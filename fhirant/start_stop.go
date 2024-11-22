@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/pocketbase/pocketbase"
@@ -89,20 +90,14 @@ func StartFhirAnt(
 	log.Println("[INFO] PocketBase and Caddy servers shut down gracefully.")
 }
 
-// StopFhirAnt gracefully stops both PocketBase and Caddy servers.
 func StopFhirAnt() {
 	log.Println("[INFO] Initiating shutdown of PocketBase and Caddy servers...")
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	// Stop PocketBase Server
+	// Stop PocketBase with a timeout
+	done := make(chan struct{})
 	go func() {
-		defer wg.Done()
 		log.Println("[DEBUG] Stopping PocketBase server...")
-
 		if pocketBaseApp != nil {
-			// Utilize OnTerminate callback for proper cleanup
 			err := pocketBaseApp.OnTerminate().Trigger(&core.TerminateEvent{
 				App: pocketBaseApp,
 			}, func(e *core.TerminateEvent) error {
@@ -117,24 +112,25 @@ func StopFhirAnt() {
 				onPocketBaseStop()
 			}
 		}
+		close(done)
 	}()
+
+	select {
+	case <-done:
+		log.Println("[INFO] PocketBase server shut down cleanly.")
+	case <-time.After(5 * time.Second):
+		log.Println("[WARN] PocketBase shutdown timed out, proceeding forcefully...")
+	}
 
 	// Stop Caddy Server
-	go func() {
-		defer wg.Done()
-		log.Println("[DEBUG] Stopping Caddy server...")
-
-		if err := caddy.Stop(); err != nil {
-			log.Printf("[ERROR] Failed to stop Caddy server: %v", err)
-			onCaddyError(err)
-		} else {
-			log.Println("[DEBUG] Caddy server stopped successfully.")
-			onCaddyStop()
-		}
-	}()
-
-	// Wait for both PocketBase and Caddy to stop
-	wg.Wait()
+	log.Println("[DEBUG] Stopping Caddy server...")
+	if err := caddy.Stop(); err != nil {
+		log.Printf("[ERROR] Failed to stop Caddy server: %v", err)
+		onCaddyError(err)
+	} else {
+		log.Println("[DEBUG] Caddy server stopped successfully.")
+		onCaddyStop()
+	}
 
 	log.Println("[INFO] PocketBase and Caddy servers shut down explicitly.")
 }
