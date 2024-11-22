@@ -17,12 +17,10 @@ if [ $? -ne 0 ]; then
     echo "Android build failed!"
     exit 1
 fi
-mv fhirant.aar ../fhir_ant/android/app/libs/fhirant.aar
+mv fhirant.aar ../fhir_ant_mobile/android/app/libs/fhirant.aar
 rm fhirant-sources.jar
 
-#!/bin/bash
-
-cd ../fhir_ant
+cd ../fhir_ant_mobile
 
 # Define the file path
 FILE_PATH="./android/app/build.gradle"
