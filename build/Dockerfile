@@ -12,7 +12,7 @@ RUN go mod download
 COPY src/ ./
 
 # Build the PocketBase server
-RUN CGO_ENABLED=0 go build -o /app/pocketfhir
+RUN CGO_ENABLED=0 go build -o /app/fhirant
 
 # Use a lightweight image for the final container
 FROM caddy:2.6.2-alpine
@@ -24,7 +24,7 @@ RUN addgroup -S caddy && adduser -S caddy -G caddy
 WORKDIR /app
 
 # Copy the PocketBase executable from the builder stage
-COPY --from=builder /app/pocketfhir /app/
+COPY --from=builder /app/fhirant /app/
 
 # Copy Caddy configuration file
 COPY config/caddy/Caddyfile.prod /etc/caddy/Caddyfile

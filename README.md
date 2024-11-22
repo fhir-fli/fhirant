@@ -5,7 +5,7 @@ Fast Healthcare Interoperability Resources Agile Networking Tool
 
 ### Local Run
 - Generate: ```$ ./generate_local.sh``` - this will also start the server the first time
-- After that, you can just do: ```$ ./pocketfhir serve```
+- After that, you can just do: ```$ ./fhirant serve```
 
 ### Local-Docker Branch
 - Regenerate: ```$ ./build/generate.sh``` - can still be run as the executable
@@ -14,8 +14,8 @@ Fast Healthcare Interoperability Resources Agile Networking Tool
 - This will create a client, and while the command line says that it is serving at: 
 ```
 Server started at http://0.0.0.0:8090
-pocketfhir-caddy | ├─ REST API: http://0.0.0.0:8090/api/
-pocketfhir-caddy | └─ Admin UI: http://0.0.0.0:8090/_/
+fhirant-caddy | ├─ REST API: http://0.0.0.0:8090/api/
+fhirant-caddy | └─ Admin UI: http://0.0.0.0:8090/_/
 ```
 - It's actually located at ```https://localhost```
 - Admin UI: [https://localhost/_/]
@@ -67,13 +67,13 @@ pocketfhir-caddy | └─ Admin UI: http://0.0.0.0:8090/_/
     - Linux: curl -L https://fly.io/install.sh | sh
 - CLI login: ```$ flyctl auth login```
 - Make sure you have dotenv-cli installed: ```$ npm install -g dotenv-cli```
-- Create app: ```$ flyctl apps create pocketfhir --org mayjuun```
-- Create and mount the volume: ```$  flyctl volumes create pb_data --size=1 --app pocketfhir --region=atl```
-- Set secrets: ```$ flyctl secrets set PB_ENCRYPTION_KEY=y5E69SptuHgUzspVNipzjl9ZmsKVPkIH --app pocketfhir```
-- Deploy: ```$ flyctl deploy --app pocketfhir```
-- May need to deploy a second time: ```$ flyctl deploy --app pocketfhir --wait-timeout 300```
+- Create app: ```$ flyctl apps create fhirant --org mayjuun```
+- Create and mount the volume: ```$  flyctl volumes create pb_data --size=1 --app fhirant --region=atl```
+- Set secrets: ```$ flyctl secrets set PB_ENCRYPTION_KEY=y5E69SptuHgUzspVNipzjl9ZmsKVPkIH --app fhirant```
+- Deploy: ```$ flyctl deploy --app fhirant```
+- May need to deploy a second time: ```$ flyctl deploy --app fhirant --wait-timeout 300```
 
 ## FHIR Definitions
 - put all ```.json``` files in this directory from the FHIR downloads except for the main FHIR json schema itself
 - in the fhir_definitions directory is a dart file
-- cd into fhir_definitions and run the dart file, this will organize all of the downloads into ```.ndjson``` files, by resourceType, which are included in PocketFHIR the first time it is run
+- cd into fhir_definitions and run the dart file, this will organize all of the downloads into ```.ndjson``` files, by resourceType, which are included in FHIR ANT the first time it is run

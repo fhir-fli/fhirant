@@ -7,7 +7,7 @@ services:
       dockerfile: ./build/Dockerfile
       args:
         CADDYFILE: Caddyfile.local # For local development
-    container_name: pocketfhir-caddy
+    container_name: fhirant-caddy
     ports:
       - "443:443" # Expose the HTTPS port
     env_file:

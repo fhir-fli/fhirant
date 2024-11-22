@@ -84,7 +84,7 @@ func getCapabilityStatement(c echo.Context) error {
 		"fhirVersion":  "4.3.0",
 		"kind":         "instance",
 		"software": map[string]string{
-			"name":    "PocketFHIR Server",
+			"name":    "FHIR ANT Server",
 			"version": "0.1.0",
 		},
 		"implementation": map[string]string{

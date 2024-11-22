@@ -12,7 +12,7 @@ RUN go mod download
 COPY src/ .
 
 # Build the custom PocketBase binary
-RUN CGO_ENABLED=0 go build -o pocketfhir
+RUN CGO_ENABLED=0 go build -o fhirant
 
 # Use a minimal base image to package the custom PocketBase binary
 FROM alpine:latest
@@ -24,7 +24,7 @@ WORKDIR /app
 RUN apk add --no-cache unzip openssh
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/pocketfhir /app/
+COPY --from=builder /app/fhirant /app/
 
 # Set environment variables for directories (not secrets)
 ENV PB_DATA_DIR /app/pb_data
@@ -35,4 +35,4 @@ ENV PB_HOOKS_DIR /app/pb_hooks
 EXPOSE 8090
 
 # Start the PocketBase server
-CMD ["/app/pocketfhir", "serve", "--http=0.0.0.0:8090"]
+CMD ["/app/fhirant", "serve", "--http=0.0.0.0:8090"]

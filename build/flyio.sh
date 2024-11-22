@@ -4,7 +4,7 @@
 ORG_SLUG="mayjuun"  # Replace this with your organization slug
 
 # Define the application name
-APP_NAME="pocketfhir"
+APP_NAME="fhirant"
 
 # Path to your .env file
 ENV_FILE="./config/.env.flyio"

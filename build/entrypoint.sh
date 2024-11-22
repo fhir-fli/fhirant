@@ -4,7 +4,7 @@
 PORT=${PORT:-8090}
 
 # Start the PocketBase server
-/app/pocketfhir serve --http=0.0.0.0:$PORT --dir=/cloud/storage/pb_data --publicDir=/cloud/storage/pb_public --hooksDir=/cloud/storage/pb_hooks &
+/app/fhirant serve --http=0.0.0.0:$PORT --dir=/cloud/storage/pb_data --publicDir=/cloud/storage/pb_public --hooksDir=/cloud/storage/pb_hooks &
 
 # Wait for PocketBase to be ready
 while ! nc -z 127.0.0.1 $PORT; do

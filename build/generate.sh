@@ -4,21 +4,21 @@
 cd "$(dirname "$0")/.."
 
 # Clean up previous builds
-rm -f pocketfhir
+rm -f fhirant
 
 # Initialize Go modules in the root directory if go.mod does not exist
 if [ ! -f go.mod ]; then
-    go mod init pocketfhir
+    go mod init fhirant
 fi
 
 # Tidy up Go modules in the root directory
 go mod tidy
 
 # Build the PocketBase server and place the executable in the root directory
-CGO_ENABLED=0 go build -o pocketfhir ./src
+CGO_ENABLED=0 go build -o fhirant ./src
 
 # Start the PocketBase server in the background
-./pocketfhir serve &
+./fhirant serve &
 PB_PID=$!
 
 # Wait for the pb_migrations and pb_data directories to be generated
@@ -39,4 +39,4 @@ cp -r ./pb_data ./data/pb_data
 rm -r ./pb_migrations
 rm -r ./pb_data
 
-echo "PocketFHIR build completed successfully."
+echo "FHIR ANT build completed successfully."
