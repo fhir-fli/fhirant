@@ -1,6 +1,6 @@
 package main
 
-import "github.com/fhir-fli/fhir_ant/fhir_ant"
+import "github.com/fhir-fli/fhirant/fhirant"
 
 func main() {
 	// Configuration for local development
@@ -13,6 +13,6 @@ func main() {
 	enableApiLogs := true         // Enable API logs for detailed local debugging
 	storagePath := "./storage"    // Local storage path for Caddy
 
-	// Start PocketFHIR server with local development configuration
-	pocketfhir.StartPocketFHIR(pbPort, httpPort, httpsPort, pbIpAddress, caddyIpAddress, dataDir, enableApiLogs, storagePath)
+	// Start FHIR ANT server with local development configuration
+	fhirant.StartFhirAnt(pbPort, httpPort, httpsPort, pbIpAddress, caddyIpAddress, dataDir, enableApiLogs, storagePath)
 }

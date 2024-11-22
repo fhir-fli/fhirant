@@ -1,4 +1,4 @@
-package pocketfhir
+package fhirant
 
 // Common schema applied to multiple collections
 var commonSchema = []map[string]interface{}{

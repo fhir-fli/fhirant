@@ -1,4 +1,4 @@
-package pocketfhir
+package fhirant
 
 import (
 	"fmt"

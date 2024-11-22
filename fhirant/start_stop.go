@@ -1,4 +1,4 @@
-package pocketfhir
+package fhirant
 
 import (
 	"log"
@@ -16,8 +16,8 @@ import (
 var pocketBaseApp *pocketbase.PocketBase
 var stopChannel chan os.Signal
 
-// StartPocketFHIR initializes and starts both PocketBase and Caddy servers.
-func StartPocketFHIR(
+// StartFhirAnt initializes and starts both PocketBase and Caddy servers.
+func StartFhirAnt(
 	pbPort string, httpPort string, httpsPort string, pbUrl string, ipAddress string, dataDir string, enableApiLogs bool, storagePath string) {
 
 	// Set environment variables for PocketBase configuration
@@ -38,7 +38,7 @@ func StartPocketFHIR(
 
 	go func() {
 		defer wg.Done()
-		log.Println("[DEBUG] Starting PocketFHIR server...")
+		log.Println("[DEBUG] Starting FHIR ANT server...")
 
 		// Set up and run PocketBase server
 		pocketBaseApp = pocketbase.NewWithConfig(pocketbase.Config{
@@ -84,13 +84,13 @@ func StartPocketFHIR(
 	log.Println("[INFO] Shutting down PocketBase and Caddy servers...")
 
 	// Stop both servers gracefully
-	StopPocketFHIR()
+	StopFhirAnt()
 	wg.Wait()
 	log.Println("[INFO] PocketBase and Caddy servers shut down gracefully.")
 }
 
-// StopPocketFHIR gracefully stops both PocketBase and Caddy servers.
-func StopPocketFHIR() {
+// StopFhirAnt gracefully stops both PocketBase and Caddy servers.
+func StopFhirAnt() {
 	log.Println("[INFO] Initiating shutdown of PocketBase and Caddy servers...")
 
 	var wg sync.WaitGroup
