@@ -37,3 +37,33 @@ func sendHealthUpdate(healthStatus string) {
 		log.Printf("[DEBUG] No NativeBridge defined. Health update '%s' not sent.", healthStatus)
 	}
 }
+
+// This function will be triggered when starting PocketBase
+func onPocketBaseStart() {
+	sendHealthUpdate("PocketBase server started successfully.")
+}
+
+// This function will be triggered when stopping PocketBase
+func onPocketBaseStop() {
+	sendHealthUpdate("PocketBase server stopped successfully.")
+}
+
+// This function will be triggered when starting Caddy
+func onCaddyStart() {
+	sendHealthUpdate("Caddy server started successfully.")
+}
+
+// This function will be triggered when stopping Caddy
+func onCaddyStop() {
+	sendHealthUpdate("Caddy server stopped successfully.")
+}
+
+// This function will be triggered if there's an error with PocketBase
+func onPocketBaseError(err error) {
+	sendHealthUpdate("PocketBase server encountered an error: " + err.Error())
+}
+
+// This function will be triggered if there's an error with Caddy
+func onCaddyError(err error) {
+	sendHealthUpdate("Caddy server encountered an error: " + err.Error())
+}
