@@ -1,0 +1,182 @@
+{
+    "logging": {
+        "logs": {
+            "certs": {
+                "writer": {
+                    "filename": "/path/to/logs/certs_access.log",
+                    "output": "file"
+                },
+                "encoder": {
+                    "format": "json"
+                },
+                "include": [
+                    "http.log.access.certs"
+                ]
+            },
+            "default": {
+                "exclude": [
+                    "http.log.access.certs",
+                    "http.log.access.pb_proxy"
+                ]
+            },
+            "pb_proxy": {
+                "writer": {
+                    "filename": "/path/to/logs/proxy_access.log",
+                    "output": "file"
+                },
+                "encoder": {
+                    "format": "json"
+                },
+                "include": [
+                    "http.log.access.pb_proxy"
+                ]
+            }
+        }
+    },
+    "apps": {
+        "http": {
+            "servers": {
+                "srv0": {
+                    "listen": [
+                        ":55000"
+                    ],
+                    "routes": [
+                        {
+                            "match": [
+                                {
+                                    "host": [
+                                        "10.0.2.16"
+                                    ]
+                                }
+                            ],
+                            "handle": [
+                                {
+                                    "handler": "subroute",
+                                    "routes": [
+                                        {
+                                            "handle": [
+                                                {
+                                                    "handler": "reverse_proxy",
+                                                    "health_checks": {
+                                                        "active": {
+                                                            "interval": 10000000000,
+                                                            "timeout": 2000000000,
+                                                            "uri": "/health"
+                                                        }
+                                                    },
+                                                    "upstreams": [
+                                                        {
+                                                            "dial": "127.0.0.1:8090"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "terminal": true
+                        }
+                    ],
+                    "logs": {
+                        "logger_names": {
+                            "10.0.2.16": [
+                                "pb_proxy"
+                            ]
+                        }
+                    }
+                },
+                "srv1": {
+                    "listen": [
+                        ":8081"
+                    ],
+                    "routes": [
+                        {
+                            "match": [
+                                {
+                                    "host": [
+                                        "10.0.2.16"
+                                    ]
+                                }
+                            ],
+                            "handle": [
+                                {
+                                    "handler": "subroute",
+                                    "routes": [
+                                        {
+                                            "handle": [
+                                                {
+                                                    "handler": "vars",
+                                                    "root": "/absolute/path/to/storage/pki/authorities/local"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "handle": [
+                                                {
+                                                    "handler": "subroute",
+                                                    "routes": [
+                                                        {
+                                                            "handle": [
+                                                                {
+                                                                    "handler": "rewrite",
+                                                                    "strip_path_prefix": "/certs"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "handle": [
+                                                                {
+                                                                    "browse": {},
+                                                                    "handler": "file_server",
+                                                                    "hide": [
+                                                                        "./Caddyfile.fhirant"
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "match": [
+                                                {
+                                                    "path": [
+                                                        "/certs/*"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "terminal": true
+                        }
+                    ],
+                    "logs": {
+                        "logger_names": {
+                            "10.0.2.16": [
+                                "certs"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "tls": {
+            "automation": {
+                "policies": [
+                    {
+                        "subjects": [
+                            "10.0.2.16"
+                        ],
+                        "issuers": [
+                            {
+                                "module": "internal"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

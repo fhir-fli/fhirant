@@ -1,0 +1,32 @@
+# Serve files at 10.0.2.16:8081 for browsing
+10.0.2.16:8081 {
+	root * /absolute/path/to/storage/pki/authorities/local
+
+	handle_path /certs/* {
+		file_server browse
+	}
+
+	# Enable logging with a dedicated log path for certs access
+	log certs {
+		output file /path/to/logs/certs_access.log
+		format json
+	}
+}
+
+# Reverse proxy at 10.0.2.16:55000 with TLS internal
+10.0.2.16:55000 {
+	tls internal
+
+	# Reverse proxy configuration with health checks
+	reverse_proxy 127.0.0.1:8090 {
+		health_interval 10s
+		health_timeout 2s
+		health_uri /health
+	}
+
+	# Enable logging with a dedicated log path for the proxy
+	log pb_proxy {
+		output file /path/to/logs/proxy_access.log
+		format json
+	}
+}
