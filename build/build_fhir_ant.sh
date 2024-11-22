@@ -17,7 +17,7 @@ if [ $? -ne 0 ]; then
     echo "Android build failed!"
     exit 1
 fi
-mv fhirant.aar ../fhir_ant/android/app/libs/fhirant.aar
+mv fhirant.aar ../fhir_ant_mobile/android/app/libs/fhirant.aar
 rm fhirant-sources.jar
 
 #!/bin/bash

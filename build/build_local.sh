@@ -3,6 +3,17 @@
 # Navigate to the root directory of the project
 cd "$(dirname "$0")/.."
 
+# Define the folder name
+FOLDER="storage"
+
+# Check if the folder already exists
+if [ ! -d "$FOLDER" ]; then
+  echo "Folder '$FOLDER' does not exist. Creating it now..."
+  mkdir "$FOLDER"
+else
+  echo "Folder '$FOLDER' already exists."
+fi
+
 # Clean up previous builds
 rm -f fhirant_server
 

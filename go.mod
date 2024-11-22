@@ -1,4 +1,4 @@
-module github.com/fhir-fli/fhir_ant
+module github.com/fhir-fli/fhirant
 
 go 1.22.2
 

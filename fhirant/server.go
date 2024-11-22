@@ -13,7 +13,6 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// runServerInstance handles the setup and running of the PocketBase server instance.
 func runServerInstance(app *pocketbase.PocketBase, ipAddress, pbPort string, enableApiLogs bool) error {
 	// Set CLI-like arguments for PocketBase to specify server address and port
 	log.Printf("[DEBUG] Setting CLI arguments for server address and port: %s:%s\n", ipAddress, pbPort)
@@ -31,10 +30,7 @@ func runServerInstance(app *pocketbase.PocketBase, ipAddress, pbPort string, ena
 	setupPocketbaseCallbacks(app, enableApiLogs)
 
 	// Initialize collections if necessary
-	if err := initializeCollections(app); err != nil {
-		log.Printf("[ERROR] Failed to initialize collections: %v", err)
-		return err
-	}
+	initializeCollections(app) // Let the callback handle any errors internally
 
 	// Start the server
 	log.Println("[DEBUG] Starting PocketBase server instance...")
