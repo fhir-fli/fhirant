@@ -42,7 +42,7 @@ func createInitialCollections(app *pocketbase.PocketBase) error {
 
 		existingCollection, err := app.Dao().FindCollectionByNameOrId(collectionName)
 		if err == nil && existingCollection != nil {
-			log.Printf("Collection '%s' already exists. Skipping creation.", collectionName)
+			// log.Printf("Collection '%s' already exists. Skipping creation.", collectionName)
 			continue
 		}
 
@@ -94,7 +94,7 @@ func createInitialCollections(app *pocketbase.PocketBase) error {
 			continue
 		}
 
-		log.Printf("Collection '%s' created successfully", collectionName)
+		// log.Printf("Collection '%s' created successfully", collectionName)
 	}
 
 	return nil

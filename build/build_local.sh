@@ -6,6 +6,9 @@ cd "$(dirname "$0")/.."
 # Define the folder name
 FOLDER="storage"
 
+# Remove the storage folder if it exists
+rm -r $FOLDER
+
 # Check if the folder already exists
 if [ ! -d "$FOLDER" ]; then
   echo "Folder '$FOLDER' does not exist. Creating it now..."
@@ -25,13 +28,17 @@ fi
 # Tidy up Go modules in the root directory
 go mod tidy
 
+# Set environment variables for SQLCipher
+export CGO_CFLAGS="-I/usr/include/sqlcipher"
+export CGO_LDFLAGS="-L/usr/lib -lsqlcipher -lcrypto"
+
 # Build the FHIR ANT server for desktop and place the executable in the root directory
-echo "Building FHIR ANT for regular platform..."
-if ! CGO_ENABLED=0 go build -o fhirant_server ./main.go; then
+echo "Building FHIR ANT for regular platform with SQLCipher..."
+if ! CGO_ENABLED=1 go build -tags "cgo" -o fhirant_server ./main.go; then
     echo "Build failed!"
     exit 1
 fi
-echo "Regular FHIR ANT build completed."
+echo "Regular FHIR ANT build with SQLCipher completed."
 
 # Start the FHIR ANT server in the background (for the regular platform)
 ./fhirant_server serve

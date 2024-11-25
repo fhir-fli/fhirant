@@ -20,3 +20,5 @@
 # Go workspace file
 go.work
 go.work.sum
+dart/assets/fhir_spec/
+dart/assets/mimic_iv/

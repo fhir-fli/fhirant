@@ -1,37 +1,35 @@
 #!/bin/bash
 
-# Ensure Go modules are initialized
-if [ ! -f go.mod ]; then
-    go mod init fhirant
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORK_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+ANDROID_OUTPUT_DIR="$WORK_DIR/android-output"
 
-# Install necessary tools
-go get -u golang.org/x/mobile/bind
-go install golang.org/x/mobile/cmd/gomobile@latest
-gomobile init
+# Debugging paths
+echo "SCRIPT_DIR=$SCRIPT_DIR"
+echo "WORK_DIR=$WORK_DIR"
+echo "ANDROID_OUTPUT_DIR=$ANDROID_OUTPUT_DIR"
 
-# Build FHIR ANT .aar for Android
-echo "Building FHIR ANT .aar file for Android..."
-gomobile bind -target=android -androidapi=21 -o fhirant.aar ./fhirant
-if [ $? -ne 0 ]; then
-    echo "Android build failed!"
-    exit 1
-fi
-mv fhirant.aar ../fhir_ant_mobile/android/app/libs/fhirant.aar
-rm fhirant-sources.jar
+# Verify OpenSSL and SQLCipher builds
+ARCHS=("arm" "arm64" "x86_64")
+for ARCH in "${ARCHS[@]}"; do
+  echo "Verifying dependencies for $ARCH..."
+  ls "$ANDROID_OUTPUT_DIR/openssl/$ARCH/include/openssl/crypto.h"
+  ls "$ANDROID_OUTPUT_DIR/openssl/$ARCH/include/openssl/macros.h"
+  ls "$ANDROID_OUTPUT_DIR/openssl/$ARCH/lib/libcrypto.so"
+  ls "$ANDROID_OUTPUT_DIR/openssl/$ARCH/lib/libssl.so"
+  ls "$ANDROID_OUTPUT_DIR/sqlcipher/$ARCH/include/sqlcipher/sqlite3.h"
+  ls "$ANDROID_OUTPUT_DIR/sqlcipher/$ARCH/lib/libsqlcipher.so"
+done
 
-cd ../fhir_ant_mobile
+# Set environment variables for all architectures
+export CGO_ENABLED=1
+export ANDROID_NDK_HOME="/home/grey/Android/Sdk/ndk/28.0.12433566"
+export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
+export CGO_CFLAGS="-I$ANDROID_OUTPUT_DIR/openssl/arm64/include -I$ANDROID_OUTPUT_DIR/sqlcipher/arm64/include/sqlcipher"
+export CGO_LDFLAGS="-L$ANDROID_OUTPUT_DIR/openssl/arm64/lib -L$ANDROID_OUTPUT_DIR/sqlcipher/arm64/lib -lsqlcipher -lssl -lcrypto -llog"
 
-# Define the file path
-FILE_PATH="./android/app/build.gradle"
+# Build for all supported architectures in a single AAR
+echo "Building FHIR ANT .aar file for Android (all architectures)..."
+gomobile bind -tags "cgo" -target=android -androidapi=28 -o fhirant.aar ./fhirant || exit 1
 
-# Use sed to replace the specified line
-sed -i.bak "s/implementation(name: 'fhirant', ext: 'aar') \/\/ Include FHIR ANT \.aar/implementation(name: 'fhirant-2', ext: 'aar') \/\/ Include FHIR ANT \.aar/" "$FILE_PATH"
-
-flutter clean ; flutter pub get ; flutter build apk
-
-sed -i.bak "s/implementation(name: 'fhirant-2', ext: 'aar') \/\/ Include FHIR ANT \.aar/implementation(name: 'fhirant', ext: 'aar') \/\/ Include FHIR ANT \.aar/" "$FILE_PATH"
-
-flutter clean ; flutter pub get ; flutter build apk
-
-cd ../fhirant
+echo "FHIR ANT .aar (multi-architecture) build completed successfully."
