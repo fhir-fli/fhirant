@@ -12,7 +12,6 @@ import (
 	"github.com/google/fhir/go/jsonformat/fhirvalidate"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 	"google.golang.org/protobuf/proto"
 )
@@ -38,15 +37,12 @@ func updateMeta(resourceJson map[string]interface{}) map[string]interface{} {
 	return resourceJson
 }
 
-// Handle resource creation in the FHIR database
-func handleResourceCreation(app *pocketbase.PocketBase, e *core.RecordCreateEvent) error {
+func handleResourceCreation(app *pocketbase.PocketBase, e *core.RecordEvent) error {
 	log.Println("Starting resource creation...")
 
-	resource := e.Record // Directly access the Record from the event
+	resource := e.Record
 	collectionName := resource.Collection().Name
-	log.Printf("Collection name: %s", collectionName)
 
-	// Skip history collections
 	if strings.HasSuffix(collectionName, "history") {
 		log.Println("Collection is a history collection. Skipping creation.")
 		return nil
@@ -57,7 +53,6 @@ func handleResourceCreation(app *pocketbase.PocketBase, e *core.RecordCreateEven
 		return nil
 	}
 
-	// Get resource data for validation and processing
 	resourceField := resource.Get("resource")
 	resourceData, err := getResourceData(resourceField)
 	if err != nil {
@@ -65,33 +60,20 @@ func handleResourceCreation(app *pocketbase.PocketBase, e *core.RecordCreateEven
 		return fmt.Errorf("failed to get resource data: %w", err)
 	}
 
-	// Validate the FHIR resource
 	if err := validateFHIRResource(resourceData); err != nil {
 		log.Printf("FHIR validation failed: %v", err)
 		return fmt.Errorf("validation error: %w", err)
 	}
 
-	// Check and update meta fields (lastUpdated and versionId)
 	resourceData, err = updateMetaFields(resourceData)
 	if err != nil {
 		log.Printf("Failed to update meta fields: %v", err)
 		return fmt.Errorf("failed to update meta fields: %w", err)
 	}
 
-	// Re-serialize the resource and store it
-	resourceData, err = updateResourceJson(resourceData, e.Record.Id)
-	if err != nil {
-		log.Printf("Failed to update resource JSON: %v", err)
-		return fmt.Errorf("failed to update resource JSON: %w", err)
-	}
+	resource.Set("resource", string(resourceData)) // Store JSON as string
 
-	log.Printf("Updated resource JSON for record %s: %s", resource.Id, resourceData)
-
-	// Set the updated resource JSON back into the record
-	resource.Set("resource", types.JsonRaw(resourceData))
-
-	// Explicitly save the updated record in PocketBase
-	if err := app.Dao().SaveRecord(resource); err != nil {
+	if err := app.Save(resource); err != nil {
 		log.Printf("Failed to save updated resource: %v", err)
 		return fmt.Errorf("failed to save updated resource: %w", err)
 	}
@@ -101,7 +83,7 @@ func handleResourceCreation(app *pocketbase.PocketBase, e *core.RecordCreateEven
 }
 
 // Handle resource update in the FHIR database
-func handleResourceUpdate(app *pocketbase.PocketBase, e *core.RecordUpdateEvent) error {
+func handleResourceUpdate(app *pocketbase.PocketBase, e *core.RecordEvent) error {
 	log.Println("Starting resource update...")
 
 	newResourceVersion := e.Record
@@ -120,7 +102,7 @@ func handleResourceUpdate(app *pocketbase.PocketBase, e *core.RecordUpdateEvent)
 	}
 
 	// Fetch the current resource from the main table
-	currentResource, err := app.Dao().FindRecordById(collectionName, newResourceVersion.Id)
+	currentResource, err := app.FindRecordById(collectionName, newResourceVersion.Id)
 	if err != nil {
 		log.Printf("Failed to fetch existing resource: %v", err)
 		return fmt.Errorf("failed to fetch existing resource: %w", err)
@@ -183,7 +165,7 @@ func handleResourceUpdate(app *pocketbase.PocketBase, e *core.RecordUpdateEvent)
 		newResourceVersion.Set("resource", types.JsonRaw(resourceData))
 
 		// Save the updated resource in the main table
-		if err := app.Dao().SaveRecord(newResourceVersion); err != nil {
+		if err := app.Save(newResourceVersion); err != nil {
 			log.Printf("Failed to save updated resource: %v", err)
 			return fmt.Errorf("failed to save updated resource: %w", err)
 		}
@@ -217,7 +199,7 @@ func updateResourceJson(resourceData []byte, id string) ([]byte, error) {
 
 // Determine if the collection is versioned by checking for the "lastUpdated" field
 func isVersionedCollection(app *pocketbase.PocketBase, collectionName string) bool {
-	collection, err := app.Dao().FindCollectionByNameOrId(collectionName)
+	collection, err := app.FindCollectionByNameOrId(collectionName)
 	if err != nil {
 		log.Printf("Failed to find collection: %v", err)
 		return false
@@ -243,20 +225,18 @@ func updateMetaFields(resourceData []byte) ([]byte, error) {
 	return json.Marshal(resourceJson)
 }
 
-// Extract resource data
-func getResourceData(resourceField any) (resourceData []byte, err error) {
+func getResourceData(resourceField any) ([]byte, error) {
 	log.Println("Getting resource data...")
 
 	switch v := resourceField.(type) {
-	case types.JsonRaw:
-		resourceData = []byte(v)
+	case string:
+		return []byte(v), nil
+	case []byte:
+		return v, nil
 	default:
 		log.Println("Resource field is not of expected type")
 		return nil, fmt.Errorf("resource field is not of expected type")
 	}
-
-	log.Println("Resource data retrieved successfully.")
-	return resourceData, nil
 }
 
 // Validate the FHIR resource
@@ -309,34 +289,34 @@ func getMetaFromResource(resourceData []byte) *meta {
 }
 
 // Move resource to history table
-func moveResourceToHistory(app *pocketbase.PocketBase, collectionName string, resource *models.Record) error {
+func moveResourceToHistory(app *pocketbase.PocketBase, collectionName string, resource *core.Record) error {
 	log.Printf("Moving resource with ID %s to history table...", resource.Id)
 
 	historyCollectionName := collectionName + "history"
 
-	historyCollection, err := app.Dao().FindCollectionByNameOrId(historyCollectionName)
+	historyCollection, err := app.FindCollectionByNameOrId(historyCollectionName)
 	if err != nil {
 		log.Printf("Failed to find history collection: %v", err)
 		return fmt.Errorf("failed to find history collection: %w", err)
 	}
 
 	resourceField := resource.Get("resource")
-	resourceData, ok := resourceField.(types.JsonRaw)
+	resourceData, ok := resourceField.(string) // Use string if JSON is stored as a string
 	if !ok {
-		log.Println("Failed to assert resource field as types.JsonRaw")
-		return fmt.Errorf("failed to assert resource field as types.JsonRaw")
+		log.Println("Failed to assert resource field as string")
+		return fmt.Errorf("failed to assert resource field as string")
 	}
 
-	historicalResource := models.NewRecord(historyCollection)
+	historicalResource := core.NewRecord(historyCollection)
 	historicalResource.Set("fhirId", resource.Id)
 	historicalResource.Set("resourceType", resource.Get("resourceType"))
 
 	meta := getMetaFromResource([]byte(resourceData))
 	historicalResource.Set("lastUpdated", meta.LastUpdated) // Use lastUpdated as lastUpdated for history
-	historicalResource.Set("resource", resourceData)
+	historicalResource.Set("resource", resourceData)        // Set resource data as string
 
 	log.Printf("Saving historical resource with lastUpdated %s to history table...", meta.LastUpdated)
-	if err := app.Dao().SaveRecord(historicalResource); err != nil {
+	if err := app.Save(historicalResource); err != nil {
 		log.Printf("Failed to save resource to history table: %v", err)
 		return fmt.Errorf("failed to save resource to history table: %w", err)
 	}

@@ -25,7 +25,7 @@ String generateQueryCode(Bundle bundle) {
   buffer.writeln('import (');
   buffer.writeln('  "fmt"');
   buffer.writeln('  "github.com/pocketbase/pocketbase"');
-  buffer.writeln('  "github.com/pocketbase/pocketbase/models"');
+  buffer.writeln('  "github.com/pocketbase/pocketbase/core" ');
   buffer.writeln(')');
   buffer.writeln();
   buffer.writeln(

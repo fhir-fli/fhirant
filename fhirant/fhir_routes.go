@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -65,7 +64,7 @@ func createOrUpdateFHIRResource(c echo.Context, app *pocketbase.PocketBase) erro
 	}
 	record.Set("resource", types.JsonRaw(resourceJSON))
 
-	if err := app.Dao().SaveRecord(record); err != nil {
+	if err := app.Save(record); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save resource"})
 	}
 
