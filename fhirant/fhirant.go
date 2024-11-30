@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/fhir-fli/fhirant/fhirant/db"
-	"github.com/fhir-fli/fhirant/fhirant/utils"
+	"github.com/fhir-fli/fhirant/db"
+	"github.com/fhir-fli/fhirant/utils"
 )
 
 // FhirAnt struct encapsulates database connection and package methods.
