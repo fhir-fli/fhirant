@@ -1,20 +1,26 @@
 package main
 
 import (
+	"fhirant/api"
+	"fhirant/couchbase"
 	"log"
-
-	"github.com/fhir-fli/fhirant/fhirant"
+	"net/http"
 )
 
 func main() {
-	// Initialize FhirAnt
-	dbPath := "fhirant_test.db"
-	encryptionKey := "01234567891123450123456789112345"
-	fhir, err := fhirant.NewFhirAnt(dbPath, encryptionKey)
-	if err != nil {
-		log.Fatalf("Failed to initialize FhirAnt: %v", err)
-	}
-	defer fhir.Close()
+    // Initialize Couchbase Connection
+    err := couchbase.InitCouchbaseConnection()
+    if err != nil {
+        log.Fatalf("Could not initialize Couchbase connection: %v", err)
+    }
 
-	log.Println("FhirAnt initialized successfully.")
+    // Set up HTTP routes
+    http.HandleFunc("/status", api.StatusHandler)
+    http.HandleFunc("/resource/create", api.CreateResourceHandler)
+
+    // Start the server
+    log.Println("Starting server on :8080")
+    if err := http.ListenAndServe(":8080", nil); err != nil {
+        log.Fatal("Failed to start server:", err)
+    }
 }
