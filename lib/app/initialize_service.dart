@@ -1,19 +1,10 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:fhirant/app/app.dart';
 import 'package:fhirant/app/signaling_server.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeService();
-  runApp(App());
-}
 
 Future<void> initializeService() async {
   const notificationChannelId = 'signaling_server';

@@ -5,7 +5,7 @@ import 'dart:io';
 class SignalingServer {
   HttpServer? _server;
 
-  Future<void> startServer({int port = 3000}) async {
+  Future<void> startServer({int port = 55000}) async {
     if (_server != null) return;
 
     _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
