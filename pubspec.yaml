@@ -1,5 +1,5 @@
 name: fhirant
-description: A FHIR server application using Shelf
+description: Fast Healthcare Interoperability Resources Agile Networking Tool
 version: 1.0.0+1
 publish_to: none
 
@@ -35,5 +35,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-  assets:
-    - assets/
+  # assets:
+  #   - assets/
