@@ -1,4 +1,6 @@
-import 'package:fhirant/app/app.dart';
-import 'package:flutter/material.dart';
+// import 'package:fhirant/app/app.dart';
+// import 'package:fhirant/bootstrap.dart';
 
-void main() => runApp(App());
+// void main() {
+//   bootstrap(() => const App());
+// }
