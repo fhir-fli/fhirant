@@ -15,8 +15,6 @@ dependencies:
     sdk: flutter
   intl: ^0.19.0
 
-  flutter_background_service: any
-  flutter_local_notifications: any
 dev_dependencies:
   bloc_test: ^9.1.7
   flutter_test:

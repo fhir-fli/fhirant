@@ -1,6 +1,6 @@
-// import 'package:fhirant/app/app.dart';
-// import 'package:fhirant/bootstrap.dart';
+import 'package:fhirant/app/app.dart';
+import 'package:fhirant/bootstrap.dart';
 
-// void main() {
-//   bootstrap(() => const App());
-// }
+void main() {
+  bootstrap(() => const App());
+}
