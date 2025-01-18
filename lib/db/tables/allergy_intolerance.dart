@@ -25,14 +25,16 @@ void createAllergyIntoleranceTables(Database db) {
 
 /// Save a [AllergyIntolerance] to the database
 bool saveAllergyIntolerance(Database db, AllergyIntolerance resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AllergyIntolerance;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as AllergyIntolerance;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM AllergyIntolerance WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM AllergyIntolerance WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO AllergyIntoleranceHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveAllergyIntolerance(Database db, AllergyIntolerance resource) {
 /// Get a [AllergyIntolerance] by its ID
 AllergyIntolerance? getAllergyIntolerance(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM AllergyIntolerance WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM AllergyIntolerance WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return AllergyIntolerance.fromJsonString(result.first['resource'] as String);
+      return AllergyIntolerance.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -25,14 +25,16 @@ void createImmunizationTables(Database db) {
 
 /// Save a [Immunization] to the database
 bool saveImmunization(Database db, Immunization resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Immunization;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Immunization;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Immunization WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Immunization WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ImmunizationHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveImmunization(Database db, Immunization resource) {
 /// Get a [Immunization] by its ID
 Immunization? getImmunization(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Immunization WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Immunization WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Immunization.fromJsonString(result.first['resource'] as String);
     }

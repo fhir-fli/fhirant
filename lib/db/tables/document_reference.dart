@@ -25,14 +25,16 @@ void createDocumentReferenceTables(Database db) {
 
 /// Save a [DocumentReference] to the database
 bool saveDocumentReference(Database db, DocumentReference resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DocumentReference;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as DocumentReference;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM DocumentReference WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM DocumentReference WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO DocumentReferenceHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveDocumentReference(Database db, DocumentReference resource) {
 /// Get a [DocumentReference] by its ID
 DocumentReference? getDocumentReference(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM DocumentReference WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM DocumentReference WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return DocumentReference.fromJsonString(result.first['resource'] as String);
+      return DocumentReference.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

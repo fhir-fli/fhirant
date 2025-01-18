@@ -25,14 +25,16 @@ void createOperationOutcomeTables(Database db) {
 
 /// Save a [OperationOutcome] to the database
 bool saveOperationOutcome(Database db, OperationOutcome resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as OperationOutcome;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as OperationOutcome;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM OperationOutcome WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM OperationOutcome WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO OperationOutcomeHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveOperationOutcome(Database db, OperationOutcome resource) {
 /// Get a [OperationOutcome] by its ID
 OperationOutcome? getOperationOutcome(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM OperationOutcome WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM OperationOutcome WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return OperationOutcome.fromJsonString(result.first['resource'] as String);
+      return OperationOutcome.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

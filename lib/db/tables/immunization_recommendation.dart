@@ -24,15 +24,18 @@ void createImmunizationRecommendationTables(Database db) {
 }
 
 /// Save a [ImmunizationRecommendation] to the database
-bool saveImmunizationRecommendation(Database db, ImmunizationRecommendation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImmunizationRecommendation;
+bool saveImmunizationRecommendation(
+    Database db, ImmunizationRecommendation resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ImmunizationRecommendation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ImmunizationRecommendation WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM ImmunizationRecommendation WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ImmunizationRecommendationHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveImmunizationRecommendation(Database db, ImmunizationRecommendation reso
 }
 
 /// Get a [ImmunizationRecommendation] by its ID
-ImmunizationRecommendation? getImmunizationRecommendation(Database db, String id) {
+ImmunizationRecommendation? getImmunizationRecommendation(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ImmunizationRecommendation WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ImmunizationRecommendation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ImmunizationRecommendation.fromJsonString(result.first['resource'] as String);
+      return ImmunizationRecommendation.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

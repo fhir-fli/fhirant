@@ -1,5 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -11,9 +9,19 @@ void createSpecimenTables(Database db) {
     CREATE TABLE IF NOT EXISTS Specimen (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      patientId TEXT NOT NULL,
+      type TEXT NOT NULL,
+      collectedDateTime DATETIME,
+      status TEXT
     );
   ''')
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_specimen_patientId ON Specimen (patientId);',
+    )
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_specimen_status ON Specimen (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SpecimenHistory (
       id TEXT PRIMARY KEY,
@@ -24,47 +32,45 @@ void createSpecimenTables(Database db) {
 }
 
 /// Save a [Specimen] to the database
-bool saveSpecimen(Database db, Specimen resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Specimen;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+void saveSpecimen(Database db, Specimen specimen) {
+  final updatedSpecimen =
+      updateMeta(specimen, versionIdAsTime: true).newIdIfNoId();
+  final id = specimen.id?.value;
+  final resourceJson = updatedSpecimen.toJsonString();
+  final lastUpdated = updatedSpecimen.meta?.lastUpdated?.valueDateTime;
+  final patientId = specimen.subject?.reference?.value;
+  final type = specimen.type?.coding?.first.code?.value;
+  final collectedDateTime =
+      specimen.collection?.collectedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final status = specimen.status?.toString();
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Specimen WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO SpecimenHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Specimen WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Specimen (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Specimen (
+      id, lastUpdated, resource, patientId, type, collectedDateTime, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      type = excluded.type,
+      collectedDateTime = excluded.collectedDateTime,
+      status = excluded.status;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    type,
+    collectedDateTime,
+    status,
+  ]);
 }
 
 /// Get a [Specimen] by its ID
 Specimen? getSpecimen(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Specimen WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Specimen WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Specimen.fromJsonString(result.first['resource'] as String);
     }

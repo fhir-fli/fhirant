@@ -25,14 +25,16 @@ void createImmunizationEvaluationTables(Database db) {
 
 /// Save a [ImmunizationEvaluation] to the database
 bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImmunizationEvaluation;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ImmunizationEvaluation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ImmunizationEvaluation WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM ImmunizationEvaluation WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ImmunizationEvaluationHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
 /// Get a [ImmunizationEvaluation] by its ID
 ImmunizationEvaluation? getImmunizationEvaluation(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ImmunizationEvaluation WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ImmunizationEvaluation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ImmunizationEvaluation.fromJsonString(result.first['resource'] as String);
+      return ImmunizationEvaluation.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

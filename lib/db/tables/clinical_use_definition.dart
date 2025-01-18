@@ -25,14 +25,16 @@ void createClinicalUseDefinitionTables(Database db) {
 
 /// Save a [ClinicalUseDefinition] to the database
 bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ClinicalUseDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ClinicalUseDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ClinicalUseDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ClinicalUseDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ClinicalUseDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
 /// Get a [ClinicalUseDefinition] by its ID
 ClinicalUseDefinition? getClinicalUseDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ClinicalUseDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ClinicalUseDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ClinicalUseDefinition.fromJsonString(result.first['resource'] as String);
+      return ClinicalUseDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

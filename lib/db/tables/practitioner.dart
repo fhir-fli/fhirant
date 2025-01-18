@@ -25,14 +25,16 @@ void createPractitionerTables(Database db) {
 
 /// Save a [Practitioner] to the database
 bool savePractitioner(Database db, Practitioner resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Practitioner;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Practitioner;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Practitioner WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Practitioner WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PractitionerHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool savePractitioner(Database db, Practitioner resource) {
 /// Get a [Practitioner] by its ID
 Practitioner? getPractitioner(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Practitioner WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Practitioner WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Practitioner.fromJsonString(result.first['resource'] as String);
     }

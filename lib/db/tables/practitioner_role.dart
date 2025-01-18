@@ -25,14 +25,16 @@ void createPractitionerRoleTables(Database db) {
 
 /// Save a [PractitionerRole] to the database
 bool savePractitionerRole(Database db, PractitionerRole resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as PractitionerRole;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as PractitionerRole;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PractitionerRole WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM PractitionerRole WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PractitionerRoleHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool savePractitionerRole(Database db, PractitionerRole resource) {
 /// Get a [PractitionerRole] by its ID
 PractitionerRole? getPractitionerRole(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM PractitionerRole WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM PractitionerRole WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return PractitionerRole.fromJsonString(result.first['resource'] as String);
+      return PractitionerRole.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

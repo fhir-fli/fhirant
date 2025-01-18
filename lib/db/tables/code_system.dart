@@ -17,8 +17,10 @@ void createCodeSystemTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CodeSystemHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createCodeSystemTables(Database db) {
 
 /// Save a [CodeSystem] canonical resource to the database
 bool saveCodeSystem(Database db, CodeSystem resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CodeSystem;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CodeSystem;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -81,7 +84,8 @@ bool saveCodeSystem(Database db, CodeSystem resource) {
 /// Get a [CodeSystem] canonical resource by its ID
 CodeSystem? getCodeSystem(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CodeSystem WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM CodeSystem WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CodeSystem.fromJsonString(result.first['resource'] as String);
     }

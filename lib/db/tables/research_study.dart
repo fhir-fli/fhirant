@@ -25,14 +25,16 @@ void createResearchStudyTables(Database db) {
 
 /// Save a [ResearchStudy] to the database
 bool saveResearchStudy(Database db, ResearchStudy resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ResearchStudy;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ResearchStudy;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ResearchStudy WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM ResearchStudy WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ResearchStudyHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveResearchStudy(Database db, ResearchStudy resource) {
 /// Get a [ResearchStudy] by its ID
 ResearchStudy? getResearchStudy(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ResearchStudy WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ResearchStudy WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ResearchStudy.fromJsonString(result.first['resource'] as String);
     }

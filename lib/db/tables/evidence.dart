@@ -25,7 +25,8 @@ void createEvidenceTables(Database db) {
 
 /// Save a [Evidence] to the database
 bool saveEvidence(Database db, Evidence resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Evidence;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Evidence;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveEvidence(Database db, Evidence resource) {
 /// Get a [Evidence] by its ID
 Evidence? getEvidence(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Evidence WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Evidence WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Evidence.fromJsonString(result.first['resource'] as String);
     }

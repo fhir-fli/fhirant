@@ -25,7 +25,8 @@ void createConsentTables(Database db) {
 
 /// Save a [Consent] to the database
 bool saveConsent(Database db, Consent resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Consent;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Consent;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

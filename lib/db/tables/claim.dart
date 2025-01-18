@@ -25,7 +25,8 @@ void createClaimTables(Database db) {
 
 /// Save a [Claim] to the database
 bool saveClaim(Database db, Claim resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Claim;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Claim;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

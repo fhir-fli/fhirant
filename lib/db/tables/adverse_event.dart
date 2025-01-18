@@ -25,14 +25,16 @@ void createAdverseEventTables(Database db) {
 
 /// Save a [AdverseEvent] to the database
 bool saveAdverseEvent(Database db, AdverseEvent resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AdverseEvent;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AdverseEvent;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM AdverseEvent WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM AdverseEvent WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO AdverseEventHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveAdverseEvent(Database db, AdverseEvent resource) {
 /// Get a [AdverseEvent] by its ID
 AdverseEvent? getAdverseEvent(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM AdverseEvent WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM AdverseEvent WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return AdverseEvent.fromJsonString(result.first['resource'] as String);
     }

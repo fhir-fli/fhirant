@@ -25,14 +25,16 @@ void createOrganizationTables(Database db) {
 
 /// Save a [Organization] to the database
 bool saveOrganization(Database db, Organization resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Organization;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Organization;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Organization WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Organization WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO OrganizationHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveOrganization(Database db, Organization resource) {
 /// Get a [Organization] by its ID
 Organization? getOrganization(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Organization WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Organization WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Organization.fromJsonString(result.first['resource'] as String);
     }

@@ -13,12 +13,13 @@ void createSearchParameterTables(Database db) {
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date DATETIME,
-      title TEXT,
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT PRIMARY KEY,
@@ -30,23 +31,27 @@ void createSearchParameterTables(Database db) {
 
 /// Save a [SearchParameter] canonical resource to the database
 bool saveSearchParameter(Database db, SearchParameter resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SearchParameter;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SearchParameter;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime;
-  final title = updatedResource.title?.value;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SearchParameter WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+        'SELECT id FROM SearchParameter WHERE id = ?', [id]).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO SearchParameterHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SearchParameter WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,7 +63,6 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
         url = excluded.url,
         status = excluded.status,
         date = excluded.date,
-        title = excluded.title,
         lastUpdated = excluded.lastUpdated,
         resource = excluded.resource;
     ''', [
@@ -66,7 +70,6 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
       url,
       status,
       date,
-      title,
       lastUpdated,
       resourceJson,
     ]);
@@ -81,7 +84,8 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
 /// Get a [SearchParameter] canonical resource by its ID
 SearchParameter? getSearchParameter(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SearchParameter WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SearchParameter WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SearchParameter.fromJsonString(result.first['resource'] as String);
     }

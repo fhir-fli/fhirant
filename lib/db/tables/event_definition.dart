@@ -17,8 +17,10 @@ void createEventDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createEventDefinitionTables(Database db) {
 
 /// Save a [EventDefinition] canonical resource to the database
 bool saveEventDefinition(Database db, EventDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as EventDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as EventDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM EventDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM EventDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO EventDefinitionHistory (
           id, lastUpdated, resource
@@ -81,7 +85,8 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
 /// Get a [EventDefinition] canonical resource by its ID
 EventDefinition? getEventDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM EventDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM EventDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return EventDefinition.fromJsonString(result.first['resource'] as String);
     }

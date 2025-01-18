@@ -11,9 +11,18 @@ void createEncounterTables(Database db) {
     CREATE TABLE IF NOT EXISTS Encounter (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      patientId TEXT NOT NULL,
+      type TEXT,
+      startDateTime DATETIME,
+      endDateTime DATETIME,
+      status TEXT
     );
   ''')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_encounter_patientId ON Encounter (patientId);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_encounter_status ON Encounter (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS EncounterHistory (
       id TEXT PRIMARY KEY,
@@ -23,48 +32,48 @@ void createEncounterTables(Database db) {
   ''');
 }
 
-/// Save a [Encounter] to the database
-bool saveEncounter(Database db, Encounter resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Encounter;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+/// Save an [Encounter] to the database
+void saveEncounter(Database db, Encounter encounter) {
+  final updatedEncounter =
+      updateMeta(encounter, versionIdAsTime: true).newIdIfNoId();
+  final id = encounter.id?.value;
+  final resourceJson = updatedEncounter.toJsonString();
+  final lastUpdated = updatedEncounter.meta?.lastUpdated?.valueDateTime;
+  final patientId = encounter.subject?.reference?.value;
+  final type = encounter.type?.first.coding?.first.code?.value;
+  final startDateTime = encounter.period?.start?.valueDateTime;
+  final endDateTime = encounter.period?.end?.valueDateTime;
+  final status = encounter.status.toString();
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Encounter WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO EncounterHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Encounter WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Encounter (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Encounter (
+      id, lastUpdated, resource, patientId, type, startDateTime, endDateTime, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      type = excluded.type,
+      startDateTime = excluded.startDateTime,
+      endDateTime = excluded.endDateTime,
+      status = excluded.status;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    type,
+    startDateTime,
+    endDateTime,
+    status,
+  ]);
 }
 
-/// Get a [Encounter] by its ID
+/// Get an [Encounter] by its ID
 Encounter? getEncounter(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Encounter WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Encounter WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Encounter.fromJsonString(result.first['resource'] as String);
     }

@@ -25,14 +25,16 @@ void createDeviceUseStatementTables(Database db) {
 
 /// Save a [DeviceUseStatement] to the database
 bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DeviceUseStatement;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as DeviceUseStatement;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM DeviceUseStatement WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM DeviceUseStatement WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO DeviceUseStatementHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
 /// Get a [DeviceUseStatement] by its ID
 DeviceUseStatement? getDeviceUseStatement(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM DeviceUseStatement WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM DeviceUseStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return DeviceUseStatement.fromJsonString(result.first['resource'] as String);
+      return DeviceUseStatement.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

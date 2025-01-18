@@ -25,14 +25,16 @@ void createVisionPrescriptionTables(Database db) {
 
 /// Save a [VisionPrescription] to the database
 bool saveVisionPrescription(Database db, VisionPrescription resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as VisionPrescription;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as VisionPrescription;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM VisionPrescription WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM VisionPrescription WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO VisionPrescriptionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveVisionPrescription(Database db, VisionPrescription resource) {
 /// Get a [VisionPrescription] by its ID
 VisionPrescription? getVisionPrescription(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM VisionPrescription WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM VisionPrescription WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return VisionPrescription.fromJsonString(result.first['resource'] as String);
+      return VisionPrescription.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -11,9 +11,19 @@ void createMedicationTables(Database db) {
     CREATE TABLE IF NOT EXISTS Medication (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      code TEXT,
+      status TEXT,
+      manufacturer TEXT,
+      form TEXT
     );
   ''')
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_medication_code ON Medication (code);',
+    )
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_medication_status ON Medication (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MedicationHistory (
       id TEXT PRIMARY KEY,
@@ -24,47 +34,44 @@ void createMedicationTables(Database db) {
 }
 
 /// Save a [Medication] to the database
-bool saveMedication(Database db, Medication resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Medication;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+void saveMedication(Database db, Medication medication) {
+  final updatedMedication =
+      updateMeta(medication, versionIdAsTime: true).newIdIfNoId();
+  final id = medication.id?.value;
+  final resourceJson = updatedMedication.toJsonString();
+  final lastUpdated = updatedMedication.meta?.lastUpdated?.valueDateTime;
+  final code = medication.code?.coding?.first.code?.value;
+  final status = medication.status?.toString();
+  final manufacturer = medication.manufacturer?.reference?.value;
+  final form = medication.form?.coding?.first.code?.value;
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Medication WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO MedicationHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Medication WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Medication (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Medication (
+      id, lastUpdated, resource, code, status, manufacturer, form
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      code = excluded.code,
+      status = excluded.status,
+      manufacturer = excluded.manufacturer,
+      form = excluded.form;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    code,
+    status,
+    manufacturer,
+    form,
+  ]);
 }
 
 /// Get a [Medication] by its ID
 Medication? getMedication(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Medication WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Medication WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Medication.fromJsonString(result.first['resource'] as String);
     }

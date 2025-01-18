@@ -25,14 +25,16 @@ void createInsurancePlanTables(Database db) {
 
 /// Save a [InsurancePlan] to the database
 bool saveInsurancePlan(Database db, InsurancePlan resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as InsurancePlan;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as InsurancePlan;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM InsurancePlan WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM InsurancePlan WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO InsurancePlanHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveInsurancePlan(Database db, InsurancePlan resource) {
 /// Get a [InsurancePlan] by its ID
 InsurancePlan? getInsurancePlan(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM InsurancePlan WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM InsurancePlan WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return InsurancePlan.fromJsonString(result.first['resource'] as String);
     }

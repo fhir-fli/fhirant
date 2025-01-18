@@ -17,8 +17,10 @@ void createActivityDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ActivityDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createActivityDefinitionTables(Database db) {
 
 /// Save a [ActivityDefinition] canonical resource to the database
 bool saveActivityDefinition(Database db, ActivityDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ActivityDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ActivityDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ActivityDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ActivityDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ActivityDefinitionHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
 /// Get a [ActivityDefinition] canonical resource by its ID
 ActivityDefinition? getActivityDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ActivityDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ActivityDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ActivityDefinition.fromJsonString(result.first['resource'] as String);
+      return ActivityDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

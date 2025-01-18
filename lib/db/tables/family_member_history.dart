@@ -25,14 +25,16 @@ void createFamilyMemberHistoryTables(Database db) {
 
 /// Save a [FamilyMemberHistory] to the database
 bool saveFamilyMemberHistory(Database db, FamilyMemberHistory resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FamilyMemberHistory;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as FamilyMemberHistory;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM FamilyMemberHistory WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM FamilyMemberHistory WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO FamilyMemberHistoryHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveFamilyMemberHistory(Database db, FamilyMemberHistory resource) {
 /// Get a [FamilyMemberHistory] by its ID
 FamilyMemberHistory? getFamilyMemberHistory(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM FamilyMemberHistory WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM FamilyMemberHistory WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return FamilyMemberHistory.fromJsonString(result.first['resource'] as String);
+      return FamilyMemberHistory.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -25,14 +25,16 @@ void createRiskAssessmentTables(Database db) {
 
 /// Save a [RiskAssessment] to the database
 bool saveRiskAssessment(Database db, RiskAssessment resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RiskAssessment;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as RiskAssessment;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM RiskAssessment WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM RiskAssessment WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO RiskAssessmentHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveRiskAssessment(Database db, RiskAssessment resource) {
 /// Get a [RiskAssessment] by its ID
 RiskAssessment? getRiskAssessment(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM RiskAssessment WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM RiskAssessment WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return RiskAssessment.fromJsonString(result.first['resource'] as String);
     }

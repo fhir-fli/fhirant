@@ -18,7 +18,8 @@ void createLibraryTables(Database db) {
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_library_url ON Library (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS LibraryHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +31,8 @@ void createLibraryTables(Database db) {
 
 /// Save a [Library] canonical resource to the database
 bool saveLibrary(Database db, Library resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Library;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Library;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

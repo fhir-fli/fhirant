@@ -25,7 +25,8 @@ void createBundleTables(Database db) {
 
 /// Save a [Bundle] to the database
 bool saveBundle(Database db, Bundle resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Bundle;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Bundle;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

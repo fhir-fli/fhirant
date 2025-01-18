@@ -1,6 +1,4 @@
-
-void main() {
-}
+void main() {}
 
 // Condition: Tracks clinical conditions, problems, or diagnoses.
 // Encounter: Represents interactions between a patient and healthcare providers.

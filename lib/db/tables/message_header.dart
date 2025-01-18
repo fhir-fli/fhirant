@@ -25,14 +25,16 @@ void createMessageHeaderTables(Database db) {
 
 /// Save a [MessageHeader] to the database
 bool saveMessageHeader(Database db, MessageHeader resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MessageHeader;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MessageHeader;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MessageHeader WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM MessageHeader WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MessageHeaderHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveMessageHeader(Database db, MessageHeader resource) {
 /// Get a [MessageHeader] by its ID
 MessageHeader? getMessageHeader(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MessageHeader WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM MessageHeader WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return MessageHeader.fromJsonString(result.first['resource'] as String);
     }

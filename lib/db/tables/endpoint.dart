@@ -25,19 +25,24 @@ void createFhirEndpointTables(Database db) {
 
 /// Save a [FhirEndpoint] to the database
 bool saveFhirEndpoint(Database db, FhirEndpoint resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirEndpoint;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirEndpoint;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM FhirEndpoint WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+    if (db
+        .select('SELECT id FROM FhirEndpoint WHERE id = ?', [id]).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO FhirEndpointHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM FhirEndpoint WHERE id = ?;
-      ''', [id],);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -64,7 +69,8 @@ bool saveFhirEndpoint(Database db, FhirEndpoint resource) {
 /// Get a [FhirEndpoint] by its ID
 FhirEndpoint? getFhirEndpoint(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM FhirEndpoint WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM FhirEndpoint WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return FhirEndpoint.fromJsonString(result.first['resource'] as String);
     }

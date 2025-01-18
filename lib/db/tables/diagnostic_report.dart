@@ -25,14 +25,16 @@ void createDiagnosticReportTables(Database db) {
 
 /// Save a [DiagnosticReport] to the database
 bool saveDiagnosticReport(Database db, DiagnosticReport resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DiagnosticReport;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as DiagnosticReport;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM DiagnosticReport WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM DiagnosticReport WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO DiagnosticReportHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveDiagnosticReport(Database db, DiagnosticReport resource) {
 /// Get a [DiagnosticReport] by its ID
 DiagnosticReport? getDiagnosticReport(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM DiagnosticReport WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM DiagnosticReport WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return DiagnosticReport.fromJsonString(result.first['resource'] as String);
+      return DiagnosticReport.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

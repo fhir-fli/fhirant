@@ -25,14 +25,16 @@ void createSubscriptionStatusTables(Database db) {
 
 /// Save a [SubscriptionStatus] to the database
 bool saveSubscriptionStatus(Database db, SubscriptionStatus resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SubscriptionStatus;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SubscriptionStatus;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SubscriptionStatus WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM SubscriptionStatus WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SubscriptionStatusHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveSubscriptionStatus(Database db, SubscriptionStatus resource) {
 /// Get a [SubscriptionStatus] by its ID
 SubscriptionStatus? getSubscriptionStatus(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SubscriptionStatus WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SubscriptionStatus WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return SubscriptionStatus.fromJsonString(result.first['resource'] as String);
+      return SubscriptionStatus.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

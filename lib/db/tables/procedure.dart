@@ -11,9 +11,19 @@ void createProcedureTables(Database db) {
     CREATE TABLE IF NOT EXISTS Procedure (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      patientId TEXT NOT NULL,
+      code TEXT NOT NULL,
+      performedDateTime DATETIME,
+      status TEXT
     );
   ''')
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_procedure_patientId ON Procedure (patientId);',
+    )
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_procedure_status ON Procedure (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ProcedureHistory (
       id TEXT PRIMARY KEY,
@@ -24,47 +34,45 @@ void createProcedureTables(Database db) {
 }
 
 /// Save a [Procedure] to the database
-bool saveProcedure(Database db, Procedure resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Procedure;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+void saveProcedure(Database db, Procedure procedure) {
+  final updatedProcedure =
+      updateMeta(procedure, versionIdAsTime: true).newIdIfNoId();
+  final id = procedure.id?.value;
+  final resourceJson = updatedProcedure.toJsonString();
+  final lastUpdated = updatedProcedure.meta?.lastUpdated?.valueDateTime;
+  final patientId = procedure.subject.reference?.value;
+  final code = procedure.code?.coding?.first.code?.value;
+  final performedDateTime =
+      procedure.performedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final status = procedure.status.toString();
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Procedure WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO ProcedureHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Procedure WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Procedure (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Procedure (
+      id, lastUpdated, resource, patientId, code, performedDateTime, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      code = excluded.code,
+      performedDateTime = excluded.performedDateTime,
+      status = excluded.status;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    code,
+    performedDateTime,
+    status,
+  ]);
 }
 
 /// Get a [Procedure] by its ID
 Procedure? getProcedure(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Procedure WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Procedure WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Procedure.fromJsonString(result.first['resource'] as String);
     }

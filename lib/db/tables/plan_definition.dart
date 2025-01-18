@@ -17,8 +17,10 @@ void createPlanDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createPlanDefinitionTables(Database db) {
 
 /// Save a [PlanDefinition] canonical resource to the database
 bool savePlanDefinition(Database db, PlanDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as PlanDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as PlanDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool savePlanDefinition(Database db, PlanDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PlanDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM PlanDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PlanDefinitionHistory (
           id, lastUpdated, resource
@@ -81,7 +85,8 @@ bool savePlanDefinition(Database db, PlanDefinition resource) {
 /// Get a [PlanDefinition] canonical resource by its ID
 PlanDefinition? getPlanDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM PlanDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM PlanDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return PlanDefinition.fromJsonString(result.first['resource'] as String);
     }

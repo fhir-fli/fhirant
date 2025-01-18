@@ -25,14 +25,16 @@ void createCommunicationTables(Database db) {
 
 /// Save a [Communication] to the database
 bool saveCommunication(Database db, Communication resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Communication;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as Communication;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Communication WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Communication WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CommunicationHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveCommunication(Database db, Communication resource) {
 /// Get a [Communication] by its ID
 Communication? getCommunication(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Communication WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Communication WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Communication.fromJsonString(result.first['resource'] as String);
     }

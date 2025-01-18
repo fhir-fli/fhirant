@@ -25,14 +25,16 @@ void createAppointmentResponseTables(Database db) {
 
 /// Save a [AppointmentResponse] to the database
 bool saveAppointmentResponse(Database db, AppointmentResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AppointmentResponse;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as AppointmentResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM AppointmentResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM AppointmentResponse WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO AppointmentResponseHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveAppointmentResponse(Database db, AppointmentResponse resource) {
 /// Get a [AppointmentResponse] by its ID
 AppointmentResponse? getAppointmentResponse(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM AppointmentResponse WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM AppointmentResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return AppointmentResponse.fromJsonString(result.first['resource'] as String);
+      return AppointmentResponse.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

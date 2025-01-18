@@ -25,7 +25,8 @@ void createAuditEventTables(Database db) {
 
 /// Save a [AuditEvent] to the database
 bool saveAuditEvent(Database db, AuditEvent resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AuditEvent;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AuditEvent;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveAuditEvent(Database db, AuditEvent resource) {
 /// Get a [AuditEvent] by its ID
 AuditEvent? getAuditEvent(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM AuditEvent WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM AuditEvent WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return AuditEvent.fromJsonString(result.first['resource'] as String);
     }

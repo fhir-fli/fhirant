@@ -25,7 +25,8 @@ void createProvenanceTables(Database db) {
 
 /// Save a [Provenance] to the database
 bool saveProvenance(Database db, Provenance resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Provenance;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Provenance;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveProvenance(Database db, Provenance resource) {
 /// Get a [Provenance] by its ID
 Provenance? getProvenance(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Provenance WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Provenance WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Provenance.fromJsonString(result.first['resource'] as String);
     }

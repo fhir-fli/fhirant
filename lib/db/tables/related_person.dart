@@ -25,14 +25,16 @@ void createRelatedPersonTables(Database db) {
 
 /// Save a [RelatedPerson] to the database
 bool saveRelatedPerson(Database db, RelatedPerson resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RelatedPerson;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as RelatedPerson;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM RelatedPerson WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM RelatedPerson WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO RelatedPersonHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveRelatedPerson(Database db, RelatedPerson resource) {
 /// Get a [RelatedPerson] by its ID
 RelatedPerson? getRelatedPerson(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM RelatedPerson WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM RelatedPerson WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return RelatedPerson.fromJsonString(result.first['resource'] as String);
     }

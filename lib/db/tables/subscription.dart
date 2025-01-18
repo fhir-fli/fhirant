@@ -25,14 +25,16 @@ void createSubscriptionTables(Database db) {
 
 /// Save a [Subscription] to the database
 bool saveSubscription(Database db, Subscription resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Subscription;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Subscription;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Subscription WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Subscription WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SubscriptionHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveSubscription(Database db, Subscription resource) {
 /// Get a [Subscription] by its ID
 Subscription? getSubscription(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Subscription WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Subscription WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Subscription.fromJsonString(result.first['resource'] as String);
     }

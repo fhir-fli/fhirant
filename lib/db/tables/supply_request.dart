@@ -25,14 +25,16 @@ void createSupplyRequestTables(Database db) {
 
 /// Save a [SupplyRequest] to the database
 bool saveSupplyRequest(Database db, SupplyRequest resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SupplyRequest;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SupplyRequest;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SupplyRequest WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM SupplyRequest WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SupplyRequestHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveSupplyRequest(Database db, SupplyRequest resource) {
 /// Get a [SupplyRequest] by its ID
 SupplyRequest? getSupplyRequest(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SupplyRequest WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SupplyRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SupplyRequest.fromJsonString(result.first['resource'] as String);
     }

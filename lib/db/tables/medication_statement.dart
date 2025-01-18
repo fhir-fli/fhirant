@@ -25,14 +25,16 @@ void createMedicationStatementTables(Database db) {
 
 /// Save a [MedicationStatement] to the database
 bool saveMedicationStatement(Database db, MedicationStatement resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MedicationStatement;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MedicationStatement;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MedicationStatement WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM MedicationStatement WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MedicationStatementHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveMedicationStatement(Database db, MedicationStatement resource) {
 /// Get a [MedicationStatement] by its ID
 MedicationStatement? getMedicationStatement(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MedicationStatement WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM MedicationStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MedicationStatement.fromJsonString(result.first['resource'] as String);
+      return MedicationStatement.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

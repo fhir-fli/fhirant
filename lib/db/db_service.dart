@@ -1,10 +1,7 @@
 import 'dart:io';
-import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhirant/db/db.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
-
-part 'create_tables.dart';
-part 'patient.dart';
 
 /// Service to interact with the SQLite database
 class DbService {

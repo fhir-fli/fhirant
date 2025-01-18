@@ -25,14 +25,16 @@ void createEvidenceVariableTables(Database db) {
 
 /// Save a [EvidenceVariable] to the database
 bool saveEvidenceVariable(Database db, EvidenceVariable resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as EvidenceVariable;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as EvidenceVariable;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM EvidenceVariable WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM EvidenceVariable WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO EvidenceVariableHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveEvidenceVariable(Database db, EvidenceVariable resource) {
 /// Get a [EvidenceVariable] by its ID
 EvidenceVariable? getEvidenceVariable(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM EvidenceVariable WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM EvidenceVariable WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return EvidenceVariable.fromJsonString(result.first['resource'] as String);
+      return EvidenceVariable.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

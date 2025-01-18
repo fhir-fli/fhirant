@@ -18,7 +18,8 @@ void createMeasureTables(Database db) {
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS MeasureHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +31,8 @@ void createMeasureTables(Database db) {
 
 /// Save a [Measure] canonical resource to the database
 bool saveMeasure(Database db, Measure resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Measure;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Measure;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

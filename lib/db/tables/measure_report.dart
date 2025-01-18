@@ -25,14 +25,16 @@ void createMeasureReportTables(Database db) {
 
 /// Save a [MeasureReport] to the database
 bool saveMeasureReport(Database db, MeasureReport resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MeasureReport;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MeasureReport;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MeasureReport WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM MeasureReport WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MeasureReportHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveMeasureReport(Database db, MeasureReport resource) {
 /// Get a [MeasureReport] by its ID
 MeasureReport? getMeasureReport(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MeasureReport WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM MeasureReport WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return MeasureReport.fromJsonString(result.first['resource'] as String);
     }

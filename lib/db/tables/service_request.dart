@@ -25,14 +25,16 @@ void createServiceRequestTables(Database db) {
 
 /// Save a [ServiceRequest] to the database
 bool saveServiceRequest(Database db, ServiceRequest resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ServiceRequest;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ServiceRequest;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ServiceRequest WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ServiceRequest WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ServiceRequestHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveServiceRequest(Database db, ServiceRequest resource) {
 /// Get a [ServiceRequest] by its ID
 ServiceRequest? getServiceRequest(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ServiceRequest WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ServiceRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ServiceRequest.fromJsonString(result.first['resource'] as String);
     }

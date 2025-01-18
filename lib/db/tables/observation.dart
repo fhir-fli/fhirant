@@ -23,48 +23,51 @@ void createObservationTables(Database db) {
   ''');
 }
 
-/// Save a [Observation] to the database
-bool saveObservation(Database db, Observation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Observation;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+/// Save an [Observation] to the database
+void saveObservation(Database db, Observation observation) {
+  final updatedObservation =
+      updateMeta(observation, versionIdAsTime: true).newIdIfNoId();
+  final id = observation.id?.value;
+  final resourceJson = updatedObservation.toJsonString();
+  final lastUpdated = updatedObservation.meta?.lastUpdated?.valueDateTime;
+  final patientId = observation.subject?.reference?.value;
+  final type = observation.code.coding?.first.code?.value;
+  final value = observation.valueX?.isAs<FhirString>()?.value ??
+      observation.valueX?.isAs<Quantity>()?.value.toString();
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Observation WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO ObservationHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Observation WHERE id = ?;
-      ''', [id]);
-    }
+  final unit = observation.valueX?.isAs<Quantity>()?.unit?.value;
+  final effectiveDateTime =
+      observation.effectiveX?.isAs<FhirDateTimeBase>()?.valueDateTime;
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Observation (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Observation (
+      id, lastUpdated, resource, patientId, type, value, unit, effectiveDateTime
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      type = excluded.type,
+      value = excluded.value,
+      unit = excluded.unit,
+      effectiveDateTime = excluded.effectiveDateTime;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    type,
+    value,
+    unit,
+    effectiveDateTime,
+  ]);
 }
 
 /// Get a [Observation] by its ID
 Observation? getObservation(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Observation WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Observation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Observation.fromJsonString(result.first['resource'] as String);
     }

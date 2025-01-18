@@ -25,14 +25,16 @@ void createCompartmentDefinitionTables(Database db) {
 
 /// Save a [CompartmentDefinition] to the database
 bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CompartmentDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as CompartmentDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CompartmentDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM CompartmentDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CompartmentDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
 /// Get a [CompartmentDefinition] by its ID
 CompartmentDefinition? getCompartmentDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CompartmentDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM CompartmentDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return CompartmentDefinition.fromJsonString(result.first['resource'] as String);
+      return CompartmentDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -24,15 +24,18 @@ void createPackagedProductDefinitionTables(Database db) {
 }
 
 /// Save a [PackagedProductDefinition] to the database
-bool savePackagedProductDefinition(Database db, PackagedProductDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as PackagedProductDefinition;
+bool savePackagedProductDefinition(
+    Database db, PackagedProductDefinition resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as PackagedProductDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PackagedProductDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM PackagedProductDefinition WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PackagedProductDefinitionHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool savePackagedProductDefinition(Database db, PackagedProductDefinition resour
 }
 
 /// Get a [PackagedProductDefinition] by its ID
-PackagedProductDefinition? getPackagedProductDefinition(Database db, String id) {
+PackagedProductDefinition? getPackagedProductDefinition(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM PackagedProductDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM PackagedProductDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return PackagedProductDefinition.fromJsonString(result.first['resource'] as String);
+      return PackagedProductDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

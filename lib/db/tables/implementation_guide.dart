@@ -17,8 +17,10 @@ void createImplementationGuideTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuideHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createImplementationGuideTables(Database db) {
 
 /// Save a [ImplementationGuide] canonical resource to the database
 bool saveImplementationGuide(Database db, ImplementationGuide resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImplementationGuide;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ImplementationGuide;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ImplementationGuide WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ImplementationGuide WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ImplementationGuideHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
 /// Get a [ImplementationGuide] canonical resource by its ID
 ImplementationGuide? getImplementationGuide(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ImplementationGuide WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM ImplementationGuide WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ImplementationGuide.fromJsonString(result.first['resource'] as String);
+      return ImplementationGuide.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

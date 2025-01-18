@@ -25,14 +25,16 @@ void createNamingSystemTables(Database db) {
 
 /// Save a [NamingSystem] to the database
 bool saveNamingSystem(Database db, NamingSystem resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as NamingSystem;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as NamingSystem;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM NamingSystem WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM NamingSystem WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO NamingSystemHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveNamingSystem(Database db, NamingSystem resource) {
 /// Get a [NamingSystem] by its ID
 NamingSystem? getNamingSystem(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM NamingSystem WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM NamingSystem WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return NamingSystem.fromJsonString(result.first['resource'] as String);
     }

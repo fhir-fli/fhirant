@@ -25,7 +25,8 @@ void createParametersTables(Database db) {
 
 /// Save a [Parameters] to the database
 bool saveParameters(Database db, Parameters resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Parameters;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Parameters;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveParameters(Database db, Parameters resource) {
 /// Get a [Parameters] by its ID
 Parameters? getParameters(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Parameters WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Parameters WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Parameters.fromJsonString(result.first['resource'] as String);
     }

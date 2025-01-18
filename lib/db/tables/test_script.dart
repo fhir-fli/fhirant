@@ -25,7 +25,8 @@ void createTestScriptTables(Database db) {
 
 /// Save a [TestScript] to the database
 bool saveTestScript(Database db, TestScript resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TestScript;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TestScript;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveTestScript(Database db, TestScript resource) {
 /// Get a [TestScript] by its ID
 TestScript? getTestScript(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM TestScript WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM TestScript WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return TestScript.fromJsonString(result.first['resource'] as String);
     }

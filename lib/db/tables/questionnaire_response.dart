@@ -25,14 +25,16 @@ void createQuestionnaireResponseTables(Database db) {
 
 /// Save a [QuestionnaireResponse] to the database
 bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as QuestionnaireResponse;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as QuestionnaireResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM QuestionnaireResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM QuestionnaireResponse WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO QuestionnaireResponseHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
 /// Get a [QuestionnaireResponse] by its ID
 QuestionnaireResponse? getQuestionnaireResponse(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM QuestionnaireResponse WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM QuestionnaireResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return QuestionnaireResponse.fromJsonString(result.first['resource'] as String);
+      return QuestionnaireResponse.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

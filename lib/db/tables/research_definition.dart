@@ -25,14 +25,16 @@ void createResearchDefinitionTables(Database db) {
 
 /// Save a [ResearchDefinition] to the database
 bool saveResearchDefinition(Database db, ResearchDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ResearchDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ResearchDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ResearchDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ResearchDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ResearchDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveResearchDefinition(Database db, ResearchDefinition resource) {
 /// Get a [ResearchDefinition] by its ID
 ResearchDefinition? getResearchDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ResearchDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ResearchDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ResearchDefinition.fromJsonString(result.first['resource'] as String);
+      return ResearchDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

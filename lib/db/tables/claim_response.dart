@@ -25,14 +25,16 @@ void createClaimResponseTables(Database db) {
 
 /// Save a [ClaimResponse] to the database
 bool saveClaimResponse(Database db, ClaimResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ClaimResponse;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ClaimResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ClaimResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM ClaimResponse WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ClaimResponseHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveClaimResponse(Database db, ClaimResponse resource) {
 /// Get a [ClaimResponse] by its ID
 ClaimResponse? getClaimResponse(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ClaimResponse WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ClaimResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ClaimResponse.fromJsonString(result.first['resource'] as String);
     }

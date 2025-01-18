@@ -17,8 +17,10 @@ void createConceptMapTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ConceptMapHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createConceptMapTables(Database db) {
 
 /// Save a [ConceptMap] canonical resource to the database
 bool saveConceptMap(Database db, ConceptMap resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ConceptMap;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ConceptMap;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -81,7 +84,8 @@ bool saveConceptMap(Database db, ConceptMap resource) {
 /// Get a [ConceptMap] canonical resource by its ID
 ConceptMap? getConceptMap(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ConceptMap WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ConceptMap WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ConceptMap.fromJsonString(result.first['resource'] as String);
     }

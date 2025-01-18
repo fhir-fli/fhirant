@@ -24,15 +24,18 @@ void createBiologicallyDerivedProductTables(Database db) {
 }
 
 /// Save a [BiologicallyDerivedProduct] to the database
-bool saveBiologicallyDerivedProduct(Database db, BiologicallyDerivedProduct resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as BiologicallyDerivedProduct;
+bool saveBiologicallyDerivedProduct(
+    Database db, BiologicallyDerivedProduct resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as BiologicallyDerivedProduct;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM BiologicallyDerivedProduct WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM BiologicallyDerivedProduct WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO BiologicallyDerivedProductHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveBiologicallyDerivedProduct(Database db, BiologicallyDerivedProduct reso
 }
 
 /// Get a [BiologicallyDerivedProduct] by its ID
-BiologicallyDerivedProduct? getBiologicallyDerivedProduct(Database db, String id) {
+BiologicallyDerivedProduct? getBiologicallyDerivedProduct(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM BiologicallyDerivedProduct WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM BiologicallyDerivedProduct WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return BiologicallyDerivedProduct.fromJsonString(result.first['resource'] as String);
+      return BiologicallyDerivedProduct.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

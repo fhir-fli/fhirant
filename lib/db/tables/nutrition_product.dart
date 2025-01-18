@@ -25,14 +25,16 @@ void createNutritionProductTables(Database db) {
 
 /// Save a [NutritionProduct] to the database
 bool saveNutritionProduct(Database db, NutritionProduct resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as NutritionProduct;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as NutritionProduct;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM NutritionProduct WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM NutritionProduct WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO NutritionProductHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveNutritionProduct(Database db, NutritionProduct resource) {
 /// Get a [NutritionProduct] by its ID
 NutritionProduct? getNutritionProduct(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM NutritionProduct WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM NutritionProduct WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return NutritionProduct.fromJsonString(result.first['resource'] as String);
+      return NutritionProduct.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

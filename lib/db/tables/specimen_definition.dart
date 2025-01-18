@@ -25,14 +25,16 @@ void createSpecimenDefinitionTables(Database db) {
 
 /// Save a [SpecimenDefinition] to the database
 bool saveSpecimenDefinition(Database db, SpecimenDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SpecimenDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SpecimenDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SpecimenDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM SpecimenDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SpecimenDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveSpecimenDefinition(Database db, SpecimenDefinition resource) {
 /// Get a [SpecimenDefinition] by its ID
 SpecimenDefinition? getSpecimenDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SpecimenDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SpecimenDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return SpecimenDefinition.fromJsonString(result.first['resource'] as String);
+      return SpecimenDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

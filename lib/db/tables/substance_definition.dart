@@ -25,14 +25,16 @@ void createSubstanceDefinitionTables(Database db) {
 
 /// Save a [SubstanceDefinition] to the database
 bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SubstanceDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SubstanceDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SubstanceDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM SubstanceDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SubstanceDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
 /// Get a [SubstanceDefinition] by its ID
 SubstanceDefinition? getSubstanceDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SubstanceDefinition WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM SubstanceDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return SubstanceDefinition.fromJsonString(result.first['resource'] as String);
+      return SubstanceDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -24,15 +24,18 @@ void createCoverageEligibilityResponseTables(Database db) {
 }
 
 /// Save a [CoverageEligibilityResponse] to the database
-bool saveCoverageEligibilityResponse(Database db, CoverageEligibilityResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CoverageEligibilityResponse;
+bool saveCoverageEligibilityResponse(
+    Database db, CoverageEligibilityResponse resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as CoverageEligibilityResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CoverageEligibilityResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM CoverageEligibilityResponse WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CoverageEligibilityResponseHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveCoverageEligibilityResponse(Database db, CoverageEligibilityResponse re
 }
 
 /// Get a [CoverageEligibilityResponse] by its ID
-CoverageEligibilityResponse? getCoverageEligibilityResponse(Database db, String id) {
+CoverageEligibilityResponse? getCoverageEligibilityResponse(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CoverageEligibilityResponse WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return CoverageEligibilityResponse.fromJsonString(result.first['resource'] as String);
+      return CoverageEligibilityResponse.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

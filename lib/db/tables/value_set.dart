@@ -18,7 +18,8 @@ void createValueSetTables(Database db) {
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ValueSetHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +31,8 @@ void createValueSetTables(Database db) {
 
 /// Save a [ValueSet] canonical resource to the database
 bool saveValueSet(Database db, ValueSet resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -81,7 +83,8 @@ bool saveValueSet(Database db, ValueSet resource) {
 /// Get a [ValueSet] canonical resource by its ID
 ValueSet? getValueSet(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ValueSet WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ValueSet WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ValueSet.fromJsonString(result.first['resource'] as String);
     }

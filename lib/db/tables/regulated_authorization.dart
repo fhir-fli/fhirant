@@ -25,14 +25,16 @@ void createRegulatedAuthorizationTables(Database db) {
 
 /// Save a [RegulatedAuthorization] to the database
 bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RegulatedAuthorization;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as RegulatedAuthorization;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM RegulatedAuthorization WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM RegulatedAuthorization WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO RegulatedAuthorizationHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
 /// Get a [RegulatedAuthorization] by its ID
 RegulatedAuthorization? getRegulatedAuthorization(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM RegulatedAuthorization WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM RegulatedAuthorization WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return RegulatedAuthorization.fromJsonString(result.first['resource'] as String);
+      return RegulatedAuthorization.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

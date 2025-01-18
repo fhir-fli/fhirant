@@ -25,14 +25,16 @@ void createHealthcareServiceTables(Database db) {
 
 /// Save a [HealthcareService] to the database
 bool saveHealthcareService(Database db, HealthcareService resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as HealthcareService;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as HealthcareService;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM HealthcareService WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM HealthcareService WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO HealthcareServiceHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveHealthcareService(Database db, HealthcareService resource) {
 /// Get a [HealthcareService] by its ID
 HealthcareService? getHealthcareService(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM HealthcareService WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM HealthcareService WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return HealthcareService.fromJsonString(result.first['resource'] as String);
+      return HealthcareService.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

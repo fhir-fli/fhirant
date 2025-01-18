@@ -17,8 +17,10 @@ void createTerminologyCapabilitiesTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS TerminologyCapabilitiesHistory (
       id TEXT PRIMARY KEY,
@@ -29,8 +31,10 @@ void createTerminologyCapabilitiesTables(Database db) {
 }
 
 /// Save a [TerminologyCapabilities] canonical resource to the database
-bool saveTerminologyCapabilities(Database db, TerminologyCapabilities resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TerminologyCapabilities;
+bool saveTerminologyCapabilities(
+    Database db, TerminologyCapabilities resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as TerminologyCapabilities;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +45,8 @@ bool saveTerminologyCapabilities(Database db, TerminologyCapabilities resource) 
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM TerminologyCapabilities WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM TerminologyCapabilities WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO TerminologyCapabilitiesHistory (
           id, lastUpdated, resource
@@ -81,9 +86,11 @@ bool saveTerminologyCapabilities(Database db, TerminologyCapabilities resource) 
 /// Get a [TerminologyCapabilities] canonical resource by its ID
 TerminologyCapabilities? getTerminologyCapabilities(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM TerminologyCapabilities WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM TerminologyCapabilities WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return TerminologyCapabilities.fromJsonString(result.first['resource'] as String);
+      return TerminologyCapabilities.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

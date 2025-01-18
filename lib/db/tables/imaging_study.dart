@@ -25,14 +25,16 @@ void createImagingStudyTables(Database db) {
 
 /// Save a [ImagingStudy] to the database
 bool saveImagingStudy(Database db, ImagingStudy resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImagingStudy;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImagingStudy;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ImagingStudy WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM ImagingStudy WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ImagingStudyHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveImagingStudy(Database db, ImagingStudy resource) {
 /// Get a [ImagingStudy] by its ID
 ImagingStudy? getImagingStudy(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ImagingStudy WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ImagingStudy WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ImagingStudy.fromJsonString(result.first['resource'] as String);
     }

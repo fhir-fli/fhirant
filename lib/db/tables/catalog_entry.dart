@@ -25,14 +25,16 @@ void createCatalogEntryTables(Database db) {
 
 /// Save a [CatalogEntry] to the database
 bool saveCatalogEntry(Database db, CatalogEntry resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CatalogEntry;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CatalogEntry;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CatalogEntry WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM CatalogEntry WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CatalogEntryHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveCatalogEntry(Database db, CatalogEntry resource) {
 /// Get a [CatalogEntry] by its ID
 CatalogEntry? getCatalogEntry(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CatalogEntry WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM CatalogEntry WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CatalogEntry.fromJsonString(result.first['resource'] as String);
     }

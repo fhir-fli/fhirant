@@ -11,9 +11,20 @@ void createMedicationRequestTables(Database db) {
     CREATE TABLE IF NOT EXISTS MedicationRequest (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      patientId TEXT NOT NULL,
+      medicationId TEXT NOT NULL,
+      intent TEXT,
+      priority TEXT,
+      status TEXT
     );
   ''')
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_medication_request_patientId ON MedicationRequest (patientId);',
+    )
+    ..execute(
+      'CREATE INDEX IF NOT EXISTS idx_medication_request_status ON MedicationRequest (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MedicationRequestHistory (
       id TEXT PRIMARY KEY,
@@ -24,49 +35,56 @@ void createMedicationRequestTables(Database db) {
 }
 
 /// Save a [MedicationRequest] to the database
-bool saveMedicationRequest(Database db, MedicationRequest resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MedicationRequest;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+void saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
+  final updatedRequest =
+      updateMeta(medicationRequest, versionIdAsTime: true).newIdIfNoId();
+  final id = medicationRequest.id?.value;
+  final resourceJson = updatedRequest.toJsonString();
+  final lastUpdated = updatedRequest.meta?.lastUpdated?.valueDateTime;
+  final patientId = medicationRequest.subject.reference?.value;
+  final medicationId = medicationRequest.medicationX
+      .isAs<CodeableConcept>()
+      ?.coding
+      ?.first
+      .code
+      ?.value;
+  final intent = medicationRequest.intent.toString();
+  final priority = medicationRequest.priority?.toString();
+  final status = medicationRequest.status.toString();
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM MedicationRequest WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO MedicationRequestHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM MedicationRequest WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO MedicationRequest (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO MedicationRequest (
+      id, lastUpdated, resource, patientId, medicationId, intent, priority, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      medicationId = excluded.medicationId,
+      intent = excluded.intent,
+      priority = excluded.priority,
+      status = excluded.status;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    medicationId,
+    intent,
+    priority,
+    status,
+  ]);
 }
 
 /// Get a [MedicationRequest] by its ID
 MedicationRequest? getMedicationRequest(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MedicationRequest WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM MedicationRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MedicationRequest.fromJsonString(result.first['resource'] as String);
+      return MedicationRequest.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     print('Error retrieving resource: $e');

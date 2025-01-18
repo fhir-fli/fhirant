@@ -25,14 +25,16 @@ void createDetectedIssueTables(Database db) {
 
 /// Save a [DetectedIssue] to the database
 bool saveDetectedIssue(Database db, DetectedIssue resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DetectedIssue;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as DetectedIssue;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM DetectedIssue WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM DetectedIssue WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO DetectedIssueHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveDetectedIssue(Database db, DetectedIssue resource) {
 /// Get a [DetectedIssue] by its ID
 DetectedIssue? getDetectedIssue(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM DetectedIssue WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM DetectedIssue WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return DetectedIssue.fromJsonString(result.first['resource'] as String);
     }

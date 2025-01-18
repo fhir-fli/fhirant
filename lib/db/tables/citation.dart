@@ -25,7 +25,8 @@ void createCitationTables(Database db) {
 
 /// Save a [Citation] to the database
 bool saveCitation(Database db, Citation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Citation;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Citation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveCitation(Database db, Citation resource) {
 /// Get a [Citation] by its ID
 Citation? getCitation(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Citation WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Citation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Citation.fromJsonString(result.first['resource'] as String);
     }

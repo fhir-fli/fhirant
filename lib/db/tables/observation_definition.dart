@@ -25,14 +25,16 @@ void createObservationDefinitionTables(Database db) {
 
 /// Save a [ObservationDefinition] to the database
 bool saveObservationDefinition(Database db, ObservationDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ObservationDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ObservationDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ObservationDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ObservationDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ObservationDefinitionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveObservationDefinition(Database db, ObservationDefinition resource) {
 /// Get a [ObservationDefinition] by its ID
 ObservationDefinition? getObservationDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ObservationDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ObservationDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ObservationDefinition.fromJsonString(result.first['resource'] as String);
+      return ObservationDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

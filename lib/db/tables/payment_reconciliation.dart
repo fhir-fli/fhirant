@@ -25,14 +25,16 @@ void createPaymentReconciliationTables(Database db) {
 
 /// Save a [PaymentReconciliation] to the database
 bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as PaymentReconciliation;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as PaymentReconciliation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PaymentReconciliation WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM PaymentReconciliation WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PaymentReconciliationHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
 /// Get a [PaymentReconciliation] by its ID
 PaymentReconciliation? getPaymentReconciliation(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM PaymentReconciliation WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM PaymentReconciliation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return PaymentReconciliation.fromJsonString(result.first['resource'] as String);
+      return PaymentReconciliation.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

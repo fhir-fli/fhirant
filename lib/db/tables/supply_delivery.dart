@@ -25,14 +25,16 @@ void createSupplyDeliveryTables(Database db) {
 
 /// Save a [SupplyDelivery] to the database
 bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SupplyDelivery;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SupplyDelivery;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SupplyDelivery WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM SupplyDelivery WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SupplyDeliveryHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
 /// Get a [SupplyDelivery] by its ID
 SupplyDelivery? getSupplyDelivery(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SupplyDelivery WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SupplyDelivery WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SupplyDelivery.fromJsonString(result.first['resource'] as String);
     }

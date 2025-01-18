@@ -25,14 +25,16 @@ void createEnrollmentResponseTables(Database db) {
 
 /// Save a [EnrollmentResponse] to the database
 bool saveEnrollmentResponse(Database db, EnrollmentResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as EnrollmentResponse;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as EnrollmentResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM EnrollmentResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM EnrollmentResponse WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO EnrollmentResponseHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveEnrollmentResponse(Database db, EnrollmentResponse resource) {
 /// Get a [EnrollmentResponse] by its ID
 EnrollmentResponse? getEnrollmentResponse(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM EnrollmentResponse WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM EnrollmentResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return EnrollmentResponse.fromJsonString(result.first['resource'] as String);
+      return EnrollmentResponse.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

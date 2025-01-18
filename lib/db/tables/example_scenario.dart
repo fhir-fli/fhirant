@@ -25,14 +25,16 @@ void createExampleScenarioTables(Database db) {
 
 /// Save a [ExampleScenario] to the database
 bool saveExampleScenario(Database db, ExampleScenario resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ExampleScenario;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ExampleScenario;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ExampleScenario WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ExampleScenario WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ExampleScenarioHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveExampleScenario(Database db, ExampleScenario resource) {
 /// Get a [ExampleScenario] by its ID
 ExampleScenario? getExampleScenario(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ExampleScenario WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ExampleScenario WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ExampleScenario.fromJsonString(result.first['resource'] as String);
     }

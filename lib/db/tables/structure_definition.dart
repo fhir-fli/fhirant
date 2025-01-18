@@ -17,8 +17,10 @@ void createStructureDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createStructureDefinitionTables(Database db) {
 
 /// Save a [StructureDefinition] canonical resource to the database
 bool saveStructureDefinition(Database db, StructureDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as StructureDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as StructureDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveStructureDefinition(Database db, StructureDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM StructureDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM StructureDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO StructureDefinitionHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveStructureDefinition(Database db, StructureDefinition resource) {
 /// Get a [StructureDefinition] canonical resource by its ID
 StructureDefinition? getStructureDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM StructureDefinition WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM StructureDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return StructureDefinition.fromJsonString(result.first['resource'] as String);
+      return StructureDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -25,14 +25,16 @@ void createPaymentNoticeTables(Database db) {
 
 /// Save a [PaymentNotice] to the database
 bool savePaymentNotice(Database db, PaymentNotice resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as PaymentNotice;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as PaymentNotice;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PaymentNotice WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM PaymentNotice WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO PaymentNoticeHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool savePaymentNotice(Database db, PaymentNotice resource) {
 /// Get a [PaymentNotice] by its ID
 PaymentNotice? getPaymentNotice(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM PaymentNotice WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM PaymentNotice WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return PaymentNotice.fromJsonString(result.first['resource'] as String);
     }

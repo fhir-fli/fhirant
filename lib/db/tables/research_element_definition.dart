@@ -24,15 +24,18 @@ void createResearchElementDefinitionTables(Database db) {
 }
 
 /// Save a [ResearchElementDefinition] to the database
-bool saveResearchElementDefinition(Database db, ResearchElementDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ResearchElementDefinition;
+bool saveResearchElementDefinition(
+    Database db, ResearchElementDefinition resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ResearchElementDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ResearchElementDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM ResearchElementDefinition WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ResearchElementDefinitionHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveResearchElementDefinition(Database db, ResearchElementDefinition resour
 }
 
 /// Get a [ResearchElementDefinition] by its ID
-ResearchElementDefinition? getResearchElementDefinition(Database db, String id) {
+ResearchElementDefinition? getResearchElementDefinition(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ResearchElementDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ResearchElementDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ResearchElementDefinition.fromJsonString(result.first['resource'] as String);
+      return ResearchElementDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

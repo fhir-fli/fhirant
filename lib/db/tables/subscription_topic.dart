@@ -17,8 +17,10 @@ void createSubscriptionTopicTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopicHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createSubscriptionTopicTables(Database db) {
 
 /// Save a [SubscriptionTopic] canonical resource to the database
 bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as SubscriptionTopic;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as SubscriptionTopic;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM SubscriptionTopic WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM SubscriptionTopic WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO SubscriptionTopicHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
 /// Get a [SubscriptionTopic] canonical resource by its ID
 SubscriptionTopic? getSubscriptionTopic(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM SubscriptionTopic WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM SubscriptionTopic WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return SubscriptionTopic.fromJsonString(result.first['resource'] as String);
+      return SubscriptionTopic.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

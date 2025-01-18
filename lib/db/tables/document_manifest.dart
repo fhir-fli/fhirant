@@ -25,14 +25,16 @@ void createDocumentManifestTables(Database db) {
 
 /// Save a [DocumentManifest] to the database
 bool saveDocumentManifest(Database db, DocumentManifest resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DocumentManifest;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as DocumentManifest;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM DocumentManifest WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM DocumentManifest WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO DocumentManifestHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveDocumentManifest(Database db, DocumentManifest resource) {
 /// Get a [DocumentManifest] by its ID
 DocumentManifest? getDocumentManifest(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM DocumentManifest WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM DocumentManifest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return DocumentManifest.fromJsonString(result.first['resource'] as String);
+      return DocumentManifest.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

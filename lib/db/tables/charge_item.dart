@@ -25,7 +25,8 @@ void createChargeItemTables(Database db) {
 
 /// Save a [ChargeItem] to the database
 bool saveChargeItem(Database db, ChargeItem resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ChargeItem;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ChargeItem;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -64,7 +65,8 @@ bool saveChargeItem(Database db, ChargeItem resource) {
 /// Get a [ChargeItem] by its ID
 ChargeItem? getChargeItem(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ChargeItem WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ChargeItem WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ChargeItem.fromJsonString(result.first['resource'] as String);
     }

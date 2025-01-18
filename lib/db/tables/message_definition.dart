@@ -17,8 +17,10 @@ void createMessageDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS MessageDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createMessageDefinitionTables(Database db) {
 
 /// Save a [MessageDefinition] canonical resource to the database
 bool saveMessageDefinition(Database db, MessageDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MessageDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MessageDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveMessageDefinition(Database db, MessageDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MessageDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM MessageDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MessageDefinitionHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveMessageDefinition(Database db, MessageDefinition resource) {
 /// Get a [MessageDefinition] canonical resource by its ID
 MessageDefinition? getMessageDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MessageDefinition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM MessageDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MessageDefinition.fromJsonString(result.first['resource'] as String);
+      return MessageDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

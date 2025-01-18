@@ -17,8 +17,10 @@ void createOperationDefinitionTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createOperationDefinitionTables(Database db) {
 
 /// Save a [OperationDefinition] canonical resource to the database
 bool saveOperationDefinition(Database db, OperationDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as OperationDefinition;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as OperationDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM OperationDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM OperationDefinition WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO OperationDefinitionHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
 /// Get a [OperationDefinition] canonical resource by its ID
 OperationDefinition? getOperationDefinition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM OperationDefinition WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM OperationDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return OperationDefinition.fromJsonString(result.first['resource'] as String);
+      return OperationDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

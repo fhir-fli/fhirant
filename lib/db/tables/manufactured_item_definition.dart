@@ -24,15 +24,18 @@ void createManufacturedItemDefinitionTables(Database db) {
 }
 
 /// Save a [ManufacturedItemDefinition] to the database
-bool saveManufacturedItemDefinition(Database db, ManufacturedItemDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ManufacturedItemDefinition;
+bool saveManufacturedItemDefinition(
+    Database db, ManufacturedItemDefinition resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ManufacturedItemDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ManufacturedItemDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM ManufacturedItemDefinition WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ManufacturedItemDefinitionHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveManufacturedItemDefinition(Database db, ManufacturedItemDefinition reso
 }
 
 /// Get a [ManufacturedItemDefinition] by its ID
-ManufacturedItemDefinition? getManufacturedItemDefinition(Database db, String id) {
+ManufacturedItemDefinition? getManufacturedItemDefinition(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ManufacturedItemDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM ManufacturedItemDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ManufacturedItemDefinition.fromJsonString(result.first['resource'] as String);
+      return ManufacturedItemDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

@@ -25,7 +25,8 @@ void createFhirGroupTables(Database db) {
 
 /// Save a [FhirGroup] to the database
 bool saveFhirGroup(Database db, FhirGroup resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -33,11 +34,14 @@ bool saveFhirGroup(Database db, FhirGroup resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM FhirGroup WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO FhirGroupHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM FhirGroup WHERE id = ?;
-      ''', [id],);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -64,7 +68,8 @@ bool saveFhirGroup(Database db, FhirGroup resource) {
 /// Get a [FhirGroup] by its ID
 FhirGroup? getFhirGroup(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM FhirGroup WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM FhirGroup WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return FhirGroup.fromJsonString(result.first['resource'] as String);
     }

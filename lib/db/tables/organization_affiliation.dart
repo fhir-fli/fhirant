@@ -24,15 +24,18 @@ void createOrganizationAffiliationTables(Database db) {
 }
 
 /// Save a [OrganizationAffiliation] to the database
-bool saveOrganizationAffiliation(Database db, OrganizationAffiliation resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as OrganizationAffiliation;
+bool saveOrganizationAffiliation(
+    Database db, OrganizationAffiliation resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as OrganizationAffiliation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM OrganizationAffiliation WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM OrganizationAffiliation WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO OrganizationAffiliationHistory (
           id, lastUpdated, resource
@@ -64,9 +67,11 @@ bool saveOrganizationAffiliation(Database db, OrganizationAffiliation resource) 
 /// Get a [OrganizationAffiliation] by its ID
 OrganizationAffiliation? getOrganizationAffiliation(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM OrganizationAffiliation WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM OrganizationAffiliation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return OrganizationAffiliation.fromJsonString(result.first['resource'] as String);
+      return OrganizationAffiliation.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

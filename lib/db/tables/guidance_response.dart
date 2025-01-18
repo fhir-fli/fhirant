@@ -25,14 +25,16 @@ void createGuidanceResponseTables(Database db) {
 
 /// Save a [GuidanceResponse] to the database
 bool saveGuidanceResponse(Database db, GuidanceResponse resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as GuidanceResponse;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as GuidanceResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM GuidanceResponse WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM GuidanceResponse WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO GuidanceResponseHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveGuidanceResponse(Database db, GuidanceResponse resource) {
 /// Get a [GuidanceResponse] by its ID
 GuidanceResponse? getGuidanceResponse(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM GuidanceResponse WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM GuidanceResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return GuidanceResponse.fromJsonString(result.first['resource'] as String);
+      return GuidanceResponse.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

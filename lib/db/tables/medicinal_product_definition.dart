@@ -24,15 +24,18 @@ void createMedicinalProductDefinitionTables(Database db) {
 }
 
 /// Save a [MedicinalProductDefinition] to the database
-bool saveMedicinalProductDefinition(Database db, MedicinalProductDefinition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MedicinalProductDefinition;
+bool saveMedicinalProductDefinition(
+    Database db, MedicinalProductDefinition resource) {
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MedicinalProductDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MedicinalProductDefinition WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select('SELECT id FROM MedicinalProductDefinition WHERE id = ?',
+        [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MedicinalProductDefinitionHistory (
           id, lastUpdated, resource
@@ -62,11 +65,14 @@ bool saveMedicinalProductDefinition(Database db, MedicinalProductDefinition reso
 }
 
 /// Get a [MedicinalProductDefinition] by its ID
-MedicinalProductDefinition? getMedicinalProductDefinition(Database db, String id) {
+MedicinalProductDefinition? getMedicinalProductDefinition(
+    Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MedicinalProductDefinition WHERE id = ?', [id]);
+    final result = db.select(
+        'SELECT resource FROM MedicinalProductDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MedicinalProductDefinition.fromJsonString(result.first['resource'] as String);
+      return MedicinalProductDefinition.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

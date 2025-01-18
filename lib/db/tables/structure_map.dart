@@ -17,8 +17,10 @@ void createStructureMapTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureMapHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createStructureMapTables(Database db) {
 
 /// Save a [StructureMap] canonical resource to the database
 bool saveStructureMap(Database db, StructureMap resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as StructureMap;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as StructureMap;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveStructureMap(Database db, StructureMap resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM StructureMap WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM StructureMap WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO StructureMapHistory (
           id, lastUpdated, resource
@@ -81,7 +85,8 @@ bool saveStructureMap(Database db, StructureMap resource) {
 /// Get a [StructureMap] canonical resource by its ID
 StructureMap? getStructureMap(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM StructureMap WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM StructureMap WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return StructureMap.fromJsonString(result.first['resource'] as String);
     }

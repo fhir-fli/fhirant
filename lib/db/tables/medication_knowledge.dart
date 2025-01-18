@@ -25,14 +25,16 @@ void createMedicationKnowledgeTables(Database db) {
 
 /// Save a [MedicationKnowledge] to the database
 bool saveMedicationKnowledge(Database db, MedicationKnowledge resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MedicationKnowledge;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MedicationKnowledge;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MedicationKnowledge WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM MedicationKnowledge WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MedicationKnowledgeHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveMedicationKnowledge(Database db, MedicationKnowledge resource) {
 /// Get a [MedicationKnowledge] by its ID
 MedicationKnowledge? getMedicationKnowledge(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MedicationKnowledge WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM MedicationKnowledge WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MedicationKnowledge.fromJsonString(result.first['resource'] as String);
+      return MedicationKnowledge.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

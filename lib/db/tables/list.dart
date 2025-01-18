@@ -25,7 +25,8 @@ void createFhirListTables(Database db) {
 
 /// Save a [FhirList] to the database
 bool saveFhirList(Database db, FhirList resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirList;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirList;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -33,11 +34,14 @@ bool saveFhirList(Database db, FhirList resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM FhirList WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO FhirListHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM FhirList WHERE id = ?;
-      ''', [id],);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -64,7 +68,8 @@ bool saveFhirList(Database db, FhirList resource) {
 /// Get a [FhirList] by its ID
 FhirList? getFhirList(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM FhirList WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM FhirList WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return FhirList.fromJsonString(result.first['resource'] as String);
     }

@@ -24,47 +24,50 @@ void createConditionTables(Database db) {
 }
 
 /// Save a [Condition] to the database
-bool saveCondition(Database db, Condition resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Condition;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+void saveCondition(Database db, Condition condition) {
+  final updatedCondition =
+      updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
+  final id = condition.id?.value;
+  final resourceJson = updatedCondition.toJsonString();
+  final lastUpdated = updatedCondition.meta?.lastUpdated?.valueDateTime;
+  final patientId = condition.subject.reference?.value;
+  final clinicalStatus = condition.clinicalStatus?.coding?.first.code?.value;
+  final verificationStatus =
+      condition.verificationStatus?.coding?.first.code?.value;
+  final code = condition.code?.coding?.first.code?.value;
+  final onsetDateTime = condition.onsetX is FhirDateTimeBase
+      ? (condition.onsetX! as FhirDateTimeBase).valueDateTime
+      : null;
 
-  try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Condition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
-        INSERT INTO ConditionHistory (
-          id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Condition WHERE id = ?;
-      ''', [id]);
-    }
-
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO Condition (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    print('Error saving resource: $e');
-    return false;
-  }
+  db.execute('''
+    INSERT INTO Condition (
+      id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      lastUpdated = excluded.lastUpdated,
+      resource = excluded.resource,
+      patientId = excluded.patientId,
+      clinicalStatus = excluded.clinicalStatus,
+      verificationStatus = excluded.verificationStatus,
+      code = excluded.code,
+      onsetDateTime = excluded.onsetDateTime;
+  ''', [
+    id,
+    lastUpdated,
+    resourceJson,
+    patientId,
+    clinicalStatus,
+    verificationStatus,
+    code,
+    onsetDateTime,
+  ]);
 }
 
 /// Get a [Condition] by its ID
 Condition? getCondition(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Condition WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Condition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Condition.fromJsonString(result.first['resource'] as String);
     }

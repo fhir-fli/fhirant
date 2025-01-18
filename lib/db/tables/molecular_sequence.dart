@@ -25,14 +25,16 @@ void createMolecularSequenceTables(Database db) {
 
 /// Save a [MolecularSequence] to the database
 bool saveMolecularSequence(Database db, MolecularSequence resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as MolecularSequence;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as MolecularSequence;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MolecularSequence WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM MolecularSequence WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO MolecularSequenceHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveMolecularSequence(Database db, MolecularSequence resource) {
 /// Get a [MolecularSequence] by its ID
 MolecularSequence? getMolecularSequence(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM MolecularSequence WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM MolecularSequence WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return MolecularSequence.fromJsonString(result.first['resource'] as String);
+      return MolecularSequence.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

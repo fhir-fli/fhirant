@@ -25,7 +25,8 @@ void createInvoiceTables(Database db) {
 
 /// Save a [Invoice] to the database
 bool saveInvoice(Database db, Invoice resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Invoice;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Invoice;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

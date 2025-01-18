@@ -17,8 +17,10 @@ void createCapabilityStatementTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatementHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createCapabilityStatementTables(Database db) {
 
 /// Save a [CapabilityStatement] canonical resource to the database
 bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CapabilityStatement;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as CapabilityStatement;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CapabilityStatement WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM CapabilityStatement WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CapabilityStatementHistory (
           id, lastUpdated, resource
@@ -81,9 +85,11 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
 /// Get a [CapabilityStatement] canonical resource by its ID
 CapabilityStatement? getCapabilityStatement(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CapabilityStatement WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM CapabilityStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return CapabilityStatement.fromJsonString(result.first['resource'] as String);
+      return CapabilityStatement.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

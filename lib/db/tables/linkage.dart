@@ -25,7 +25,8 @@ void createLinkageTables(Database db) {
 
 /// Save a [Linkage] to the database
 bool saveLinkage(Database db, Linkage resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Linkage;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Linkage;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;

@@ -25,14 +25,16 @@ void createCommunicationRequestTables(Database db) {
 
 /// Save a [CommunicationRequest] to the database
 bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CommunicationRequest;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as CommunicationRequest;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CommunicationRequest WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM CommunicationRequest WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO CommunicationRequestHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
 /// Get a [CommunicationRequest] by its ID
 CommunicationRequest? getCommunicationRequest(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM CommunicationRequest WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM CommunicationRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return CommunicationRequest.fromJsonString(result.first['resource'] as String);
+      return CommunicationRequest.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

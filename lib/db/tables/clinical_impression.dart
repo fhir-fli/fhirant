@@ -25,14 +25,16 @@ void createClinicalImpressionTables(Database db) {
 
 /// Save a [ClinicalImpression] to the database
 bool saveClinicalImpression(Database db, ClinicalImpression resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ClinicalImpression;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ClinicalImpression;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ClinicalImpression WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ClinicalImpression WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ClinicalImpressionHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveClinicalImpression(Database db, ClinicalImpression resource) {
 /// Get a [ClinicalImpression] by its ID
 ClinicalImpression? getClinicalImpression(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ClinicalImpression WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM ClinicalImpression WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ClinicalImpression.fromJsonString(result.first['resource'] as String);
+      return ClinicalImpression.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');

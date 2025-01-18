@@ -25,14 +25,16 @@ void createRequestGroupTables(Database db) {
 
 /// Save a [RequestGroup] to the database
 bool saveRequestGroup(Database db, RequestGroup resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RequestGroup;
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RequestGroup;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM RequestGroup WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM RequestGroup WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO RequestGroupHistory (
           id, lastUpdated, resource
@@ -64,7 +66,8 @@ bool saveRequestGroup(Database db, RequestGroup resource) {
 /// Get a [RequestGroup] by its ID
 RequestGroup? getRequestGroup(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM RequestGroup WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM RequestGroup WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return RequestGroup.fromJsonString(result.first['resource'] as String);
     }

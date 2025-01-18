@@ -17,8 +17,10 @@ void createQuestionnaireTables(Database db) {
       lastUpdated DATETIME NOT NULL
     );
   ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);')
+    ..execute(
+        'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireHistory (
       id TEXT PRIMARY KEY,
@@ -30,7 +32,8 @@ void createQuestionnaireTables(Database db) {
 
 /// Save a [Questionnaire] canonical resource to the database
 bool saveQuestionnaire(Database db, Questionnaire resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Questionnaire;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as Questionnaire;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
@@ -41,7 +44,8 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM Questionnaire WHERE id = ?', [id]).isNotEmpty) {
+    if (db
+        .select('SELECT id FROM Questionnaire WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO QuestionnaireHistory (
           id, lastUpdated, resource
@@ -81,7 +85,8 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
 /// Get a [Questionnaire] canonical resource by its ID
 Questionnaire? getQuestionnaire(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Questionnaire WHERE id = ?', [id]);
+    final result =
+        db.select('SELECT resource FROM Questionnaire WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return Questionnaire.fromJsonString(result.first['resource'] as String);
     }

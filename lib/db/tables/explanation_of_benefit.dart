@@ -25,14 +25,16 @@ void createExplanationOfBenefitTables(Database db) {
 
 /// Save a [ExplanationOfBenefit] to the database
 bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ExplanationOfBenefit;
+  final updatedResource = updateMeta(resource, versionIdAsTime: true)
+      .newIdIfNoId() as ExplanationOfBenefit;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ExplanationOfBenefit WHERE id = ?', [id]).isNotEmpty) {
+    if (db.select(
+        'SELECT id FROM ExplanationOfBenefit WHERE id = ?', [id]).isNotEmpty) {
       db.execute('''
         INSERT INTO ExplanationOfBenefitHistory (
           id, lastUpdated, resource
@@ -64,9 +66,11 @@ bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
 /// Get a [ExplanationOfBenefit] by its ID
 ExplanationOfBenefit? getExplanationOfBenefit(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM ExplanationOfBenefit WHERE id = ?', [id]);
+    final result = db
+        .select('SELECT resource FROM ExplanationOfBenefit WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ExplanationOfBenefit.fromJsonString(result.first['resource'] as String);
+      return ExplanationOfBenefit.fromJsonString(
+          result.first['resource'] as String);
     }
   } catch (e) {
     print('Error retrieving resource: $e');
