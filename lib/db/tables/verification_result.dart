@@ -1,6 +1,7 @@
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 /// Create the primary and history tables for
