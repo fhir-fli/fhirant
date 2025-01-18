@@ -29,7 +29,7 @@ void createLocationTables(Database db) {
 }
 
 /// Save a [Location] to the database
-void saveLocation(Database db, Location location) {
+bool saveLocation(Database db, Location location) {
   final updatedLocation =
       updateMeta(location, versionIdAsTime: true).newIdIfNoId();
   final id = location.id?.value;
@@ -40,7 +40,8 @@ void saveLocation(Database db, Location location) {
   final address = location.address?.text?.value;
   final managingOrganization = location.managingOrganization?.reference?.value;
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Location (
       id, lastUpdated, resource, name, type, address, managingOrganization
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -52,14 +53,20 @@ void saveLocation(Database db, Location location) {
       address = excluded.address,
       managingOrganization = excluded.managingOrganization;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    name,
-    type,
-    address,
-    managingOrganization,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      name,
+      type,
+      address,
+      managingOrganization,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [Location] by its ID

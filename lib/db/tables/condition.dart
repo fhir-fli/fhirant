@@ -24,7 +24,7 @@ void createConditionTables(Database db) {
 }
 
 /// Save a [Condition] to the database
-void saveCondition(Database db, Condition condition) {
+bool saveCondition(Database db, Condition condition) {
   final updatedCondition =
       updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
   final id = condition.id?.value;
@@ -39,7 +39,8 @@ void saveCondition(Database db, Condition condition) {
       ? (condition.onsetX! as FhirDateTimeBase).valueDateTime
       : null;
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Condition (
       id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -52,15 +53,21 @@ void saveCondition(Database db, Condition condition) {
       code = excluded.code,
       onsetDateTime = excluded.onsetDateTime;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    clinicalStatus,
-    verificationStatus,
-    code,
-    onsetDateTime,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      clinicalStatus,
+      verificationStatus,
+      code,
+      onsetDateTime,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [Condition] by its ID

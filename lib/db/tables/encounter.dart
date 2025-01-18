@@ -35,7 +35,7 @@ void createEncounterTables(Database db) {
 }
 
 /// Save an [Encounter] to the database
-void saveEncounter(Database db, Encounter encounter) {
+bool saveEncounter(Database db, Encounter encounter) {
   final updatedEncounter =
       updateMeta(encounter, versionIdAsTime: true).newIdIfNoId();
   final id = encounter.id?.value;
@@ -47,7 +47,8 @@ void saveEncounter(Database db, Encounter encounter) {
   final endDateTime = encounter.period?.end?.valueDateTime;
   final status = encounter.status.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Encounter (
       id, lastUpdated, resource, patientId, type, startDateTime, endDateTime, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -60,15 +61,21 @@ void saveEncounter(Database db, Encounter encounter) {
       endDateTime = excluded.endDateTime,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    type,
-    startDateTime,
-    endDateTime,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      type,
+      startDateTime,
+      endDateTime,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get an [Encounter] by its ID

@@ -33,7 +33,7 @@ void createSpecimenTables(Database db) {
 }
 
 /// Save a [Specimen] to the database
-void saveSpecimen(Database db, Specimen specimen) {
+bool saveSpecimen(Database db, Specimen specimen) {
   final updatedSpecimen =
       updateMeta(specimen, versionIdAsTime: true).newIdIfNoId();
   final id = specimen.id?.value;
@@ -45,7 +45,8 @@ void saveSpecimen(Database db, Specimen specimen) {
       specimen.collection?.collectedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
   final status = specimen.status?.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Specimen (
       id, lastUpdated, resource, patientId, type, collectedDateTime, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -57,14 +58,20 @@ void saveSpecimen(Database db, Specimen specimen) {
       collectedDateTime = excluded.collectedDateTime,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    type,
-    collectedDateTime,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      type,
+      collectedDateTime,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource to Specimen: $e');
+    return false;
+  }
 }
 
 /// Get a [Specimen] by its ID

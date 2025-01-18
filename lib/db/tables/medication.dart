@@ -34,7 +34,7 @@ void createMedicationTables(Database db) {
 }
 
 /// Save a [Medication] to the database
-void saveMedication(Database db, Medication medication) {
+bool saveMedication(Database db, Medication medication) {
   final updatedMedication =
       updateMeta(medication, versionIdAsTime: true).newIdIfNoId();
   final id = medication.id?.value;
@@ -45,7 +45,8 @@ void saveMedication(Database db, Medication medication) {
   final manufacturer = medication.manufacturer?.reference?.value;
   final form = medication.form?.coding?.first.code?.value;
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Medication (
       id, lastUpdated, resource, code, status, manufacturer, form
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -57,14 +58,20 @@ void saveMedication(Database db, Medication medication) {
       manufacturer = excluded.manufacturer,
       form = excluded.form;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    code,
-    status,
-    manufacturer,
-    form,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      code,
+      status,
+      manufacturer,
+      form,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [Medication] by its ID

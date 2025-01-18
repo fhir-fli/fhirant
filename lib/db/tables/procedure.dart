@@ -34,7 +34,7 @@ void createProcedureTables(Database db) {
 }
 
 /// Save a [Procedure] to the database
-void saveProcedure(Database db, Procedure procedure) {
+bool saveProcedure(Database db, Procedure procedure) {
   final updatedProcedure =
       updateMeta(procedure, versionIdAsTime: true).newIdIfNoId();
   final id = procedure.id?.value;
@@ -46,7 +46,8 @@ void saveProcedure(Database db, Procedure procedure) {
       procedure.performedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
   final status = procedure.status.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Procedure (
       id, lastUpdated, resource, patientId, code, performedDateTime, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -58,14 +59,21 @@ void saveProcedure(Database db, Procedure procedure) {
       performedDateTime = excluded.performedDateTime,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    code,
-    performedDateTime,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      code,
+      performedDateTime,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // Log the error
+    // ignore: avoid_print
+    print('Error saving resource to Procedure: $e');
+    return false;
+  }
 }
 
 /// Get a [Procedure] by its ID

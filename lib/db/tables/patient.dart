@@ -24,7 +24,7 @@ void createPatientTables(Database db) {
 }
 
 /// Save a [Patient] to the database
-void savePatient(Database db, Patient patient) {
+bool savePatient(Database db, Patient patient) {
   final updatedPatient =
       updateMeta(patient, versionIdAsTime: true).newIdIfNoId();
   final id = patient.id?.value;
@@ -43,7 +43,8 @@ void savePatient(Database db, Patient patient) {
       ((patient.deceasedX! as FhirBoolean).value ?? false);
   final managingOrganization = patient.managingOrganization?.reference?.value;
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Patient (
       id, lastUpdated, resource, active, identifier, family_names, given_names, gender, birthDate, deceased, managingOrganization
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -59,18 +60,24 @@ void savePatient(Database db, Patient patient) {
       deceased = excluded.deceased,
       managingOrganization = excluded.managingOrganization;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    active,
-    identifier,
-    familyNames,
-    givenNames,
-    gender,
-    birthDate,
-    deceased,
-    managingOrganization,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      active,
+      identifier,
+      familyNames,
+      givenNames,
+      gender,
+      birthDate,
+      deceased,
+      managingOrganization,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource to Patient: $e');
+    return false;
+  }
 }
 
 /// Get a [Patient] by its ID

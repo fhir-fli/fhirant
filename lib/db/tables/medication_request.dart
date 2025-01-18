@@ -35,7 +35,7 @@ void createMedicationRequestTables(Database db) {
 }
 
 /// Save a [MedicationRequest] to the database
-void saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
+bool saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
   final updatedRequest =
       updateMeta(medicationRequest, versionIdAsTime: true).newIdIfNoId();
   final id = medicationRequest.id?.value;
@@ -52,7 +52,8 @@ void saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
   final priority = medicationRequest.priority?.toString();
   final status = medicationRequest.status.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO MedicationRequest (
       id, lastUpdated, resource, patientId, medicationId, intent, priority, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -65,15 +66,21 @@ void saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
       priority = excluded.priority,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    medicationId,
-    intent,
-    priority,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      medicationId,
+      intent,
+      priority,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [MedicationRequest] by its ID

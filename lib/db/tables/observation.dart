@@ -24,7 +24,7 @@ void createObservationTables(Database db) {
 }
 
 /// Save an [Observation] to the database
-void saveObservation(Database db, Observation observation) {
+bool saveObservation(Database db, Observation observation) {
   final updatedObservation =
       updateMeta(observation, versionIdAsTime: true).newIdIfNoId();
   final id = observation.id?.value;
@@ -39,7 +39,8 @@ void saveObservation(Database db, Observation observation) {
   final effectiveDateTime =
       observation.effectiveX?.isAs<FhirDateTimeBase>()?.valueDateTime;
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO Observation (
       id, lastUpdated, resource, patientId, type, value, unit, effectiveDateTime
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -52,15 +53,21 @@ void saveObservation(Database db, Observation observation) {
       unit = excluded.unit,
       effectiveDateTime = excluded.effectiveDateTime;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    type,
-    value,
-    unit,
-    effectiveDateTime,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      type,
+      value,
+      unit,
+      effectiveDateTime,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource to Observation: $e');
+    return false;
+  }
 }
 
 /// Get a [Observation] by its ID

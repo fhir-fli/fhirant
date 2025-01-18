@@ -34,7 +34,7 @@ void createMedicationAdministrationTables(Database db) {
 }
 
 /// Save a [MedicationAdministration] to the database
-void saveMedicationAdministration(
+bool saveMedicationAdministration(
   Database db,
   MedicationAdministration medicationAdmin,
 ) {
@@ -54,7 +54,8 @@ void saveMedicationAdministration(
       medicationAdmin.effectiveX.isAs<FhirDateTimeBase>()?.valueDateTime;
   final status = medicationAdmin.status.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO MedicationAdministration (
       id, lastUpdated, resource, patientId, medicationId, effectiveDateTime, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -66,14 +67,20 @@ void saveMedicationAdministration(
       effectiveDateTime = excluded.effectiveDateTime,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    medicationId,
-    effectiveDateTime,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      medicationId,
+      effectiveDateTime,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [MedicationAdministration] by its ID

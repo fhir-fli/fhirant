@@ -35,7 +35,7 @@ void createMedicationDispenseTables(Database db) {
 }
 
 /// Save a [MedicationDispense] to the database
-void saveMedicationDispense(
+bool saveMedicationDispense(
   Database db,
   MedicationDispense medicationDispense,
 ) {
@@ -55,7 +55,8 @@ void saveMedicationDispense(
   final daysSupply = medicationDispense.daysSupply?.value;
   final status = medicationDispense.status.toString();
 
-  db.execute('''
+  try {
+    db.execute('''
     INSERT INTO MedicationDispense (
       id, lastUpdated, resource, patientId, medicationId, quantity, daysSupply, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -68,15 +69,21 @@ void saveMedicationDispense(
       daysSupply = excluded.daysSupply,
       status = excluded.status;
   ''', [
-    id,
-    lastUpdated,
-    resourceJson,
-    patientId,
-    medicationId,
-    quantity,
-    daysSupply,
-    status,
-  ]);
+      id,
+      lastUpdated,
+      resourceJson,
+      patientId,
+      medicationId,
+      quantity,
+      daysSupply,
+      status,
+    ]);
+    return true;
+  } catch (e) {
+    // ignore: avoid_print
+    print('Error saving resource: $e');
+    return false;
+  }
 }
 
 /// Get a [MedicationDispense] by its ID
