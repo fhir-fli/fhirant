@@ -81,6 +81,7 @@ Patient? getPatient(Database db, String id) {
       return Patient.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

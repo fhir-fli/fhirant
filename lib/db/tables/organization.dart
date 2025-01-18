@@ -35,11 +35,14 @@ bool saveOrganization(Database db, Organization resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM Organization WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO OrganizationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Organization WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveOrganization(Database db, Organization resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ Organization? getOrganization(Database db, String id) {
       return Organization.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

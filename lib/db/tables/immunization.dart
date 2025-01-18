@@ -35,11 +35,14 @@ bool saveImmunization(Database db, Immunization resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM Immunization WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO ImmunizationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Immunization WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveImmunization(Database db, Immunization resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ Immunization? getImmunization(Database db, String id) {
       return Immunization.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

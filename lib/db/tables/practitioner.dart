@@ -35,11 +35,14 @@ bool savePractitioner(Database db, Practitioner resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM Practitioner WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO PractitionerHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Practitioner WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool savePractitioner(Database db, Practitioner resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ Practitioner? getPractitioner(Database db, String id) {
       return Practitioner.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

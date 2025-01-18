@@ -33,13 +33,18 @@ bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM RegulatedAuthorization WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM RegulatedAuthorization WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO RegulatedAuthorizationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM RegulatedAuthorization WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
 RegulatedAuthorization? getRegulatedAuthorization(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM RegulatedAuthorization WHERE id = ?', [id]);
+      'SELECT resource FROM RegulatedAuthorization WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return RegulatedAuthorization.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -17,6 +17,7 @@ void createSpecimenTables(Database db) {
     );
   ''')
     ..execute(
+      // ignore: lines_longer_than_80_chars
       'CREATE INDEX IF NOT EXISTS idx_specimen_patientId ON Specimen (patientId);',
     )
     ..execute(
@@ -75,6 +76,7 @@ Specimen? getSpecimen(Database db, String id) {
       return Specimen.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

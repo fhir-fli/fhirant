@@ -34,11 +34,14 @@ bool saveMedia(Database db, Media resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Media WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO MediaHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Media WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveMedia(Database db, Media resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Media? getMedia(Database db, String id) {
       return Media.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

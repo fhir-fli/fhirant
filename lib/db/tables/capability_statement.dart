@@ -18,9 +18,11 @@ void createCapabilityStatementTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);')
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);')
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatementHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM CapabilityStatement WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM CapabilityStatement WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO CapabilityStatementHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM CapabilityStatement WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ CapabilityStatement? getCapabilityStatement(Database db, String id) {
         .select('SELECT resource FROM CapabilityStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CapabilityStatement.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

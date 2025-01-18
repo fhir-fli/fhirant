@@ -72,6 +72,7 @@ Observation? getObservation(Database db, String id) {
       return Observation.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

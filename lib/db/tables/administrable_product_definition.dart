@@ -25,7 +25,9 @@ void createAdministrableProductDefinitionTables(Database db) {
 
 /// Save a [AdministrableProductDefinition] to the database
 bool saveAdministrableProductDefinition(
-    Database db, AdministrableProductDefinition resource) {
+  Database db,
+  AdministrableProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as AdministrableProductDefinition;
   final id = updatedResource.id?.value;
@@ -34,13 +36,18 @@ bool saveAdministrableProductDefinition(
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM AdministrableProductDefinition WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM AdministrableProductDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO AdministrableProductDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM AdministrableProductDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -59,6 +66,7 @@ bool saveAdministrableProductDefinition(
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -66,16 +74,21 @@ bool saveAdministrableProductDefinition(
 
 /// Get a [AdministrableProductDefinition] by its ID
 AdministrableProductDefinition? getAdministrableProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
-        'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',
-        [id]);
+      'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return AdministrableProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

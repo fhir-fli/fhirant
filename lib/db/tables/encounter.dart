@@ -20,9 +20,11 @@ void createEncounterTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_encounter_patientId ON Encounter (patientId);')
+      'CREATE INDEX IF NOT EXISTS idx_encounter_patientId ON Encounter (patientId);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_encounter_status ON Encounter (status);')
+      'CREATE INDEX IF NOT EXISTS idx_encounter_status ON Encounter (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS EncounterHistory (
       id TEXT PRIMARY KEY,
@@ -78,6 +80,7 @@ Encounter? getEncounter(Database db, String id) {
       return Encounter.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

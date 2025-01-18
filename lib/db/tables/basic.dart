@@ -34,11 +34,14 @@ bool saveBasic(Database db, Basic resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Basic WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO BasicHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Basic WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveBasic(Database db, Basic resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Basic? getBasic(Database db, String id) {
       return Basic.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -34,11 +34,14 @@ bool savePerson(Database db, Person resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Person WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO PersonHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Person WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool savePerson(Database db, Person resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Person? getPerson(Database db, String id) {
       return Person.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -34,11 +34,14 @@ bool saveChargeItem(Database db, ChargeItem resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM ChargeItem WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO ChargeItemHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ChargeItem WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveChargeItem(Database db, ChargeItem resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -71,6 +75,7 @@ ChargeItem? getChargeItem(Database db, String id) {
       return ChargeItem.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

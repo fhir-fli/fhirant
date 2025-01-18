@@ -34,12 +34,17 @@ bool saveMedicationStatement(Database db, MedicationStatement resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM MedicationStatement WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM MedicationStatement WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO MedicationStatementHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM MedicationStatement WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveMedicationStatement(Database db, MedicationStatement resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ MedicationStatement? getMedicationStatement(Database db, String id) {
         .select('SELECT resource FROM MedicationStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return MedicationStatement.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

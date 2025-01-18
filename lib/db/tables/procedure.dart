@@ -77,6 +77,7 @@ Procedure? getProcedure(Database db, String id) {
       return Procedure.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

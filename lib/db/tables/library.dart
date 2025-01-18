@@ -19,7 +19,8 @@ void createLibraryTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_library_url ON Library (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);')
+      'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS LibraryHistory (
       id TEXT PRIMARY KEY,
@@ -44,11 +45,14 @@ bool saveLibrary(Database db, Library resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Library WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO LibraryHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Library WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -75,6 +79,7 @@ bool saveLibrary(Database db, Library resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -88,6 +93,7 @@ Library? getLibrary(Database db, String id) {
       return Library.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

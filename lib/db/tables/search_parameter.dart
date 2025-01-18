@@ -17,9 +17,11 @@ void createSearchParameterTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);')
+      'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);')
+      'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT PRIMARY KEY,
@@ -43,7 +45,9 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM SearchParameter WHERE id = ?', [id]).isNotEmpty) {
+      'SELECT id FROM SearchParameter WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
       db.execute(
         '''
         INSERT INTO SearchParameterHistory (
@@ -76,6 +80,7 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -90,6 +95,7 @@ SearchParameter? getSearchParameter(Database db, String id) {
       return SearchParameter.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

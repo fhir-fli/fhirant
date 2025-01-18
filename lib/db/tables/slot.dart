@@ -34,11 +34,14 @@ bool saveSlot(Database db, Slot resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Slot WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO SlotHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Slot WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveSlot(Database db, Slot resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Slot? getSlot(Database db, String id) {
       return Slot.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

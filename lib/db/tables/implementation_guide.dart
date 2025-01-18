@@ -18,9 +18,11 @@ void createImplementationGuideTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);')
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);')
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuideHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ImplementationGuide WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ImplementationGuide WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ImplementationGuideHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ImplementationGuide WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ ImplementationGuide? getImplementationGuide(Database db, String id) {
         .select('SELECT resource FROM ImplementationGuide WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ImplementationGuide.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

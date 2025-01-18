@@ -18,9 +18,11 @@ void createConceptMapTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);')
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);')
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ConceptMapHistory (
       id TEXT PRIMARY KEY,
@@ -45,11 +47,14 @@ bool saveConceptMap(Database db, ConceptMap resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM ConceptMap WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO ConceptMapHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ConceptMap WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -76,6 +81,7 @@ bool saveConceptMap(Database db, ConceptMap resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -90,6 +96,7 @@ ConceptMap? getConceptMap(Database db, String id) {
       return ConceptMap.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -18,9 +18,11 @@ void createTerminologyCapabilitiesTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);')
+      'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);')
+      'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS TerminologyCapabilitiesHistory (
       id TEXT PRIMARY KEY,
@@ -32,7 +34,9 @@ void createTerminologyCapabilitiesTables(Database db) {
 
 /// Save a [TerminologyCapabilities] canonical resource to the database
 bool saveTerminologyCapabilities(
-    Database db, TerminologyCapabilities resource) {
+  Database db,
+  TerminologyCapabilities resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as TerminologyCapabilities;
   final id = updatedResource.id?.value;
@@ -45,13 +49,18 @@ bool saveTerminologyCapabilities(
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM TerminologyCapabilities WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM TerminologyCapabilities WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO TerminologyCapabilitiesHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM TerminologyCapabilities WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -78,6 +87,7 @@ bool saveTerminologyCapabilities(
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -87,12 +97,16 @@ bool saveTerminologyCapabilities(
 TerminologyCapabilities? getTerminologyCapabilities(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM TerminologyCapabilities WHERE id = ?', [id]);
+      'SELECT resource FROM TerminologyCapabilities WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return TerminologyCapabilities.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -61,6 +61,7 @@ bool saveFhirEndpoint(Database db, FhirEndpoint resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -75,6 +76,7 @@ FhirEndpoint? getFhirEndpoint(Database db, String id) {
       return FhirEndpoint.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

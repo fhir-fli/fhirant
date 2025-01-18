@@ -34,12 +34,17 @@ bool saveResearchSubject(Database db, ResearchSubject resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ResearchSubject WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ResearchSubject WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ResearchSubjectHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ResearchSubject WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveResearchSubject(Database db, ResearchSubject resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +78,7 @@ ResearchSubject? getResearchSubject(Database db, String id) {
       return ResearchSubject.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

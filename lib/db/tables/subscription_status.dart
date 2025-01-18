@@ -34,12 +34,17 @@ bool saveSubscriptionStatus(Database db, SubscriptionStatus resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM SubscriptionStatus WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM SubscriptionStatus WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO SubscriptionStatusHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SubscriptionStatus WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveSubscriptionStatus(Database db, SubscriptionStatus resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ SubscriptionStatus? getSubscriptionStatus(Database db, String id) {
         db.select('SELECT resource FROM SubscriptionStatus WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SubscriptionStatus.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

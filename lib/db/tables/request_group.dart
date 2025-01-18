@@ -35,11 +35,14 @@ bool saveRequestGroup(Database db, RequestGroup resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM RequestGroup WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO RequestGroupHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM RequestGroup WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveRequestGroup(Database db, RequestGroup resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ RequestGroup? getRequestGroup(Database db, String id) {
       return RequestGroup.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

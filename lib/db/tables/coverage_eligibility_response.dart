@@ -25,7 +25,9 @@ void createCoverageEligibilityResponseTables(Database db) {
 
 /// Save a [CoverageEligibilityResponse] to the database
 bool saveCoverageEligibilityResponse(
-    Database db, CoverageEligibilityResponse resource) {
+  Database db,
+  CoverageEligibilityResponse resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CoverageEligibilityResponse;
   final id = updatedResource.id?.value;
@@ -34,13 +36,18 @@ bool saveCoverageEligibilityResponse(
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM CoverageEligibilityResponse WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM CoverageEligibilityResponse WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO CoverageEligibilityResponseHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM CoverageEligibilityResponse WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -59,6 +66,7 @@ bool saveCoverageEligibilityResponse(
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -66,15 +74,21 @@ bool saveCoverageEligibilityResponse(
 
 /// Get a [CoverageEligibilityResponse] by its ID
 CoverageEligibilityResponse? getCoverageEligibilityResponse(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
-        'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?', [id]);
+      'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CoverageEligibilityResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

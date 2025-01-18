@@ -18,9 +18,11 @@ void createQuestionnaireTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);')
+      'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);')
+      'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireHistory (
       id TEXT PRIMARY KEY,
@@ -46,11 +48,14 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM Questionnaire WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO QuestionnaireHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Questionnaire WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +82,7 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -91,6 +97,7 @@ Questionnaire? getQuestionnaire(Database db, String id) {
       return Questionnaire.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

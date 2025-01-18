@@ -34,11 +34,14 @@ bool saveBundle(Database db, Bundle resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Bundle WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO BundleHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Bundle WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveBundle(Database db, Bundle resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Bundle? getBundle(Database db, String id) {
       return Bundle.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

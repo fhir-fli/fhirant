@@ -18,9 +18,11 @@ void createOperationDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM OperationDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM OperationDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO OperationDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM OperationDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ OperationDefinition? getOperationDefinition(Database db, String id) {
         .select('SELECT resource FROM OperationDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return OperationDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

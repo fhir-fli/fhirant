@@ -34,12 +34,17 @@ bool saveClinicalImpression(Database db, ClinicalImpression resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ClinicalImpression WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ClinicalImpression WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ClinicalImpressionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ClinicalImpression WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveClinicalImpression(Database db, ClinicalImpression resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ ClinicalImpression? getClinicalImpression(Database db, String id) {
         db.select('SELECT resource FROM ClinicalImpression WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ClinicalImpression.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

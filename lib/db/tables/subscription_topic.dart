@@ -18,9 +18,11 @@ void createSubscriptionTopicTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);')
+      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);')
+      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopicHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM SubscriptionTopic WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM SubscriptionTopic WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO SubscriptionTopicHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SubscriptionTopic WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ SubscriptionTopic? getSubscriptionTopic(Database db, String id) {
         db.select('SELECT resource FROM SubscriptionTopic WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SubscriptionTopic.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

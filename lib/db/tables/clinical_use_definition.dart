@@ -34,12 +34,17 @@ bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ClinicalUseDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ClinicalUseDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ClinicalUseDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ClinicalUseDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
 ClinicalUseDefinition? getClinicalUseDefinition(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ClinicalUseDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM ClinicalUseDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ClinicalUseDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

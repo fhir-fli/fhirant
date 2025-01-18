@@ -34,12 +34,17 @@ bool saveAppointmentResponse(Database db, AppointmentResponse resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM AppointmentResponse WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM AppointmentResponse WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO AppointmentResponseHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM AppointmentResponse WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveAppointmentResponse(Database db, AppointmentResponse resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ AppointmentResponse? getAppointmentResponse(Database db, String id) {
         .select('SELECT resource FROM AppointmentResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return AppointmentResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

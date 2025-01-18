@@ -34,12 +34,17 @@ bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM CommunicationRequest WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM CommunicationRequest WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO CommunicationRequestHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM CommunicationRequest WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ CommunicationRequest? getCommunicationRequest(Database db, String id) {
         .select('SELECT resource FROM CommunicationRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CommunicationRequest.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

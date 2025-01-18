@@ -34,12 +34,17 @@ bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ExplanationOfBenefit WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ExplanationOfBenefit WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ExplanationOfBenefitHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ExplanationOfBenefit WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ ExplanationOfBenefit? getExplanationOfBenefit(Database db, String id) {
         .select('SELECT resource FROM ExplanationOfBenefit WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ExplanationOfBenefit.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

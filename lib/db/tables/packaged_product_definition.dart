@@ -25,7 +25,9 @@ void createPackagedProductDefinitionTables(Database db) {
 
 /// Save a [PackagedProductDefinition] to the database
 bool savePackagedProductDefinition(
-    Database db, PackagedProductDefinition resource) {
+  Database db,
+  PackagedProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PackagedProductDefinition;
   final id = updatedResource.id?.value;
@@ -34,13 +36,18 @@ bool savePackagedProductDefinition(
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM PackagedProductDefinition WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM PackagedProductDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO PackagedProductDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM PackagedProductDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -59,6 +66,7 @@ bool savePackagedProductDefinition(
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -66,15 +74,21 @@ bool savePackagedProductDefinition(
 
 /// Get a [PackagedProductDefinition] by its ID
 PackagedProductDefinition? getPackagedProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
-        'SELECT resource FROM PackagedProductDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM PackagedProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PackagedProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

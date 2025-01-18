@@ -17,9 +17,11 @@ void createGraphDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -43,7 +45,9 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM GraphDefinition WHERE id = ?', [id]).isNotEmpty) {
+      'SELECT id FROM GraphDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
       db.execute(
         '''
         INSERT INTO GraphDefinitionHistory (
@@ -76,6 +80,7 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -90,6 +95,7 @@ GraphDefinition? getGraphDefinition(Database db, String id) {
       return GraphDefinition.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

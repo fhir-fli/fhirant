@@ -17,9 +17,11 @@ void createMedicationAdministrationTables(Database db) {
     );
   ''')
     ..execute(
+      // ignore: lines_longer_than_80_chars
       'CREATE INDEX IF NOT EXISTS idx_medication_admin_patientId ON MedicationAdministration (patientId);',
     )
     ..execute(
+      // ignore: lines_longer_than_80_chars
       'CREATE INDEX IF NOT EXISTS idx_medication_admin_status ON MedicationAdministration (status);',
     )
     ..execute('''
@@ -87,6 +89,7 @@ MedicationAdministration? getMedicationAdministration(Database db, String id) {
       );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

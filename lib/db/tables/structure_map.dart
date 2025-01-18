@@ -18,9 +18,11 @@ void createStructureMapTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureMapHistory (
       id TEXT PRIMARY KEY,
@@ -46,11 +48,14 @@ bool saveStructureMap(Database db, StructureMap resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM StructureMap WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO StructureMapHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM StructureMap WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +82,7 @@ bool saveStructureMap(Database db, StructureMap resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -91,6 +97,7 @@ StructureMap? getStructureMap(Database db, String id) {
       return StructureMap.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

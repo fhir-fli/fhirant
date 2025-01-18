@@ -90,6 +90,7 @@ MedicationDispense? getMedicationDispense(Database db, String id) {
       );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

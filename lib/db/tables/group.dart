@@ -60,6 +60,7 @@ bool saveFhirGroup(Database db, FhirGroup resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -74,6 +75,7 @@ FhirGroup? getFhirGroup(Database db, String id) {
       return FhirGroup.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -34,12 +34,17 @@ bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM SupplyDelivery WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM SupplyDelivery WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO SupplyDeliveryHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SupplyDelivery WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +78,7 @@ SupplyDelivery? getSupplyDelivery(Database db, String id) {
       return SupplyDelivery.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

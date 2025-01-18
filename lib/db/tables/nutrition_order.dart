@@ -34,12 +34,17 @@ bool saveNutritionOrder(Database db, NutritionOrder resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM NutritionOrder WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM NutritionOrder WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO NutritionOrderHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM NutritionOrder WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveNutritionOrder(Database db, NutritionOrder resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +78,7 @@ NutritionOrder? getNutritionOrder(Database db, String id) {
       return NutritionOrder.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

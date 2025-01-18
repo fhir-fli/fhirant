@@ -34,11 +34,14 @@ bool saveEvidence(Database db, Evidence resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Evidence WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO EvidenceHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Evidence WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveEvidence(Database db, Evidence resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -71,6 +75,7 @@ Evidence? getEvidence(Database db, String id) {
       return Evidence.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

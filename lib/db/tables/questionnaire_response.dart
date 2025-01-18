@@ -34,12 +34,17 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM QuestionnaireResponse WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM QuestionnaireResponse WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO QuestionnaireResponseHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM QuestionnaireResponse WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
 QuestionnaireResponse? getQuestionnaireResponse(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM QuestionnaireResponse WHERE id = ?', [id]);
+      'SELECT resource FROM QuestionnaireResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return QuestionnaireResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -18,9 +18,11 @@ void createPlanDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool savePlanDefinition(Database db, PlanDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM PlanDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM PlanDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO PlanDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM PlanDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool savePlanDefinition(Database db, PlanDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -91,6 +99,7 @@ PlanDefinition? getPlanDefinition(Database db, String id) {
       return PlanDefinition.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

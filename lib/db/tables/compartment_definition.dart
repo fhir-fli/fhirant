@@ -34,12 +34,17 @@ bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM CompartmentDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM CompartmentDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO CompartmentDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM CompartmentDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
 CompartmentDefinition? getCompartmentDefinition(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM CompartmentDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM CompartmentDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CompartmentDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

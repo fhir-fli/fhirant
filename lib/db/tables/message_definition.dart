@@ -18,9 +18,11 @@ void createMessageDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MessageDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveMessageDefinition(Database db, MessageDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM MessageDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM MessageDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO MessageDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM MessageDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveMessageDefinition(Database db, MessageDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ MessageDefinition? getMessageDefinition(Database db, String id) {
         db.select('SELECT resource FROM MessageDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return MessageDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -35,11 +35,14 @@ bool saveCommunication(Database db, Communication resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM Communication WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO CommunicationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Communication WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveCommunication(Database db, Communication resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ Communication? getCommunication(Database db, String id) {
       return Communication.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

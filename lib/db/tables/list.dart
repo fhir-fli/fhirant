@@ -60,6 +60,7 @@ bool saveFhirList(Database db, FhirList resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -74,6 +75,7 @@ FhirList? getFhirList(Database db, String id) {
       return FhirList.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

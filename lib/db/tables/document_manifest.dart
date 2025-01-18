@@ -34,12 +34,17 @@ bool saveDocumentManifest(Database db, DocumentManifest resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM DocumentManifest WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM DocumentManifest WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO DocumentManifestHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM DocumentManifest WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveDocumentManifest(Database db, DocumentManifest resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ DocumentManifest? getDocumentManifest(Database db, String id) {
         db.select('SELECT resource FROM DocumentManifest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return DocumentManifest.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

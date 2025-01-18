@@ -25,7 +25,9 @@ void createMedicinalProductDefinitionTables(Database db) {
 
 /// Save a [MedicinalProductDefinition] to the database
 bool saveMedicinalProductDefinition(
-    Database db, MedicinalProductDefinition resource) {
+  Database db,
+  MedicinalProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MedicinalProductDefinition;
   final id = updatedResource.id?.value;
@@ -34,13 +36,18 @@ bool saveMedicinalProductDefinition(
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM MedicinalProductDefinition WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM MedicinalProductDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO MedicinalProductDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM MedicinalProductDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -59,6 +66,7 @@ bool saveMedicinalProductDefinition(
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -66,15 +74,21 @@ bool saveMedicinalProductDefinition(
 
 /// Get a [MedicinalProductDefinition] by its ID
 MedicinalProductDefinition? getMedicinalProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
-        'SELECT resource FROM MedicinalProductDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM MedicinalProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MedicinalProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

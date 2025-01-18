@@ -35,11 +35,14 @@ bool saveRelatedPerson(Database db, RelatedPerson resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM RelatedPerson WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO RelatedPersonHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM RelatedPerson WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveRelatedPerson(Database db, RelatedPerson resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ RelatedPerson? getRelatedPerson(Database db, String id) {
       return RelatedPerson.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

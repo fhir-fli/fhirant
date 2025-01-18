@@ -34,12 +34,17 @@ bool saveOperationOutcome(Database db, OperationOutcome resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM OperationOutcome WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM OperationOutcome WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO OperationOutcomeHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM OperationOutcome WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveOperationOutcome(Database db, OperationOutcome resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ OperationOutcome? getOperationOutcome(Database db, String id) {
         db.select('SELECT resource FROM OperationOutcome WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return OperationOutcome.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

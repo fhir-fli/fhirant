@@ -34,12 +34,17 @@ bool saveDeviceDefinition(Database db, DeviceDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM DeviceDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM DeviceDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO DeviceDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM DeviceDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveDeviceDefinition(Database db, DeviceDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ DeviceDefinition? getDeviceDefinition(Database db, String id) {
         db.select('SELECT resource FROM DeviceDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return DeviceDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

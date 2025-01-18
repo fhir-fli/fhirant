@@ -33,13 +33,18 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
 
   try {
     // Archive old version in the history table
-    if (db.select('SELECT id FROM ImmunizationEvaluation WHERE id = ?',
-        [id]).isNotEmpty) {
-      db.execute('''
+    if (db.select(
+      'SELECT id FROM ImmunizationEvaluation WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ImmunizationEvaluationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ImmunizationEvaluation WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
 ImmunizationEvaluation? getImmunizationEvaluation(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ImmunizationEvaluation WHERE id = ?', [id]);
+      'SELECT resource FROM ImmunizationEvaluation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ImmunizationEvaluation.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

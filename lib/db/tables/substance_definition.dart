@@ -34,12 +34,17 @@ bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM SubstanceDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM SubstanceDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO SubstanceDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SubstanceDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ SubstanceDefinition? getSubstanceDefinition(Database db, String id) {
         .select('SELECT resource FROM SubstanceDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SubstanceDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

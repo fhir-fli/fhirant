@@ -34,12 +34,17 @@ bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM DeviceUseStatement WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM DeviceUseStatement WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO DeviceUseStatementHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM DeviceUseStatement WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ DeviceUseStatement? getDeviceUseStatement(Database db, String id) {
         db.select('SELECT resource FROM DeviceUseStatement WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return DeviceUseStatement.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

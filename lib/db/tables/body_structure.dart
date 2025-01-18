@@ -35,11 +35,14 @@ bool saveBodyStructure(Database db, BodyStructure resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM BodyStructure WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO BodyStructureHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM BodyStructure WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveBodyStructure(Database db, BodyStructure resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ BodyStructure? getBodyStructure(Database db, String id) {
       return BodyStructure.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

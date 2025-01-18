@@ -19,6 +19,7 @@ void main() {
   }
 }
 
+/// Create the primary table for the resourceType resources
 String baseTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] resources
@@ -92,6 +93,7 @@ $resourceType? get$resourceType(Database db, String id) {
 }
 """;
 
+/// Create the primary and history tables for
 String canonicalTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] canonical resources

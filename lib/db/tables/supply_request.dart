@@ -35,11 +35,14 @@ bool saveSupplyRequest(Database db, SupplyRequest resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM SupplyRequest WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO SupplyRequestHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM SupplyRequest WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveSupplyRequest(Database db, SupplyRequest resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ SupplyRequest? getSupplyRequest(Database db, String id) {
       return SupplyRequest.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

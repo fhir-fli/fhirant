@@ -18,9 +18,11 @@ void createEventDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM EventDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM EventDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO EventDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM EventDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -91,6 +99,7 @@ EventDefinition? getEventDefinition(Database db, String id) {
       return EventDefinition.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

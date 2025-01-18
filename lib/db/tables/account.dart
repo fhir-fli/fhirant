@@ -34,11 +34,14 @@ bool saveAccount(Database db, Account resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Account WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO AccountHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Account WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveAccount(Database db, Account resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Account? getAccount(Database db, String id) {
       return Account.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

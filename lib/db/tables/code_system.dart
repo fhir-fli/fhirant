@@ -18,9 +18,11 @@ void createCodeSystemTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);')
+      'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);')
+      'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS CodeSystemHistory (
       id TEXT PRIMARY KEY,
@@ -45,11 +47,14 @@ bool saveCodeSystem(Database db, CodeSystem resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM CodeSystem WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO CodeSystemHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM CodeSystem WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -76,6 +81,7 @@ bool saveCodeSystem(Database db, CodeSystem resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -90,6 +96,7 @@ CodeSystem? getCodeSystem(Database db, String id) {
       return CodeSystem.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

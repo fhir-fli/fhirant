@@ -34,12 +34,17 @@ bool saveServiceRequest(Database db, ServiceRequest resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ServiceRequest WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ServiceRequest WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ServiceRequestHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ServiceRequest WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveServiceRequest(Database db, ServiceRequest resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +78,7 @@ ServiceRequest? getServiceRequest(Database db, String id) {
       return ServiceRequest.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

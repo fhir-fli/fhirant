@@ -35,11 +35,14 @@ bool saveMessageHeader(Database db, MessageHeader resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM MessageHeader WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO MessageHeaderHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM MessageHeader WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveMessageHeader(Database db, MessageHeader resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ MessageHeader? getMessageHeader(Database db, String id) {
       return MessageHeader.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -34,12 +34,17 @@ bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM PaymentReconciliation WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM PaymentReconciliation WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO PaymentReconciliationHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM PaymentReconciliation WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -67,12 +73,16 @@ bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
 PaymentReconciliation? getPaymentReconciliation(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM PaymentReconciliation WHERE id = ?', [id]);
+      'SELECT resource FROM PaymentReconciliation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PaymentReconciliation.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -34,11 +34,14 @@ bool saveLinkage(Database db, Linkage resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Linkage WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO LinkageHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Linkage WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveLinkage(Database db, Linkage resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Linkage? getLinkage(Database db, String id) {
       return Linkage.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

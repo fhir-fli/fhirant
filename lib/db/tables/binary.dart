@@ -34,11 +34,14 @@ bool saveBinary(Database db, Binary resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Binary WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO BinaryHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Binary WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveBinary(Database db, Binary resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,6 +74,7 @@ Binary? getBinary(Database db, String id) {
       return Binary.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

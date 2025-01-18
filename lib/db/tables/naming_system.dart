@@ -35,11 +35,14 @@ bool saveNamingSystem(Database db, NamingSystem resource) {
     // Archive old version in the history table
     if (db
         .select('SELECT id FROM NamingSystem WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO NamingSystemHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM NamingSystem WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +61,7 @@ bool saveNamingSystem(Database db, NamingSystem resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -72,6 +76,7 @@ NamingSystem? getNamingSystem(Database db, String id) {
       return NamingSystem.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

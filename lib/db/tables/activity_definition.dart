@@ -18,9 +18,11 @@ void createActivityDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ActivityDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -45,12 +47,17 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ActivityDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ActivityDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ActivityDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ActivityDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -77,6 +84,7 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,9 +97,11 @@ ActivityDefinition? getActivityDefinition(Database db, String id) {
         db.select('SELECT resource FROM ActivityDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ActivityDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

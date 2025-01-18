@@ -19,7 +19,8 @@ void createValueSetTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);')
+      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ValueSetHistory (
       id TEXT PRIMARY KEY,
@@ -44,11 +45,14 @@ bool saveValueSet(Database db, ValueSet resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM ValueSet WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO ValueSetHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ValueSet WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -75,6 +79,7 @@ bool saveValueSet(Database db, ValueSet resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -89,6 +94,7 @@ ValueSet? getValueSet(Database db, String id) {
       return ValueSet.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

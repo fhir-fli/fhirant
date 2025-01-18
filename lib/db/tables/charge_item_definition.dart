@@ -34,12 +34,17 @@ bool saveChargeItemDefinition(Database db, ChargeItemDefinition resource) {
   try {
     // Archive old version in the history table
     if (db.select(
-        'SELECT id FROM ChargeItemDefinition WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      'SELECT id FROM ChargeItemDefinition WHERE id = ?',
+      [id],
+    ).isNotEmpty) {
+      db.execute(
+        '''
         INSERT INTO ChargeItemDefinitionHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM ChargeItemDefinition WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -58,6 +63,7 @@ bool saveChargeItemDefinition(Database db, ChargeItemDefinition resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -70,9 +76,11 @@ ChargeItemDefinition? getChargeItemDefinition(Database db, String id) {
         .select('SELECT resource FROM ChargeItemDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return ChargeItemDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

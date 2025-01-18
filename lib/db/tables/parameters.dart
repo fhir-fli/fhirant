@@ -34,11 +34,14 @@ bool saveParameters(Database db, Parameters resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Parameters WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO ParametersHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Parameters WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -57,6 +60,7 @@ bool saveParameters(Database db, Parameters resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -71,6 +75,7 @@ Parameters? getParameters(Database db, String id) {
       return Parameters.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

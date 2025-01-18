@@ -19,7 +19,8 @@ void createMeasureTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);')
+      'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MeasureHistory (
       id TEXT PRIMARY KEY,
@@ -44,11 +45,14 @@ bool saveMeasure(Database db, Measure resource) {
   try {
     // Archive old version in the history table
     if (db.select('SELECT id FROM Measure WHERE id = ?', [id]).isNotEmpty) {
-      db.execute('''
+      db.execute(
+        '''
         INSERT INTO MeasureHistory (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM Measure WHERE id = ?;
-      ''', [id]);
+      ''',
+        [id],
+      );
     }
 
     // Insert new version into the main table
@@ -75,6 +79,7 @@ bool saveMeasure(Database db, Measure resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -88,6 +93,7 @@ Measure? getMeasure(Database db, String id) {
       return Measure.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;
