@@ -28,7 +28,8 @@ void createMedicationTables(Database db) {
     CREATE TABLE IF NOT EXISTS MedicationHistory (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      PRIMARY KEY (id, lastUpdated)
     );
   ''');
 }

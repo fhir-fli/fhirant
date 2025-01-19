@@ -26,7 +26,8 @@ void createSearchParameterTables(Database db) {
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      PRIMARY KEY (id, lastUpdated)
     );
   ''');
 }

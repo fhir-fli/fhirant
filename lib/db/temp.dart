@@ -56,9 +56,10 @@ void create${resourceType}Tables(Database db) {
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
-      id TEXT PRIMARY KEY,
+      id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      PRIMARY KEY (id, lastUpdated)
     );
   ''');
 }
@@ -150,7 +151,8 @@ void create${resourceType}Tables(Database db) {
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      PRIMARY KEY (id, lastUpdated)
     );
   ''');
 }

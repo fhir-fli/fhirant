@@ -26,7 +26,8 @@ void createPatientTables(Database db) {
     CREATE TABLE IF NOT EXISTS PatientHistory (
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
+      PRIMARY KEY (id, lastUpdated)
     );
   ''');
 }
