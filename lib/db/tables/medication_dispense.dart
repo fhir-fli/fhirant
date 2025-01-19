@@ -47,11 +47,17 @@ bool saveMedicationDispense(
       updatedDispense.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = medicationDispense.subject?.reference?.value;
   final medicationId = medicationDispense.medicationX
-      .isAs<CodeableConcept>()
-      ?.coding
-      ?.first
-      .code
-      ?.value;
+          .isAs<CodeableConcept>()
+          ?.coding
+          ?.first
+          .code
+          ?.value ??
+      medicationDispense.medicationX
+          .isAs<Reference>()
+          ?.reference
+          ?.value
+          ?.split('/')
+          .last;
   final quantity = medicationDispense.quantity?.value?.toString();
   final daysSupply = medicationDispense.daysSupply?.value;
   final status = medicationDispense.status.toString();

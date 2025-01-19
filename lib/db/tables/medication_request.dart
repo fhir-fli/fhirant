@@ -44,11 +44,17 @@ bool saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
       updatedRequest.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = medicationRequest.subject.reference?.value;
   final medicationId = medicationRequest.medicationX
-      .isAs<CodeableConcept>()
-      ?.coding
-      ?.first
-      .code
-      ?.value;
+          .isAs<CodeableConcept>()
+          ?.coding
+          ?.first
+          .code
+          ?.value ??
+      medicationRequest.medicationX
+          .isAs<Reference>()
+          ?.reference
+          ?.value
+          ?.split('/')
+          .last;
   final intent = medicationRequest.intent.toString();
   final priority = medicationRequest.priority?.toString();
   final status = medicationRequest.status.toString();

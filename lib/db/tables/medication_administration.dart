@@ -46,11 +46,17 @@ bool saveMedicationAdministration(
       updatedAdmin.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = medicationAdmin.subject.reference?.value;
   final medicationId = medicationAdmin.medicationX
-      .isAs<CodeableConcept>()
-      ?.coding
-      ?.first
-      .code
-      ?.value;
+          .isAs<CodeableConcept>()
+          ?.coding
+          ?.first
+          .code
+          ?.value ??
+      medicationAdmin.medicationX
+          .isAs<Reference>()
+          ?.reference
+          ?.value
+          ?.split('/')
+          .last;
   final effectiveDateTime = medicationAdmin.effectiveX
       .isAs<FhirDateTimeBase>()
       ?.valueDateTime

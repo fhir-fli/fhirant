@@ -11,7 +11,7 @@ void createConditionTables(Database db) {
     CREATE TABLE IF NOT EXISTS Condition (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       clinicalStatus TEXT,
       verificationStatus TEXT,
@@ -32,7 +32,7 @@ void createConditionTables(Database db) {
 bool saveCondition(Database db, Condition condition) {
   final updatedCondition =
       updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
-  final id = condition.id?.value;
+  final id = updatedCondition.id?.value;
   final resourceJson = updatedCondition.toJsonString();
   final lastUpdated =
       updatedCondition.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -48,6 +48,27 @@ bool saveCondition(Database db, Condition condition) {
       : null;
 
   try {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Condition WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
+        INSERT INTO ConditionHistory (
+          id, lastUpdated, resource
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
+    }
+
+    // Insert or update the new version in the main table
     db.execute('''
     INSERT INTO Condition (
       id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
@@ -70,8 +91,10 @@ bool saveCondition(Database db, Condition condition) {
       code,
       onsetDateTime,
     ]);
+
     return true;
   } catch (e) {
+    // Log the error
     // ignore: avoid_print
     print('Error saving resource: $e');
     return false;

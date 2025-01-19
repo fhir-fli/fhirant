@@ -51,8 +51,7 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
       final manifestMap = json.decode(manifestContent) as Map<String, dynamic>;
       final ndjsonFiles = manifestMap.keys
           .where(
-            (key) =>
-                key.startsWith('mimic-fhir') && key.endsWith('.ndjson'),
+            (key) => key.startsWith('mimic-fhir') && key.endsWith('.ndjson'),
           )
           .toList();
 
@@ -62,16 +61,21 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
         final fileContent = await rootBundle.loadString(file);
         final lines = fileContent.split('\n').where((line) => line.isNotEmpty);
 
+        final resources = <Resource>[];
         for (final line in lines) {
+          if (line.isEmpty) {
+            continue;
+          }
           final resource = Resource.fromJsonString(line);
+          resources.add(resource);
           // ignore: avoid_print
           print(resource.path);
-          var saveSuccessful = false;
-          saveSuccessful = dbService.saveResource(resource);
-          if (saveSuccessful) {
-            totalResources++;
-          }
         }
+        final result = DbService().bulkSaveResourcesOfSameType(resources);
+        if(result){
+          totalResources += resources.length;
+        }
+        resources.clear();
       }
 
       stopwatch.stop();

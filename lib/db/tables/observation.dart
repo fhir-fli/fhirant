@@ -11,7 +11,7 @@ void createObservationTables(Database db) {
     CREATE TABLE IF NOT EXISTS Observation (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
+      resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       type TEXT,
       value TEXT,
