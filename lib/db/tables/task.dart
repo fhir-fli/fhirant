@@ -24,7 +24,10 @@ void createTaskTables(Database db) {
 }
 
 /// Save a [Task] to the database
-bool saveTask(Database db, Task resource) {
+bool saveTask(
+  Database db,
+  Task resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Task;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveTask(Database db, Task resource) {
 /// Get a [Task] by its ID
 Task? getTask(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Task WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Task WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Task.fromJsonString(result.first['resource'] as String);
+      return Task.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

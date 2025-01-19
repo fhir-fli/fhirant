@@ -24,7 +24,10 @@ void createChargeItemDefinitionTables(Database db) {
 }
 
 /// Save a [ChargeItemDefinition] to the database
-bool saveChargeItemDefinition(Database db, ChargeItemDefinition resource) {
+bool saveChargeItemDefinition(
+  Database db,
+  ChargeItemDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ChargeItemDefinition;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveChargeItemDefinition(Database db, ChargeItemDefinition resource) {
 /// Get a [ChargeItemDefinition] by its ID
 ChargeItemDefinition? getChargeItemDefinition(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM ChargeItemDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ChargeItemDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ChargeItemDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

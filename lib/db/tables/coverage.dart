@@ -24,7 +24,10 @@ void createCoverageTables(Database db) {
 }
 
 /// Save a [Coverage] to the database
-bool saveCoverage(Database db, Coverage resource) {
+bool saveCoverage(
+  Database db,
+  Coverage resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Coverage;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveCoverage(Database db, Coverage resource) {
 /// Get a [Coverage] by its ID
 Coverage? getCoverage(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Coverage WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Coverage WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Coverage.fromJsonString(result.first['resource'] as String);
+      return Coverage.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

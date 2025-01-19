@@ -31,7 +31,10 @@ void createMessageDefinitionTables(Database db) {
 }
 
 /// Save a [MessageDefinition] canonical resource to the database
-bool saveMessageDefinition(Database db, MessageDefinition resource) {
+bool saveMessageDefinition(
+  Database db,
+  MessageDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MessageDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveMessageDefinition(Database db, MessageDefinition resource) {
 /// Get a [MessageDefinition] canonical resource by its ID
 MessageDefinition? getMessageDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM MessageDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MessageDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MessageDefinition.fromJsonString(
         result.first['resource'] as String,

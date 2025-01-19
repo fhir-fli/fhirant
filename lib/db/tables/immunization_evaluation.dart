@@ -24,7 +24,10 @@ void createImmunizationEvaluationTables(Database db) {
 }
 
 /// Save a [ImmunizationEvaluation] to the database
-bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
+bool saveImmunizationEvaluation(
+  Database db,
+  ImmunizationEvaluation resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ImmunizationEvaluation;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
 ImmunizationEvaluation? getImmunizationEvaluation(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ImmunizationEvaluation WHERE id = ?', [id]);
+      'SELECT resource FROM ImmunizationEvaluation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ImmunizationEvaluation.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

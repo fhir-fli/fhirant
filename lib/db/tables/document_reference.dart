@@ -24,7 +24,10 @@ void createDocumentReferenceTables(Database db) {
 }
 
 /// Save a [DocumentReference] to the database
-bool saveDocumentReference(Database db, DocumentReference resource) {
+bool saveDocumentReference(
+  Database db,
+  DocumentReference resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DocumentReference;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveDocumentReference(Database db, DocumentReference resource) {
 /// Get a [DocumentReference] by its ID
 DocumentReference? getDocumentReference(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DocumentReference WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DocumentReference WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return DocumentReference.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

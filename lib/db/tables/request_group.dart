@@ -24,7 +24,10 @@ void createRequestGroupTables(Database db) {
 }
 
 /// Save a [RequestGroup] to the database
-bool saveRequestGroup(Database db, RequestGroup resource) {
+bool saveRequestGroup(
+  Database db,
+  RequestGroup resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RequestGroup;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveRequestGroup(Database db, RequestGroup resource) {
 /// Get a [RequestGroup] by its ID
 RequestGroup? getRequestGroup(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM RequestGroup WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM RequestGroup WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return RequestGroup.fromJsonString(result.first['resource'] as String);
+      return RequestGroup.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

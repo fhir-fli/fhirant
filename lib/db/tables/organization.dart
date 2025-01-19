@@ -24,7 +24,10 @@ void createOrganizationTables(Database db) {
 }
 
 /// Save a [Organization] to the database
-bool saveOrganization(Database db, Organization resource) {
+bool saveOrganization(
+  Database db,
+  Organization resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Organization;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveOrganization(Database db, Organization resource) {
 /// Get a [Organization] by its ID
 Organization? getOrganization(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Organization WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Organization WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Organization.fromJsonString(result.first['resource'] as String);
+      return Organization.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createClinicalUseDefinitionTables(Database db) {
 }
 
 /// Save a [ClinicalUseDefinition] to the database
-bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
+bool saveClinicalUseDefinition(
+  Database db,
+  ClinicalUseDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ClinicalUseDefinition;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveClinicalUseDefinition(Database db, ClinicalUseDefinition resource) {
 ClinicalUseDefinition? getClinicalUseDefinition(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ClinicalUseDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM ClinicalUseDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ClinicalUseDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

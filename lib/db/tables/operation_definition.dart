@@ -31,7 +31,10 @@ void createOperationDefinitionTables(Database db) {
 }
 
 /// Save a [OperationDefinition] canonical resource to the database
-bool saveOperationDefinition(Database db, OperationDefinition resource) {
+bool saveOperationDefinition(
+  Database db,
+  OperationDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OperationDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
 /// Get a [OperationDefinition] canonical resource by its ID
 OperationDefinition? getOperationDefinition(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM OperationDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM OperationDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return OperationDefinition.fromJsonString(
         result.first['resource'] as String,

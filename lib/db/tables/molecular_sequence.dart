@@ -24,7 +24,10 @@ void createMolecularSequenceTables(Database db) {
 }
 
 /// Save a [MolecularSequence] to the database
-bool saveMolecularSequence(Database db, MolecularSequence resource) {
+bool saveMolecularSequence(
+  Database db,
+  MolecularSequence resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MolecularSequence;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveMolecularSequence(Database db, MolecularSequence resource) {
 /// Get a [MolecularSequence] by its ID
 MolecularSequence? getMolecularSequence(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM MolecularSequence WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MolecularSequence WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MolecularSequence.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -25,7 +25,9 @@ void createMedicinalProductDefinitionTables(Database db) {
 
 /// Save a [MedicinalProductDefinition] to the database
 bool saveMedicinalProductDefinition(
-    Database db, MedicinalProductDefinition resource) {
+  Database db,
+  MedicinalProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MedicinalProductDefinition;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ MedicinalProductDefinition? getMedicinalProductDefinition(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM MedicinalProductDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM MedicinalProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MedicinalProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

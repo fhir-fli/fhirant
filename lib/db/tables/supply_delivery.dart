@@ -24,7 +24,10 @@ void createSupplyDeliveryTables(Database db) {
 }
 
 /// Save a [SupplyDelivery] to the database
-bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
+bool saveSupplyDelivery(
+  Database db,
+  SupplyDelivery resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SupplyDelivery;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveSupplyDelivery(Database db, SupplyDelivery resource) {
 /// Get a [SupplyDelivery] by its ID
 SupplyDelivery? getSupplyDelivery(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM SupplyDelivery WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM SupplyDelivery WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return SupplyDelivery.fromJsonString(result.first['resource'] as String);
+      return SupplyDelivery.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

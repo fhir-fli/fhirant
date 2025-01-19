@@ -31,7 +31,10 @@ void createActivityDefinitionTables(Database db) {
 }
 
 /// Save a [ActivityDefinition] canonical resource to the database
-bool saveActivityDefinition(Database db, ActivityDefinition resource) {
+bool saveActivityDefinition(
+  Database db,
+  ActivityDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ActivityDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
 /// Get a [ActivityDefinition] canonical resource by its ID
 ActivityDefinition? getActivityDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ActivityDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ActivityDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ActivityDefinition.fromJsonString(
         result.first['resource'] as String,

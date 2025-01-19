@@ -30,7 +30,10 @@ void createMeasureTables(Database db) {
 }
 
 /// Save a [Measure] canonical resource to the database
-bool saveMeasure(Database db, Measure resource) {
+bool saveMeasure(
+  Database db,
+  Measure resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Measure;
   final id = updatedResource.id?.value;
@@ -96,7 +99,10 @@ bool saveMeasure(Database db, Measure resource) {
 /// Get a [Measure] canonical resource by its ID
 Measure? getMeasure(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Measure WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Measure WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return Measure.fromJsonString(
         result.first['resource'] as String,

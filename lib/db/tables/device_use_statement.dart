@@ -24,7 +24,10 @@ void createDeviceUseStatementTables(Database db) {
 }
 
 /// Save a [DeviceUseStatement] to the database
-bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
+bool saveDeviceUseStatement(
+  Database db,
+  DeviceUseStatement resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DeviceUseStatement;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveDeviceUseStatement(Database db, DeviceUseStatement resource) {
 /// Get a [DeviceUseStatement] by its ID
 DeviceUseStatement? getDeviceUseStatement(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DeviceUseStatement WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DeviceUseStatement WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return DeviceUseStatement.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

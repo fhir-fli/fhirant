@@ -24,7 +24,10 @@ void createRegulatedAuthorizationTables(Database db) {
 }
 
 /// Save a [RegulatedAuthorization] to the database
-bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
+bool saveRegulatedAuthorization(
+  Database db,
+  RegulatedAuthorization resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as RegulatedAuthorization;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveRegulatedAuthorization(Database db, RegulatedAuthorization resource) {
 RegulatedAuthorization? getRegulatedAuthorization(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM RegulatedAuthorization WHERE id = ?', [id]);
+      'SELECT resource FROM RegulatedAuthorization WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return RegulatedAuthorization.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createInvoiceTables(Database db) {
 }
 
 /// Save a [Invoice] to the database
-bool saveInvoice(Database db, Invoice resource) {
+bool saveInvoice(
+  Database db,
+  Invoice resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Invoice;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveInvoice(Database db, Invoice resource) {
 /// Get a [Invoice] by its ID
 Invoice? getInvoice(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Invoice WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Invoice WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Invoice.fromJsonString(result.first['resource'] as String);
+      return Invoice.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -31,7 +31,10 @@ void createStructureMapTables(Database db) {
 }
 
 /// Save a [StructureMap] canonical resource to the database
-bool saveStructureMap(Database db, StructureMap resource) {
+bool saveStructureMap(
+  Database db,
+  StructureMap resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as StructureMap;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveStructureMap(Database db, StructureMap resource) {
 /// Get a [StructureMap] canonical resource by its ID
 StructureMap? getStructureMap(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM StructureMap WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM StructureMap WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return StructureMap.fromJsonString(
         result.first['resource'] as String,

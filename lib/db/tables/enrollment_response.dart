@@ -24,7 +24,10 @@ void createEnrollmentResponseTables(Database db) {
 }
 
 /// Save a [EnrollmentResponse] to the database
-bool saveEnrollmentResponse(Database db, EnrollmentResponse resource) {
+bool saveEnrollmentResponse(
+  Database db,
+  EnrollmentResponse resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EnrollmentResponse;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveEnrollmentResponse(Database db, EnrollmentResponse resource) {
 /// Get a [EnrollmentResponse] by its ID
 EnrollmentResponse? getEnrollmentResponse(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EnrollmentResponse WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EnrollmentResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return EnrollmentResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

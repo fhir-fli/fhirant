@@ -24,7 +24,10 @@ void createBinaryTables(Database db) {
 }
 
 /// Save a [Binary] to the database
-bool saveBinary(Database db, Binary resource) {
+bool saveBinary(
+  Database db,
+  Binary resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Binary;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveBinary(Database db, Binary resource) {
 /// Get a [Binary] by its ID
 Binary? getBinary(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Binary WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Binary WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Binary.fromJsonString(result.first['resource'] as String);
+      return Binary.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

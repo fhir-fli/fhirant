@@ -24,7 +24,10 @@ void createGuidanceResponseTables(Database db) {
 }
 
 /// Save a [GuidanceResponse] to the database
-bool saveGuidanceResponse(Database db, GuidanceResponse resource) {
+bool saveGuidanceResponse(
+  Database db,
+  GuidanceResponse resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as GuidanceResponse;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveGuidanceResponse(Database db, GuidanceResponse resource) {
 /// Get a [GuidanceResponse] by its ID
 GuidanceResponse? getGuidanceResponse(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM GuidanceResponse WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM GuidanceResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return GuidanceResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

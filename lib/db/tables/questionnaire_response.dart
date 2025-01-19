@@ -24,7 +24,10 @@ void createQuestionnaireResponseTables(Database db) {
 }
 
 /// Save a [QuestionnaireResponse] to the database
-bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
+bool saveQuestionnaireResponse(
+  Database db,
+  QuestionnaireResponse resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as QuestionnaireResponse;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
 QuestionnaireResponse? getQuestionnaireResponse(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM QuestionnaireResponse WHERE id = ?', [id]);
+      'SELECT resource FROM QuestionnaireResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return QuestionnaireResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

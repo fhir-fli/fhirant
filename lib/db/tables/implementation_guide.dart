@@ -31,7 +31,10 @@ void createImplementationGuideTables(Database db) {
 }
 
 /// Save a [ImplementationGuide] canonical resource to the database
-bool saveImplementationGuide(Database db, ImplementationGuide resource) {
+bool saveImplementationGuide(
+  Database db,
+  ImplementationGuide resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ImplementationGuide;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
 /// Get a [ImplementationGuide] canonical resource by its ID
 ImplementationGuide? getImplementationGuide(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM ImplementationGuide WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ImplementationGuide WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ImplementationGuide.fromJsonString(
         result.first['resource'] as String,

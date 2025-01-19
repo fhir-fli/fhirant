@@ -24,7 +24,10 @@ void createClinicalImpressionTables(Database db) {
 }
 
 /// Save a [ClinicalImpression] to the database
-bool saveClinicalImpression(Database db, ClinicalImpression resource) {
+bool saveClinicalImpression(
+  Database db,
+  ClinicalImpression resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ClinicalImpression;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveClinicalImpression(Database db, ClinicalImpression resource) {
 /// Get a [ClinicalImpression] by its ID
 ClinicalImpression? getClinicalImpression(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ClinicalImpression WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ClinicalImpression WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ClinicalImpression.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

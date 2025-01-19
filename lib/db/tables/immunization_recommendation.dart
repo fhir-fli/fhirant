@@ -25,7 +25,9 @@ void createImmunizationRecommendationTables(Database db) {
 
 /// Save a [ImmunizationRecommendation] to the database
 bool saveImmunizationRecommendation(
-    Database db, ImmunizationRecommendation resource) {
+  Database db,
+  ImmunizationRecommendation resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ImmunizationRecommendation;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ ImmunizationRecommendation? getImmunizationRecommendation(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ImmunizationRecommendation WHERE id = ?', [id]);
+      'SELECT resource FROM ImmunizationRecommendation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ImmunizationRecommendation.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

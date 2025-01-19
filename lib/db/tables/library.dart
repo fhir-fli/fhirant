@@ -30,7 +30,10 @@ void createLibraryTables(Database db) {
 }
 
 /// Save a [Library] canonical resource to the database
-bool saveLibrary(Database db, Library resource) {
+bool saveLibrary(
+  Database db,
+  Library resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Library;
   final id = updatedResource.id?.value;
@@ -96,7 +99,10 @@ bool saveLibrary(Database db, Library resource) {
 /// Get a [Library] canonical resource by its ID
 Library? getLibrary(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Library WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Library WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return Library.fromJsonString(
         result.first['resource'] as String,

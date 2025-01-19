@@ -24,7 +24,10 @@ void createAccountTables(Database db) {
 }
 
 /// Save a [Account] to the database
-bool saveAccount(Database db, Account resource) {
+bool saveAccount(
+  Database db,
+  Account resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Account;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveAccount(Database db, Account resource) {
 /// Get a [Account] by its ID
 Account? getAccount(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Account WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Account WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Account.fromJsonString(result.first['resource'] as String);
+      return Account.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

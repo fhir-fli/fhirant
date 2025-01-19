@@ -24,7 +24,10 @@ void createSpecimenDefinitionTables(Database db) {
 }
 
 /// Save a [SpecimenDefinition] to the database
-bool saveSpecimenDefinition(Database db, SpecimenDefinition resource) {
+bool saveSpecimenDefinition(
+  Database db,
+  SpecimenDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SpecimenDefinition;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveSpecimenDefinition(Database db, SpecimenDefinition resource) {
 /// Get a [SpecimenDefinition] by its ID
 SpecimenDefinition? getSpecimenDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM SpecimenDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM SpecimenDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return SpecimenDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createCompositionTables(Database db) {
 }
 
 /// Save a [Composition] to the database
-bool saveComposition(Database db, Composition resource) {
+bool saveComposition(
+  Database db,
+  Composition resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Composition;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveComposition(Database db, Composition resource) {
 /// Get a [Composition] by its ID
 Composition? getComposition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Composition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Composition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Composition.fromJsonString(result.first['resource'] as String);
+      return Composition.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

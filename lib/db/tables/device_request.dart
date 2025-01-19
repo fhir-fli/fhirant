@@ -24,7 +24,10 @@ void createDeviceRequestTables(Database db) {
 }
 
 /// Save a [DeviceRequest] to the database
-bool saveDeviceRequest(Database db, DeviceRequest resource) {
+bool saveDeviceRequest(
+  Database db,
+  DeviceRequest resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DeviceRequest;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveDeviceRequest(Database db, DeviceRequest resource) {
 /// Get a [DeviceRequest] by its ID
 DeviceRequest? getDeviceRequest(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DeviceRequest WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DeviceRequest WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return DeviceRequest.fromJsonString(result.first['resource'] as String);
+      return DeviceRequest.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

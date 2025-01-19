@@ -30,7 +30,10 @@ void createValueSetTables(Database db) {
 }
 
 /// Save a [ValueSet] canonical resource to the database
-bool saveValueSet(Database db, ValueSet resource) {
+bool saveValueSet(
+  Database db,
+  ValueSet resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
   final id = updatedResource.id?.value;
@@ -96,8 +99,10 @@ bool saveValueSet(Database db, ValueSet resource) {
 /// Get a [ValueSet] canonical resource by its ID
 ValueSet? getValueSet(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ValueSet WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ValueSet WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ValueSet.fromJsonString(
         result.first['resource'] as String,

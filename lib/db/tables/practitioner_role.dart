@@ -24,7 +24,10 @@ void createPractitionerRoleTables(Database db) {
 }
 
 /// Save a [PractitionerRole] to the database
-bool savePractitionerRole(Database db, PractitionerRole resource) {
+bool savePractitionerRole(
+  Database db,
+  PractitionerRole resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PractitionerRole;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool savePractitionerRole(Database db, PractitionerRole resource) {
 /// Get a [PractitionerRole] by its ID
 PractitionerRole? getPractitionerRole(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM PractitionerRole WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM PractitionerRole WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PractitionerRole.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createOperationOutcomeTables(Database db) {
 }
 
 /// Save a [OperationOutcome] to the database
-bool saveOperationOutcome(Database db, OperationOutcome resource) {
+bool saveOperationOutcome(
+  Database db,
+  OperationOutcome resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OperationOutcome;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveOperationOutcome(Database db, OperationOutcome resource) {
 /// Get a [OperationOutcome] by its ID
 OperationOutcome? getOperationOutcome(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM OperationOutcome WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM OperationOutcome WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return OperationOutcome.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

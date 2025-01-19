@@ -24,7 +24,10 @@ void createAllergyIntoleranceTables(Database db) {
 }
 
 /// Save a [AllergyIntolerance] to the database
-bool saveAllergyIntolerance(Database db, AllergyIntolerance resource) {
+bool saveAllergyIntolerance(
+  Database db,
+  AllergyIntolerance resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as AllergyIntolerance;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveAllergyIntolerance(Database db, AllergyIntolerance resource) {
 /// Get a [AllergyIntolerance] by its ID
 AllergyIntolerance? getAllergyIntolerance(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM AllergyIntolerance WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM AllergyIntolerance WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return AllergyIntolerance.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

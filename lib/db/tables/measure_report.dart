@@ -24,7 +24,10 @@ void createMeasureReportTables(Database db) {
 }
 
 /// Save a [MeasureReport] to the database
-bool saveMeasureReport(Database db, MeasureReport resource) {
+bool saveMeasureReport(
+  Database db,
+  MeasureReport resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MeasureReport;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveMeasureReport(Database db, MeasureReport resource) {
 /// Get a [MeasureReport] by its ID
 MeasureReport? getMeasureReport(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM MeasureReport WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MeasureReport WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return MeasureReport.fromJsonString(result.first['resource'] as String);
+      return MeasureReport.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

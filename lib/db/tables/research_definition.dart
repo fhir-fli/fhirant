@@ -24,7 +24,10 @@ void createResearchDefinitionTables(Database db) {
 }
 
 /// Save a [ResearchDefinition] to the database
-bool saveResearchDefinition(Database db, ResearchDefinition resource) {
+bool saveResearchDefinition(
+  Database db,
+  ResearchDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ResearchDefinition;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveResearchDefinition(Database db, ResearchDefinition resource) {
 /// Get a [ResearchDefinition] by its ID
 ResearchDefinition? getResearchDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ResearchDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ResearchDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ResearchDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

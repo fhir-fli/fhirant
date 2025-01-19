@@ -24,7 +24,10 @@ void createBundleTables(Database db) {
 }
 
 /// Save a [Bundle] to the database
-bool saveBundle(Database db, Bundle resource) {
+bool saveBundle(
+  Database db,
+  Bundle resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Bundle;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveBundle(Database db, Bundle resource) {
 /// Get a [Bundle] by its ID
 Bundle? getBundle(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Bundle WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Bundle WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Bundle.fromJsonString(result.first['resource'] as String);
+      return Bundle.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

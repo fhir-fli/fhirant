@@ -24,7 +24,10 @@ void createIngredientTables(Database db) {
 }
 
 /// Save a [Ingredient] to the database
-bool saveIngredient(Database db, Ingredient resource) {
+bool saveIngredient(
+  Database db,
+  Ingredient resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Ingredient;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveIngredient(Database db, Ingredient resource) {
 /// Get a [Ingredient] by its ID
 Ingredient? getIngredient(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Ingredient WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Ingredient WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Ingredient.fromJsonString(result.first['resource'] as String);
+      return Ingredient.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

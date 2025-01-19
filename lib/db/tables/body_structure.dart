@@ -24,7 +24,10 @@ void createBodyStructureTables(Database db) {
 }
 
 /// Save a [BodyStructure] to the database
-bool saveBodyStructure(Database db, BodyStructure resource) {
+bool saveBodyStructure(
+  Database db,
+  BodyStructure resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as BodyStructure;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveBodyStructure(Database db, BodyStructure resource) {
 /// Get a [BodyStructure] by its ID
 BodyStructure? getBodyStructure(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM BodyStructure WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM BodyStructure WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return BodyStructure.fromJsonString(result.first['resource'] as String);
+      return BodyStructure.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createSubstanceDefinitionTables(Database db) {
 }
 
 /// Save a [SubstanceDefinition] to the database
-bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
+bool saveSubstanceDefinition(
+  Database db,
+  SubstanceDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SubstanceDefinition;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
 /// Get a [SubstanceDefinition] by its ID
 SubstanceDefinition? getSubstanceDefinition(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM SubstanceDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM SubstanceDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return SubstanceDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

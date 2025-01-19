@@ -24,7 +24,10 @@ void createDiagnosticReportTables(Database db) {
 }
 
 /// Save a [DiagnosticReport] to the database
-bool saveDiagnosticReport(Database db, DiagnosticReport resource) {
+bool saveDiagnosticReport(
+  Database db,
+  DiagnosticReport resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DiagnosticReport;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveDiagnosticReport(Database db, DiagnosticReport resource) {
 /// Get a [DiagnosticReport] by its ID
 DiagnosticReport? getDiagnosticReport(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DiagnosticReport WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DiagnosticReport WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return DiagnosticReport.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

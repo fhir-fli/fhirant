@@ -31,7 +31,10 @@ void createStructureDefinitionTables(Database db) {
 }
 
 /// Save a [StructureDefinition] canonical resource to the database
-bool saveStructureDefinition(Database db, StructureDefinition resource) {
+bool saveStructureDefinition(
+  Database db,
+  StructureDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as StructureDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveStructureDefinition(Database db, StructureDefinition resource) {
 /// Get a [StructureDefinition] canonical resource by its ID
 StructureDefinition? getStructureDefinition(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM StructureDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM StructureDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return StructureDefinition.fromJsonString(
         result.first['resource'] as String,

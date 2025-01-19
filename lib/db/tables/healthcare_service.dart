@@ -24,7 +24,10 @@ void createHealthcareServiceTables(Database db) {
 }
 
 /// Save a [HealthcareService] to the database
-bool saveHealthcareService(Database db, HealthcareService resource) {
+bool saveHealthcareService(
+  Database db,
+  HealthcareService resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as HealthcareService;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveHealthcareService(Database db, HealthcareService resource) {
 /// Get a [HealthcareService] by its ID
 HealthcareService? getHealthcareService(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM HealthcareService WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM HealthcareService WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return HealthcareService.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

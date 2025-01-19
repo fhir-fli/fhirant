@@ -24,7 +24,10 @@ void createSubstanceTables(Database db) {
 }
 
 /// Save a [Substance] to the database
-bool saveSubstance(Database db, Substance resource) {
+bool saveSubstance(
+  Database db,
+  Substance resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Substance;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveSubstance(Database db, Substance resource) {
 /// Get a [Substance] by its ID
 Substance? getSubstance(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Substance WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Substance WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Substance.fromJsonString(result.first['resource'] as String);
+      return Substance.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

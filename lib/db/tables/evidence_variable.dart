@@ -24,7 +24,10 @@ void createEvidenceVariableTables(Database db) {
 }
 
 /// Save a [EvidenceVariable] to the database
-bool saveEvidenceVariable(Database db, EvidenceVariable resource) {
+bool saveEvidenceVariable(
+  Database db,
+  EvidenceVariable resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EvidenceVariable;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveEvidenceVariable(Database db, EvidenceVariable resource) {
 /// Get a [EvidenceVariable] by its ID
 EvidenceVariable? getEvidenceVariable(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EvidenceVariable WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EvidenceVariable WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return EvidenceVariable.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

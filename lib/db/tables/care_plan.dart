@@ -24,7 +24,10 @@ void createCarePlanTables(Database db) {
 }
 
 /// Save a [CarePlan] to the database
-bool saveCarePlan(Database db, CarePlan resource) {
+bool saveCarePlan(
+  Database db,
+  CarePlan resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CarePlan;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveCarePlan(Database db, CarePlan resource) {
 /// Get a [CarePlan] by its ID
 CarePlan? getCarePlan(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM CarePlan WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM CarePlan WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return CarePlan.fromJsonString(result.first['resource'] as String);
+      return CarePlan.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

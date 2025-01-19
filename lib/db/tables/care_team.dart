@@ -24,7 +24,10 @@ void createCareTeamTables(Database db) {
 }
 
 /// Save a [CareTeam] to the database
-bool saveCareTeam(Database db, CareTeam resource) {
+bool saveCareTeam(
+  Database db,
+  CareTeam resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CareTeam;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveCareTeam(Database db, CareTeam resource) {
 /// Get a [CareTeam] by its ID
 CareTeam? getCareTeam(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM CareTeam WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM CareTeam WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return CareTeam.fromJsonString(result.first['resource'] as String);
+      return CareTeam.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

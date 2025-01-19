@@ -24,7 +24,10 @@ void createMedicationKnowledgeTables(Database db) {
 }
 
 /// Save a [MedicationKnowledge] to the database
-bool saveMedicationKnowledge(Database db, MedicationKnowledge resource) {
+bool saveMedicationKnowledge(
+  Database db,
+  MedicationKnowledge resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MedicationKnowledge;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveMedicationKnowledge(Database db, MedicationKnowledge resource) {
 /// Get a [MedicationKnowledge] by its ID
 MedicationKnowledge? getMedicationKnowledge(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM MedicationKnowledge WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MedicationKnowledge WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MedicationKnowledge.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

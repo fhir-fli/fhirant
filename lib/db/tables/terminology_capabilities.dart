@@ -32,7 +32,9 @@ void createTerminologyCapabilitiesTables(Database db) {
 
 /// Save a [TerminologyCapabilities] canonical resource to the database
 bool saveTerminologyCapabilities(
-    Database db, TerminologyCapabilities resource) {
+  Database db,
+  TerminologyCapabilities resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as TerminologyCapabilities;
   final id = updatedResource.id?.value;
@@ -99,7 +101,9 @@ bool saveTerminologyCapabilities(
 TerminologyCapabilities? getTerminologyCapabilities(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM TerminologyCapabilities WHERE id = ?', [id]);
+      'SELECT resource FROM TerminologyCapabilities WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return TerminologyCapabilities.fromJsonString(
         result.first['resource'] as String,

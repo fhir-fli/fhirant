@@ -24,7 +24,10 @@ void createSlotTables(Database db) {
 }
 
 /// Save a [Slot] to the database
-bool saveSlot(Database db, Slot resource) {
+bool saveSlot(
+  Database db,
+  Slot resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Slot;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveSlot(Database db, Slot resource) {
 /// Get a [Slot] by its ID
 Slot? getSlot(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Slot WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Slot WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Slot.fromJsonString(result.first['resource'] as String);
+      return Slot.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

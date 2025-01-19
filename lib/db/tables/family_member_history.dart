@@ -24,7 +24,10 @@ void createFamilyMemberHistoryTables(Database db) {
 }
 
 /// Save a [FamilyMemberHistory] to the database
-bool saveFamilyMemberHistory(Database db, FamilyMemberHistory resource) {
+bool saveFamilyMemberHistory(
+  Database db,
+  FamilyMemberHistory resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as FamilyMemberHistory;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveFamilyMemberHistory(Database db, FamilyMemberHistory resource) {
 /// Get a [FamilyMemberHistory] by its ID
 FamilyMemberHistory? getFamilyMemberHistory(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM FamilyMemberHistory WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM FamilyMemberHistory WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return FamilyMemberHistory.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

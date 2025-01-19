@@ -24,7 +24,10 @@ void createPaymentNoticeTables(Database db) {
 }
 
 /// Save a [PaymentNotice] to the database
-bool savePaymentNotice(Database db, PaymentNotice resource) {
+bool savePaymentNotice(
+  Database db,
+  PaymentNotice resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PaymentNotice;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool savePaymentNotice(Database db, PaymentNotice resource) {
 /// Get a [PaymentNotice] by its ID
 PaymentNotice? getPaymentNotice(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM PaymentNotice WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM PaymentNotice WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return PaymentNotice.fromJsonString(result.first['resource'] as String);
+      return PaymentNotice.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

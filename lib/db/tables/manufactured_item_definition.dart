@@ -25,7 +25,9 @@ void createManufacturedItemDefinitionTables(Database db) {
 
 /// Save a [ManufacturedItemDefinition] to the database
 bool saveManufacturedItemDefinition(
-    Database db, ManufacturedItemDefinition resource) {
+  Database db,
+  ManufacturedItemDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ManufacturedItemDefinition;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ ManufacturedItemDefinition? getManufacturedItemDefinition(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ManufacturedItemDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM ManufacturedItemDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ManufacturedItemDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

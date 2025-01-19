@@ -24,7 +24,10 @@ void createDocumentManifestTables(Database db) {
 }
 
 /// Save a [DocumentManifest] to the database
-bool saveDocumentManifest(Database db, DocumentManifest resource) {
+bool saveDocumentManifest(
+  Database db,
+  DocumentManifest resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DocumentManifest;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveDocumentManifest(Database db, DocumentManifest resource) {
 /// Get a [DocumentManifest] by its ID
 DocumentManifest? getDocumentManifest(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DocumentManifest WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DocumentManifest WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return DocumentManifest.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

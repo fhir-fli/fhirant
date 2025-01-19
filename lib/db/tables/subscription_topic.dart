@@ -31,7 +31,10 @@ void createSubscriptionTopicTables(Database db) {
 }
 
 /// Save a [SubscriptionTopic] canonical resource to the database
-bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
+bool saveSubscriptionTopic(
+  Database db,
+  SubscriptionTopic resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SubscriptionTopic;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
 /// Get a [SubscriptionTopic] canonical resource by its ID
 SubscriptionTopic? getSubscriptionTopic(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM SubscriptionTopic WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM SubscriptionTopic WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return SubscriptionTopic.fromJsonString(
         result.first['resource'] as String,

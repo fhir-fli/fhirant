@@ -24,7 +24,10 @@ void createEvidenceReportTables(Database db) {
 }
 
 /// Save a [EvidenceReport] to the database
-bool saveEvidenceReport(Database db, EvidenceReport resource) {
+bool saveEvidenceReport(
+  Database db,
+  EvidenceReport resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EvidenceReport;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveEvidenceReport(Database db, EvidenceReport resource) {
 /// Get a [EvidenceReport] by its ID
 EvidenceReport? getEvidenceReport(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EvidenceReport WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EvidenceReport WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return EvidenceReport.fromJsonString(result.first['resource'] as String);
+      return EvidenceReport.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

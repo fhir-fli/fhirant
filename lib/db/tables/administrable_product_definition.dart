@@ -25,7 +25,9 @@ void createAdministrableProductDefinitionTables(Database db) {
 
 /// Save a [AdministrableProductDefinition] to the database
 bool saveAdministrableProductDefinition(
-    Database db, AdministrableProductDefinition resource) {
+  Database db,
+  AdministrableProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as AdministrableProductDefinition;
   final id = updatedResource.id?.value;
@@ -81,11 +83,13 @@ AdministrableProductDefinition? getAdministrableProductDefinition(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',
-        [id]);
+      'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return AdministrableProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

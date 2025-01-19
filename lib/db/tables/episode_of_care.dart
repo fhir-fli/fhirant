@@ -24,7 +24,10 @@ void createEpisodeOfCareTables(Database db) {
 }
 
 /// Save a [EpisodeOfCare] to the database
-bool saveEpisodeOfCare(Database db, EpisodeOfCare resource) {
+bool saveEpisodeOfCare(
+  Database db,
+  EpisodeOfCare resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EpisodeOfCare;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveEpisodeOfCare(Database db, EpisodeOfCare resource) {
 /// Get a [EpisodeOfCare] by its ID
 EpisodeOfCare? getEpisodeOfCare(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EpisodeOfCare WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EpisodeOfCare WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return EpisodeOfCare.fromJsonString(result.first['resource'] as String);
+      return EpisodeOfCare.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

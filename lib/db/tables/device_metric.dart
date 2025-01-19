@@ -24,7 +24,10 @@ void createDeviceMetricTables(Database db) {
 }
 
 /// Save a [DeviceMetric] to the database
-bool saveDeviceMetric(Database db, DeviceMetric resource) {
+bool saveDeviceMetric(
+  Database db,
+  DeviceMetric resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DeviceMetric;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveDeviceMetric(Database db, DeviceMetric resource) {
 /// Get a [DeviceMetric] by its ID
 DeviceMetric? getDeviceMetric(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DeviceMetric WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DeviceMetric WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return DeviceMetric.fromJsonString(result.first['resource'] as String);
+      return DeviceMetric.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

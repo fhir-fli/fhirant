@@ -25,7 +25,9 @@ void createCoverageEligibilityResponseTables(Database db) {
 
 /// Save a [CoverageEligibilityResponse] to the database
 bool saveCoverageEligibilityResponse(
-    Database db, CoverageEligibilityResponse resource) {
+  Database db,
+  CoverageEligibilityResponse resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CoverageEligibilityResponse;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ CoverageEligibilityResponse? getCoverageEligibilityResponse(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?', [id]);
+      'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CoverageEligibilityResponse.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

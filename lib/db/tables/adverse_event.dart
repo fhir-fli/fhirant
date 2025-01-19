@@ -24,7 +24,10 @@ void createAdverseEventTables(Database db) {
 }
 
 /// Save a [AdverseEvent] to the database
-bool saveAdverseEvent(Database db, AdverseEvent resource) {
+bool saveAdverseEvent(
+  Database db,
+  AdverseEvent resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AdverseEvent;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveAdverseEvent(Database db, AdverseEvent resource) {
 /// Get a [AdverseEvent] by its ID
 AdverseEvent? getAdverseEvent(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM AdverseEvent WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM AdverseEvent WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return AdverseEvent.fromJsonString(result.first['resource'] as String);
+      return AdverseEvent.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

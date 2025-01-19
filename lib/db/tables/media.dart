@@ -24,7 +24,10 @@ void createMediaTables(Database db) {
 }
 
 /// Save a [Media] to the database
-bool saveMedia(Database db, Media resource) {
+bool saveMedia(
+  Database db,
+  Media resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Media;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveMedia(Database db, Media resource) {
 /// Get a [Media] by its ID
 Media? getMedia(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Media WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Media WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Media.fromJsonString(result.first['resource'] as String);
+      return Media.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

@@ -24,7 +24,10 @@ void createSubscriptionTables(Database db) {
 }
 
 /// Save a [Subscription] to the database
-bool saveSubscription(Database db, Subscription resource) {
+bool saveSubscription(
+  Database db,
+  Subscription resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Subscription;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveSubscription(Database db, Subscription resource) {
 /// Get a [Subscription] by its ID
 Subscription? getSubscription(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Subscription WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Subscription WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Subscription.fromJsonString(result.first['resource'] as String);
+      return Subscription.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

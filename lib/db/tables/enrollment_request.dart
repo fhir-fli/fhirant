@@ -24,7 +24,10 @@ void createEnrollmentRequestTables(Database db) {
 }
 
 /// Save a [EnrollmentRequest] to the database
-bool saveEnrollmentRequest(Database db, EnrollmentRequest resource) {
+bool saveEnrollmentRequest(
+  Database db,
+  EnrollmentRequest resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EnrollmentRequest;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveEnrollmentRequest(Database db, EnrollmentRequest resource) {
 /// Get a [EnrollmentRequest] by its ID
 EnrollmentRequest? getEnrollmentRequest(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EnrollmentRequest WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EnrollmentRequest WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return EnrollmentRequest.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

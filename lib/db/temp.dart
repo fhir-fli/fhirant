@@ -64,7 +64,7 @@ void create${resourceType}Tables(Database db) {
 }
 
 /// Save a [$resourceType] to the database
-bool save$resourceType(Database db, $resourceType resource) {
+bool save$resourceType(Database db, $resourceType resource,) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
@@ -116,7 +116,7 @@ bool save$resourceType(Database db, $resourceType resource) {
 /// Get a [$resourceType] by its ID
 $resourceType? get$resourceType(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id]);
+    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id],);
     if (result.isNotEmpty) {
       return $resourceType.fromJsonString(result.first['resource'] as String,);
     }
@@ -156,7 +156,7 @@ void create${resourceType}Tables(Database db) {
 }
 
 /// Save a [$resourceType] canonical resource to the database
-bool save$resourceType(Database db, $resourceType resource) {
+bool save$resourceType(Database db, $resourceType resource,) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
@@ -220,7 +220,7 @@ bool save$resourceType(Database db, $resourceType resource) {
 /// Get a [$resourceType] canonical resource by its ID
 $resourceType? get$resourceType(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id]);
+    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id],);
     if (result.isNotEmpty) {
       return $resourceType.fromJsonString(result.first['resource'] as String,);
     }

@@ -24,7 +24,10 @@ void createFlagTables(Database db) {
 }
 
 /// Save a [Flag] to the database
-bool saveFlag(Database db, Flag resource) {
+bool saveFlag(
+  Database db,
+  Flag resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Flag;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveFlag(Database db, Flag resource) {
 /// Get a [Flag] by its ID
 Flag? getFlag(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Flag WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Flag WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Flag.fromJsonString(result.first['resource'] as String);
+      return Flag.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

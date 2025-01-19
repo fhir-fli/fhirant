@@ -24,7 +24,10 @@ void createPaymentReconciliationTables(Database db) {
 }
 
 /// Save a [PaymentReconciliation] to the database
-bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
+bool savePaymentReconciliation(
+  Database db,
+  PaymentReconciliation resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PaymentReconciliation;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool savePaymentReconciliation(Database db, PaymentReconciliation resource) {
 PaymentReconciliation? getPaymentReconciliation(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM PaymentReconciliation WHERE id = ?', [id]);
+      'SELECT resource FROM PaymentReconciliation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PaymentReconciliation.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

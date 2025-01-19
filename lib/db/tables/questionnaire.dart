@@ -31,7 +31,10 @@ void createQuestionnaireTables(Database db) {
 }
 
 /// Save a [Questionnaire] canonical resource to the database
-bool saveQuestionnaire(Database db, Questionnaire resource) {
+bool saveQuestionnaire(
+  Database db,
+  Questionnaire resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as Questionnaire;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
 /// Get a [Questionnaire] canonical resource by its ID
 Questionnaire? getQuestionnaire(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Questionnaire WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Questionnaire WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return Questionnaire.fromJsonString(
         result.first['resource'] as String,

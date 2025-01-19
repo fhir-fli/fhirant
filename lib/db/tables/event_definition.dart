@@ -31,7 +31,10 @@ void createEventDefinitionTables(Database db) {
 }
 
 /// Save a [EventDefinition] canonical resource to the database
-bool saveEventDefinition(Database db, EventDefinition resource) {
+bool saveEventDefinition(
+  Database db,
+  EventDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EventDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
 /// Get a [EventDefinition] canonical resource by its ID
 EventDefinition? getEventDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM EventDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM EventDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return EventDefinition.fromJsonString(
         result.first['resource'] as String,

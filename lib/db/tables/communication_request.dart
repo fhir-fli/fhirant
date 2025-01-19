@@ -24,7 +24,10 @@ void createCommunicationRequestTables(Database db) {
 }
 
 /// Save a [CommunicationRequest] to the database
-bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
+bool saveCommunicationRequest(
+  Database db,
+  CommunicationRequest resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CommunicationRequest;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
 /// Get a [CommunicationRequest] by its ID
 CommunicationRequest? getCommunicationRequest(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM CommunicationRequest WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM CommunicationRequest WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CommunicationRequest.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

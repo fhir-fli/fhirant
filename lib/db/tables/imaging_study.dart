@@ -24,7 +24,10 @@ void createImagingStudyTables(Database db) {
 }
 
 /// Save a [ImagingStudy] to the database
-bool saveImagingStudy(Database db, ImagingStudy resource) {
+bool saveImagingStudy(
+  Database db,
+  ImagingStudy resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImagingStudy;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveImagingStudy(Database db, ImagingStudy resource) {
 /// Get a [ImagingStudy] by its ID
 ImagingStudy? getImagingStudy(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ImagingStudy WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ImagingStudy WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return ImagingStudy.fromJsonString(result.first['resource'] as String);
+      return ImagingStudy.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

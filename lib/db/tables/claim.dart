@@ -24,7 +24,10 @@ void createClaimTables(Database db) {
 }
 
 /// Save a [Claim] to the database
-bool saveClaim(Database db, Claim resource) {
+bool saveClaim(
+  Database db,
+  Claim resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Claim;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveClaim(Database db, Claim resource) {
 /// Get a [Claim] by its ID
 Claim? getClaim(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Claim WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Claim WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Claim.fromJsonString(result.first['resource'] as String);
+      return Claim.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

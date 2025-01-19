@@ -24,7 +24,10 @@ void createVisionPrescriptionTables(Database db) {
 }
 
 /// Save a [VisionPrescription] to the database
-bool saveVisionPrescription(Database db, VisionPrescription resource) {
+bool saveVisionPrescription(
+  Database db,
+  VisionPrescription resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as VisionPrescription;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveVisionPrescription(Database db, VisionPrescription resource) {
 /// Get a [VisionPrescription] by its ID
 VisionPrescription? getVisionPrescription(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM VisionPrescription WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM VisionPrescription WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return VisionPrescription.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

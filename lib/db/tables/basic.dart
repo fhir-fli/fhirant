@@ -24,7 +24,10 @@ void createBasicTables(Database db) {
 }
 
 /// Save a [Basic] to the database
-bool saveBasic(Database db, Basic resource) {
+bool saveBasic(
+  Database db,
+  Basic resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Basic;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveBasic(Database db, Basic resource) {
 /// Get a [Basic] by its ID
 Basic? getBasic(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Basic WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Basic WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Basic.fromJsonString(result.first['resource'] as String);
+      return Basic.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

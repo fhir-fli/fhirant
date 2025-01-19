@@ -24,7 +24,10 @@ void createConsentTables(Database db) {
 }
 
 /// Save a [Consent] to the database
-bool saveConsent(Database db, Consent resource) {
+bool saveConsent(
+  Database db,
+  Consent resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Consent;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveConsent(Database db, Consent resource) {
 /// Get a [Consent] by its ID
 Consent? getConsent(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Consent WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Consent WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Consent.fromJsonString(result.first['resource'] as String);
+      return Consent.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

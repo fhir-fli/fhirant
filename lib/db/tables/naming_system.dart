@@ -24,7 +24,10 @@ void createNamingSystemTables(Database db) {
 }
 
 /// Save a [NamingSystem] to the database
-bool saveNamingSystem(Database db, NamingSystem resource) {
+bool saveNamingSystem(
+  Database db,
+  NamingSystem resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as NamingSystem;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveNamingSystem(Database db, NamingSystem resource) {
 /// Get a [NamingSystem] by its ID
 NamingSystem? getNamingSystem(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM NamingSystem WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM NamingSystem WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return NamingSystem.fromJsonString(result.first['resource'] as String);
+      return NamingSystem.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

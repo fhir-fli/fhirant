@@ -24,7 +24,10 @@ void createNutritionProductTables(Database db) {
 }
 
 /// Save a [NutritionProduct] to the database
-bool saveNutritionProduct(Database db, NutritionProduct resource) {
+bool saveNutritionProduct(
+  Database db,
+  NutritionProduct resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as NutritionProduct;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveNutritionProduct(Database db, NutritionProduct resource) {
 /// Get a [NutritionProduct] by its ID
 NutritionProduct? getNutritionProduct(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM NutritionProduct WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM NutritionProduct WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return NutritionProduct.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

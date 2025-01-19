@@ -31,7 +31,10 @@ void createConceptMapTables(Database db) {
 }
 
 /// Save a [ConceptMap] canonical resource to the database
-bool saveConceptMap(Database db, ConceptMap resource) {
+bool saveConceptMap(
+  Database db,
+  ConceptMap resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ConceptMap;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveConceptMap(Database db, ConceptMap resource) {
 /// Get a [ConceptMap] canonical resource by its ID
 ConceptMap? getConceptMap(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ConceptMap WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ConceptMap WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ConceptMap.fromJsonString(
         result.first['resource'] as String,

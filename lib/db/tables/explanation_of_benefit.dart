@@ -24,7 +24,10 @@ void createExplanationOfBenefitTables(Database db) {
 }
 
 /// Save a [ExplanationOfBenefit] to the database
-bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
+bool saveExplanationOfBenefit(
+  Database db,
+  ExplanationOfBenefit resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ExplanationOfBenefit;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveExplanationOfBenefit(Database db, ExplanationOfBenefit resource) {
 /// Get a [ExplanationOfBenefit] by its ID
 ExplanationOfBenefit? getExplanationOfBenefit(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM ExplanationOfBenefit WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ExplanationOfBenefit WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ExplanationOfBenefit.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

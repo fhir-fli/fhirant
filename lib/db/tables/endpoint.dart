@@ -24,7 +24,10 @@ void createFhirEndpointTables(Database db) {
 }
 
 /// Save a [FhirEndpoint] to the database
-bool saveFhirEndpoint(Database db, FhirEndpoint resource) {
+bool saveFhirEndpoint(
+  Database db,
+  FhirEndpoint resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirEndpoint;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveFhirEndpoint(Database db, FhirEndpoint resource) {
 /// Get a [FhirEndpoint] by its ID
 FhirEndpoint? getFhirEndpoint(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM FhirEndpoint WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM FhirEndpoint WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return FhirEndpoint.fromJsonString(result.first['resource'] as String);
+      return FhirEndpoint.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

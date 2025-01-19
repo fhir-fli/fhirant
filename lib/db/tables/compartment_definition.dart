@@ -24,7 +24,10 @@ void createCompartmentDefinitionTables(Database db) {
 }
 
 /// Save a [CompartmentDefinition] to the database
-bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
+bool saveCompartmentDefinition(
+  Database db,
+  CompartmentDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CompartmentDefinition;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveCompartmentDefinition(Database db, CompartmentDefinition resource) {
 CompartmentDefinition? getCompartmentDefinition(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM CompartmentDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM CompartmentDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CompartmentDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

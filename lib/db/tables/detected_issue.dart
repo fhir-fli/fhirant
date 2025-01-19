@@ -24,7 +24,10 @@ void createDetectedIssueTables(Database db) {
 }
 
 /// Save a [DetectedIssue] to the database
-bool saveDetectedIssue(Database db, DetectedIssue resource) {
+bool saveDetectedIssue(
+  Database db,
+  DetectedIssue resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DetectedIssue;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveDetectedIssue(Database db, DetectedIssue resource) {
 /// Get a [DetectedIssue] by its ID
 DetectedIssue? getDetectedIssue(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DetectedIssue WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DetectedIssue WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return DetectedIssue.fromJsonString(result.first['resource'] as String);
+      return DetectedIssue.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

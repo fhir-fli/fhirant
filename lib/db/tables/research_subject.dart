@@ -24,7 +24,10 @@ void createResearchSubjectTables(Database db) {
 }
 
 /// Save a [ResearchSubject] to the database
-bool saveResearchSubject(Database db, ResearchSubject resource) {
+bool saveResearchSubject(
+  Database db,
+  ResearchSubject resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ResearchSubject;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveResearchSubject(Database db, ResearchSubject resource) {
 /// Get a [ResearchSubject] by its ID
 ResearchSubject? getResearchSubject(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ResearchSubject WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ResearchSubject WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return ResearchSubject.fromJsonString(result.first['resource'] as String);
+      return ResearchSubject.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

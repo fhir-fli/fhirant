@@ -24,7 +24,10 @@ void createMedicationStatementTables(Database db) {
 }
 
 /// Save a [MedicationStatement] to the database
-bool saveMedicationStatement(Database db, MedicationStatement resource) {
+bool saveMedicationStatement(
+  Database db,
+  MedicationStatement resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MedicationStatement;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveMedicationStatement(Database db, MedicationStatement resource) {
 /// Get a [MedicationStatement] by its ID
 MedicationStatement? getMedicationStatement(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM MedicationStatement WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MedicationStatement WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MedicationStatement.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

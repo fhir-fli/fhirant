@@ -24,7 +24,10 @@ void createFhirGroupTables(Database db) {
 }
 
 /// Save a [FhirGroup] to the database
-bool saveFhirGroup(Database db, FhirGroup resource) {
+bool saveFhirGroup(
+  Database db,
+  FhirGroup resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveFhirGroup(Database db, FhirGroup resource) {
 /// Get a [FhirGroup] by its ID
 FhirGroup? getFhirGroup(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM FhirGroup WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM FhirGroup WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return FhirGroup.fromJsonString(result.first['resource'] as String);
+      return FhirGroup.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

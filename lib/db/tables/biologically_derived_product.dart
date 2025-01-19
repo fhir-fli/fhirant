@@ -25,7 +25,9 @@ void createBiologicallyDerivedProductTables(Database db) {
 
 /// Save a [BiologicallyDerivedProduct] to the database
 bool saveBiologicallyDerivedProduct(
-    Database db, BiologicallyDerivedProduct resource) {
+  Database db,
+  BiologicallyDerivedProduct resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as BiologicallyDerivedProduct;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ BiologicallyDerivedProduct? getBiologicallyDerivedProduct(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM BiologicallyDerivedProduct WHERE id = ?', [id]);
+      'SELECT resource FROM BiologicallyDerivedProduct WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return BiologicallyDerivedProduct.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

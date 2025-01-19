@@ -31,7 +31,10 @@ void createCapabilityStatementTables(Database db) {
 }
 
 /// Save a [CapabilityStatement] canonical resource to the database
-bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
+bool saveCapabilityStatement(
+  Database db,
+  CapabilityStatement resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CapabilityStatement;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
 /// Get a [CapabilityStatement] canonical resource by its ID
 CapabilityStatement? getCapabilityStatement(Database db, String id) {
   try {
-    final result = db
-        .select('SELECT resource FROM CapabilityStatement WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM CapabilityStatement WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CapabilityStatement.fromJsonString(
         result.first['resource'] as String,

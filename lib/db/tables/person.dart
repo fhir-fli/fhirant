@@ -24,7 +24,10 @@ void createPersonTables(Database db) {
 }
 
 /// Save a [Person] to the database
-bool savePerson(Database db, Person resource) {
+bool savePerson(
+  Database db,
+  Person resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Person;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool savePerson(Database db, Person resource) {
 /// Get a [Person] by its ID
 Person? getPerson(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Person WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Person WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Person.fromJsonString(result.first['resource'] as String);
+      return Person.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

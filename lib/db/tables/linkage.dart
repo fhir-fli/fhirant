@@ -24,7 +24,10 @@ void createLinkageTables(Database db) {
 }
 
 /// Save a [Linkage] to the database
-bool saveLinkage(Database db, Linkage resource) {
+bool saveLinkage(
+  Database db,
+  Linkage resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Linkage;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveLinkage(Database db, Linkage resource) {
 /// Get a [Linkage] by its ID
 Linkage? getLinkage(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Linkage WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Linkage WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Linkage.fromJsonString(result.first['resource'] as String);
+      return Linkage.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

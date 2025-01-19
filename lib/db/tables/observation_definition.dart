@@ -24,7 +24,10 @@ void createObservationDefinitionTables(Database db) {
 }
 
 /// Save a [ObservationDefinition] to the database
-bool saveObservationDefinition(Database db, ObservationDefinition resource) {
+bool saveObservationDefinition(
+  Database db,
+  ObservationDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ObservationDefinition;
   final id = updatedResource.id?.value;
@@ -79,10 +82,13 @@ bool saveObservationDefinition(Database db, ObservationDefinition resource) {
 ObservationDefinition? getObservationDefinition(Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ObservationDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM ObservationDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ObservationDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

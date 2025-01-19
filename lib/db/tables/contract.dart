@@ -24,7 +24,10 @@ void createContractTables(Database db) {
 }
 
 /// Save a [Contract] to the database
-bool saveContract(Database db, Contract resource) {
+bool saveContract(
+  Database db,
+  Contract resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Contract;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveContract(Database db, Contract resource) {
 /// Get a [Contract] by its ID
 Contract? getContract(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Contract WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Contract WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Contract.fromJsonString(result.first['resource'] as String);
+      return Contract.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

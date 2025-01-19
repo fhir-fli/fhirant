@@ -24,7 +24,10 @@ void createAppointmentTables(Database db) {
 }
 
 /// Save a [Appointment] to the database
-bool saveAppointment(Database db, Appointment resource) {
+bool saveAppointment(
+  Database db,
+  Appointment resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Appointment;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveAppointment(Database db, Appointment resource) {
 /// Get a [Appointment] by its ID
 Appointment? getAppointment(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Appointment WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Appointment WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Appointment.fromJsonString(result.first['resource'] as String);
+      return Appointment.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

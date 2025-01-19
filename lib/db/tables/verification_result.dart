@@ -24,7 +24,10 @@ void createVerificationResultTables(Database db) {
 }
 
 /// Save a [VerificationResult] to the database
-bool saveVerificationResult(Database db, VerificationResult resource) {
+bool saveVerificationResult(
+  Database db,
+  VerificationResult resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as VerificationResult;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveVerificationResult(Database db, VerificationResult resource) {
 /// Get a [VerificationResult] by its ID
 VerificationResult? getVerificationResult(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM VerificationResult WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM VerificationResult WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return VerificationResult.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

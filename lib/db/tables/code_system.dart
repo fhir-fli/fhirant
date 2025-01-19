@@ -31,7 +31,10 @@ void createCodeSystemTables(Database db) {
 }
 
 /// Save a [CodeSystem] canonical resource to the database
-bool saveCodeSystem(Database db, CodeSystem resource) {
+bool saveCodeSystem(
+  Database db,
+  CodeSystem resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CodeSystem;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool saveCodeSystem(Database db, CodeSystem resource) {
 /// Get a [CodeSystem] canonical resource by its ID
 CodeSystem? getCodeSystem(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM CodeSystem WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM CodeSystem WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return CodeSystem.fromJsonString(
         result.first['resource'] as String,

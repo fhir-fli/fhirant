@@ -24,7 +24,10 @@ void createTestReportTables(Database db) {
 }
 
 /// Save a [TestReport] to the database
-bool saveTestReport(Database db, TestReport resource) {
+bool saveTestReport(
+  Database db,
+  TestReport resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TestReport;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveTestReport(Database db, TestReport resource) {
 /// Get a [TestReport] by its ID
 TestReport? getTestReport(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM TestReport WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM TestReport WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return TestReport.fromJsonString(result.first['resource'] as String);
+      return TestReport.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

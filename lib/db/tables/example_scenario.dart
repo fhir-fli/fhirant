@@ -24,7 +24,10 @@ void createExampleScenarioTables(Database db) {
 }
 
 /// Save a [ExampleScenario] to the database
-bool saveExampleScenario(Database db, ExampleScenario resource) {
+bool saveExampleScenario(
+  Database db,
+  ExampleScenario resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ExampleScenario;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveExampleScenario(Database db, ExampleScenario resource) {
 /// Get a [ExampleScenario] by its ID
 ExampleScenario? getExampleScenario(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ExampleScenario WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ExampleScenario WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return ExampleScenario.fromJsonString(result.first['resource'] as String);
+      return ExampleScenario.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

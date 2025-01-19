@@ -31,7 +31,10 @@ void createPlanDefinitionTables(Database db) {
 }
 
 /// Save a [PlanDefinition] canonical resource to the database
-bool savePlanDefinition(Database db, PlanDefinition resource) {
+bool savePlanDefinition(
+  Database db,
+  PlanDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PlanDefinition;
   final id = updatedResource.id?.value;
@@ -97,8 +100,10 @@ bool savePlanDefinition(Database db, PlanDefinition resource) {
 /// Get a [PlanDefinition] canonical resource by its ID
 PlanDefinition? getPlanDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM PlanDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM PlanDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PlanDefinition.fromJsonString(
         result.first['resource'] as String,

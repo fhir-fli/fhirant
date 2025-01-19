@@ -24,7 +24,10 @@ void createGoalTables(Database db) {
 }
 
 /// Save a [Goal] to the database
-bool saveGoal(Database db, Goal resource) {
+bool saveGoal(
+  Database db,
+  Goal resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Goal;
   final id = updatedResource.id?.value;
@@ -78,9 +81,14 @@ bool saveGoal(Database db, Goal resource) {
 /// Get a [Goal] by its ID
 Goal? getGoal(Database db, String id) {
   try {
-    final result = db.select('SELECT resource FROM Goal WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Goal WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Goal.fromJsonString(result.first['resource'] as String);
+      return Goal.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

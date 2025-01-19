@@ -24,7 +24,10 @@ void createScheduleTables(Database db) {
 }
 
 /// Save a [Schedule] to the database
-bool saveSchedule(Database db, Schedule resource) {
+bool saveSchedule(
+  Database db,
+  Schedule resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Schedule;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveSchedule(Database db, Schedule resource) {
 /// Get a [Schedule] by its ID
 Schedule? getSchedule(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM Schedule WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM Schedule WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Schedule.fromJsonString(result.first['resource'] as String);
+      return Schedule.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

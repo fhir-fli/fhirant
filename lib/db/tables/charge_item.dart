@@ -24,7 +24,10 @@ void createChargeItemTables(Database db) {
 }
 
 /// Save a [ChargeItem] to the database
-bool saveChargeItem(Database db, ChargeItem resource) {
+bool saveChargeItem(
+  Database db,
+  ChargeItem resource,
+) {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ChargeItem;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveChargeItem(Database db, ChargeItem resource) {
 /// Get a [ChargeItem] by its ID
 ChargeItem? getChargeItem(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ChargeItem WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ChargeItem WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return ChargeItem.fromJsonString(result.first['resource'] as String);
+      return ChargeItem.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

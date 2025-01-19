@@ -25,7 +25,9 @@ void createResearchElementDefinitionTables(Database db) {
 
 /// Save a [ResearchElementDefinition] to the database
 bool saveResearchElementDefinition(
-    Database db, ResearchElementDefinition resource) {
+  Database db,
+  ResearchElementDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ResearchElementDefinition;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ ResearchElementDefinition? getResearchElementDefinition(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM ResearchElementDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM ResearchElementDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return ResearchElementDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

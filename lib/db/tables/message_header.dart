@@ -24,7 +24,10 @@ void createMessageHeaderTables(Database db) {
 }
 
 /// Save a [MessageHeader] to the database
-bool saveMessageHeader(Database db, MessageHeader resource) {
+bool saveMessageHeader(
+  Database db,
+  MessageHeader resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MessageHeader;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveMessageHeader(Database db, MessageHeader resource) {
 /// Get a [MessageHeader] by its ID
 MessageHeader? getMessageHeader(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM MessageHeader WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM MessageHeader WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return MessageHeader.fromJsonString(result.first['resource'] as String);
+      return MessageHeader.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

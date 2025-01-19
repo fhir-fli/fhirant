@@ -24,7 +24,10 @@ void createServiceRequestTables(Database db) {
 }
 
 /// Save a [ServiceRequest] to the database
-bool saveServiceRequest(Database db, ServiceRequest resource) {
+bool saveServiceRequest(
+  Database db,
+  ServiceRequest resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ServiceRequest;
   final id = updatedResource.id?.value;
@@ -78,10 +81,14 @@ bool saveServiceRequest(Database db, ServiceRequest resource) {
 /// Get a [ServiceRequest] by its ID
 ServiceRequest? getServiceRequest(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM ServiceRequest WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM ServiceRequest WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return ServiceRequest.fromJsonString(result.first['resource'] as String);
+      return ServiceRequest.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

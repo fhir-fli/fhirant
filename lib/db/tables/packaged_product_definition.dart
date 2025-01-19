@@ -25,7 +25,9 @@ void createPackagedProductDefinitionTables(Database db) {
 
 /// Save a [PackagedProductDefinition] to the database
 bool savePackagedProductDefinition(
-    Database db, PackagedProductDefinition resource) {
+  Database db,
+  PackagedProductDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PackagedProductDefinition;
   final id = updatedResource.id?.value;
@@ -81,10 +83,13 @@ PackagedProductDefinition? getPackagedProductDefinition(
     Database db, String id) {
   try {
     final result = db.select(
-        'SELECT resource FROM PackagedProductDefinition WHERE id = ?', [id]);
+      'SELECT resource FROM PackagedProductDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return PackagedProductDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

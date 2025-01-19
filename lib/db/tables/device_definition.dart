@@ -24,7 +24,10 @@ void createDeviceDefinitionTables(Database db) {
 }
 
 /// Save a [DeviceDefinition] to the database
-bool saveDeviceDefinition(Database db, DeviceDefinition resource) {
+bool saveDeviceDefinition(
+  Database db,
+  DeviceDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DeviceDefinition;
   final id = updatedResource.id?.value;
@@ -78,11 +81,14 @@ bool saveDeviceDefinition(Database db, DeviceDefinition resource) {
 /// Get a [DeviceDefinition] by its ID
 DeviceDefinition? getDeviceDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM DeviceDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM DeviceDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return DeviceDefinition.fromJsonString(
-          result.first['resource'] as String);
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print
