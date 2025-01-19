@@ -17,9 +17,11 @@ void createSearchParameterTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',)
+      'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',)
+      'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT PRIMARY KEY,

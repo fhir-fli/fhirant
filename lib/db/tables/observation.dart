@@ -47,6 +47,26 @@ bool saveObservation(Database db, Observation observation) {
       ?.millisecondsSinceEpoch;
 
   try {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Observation WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
+        INSERT INTO ObservationHistory (
+          id, lastUpdated, resource
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
+    }
+
     db.execute('''
     INSERT INTO Observation (
       id, lastUpdated, resource, patientId, type, value, unit, effectiveDateTime

@@ -118,7 +118,7 @@ $resourceType? get$resourceType(Database db, String id) {
   try {
     final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return $resourceType.fromJsonString(result.first['resource'] as String);
+      return $resourceType.fromJsonString(result.first['resource'] as String,);
     }
   } catch (e) {
     // ignore: avoid_print

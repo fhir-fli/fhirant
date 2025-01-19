@@ -55,6 +55,26 @@ bool savePatient(Database db, Patient patient) {
   final managingOrganization = patient.managingOrganization?.reference?.value;
 
   try {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Patient WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
+        INSERT INTO PatientHistory (
+          id, lastUpdated, resource
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
+    }
+
     db.execute('''
     INSERT INTO Patient (
       id, lastUpdated, resource, active, identifier, family_names, given_names, gender, birthDate, deceased, managingOrganization

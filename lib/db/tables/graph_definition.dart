@@ -17,9 +17,11 @@ void createGraphDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',)
+      'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',)
+      'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -40,7 +42,7 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
- 
+
   try {
     // Check if a resource with the same ID exists
     final existingResource = db.select(

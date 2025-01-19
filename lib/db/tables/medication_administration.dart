@@ -64,6 +64,26 @@ bool saveMedicationAdministration(
   final status = medicationAdmin.status.toString();
 
   try {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM MedicationAdministration WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
+        INSERT INTO MedicationAdministrationHistory (
+          id, lastUpdated, resource
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
+    }
+
     db.execute('''
     INSERT INTO MedicationAdministration (
       id, lastUpdated, resource, patientId, medicationId, effectiveDateTime, status
