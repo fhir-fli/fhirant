@@ -10,14 +10,14 @@ void createImmunizationEvaluationTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImmunizationEvaluation (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImmunizationEvaluationHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -29,7 +29,8 @@ bool saveImmunizationEvaluation(Database db, ImmunizationEvaluation resource) {
       .newIdIfNoId() as ImmunizationEvaluation;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

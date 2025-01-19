@@ -10,14 +10,14 @@ void createDiagnosticReportTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReport (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReportHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -29,7 +29,8 @@ bool saveDiagnosticReport(Database db, DiagnosticReport resource) {
       .newIdIfNoId() as DiagnosticReport;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

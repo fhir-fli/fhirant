@@ -10,14 +10,14 @@ void createCoverageEligibilityResponseTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityResponse (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityResponseHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -32,7 +32,8 @@ bool saveCoverageEligibilityResponse(
       .newIdIfNoId() as CoverageEligibilityResponse;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

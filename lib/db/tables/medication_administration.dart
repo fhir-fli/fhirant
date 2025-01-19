@@ -8,11 +8,11 @@ void createMedicationAdministrationTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS MedicationAdministration (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       medicationId TEXT NOT NULL,
-      effectiveDateTime DATETIME,
+      effectiveDateTime INT,
       status TEXT
     );
   ''')
@@ -42,7 +42,8 @@ bool saveMedicationAdministration(
       updateMeta(medicationAdmin, versionIdAsTime: true).newIdIfNoId();
   final id = medicationAdmin.id?.value;
   final resourceJson = updatedAdmin.toJsonString();
-  final lastUpdated = updatedAdmin.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedAdmin.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = medicationAdmin.subject.reference?.value;
   final medicationId = medicationAdmin.medicationX
       .isAs<CodeableConcept>()
@@ -50,8 +51,10 @@ bool saveMedicationAdministration(
       ?.first
       .code
       ?.value;
-  final effectiveDateTime =
-      medicationAdmin.effectiveX.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final effectiveDateTime = medicationAdmin.effectiveX
+      .isAs<FhirDateTimeBase>()
+      ?.valueDateTime
+      ?.millisecondsSinceEpoch;
   final status = medicationAdmin.status.toString();
 
   try {

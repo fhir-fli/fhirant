@@ -10,14 +10,14 @@ void createCoverageEligibilityRequestTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityRequest (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityRequestHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -32,7 +32,8 @@ bool saveCoverageEligibilityRequest(
       .newIdIfNoId() as CoverageEligibilityRequest;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

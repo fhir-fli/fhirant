@@ -10,14 +10,14 @@ void createConsentTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Consent (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ConsentHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -29,7 +29,8 @@ bool saveConsent(Database db, Consent resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Consent;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

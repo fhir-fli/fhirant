@@ -12,8 +12,8 @@ void createGraphDefinitionTables(Database db) {
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date DATETIME,
-      lastUpdated DATETIME NOT NULL
+      date INT,
+      lastUpdated INT NOT NULL
     );
   ''')
     ..execute(
@@ -37,10 +37,11 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
       .newIdIfNoId() as GraphDefinition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime;
+  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table
@@ -61,8 +62,8 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
     // Insert new version into the main table
     db.execute('''
       INSERT INTO GraphDefinition (
-        id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        id, url, status, date, lastUpdated, resource
+      ) VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         url = excluded.url,
         status = excluded.status,

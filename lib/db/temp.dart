@@ -28,14 +28,14 @@ void create${resourceType}Tables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -46,7 +46,7 @@ bool save$resourceType(Database db, $resourceType resource) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table
@@ -55,7 +55,7 @@ bool save$resourceType(Database db, $resourceType resource) {
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM $resourceType WHERE id = ?;
-      ''', [id]);
+      ''', [id],);
     }
 
     // Insert new version into the main table
@@ -74,6 +74,7 @@ bool save$resourceType(Database db, $resourceType resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: \$e');
     return false;
   }
@@ -87,6 +88,7 @@ $resourceType? get$resourceType(Database db, String id) {
       return $resourceType.fromJsonString(result.first['resource'] as String);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: \$e');
   }
   return null;
@@ -104,9 +106,9 @@ void create${resourceType}Tables(Database db) {
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date DATETIME,
+      date INT,
       title TEXT,
-      lastUpdated DATETIME NOT NULL
+      lastUpdated INT NOT NULL
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url ON $resourceType (url);')
@@ -128,7 +130,7 @@ bool save$resourceType(Database db, $resourceType resource) {
     final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime;
+  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
   final title = updatedResource.title?.value;
 
   try {
@@ -138,7 +140,7 @@ bool save$resourceType(Database db, $resourceType resource) {
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
         ) SELECT id, lastUpdated, resource FROM $resourceType WHERE id = ?;
-      ''', [id]);
+      ''', [id],);
     }
 
     // Insert new version into the main table

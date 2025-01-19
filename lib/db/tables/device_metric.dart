@@ -10,14 +10,14 @@ void createDeviceMetricTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS DeviceMetric (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS DeviceMetricHistory (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
     );
   ''');
@@ -29,7 +29,8 @@ bool saveDeviceMetric(Database db, DeviceMetric resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as DeviceMetric;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

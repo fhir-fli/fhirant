@@ -10,7 +10,7 @@ void createMedicationRequestTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS MedicationRequest (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       medicationId TEXT NOT NULL,
@@ -40,7 +40,8 @@ bool saveMedicationRequest(Database db, MedicationRequest medicationRequest) {
       updateMeta(medicationRequest, versionIdAsTime: true).newIdIfNoId();
   final id = medicationRequest.id?.value;
   final resourceJson = updatedRequest.toJsonString();
-  final lastUpdated = updatedRequest.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedRequest.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = medicationRequest.subject.reference?.value;
   final medicationId = medicationRequest.medicationX
       .isAs<CodeableConcept>()

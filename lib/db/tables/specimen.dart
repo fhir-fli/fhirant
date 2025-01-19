@@ -8,11 +8,11 @@ void createSpecimenTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Specimen (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       type TEXT NOT NULL,
-      collectedDateTime DATETIME,
+      collectedDateTime INT,
       status TEXT
     );
   ''')
@@ -38,11 +38,14 @@ bool saveSpecimen(Database db, Specimen specimen) {
       updateMeta(specimen, versionIdAsTime: true).newIdIfNoId();
   final id = specimen.id?.value;
   final resourceJson = updatedSpecimen.toJsonString();
-  final lastUpdated = updatedSpecimen.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedSpecimen.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = specimen.subject?.reference?.value;
   final type = specimen.type?.coding?.first.code?.value;
-  final collectedDateTime =
-      specimen.collection?.collectedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final collectedDateTime = specimen.collection?.collectedX
+      ?.isAs<FhirDateTimeBase>()
+      ?.valueDateTime
+      ?.millisecondsSinceEpoch;
   final status = specimen.status?.toString();
 
   try {

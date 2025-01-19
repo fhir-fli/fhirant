@@ -12,6 +12,14 @@ void createPatientTables(Database db) {
       id TEXT PRIMARY KEY,
       lastUpdated DATETIME NOT NULL,
       resource TEXT NOT NULL
+      active INTEGER,
+      identifier TEXT,
+      family_names TEXT,
+      given_names TEXT,
+      gender TEXT,
+      birthDate INT,
+      deceased INTEGER,
+      managingOrganization TEXT
     );
   ''')
     ..execute('''
@@ -29,8 +37,10 @@ bool savePatient(Database db, Patient patient) {
       updateMeta(patient, versionIdAsTime: true).newIdIfNoId();
   final id = patient.id?.value;
   final resourceJson = updatedPatient.toJsonString();
-  final lastUpdated = updatedPatient.meta?.lastUpdated?.valueDateTime;
-  final active = patient.active?.value;
+  final lastUpdated =
+      updatedPatient.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final activeBoolean = patient.active?.value;
+  final active = activeBoolean != null ? (activeBoolean ? 1 : 0) : null;
   final identifier =
       patient.identifier?.map((e) => e.value?.value ?? '').join(',');
   final familyNames = patient.name?.map((n) => n.family?.value ?? '').join(',');
@@ -38,9 +48,10 @@ bool savePatient(Database db, Patient patient) {
       ?.map((n) => n.given?.map((e) => e.value).join(' '))
       .join(',');
   final gender = patient.gender?.toString();
-  final birthDate = patient.birthDate?.valueDateTime;
-  final deceased = patient.deceasedX is FhirBoolean &&
+  final birthDate = patient.birthDate?.valueDateTime?.millisecondsSinceEpoch;
+  final deceasedBoolean = patient.deceasedX is FhirBoolean &&
       ((patient.deceasedX! as FhirBoolean).value ?? false);
+  final deceased = deceasedBoolean ? 1 : 0;
   final managingOrganization = patient.managingOrganization?.reference?.value;
 
   try {

@@ -12,9 +12,9 @@ void createValueSetTables(Database db) {
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date DATETIME,
+      date INT,
       title TEXT,
-      lastUpdated DATETIME NOT NULL
+      lastUpdated INT NOT NULL
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
@@ -36,10 +36,11 @@ bool saveValueSet(Database db, ValueSet resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime;
+  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
   final title = updatedResource.title?.value;
 
   try {

@@ -10,11 +10,11 @@ void createProcedureTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Procedure (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       code TEXT NOT NULL,
-      performedDateTime DATETIME,
+      performedDateTime INT,
       status TEXT
     );
   ''')
@@ -39,11 +39,14 @@ bool saveProcedure(Database db, Procedure procedure) {
       updateMeta(procedure, versionIdAsTime: true).newIdIfNoId();
   final id = procedure.id?.value;
   final resourceJson = updatedProcedure.toJsonString();
-  final lastUpdated = updatedProcedure.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedProcedure.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = procedure.subject.reference?.value;
   final code = procedure.code?.coding?.first.code?.value;
-  final performedDateTime =
-      procedure.performedX?.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final performedDateTime = procedure.performedX
+      ?.isAs<FhirDateTimeBase>()
+      ?.valueDateTime
+      ?.millisecondsSinceEpoch;
   final status = procedure.status.toString();
 
   try {

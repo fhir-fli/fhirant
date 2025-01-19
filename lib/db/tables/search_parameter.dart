@@ -12,8 +12,8 @@ void createSearchParameterTables(Database db) {
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date DATETIME,
-      lastUpdated DATETIME NOT NULL
+      date INT,
+      lastUpdated INT NOT NULL
     );
   ''')
     ..execute(
@@ -37,10 +37,11 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
       .newIdIfNoId() as SearchParameter;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime;
+  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

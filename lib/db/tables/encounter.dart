@@ -10,12 +10,12 @@ void createEncounterTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Encounter (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       patientId TEXT NOT NULL,
       type TEXT,
-      startDateTime DATETIME,
-      endDateTime DATETIME,
+      startDateTime INT,
+      endDateTime INT,
       status TEXT
     );
   ''')
@@ -40,11 +40,14 @@ bool saveEncounter(Database db, Encounter encounter) {
       updateMeta(encounter, versionIdAsTime: true).newIdIfNoId();
   final id = encounter.id?.value;
   final resourceJson = updatedEncounter.toJsonString();
-  final lastUpdated = updatedEncounter.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedEncounter.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = encounter.subject?.reference?.value;
   final type = encounter.type?.first.coding?.first.code?.value;
-  final startDateTime = encounter.period?.start?.valueDateTime;
-  final endDateTime = encounter.period?.end?.valueDateTime;
+  final startDateTime =
+      encounter.period?.start?.valueDateTime?.millisecondsSinceEpoch;
+  final endDateTime =
+      encounter.period?.end?.valueDateTime?.millisecondsSinceEpoch;
   final status = encounter.status.toString();
 
   try {

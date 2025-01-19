@@ -12,9 +12,9 @@ void createMeasureTables(Database db) {
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date DATETIME,
+      date INT,
       title TEXT,
-      lastUpdated DATETIME NOT NULL
+      lastUpdated INT NOT NULL
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
@@ -36,10 +36,11 @@ bool saveMeasure(Database db, Measure resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Measure;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime;
+  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
   final title = updatedResource.title?.value;
 
   try {

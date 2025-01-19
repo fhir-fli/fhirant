@@ -8,7 +8,7 @@ void createLocationTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Location (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       name TEXT,
       type TEXT,
@@ -34,7 +34,8 @@ bool saveLocation(Database db, Location location) {
       updateMeta(location, versionIdAsTime: true).newIdIfNoId();
   final id = location.id?.value;
   final resourceJson = updatedLocation.toJsonString();
-  final lastUpdated = updatedLocation.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedLocation.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final name = location.name?.value;
   final type = location.type?.first.coding?.first.code?.value;
   final address = location.address?.text?.value;

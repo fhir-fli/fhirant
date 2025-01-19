@@ -10,8 +10,13 @@ void createConditionTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Condition (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
+      patientId TEXT NOT NULL,
+      clinicalStatus TEXT,
+      verificationStatus TEXT,
+      code TEXT,
+      onsetDateTime INT
     );
   ''')
     ..execute('''
@@ -29,14 +34,17 @@ bool saveCondition(Database db, Condition condition) {
       updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
   final id = condition.id?.value;
   final resourceJson = updatedCondition.toJsonString();
-  final lastUpdated = updatedCondition.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated =
+      updatedCondition.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = condition.subject.reference?.value;
   final clinicalStatus = condition.clinicalStatus?.coding?.first.code?.value;
   final verificationStatus =
       condition.verificationStatus?.coding?.first.code?.value;
   final code = condition.code?.coding?.first.code?.value;
   final onsetDateTime = condition.onsetX is FhirDateTimeBase
-      ? (condition.onsetX! as FhirDateTimeBase).valueDateTime
+      ? (condition.onsetX! as FhirDateTimeBase)
+          .valueDateTime
+          ?.millisecondsSinceEpoch
       : null;
 
   try {

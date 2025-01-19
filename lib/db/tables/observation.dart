@@ -10,8 +10,13 @@ void createObservationTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Observation (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
+      patientId TEXT NOT NULL,
+      type TEXT,
+      value TEXT,
+      unit TEXT,
+      effectiveDateTime INT
     );
   ''')
     ..execute('''
@@ -29,15 +34,17 @@ bool saveObservation(Database db, Observation observation) {
       updateMeta(observation, versionIdAsTime: true).newIdIfNoId();
   final id = observation.id?.value;
   final resourceJson = updatedObservation.toJsonString();
-  final lastUpdated = updatedObservation.meta?.lastUpdated?.valueDateTime;
+  final lastUpdated = updatedObservation
+      .meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final patientId = observation.subject?.reference?.value;
   final type = observation.code.coding?.first.code?.value;
   final value = observation.valueX?.isAs<FhirString>()?.value ??
       observation.valueX?.isAs<Quantity>()?.value.toString();
-
   final unit = observation.valueX?.isAs<Quantity>()?.unit?.value;
-  final effectiveDateTime =
-      observation.effectiveX?.isAs<FhirDateTimeBase>()?.valueDateTime;
+  final effectiveDateTime = observation.effectiveX
+      ?.isAs<FhirDateTimeBase>()
+      ?.valueDateTime
+      ?.millisecondsSinceEpoch;
 
   try {
     db.execute('''
