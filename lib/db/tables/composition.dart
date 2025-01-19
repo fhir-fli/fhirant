@@ -29,7 +29,7 @@ bool saveComposition(Database db, Composition resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Composition;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

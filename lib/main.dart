@@ -52,7 +52,7 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
       final ndjsonFiles = manifestMap.keys
           .where(
             (key) =>
-                key.startsWith('assets/mimic-fhir') && key.endsWith('.ndjson'),
+                key.startsWith('mimic-fhir') && key.endsWith('.ndjson'),
           )
           .toList();
 

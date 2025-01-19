@@ -29,7 +29,7 @@ bool saveOperationOutcome(Database db, OperationOutcome resource) {
       .newIdIfNoId() as OperationOutcome;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

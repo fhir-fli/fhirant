@@ -38,7 +38,7 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
       .newIdIfNoId() as SubscriptionTopic;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime;

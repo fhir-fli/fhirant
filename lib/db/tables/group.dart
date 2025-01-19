@@ -29,7 +29,7 @@ bool saveFhirGroup(Database db, FhirGroup resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

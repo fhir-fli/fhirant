@@ -29,7 +29,7 @@ bool saveDocumentReference(Database db, DocumentReference resource) {
       .newIdIfNoId() as DocumentReference;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table

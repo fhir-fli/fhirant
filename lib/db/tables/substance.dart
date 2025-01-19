@@ -29,7 +29,7 @@ bool saveSubstance(Database db, Substance resource) {
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Substance;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime;
+    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Archive old version in the history table
