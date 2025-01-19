@@ -18,11 +18,9 @@ void createSubscriptionTopicTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopicHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveSubscriptionTopic(Database db, SubscriptionTopic resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM SubscriptionTopic WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM SubscriptionTopic WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO SubscriptionTopicHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM SubscriptionTopic WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

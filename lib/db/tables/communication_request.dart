@@ -33,19 +33,24 @@ bool saveCommunicationRequest(Database db, CommunicationRequest resource) {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM CommunicationRequest WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM CommunicationRequest WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO CommunicationRequestHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM CommunicationRequest WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -77,8 +82,7 @@ CommunicationRequest? getCommunicationRequest(Database db, String id) {
         .select('SELECT resource FROM CommunicationRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CommunicationRequest.fromJsonString(
-        result.first['resource'] as String,
-      );
+          result.first['resource'] as String);
     }
   } catch (e) {
     // ignore: avoid_print

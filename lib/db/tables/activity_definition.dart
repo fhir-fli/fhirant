@@ -18,11 +18,9 @@ void createActivityDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ActivityDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveActivityDefinition(Database db, ActivityDefinition resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM ActivityDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM ActivityDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO ActivityDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM ActivityDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

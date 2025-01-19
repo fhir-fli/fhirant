@@ -18,11 +18,9 @@ void createOperationDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveOperationDefinition(Database db, OperationDefinition resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM OperationDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM OperationDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO OperationDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM OperationDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

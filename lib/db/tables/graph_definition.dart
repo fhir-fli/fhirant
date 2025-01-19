@@ -17,11 +17,9 @@ void createGraphDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',)
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',)
     ..execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -42,21 +40,26 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
-
+ 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM GraphDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM GraphDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO GraphDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM GraphDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -93,7 +96,9 @@ GraphDefinition? getGraphDefinition(Database db, String id) {
     final result =
         db.select('SELECT resource FROM GraphDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return GraphDefinition.fromJsonString(result.first['resource'] as String);
+      return GraphDefinition.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

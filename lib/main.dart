@@ -72,7 +72,7 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
           print(resource.path);
         }
         final result = DbService().bulkSaveResourcesOfSameType(resources);
-        if(result){
+        if (result) {
           totalResources += resources.length;
         }
         resources.clear();

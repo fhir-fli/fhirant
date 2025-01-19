@@ -19,8 +19,7 @@ void createValueSetTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ValueSetHistory (
       id TEXT PRIMARY KEY,
@@ -44,16 +43,24 @@ bool saveValueSet(Database db, ValueSet resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM ValueSet WHERE id = ?', [id]).isNotEmpty) {
-      db.execute(
-        '''
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM ValueSet WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO ValueSetHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM ValueSet WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -92,7 +99,9 @@ ValueSet? getValueSet(Database db, String id) {
     final result =
         db.select('SELECT resource FROM ValueSet WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return ValueSet.fromJsonString(result.first['resource'] as String);
+      return ValueSet.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

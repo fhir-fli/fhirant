@@ -25,9 +25,7 @@ void createCoverageEligibilityRequestTables(Database db) {
 
 /// Save a [CoverageEligibilityRequest] to the database
 bool saveCoverageEligibilityRequest(
-  Database db,
-  CoverageEligibilityRequest resource,
-) {
+    Database db, CoverageEligibilityRequest resource) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CoverageEligibilityRequest;
   final id = updatedResource.id?.value;
@@ -36,19 +34,24 @@ bool saveCoverageEligibilityRequest(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM CoverageEligibilityRequest WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM CoverageEligibilityRequest WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO CoverageEligibilityRequestHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM CoverageEligibilityRequest WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -75,18 +78,13 @@ bool saveCoverageEligibilityRequest(
 
 /// Get a [CoverageEligibilityRequest] by its ID
 CoverageEligibilityRequest? getCoverageEligibilityRequest(
-  Database db,
-  String id,
-) {
+    Database db, String id) {
   try {
     final result = db.select(
-      'SELECT resource FROM CoverageEligibilityRequest WHERE id = ?',
-      [id],
-    );
+        'SELECT resource FROM CoverageEligibilityRequest WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return CoverageEligibilityRequest.fromJsonString(
-        result.first['resource'] as String,
-      );
+          result.first['resource'] as String);
     }
   } catch (e) {
     // ignore: avoid_print

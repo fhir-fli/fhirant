@@ -33,16 +33,24 @@ bool saveMedia(Database db, Media resource) {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Media WHERE id = ?', [id]).isNotEmpty) {
-      db.execute(
-        '''
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Media WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO MediaHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Media WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

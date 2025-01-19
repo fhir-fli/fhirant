@@ -17,11 +17,9 @@ void createSearchParameterTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',)
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',)
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT PRIMARY KEY,
@@ -44,26 +42,31 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM SearchParameter WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM SearchParameter WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO SearchParameterHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM SearchParameter WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
     db.execute('''
       INSERT INTO SearchParameter (
-        id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        id, url, status, date, lastUpdated, resource
+      ) VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         url = excluded.url,
         status = excluded.status,
@@ -93,7 +96,9 @@ SearchParameter? getSearchParameter(Database db, String id) {
     final result =
         db.select('SELECT resource FROM SearchParameter WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return SearchParameter.fromJsonString(result.first['resource'] as String);
+      return SearchParameter.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

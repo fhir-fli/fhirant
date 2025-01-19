@@ -18,11 +18,9 @@ void createQuestionnaireTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireHistory (
       id TEXT PRIMARY KEY,
@@ -46,17 +44,24 @@ bool saveQuestionnaire(Database db, Questionnaire resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db
-        .select('SELECT id FROM Questionnaire WHERE id = ?', [id]).isNotEmpty) {
-      db.execute(
-        '''
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Questionnaire WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO QuestionnaireHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Questionnaire WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -95,7 +100,9 @@ Questionnaire? getQuestionnaire(Database db, String id) {
     final result =
         db.select('SELECT resource FROM Questionnaire WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return Questionnaire.fromJsonString(result.first['resource'] as String);
+      return Questionnaire.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

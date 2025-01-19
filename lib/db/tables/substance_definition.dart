@@ -33,19 +33,24 @@ bool saveSubstanceDefinition(Database db, SubstanceDefinition resource) {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM SubstanceDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM SubstanceDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO SubstanceDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM SubstanceDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -77,8 +82,7 @@ SubstanceDefinition? getSubstanceDefinition(Database db, String id) {
         .select('SELECT resource FROM SubstanceDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return SubstanceDefinition.fromJsonString(
-        result.first['resource'] as String,
-      );
+          result.first['resource'] as String);
     }
   } catch (e) {
     // ignore: avoid_print

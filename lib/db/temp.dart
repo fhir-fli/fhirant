@@ -8,14 +8,36 @@ void main() {
     fileString += "import 'package:fhir_r4/fhir_r4.dart';\n";
     fileString += "import 'package:sqlite3/sqlite3.dart';\n\n";
 
-    if (resource.isCanonicalResource) {
-      fileString += canonicalTableCreate(resource);
-    } else {
-      fileString += baseTableCreate(resource);
-    }
+    if (![
+      'Condition',
+      'Encounter',
+      'Location',
+      'MedicationAdministration',
+      'MedicationDispense',
+      'MedicationRequest',
+      'Medication',
+      'Observation',
+      'Patient',
+      'Procedure',
+      'Specimen',
+    ].contains(resource)) {
+      if (resource.isCanonicalResource) {
+        if (['Endpoint', 'Group', 'List'].contains(resource)) {
+          fileString += canonicalTableCreate('Fhir$resource');
+        } else {
+          fileString += canonicalTableCreate(resource);
+        }
+      } else {
+        if (['Endpoint', 'Group', 'List'].contains(resource)) {
+          fileString += baseTableCreate('Fhir$resource');
+        } else {
+          fileString += baseTableCreate(resource);
+        }
+      }
 
-    final fileName = resource.toLowerSnakeCase();
-    File('tables/$fileName.dart').writeAsStringSync(fileString);
+      final fileName = resource.toLowerSnakeCase();
+      File('tables/$fileName.dart').writeAsStringSync(fileString);
+    }
   }
 }
 
@@ -49,13 +71,24 @@ bool save$resourceType(Database db, $resourceType resource) {
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM $resourceType WHERE id = ?', [id]).isNotEmpty) {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
       db.execute('''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM $resourceType WHERE id = ?;
-      ''', [id],);
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -134,13 +167,24 @@ bool save$resourceType(Database db, $resourceType resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM $resourceType WHERE id = ?', [id]).isNotEmpty) {
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
       db.execute('''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM $resourceType WHERE id = ?;
-      ''', [id],);
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -167,6 +211,7 @@ bool save$resourceType(Database db, $resourceType resource) {
 
     return true;
   } catch (e) {
+    // ignore: avoid_print
     print('Error saving resource: \$e');
     return false;
   }
@@ -177,9 +222,10 @@ $resourceType? get$resourceType(Database db, String id) {
   try {
     final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return $resourceType.fromJsonString(result.first['resource'] as String);
+      return $resourceType.fromJsonString(result.first['resource'] as String,);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('Error retrieving resource: \$e');
   }
   return null;

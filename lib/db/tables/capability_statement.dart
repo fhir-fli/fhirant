@@ -18,11 +18,9 @@ void createCapabilityStatementTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatementHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveCapabilityStatement(Database db, CapabilityStatement resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM CapabilityStatement WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM CapabilityStatement WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO CapabilityStatementHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM CapabilityStatement WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

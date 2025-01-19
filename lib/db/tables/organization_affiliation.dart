@@ -25,9 +25,7 @@ void createOrganizationAffiliationTables(Database db) {
 
 /// Save a [OrganizationAffiliation] to the database
 bool saveOrganizationAffiliation(
-  Database db,
-  OrganizationAffiliation resource,
-) {
+    Database db, OrganizationAffiliation resource) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OrganizationAffiliation;
   final id = updatedResource.id?.value;
@@ -36,19 +34,24 @@ bool saveOrganizationAffiliation(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM OrganizationAffiliation WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM OrganizationAffiliation WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO OrganizationAffiliationHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM OrganizationAffiliation WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -77,13 +80,10 @@ bool saveOrganizationAffiliation(
 OrganizationAffiliation? getOrganizationAffiliation(Database db, String id) {
   try {
     final result = db.select(
-      'SELECT resource FROM OrganizationAffiliation WHERE id = ?',
-      [id],
-    );
+        'SELECT resource FROM OrganizationAffiliation WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return OrganizationAffiliation.fromJsonString(
-        result.first['resource'] as String,
-      );
+          result.first['resource'] as String);
     }
   } catch (e) {
     // ignore: avoid_print

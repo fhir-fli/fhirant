@@ -18,11 +18,9 @@ void createEventDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveEventDefinition(Database db, EventDefinition resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM EventDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM EventDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO EventDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM EventDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -97,7 +100,9 @@ EventDefinition? getEventDefinition(Database db, String id) {
     final result =
         db.select('SELECT resource FROM EventDefinition WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return EventDefinition.fromJsonString(result.first['resource'] as String);
+      return EventDefinition.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

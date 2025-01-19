@@ -18,11 +18,9 @@ void createCodeSystemTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS CodeSystemHistory (
       id TEXT PRIMARY KEY,
@@ -46,16 +44,24 @@ bool saveCodeSystem(Database db, CodeSystem resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM CodeSystem WHERE id = ?', [id]).isNotEmpty) {
-      db.execute(
-        '''
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM CodeSystem WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO CodeSystemHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM CodeSystem WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -94,7 +100,9 @@ CodeSystem? getCodeSystem(Database db, String id) {
     final result =
         db.select('SELECT resource FROM CodeSystem WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return CodeSystem.fromJsonString(result.first['resource'] as String);
+      return CodeSystem.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

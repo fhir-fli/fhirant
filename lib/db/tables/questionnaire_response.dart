@@ -33,19 +33,24 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM QuestionnaireResponse WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM QuestionnaireResponse WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO QuestionnaireResponseHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM QuestionnaireResponse WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -74,13 +79,10 @@ bool saveQuestionnaireResponse(Database db, QuestionnaireResponse resource) {
 QuestionnaireResponse? getQuestionnaireResponse(Database db, String id) {
   try {
     final result = db.select(
-      'SELECT resource FROM QuestionnaireResponse WHERE id = ?',
-      [id],
-    );
+        'SELECT resource FROM QuestionnaireResponse WHERE id = ?', [id]);
     if (result.isNotEmpty) {
       return QuestionnaireResponse.fromJsonString(
-        result.first['resource'] as String,
-      );
+          result.first['resource'] as String);
     }
   } catch (e) {
     // ignore: avoid_print

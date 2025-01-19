@@ -18,11 +18,9 @@ void createImplementationGuideTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuideHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveImplementationGuide(Database db, ImplementationGuide resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM ImplementationGuide WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM ImplementationGuide WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO ImplementationGuideHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM ImplementationGuide WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

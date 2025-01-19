@@ -18,11 +18,9 @@ void createStructureDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureDefinitionHistory (
       id TEXT PRIMARY KEY,
@@ -46,19 +44,24 @@ bool saveStructureDefinition(Database db, StructureDefinition resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select(
-      'SELECT id FROM StructureDefinition WHERE id = ?',
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM StructureDefinition WHERE id = ?',
       [id],
-    ).isNotEmpty) {
-      db.execute(
-        '''
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO StructureDefinitionHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM StructureDefinition WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table

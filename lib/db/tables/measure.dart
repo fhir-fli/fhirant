@@ -19,8 +19,7 @@ void createMeasureTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
     ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);',
-    )
+        'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS MeasureHistory (
       id TEXT PRIMARY KEY,
@@ -44,16 +43,24 @@ bool saveMeasure(Database db, Measure resource) {
   final title = updatedResource.title?.value;
 
   try {
-    // Archive old version in the history table
-    if (db.select('SELECT id FROM Measure WHERE id = ?', [id]).isNotEmpty) {
-      db.execute(
-        '''
+    // Check if a resource with the same ID exists
+    final existingResource = db.select(
+      'SELECT id, resource, lastUpdated FROM Measure WHERE id = ?',
+      [id],
+    );
+
+    if (existingResource.isNotEmpty) {
+      // Insert the current version into the history table before updating
+      final oldResource = existingResource.first;
+      db.execute('''
         INSERT INTO MeasureHistory (
           id, lastUpdated, resource
-        ) SELECT id, lastUpdated, resource FROM Measure WHERE id = ?;
-      ''',
-        [id],
-      );
+        ) VALUES (?, ?, ?);
+      ''', [
+        oldResource['id'],
+        oldResource['lastUpdated'],
+        oldResource['resource'],
+      ]);
     }
 
     // Insert new version into the main table
@@ -91,7 +98,9 @@ Measure? getMeasure(Database db, String id) {
   try {
     final result = db.select('SELECT resource FROM Measure WHERE id = ?', [id]);
     if (result.isNotEmpty) {
-      return Measure.fromJsonString(result.first['resource'] as String);
+      return Measure.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print
