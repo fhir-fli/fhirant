@@ -24,8 +24,8 @@ void createSearchParameterTables(Database db) {
     )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
-      id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      id TEXT NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
     );

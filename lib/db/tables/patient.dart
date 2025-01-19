@@ -10,7 +10,7 @@ void createPatientTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Patient (
       id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       active INTEGER,
       identifier TEXT,
@@ -24,8 +24,8 @@ void createPatientTables(Database db) {
   ''')
     ..execute('''
     CREATE TABLE IF NOT EXISTS PatientHistory (
-      id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      id TEXT NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
     );

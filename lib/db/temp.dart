@@ -149,8 +149,8 @@ void create${resourceType}Tables(Database db) {
     ..execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_status ON $resourceType (status);')
     ..execute('''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
-      id TEXT PRIMARY KEY,
-      lastUpdated DATETIME NOT NULL,
+      id TEXT NOT NULL,
+      lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
     );
