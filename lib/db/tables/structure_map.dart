@@ -18,9 +18,11 @@ void createStructureMapTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureMapHistory (
       id TEXT PRIMARY KEY,

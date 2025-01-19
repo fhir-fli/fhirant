@@ -18,9 +18,11 @@ void createOperationDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT PRIMARY KEY,

@@ -80,7 +80,9 @@ bool saveCoverageEligibilityRequest(
 
 /// Get a [CoverageEligibilityRequest] by its ID
 CoverageEligibilityRequest? getCoverageEligibilityRequest(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM CoverageEligibilityRequest WHERE id = ?',

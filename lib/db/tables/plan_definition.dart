@@ -18,9 +18,11 @@ void createPlanDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinitionHistory (
       id TEXT PRIMARY KEY,

@@ -80,7 +80,9 @@ bool saveManufacturedItemDefinition(
 
 /// Get a [ManufacturedItemDefinition] by its ID
 ManufacturedItemDefinition? getManufacturedItemDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM ManufacturedItemDefinition WHERE id = ?',

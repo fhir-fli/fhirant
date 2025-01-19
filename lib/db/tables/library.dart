@@ -19,7 +19,8 @@ void createLibraryTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_library_url ON Library (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);')
+      'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS LibraryHistory (
       id TEXT PRIMARY KEY,

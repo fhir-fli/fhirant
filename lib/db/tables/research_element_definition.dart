@@ -80,7 +80,9 @@ bool saveResearchElementDefinition(
 
 /// Get a [ResearchElementDefinition] by its ID
 ResearchElementDefinition? getResearchElementDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM ResearchElementDefinition WHERE id = ?',

@@ -80,7 +80,9 @@ bool saveMedicinalProductDefinition(
 
 /// Get a [MedicinalProductDefinition] by its ID
 MedicinalProductDefinition? getMedicinalProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM MedicinalProductDefinition WHERE id = ?',

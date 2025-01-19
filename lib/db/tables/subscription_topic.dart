@@ -18,9 +18,11 @@ void createSubscriptionTopicTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);')
+      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);')
+      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopicHistory (
       id TEXT PRIMARY KEY,

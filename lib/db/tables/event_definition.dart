@@ -18,9 +18,11 @@ void createEventDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT PRIMARY KEY,

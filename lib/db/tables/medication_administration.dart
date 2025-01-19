@@ -66,6 +66,7 @@ bool saveMedicationAdministration(
   try {
     // Check if a resource with the same ID exists
     final existingResource = db.select(
+      // ignore: lines_longer_than_80_chars
       'SELECT id, resource, lastUpdated FROM MedicationAdministration WHERE id = ?',
       [id],
     );

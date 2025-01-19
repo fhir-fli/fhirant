@@ -18,9 +18,11 @@ void createConceptMapTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);')
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);')
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ConceptMapHistory (
       id TEXT PRIMARY KEY,

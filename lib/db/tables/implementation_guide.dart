@@ -18,9 +18,11 @@ void createImplementationGuideTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);')
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);')
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuideHistory (
       id TEXT PRIMARY KEY,

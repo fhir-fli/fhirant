@@ -80,7 +80,9 @@ bool saveAdministrableProductDefinition(
 
 /// Get a [AdministrableProductDefinition] by its ID
 AdministrableProductDefinition? getAdministrableProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',

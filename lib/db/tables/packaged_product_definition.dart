@@ -80,7 +80,9 @@ bool savePackagedProductDefinition(
 
 /// Get a [PackagedProductDefinition] by its ID
 PackagedProductDefinition? getPackagedProductDefinition(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM PackagedProductDefinition WHERE id = ?',

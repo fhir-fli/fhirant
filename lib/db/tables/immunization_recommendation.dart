@@ -80,7 +80,9 @@ bool saveImmunizationRecommendation(
 
 /// Get a [ImmunizationRecommendation] by its ID
 ImmunizationRecommendation? getImmunizationRecommendation(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM ImmunizationRecommendation WHERE id = ?',

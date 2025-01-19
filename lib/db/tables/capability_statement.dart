@@ -18,9 +18,11 @@ void createCapabilityStatementTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);')
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);')
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatementHistory (
       id TEXT PRIMARY KEY,

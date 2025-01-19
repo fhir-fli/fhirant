@@ -18,9 +18,11 @@ void createCodeSystemTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);')
+      'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);')
+      'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS CodeSystemHistory (
       id TEXT PRIMARY KEY,

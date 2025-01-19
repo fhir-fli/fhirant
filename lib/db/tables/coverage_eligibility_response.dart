@@ -80,7 +80,9 @@ bool saveCoverageEligibilityResponse(
 
 /// Get a [CoverageEligibilityResponse] by its ID
 CoverageEligibilityResponse? getCoverageEligibilityResponse(
-    Database db, String id) {
+  Database db,
+  String id,
+) {
   try {
     final result = db.select(
       'SELECT resource FROM CoverageEligibilityResponse WHERE id = ?',

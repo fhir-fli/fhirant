@@ -18,9 +18,11 @@ void createQuestionnaireTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);')
+      'CREATE INDEX IF NOT EXISTS idx_questionnaire_url ON Questionnaire (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);')
+      'CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON Questionnaire (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireHistory (
       id TEXT PRIMARY KEY,

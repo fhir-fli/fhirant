@@ -19,7 +19,8 @@ void createValueSetTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);')
+      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ValueSetHistory (
       id TEXT PRIMARY KEY,

@@ -18,9 +18,11 @@ void createStructureDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_definition_url ON StructureDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_structure_definition_status ON StructureDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS StructureDefinitionHistory (
       id TEXT PRIMARY KEY,

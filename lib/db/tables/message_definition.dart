@@ -18,9 +18,11 @@ void createMessageDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MessageDefinitionHistory (
       id TEXT PRIMARY KEY,

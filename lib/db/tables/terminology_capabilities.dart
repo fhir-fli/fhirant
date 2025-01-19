@@ -18,9 +18,11 @@ void createTerminologyCapabilitiesTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);')
+      'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_url ON TerminologyCapabilities (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);')
+      'CREATE INDEX IF NOT EXISTS idx_terminology_capabilities_status ON TerminologyCapabilities (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS TerminologyCapabilitiesHistory (
       id TEXT PRIMARY KEY,

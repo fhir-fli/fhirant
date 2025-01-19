@@ -19,7 +19,8 @@ void createMeasureTables(Database db) {
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);')
+      'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS MeasureHistory (
       id TEXT PRIMARY KEY,

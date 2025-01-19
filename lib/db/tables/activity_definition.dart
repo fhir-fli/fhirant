@@ -18,9 +18,11 @@ void createActivityDefinitionTables(Database db) {
     );
   ''')
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);')
+      'CREATE INDEX IF NOT EXISTS idx_activity_definition_url ON ActivityDefinition (url);',
+    )
     ..execute(
-        'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);')
+      'CREATE INDEX IF NOT EXISTS idx_activity_definition_status ON ActivityDefinition (status);',
+    )
     ..execute('''
     CREATE TABLE IF NOT EXISTS ActivityDefinitionHistory (
       id TEXT PRIMARY KEY,
