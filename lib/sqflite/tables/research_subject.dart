@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ResearchSubject] resources
-Future<void> createResearchSubjectTables(Database db)  async {
+Future<void> createResearchSubjectTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ResearchSubject (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createResearchSubjectTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ResearchSubjectHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createResearchSubjectTables(Database db)  async {
 }
 
 /// Save a [ResearchSubject] to the database
-Future<bool> saveResearchSubject(
-  Database db,
-  ResearchSubject resource,
-) async {
+Future<bool> saveResearchSubject(Database db, ResearchSubject resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ResearchSubject;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveResearchSubject(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ResearchSubject WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveResearchSubject(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ResearchSubjectHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveResearchSubject(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ResearchSubject (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ResearchSubject (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveResearchSubject(
 }
 
 /// Get a [ResearchSubject] by its ID
-ResearchSubject? getResearchSubject(Database db, String id) {
+Future<ResearchSubject?> getResearchSubject(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ResearchSubject WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ResearchSubject.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

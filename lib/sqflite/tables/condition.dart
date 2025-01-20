@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Condition] resources
-Future<void> createConditionTables(Database db)  async {
+Future<void> createConditionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Condition (
       id TEXT PRIMARY KEY,
@@ -18,7 +18,7 @@ Future<void> createConditionTables(Database db)  async {
       onsetDateTime INT
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ConditionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -29,7 +29,7 @@ Future<void> createConditionTables(Database db)  async {
 }
 
 /// Save a [Condition] to the database
-Future<bool> saveCondition(Database db, Condition condition) {
+Future<bool> saveCondition(Database db, Condition condition) async {
   final updatedCondition =
       updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
   final id = updatedCondition.id?.value;
@@ -49,7 +49,7 @@ Future<bool> saveCondition(Database db, Condition condition) {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Condition WHERE id = ?',
       [id],
     );
@@ -57,7 +57,7 @@ Future<bool> saveCondition(Database db, Condition condition) {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ConditionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -69,19 +69,11 @@ Future<bool> saveCondition(Database db, Condition condition) {
     }
 
     // Insert or update the new version in the main table
-    await db.execute('''
-    INSERT INTO Condition (
-      id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      clinicalStatus = excluded.clinicalStatus,
-      verificationStatus = excluded.verificationStatus,
-      code = excluded.code,
-      onsetDateTime = excluded.onsetDateTime;
-  ''', [
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Condition (
+        id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    ''', [
       id,
       lastUpdated,
       resourceJson,
@@ -102,12 +94,14 @@ Future<bool> saveCondition(Database db, Condition condition) {
 }
 
 /// Get a [Condition] by its ID
-Condition? getCondition(Database db, String id) {
+Future<Condition?> getCondition(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM Condition WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Condition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Condition.fromJsonString(result.first['resource'] as String);
+      return Condition.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
     // ignore: avoid_print

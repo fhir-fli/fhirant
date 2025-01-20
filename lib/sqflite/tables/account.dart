@@ -13,7 +13,7 @@ Future<void> createAccountTables(Database db) async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS AccountHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createAccountTables(Database db) async {
 }
 
 /// Save a [Account] to the database
-Future<bool> saveAccount(
-  Database db,
-  Account resource,
-) async {
+Future<bool> saveAccount(Database db, Account resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Account;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveAccount(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Account WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveAccount(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO AccountHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveAccount(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Account (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Account (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveAccount(
 }
 
 /// Get a [Account] by its ID
-Account? getAccount(Database db, String id) {
+Future<Account?> getAccount(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Account WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Account.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

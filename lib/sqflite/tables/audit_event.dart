@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [AuditEvent] resources
-Future<void> createAuditEventTables(Database db)  async {
+Future<void> createAuditEventTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS AuditEvent (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createAuditEventTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS AuditEventHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createAuditEventTables(Database db)  async {
 }
 
 /// Save a [AuditEvent] to the database
-Future<bool> saveAuditEvent(
-  Database db,
-  AuditEvent resource,
-) async {
+Future<bool> saveAuditEvent(Database db, AuditEvent resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AuditEvent;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveAuditEvent(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM AuditEvent WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveAuditEvent(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO AuditEventHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveAuditEvent(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO AuditEvent (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO AuditEvent (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveAuditEvent(
 }
 
 /// Get a [AuditEvent] by its ID
-AuditEvent? getAuditEvent(Database db, String id) {
+Future<AuditEvent?> getAuditEvent(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM AuditEvent WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return AuditEvent.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

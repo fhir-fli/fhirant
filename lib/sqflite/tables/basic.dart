@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Basic] resources
-Future<void> createBasicTables(Database db)  async {
+Future<void> createBasicTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Basic (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createBasicTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS BasicHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createBasicTables(Database db)  async {
 }
 
 /// Save a [Basic] to the database
-Future<bool> saveBasic(
-  Database db,
-  Basic resource,
-) async {
+Future<bool> saveBasic(Database db, Basic resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Basic;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveBasic(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Basic WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveBasic(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO BasicHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveBasic(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Basic (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Basic (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveBasic(
 }
 
 /// Get a [Basic] by its ID
-Basic? getBasic(Database db, String id) {
+Future<Basic?> getBasic(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Basic WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Basic.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [EventDefinition] canonical resources
-Future<void> createEventDefinitionTables(Database db)  async {
+Future<void> createEventDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS EventDefinition (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createEventDefinitionTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -33,10 +31,7 @@ Future<void> createEventDefinitionTables(Database db)  async {
 }
 
 /// Save a [EventDefinition] canonical resource to the database
-Future<bool> saveEventDefinition(
-  Database db,
-  EventDefinition resource,
-) async {
+Future<bool> saveEventDefinition(Database db, EventDefinition resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EventDefinition;
   final id = updatedResource.id?.value;
@@ -50,7 +45,7 @@ Future<bool> saveEventDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM EventDefinition WHERE id = ?',
       [id],
     );
@@ -58,7 +53,7 @@ Future<bool> saveEventDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO EventDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +65,10 @@ Future<bool> saveEventDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO EventDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO EventDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +88,15 @@ Future<bool> saveEventDefinition(
 }
 
 /// Get a [EventDefinition] canonical resource by its ID
-EventDefinition? getEventDefinition(Database db, String id) {
+Future<EventDefinition?> getEventDefinition(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM EventDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return EventDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

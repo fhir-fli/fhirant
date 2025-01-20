@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [TestReport] resources
-Future<void> createTestReportTables(Database db)  async {
+Future<void> createTestReportTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS TestReport (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createTestReportTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS TestReportHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createTestReportTables(Database db)  async {
 }
 
 /// Save a [TestReport] to the database
-Future<bool> saveTestReport(
-  Database db,
-  TestReport resource,
-) async {
+Future<bool> saveTestReport(Database db, TestReport resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TestReport;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveTestReport(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM TestReport WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveTestReport(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO TestReportHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveTestReport(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO TestReport (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO TestReport (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveTestReport(
 }
 
 /// Get a [TestReport] by its ID
-TestReport? getTestReport(Database db, String id) {
+Future<TestReport?> getTestReport(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM TestReport WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return TestReport.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ExplanationOfBenefit] resources
-Future<void> createExplanationOfBenefitTables(Database db)  async {
+Future<void> createExplanationOfBenefitTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ExplanationOfBenefit (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createExplanationOfBenefitTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ExplanationOfBenefitHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createExplanationOfBenefitTables(Database db)  async {
 
 /// Save a [ExplanationOfBenefit] to the database
 Future<bool> saveExplanationOfBenefit(
-  Database db,
-  ExplanationOfBenefit resource,
-) async {
+    Database db, ExplanationOfBenefit resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ExplanationOfBenefit;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveExplanationOfBenefit(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ExplanationOfBenefit WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveExplanationOfBenefit(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ExplanationOfBenefitHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveExplanationOfBenefit(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ExplanationOfBenefit (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ExplanationOfBenefit (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveExplanationOfBenefit(
 }
 
 /// Get a [ExplanationOfBenefit] by its ID
-ExplanationOfBenefit? getExplanationOfBenefit(Database db, String id) {
+Future<ExplanationOfBenefit?> getExplanationOfBenefit(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ExplanationOfBenefit WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ExplanationOfBenefit.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

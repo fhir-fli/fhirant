@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ConceptMap] canonical resources
-Future<void> createConceptMapTables(Database db)  async {
+Future<void> createConceptMapTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ConceptMap (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createConceptMapTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_url ON ConceptMap (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_concept_map_status ON ConceptMap (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ConceptMapHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -33,10 +31,7 @@ Future<void> createConceptMapTables(Database db)  async {
 }
 
 /// Save a [ConceptMap] canonical resource to the database
-Future<bool> saveConceptMap(
-  Database db,
-  ConceptMap resource,
-) async {
+Future<bool> saveConceptMap(Database db, ConceptMap resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ConceptMap;
   final id = updatedResource.id?.value;
@@ -50,7 +45,7 @@ Future<bool> saveConceptMap(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ConceptMap WHERE id = ?',
       [id],
     );
@@ -58,7 +53,7 @@ Future<bool> saveConceptMap(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ConceptMapHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +65,10 @@ Future<bool> saveConceptMap(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ConceptMap (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ConceptMap (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +88,15 @@ Future<bool> saveConceptMap(
 }
 
 /// Get a [ConceptMap] canonical resource by its ID
-ConceptMap? getConceptMap(Database db, String id) {
+Future<ConceptMap?> getConceptMap(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ConceptMap WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ConceptMap.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

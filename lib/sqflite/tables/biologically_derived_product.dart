@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [BiologicallyDerivedProduct] resources
-Future<void> createBiologicallyDerivedProductTables(Database db)  async {
+Future<void> createBiologicallyDerivedProductTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS BiologicallyDerivedProduct (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createBiologicallyDerivedProductTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS BiologicallyDerivedProductHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createBiologicallyDerivedProductTables(Database db)  async {
 
 /// Save a [BiologicallyDerivedProduct] to the database
 Future<bool> saveBiologicallyDerivedProduct(
-  Database db,
-  BiologicallyDerivedProduct resource,
-) async {
+    Database db, BiologicallyDerivedProduct resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as BiologicallyDerivedProduct;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveBiologicallyDerivedProduct(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM BiologicallyDerivedProduct WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveBiologicallyDerivedProduct(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO BiologicallyDerivedProductHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveBiologicallyDerivedProduct(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO BiologicallyDerivedProduct (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO BiologicallyDerivedProduct (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,18 +74,16 @@ Future<bool> saveBiologicallyDerivedProduct(
 }
 
 /// Get a [BiologicallyDerivedProduct] by its ID
-BiologicallyDerivedProduct? getBiologicallyDerivedProduct(
-  Database db,
-  String id,
-) {
+Future<BiologicallyDerivedProduct?> getBiologicallyDerivedProduct(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM BiologicallyDerivedProduct WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return BiologicallyDerivedProduct.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

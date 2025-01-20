@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ImagingStudy] resources
-Future<void> createImagingStudyTables(Database db)  async {
+Future<void> createImagingStudyTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ImagingStudy (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createImagingStudyTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ImagingStudyHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createImagingStudyTables(Database db)  async {
 }
 
 /// Save a [ImagingStudy] to the database
-Future<bool> saveImagingStudy(
-  Database db,
-  ImagingStudy resource,
-) async {
+Future<bool> saveImagingStudy(Database db, ImagingStudy resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImagingStudy;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveImagingStudy(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ImagingStudy WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveImagingStudy(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ImagingStudyHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveImagingStudy(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ImagingStudy (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ImagingStudy (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveImagingStudy(
 }
 
 /// Get a [ImagingStudy] by its ID
-ImagingStudy? getImagingStudy(Database db, String id) {
+Future<ImagingStudy?> getImagingStudy(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ImagingStudy WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ImagingStudy.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

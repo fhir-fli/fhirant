@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Slot] resources
-Future<void> createSlotTables(Database db)  async {
+Future<void> createSlotTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Slot (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createSlotTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SlotHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createSlotTables(Database db)  async {
 }
 
 /// Save a [Slot] to the database
-Future<bool> saveSlot(
-  Database db,
-  Slot resource,
-) async {
+Future<bool> saveSlot(Database db, Slot resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Slot;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveSlot(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Slot WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveSlot(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SlotHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveSlot(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Slot (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Slot (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveSlot(
 }
 
 /// Get a [Slot] by its ID
-Slot? getSlot(Database db, String id) {
+Future<Slot?> getSlot(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Slot WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Slot.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

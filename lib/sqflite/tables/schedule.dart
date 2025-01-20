@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Schedule] resources
-Future<void> createScheduleTables(Database db)  async {
+Future<void> createScheduleTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Schedule (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createScheduleTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ScheduleHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createScheduleTables(Database db)  async {
 }
 
 /// Save a [Schedule] to the database
-Future<bool> saveSchedule(
-  Database db,
-  Schedule resource,
-) async {
+Future<bool> saveSchedule(Database db, Schedule resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Schedule;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveSchedule(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Schedule WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveSchedule(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ScheduleHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveSchedule(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Schedule (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Schedule (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveSchedule(
 }
 
 /// Get a [Schedule] by its ID
-Schedule? getSchedule(Database db, String id) {
+Future<Schedule?> getSchedule(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Schedule WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Schedule.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

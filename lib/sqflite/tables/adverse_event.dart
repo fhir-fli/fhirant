@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [AdverseEvent] resources
-Future<void> createAdverseEventTables(Database db)  async {
+Future<void> createAdverseEventTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS AdverseEvent (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createAdverseEventTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS AdverseEventHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createAdverseEventTables(Database db)  async {
 }
 
 /// Save a [AdverseEvent] to the database
-Future<bool> saveAdverseEvent(
-  Database db,
-  AdverseEvent resource,
-) async {
+Future<bool> saveAdverseEvent(Database db, AdverseEvent resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as AdverseEvent;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveAdverseEvent(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM AdverseEvent WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveAdverseEvent(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO AdverseEventHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveAdverseEvent(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO AdverseEvent (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO AdverseEvent (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveAdverseEvent(
 }
 
 /// Get a [AdverseEvent] by its ID
-AdverseEvent? getAdverseEvent(Database db, String id) {
+Future<AdverseEvent?> getAdverseEvent(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM AdverseEvent WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return AdverseEvent.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

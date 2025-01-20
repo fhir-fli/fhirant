@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [AllergyIntolerance] resources
-Future<void> createAllergyIntoleranceTables(Database db)  async {
+Future<void> createAllergyIntoleranceTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS AllergyIntolerance (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createAllergyIntoleranceTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS AllergyIntoleranceHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createAllergyIntoleranceTables(Database db)  async {
 
 /// Save a [AllergyIntolerance] to the database
 Future<bool> saveAllergyIntolerance(
-  Database db,
-  AllergyIntolerance resource,
-) async {
+    Database db, AllergyIntolerance resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as AllergyIntolerance;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveAllergyIntolerance(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM AllergyIntolerance WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveAllergyIntolerance(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO AllergyIntoleranceHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveAllergyIntolerance(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO AllergyIntolerance (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO AllergyIntolerance (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveAllergyIntolerance(
 }
 
 /// Get a [AllergyIntolerance] by its ID
-AllergyIntolerance? getAllergyIntolerance(Database db, String id) {
+Future<AllergyIntolerance?> getAllergyIntolerance(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM AllergyIntolerance WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return AllergyIntolerance.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

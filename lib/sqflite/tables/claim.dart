@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Claim] resources
-Future<void> createClaimTables(Database db)  async {
+Future<void> createClaimTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Claim (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createClaimTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ClaimHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createClaimTables(Database db)  async {
 }
 
 /// Save a [Claim] to the database
-Future<bool> saveClaim(
-  Database db,
-  Claim resource,
-) async {
+Future<bool> saveClaim(Database db, Claim resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Claim;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveClaim(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Claim WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveClaim(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ClaimHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveClaim(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Claim (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Claim (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveClaim(
 }
 
 /// Get a [Claim] by its ID
-Claim? getClaim(Database db, String id) {
+Future<Claim?> getClaim(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Claim WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Claim.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

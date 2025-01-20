@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Composition] resources
-Future<void> createCompositionTables(Database db)  async {
+Future<void> createCompositionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Composition (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createCompositionTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CompositionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createCompositionTables(Database db)  async {
 }
 
 /// Save a [Composition] to the database
-Future<bool> saveComposition(
-  Database db,
-  Composition resource,
-) async {
+Future<bool> saveComposition(Database db, Composition resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Composition;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveComposition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Composition WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveComposition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CompositionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveComposition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Composition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Composition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveComposition(
 }
 
 /// Get a [Composition] by its ID
-Composition? getComposition(Database db, String id) {
+Future<Composition?> getComposition(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Composition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Composition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

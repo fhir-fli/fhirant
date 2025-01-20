@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [EnrollmentRequest] resources
-Future<void> createEnrollmentRequestTables(Database db)  async {
+Future<void> createEnrollmentRequestTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS EnrollmentRequest (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createEnrollmentRequestTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS EnrollmentRequestHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createEnrollmentRequestTables(Database db)  async {
 
 /// Save a [EnrollmentRequest] to the database
 Future<bool> saveEnrollmentRequest(
-  Database db,
-  EnrollmentRequest resource,
-) async {
+    Database db, EnrollmentRequest resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EnrollmentRequest;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveEnrollmentRequest(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM EnrollmentRequest WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveEnrollmentRequest(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO EnrollmentRequestHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveEnrollmentRequest(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO EnrollmentRequest (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO EnrollmentRequest (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> saveEnrollmentRequest(
 }
 
 /// Get a [EnrollmentRequest] by its ID
-EnrollmentRequest? getEnrollmentRequest(Database db, String id) {
+Future<EnrollmentRequest?> getEnrollmentRequest(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM EnrollmentRequest WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return EnrollmentRequest.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ImmunizationRecommendation] resources
-Future<void> createImmunizationRecommendationTables(Database db)  async {
+Future<void> createImmunizationRecommendationTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ImmunizationRecommendation (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createImmunizationRecommendationTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ImmunizationRecommendationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createImmunizationRecommendationTables(Database db)  async {
 
 /// Save a [ImmunizationRecommendation] to the database
 Future<bool> saveImmunizationRecommendation(
-  Database db,
-  ImmunizationRecommendation resource,
-) async {
+    Database db, ImmunizationRecommendation resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ImmunizationRecommendation;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveImmunizationRecommendation(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ImmunizationRecommendation WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveImmunizationRecommendation(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ImmunizationRecommendationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveImmunizationRecommendation(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ImmunizationRecommendation (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ImmunizationRecommendation (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,18 +74,16 @@ Future<bool> saveImmunizationRecommendation(
 }
 
 /// Get a [ImmunizationRecommendation] by its ID
-ImmunizationRecommendation? getImmunizationRecommendation(
-  Database db,
-  String id,
-) {
+Future<ImmunizationRecommendation?> getImmunizationRecommendation(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ImmunizationRecommendation WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ImmunizationRecommendation.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

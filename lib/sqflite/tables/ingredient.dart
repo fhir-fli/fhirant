@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Ingredient] resources
-Future<void> createIngredientTables(Database db)  async {
+Future<void> createIngredientTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Ingredient (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createIngredientTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS IngredientHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createIngredientTables(Database db)  async {
 }
 
 /// Save a [Ingredient] to the database
-Future<bool> saveIngredient(
-  Database db,
-  Ingredient resource,
-) async {
+Future<bool> saveIngredient(Database db, Ingredient resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Ingredient;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveIngredient(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Ingredient WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveIngredient(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO IngredientHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveIngredient(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Ingredient (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Ingredient (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveIngredient(
 }
 
 /// Get a [Ingredient] by its ID
-Ingredient? getIngredient(Database db, String id) {
+Future<Ingredient?> getIngredient(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Ingredient WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Ingredient.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

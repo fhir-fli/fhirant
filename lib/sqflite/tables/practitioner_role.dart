@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [PractitionerRole] resources
-Future<void> createPractitionerRoleTables(Database db)  async {
+Future<void> createPractitionerRoleTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS PractitionerRole (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createPractitionerRoleTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS PractitionerRoleHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createPractitionerRoleTables(Database db)  async {
 
 /// Save a [PractitionerRole] to the database
 Future<bool> savePractitionerRole(
-  Database db,
-  PractitionerRole resource,
-) async {
+    Database db, PractitionerRole resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PractitionerRole;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> savePractitionerRole(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM PractitionerRole WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> savePractitionerRole(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO PractitionerRoleHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> savePractitionerRole(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO PractitionerRole (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO PractitionerRole (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> savePractitionerRole(
 }
 
 /// Get a [PractitionerRole] by its ID
-PractitionerRole? getPractitionerRole(Database db, String id) {
+Future<PractitionerRole?> getPractitionerRole(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM PractitionerRole WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return PractitionerRole.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

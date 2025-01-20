@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [RiskAssessment] resources
-Future<void> createRiskAssessmentTables(Database db)  async {
+Future<void> createRiskAssessmentTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS RiskAssessment (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createRiskAssessmentTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS RiskAssessmentHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createRiskAssessmentTables(Database db)  async {
 }
 
 /// Save a [RiskAssessment] to the database
-Future<bool> saveRiskAssessment(
-  Database db,
-  RiskAssessment resource,
-) async {
+Future<bool> saveRiskAssessment(Database db, RiskAssessment resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as RiskAssessment;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveRiskAssessment(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM RiskAssessment WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveRiskAssessment(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO RiskAssessmentHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveRiskAssessment(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO RiskAssessment (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO RiskAssessment (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveRiskAssessment(
 }
 
 /// Get a [RiskAssessment] by its ID
-RiskAssessment? getRiskAssessment(Database db, String id) {
+Future<RiskAssessment?> getRiskAssessment(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM RiskAssessment WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return RiskAssessment.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [CapabilityStatement] canonical resources
-Future<void> createCapabilityStatementTables(Database db)  async {
+Future<void> createCapabilityStatementTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatement (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createCapabilityStatementTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_url ON CapabilityStatement (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_capability_statement_status ON CapabilityStatement (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CapabilityStatementHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,9 +32,7 @@ Future<void> createCapabilityStatementTables(Database db)  async {
 
 /// Save a [CapabilityStatement] canonical resource to the database
 Future<bool> saveCapabilityStatement(
-  Database db,
-  CapabilityStatement resource,
-) async {
+    Database db, CapabilityStatement resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CapabilityStatement;
   final id = updatedResource.id?.value;
@@ -50,7 +46,7 @@ Future<bool> saveCapabilityStatement(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM CapabilityStatement WHERE id = ?',
       [id],
     );
@@ -58,7 +54,7 @@ Future<bool> saveCapabilityStatement(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CapabilityStatementHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +66,10 @@ Future<bool> saveCapabilityStatement(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO CapabilityStatement (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO CapabilityStatement (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +89,16 @@ Future<bool> saveCapabilityStatement(
 }
 
 /// Get a [CapabilityStatement] canonical resource by its ID
-CapabilityStatement? getCapabilityStatement(Database db, String id) {
+Future<CapabilityStatement?> getCapabilityStatement(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM CapabilityStatement WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return CapabilityStatement.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ValueSet] canonical resources
-Future<void> createValueSetTables(Database db)  async {
+Future<void> createValueSetTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ValueSet (
       id TEXT PRIMARY KEY,
@@ -16,11 +16,11 @@ Future<void> createValueSetTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ValueSetHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -31,10 +31,7 @@ Future<void> createValueSetTables(Database db)  async {
 }
 
 /// Save a [ValueSet] canonical resource to the database
-Future<bool> saveValueSet(
-  Database db,
-  ValueSet resource,
-) async {
+Future<bool> saveValueSet(Database db, ValueSet resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
   final id = updatedResource.id?.value;
@@ -48,7 +45,7 @@ Future<bool> saveValueSet(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ValueSet WHERE id = ?',
       [id],
     );
@@ -56,7 +53,7 @@ Future<bool> saveValueSet(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ValueSetHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -68,17 +65,10 @@ Future<bool> saveValueSet(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ValueSet (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ValueSet (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -98,15 +88,15 @@ Future<bool> saveValueSet(
 }
 
 /// Get a [ValueSet] canonical resource by its ID
-ValueSet? getValueSet(Database db, String id) {
+Future<ValueSet?> getValueSet(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ValueSet WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ValueSet.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [CodeSystem] canonical resources
-Future<void> createCodeSystemTables(Database db)  async {
+Future<void> createCodeSystemTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS CodeSystem (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createCodeSystemTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_code_system_url ON CodeSystem (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_code_system_status ON CodeSystem (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CodeSystemHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -33,10 +31,7 @@ Future<void> createCodeSystemTables(Database db)  async {
 }
 
 /// Save a [CodeSystem] canonical resource to the database
-Future<bool> saveCodeSystem(
-  Database db,
-  CodeSystem resource,
-) async {
+Future<bool> saveCodeSystem(Database db, CodeSystem resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CodeSystem;
   final id = updatedResource.id?.value;
@@ -50,7 +45,7 @@ Future<bool> saveCodeSystem(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM CodeSystem WHERE id = ?',
       [id],
     );
@@ -58,7 +53,7 @@ Future<bool> saveCodeSystem(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CodeSystemHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +65,10 @@ Future<bool> saveCodeSystem(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO CodeSystem (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO CodeSystem (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +88,15 @@ Future<bool> saveCodeSystem(
 }
 
 /// Get a [CodeSystem] canonical resource by its ID
-CodeSystem? getCodeSystem(Database db, String id) {
+Future<CodeSystem?> getCodeSystem(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM CodeSystem WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return CodeSystem.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

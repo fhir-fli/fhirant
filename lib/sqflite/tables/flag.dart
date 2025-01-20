@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Flag] resources
-Future<void> createFlagTables(Database db)  async {
+Future<void> createFlagTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Flag (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createFlagTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS FlagHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createFlagTables(Database db)  async {
 }
 
 /// Save a [Flag] to the database
-Future<bool> saveFlag(
-  Database db,
-  Flag resource,
-) async {
+Future<bool> saveFlag(Database db, Flag resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Flag;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveFlag(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Flag WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveFlag(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO FlagHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveFlag(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Flag (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Flag (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveFlag(
 }
 
 /// Get a [Flag] by its ID
-Flag? getFlag(Database db, String id) {
+Future<Flag?> getFlag(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Flag WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Flag.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [SpecimenDefinition] resources
-Future<void> createSpecimenDefinitionTables(Database db)  async {
+Future<void> createSpecimenDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS SpecimenDefinition (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createSpecimenDefinitionTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SpecimenDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createSpecimenDefinitionTables(Database db)  async {
 
 /// Save a [SpecimenDefinition] to the database
 Future<bool> saveSpecimenDefinition(
-  Database db,
-  SpecimenDefinition resource,
-) async {
+    Database db, SpecimenDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SpecimenDefinition;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveSpecimenDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM SpecimenDefinition WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveSpecimenDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SpecimenDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveSpecimenDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO SpecimenDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO SpecimenDefinition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveSpecimenDefinition(
 }
 
 /// Get a [SpecimenDefinition] by its ID
-SpecimenDefinition? getSpecimenDefinition(Database db, String id) {
+Future<SpecimenDefinition?> getSpecimenDefinition(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM SpecimenDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return SpecimenDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

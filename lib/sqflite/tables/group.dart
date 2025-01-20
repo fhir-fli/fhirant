@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [FhirGroup] resources
-Future<void> createFhirGroupTables(Database db)  async {
+Future<void> createFhirGroupTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS FhirGroup (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createFhirGroupTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS FhirGroupHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createFhirGroupTables(Database db)  async {
 }
 
 /// Save a [FhirGroup] to the database
-Future<bool> saveFhirGroup(
-  Database db,
-  FhirGroup resource,
-) async {
+Future<bool> saveFhirGroup(Database db, FhirGroup resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveFhirGroup(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM FhirGroup WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveFhirGroup(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO FhirGroupHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveFhirGroup(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO FhirGroup (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO FhirGroup (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveFhirGroup(
 }
 
 /// Get a [FhirGroup] by its ID
-FhirGroup? getFhirGroup(Database db, String id) {
+Future<FhirGroup?> getFhirGroup(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM FhirGroup WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return FhirGroup.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

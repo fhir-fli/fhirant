@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [CatalogEntry] resources
-Future<void> createCatalogEntryTables(Database db)  async {
+Future<void> createCatalogEntryTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS CatalogEntry (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createCatalogEntryTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CatalogEntryHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createCatalogEntryTables(Database db)  async {
 }
 
 /// Save a [CatalogEntry] to the database
-Future<bool> saveCatalogEntry(
-  Database db,
-  CatalogEntry resource,
-) async {
+Future<bool> saveCatalogEntry(Database db, CatalogEntry resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CatalogEntry;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveCatalogEntry(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM CatalogEntry WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveCatalogEntry(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CatalogEntryHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveCatalogEntry(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO CatalogEntry (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO CatalogEntry (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveCatalogEntry(
 }
 
 /// Get a [CatalogEntry] by its ID
-CatalogEntry? getCatalogEntry(Database db, String id) {
+Future<CatalogEntry?> getCatalogEntry(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM CatalogEntry WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return CatalogEntry.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

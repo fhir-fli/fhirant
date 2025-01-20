@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Provenance] resources
-Future<void> createProvenanceTables(Database db)  async {
+Future<void> createProvenanceTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Provenance (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createProvenanceTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ProvenanceHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createProvenanceTables(Database db)  async {
 }
 
 /// Save a [Provenance] to the database
-Future<bool> saveProvenance(
-  Database db,
-  Provenance resource,
-) async {
+Future<bool> saveProvenance(Database db, Provenance resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Provenance;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveProvenance(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Provenance WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveProvenance(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ProvenanceHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveProvenance(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Provenance (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Provenance (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveProvenance(
 }
 
 /// Get a [Provenance] by its ID
-Provenance? getProvenance(Database db, String id) {
+Future<Provenance?> getProvenance(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Provenance WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Provenance.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

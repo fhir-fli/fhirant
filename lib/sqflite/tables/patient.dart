@@ -1,11 +1,9 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Patient] resources
-Future<void> createPatientTables(Database db)  async {
+Future<void> createPatientTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Patient (
       id TEXT PRIMARY KEY,
@@ -21,7 +19,7 @@ Future<void> createPatientTables(Database db)  async {
       managingOrganization TEXT
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS PatientHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -32,10 +30,10 @@ Future<void> createPatientTables(Database db)  async {
 }
 
 /// Save a [Patient] to the database
-Future<bool> savePatient(Database db, Patient patient) {
+Future<bool> savePatient(Database db, Patient patient) async {
   final updatedPatient =
       updateMeta(patient, versionIdAsTime: true).newIdIfNoId();
-  final id = patient.id?.value;
+  final id = updatedPatient.id?.value;
   final resourceJson = updatedPatient.toJsonString();
   final lastUpdated =
       updatedPatient.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -55,16 +53,14 @@ Future<bool> savePatient(Database db, Patient patient) {
   final managingOrganization = patient.managingOrganization?.reference?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Patient WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO PatientHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -75,21 +71,10 @@ Future<bool> savePatient(Database db, Patient patient) {
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO Patient (
+    await db.rawInsert('''
+    INSERT OR REPLACE INTO Patient (
       id, lastUpdated, resource, active, identifier, family_names, given_names, gender, birthDate, deceased, managingOrganization
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      active = excluded.active,
-      identifier = excluded.identifier,
-      family_names = excluded.family_names,
-      given_names = excluded.given_names,
-      gender = excluded.gender,
-      birthDate = excluded.birthDate,
-      deceased = excluded.deceased,
-      managingOrganization = excluded.managingOrganization;
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   ''', [
       id,
       lastUpdated,
@@ -105,22 +90,23 @@ Future<bool> savePatient(Database db, Patient patient) {
     ]);
     return true;
   } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource to Patient: $e');
+    print('Error saving Patient: $e');
     return false;
   }
 }
 
 /// Get a [Patient] by its ID
-Patient? getPatient(Database db, String id) {
+Future<Patient?> getPatient(Database db, String id) async {
   try {
-    final result = db.select('SELECT resource FROM Patient WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Patient WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Patient.fromJsonString(result.first['resource'] as String);
+      return Patient.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
+    print('Error retrieving Patient: $e');
   }
   return null;
 }

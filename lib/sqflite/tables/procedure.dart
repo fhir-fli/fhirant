@@ -1,11 +1,9 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Procedure] resources
-Future<void> createProcedureTables(Database db)  async {
+Future<void> createProcedureTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Procedure (
       id TEXT PRIMARY KEY,
@@ -17,13 +15,13 @@ Future<void> createProcedureTables(Database db)  async {
       status TEXT
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_procedure_patientId ON Procedure (patientId);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_procedure_status ON Procedure (status);',
-    )
-    await db.execute('''
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_procedure_patientId ON Procedure (patientId);',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_procedure_status ON Procedure (status);',
+  );
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ProcedureHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,7 +32,7 @@ Future<void> createProcedureTables(Database db)  async {
 }
 
 /// Save a [Procedure] to the database
-Future<bool> saveProcedure(Database db, Procedure procedure) {
+Future<bool> saveProcedure(Database db, Procedure procedure) async {
   final updatedProcedure =
       updateMeta(procedure, versionIdAsTime: true).newIdIfNoId();
   final id = procedure.id?.value;
@@ -50,16 +48,14 @@ Future<bool> saveProcedure(Database db, Procedure procedure) {
   final status = procedure.status.toString();
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Procedure WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ProcedureHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,18 +66,11 @@ Future<bool> saveProcedure(Database db, Procedure procedure) {
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO Procedure (
-      id, lastUpdated, resource, patientId, code, performedDateTime, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      code = excluded.code,
-      performedDateTime = excluded.performedDateTime,
-      status = excluded.status;
-  ''', [
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Procedure (
+        id, lastUpdated, resource, patientId, code, performedDateTime, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
+    ''', [
       id,
       lastUpdated,
       resourceJson,
@@ -92,24 +81,23 @@ Future<bool> saveProcedure(Database db, Procedure procedure) {
     ]);
     return true;
   } catch (e) {
-    // Log the error
-    // ignore: avoid_print
-    print('Error saving resource to Procedure: $e');
+    print('Error saving Procedure: $e');
     return false;
   }
 }
 
 /// Get a [Procedure] by its ID
-Procedure? getProcedure(Database db, String id) {
+Future<Procedure?> getProcedure(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM Procedure WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Procedure WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Procedure.fromJsonString(result.first['resource'] as String);
+      return Procedure.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
+    print('Error retrieving Procedure: $e');
   }
   return null;
 }

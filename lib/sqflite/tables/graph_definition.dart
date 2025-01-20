@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [GraphDefinition] canonical resources
-Future<void> createGraphDefinitionTables(Database db)  async {
+Future<void> createGraphDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinition (
       id TEXT PRIMARY KEY,
@@ -15,13 +15,13 @@ Future<void> createGraphDefinitionTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',
-    )
-    await db.execute('''
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_graph_definition_url ON GraphDefinition (url);',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_graph_definition_status ON GraphDefinition (status);',
+  );
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -32,7 +32,7 @@ Future<void> createGraphDefinitionTables(Database db)  async {
 }
 
 /// Save a [GraphDefinition] canonical resource to the database
-Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) {
+Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as GraphDefinition;
   final id = updatedResource.id?.value;
@@ -45,7 +45,7 @@ Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM GraphDefinition WHERE id = ?',
       [id],
     );
@@ -53,7 +53,7 @@ Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO GraphDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -65,16 +65,10 @@ Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) {
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO GraphDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO GraphDefinition (
         id, url, status, date, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -93,13 +87,15 @@ Future<bool> saveGraphDefinition(Database db, GraphDefinition resource) {
 }
 
 /// Get a [GraphDefinition] canonical resource by its ID
-GraphDefinition? getGraphDefinition(Database db, String id) {
+Future<GraphDefinition?> getGraphDefinition(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM GraphDefinition WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM GraphDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return GraphDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Consent] resources
-Future<void> createConsentTables(Database db)  async {
+Future<void> createConsentTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Consent (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createConsentTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ConsentHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createConsentTables(Database db)  async {
 }
 
 /// Save a [Consent] to the database
-Future<bool> saveConsent(
-  Database db,
-  Consent resource,
-) async {
+Future<bool> saveConsent(Database db, Consent resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Consent;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveConsent(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Consent WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveConsent(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ConsentHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveConsent(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Consent (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Consent (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveConsent(
 }
 
 /// Get a [Consent] by its ID
-Consent? getConsent(Database db, String id) {
+Future<Consent?> getConsent(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Consent WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Consent.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

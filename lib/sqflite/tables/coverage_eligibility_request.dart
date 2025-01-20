@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [CoverageEligibilityRequest] resources
-Future<void> createCoverageEligibilityRequestTables(Database db)  async {
+Future<void> createCoverageEligibilityRequestTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityRequest (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createCoverageEligibilityRequestTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CoverageEligibilityRequestHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createCoverageEligibilityRequestTables(Database db)  async {
 
 /// Save a [CoverageEligibilityRequest] to the database
 Future<bool> saveCoverageEligibilityRequest(
-  Database db,
-  CoverageEligibilityRequest resource,
-) async {
+    Database db, CoverageEligibilityRequest resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as CoverageEligibilityRequest;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveCoverageEligibilityRequest(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM CoverageEligibilityRequest WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveCoverageEligibilityRequest(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CoverageEligibilityRequestHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveCoverageEligibilityRequest(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO CoverageEligibilityRequest (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO CoverageEligibilityRequest (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,18 +74,16 @@ Future<bool> saveCoverageEligibilityRequest(
 }
 
 /// Get a [CoverageEligibilityRequest] by its ID
-CoverageEligibilityRequest? getCoverageEligibilityRequest(
-  Database db,
-  String id,
-) {
+Future<CoverageEligibilityRequest?> getCoverageEligibilityRequest(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM CoverageEligibilityRequest WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return CoverageEligibilityRequest.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Device] resources
-Future<void> createDeviceTables(Database db)  async {
+Future<void> createDeviceTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Device (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createDeviceTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS DeviceHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createDeviceTables(Database db)  async {
 }
 
 /// Save a [Device] to the database
-Future<bool> saveDevice(
-  Database db,
-  Device resource,
-) async {
+Future<bool> saveDevice(Database db, Device resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Device;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveDevice(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Device WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveDevice(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO DeviceHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveDevice(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Device (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Device (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveDevice(
 }
 
 /// Get a [Device] by its ID
-Device? getDevice(Database db, String id) {
+Future<Device?> getDevice(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Device WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Device.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [SubscriptionStatus] resources
-Future<void> createSubscriptionStatusTables(Database db)  async {
+Future<void> createSubscriptionStatusTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionStatus (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createSubscriptionStatusTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionStatusHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createSubscriptionStatusTables(Database db)  async {
 
 /// Save a [SubscriptionStatus] to the database
 Future<bool> saveSubscriptionStatus(
-  Database db,
-  SubscriptionStatus resource,
-) async {
+    Database db, SubscriptionStatus resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SubscriptionStatus;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveSubscriptionStatus(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM SubscriptionStatus WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveSubscriptionStatus(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SubscriptionStatusHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveSubscriptionStatus(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO SubscriptionStatus (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO SubscriptionStatus (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveSubscriptionStatus(
 }
 
 /// Get a [SubscriptionStatus] by its ID
-SubscriptionStatus? getSubscriptionStatus(Database db, String id) {
+Future<SubscriptionStatus?> getSubscriptionStatus(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM SubscriptionStatus WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return SubscriptionStatus.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

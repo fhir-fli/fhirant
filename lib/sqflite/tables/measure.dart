@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Measure] canonical resources
-Future<void> createMeasureTables(Database db)  async {
+Future<void> createMeasureTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Measure (
       id TEXT PRIMARY KEY,
@@ -16,11 +16,11 @@ Future<void> createMeasureTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);')
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);',
-    )
-    await db.execute('''
+  await db
+      .execute('CREATE INDEX IF NOT EXISTS idx_measure_url ON Measure (url);');
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_measure_status ON Measure (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS MeasureHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -31,10 +31,7 @@ Future<void> createMeasureTables(Database db)  async {
 }
 
 /// Save a [Measure] canonical resource to the database
-Future<bool> saveMeasure(
-  Database db,
-  Measure resource,
-) async {
+Future<bool> saveMeasure(Database db, Measure resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Measure;
   final id = updatedResource.id?.value;
@@ -48,7 +45,7 @@ Future<bool> saveMeasure(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Measure WHERE id = ?',
       [id],
     );
@@ -56,7 +53,7 @@ Future<bool> saveMeasure(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO MeasureHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -68,17 +65,10 @@ Future<bool> saveMeasure(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Measure (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Measure (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -98,15 +88,15 @@ Future<bool> saveMeasure(
 }
 
 /// Get a [Measure] canonical resource by its ID
-Measure? getMeasure(Database db, String id) {
+Future<Measure?> getMeasure(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Measure WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Measure.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

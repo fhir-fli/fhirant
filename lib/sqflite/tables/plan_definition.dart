@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [PlanDefinition] canonical resources
-Future<void> createPlanDefinitionTables(Database db)  async {
+Future<void> createPlanDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinition (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createPlanDefinitionTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -33,10 +31,7 @@ Future<void> createPlanDefinitionTables(Database db)  async {
 }
 
 /// Save a [PlanDefinition] canonical resource to the database
-Future<bool> savePlanDefinition(
-  Database db,
-  PlanDefinition resource,
-) async {
+Future<bool> savePlanDefinition(Database db, PlanDefinition resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PlanDefinition;
   final id = updatedResource.id?.value;
@@ -50,7 +45,7 @@ Future<bool> savePlanDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM PlanDefinition WHERE id = ?',
       [id],
     );
@@ -58,7 +53,7 @@ Future<bool> savePlanDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO PlanDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +65,10 @@ Future<bool> savePlanDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO PlanDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO PlanDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +88,15 @@ Future<bool> savePlanDefinition(
 }
 
 /// Get a [PlanDefinition] canonical resource by its ID
-PlanDefinition? getPlanDefinition(Database db, String id) {
+Future<PlanDefinition?> getPlanDefinition(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM PlanDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return PlanDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

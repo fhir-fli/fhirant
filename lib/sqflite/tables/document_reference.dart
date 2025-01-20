@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DocumentReference] resources
-Future<void> createDocumentReferenceTables(Database db)  async {
+Future<void> createDocumentReferenceTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS DocumentReference (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createDocumentReferenceTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS DocumentReferenceHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createDocumentReferenceTables(Database db)  async {
 
 /// Save a [DocumentReference] to the database
 Future<bool> saveDocumentReference(
-  Database db,
-  DocumentReference resource,
-) async {
+    Database db, DocumentReference resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DocumentReference;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveDocumentReference(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM DocumentReference WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveDocumentReference(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO DocumentReferenceHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveDocumentReference(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO DocumentReference (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO DocumentReference (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> saveDocumentReference(
 }
 
 /// Get a [DocumentReference] by its ID
-DocumentReference? getDocumentReference(Database db, String id) {
+Future<DocumentReference?> getDocumentReference(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM DocumentReference WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return DocumentReference.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

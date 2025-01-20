@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [MedicationKnowledge] resources
-Future<void> createMedicationKnowledgeTables(Database db)  async {
+Future<void> createMedicationKnowledgeTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS MedicationKnowledge (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createMedicationKnowledgeTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS MedicationKnowledgeHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createMedicationKnowledgeTables(Database db)  async {
 
 /// Save a [MedicationKnowledge] to the database
 Future<bool> saveMedicationKnowledge(
-  Database db,
-  MedicationKnowledge resource,
-) async {
+    Database db, MedicationKnowledge resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MedicationKnowledge;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveMedicationKnowledge(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM MedicationKnowledge WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveMedicationKnowledge(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO MedicationKnowledgeHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveMedicationKnowledge(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO MedicationKnowledge (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO MedicationKnowledge (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveMedicationKnowledge(
 }
 
 /// Get a [MedicationKnowledge] by its ID
-MedicationKnowledge? getMedicationKnowledge(Database db, String id) {
+Future<MedicationKnowledge?> getMedicationKnowledge(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM MedicationKnowledge WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return MedicationKnowledge.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

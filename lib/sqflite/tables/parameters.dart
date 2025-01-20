@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Parameters] resources
-Future<void> createParametersTables(Database db)  async {
+Future<void> createParametersTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Parameters (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createParametersTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ParametersHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createParametersTables(Database db)  async {
 }
 
 /// Save a [Parameters] to the database
-Future<bool> saveParameters(
-  Database db,
-  Parameters resource,
-) async {
+Future<bool> saveParameters(Database db, Parameters resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Parameters;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveParameters(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Parameters WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveParameters(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ParametersHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveParameters(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Parameters (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Parameters (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveParameters(
 }
 
 /// Get a [Parameters] by its ID
-Parameters? getParameters(Database db, String id) {
+Future<Parameters?> getParameters(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Parameters WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Parameters.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

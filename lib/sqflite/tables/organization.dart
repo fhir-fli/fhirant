@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Organization] resources
-Future<void> createOrganizationTables(Database db)  async {
+Future<void> createOrganizationTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Organization (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createOrganizationTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS OrganizationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createOrganizationTables(Database db)  async {
 }
 
 /// Save a [Organization] to the database
-Future<bool> saveOrganization(
-  Database db,
-  Organization resource,
-) async {
+Future<bool> saveOrganization(Database db, Organization resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Organization;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveOrganization(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Organization WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveOrganization(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO OrganizationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveOrganization(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Organization (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Organization (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveOrganization(
 }
 
 /// Get a [Organization] by its ID
-Organization? getOrganization(Database db, String id) {
+Future<Organization?> getOrganization(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Organization WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Organization.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [NamingSystem] resources
-Future<void> createNamingSystemTables(Database db)  async {
+Future<void> createNamingSystemTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS NamingSystem (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createNamingSystemTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS NamingSystemHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createNamingSystemTables(Database db)  async {
 }
 
 /// Save a [NamingSystem] to the database
-Future<bool> saveNamingSystem(
-  Database db,
-  NamingSystem resource,
-) async {
+Future<bool> saveNamingSystem(Database db, NamingSystem resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as NamingSystem;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveNamingSystem(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM NamingSystem WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveNamingSystem(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO NamingSystemHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveNamingSystem(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO NamingSystem (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO NamingSystem (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveNamingSystem(
 }
 
 /// Get a [NamingSystem] by its ID
-NamingSystem? getNamingSystem(Database db, String id) {
+Future<NamingSystem?> getNamingSystem(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM NamingSystem WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return NamingSystem.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

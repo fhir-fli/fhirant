@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Specimen] resources
-Future<void> createSpecimenTables(Database db)  async {
+Future<void> createSpecimenTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Specimen (
       id TEXT PRIMARY KEY,
@@ -15,14 +15,13 @@ Future<void> createSpecimenTables(Database db)  async {
       status TEXT
     );
   ''');
-    await db.execute(
-      // ignore: lines_longer_than_80_chars
-      'CREATE INDEX IF NOT EXISTS idx_specimen_patientId ON Specimen (patientId);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_specimen_status ON Specimen (status);',
-    )
-    await db.execute('''
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_specimen_patientId ON Specimen (patientId);',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_specimen_status ON Specimen (status);',
+  );
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SpecimenHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -33,7 +32,7 @@ Future<void> createSpecimenTables(Database db)  async {
 }
 
 /// Save a [Specimen] to the database
-Future<bool> saveSpecimen(Database db, Specimen specimen) {
+Future<bool> saveSpecimen(Database db, Specimen specimen) async {
   final updatedSpecimen =
       updateMeta(specimen, versionIdAsTime: true).newIdIfNoId();
   final id = specimen.id?.value;
@@ -49,16 +48,14 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) {
   final status = specimen.status?.toString();
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Specimen WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SpecimenHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -69,18 +66,11 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) {
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO Specimen (
-      id, lastUpdated, resource, patientId, type, collectedDateTime, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      type = excluded.type,
-      collectedDateTime = excluded.collectedDateTime,
-      status = excluded.status;
-  ''', [
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Specimen (
+        id, lastUpdated, resource, patientId, type, collectedDateTime, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
+    ''', [
       id,
       lastUpdated,
       resourceJson,
@@ -91,23 +81,23 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) {
     ]);
     return true;
   } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource to Specimen: $e');
+    print('Error saving Specimen: $e');
     return false;
   }
 }
 
 /// Get a [Specimen] by its ID
-Specimen? getSpecimen(Database db, String id) {
+Future<Specimen?> getSpecimen(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM Specimen WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Specimen WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Specimen.fromJsonString(result.first['resource'] as String);
+      return Specimen.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
+    print('Error retrieving Specimen: $e');
   }
   return null;
 }

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [OperationOutcome] resources
-Future<void> createOperationOutcomeTables(Database db)  async {
+Future<void> createOperationOutcomeTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS OperationOutcome (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createOperationOutcomeTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS OperationOutcomeHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createOperationOutcomeTables(Database db)  async {
 
 /// Save a [OperationOutcome] to the database
 Future<bool> saveOperationOutcome(
-  Database db,
-  OperationOutcome resource,
-) async {
+    Database db, OperationOutcome resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OperationOutcome;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveOperationOutcome(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM OperationOutcome WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveOperationOutcome(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO OperationOutcomeHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveOperationOutcome(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO OperationOutcome (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO OperationOutcome (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> saveOperationOutcome(
 }
 
 /// Get a [OperationOutcome] by its ID
-OperationOutcome? getOperationOutcome(Database db, String id) {
+Future<OperationOutcome?> getOperationOutcome(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM OperationOutcome WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return OperationOutcome.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

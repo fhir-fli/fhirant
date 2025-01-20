@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [RelatedPerson] resources
-Future<void> createRelatedPersonTables(Database db)  async {
+Future<void> createRelatedPersonTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS RelatedPerson (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createRelatedPersonTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS RelatedPersonHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createRelatedPersonTables(Database db)  async {
 }
 
 /// Save a [RelatedPerson] to the database
-Future<bool> saveRelatedPerson(
-  Database db,
-  RelatedPerson resource,
-) async {
+Future<bool> saveRelatedPerson(Database db, RelatedPerson resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as RelatedPerson;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveRelatedPerson(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM RelatedPerson WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveRelatedPerson(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO RelatedPersonHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveRelatedPerson(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO RelatedPerson (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO RelatedPerson (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveRelatedPerson(
 }
 
 /// Get a [RelatedPerson] by its ID
-RelatedPerson? getRelatedPerson(Database db, String id) {
+Future<RelatedPerson?> getRelatedPerson(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM RelatedPerson WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return RelatedPerson.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Subscription] resources
-Future<void> createSubscriptionTables(Database db)  async {
+Future<void> createSubscriptionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Subscription (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createSubscriptionTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createSubscriptionTables(Database db)  async {
 }
 
 /// Save a [Subscription] to the database
-Future<bool> saveSubscription(
-  Database db,
-  Subscription resource,
-) async {
+Future<bool> saveSubscription(Database db, Subscription resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Subscription;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveSubscription(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Subscription WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveSubscription(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SubscriptionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveSubscription(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Subscription (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Subscription (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveSubscription(
 }
 
 /// Get a [Subscription] by its ID
-Subscription? getSubscription(Database db, String id) {
+Future<Subscription?> getSubscription(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Subscription WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Subscription.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

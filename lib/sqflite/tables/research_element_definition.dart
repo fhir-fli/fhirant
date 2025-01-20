@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ResearchElementDefinition] resources
-Future<void> createResearchElementDefinitionTables(Database db)  async {
+Future<void> createResearchElementDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ResearchElementDefinition (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createResearchElementDefinitionTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ResearchElementDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createResearchElementDefinitionTables(Database db)  async {
 
 /// Save a [ResearchElementDefinition] to the database
 Future<bool> saveResearchElementDefinition(
-  Database db,
-  ResearchElementDefinition resource,
-) async {
+    Database db, ResearchElementDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ResearchElementDefinition;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveResearchElementDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ResearchElementDefinition WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveResearchElementDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ResearchElementDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveResearchElementDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ResearchElementDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ResearchElementDefinition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,18 +74,16 @@ Future<bool> saveResearchElementDefinition(
 }
 
 /// Get a [ResearchElementDefinition] by its ID
-ResearchElementDefinition? getResearchElementDefinition(
-  Database db,
-  String id,
-) {
+Future<ResearchElementDefinition?> getResearchElementDefinition(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ResearchElementDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ResearchElementDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

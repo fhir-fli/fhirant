@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [TestScript] resources
-Future<void> createTestScriptTables(Database db)  async {
+Future<void> createTestScriptTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS TestScript (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createTestScriptTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS TestScriptHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createTestScriptTables(Database db)  async {
 }
 
 /// Save a [TestScript] to the database
-Future<bool> saveTestScript(
-  Database db,
-  TestScript resource,
-) async {
+Future<bool> saveTestScript(Database db, TestScript resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as TestScript;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveTestScript(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM TestScript WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveTestScript(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO TestScriptHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveTestScript(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO TestScript (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO TestScript (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveTestScript(
 }
 
 /// Get a [TestScript] by its ID
-TestScript? getTestScript(Database db, String id) {
+Future<TestScript?> getTestScript(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM TestScript WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return TestScript.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [OrganizationAffiliation] resources
-Future<void> createOrganizationAffiliationTables(Database db)  async {
+Future<void> createOrganizationAffiliationTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS OrganizationAffiliation (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createOrganizationAffiliationTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS OrganizationAffiliationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createOrganizationAffiliationTables(Database db)  async {
 
 /// Save a [OrganizationAffiliation] to the database
 Future<bool> saveOrganizationAffiliation(
-  Database db,
-  OrganizationAffiliation resource,
-) async {
+    Database db, OrganizationAffiliation resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OrganizationAffiliation;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveOrganizationAffiliation(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM OrganizationAffiliation WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveOrganizationAffiliation(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO OrganizationAffiliationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveOrganizationAffiliation(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO OrganizationAffiliation (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO OrganizationAffiliation (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveOrganizationAffiliation(
 }
 
 /// Get a [OrganizationAffiliation] by its ID
-OrganizationAffiliation? getOrganizationAffiliation(Database db, String id) {
+Future<OrganizationAffiliation?> getOrganizationAffiliation(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM OrganizationAffiliation WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return OrganizationAffiliation.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

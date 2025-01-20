@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [GuidanceResponse] resources
-Future<void> createGuidanceResponseTables(Database db)  async {
+Future<void> createGuidanceResponseTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS GuidanceResponse (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createGuidanceResponseTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS GuidanceResponseHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createGuidanceResponseTables(Database db)  async {
 
 /// Save a [GuidanceResponse] to the database
 Future<bool> saveGuidanceResponse(
-  Database db,
-  GuidanceResponse resource,
-) async {
+    Database db, GuidanceResponse resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as GuidanceResponse;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveGuidanceResponse(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM GuidanceResponse WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveGuidanceResponse(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO GuidanceResponseHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveGuidanceResponse(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO GuidanceResponse (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO GuidanceResponse (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> saveGuidanceResponse(
 }
 
 /// Get a [GuidanceResponse] by its ID
-GuidanceResponse? getGuidanceResponse(Database db, String id) {
+Future<GuidanceResponse?> getGuidanceResponse(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM GuidanceResponse WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return GuidanceResponse.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

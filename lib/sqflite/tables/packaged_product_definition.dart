@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [PackagedProductDefinition] resources
-Future<void> createPackagedProductDefinitionTables(Database db)  async {
+Future<void> createPackagedProductDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS PackagedProductDefinition (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createPackagedProductDefinitionTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS PackagedProductDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createPackagedProductDefinitionTables(Database db)  async {
 
 /// Save a [PackagedProductDefinition] to the database
 Future<bool> savePackagedProductDefinition(
-  Database db,
-  PackagedProductDefinition resource,
-) async {
+    Database db, PackagedProductDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PackagedProductDefinition;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> savePackagedProductDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM PackagedProductDefinition WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> savePackagedProductDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO PackagedProductDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> savePackagedProductDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO PackagedProductDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO PackagedProductDefinition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,18 +74,16 @@ Future<bool> savePackagedProductDefinition(
 }
 
 /// Get a [PackagedProductDefinition] by its ID
-PackagedProductDefinition? getPackagedProductDefinition(
-  Database db,
-  String id,
-) {
+Future<PackagedProductDefinition?> getPackagedProductDefinition(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM PackagedProductDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return PackagedProductDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DiagnosticReport] resources
-Future<void> createDiagnosticReportTables(Database db)  async {
+Future<void> createDiagnosticReportTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReport (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createDiagnosticReportTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReportHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createDiagnosticReportTables(Database db)  async {
 
 /// Save a [DiagnosticReport] to the database
 Future<bool> saveDiagnosticReport(
-  Database db,
-  DiagnosticReport resource,
-) async {
+    Database db, DiagnosticReport resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DiagnosticReport;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveDiagnosticReport(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM DiagnosticReport WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveDiagnosticReport(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO DiagnosticReportHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveDiagnosticReport(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO DiagnosticReport (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO DiagnosticReport (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,15 @@ Future<bool> saveDiagnosticReport(
 }
 
 /// Get a [DiagnosticReport] by its ID
-DiagnosticReport? getDiagnosticReport(Database db, String id) {
+Future<DiagnosticReport?> getDiagnosticReport(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM DiagnosticReport WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return DiagnosticReport.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

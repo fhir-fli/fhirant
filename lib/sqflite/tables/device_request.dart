@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DeviceRequest] resources
-Future<void> createDeviceRequestTables(Database db)  async {
+Future<void> createDeviceRequestTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS DeviceRequest (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createDeviceRequestTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS DeviceRequestHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createDeviceRequestTables(Database db)  async {
 }
 
 /// Save a [DeviceRequest] to the database
-Future<bool> saveDeviceRequest(
-  Database db,
-  DeviceRequest resource,
-) async {
+Future<bool> saveDeviceRequest(Database db, DeviceRequest resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DeviceRequest;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveDeviceRequest(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM DeviceRequest WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveDeviceRequest(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO DeviceRequestHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveDeviceRequest(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO DeviceRequest (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO DeviceRequest (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveDeviceRequest(
 }
 
 /// Get a [DeviceRequest] by its ID
-DeviceRequest? getDeviceRequest(Database db, String id) {
+Future<DeviceRequest?> getDeviceRequest(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM DeviceRequest WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return DeviceRequest.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

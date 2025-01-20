@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [CarePlan] resources
-Future<void> createCarePlanTables(Database db)  async {
+Future<void> createCarePlanTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS CarePlan (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createCarePlanTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS CarePlanHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createCarePlanTables(Database db)  async {
 }
 
 /// Save a [CarePlan] to the database
-Future<bool> saveCarePlan(
-  Database db,
-  CarePlan resource,
-) async {
+Future<bool> saveCarePlan(Database db, CarePlan resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as CarePlan;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveCarePlan(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM CarePlan WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveCarePlan(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO CarePlanHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveCarePlan(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO CarePlan (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO CarePlan (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveCarePlan(
 }
 
 /// Get a [CarePlan] by its ID
-CarePlan? getCarePlan(Database db, String id) {
+Future<CarePlan?> getCarePlan(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM CarePlan WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return CarePlan.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [BodyStructure] resources
-Future<void> createBodyStructureTables(Database db)  async {
+Future<void> createBodyStructureTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS BodyStructure (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createBodyStructureTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS BodyStructureHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createBodyStructureTables(Database db)  async {
 }
 
 /// Save a [BodyStructure] to the database
-Future<bool> saveBodyStructure(
-  Database db,
-  BodyStructure resource,
-) async {
+Future<bool> saveBodyStructure(Database db, BodyStructure resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as BodyStructure;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveBodyStructure(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM BodyStructure WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveBodyStructure(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO BodyStructureHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveBodyStructure(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO BodyStructure (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO BodyStructure (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveBodyStructure(
 }
 
 /// Get a [BodyStructure] by its ID
-BodyStructure? getBodyStructure(Database db, String id) {
+Future<BodyStructure?> getBodyStructure(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM BodyStructure WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return BodyStructure.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

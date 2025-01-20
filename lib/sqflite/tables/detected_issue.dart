@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DetectedIssue] resources
-Future<void> createDetectedIssueTables(Database db)  async {
+Future<void> createDetectedIssueTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS DetectedIssue (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createDetectedIssueTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS DetectedIssueHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createDetectedIssueTables(Database db)  async {
 }
 
 /// Save a [DetectedIssue] to the database
-Future<bool> saveDetectedIssue(
-  Database db,
-  DetectedIssue resource,
-) async {
+Future<bool> saveDetectedIssue(Database db, DetectedIssue resource) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DetectedIssue;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveDetectedIssue(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM DetectedIssue WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveDetectedIssue(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO DetectedIssueHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveDetectedIssue(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO DetectedIssue (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO DetectedIssue (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveDetectedIssue(
 }
 
 /// Get a [DetectedIssue] by its ID
-DetectedIssue? getDetectedIssue(Database db, String id) {
+Future<DetectedIssue?> getDetectedIssue(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM DetectedIssue WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return DetectedIssue.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [VerificationResult] resources
-Future<void> createVerificationResultTables(Database db)  async {
+Future<void> createVerificationResultTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS VerificationResult (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createVerificationResultTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS VerificationResultHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -25,9 +25,7 @@ Future<void> createVerificationResultTables(Database db)  async {
 
 /// Save a [VerificationResult] to the database
 Future<bool> saveVerificationResult(
-  Database db,
-  VerificationResult resource,
-) async {
+    Database db, VerificationResult resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as VerificationResult;
   final id = updatedResource.id?.value;
@@ -37,7 +35,7 @@ Future<bool> saveVerificationResult(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM VerificationResult WHERE id = ?',
       [id],
     );
@@ -45,7 +43,7 @@ Future<bool> saveVerificationResult(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO VerificationResultHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +55,10 @@ Future<bool> saveVerificationResult(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO VerificationResult (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO VerificationResult (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +74,16 @@ Future<bool> saveVerificationResult(
 }
 
 /// Get a [VerificationResult] by its ID
-VerificationResult? getVerificationResult(Database db, String id) {
+Future<VerificationResult?> getVerificationResult(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM VerificationResult WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return VerificationResult.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Substance] resources
-Future<void> createSubstanceTables(Database db)  async {
+Future<void> createSubstanceTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Substance (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createSubstanceTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS SubstanceHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createSubstanceTables(Database db)  async {
 }
 
 /// Save a [Substance] to the database
-Future<bool> saveSubstance(
-  Database db,
-  Substance resource,
-) async {
+Future<bool> saveSubstance(Database db, Substance resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Substance;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveSubstance(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Substance WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveSubstance(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO SubstanceHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveSubstance(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO Substance (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO Substance (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveSubstance(
 }
 
 /// Get a [Substance] by its ID
-Substance? getSubstance(Database db, String id) {
+Future<Substance?> getSubstance(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM Substance WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return Substance.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

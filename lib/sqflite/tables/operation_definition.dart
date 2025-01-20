@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [OperationDefinition] canonical resources
-Future<void> createOperationDefinitionTables(Database db)  async {
+Future<void> createOperationDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinition (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createOperationDefinitionTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,9 +32,7 @@ Future<void> createOperationDefinitionTables(Database db)  async {
 
 /// Save a [OperationDefinition] canonical resource to the database
 Future<bool> saveOperationDefinition(
-  Database db,
-  OperationDefinition resource,
-) async {
+    Database db, OperationDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OperationDefinition;
   final id = updatedResource.id?.value;
@@ -50,7 +46,7 @@ Future<bool> saveOperationDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM OperationDefinition WHERE id = ?',
       [id],
     );
@@ -58,7 +54,7 @@ Future<bool> saveOperationDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO OperationDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +66,10 @@ Future<bool> saveOperationDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO OperationDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO OperationDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +89,16 @@ Future<bool> saveOperationDefinition(
 }
 
 /// Get a [OperationDefinition] canonical resource by its ID
-OperationDefinition? getOperationDefinition(Database db, String id) {
+Future<OperationDefinition?> getOperationDefinition(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM OperationDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return OperationDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

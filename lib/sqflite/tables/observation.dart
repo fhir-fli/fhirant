@@ -1,11 +1,9 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Observation] resources
-Future<void> createObservationTables(Database db)  async {
+Future<void> createObservationTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Observation (
       id TEXT PRIMARY KEY,
@@ -18,7 +16,7 @@ Future<void> createObservationTables(Database db)  async {
       effectiveDateTime INT
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ObservationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -29,10 +27,10 @@ Future<void> createObservationTables(Database db)  async {
 }
 
 /// Save an [Observation] to the database
-Future<bool> saveObservation(Database db, Observation observation) {
+Future<bool> saveObservation(Database db, Observation observation) async {
   final updatedObservation =
       updateMeta(observation, versionIdAsTime: true).newIdIfNoId();
-  final id = observation.id?.value;
+  final id = updatedObservation.id?.value;
   final resourceJson = updatedObservation.toJsonString();
   final lastUpdated = updatedObservation
       .meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -47,16 +45,14 @@ Future<bool> saveObservation(Database db, Observation observation) {
       ?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Observation WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ObservationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -67,18 +63,10 @@ Future<bool> saveObservation(Database db, Observation observation) {
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO Observation (
+    await db.rawInsert('''
+    INSERT OR REPLACE INTO Observation (
       id, lastUpdated, resource, patientId, type, value, unit, effectiveDateTime
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      type = excluded.type,
-      value = excluded.value,
-      unit = excluded.unit,
-      effectiveDateTime = excluded.effectiveDateTime;
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
   ''', [
       id,
       lastUpdated,
@@ -91,23 +79,23 @@ Future<bool> saveObservation(Database db, Observation observation) {
     ]);
     return true;
   } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource to Observation: $e');
+    print('Error saving Observation: $e');
     return false;
   }
 }
 
-/// Get a [Observation] by its ID
-Observation? getObservation(Database db, String id) {
+/// Get an [Observation] by its ID
+Future<Observation?> getObservation(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM Observation WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Observation WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Observation.fromJsonString(result.first['resource'] as String);
+      return Observation.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
+    print('Error retrieving Observation: $e');
   }
   return null;
 }

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [MessageDefinition] canonical resources
-Future<void> createMessageDefinitionTables(Database db)  async {
+Future<void> createMessageDefinitionTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS MessageDefinition (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createMessageDefinitionTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_url ON MessageDefinition (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_message_definition_status ON MessageDefinition (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS MessageDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,9 +32,7 @@ Future<void> createMessageDefinitionTables(Database db)  async {
 
 /// Save a [MessageDefinition] canonical resource to the database
 Future<bool> saveMessageDefinition(
-  Database db,
-  MessageDefinition resource,
-) async {
+    Database db, MessageDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as MessageDefinition;
   final id = updatedResource.id?.value;
@@ -50,7 +46,7 @@ Future<bool> saveMessageDefinition(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM MessageDefinition WHERE id = ?',
       [id],
     );
@@ -58,7 +54,7 @@ Future<bool> saveMessageDefinition(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO MessageDefinitionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +66,10 @@ Future<bool> saveMessageDefinition(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO MessageDefinition (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO MessageDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +89,15 @@ Future<bool> saveMessageDefinition(
 }
 
 /// Get a [MessageDefinition] canonical resource by its ID
-MessageDefinition? getMessageDefinition(Database db, String id) {
+Future<MessageDefinition?> getMessageDefinition(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM MessageDefinition WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return MessageDefinition.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

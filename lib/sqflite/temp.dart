@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:fhir_r4/fhir_r4.dart';
 
 void main() {
@@ -45,7 +44,7 @@ void main() {
 String baseTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] resources
-Future<void> create${resourceType}Tables(Database db)  async {
+Future<void> create${resourceType}Tables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
@@ -53,7 +52,7 @@ Future<void> create${resourceType}Tables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -64,15 +63,17 @@ Future<void> create${resourceType}Tables(Database db)  async {
 }
 
 /// Save a [$resourceType] to the database
-Future<bool> save$resourceType(Database db, $resourceType resource,) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
+Future<bool> save$resourceType(Database db, $resourceType resource) async {
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
       [id],
     );
@@ -80,7 +81,7 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -92,13 +93,10 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO $resourceType (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO $resourceType (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -114,11 +112,16 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
 }
 
 /// Get a [$resourceType] by its ID
-$resourceType? get$resourceType(Database db, String id) {
+Future<$resourceType?> get$resourceType(Database db, String id) async {
   try {
-    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id],);
+    final result = await db.rawQuery(
+      'SELECT resource FROM $resourceType WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return $resourceType.fromJsonString(result.first['resource'] as String,);
+      return $resourceType.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print
@@ -132,7 +135,7 @@ $resourceType? get$resourceType(Database db, String id) {
 String canonicalTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] canonical resources
-Future<void> create${resourceType}Tables(Database db)  async {
+Future<void> create${resourceType}Tables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
@@ -143,9 +146,9 @@ Future<void> create${resourceType}Tables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url ON $resourceType (url);')
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_status ON $resourceType (status);')
-    await db.execute('''
+  await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url ON $resourceType (url);');
+  await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_status ON $resourceType (status);');
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -156,11 +159,13 @@ Future<void> create${resourceType}Tables(Database db)  async {
 }
 
 /// Save a [$resourceType] canonical resource to the database
-Future<bool> save$resourceType(Database db, $resourceType resource,) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
+Future<bool> save$resourceType(Database db, $resourceType resource) async {
+  final updatedResource =
+      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated =
+      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
@@ -168,7 +173,7 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
       [id],
     );
@@ -176,7 +181,7 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -188,17 +193,10 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO $resourceType (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO $resourceType (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -218,11 +216,16 @@ Future<bool> save$resourceType(Database db, $resourceType resource,) {
 }
 
 /// Get a [$resourceType] canonical resource by its ID
-$resourceType? get$resourceType(Database db, String id) {
+Future<$resourceType?> get$resourceType(Database db, String id) async {
   try {
-    final result = db.select('SELECT resource FROM $resourceType WHERE id = ?', [id],);
+    final result = await db.rawQuery(
+      'SELECT resource FROM $resourceType WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return $resourceType.fromJsonString(result.first['resource'] as String,);
+      return $resourceType.fromJsonString(
+        result.first['resource'] as String,
+      );
     }
   } catch (e) {
     // ignore: avoid_print

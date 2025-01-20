@@ -1,11 +1,9 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [MedicationDispense] resources
-Future<void> createMedicationDispenseTables(Database db)  async {
+Future<void> createMedicationDispenseTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS MedicationDispense (
       id TEXT PRIMARY KEY,
@@ -18,13 +16,13 @@ Future<void> createMedicationDispenseTables(Database db)  async {
       status TEXT
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_med_dispense_patientId ON MedicationDispense (patientId);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_med_dispense_status ON MedicationDispense (status);',
-    )
-    await db.execute('''
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_med_dispense_patientId ON MedicationDispense (patientId);',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_med_dispense_status ON MedicationDispense (status);',
+  );
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS MedicationDispenseHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -41,7 +39,7 @@ Future<bool> saveMedicationDispense(
 ) async {
   final updatedDispense =
       updateMeta(medicationDispense, versionIdAsTime: true).newIdIfNoId();
-  final id = medicationDispense.id?.value;
+  final id = updatedDispense.id?.value;
   final resourceJson = updatedDispense.toJsonString();
   final lastUpdated =
       updatedDispense.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -63,16 +61,14 @@ Future<bool> saveMedicationDispense(
   final status = medicationDispense.status.toString();
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM MedicationDispense WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO MedicationDispenseHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -83,19 +79,11 @@ Future<bool> saveMedicationDispense(
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO MedicationDispense (
-      id, lastUpdated, resource, patientId, medicationId, quantity, daysSupply, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      medicationId = excluded.medicationId,
-      quantity = excluded.quantity,
-      daysSupply = excluded.daysSupply,
-      status = excluded.status;
-  ''', [
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO MedicationDispense (
+        id, lastUpdated, resource, patientId, medicationId, quantity, daysSupply, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    ''', [
       id,
       lastUpdated,
       resourceJson,
@@ -107,24 +95,27 @@ Future<bool> saveMedicationDispense(
     ]);
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [MedicationDispense] by its ID
-MedicationDispense? getMedicationDispense(Database db, String id) {
+Future<MedicationDispense?> getMedicationDispense(
+  Database db,
+  String id,
+) async {
   try {
-    final result =
-        db.select('SELECT resource FROM MedicationDispense WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM MedicationDispense WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return MedicationDispense.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

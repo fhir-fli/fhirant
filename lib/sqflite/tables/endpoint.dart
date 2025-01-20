@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [FhirEndpoint] resources
-Future<void> createFhirEndpointTables(Database db)  async {
+Future<void> createFhirEndpointTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS FhirEndpoint (
       id TEXT PRIMARY KEY,
@@ -13,7 +13,7 @@ Future<void> createFhirEndpointTables(Database db)  async {
       resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS FhirEndpointHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -24,10 +24,7 @@ Future<void> createFhirEndpointTables(Database db)  async {
 }
 
 /// Save a [FhirEndpoint] to the database
-Future<bool> saveFhirEndpoint(
-  Database db,
-  FhirEndpoint resource,
-) async {
+Future<bool> saveFhirEndpoint(Database db, FhirEndpoint resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirEndpoint;
   final id = updatedResource.id?.value;
@@ -37,7 +34,7 @@ Future<bool> saveFhirEndpoint(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM FhirEndpoint WHERE id = ?',
       [id],
     );
@@ -45,7 +42,7 @@ Future<bool> saveFhirEndpoint(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO FhirEndpointHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -57,13 +54,10 @@ Future<bool> saveFhirEndpoint(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO FhirEndpoint (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO FhirEndpoint (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -79,15 +73,15 @@ Future<bool> saveFhirEndpoint(
 }
 
 /// Get a [FhirEndpoint] by its ID
-FhirEndpoint? getFhirEndpoint(Database db, String id) {
+Future<FhirEndpoint?> getFhirEndpoint(Database db, String id) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM FhirEndpoint WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return FhirEndpoint.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

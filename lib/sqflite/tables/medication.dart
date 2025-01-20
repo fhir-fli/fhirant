@@ -1,11 +1,9 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Medication] resources
-Future<void> createMedicationTables(Database db)  async {
+Future<void> createMedicationTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Medication (
       id TEXT PRIMARY KEY,
@@ -17,13 +15,13 @@ Future<void> createMedicationTables(Database db)  async {
       form TEXT
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_medication_code ON Medication (code);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_medication_status ON Medication (status);',
-    )
-    await db.execute('''
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_medication_code ON Medication (code);',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_medication_status ON Medication (status);',
+  );
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS MedicationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,10 +32,10 @@ Future<void> createMedicationTables(Database db)  async {
 }
 
 /// Save a [Medication] to the database
-Future<bool> saveMedication(Database db, Medication medication) {
+Future<bool> saveMedication(Database db, Medication medication) async {
   final updatedMedication =
       updateMeta(medication, versionIdAsTime: true).newIdIfNoId();
-  final id = medication.id?.value;
+  final id = updatedMedication.id?.value;
   final resourceJson = updatedMedication.toJsonString();
   final lastUpdated = updatedMedication
       .meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -47,16 +45,14 @@ Future<bool> saveMedication(Database db, Medication medication) {
   final form = medication.form?.coding?.first.code?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM Medication WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO MedicationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -67,17 +63,10 @@ Future<bool> saveMedication(Database db, Medication medication) {
       ]);
     }
 
-    await db.execute('''
-    INSERT INTO Medication (
+    await db.rawInsert('''
+    INSERT OR REPLACE INTO Medication (
       id, lastUpdated, resource, code, status, manufacturer, form
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      code = excluded.code,
-      status = excluded.status,
-      manufacturer = excluded.manufacturer,
-      form = excluded.form;
+    ) VALUES (?, ?, ?, ?, ?, ?, ?);
   ''', [
       id,
       lastUpdated,
@@ -89,22 +78,22 @@ Future<bool> saveMedication(Database db, Medication medication) {
     ]);
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Medication] by its ID
-Medication? getMedication(Database db, String id) {
+Future<Medication?> getMedication(Database db, String id) async {
   try {
-    final result =
-        db.select('SELECT resource FROM Medication WHERE id = ?', [id]);
+    final result = await db.rawQuery(
+      'SELECT resource FROM Medication WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
-      return Medication.fromJsonString(result.first['resource'] as String);
+      return Medication.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

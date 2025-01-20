@@ -5,16 +5,15 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [FamilyMemberHistory] resources
-Future<void> createFamilyMemberHistoryTables(Database db)  async {
+Future<void> createFamilyMemberHistoryTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS FamilyMemberHistory (
-      id TEXT NOT NULL,
+      id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
+      resource TEXT NOT NULL
     );
   ''');
-    await db.execute('''
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS FamilyMemberHistoryHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -26,9 +25,7 @@ Future<void> createFamilyMemberHistoryTables(Database db)  async {
 
 /// Save a [FamilyMemberHistory] to the database
 Future<bool> saveFamilyMemberHistory(
-  Database db,
-  FamilyMemberHistory resource,
-) async {
+    Database db, FamilyMemberHistory resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as FamilyMemberHistory;
   final id = updatedResource.id?.value;
@@ -38,7 +35,7 @@ Future<bool> saveFamilyMemberHistory(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM FamilyMemberHistory WHERE id = ?',
       [id],
     );
@@ -46,7 +43,7 @@ Future<bool> saveFamilyMemberHistory(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO FamilyMemberHistoryHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -58,13 +55,10 @@ Future<bool> saveFamilyMemberHistory(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO FamilyMemberHistory (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO FamilyMemberHistory (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?);
     ''', [
       id,
       lastUpdated,
@@ -80,15 +74,16 @@ Future<bool> saveFamilyMemberHistory(
 }
 
 /// Get a [FamilyMemberHistory] by its ID
-FamilyMemberHistory? getFamilyMemberHistory(Database db, String id) {
+Future<FamilyMemberHistory?> getFamilyMemberHistory(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM FamilyMemberHistory WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return FamilyMemberHistory.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {

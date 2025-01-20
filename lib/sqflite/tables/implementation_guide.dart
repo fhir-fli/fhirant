@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ImplementationGuide] canonical resources
-Future<void> createImplementationGuideTables(Database db)  async {
+Future<void> createImplementationGuideTables(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuide (
       id TEXT PRIMARY KEY,
@@ -16,13 +16,11 @@ Future<void> createImplementationGuideTables(Database db)  async {
       lastUpdated INT NOT NULL
     );
   ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);',
-    )
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);',
-    )
-    await db.execute('''
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_url ON ImplementationGuide (url);',);
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_implementation_guide_status ON ImplementationGuide (status);',);
+  await db.execute('''
     CREATE TABLE IF NOT EXISTS ImplementationGuideHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,9 +32,7 @@ Future<void> createImplementationGuideTables(Database db)  async {
 
 /// Save a [ImplementationGuide] canonical resource to the database
 Future<bool> saveImplementationGuide(
-  Database db,
-  ImplementationGuide resource,
-) async {
+    Database db, ImplementationGuide resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ImplementationGuide;
   final id = updatedResource.id?.value;
@@ -50,7 +46,7 @@ Future<bool> saveImplementationGuide(
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = db.select(
+    final existingResource = await db.rawQuery(
       'SELECT id, resource, lastUpdated FROM ImplementationGuide WHERE id = ?',
       [id],
     );
@@ -58,7 +54,7 @@ Future<bool> saveImplementationGuide(
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.execute('''
+      await db.rawInsert('''
         INSERT INTO ImplementationGuideHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -70,17 +66,10 @@ Future<bool> saveImplementationGuide(
     }
 
     // Insert new version into the main table
-    await db.execute('''
-      INSERT INTO ImplementationGuide (
+    await db.rawInsert('''
+      INSERT OR REPLACE INTO ImplementationGuide (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);
     ''', [
       id,
       url,
@@ -100,15 +89,16 @@ Future<bool> saveImplementationGuide(
 }
 
 /// Get a [ImplementationGuide] canonical resource by its ID
-ImplementationGuide? getImplementationGuide(Database db, String id) {
+Future<ImplementationGuide?> getImplementationGuide(
+    Database db, String id,) async {
   try {
-    final result = db.select(
+    final result = await db.rawQuery(
       'SELECT resource FROM ImplementationGuide WHERE id = ?',
       [id],
     );
     if (result.isNotEmpty) {
       return ImplementationGuide.fromJsonString(
-        result.first['resource'] as String,
+        result.first['resource']! as String,
       );
     }
   } catch (e) {
