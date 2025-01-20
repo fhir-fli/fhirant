@@ -5,26 +5,26 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ImagingStudy] resources
-Future<void> createImagingStudyTables(Database db) async {
-  await db.execute('''
+Future<void> createImagingStudyTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ImagingStudy (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ImagingStudyHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [ImagingStudy] to the database
-Future<bool> saveImagingStudy(Database db, ImagingStudy resource) async {
+Future<bool> saveImagingStudy(Transaction txn, ImagingStudy resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ImagingStudy;
   final id = updatedResource.id?.value;
@@ -33,49 +33,51 @@ Future<bool> saveImagingStudy(Database db, ImagingStudy resource) async {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM ImagingStudy WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO ImagingStudyHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO ImagingStudy (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [ImagingStudy] by its ID
-Future<ImagingStudy?> getImagingStudy(Database db, String id) async {
+Future<ImagingStudy?> getImagingStudy(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM ImagingStudy WHERE id = ?',
       [id],
     );
@@ -85,7 +87,6 @@ Future<ImagingStudy?> getImagingStudy(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

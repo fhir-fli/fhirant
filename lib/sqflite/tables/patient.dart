@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Patient] resources
-Future<void> createPatientTables(Database db) async {
-  await db.execute('''
+Future<void> createPatientTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Patient (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -19,7 +19,7 @@ Future<void> createPatientTables(Database db) async {
       managingOrganization TEXT
     );
   ''');
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS PatientHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -30,7 +30,7 @@ Future<void> createPatientTables(Database db) async {
 }
 
 /// Save a [Patient] to the database
-Future<bool> savePatient(Database db, Patient patient) async {
+Future<bool> savePatient(Transaction txn, Patient patient) async {
   final updatedPatient =
       updateMeta(patient, versionIdAsTime: true).newIdIfNoId();
   final id = updatedPatient.id?.value;
@@ -53,14 +53,14 @@ Future<bool> savePatient(Database db, Patient patient) async {
   final managingOrganization = patient.managingOrganization?.reference?.value;
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Patient WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO PatientHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -71,7 +71,7 @@ Future<bool> savePatient(Database db, Patient patient) async {
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
     INSERT OR REPLACE INTO Patient (
       id, lastUpdated, resource, active, identifier, family_names, given_names, gender, birthDate, deceased, managingOrganization
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -96,9 +96,9 @@ Future<bool> savePatient(Database db, Patient patient) async {
 }
 
 /// Get a [Patient] by its ID
-Future<Patient?> getPatient(Database db, String id) async {
+Future<Patient?> getPatient(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Patient WHERE id = ?',
       [id],
     );

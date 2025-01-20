@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Encounter] resources
-Future<void> createEncounterTables(Database db) async {
-  await db.execute('''
+Future<void> createEncounterTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Encounter (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -18,13 +18,13 @@ Future<void> createEncounterTables(Database db) async {
       status TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_encounter_patientId ON Encounter (patientId);',
   );
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_encounter_status ON Encounter (status);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS EncounterHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -35,7 +35,7 @@ Future<void> createEncounterTables(Database db) async {
 }
 
 /// Save an [Encounter] to the database
-Future<bool> saveEncounter(Database db, Encounter encounter) async {
+Future<bool> saveEncounter(Transaction txn, Encounter encounter) async {
   final updatedEncounter =
       updateMeta(encounter, versionIdAsTime: true).newIdIfNoId();
   final id = encounter.id?.value;
@@ -52,7 +52,7 @@ Future<bool> saveEncounter(Database db, Encounter encounter) async {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Encounter WHERE id = ?',
       [id],
     );
@@ -60,7 +60,7 @@ Future<bool> saveEncounter(Database db, Encounter encounter) async {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO EncounterHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -72,7 +72,7 @@ Future<bool> saveEncounter(Database db, Encounter encounter) async {
     }
 
     // Insert or update the new version in the main table
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO Encounter (
         id, lastUpdated, resource, patientId, type, startDateTime, endDateTime, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -89,17 +89,15 @@ Future<bool> saveEncounter(Database db, Encounter encounter) async {
 
     return true;
   } catch (e) {
-    // Log the error
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get an [Encounter] by its ID
-Future<Encounter?> getEncounter(Database db, String id) async {
+Future<Encounter?> getEncounter(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Encounter WHERE id = ?',
       [id],
     );
@@ -107,7 +105,6 @@ Future<Encounter?> getEncounter(Database db, String id) async {
       return Encounter.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

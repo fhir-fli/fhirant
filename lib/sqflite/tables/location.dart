@@ -1,10 +1,12 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Location] resources
-Future<void> createLocationTables(Database db) async {
-  await db.execute('''
+Future<void> createLocationTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Location (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -15,10 +17,10 @@ Future<void> createLocationTables(Database db) async {
       managingOrganization TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_location_name ON Location (name);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS LocationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -29,10 +31,10 @@ Future<void> createLocationTables(Database db) async {
 }
 
 /// Save a [Location] to the database
-Future<bool> saveLocation(Database db, Location location) async {
+Future<bool> saveLocation(Transaction txn, Location location) async {
   final updatedLocation =
       updateMeta(location, versionIdAsTime: true).newIdIfNoId();
-  final id = location.id?.value;
+  final id = updatedLocation.id?.value;
   final resourceJson = updatedLocation.toJsonString();
   final lastUpdated =
       updatedLocation.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
@@ -43,7 +45,7 @@ Future<bool> saveLocation(Database db, Location location) async {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Location WHERE id = ?',
       [id],
     );
@@ -51,7 +53,7 @@ Future<bool> saveLocation(Database db, Location location) async {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO LocationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -63,7 +65,7 @@ Future<bool> saveLocation(Database db, Location location) async {
     }
 
     // Insert or update the new version in the main table
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO Location (
         id, lastUpdated, resource, name, type, address, managingOrganization
       ) VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -78,17 +80,15 @@ Future<bool> saveLocation(Database db, Location location) async {
     ]);
     return true;
   } catch (e) {
-    // Log the error
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Location] by its ID
-Future<Location?> getLocation(Database db, String id) async {
+Future<Location?> getLocation(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Location WHERE id = ?',
       [id],
     );
@@ -96,7 +96,6 @@ Future<Location?> getLocation(Database db, String id) async {
       return Location.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

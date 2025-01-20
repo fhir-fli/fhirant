@@ -5,27 +5,27 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [AdministrableProductDefinition] resources
-Future<void> createAdministrableProductDefinitionTables(Database db) async {
-  await db.execute('''
+Future<void> createAdministrableProductDefinitionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS AdministrableProductDefinition (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS AdministrableProductDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [AdministrableProductDefinition] to the database
 Future<bool> saveAdministrableProductDefinition(
-    Database db, AdministrableProductDefinition resource,) async {
+    Transaction txn, AdministrableProductDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as AdministrableProductDefinition;
   final id = updatedResource.id?.value;
@@ -34,40 +34,42 @@ Future<bool> saveAdministrableProductDefinition(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM AdministrableProductDefinition WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO AdministrableProductDefinitionHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO AdministrableProductDefinition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -75,9 +77,9 @@ Future<bool> saveAdministrableProductDefinition(
 
 /// Get a [AdministrableProductDefinition] by its ID
 Future<AdministrableProductDefinition?> getAdministrableProductDefinition(
-    Database db, String id,) async {
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM AdministrableProductDefinition WHERE id = ?',
       [id],
     );
@@ -87,7 +89,6 @@ Future<AdministrableProductDefinition?> getAdministrableProductDefinition(
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

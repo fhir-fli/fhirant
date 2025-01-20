@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Library] canonical resources
-Future<void> createLibraryTables(Database db) async {
-  await db.execute('''
+Future<void> createLibraryTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Library (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,24 +14,28 @@ Future<void> createLibraryTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db
-      .execute('CREATE INDEX IF NOT EXISTS idx_library_url ON Library (url);');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_library_status ON Library (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_library_url
+    ON Library (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_library_status
+    ON Library (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS LibraryHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [Library] canonical resource to the database
-Future<bool> saveLibrary(Database db, Library resource) async {
+Future<bool> saveLibrary(Transaction txn, Library resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Library;
   final id = updatedResource.id?.value;
@@ -44,53 +48,55 @@ Future<bool> saveLibrary(Database db, Library resource) async {
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Library WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO LibraryHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO Library (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Library] canonical resource by its ID
-Future<Library?> getLibrary(Database db, String id) async {
+Future<Library?> getLibrary(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Library WHERE id = ?',
       [id],
     );
@@ -100,7 +106,6 @@ Future<Library?> getLibrary(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

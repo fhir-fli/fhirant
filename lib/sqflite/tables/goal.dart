@@ -5,26 +5,26 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Goal] resources
-Future<void> createGoalTables(Database db) async {
-  await db.execute('''
+Future<void> createGoalTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Goal (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS GoalHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [Goal] to the database
-Future<bool> saveGoal(Database db, Goal resource) async {
+Future<bool> saveGoal(Transaction txn, Goal resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Goal;
   final id = updatedResource.id?.value;
@@ -33,49 +33,51 @@ Future<bool> saveGoal(Database db, Goal resource) async {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Goal WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO GoalHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO Goal (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Goal] by its ID
-Future<Goal?> getGoal(Database db, String id) async {
+Future<Goal?> getGoal(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Goal WHERE id = ?',
       [id],
     );
@@ -85,7 +87,6 @@ Future<Goal?> getGoal(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -5,27 +5,27 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [QuestionnaireResponse] resources
-Future<void> createQuestionnaireResponseTables(Database db) async {
-  await db.execute('''
+Future<void> createQuestionnaireResponseTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireResponse (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS QuestionnaireResponseHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [QuestionnaireResponse] to the database
 Future<bool> saveQuestionnaireResponse(
-    Database db, QuestionnaireResponse resource,) async {
+    Transaction txn, QuestionnaireResponse resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as QuestionnaireResponse;
   final id = updatedResource.id?.value;
@@ -34,40 +34,42 @@ Future<bool> saveQuestionnaireResponse(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM QuestionnaireResponse WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO QuestionnaireResponseHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO QuestionnaireResponse (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -75,9 +77,9 @@ Future<bool> saveQuestionnaireResponse(
 
 /// Get a [QuestionnaireResponse] by its ID
 Future<QuestionnaireResponse?> getQuestionnaireResponse(
-    Database db, String id,) async {
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM QuestionnaireResponse WHERE id = ?',
       [id],
     );
@@ -87,7 +89,6 @@ Future<QuestionnaireResponse?> getQuestionnaireResponse(
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

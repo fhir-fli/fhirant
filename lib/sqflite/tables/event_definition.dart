@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [EventDefinition] canonical resources
-Future<void> createEventDefinitionTables(Database db) async {
-  await db.execute('''
+Future<void> createEventDefinitionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS EventDefinition (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,24 +14,29 @@ Future<void> createEventDefinitionTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_url ON EventDefinition (url);',);
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_event_definition_status ON EventDefinition (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_event_definition_url
+    ON EventDefinition (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_event_definition_status
+    ON EventDefinition (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS EventDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [EventDefinition] canonical resource to the database
-Future<bool> saveEventDefinition(Database db, EventDefinition resource) async {
+Future<bool> saveEventDefinition(
+    Transaction txn, EventDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as EventDefinition;
   final id = updatedResource.id?.value;
@@ -44,53 +49,55 @@ Future<bool> saveEventDefinition(Database db, EventDefinition resource) async {
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM EventDefinition WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO EventDefinitionHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO EventDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [EventDefinition] canonical resource by its ID
-Future<EventDefinition?> getEventDefinition(Database db, String id) async {
+Future<EventDefinition?> getEventDefinition(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM EventDefinition WHERE id = ?',
       [id],
     );
@@ -100,7 +107,6 @@ Future<EventDefinition?> getEventDefinition(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

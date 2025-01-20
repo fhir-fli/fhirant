@@ -5,26 +5,26 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Binary] resources
-Future<void> createBinaryTables(Database db) async {
-  await db.execute('''
+Future<void> createBinaryTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Binary (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS BinaryHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [Binary] to the database
-Future<bool> saveBinary(Database db, Binary resource) async {
+Future<bool> saveBinary(Transaction txn, Binary resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as Binary;
   final id = updatedResource.id?.value;
@@ -33,49 +33,51 @@ Future<bool> saveBinary(Database db, Binary resource) async {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Binary WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO BinaryHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO Binary (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Binary] by its ID
-Future<Binary?> getBinary(Database db, String id) async {
+Future<Binary?> getBinary(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Binary WHERE id = ?',
       [id],
     );
@@ -85,7 +87,6 @@ Future<Binary?> getBinary(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

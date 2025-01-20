@@ -5,26 +5,26 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [RequestGroup] resources
-Future<void> createRequestGroupTables(Database db) async {
-  await db.execute('''
+Future<void> createRequestGroupTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS RequestGroup (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS RequestGroupHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [RequestGroup] to the database
-Future<bool> saveRequestGroup(Database db, RequestGroup resource) async {
+Future<bool> saveRequestGroup(Transaction txn, RequestGroup resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as RequestGroup;
   final id = updatedResource.id?.value;
@@ -33,49 +33,51 @@ Future<bool> saveRequestGroup(Database db, RequestGroup resource) async {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM RequestGroup WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO RequestGroupHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO RequestGroup (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [RequestGroup] by its ID
-Future<RequestGroup?> getRequestGroup(Database db, String id) async {
+Future<RequestGroup?> getRequestGroup(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM RequestGroup WHERE id = ?',
       [id],
     );
@@ -85,7 +87,6 @@ Future<RequestGroup?> getRequestGroup(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

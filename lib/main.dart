@@ -1,10 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/db/db_service.dart';
+import 'package:fhirant/sqflite/db.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  // Initialize databaseFactory for sqflite_common_ffi on non-mobile platforms
+  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   runApp(const MyApp());
 }
 
@@ -29,12 +38,14 @@ class FhirLoaderScreen extends StatefulWidget {
 }
 
 class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
-  final DbService dbService = DbService();
+  final DbService sqlite3Service = DbService(); // SQLite3 service
+  final SqfliteDbService sqfliteService = SqfliteDbService(); // Sqflite service
   String resultMessage = 'Press the button to start loading FHIR resources.';
 
   @override
   void dispose() {
-    dbService.close();
+    sqlite3Service.close();
+    sqfliteService.close();
     super.dispose();
   }
 
@@ -43,10 +54,8 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
       resultMessage = 'Loading resources...';
     });
 
-    final stopwatch = Stopwatch()..start();
-
     try {
-      // Get a list of NDJSON files in the assets folder
+      // Read the asset manifest and filter for NDJSON files
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final manifestMap = json.decode(manifestContent) as Map<String, dynamic>;
       final ndjsonFiles = manifestMap.keys
@@ -57,32 +66,52 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
 
       var totalResources = 0;
 
+      // Benchmark SQLite3
+      final sqlite3Stopwatch = Stopwatch()..start();
       for (final file in ndjsonFiles) {
         final fileContent = await rootBundle.loadString(file);
         final lines = fileContent.split('\n').where((line) => line.isNotEmpty);
 
         final resources = <Resource>[];
         for (final line in lines) {
-          if (line.isEmpty) {
-            continue;
-          }
           final resource = Resource.fromJsonString(line);
           resources.add(resource);
-          // ignore: avoid_print
           print(resource.path);
         }
-        final result = DbService().bulkSaveResourcesOfSameType(resources);
+        final result = sqlite3Service.bulkSaveResourcesOfSameType(resources);
         if (result) {
           totalResources += resources.length;
         }
         resources.clear();
       }
+      sqlite3Stopwatch.stop();
 
-      stopwatch.stop();
+      // Benchmark Sqflite
+      totalResources = 0;
+      final sqfliteStopwatch = Stopwatch()..start();
+      for (final file in ndjsonFiles) {
+        final fileContent = await rootBundle.loadString(file);
+        final lines = fileContent.split('\n').where((line) => line.isNotEmpty);
+
+        final resources = <Resource>[];
+        for (final line in lines) {
+          final resource = Resource.fromJsonString(line);
+          resources.add(resource);
+          print(resource.path);
+        }
+        final result =
+            await sqfliteService.bulkSaveResourcesOfSameType(resources);
+        if (result) {
+          totalResources += resources.length;
+        }
+        resources.clear();
+      }
+      sqfliteStopwatch.stop();
 
       setState(() {
-        resultMessage = 'Successfully loaded $totalResources resources in '
-            '${stopwatch.elapsed.inMilliseconds} ms.';
+        resultMessage =
+            'SQLite3 loaded resources in ${sqlite3Stopwatch.elapsed.inMilliseconds} ms.\n'
+            'Sqflite loaded resources in ${sqfliteStopwatch.elapsed.inMilliseconds} ms.';
       });
     } catch (e) {
       setState(() {

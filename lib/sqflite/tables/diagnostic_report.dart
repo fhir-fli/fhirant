@@ -5,27 +5,27 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DiagnosticReport] resources
-Future<void> createDiagnosticReportTables(Database db) async {
-  await db.execute('''
+Future<void> createDiagnosticReportTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReport (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS DiagnosticReportHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [DiagnosticReport] to the database
 Future<bool> saveDiagnosticReport(
-    Database db, DiagnosticReport resource,) async {
+    Transaction txn, DiagnosticReport resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DiagnosticReport;
   final id = updatedResource.id?.value;
@@ -34,49 +34,52 @@ Future<bool> saveDiagnosticReport(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM DiagnosticReport WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO DiagnosticReportHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO DiagnosticReport (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [DiagnosticReport] by its ID
-Future<DiagnosticReport?> getDiagnosticReport(Database db, String id) async {
+Future<DiagnosticReport?> getDiagnosticReport(
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM DiagnosticReport WHERE id = ?',
       [id],
     );
@@ -86,7 +89,6 @@ Future<DiagnosticReport?> getDiagnosticReport(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

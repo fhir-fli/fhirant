@@ -3,9 +3,13 @@ import 'package:fhir_r4/fhir_r4.dart';
 
 void main() {
   for (final resource in R4ResourceType.typesAsStrings) {
-    var fileString = '// ignore_for_file: lines_longer_than_80_chars\n\n';
-    fileString += "import 'package:fhir_r4/fhir_r4.dart';\n";
-    fileString += "import 'package:sqflite/sqflite.dart';\n\n";
+    var fileString = '''
+// ignore_for_file: lines_longer_than_80_chars
+
+import 'package:fhir_r4/fhir_r4.dart';
+import 'package:sqflite/sqflite.dart';
+
+''';
 
     if (![
       'Condition',
@@ -44,26 +48,30 @@ void main() {
 String baseTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] resources
-Future<void> create${resourceType}Tables(Database db) async {
-  await db.execute('''
+Future<void> create${resourceType}Tables(Transaction txn) async {
+  await txn.execute(
+    '''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    '''
+  );
+  await txn.execute(
+    '''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    '''
+  );
 }
 
 /// Save a [$resourceType] to the database
-Future<bool> save$resourceType(Database db, $resourceType resource) async {
+Future<bool> save$resourceType(Transaction txn, $resourceType resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
@@ -72,49 +80,51 @@ Future<bool> save$resourceType(Database db, $resourceType resource) async {
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO $resourceType (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: \$e');
     return false;
   }
 }
 
 /// Get a [$resourceType] by its ID
-Future<$resourceType?> get$resourceType(Database db, String id) async {
+Future<$resourceType?> get$resourceType(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM $resourceType WHERE id = ?',
       [id],
     );
@@ -124,7 +134,6 @@ Future<$resourceType?> get$resourceType(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: \$e');
   }
   return null;
@@ -135,8 +144,9 @@ Future<$resourceType?> get$resourceType(Database db, String id) async {
 String canonicalTableCreate(String resourceType) => """
 /// Create the primary and history tables for
 /// [$resourceType] canonical resources
-Future<void> create${resourceType}Tables(Database db) async {
-  await db.execute('''
+Future<void> create${resourceType}Tables(Transaction txn) async {
+  await txn.execute(
+    '''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -144,22 +154,35 @@ Future<void> create${resourceType}Tables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url ON $resourceType (url);');
-  await db.execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_status ON $resourceType (status);');
-  await db.execute('''
+    )
+    '''
+  );
+  await txn.execute(
+    '''
+    CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url
+    ON $resourceType (url)
+    '''
+  );
+  await txn.execute(
+    '''
+    CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_status
+    ON $resourceType (status)
+    '''
+  );
+  await txn.execute(
+    '''
     CREATE TABLE IF NOT EXISTS ${resourceType}History (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    '''
+  );
 }
 
 /// Save a [$resourceType] canonical resource to the database
-Future<bool> save$resourceType(Database db, $resourceType resource) async {
+Future<bool> save$resourceType(Transaction txn, $resourceType resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
@@ -172,53 +195,55 @@ Future<bool> save$resourceType(Database db, $resourceType resource) async {
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM $resourceType WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO ${resourceType}History (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO $resourceType (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: \$e');
     return false;
   }
 }
 
 /// Get a [$resourceType] canonical resource by its ID
-Future<$resourceType?> get$resourceType(Database db, String id) async {
+Future<$resourceType?> get$resourceType(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM $resourceType WHERE id = ?',
       [id],
     );
@@ -228,7 +253,6 @@ Future<$resourceType?> get$resourceType(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: \$e');
   }
   return null;

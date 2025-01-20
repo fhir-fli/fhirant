@@ -5,27 +5,27 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [ManufacturedItemDefinition] resources
-Future<void> createManufacturedItemDefinitionTables(Database db) async {
-  await db.execute('''
+Future<void> createManufacturedItemDefinitionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ManufacturedItemDefinition (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ManufacturedItemDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [ManufacturedItemDefinition] to the database
 Future<bool> saveManufacturedItemDefinition(
-    Database db, ManufacturedItemDefinition resource,) async {
+    Transaction txn, ManufacturedItemDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as ManufacturedItemDefinition;
   final id = updatedResource.id?.value;
@@ -34,40 +34,42 @@ Future<bool> saveManufacturedItemDefinition(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM ManufacturedItemDefinition WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO ManufacturedItemDefinitionHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO ManufacturedItemDefinition (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -75,9 +77,9 @@ Future<bool> saveManufacturedItemDefinition(
 
 /// Get a [ManufacturedItemDefinition] by its ID
 Future<ManufacturedItemDefinition?> getManufacturedItemDefinition(
-    Database db, String id,) async {
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM ManufacturedItemDefinition WHERE id = ?',
       [id],
     );
@@ -87,7 +89,6 @@ Future<ManufacturedItemDefinition?> getManufacturedItemDefinition(
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

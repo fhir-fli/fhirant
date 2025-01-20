@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [PlanDefinition] canonical resources
-Future<void> createPlanDefinitionTables(Database db) async {
-  await db.execute('''
+Future<void> createPlanDefinitionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinition (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,24 +14,29 @@ Future<void> createPlanDefinitionTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_plan_definition_url ON PlanDefinition (url);',);
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_plan_definition_status ON PlanDefinition (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_plan_definition_url
+    ON PlanDefinition (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_plan_definition_status
+    ON PlanDefinition (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS PlanDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [PlanDefinition] canonical resource to the database
-Future<bool> savePlanDefinition(Database db, PlanDefinition resource) async {
+Future<bool> savePlanDefinition(
+    Transaction txn, PlanDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as PlanDefinition;
   final id = updatedResource.id?.value;
@@ -44,53 +49,55 @@ Future<bool> savePlanDefinition(Database db, PlanDefinition resource) async {
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM PlanDefinition WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO PlanDefinitionHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO PlanDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [PlanDefinition] canonical resource by its ID
-Future<PlanDefinition?> getPlanDefinition(Database db, String id) async {
+Future<PlanDefinition?> getPlanDefinition(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM PlanDefinition WHERE id = ?',
       [id],
     );
@@ -100,7 +107,6 @@ Future<PlanDefinition?> getPlanDefinition(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

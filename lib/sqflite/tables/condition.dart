@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Condition] resources
-Future<void> createConditionTables(Database db) async {
-  await db.execute('''
+Future<void> createConditionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Condition (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -18,7 +18,7 @@ Future<void> createConditionTables(Database db) async {
       onsetDateTime INT
     );
   ''');
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ConditionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -29,7 +29,7 @@ Future<void> createConditionTables(Database db) async {
 }
 
 /// Save a [Condition] to the database
-Future<bool> saveCondition(Database db, Condition condition) async {
+Future<bool> saveCondition(Transaction txn, Condition condition) async {
   final updatedCondition =
       updateMeta(condition, versionIdAsTime: true).newIdIfNoId();
   final id = updatedCondition.id?.value;
@@ -49,7 +49,7 @@ Future<bool> saveCondition(Database db, Condition condition) async {
 
   try {
     // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Condition WHERE id = ?',
       [id],
     );
@@ -57,7 +57,7 @@ Future<bool> saveCondition(Database db, Condition condition) async {
     if (existingResource.isNotEmpty) {
       // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO ConditionHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -69,7 +69,7 @@ Future<bool> saveCondition(Database db, Condition condition) async {
     }
 
     // Insert or update the new version in the main table
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO Condition (
         id, lastUpdated, resource, patientId, clinicalStatus, verificationStatus, code, onsetDateTime
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -86,17 +86,15 @@ Future<bool> saveCondition(Database db, Condition condition) async {
 
     return true;
   } catch (e) {
-    // Log the error
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [Condition] by its ID
-Future<Condition?> getCondition(Database db, String id) async {
+Future<Condition?> getCondition(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Condition WHERE id = ?',
       [id],
     );
@@ -104,7 +102,6 @@ Future<Condition?> getCondition(Database db, String id) async {
       return Condition.fromJsonString(result.first['resource']! as String);
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

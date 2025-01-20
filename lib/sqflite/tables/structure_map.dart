@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [StructureMap] canonical resources
-Future<void> createStructureMapTables(Database db) async {
-  await db.execute('''
+Future<void> createStructureMapTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS StructureMap (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,24 +14,28 @@ Future<void> createStructureMapTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_structure_map_url ON StructureMap (url);',);
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_structure_map_status ON StructureMap (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_structure_map_url
+    ON StructureMap (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_structure_map_status
+    ON StructureMap (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS StructureMapHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [StructureMap] canonical resource to the database
-Future<bool> saveStructureMap(Database db, StructureMap resource) async {
+Future<bool> saveStructureMap(Transaction txn, StructureMap resource) async {
   final updatedResource =
       updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as StructureMap;
   final id = updatedResource.id?.value;
@@ -44,53 +48,55 @@ Future<bool> saveStructureMap(Database db, StructureMap resource) async {
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM StructureMap WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO StructureMapHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO StructureMap (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [StructureMap] canonical resource by its ID
-Future<StructureMap?> getStructureMap(Database db, String id) async {
+Future<StructureMap?> getStructureMap(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM StructureMap WHERE id = ?',
       [id],
     );
@@ -100,7 +106,6 @@ Future<StructureMap?> getStructureMap(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -5,27 +5,27 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [DocumentManifest] resources
-Future<void> createDocumentManifestTables(Database db) async {
-  await db.execute('''
+Future<void> createDocumentManifestTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS DocumentManifest (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL
-    );
-  ''');
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS DocumentManifestHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [DocumentManifest] to the database
 Future<bool> saveDocumentManifest(
-    Database db, DocumentManifest resource,) async {
+    Transaction txn, DocumentManifest resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as DocumentManifest;
   final id = updatedResource.id?.value;
@@ -34,49 +34,52 @@ Future<bool> saveDocumentManifest(
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM DocumentManifest WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO DocumentManifestHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO DocumentManifest (
         id, lastUpdated, resource
-      ) VALUES (?, ?, ?);
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?)
+      ''',
+      [
+        id,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [DocumentManifest] by its ID
-Future<DocumentManifest?> getDocumentManifest(Database db, String id) async {
+Future<DocumentManifest?> getDocumentManifest(
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM DocumentManifest WHERE id = ?',
       [id],
     );
@@ -86,7 +89,6 @@ Future<DocumentManifest?> getDocumentManifest(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [OperationDefinition] canonical resources
-Future<void> createOperationDefinitionTables(Database db) async {
-  await db.execute('''
+Future<void> createOperationDefinitionTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinition (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,25 +14,29 @@ Future<void> createOperationDefinitionTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_url ON OperationDefinition (url);',);
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_operation_definition_status ON OperationDefinition (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_operation_definition_url
+    ON OperationDefinition (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_operation_definition_status
+    ON OperationDefinition (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS OperationDefinitionHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [OperationDefinition] canonical resource to the database
 Future<bool> saveOperationDefinition(
-    Database db, OperationDefinition resource,) async {
+    Transaction txn, OperationDefinition resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as OperationDefinition;
   final id = updatedResource.id?.value;
@@ -45,44 +49,46 @@ Future<bool> saveOperationDefinition(
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM OperationDefinition WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO OperationDefinitionHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO OperationDefinition (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
@@ -90,9 +96,9 @@ Future<bool> saveOperationDefinition(
 
 /// Get a [OperationDefinition] canonical resource by its ID
 Future<OperationDefinition?> getOperationDefinition(
-    Database db, String id,) async {
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM OperationDefinition WHERE id = ?',
       [id],
     );
@@ -102,7 +108,6 @@ Future<OperationDefinition?> getOperationDefinition(
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

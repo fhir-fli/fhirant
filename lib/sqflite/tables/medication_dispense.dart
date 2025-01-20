@@ -1,10 +1,12 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [MedicationDispense] resources
-Future<void> createMedicationDispenseTables(Database db) async {
-  await db.execute('''
+Future<void> createMedicationDispenseTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS MedicationDispense (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -16,13 +18,13 @@ Future<void> createMedicationDispenseTables(Database db) async {
       status TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_med_dispense_patientId ON MedicationDispense (patientId);',
   );
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_med_dispense_status ON MedicationDispense (status);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS MedicationDispenseHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,7 +36,7 @@ Future<void> createMedicationDispenseTables(Database db) async {
 
 /// Save a [MedicationDispense] to the database
 Future<bool> saveMedicationDispense(
-  Database db,
+  Transaction txn,
   MedicationDispense medicationDispense,
 ) async {
   final updatedDispense =
@@ -61,14 +63,14 @@ Future<bool> saveMedicationDispense(
   final status = medicationDispense.status.toString();
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM MedicationDispense WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO MedicationDispenseHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -79,7 +81,7 @@ Future<bool> saveMedicationDispense(
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO MedicationDispense (
         id, lastUpdated, resource, patientId, medicationId, quantity, daysSupply, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -102,11 +104,11 @@ Future<bool> saveMedicationDispense(
 
 /// Get a [MedicationDispense] by its ID
 Future<MedicationDispense?> getMedicationDispense(
-  Database db,
+  Transaction txn,
   String id,
 ) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM MedicationDispense WHERE id = ?',
       [id],
     );

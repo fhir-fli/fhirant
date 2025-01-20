@@ -20,7 +20,9 @@ class SqfliteDbService {
       filePath,
       version: _databaseVersion,
       onCreate: (db, version) async {
-        await createTables(db);
+        await db.transaction((txn) async {
+          await createTables(txn);
+        });
       },
     );
   }
@@ -36,9 +38,10 @@ class SqfliteDbService {
   Future<bool> saveResource(Resource resource) async {
     final db = await database;
     try {
-      final saveFn =
-          saveFunction(resource.resourceType); // Fetch correct save function
-      return await saveFn(db, resource); // Pass Database instance
+      final saveFn = saveFunction(resource.resourceType); // Fetch save function
+      return await db.transaction((txn) async {
+        return saveFn(txn, resource); // Use transaction object
+      });
     } catch (e) {
       print('Error saving resource of type ${resource.resourceType}: $e');
       return false;
@@ -53,10 +56,10 @@ class SqfliteDbService {
 
     final db = await database;
     try {
-      await db.transaction((_) async {
+      await db.transaction((txn) async {
         final saveFn = saveFunction(resources.first.resourceType);
         for (final resource in resources) {
-          await saveFn(db, resource); // Pass Database instance, not Transaction
+          await saveFn(txn, resource); // Use transaction object
         }
       });
       return true;
@@ -72,7 +75,7 @@ class SqfliteDbService {
 
     final db = await database;
     try {
-      await db.transaction((_) async {
+      await db.transaction((txn) async {
         final groupedResources = <R4ResourceType, List<Resource>>{};
 
         for (final resource in resources) {
@@ -84,10 +87,7 @@ class SqfliteDbService {
         for (final entry in groupedResources.entries) {
           final saveFn = saveFunction(entry.key);
           for (final resource in entry.value) {
-            await saveFn(
-              db,
-              resource,
-            ); // Pass Database instance, not Transaction
+            await saveFn(txn, resource); // Use transaction object
           }
         }
       });

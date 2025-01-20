@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Procedure] resources
-Future<void> createProcedureTables(Database db) async {
-  await db.execute('''
+Future<void> createProcedureTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Procedure (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -15,13 +15,13 @@ Future<void> createProcedureTables(Database db) async {
       status TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_procedure_patientId ON Procedure (patientId);',
   );
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_procedure_status ON Procedure (status);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ProcedureHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -32,7 +32,7 @@ Future<void> createProcedureTables(Database db) async {
 }
 
 /// Save a [Procedure] to the database
-Future<bool> saveProcedure(Database db, Procedure procedure) async {
+Future<bool> saveProcedure(Transaction txn, Procedure procedure) async {
   final updatedProcedure =
       updateMeta(procedure, versionIdAsTime: true).newIdIfNoId();
   final id = procedure.id?.value;
@@ -48,14 +48,14 @@ Future<bool> saveProcedure(Database db, Procedure procedure) async {
   final status = procedure.status.toString();
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Procedure WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO ProcedureHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -66,7 +66,7 @@ Future<bool> saveProcedure(Database db, Procedure procedure) async {
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO Procedure (
         id, lastUpdated, resource, patientId, code, performedDateTime, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -87,9 +87,9 @@ Future<bool> saveProcedure(Database db, Procedure procedure) async {
 }
 
 /// Get a [Procedure] by its ID
-Future<Procedure?> getProcedure(Database db, String id) async {
+Future<Procedure?> getProcedure(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Procedure WHERE id = ?',
       [id],
     );

@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Observation] resources
-Future<void> createObservationTables(Database db) async {
-  await db.execute('''
+Future<void> createObservationTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Observation (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -16,7 +16,7 @@ Future<void> createObservationTables(Database db) async {
       effectiveDateTime INT
     );
   ''');
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS ObservationHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -27,7 +27,7 @@ Future<void> createObservationTables(Database db) async {
 }
 
 /// Save an [Observation] to the database
-Future<bool> saveObservation(Database db, Observation observation) async {
+Future<bool> saveObservation(Transaction txn, Observation observation) async {
   final updatedObservation =
       updateMeta(observation, versionIdAsTime: true).newIdIfNoId();
   final id = updatedObservation.id?.value;
@@ -45,14 +45,14 @@ Future<bool> saveObservation(Database db, Observation observation) async {
       ?.millisecondsSinceEpoch;
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Observation WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO ObservationHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -63,7 +63,7 @@ Future<bool> saveObservation(Database db, Observation observation) async {
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
     INSERT OR REPLACE INTO Observation (
       id, lastUpdated, resource, patientId, type, value, unit, effectiveDateTime
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -85,9 +85,9 @@ Future<bool> saveObservation(Database db, Observation observation) async {
 }
 
 /// Get an [Observation] by its ID
-Future<Observation?> getObservation(Database db, String id) async {
+Future<Observation?> getObservation(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Observation WHERE id = ?',
       [id],
     );

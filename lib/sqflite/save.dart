@@ -2,412 +2,422 @@ import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/sqflite/db.dart';
 import 'package:sqflite/sqflite.dart';
 
-Future<bool> Function(Database, Resource) saveFunction(
+Future<bool> Function(Transaction, Resource) saveFunction(
   R4ResourceType resourceType,
 ) {
   switch (resourceType) {
     case R4ResourceType.Account:
-      return (db, resource) async => saveAccount(db, resource as Account);
+      return (txn, resource) async => saveAccount(txn, resource as Account);
     case R4ResourceType.ActivityDefinition:
-      return (db, resource) async =>
-          saveActivityDefinition(db, resource as ActivityDefinition);
+      return (txn, resource) async =>
+          saveActivityDefinition(txn, resource as ActivityDefinition);
     case R4ResourceType.AdministrableProductDefinition:
-      return (db, resource) async => saveAdministrableProductDefinition(
-            db,
+      return (txn, resource) async => saveAdministrableProductDefinition(
+            txn,
             resource as AdministrableProductDefinition,
           );
     case R4ResourceType.AdverseEvent:
-      return (db, resource) async =>
-          saveAdverseEvent(db, resource as AdverseEvent);
+      return (txn, resource) async =>
+          saveAdverseEvent(txn, resource as AdverseEvent);
     case R4ResourceType.AllergyIntolerance:
-      return (db, resource) async =>
-          saveAllergyIntolerance(db, resource as AllergyIntolerance);
+      return (txn, resource) async =>
+          saveAllergyIntolerance(txn, resource as AllergyIntolerance);
     case R4ResourceType.Appointment:
-      return (db, resource) async =>
-          saveAppointment(db, resource as Appointment);
+      return (txn, resource) async =>
+          saveAppointment(txn, resource as Appointment);
     case R4ResourceType.AppointmentResponse:
-      return (db, resource) async =>
-          saveAppointmentResponse(db, resource as AppointmentResponse);
+      return (txn, resource) async =>
+          saveAppointmentResponse(txn, resource as AppointmentResponse);
     case R4ResourceType.AuditEvent:
-      return (db, resource) async => saveAuditEvent(db, resource as AuditEvent);
+      return (txn, resource) async =>
+          saveAuditEvent(txn, resource as AuditEvent);
     case R4ResourceType.Basic:
-      return (db, resource) async => saveBasic(db, resource as Basic);
+      return (txn, resource) async => saveBasic(txn, resource as Basic);
     case R4ResourceType.Binary:
-      return (db, resource) async => saveBinary(db, resource as Binary);
+      return (txn, resource) async => saveBinary(txn, resource as Binary);
     case R4ResourceType.BiologicallyDerivedProduct:
-      return (db, resource) async => saveBiologicallyDerivedProduct(
-            db,
+      return (txn, resource) async => saveBiologicallyDerivedProduct(
+            txn,
             resource as BiologicallyDerivedProduct,
           );
     case R4ResourceType.BodyStructure:
-      return (db, resource) async =>
-          saveBodyStructure(db, resource as BodyStructure);
+      return (txn, resource) async =>
+          saveBodyStructure(txn, resource as BodyStructure);
     case R4ResourceType.Bundle:
-      return (db, resource) async => saveBundle(db, resource as Bundle);
+      return (txn, resource) async => saveBundle(txn, resource as Bundle);
     case R4ResourceType.CapabilityStatement:
-      return (db, resource) async =>
-          saveCapabilityStatement(db, resource as CapabilityStatement);
+      return (txn, resource) async =>
+          saveCapabilityStatement(txn, resource as CapabilityStatement);
     case R4ResourceType.CarePlan:
-      return (db, resource) async => saveCarePlan(db, resource as CarePlan);
+      return (txn, resource) async => saveCarePlan(txn, resource as CarePlan);
     case R4ResourceType.CareTeam:
-      return (db, resource) async => saveCareTeam(db, resource as CareTeam);
+      return (txn, resource) async => saveCareTeam(txn, resource as CareTeam);
     case R4ResourceType.CatalogEntry:
-      return (db, resource) async =>
-          saveCatalogEntry(db, resource as CatalogEntry);
+      return (txn, resource) async =>
+          saveCatalogEntry(txn, resource as CatalogEntry);
     case R4ResourceType.ChargeItem:
-      return (db, resource) async => saveChargeItem(db, resource as ChargeItem);
+      return (txn, resource) async =>
+          saveChargeItem(txn, resource as ChargeItem);
     case R4ResourceType.ChargeItemDefinition:
-      return (db, resource) async =>
-          saveChargeItemDefinition(db, resource as ChargeItemDefinition);
+      return (txn, resource) async =>
+          saveChargeItemDefinition(txn, resource as ChargeItemDefinition);
     case R4ResourceType.Citation:
-      return (db, resource) async => saveCitation(db, resource as Citation);
+      return (txn, resource) async => saveCitation(txn, resource as Citation);
     case R4ResourceType.Claim:
-      return (db, resource) async => saveClaim(db, resource as Claim);
+      return (txn, resource) async => saveClaim(txn, resource as Claim);
     case R4ResourceType.ClaimResponse:
-      return (db, resource) async =>
-          saveClaimResponse(db, resource as ClaimResponse);
+      return (txn, resource) async =>
+          saveClaimResponse(txn, resource as ClaimResponse);
     case R4ResourceType.ClinicalImpression:
-      return (db, resource) async =>
-          saveClinicalImpression(db, resource as ClinicalImpression);
+      return (txn, resource) async =>
+          saveClinicalImpression(txn, resource as ClinicalImpression);
     case R4ResourceType.ClinicalUseDefinition:
-      return (db, resource) async =>
-          saveClinicalUseDefinition(db, resource as ClinicalUseDefinition);
+      return (txn, resource) async =>
+          saveClinicalUseDefinition(txn, resource as ClinicalUseDefinition);
     case R4ResourceType.CodeSystem:
-      return (db, resource) async => saveCodeSystem(db, resource as CodeSystem);
+      return (txn, resource) async =>
+          saveCodeSystem(txn, resource as CodeSystem);
     case R4ResourceType.Communication:
-      return (db, resource) async =>
-          saveCommunication(db, resource as Communication);
+      return (txn, resource) async =>
+          saveCommunication(txn, resource as Communication);
     case R4ResourceType.CommunicationRequest:
-      return (db, resource) async =>
-          saveCommunicationRequest(db, resource as CommunicationRequest);
+      return (txn, resource) async =>
+          saveCommunicationRequest(txn, resource as CommunicationRequest);
     case R4ResourceType.CompartmentDefinition:
-      return (db, resource) async =>
-          saveCompartmentDefinition(db, resource as CompartmentDefinition);
+      return (txn, resource) async =>
+          saveCompartmentDefinition(txn, resource as CompartmentDefinition);
     case R4ResourceType.Composition:
-      return (db, resource) async =>
-          saveComposition(db, resource as Composition);
+      return (txn, resource) async =>
+          saveComposition(txn, resource as Composition);
     case R4ResourceType.ConceptMap:
-      return (db, resource) async => saveConceptMap(db, resource as ConceptMap);
+      return (txn, resource) async =>
+          saveConceptMap(txn, resource as ConceptMap);
     case R4ResourceType.Condition:
-      return (db, resource) async => saveCondition(db, resource as Condition);
+      return (txn, resource) async => saveCondition(txn, resource as Condition);
     case R4ResourceType.Consent:
-      return (db, resource) async => saveConsent(db, resource as Consent);
+      return (txn, resource) async => saveConsent(txn, resource as Consent);
     case R4ResourceType.Contract:
-      return (db, resource) async => saveContract(db, resource as Contract);
+      return (txn, resource) async => saveContract(txn, resource as Contract);
     case R4ResourceType.Coverage:
-      return (db, resource) async => saveCoverage(db, resource as Coverage);
+      return (txn, resource) async => saveCoverage(txn, resource as Coverage);
     case R4ResourceType.CoverageEligibilityRequest:
-      return (db, resource) async => saveCoverageEligibilityRequest(
-            db,
+      return (txn, resource) async => saveCoverageEligibilityRequest(
+            txn,
             resource as CoverageEligibilityRequest,
           );
     case R4ResourceType.CoverageEligibilityResponse:
-      return (db, resource) async => saveCoverageEligibilityResponse(
-            db,
+      return (txn, resource) async => saveCoverageEligibilityResponse(
+            txn,
             resource as CoverageEligibilityResponse,
           );
     case R4ResourceType.DetectedIssue:
-      return (db, resource) async =>
-          saveDetectedIssue(db, resource as DetectedIssue);
+      return (txn, resource) async =>
+          saveDetectedIssue(txn, resource as DetectedIssue);
     case R4ResourceType.Device:
-      return (db, resource) async => saveDevice(db, resource as Device);
+      return (txn, resource) async => saveDevice(txn, resource as Device);
     case R4ResourceType.DeviceDefinition:
-      return (db, resource) async =>
-          saveDeviceDefinition(db, resource as DeviceDefinition);
+      return (txn, resource) async =>
+          saveDeviceDefinition(txn, resource as DeviceDefinition);
     case R4ResourceType.DeviceMetric:
-      return (db, resource) async =>
-          saveDeviceMetric(db, resource as DeviceMetric);
+      return (txn, resource) async =>
+          saveDeviceMetric(txn, resource as DeviceMetric);
     case R4ResourceType.DeviceRequest:
-      return (db, resource) async =>
-          saveDeviceRequest(db, resource as DeviceRequest);
+      return (txn, resource) async =>
+          saveDeviceRequest(txn, resource as DeviceRequest);
     case R4ResourceType.DeviceUseStatement:
-      return (db, resource) async =>
-          saveDeviceUseStatement(db, resource as DeviceUseStatement);
+      return (txn, resource) async =>
+          saveDeviceUseStatement(txn, resource as DeviceUseStatement);
     case R4ResourceType.DiagnosticReport:
-      return (db, resource) async =>
-          saveDiagnosticReport(db, resource as DiagnosticReport);
+      return (txn, resource) async =>
+          saveDiagnosticReport(txn, resource as DiagnosticReport);
     case R4ResourceType.DocumentManifest:
-      return (db, resource) async =>
-          saveDocumentManifest(db, resource as DocumentManifest);
+      return (txn, resource) async =>
+          saveDocumentManifest(txn, resource as DocumentManifest);
     case R4ResourceType.DocumentReference:
-      return (db, resource) async =>
-          saveDocumentReference(db, resource as DocumentReference);
+      return (txn, resource) async =>
+          saveDocumentReference(txn, resource as DocumentReference);
     case R4ResourceType.Encounter:
-      return (db, resource) async => saveEncounter(db, resource as Encounter);
+      return (txn, resource) async => saveEncounter(txn, resource as Encounter);
     case R4ResourceType.FhirEndpoint:
-      return (db, resource) async =>
-          saveFhirEndpoint(db, resource as FhirEndpoint);
+      return (txn, resource) async =>
+          saveFhirEndpoint(txn, resource as FhirEndpoint);
     case R4ResourceType.EnrollmentRequest:
-      return (db, resource) async =>
-          saveEnrollmentRequest(db, resource as EnrollmentRequest);
+      return (txn, resource) async =>
+          saveEnrollmentRequest(txn, resource as EnrollmentRequest);
     case R4ResourceType.EnrollmentResponse:
-      return (db, resource) async =>
-          saveEnrollmentResponse(db, resource as EnrollmentResponse);
+      return (txn, resource) async =>
+          saveEnrollmentResponse(txn, resource as EnrollmentResponse);
     case R4ResourceType.EpisodeOfCare:
-      return (db, resource) async =>
-          saveEpisodeOfCare(db, resource as EpisodeOfCare);
+      return (txn, resource) async =>
+          saveEpisodeOfCare(txn, resource as EpisodeOfCare);
     case R4ResourceType.EventDefinition:
-      return (db, resource) async =>
-          saveEventDefinition(db, resource as EventDefinition);
+      return (txn, resource) async =>
+          saveEventDefinition(txn, resource as EventDefinition);
     case R4ResourceType.Evidence:
-      return (db, resource) async => saveEvidence(db, resource as Evidence);
+      return (txn, resource) async => saveEvidence(txn, resource as Evidence);
     case R4ResourceType.EvidenceReport:
-      return (db, resource) async =>
-          saveEvidenceReport(db, resource as EvidenceReport);
+      return (txn, resource) async =>
+          saveEvidenceReport(txn, resource as EvidenceReport);
     case R4ResourceType.EvidenceVariable:
-      return (db, resource) async =>
-          saveEvidenceVariable(db, resource as EvidenceVariable);
+      return (txn, resource) async =>
+          saveEvidenceVariable(txn, resource as EvidenceVariable);
     case R4ResourceType.ExampleScenario:
-      return (db, resource) async =>
-          saveExampleScenario(db, resource as ExampleScenario);
+      return (txn, resource) async =>
+          saveExampleScenario(txn, resource as ExampleScenario);
     case R4ResourceType.ExplanationOfBenefit:
-      return (db, resource) async =>
-          saveExplanationOfBenefit(db, resource as ExplanationOfBenefit);
+      return (txn, resource) async =>
+          saveExplanationOfBenefit(txn, resource as ExplanationOfBenefit);
     case R4ResourceType.FamilyMemberHistory:
-      return (db, resource) async =>
-          saveFamilyMemberHistory(db, resource as FamilyMemberHistory);
+      return (txn, resource) async =>
+          saveFamilyMemberHistory(txn, resource as FamilyMemberHistory);
     case R4ResourceType.Flag:
-      return (db, resource) async => saveFlag(db, resource as Flag);
+      return (txn, resource) async => saveFlag(txn, resource as Flag);
     case R4ResourceType.Goal:
-      return (db, resource) async => saveGoal(db, resource as Goal);
+      return (txn, resource) async => saveGoal(txn, resource as Goal);
     case R4ResourceType.GraphDefinition:
-      return (db, resource) async =>
-          saveGraphDefinition(db, resource as GraphDefinition);
+      return (txn, resource) async =>
+          saveGraphDefinition(txn, resource as GraphDefinition);
     case R4ResourceType.FhirGroup:
-      return (db, resource) async => saveFhirGroup(db, resource as FhirGroup);
+      return (txn, resource) async => saveFhirGroup(txn, resource as FhirGroup);
     case R4ResourceType.GuidanceResponse:
-      return (db, resource) async =>
-          saveGuidanceResponse(db, resource as GuidanceResponse);
+      return (txn, resource) async =>
+          saveGuidanceResponse(txn, resource as GuidanceResponse);
     case R4ResourceType.HealthcareService:
-      return (db, resource) async =>
-          saveHealthcareService(db, resource as HealthcareService);
+      return (txn, resource) async =>
+          saveHealthcareService(txn, resource as HealthcareService);
     case R4ResourceType.ImagingStudy:
-      return (db, resource) async =>
-          saveImagingStudy(db, resource as ImagingStudy);
+      return (txn, resource) async =>
+          saveImagingStudy(txn, resource as ImagingStudy);
     case R4ResourceType.Immunization:
-      return (db, resource) async =>
-          saveImmunization(db, resource as Immunization);
+      return (txn, resource) async =>
+          saveImmunization(txn, resource as Immunization);
     case R4ResourceType.ImmunizationEvaluation:
-      return (db, resource) async =>
-          saveImmunizationEvaluation(db, resource as ImmunizationEvaluation);
+      return (txn, resource) async =>
+          saveImmunizationEvaluation(txn, resource as ImmunizationEvaluation);
     case R4ResourceType.ImmunizationRecommendation:
-      return (db, resource) async => saveImmunizationRecommendation(
-            db,
+      return (txn, resource) async => saveImmunizationRecommendation(
+            txn,
             resource as ImmunizationRecommendation,
           );
     case R4ResourceType.ImplementationGuide:
-      return (db, resource) async =>
-          saveImplementationGuide(db, resource as ImplementationGuide);
+      return (txn, resource) async =>
+          saveImplementationGuide(txn, resource as ImplementationGuide);
     case R4ResourceType.Ingredient:
-      return (db, resource) async => saveIngredient(db, resource as Ingredient);
+      return (txn, resource) async =>
+          saveIngredient(txn, resource as Ingredient);
     case R4ResourceType.InsurancePlan:
-      return (db, resource) async =>
-          saveInsurancePlan(db, resource as InsurancePlan);
+      return (txn, resource) async =>
+          saveInsurancePlan(txn, resource as InsurancePlan);
     case R4ResourceType.Invoice:
-      return (db, resource) async => saveInvoice(db, resource as Invoice);
+      return (txn, resource) async => saveInvoice(txn, resource as Invoice);
     case R4ResourceType.Library:
-      return (db, resource) async => saveLibrary(db, resource as Library);
+      return (txn, resource) async => saveLibrary(txn, resource as Library);
     case R4ResourceType.Linkage:
-      return (db, resource) async => saveLinkage(db, resource as Linkage);
+      return (txn, resource) async => saveLinkage(txn, resource as Linkage);
     case R4ResourceType.FhirList:
-      return (db, resource) async => saveFhirList(db, resource as FhirList);
+      return (txn, resource) async => saveFhirList(txn, resource as FhirList);
     case R4ResourceType.Location:
-      return (db, resource) async => saveLocation(db, resource as Location);
+      return (txn, resource) async => saveLocation(txn, resource as Location);
     case R4ResourceType.ManufacturedItemDefinition:
-      return (db, resource) async => saveManufacturedItemDefinition(
-            db,
+      return (txn, resource) async => saveManufacturedItemDefinition(
+            txn,
             resource as ManufacturedItemDefinition,
           );
     case R4ResourceType.Measure:
-      return (db, resource) async => saveMeasure(db, resource as Measure);
+      return (txn, resource) async => saveMeasure(txn, resource as Measure);
     case R4ResourceType.MeasureReport:
-      return (db, resource) async =>
-          saveMeasureReport(db, resource as MeasureReport);
+      return (txn, resource) async =>
+          saveMeasureReport(txn, resource as MeasureReport);
     case R4ResourceType.Media:
-      return (db, resource) async => saveMedia(db, resource as Media);
+      return (txn, resource) async => saveMedia(txn, resource as Media);
     case R4ResourceType.Medication:
-      return (db, resource) async => saveMedication(db, resource as Medication);
+      return (txn, resource) async =>
+          saveMedication(txn, resource as Medication);
     case R4ResourceType.MedicationAdministration:
-      return (db, resource) async => saveMedicationAdministration(
-            db,
+      return (txn, resource) async => saveMedicationAdministration(
+            txn,
             resource as MedicationAdministration,
           );
     case R4ResourceType.MedicationDispense:
-      return (db, resource) async =>
-          saveMedicationDispense(db, resource as MedicationDispense);
+      return (txn, resource) async =>
+          saveMedicationDispense(txn, resource as MedicationDispense);
     case R4ResourceType.MedicationKnowledge:
-      return (db, resource) async =>
-          saveMedicationKnowledge(db, resource as MedicationKnowledge);
+      return (txn, resource) async =>
+          saveMedicationKnowledge(txn, resource as MedicationKnowledge);
     case R4ResourceType.MedicationRequest:
-      return (db, resource) async =>
-          saveMedicationRequest(db, resource as MedicationRequest);
+      return (txn, resource) async =>
+          saveMedicationRequest(txn, resource as MedicationRequest);
     case R4ResourceType.MedicationStatement:
-      return (db, resource) async =>
-          saveMedicationStatement(db, resource as MedicationStatement);
+      return (txn, resource) async =>
+          saveMedicationStatement(txn, resource as MedicationStatement);
     case R4ResourceType.MedicinalProductDefinition:
-      return (db, resource) async => saveMedicinalProductDefinition(
-            db,
+      return (txn, resource) async => saveMedicinalProductDefinition(
+            txn,
             resource as MedicinalProductDefinition,
           );
     case R4ResourceType.MessageDefinition:
-      return (db, resource) async =>
-          saveMessageDefinition(db, resource as MessageDefinition);
+      return (txn, resource) async =>
+          saveMessageDefinition(txn, resource as MessageDefinition);
     case R4ResourceType.MessageHeader:
-      return (db, resource) async =>
-          saveMessageHeader(db, resource as MessageHeader);
+      return (txn, resource) async =>
+          saveMessageHeader(txn, resource as MessageHeader);
     case R4ResourceType.MolecularSequence:
-      return (db, resource) async =>
-          saveMolecularSequence(db, resource as MolecularSequence);
+      return (txn, resource) async =>
+          saveMolecularSequence(txn, resource as MolecularSequence);
     case R4ResourceType.NamingSystem:
-      return (db, resource) async =>
-          saveNamingSystem(db, resource as NamingSystem);
+      return (txn, resource) async =>
+          saveNamingSystem(txn, resource as NamingSystem);
     case R4ResourceType.NutritionOrder:
-      return (db, resource) async =>
-          saveNutritionOrder(db, resource as NutritionOrder);
+      return (txn, resource) async =>
+          saveNutritionOrder(txn, resource as NutritionOrder);
     case R4ResourceType.NutritionProduct:
-      return (db, resource) async =>
-          saveNutritionProduct(db, resource as NutritionProduct);
+      return (txn, resource) async =>
+          saveNutritionProduct(txn, resource as NutritionProduct);
     case R4ResourceType.Observation:
-      return (db, resource) async =>
-          saveObservation(db, resource as Observation);
+      return (txn, resource) async =>
+          saveObservation(txn, resource as Observation);
     case R4ResourceType.ObservationDefinition:
-      return (db, resource) async =>
-          saveObservationDefinition(db, resource as ObservationDefinition);
+      return (txn, resource) async =>
+          saveObservationDefinition(txn, resource as ObservationDefinition);
     case R4ResourceType.OperationDefinition:
-      return (db, resource) async =>
-          saveOperationDefinition(db, resource as OperationDefinition);
+      return (txn, resource) async =>
+          saveOperationDefinition(txn, resource as OperationDefinition);
     case R4ResourceType.OperationOutcome:
-      return (db, resource) async =>
-          saveOperationOutcome(db, resource as OperationOutcome);
+      return (txn, resource) async =>
+          saveOperationOutcome(txn, resource as OperationOutcome);
     case R4ResourceType.Organization:
-      return (db, resource) async =>
-          saveOrganization(db, resource as Organization);
+      return (txn, resource) async =>
+          saveOrganization(txn, resource as Organization);
     case R4ResourceType.OrganizationAffiliation:
-      return (db, resource) async => saveOrganizationAffiliation(
-            db,
+      return (txn, resource) async => saveOrganizationAffiliation(
+            txn,
             resource as OrganizationAffiliation,
           );
     case R4ResourceType.PackagedProductDefinition:
-      return (db, resource) async => savePackagedProductDefinition(
-            db,
+      return (txn, resource) async => savePackagedProductDefinition(
+            txn,
             resource as PackagedProductDefinition,
           );
     case R4ResourceType.Parameters:
-      return (db, resource) async => saveParameters(db, resource as Parameters);
+      return (txn, resource) async =>
+          saveParameters(txn, resource as Parameters);
     case R4ResourceType.Patient:
-      return (db, resource) async => savePatient(db, resource as Patient);
+      return (txn, resource) async => savePatient(txn, resource as Patient);
     case R4ResourceType.PaymentNotice:
-      return (db, resource) async =>
-          savePaymentNotice(db, resource as PaymentNotice);
+      return (txn, resource) async =>
+          savePaymentNotice(txn, resource as PaymentNotice);
     case R4ResourceType.PaymentReconciliation:
-      return (db, resource) async =>
-          savePaymentReconciliation(db, resource as PaymentReconciliation);
+      return (txn, resource) async =>
+          savePaymentReconciliation(txn, resource as PaymentReconciliation);
     case R4ResourceType.Person:
-      return (db, resource) async => savePerson(db, resource as Person);
+      return (txn, resource) async => savePerson(txn, resource as Person);
     case R4ResourceType.PlanDefinition:
-      return (db, resource) async =>
-          savePlanDefinition(db, resource as PlanDefinition);
+      return (txn, resource) async =>
+          savePlanDefinition(txn, resource as PlanDefinition);
     case R4ResourceType.Practitioner:
-      return (db, resource) async =>
-          savePractitioner(db, resource as Practitioner);
+      return (txn, resource) async =>
+          savePractitioner(txn, resource as Practitioner);
     case R4ResourceType.PractitionerRole:
-      return (db, resource) async =>
-          savePractitionerRole(db, resource as PractitionerRole);
+      return (txn, resource) async =>
+          savePractitionerRole(txn, resource as PractitionerRole);
     case R4ResourceType.Procedure:
-      return (db, resource) async => saveProcedure(db, resource as Procedure);
+      return (txn, resource) async => saveProcedure(txn, resource as Procedure);
     case R4ResourceType.Provenance:
-      return (db, resource) async => saveProvenance(db, resource as Provenance);
+      return (txn, resource) async =>
+          saveProvenance(txn, resource as Provenance);
     case R4ResourceType.Questionnaire:
-      return (db, resource) async =>
-          saveQuestionnaire(db, resource as Questionnaire);
+      return (txn, resource) async =>
+          saveQuestionnaire(txn, resource as Questionnaire);
     case R4ResourceType.QuestionnaireResponse:
-      return (db, resource) async =>
-          saveQuestionnaireResponse(db, resource as QuestionnaireResponse);
+      return (txn, resource) async =>
+          saveQuestionnaireResponse(txn, resource as QuestionnaireResponse);
     case R4ResourceType.RegulatedAuthorization:
-      return (db, resource) async =>
-          saveRegulatedAuthorization(db, resource as RegulatedAuthorization);
+      return (txn, resource) async =>
+          saveRegulatedAuthorization(txn, resource as RegulatedAuthorization);
     case R4ResourceType.RelatedPerson:
-      return (db, resource) async =>
-          saveRelatedPerson(db, resource as RelatedPerson);
+      return (txn, resource) async =>
+          saveRelatedPerson(txn, resource as RelatedPerson);
     case R4ResourceType.RequestGroup:
-      return (db, resource) async =>
-          saveRequestGroup(db, resource as RequestGroup);
+      return (txn, resource) async =>
+          saveRequestGroup(txn, resource as RequestGroup);
     case R4ResourceType.ResearchDefinition:
-      return (db, resource) async =>
-          saveResearchDefinition(db, resource as ResearchDefinition);
+      return (txn, resource) async =>
+          saveResearchDefinition(txn, resource as ResearchDefinition);
     case R4ResourceType.ResearchElementDefinition:
-      return (db, resource) async => saveResearchElementDefinition(
-            db,
+      return (txn, resource) async => saveResearchElementDefinition(
+            txn,
             resource as ResearchElementDefinition,
           );
     case R4ResourceType.ResearchStudy:
-      return (db, resource) async =>
-          saveResearchStudy(db, resource as ResearchStudy);
+      return (txn, resource) async =>
+          saveResearchStudy(txn, resource as ResearchStudy);
     case R4ResourceType.ResearchSubject:
-      return (db, resource) async =>
-          saveResearchSubject(db, resource as ResearchSubject);
+      return (txn, resource) async =>
+          saveResearchSubject(txn, resource as ResearchSubject);
     case R4ResourceType.RiskAssessment:
-      return (db, resource) async =>
-          saveRiskAssessment(db, resource as RiskAssessment);
+      return (txn, resource) async =>
+          saveRiskAssessment(txn, resource as RiskAssessment);
     case R4ResourceType.Schedule:
-      return (db, resource) async => saveSchedule(db, resource as Schedule);
+      return (txn, resource) async => saveSchedule(txn, resource as Schedule);
     case R4ResourceType.SearchParameter:
-      return (db, resource) async =>
-          saveSearchParameter(db, resource as SearchParameter);
+      return (txn, resource) async =>
+          saveSearchParameter(txn, resource as SearchParameter);
     case R4ResourceType.ServiceRequest:
-      return (db, resource) async =>
-          saveServiceRequest(db, resource as ServiceRequest);
+      return (txn, resource) async =>
+          saveServiceRequest(txn, resource as ServiceRequest);
     case R4ResourceType.Slot:
-      return (db, resource) async => saveSlot(db, resource as Slot);
+      return (txn, resource) async => saveSlot(txn, resource as Slot);
     case R4ResourceType.Specimen:
-      return (db, resource) async => saveSpecimen(db, resource as Specimen);
+      return (txn, resource) async => saveSpecimen(txn, resource as Specimen);
     case R4ResourceType.SpecimenDefinition:
-      return (db, resource) async =>
-          saveSpecimenDefinition(db, resource as SpecimenDefinition);
+      return (txn, resource) async =>
+          saveSpecimenDefinition(txn, resource as SpecimenDefinition);
     case R4ResourceType.StructureDefinition:
-      return (db, resource) async =>
-          saveStructureDefinition(db, resource as StructureDefinition);
+      return (txn, resource) async =>
+          saveStructureDefinition(txn, resource as StructureDefinition);
     case R4ResourceType.StructureMap:
-      return (db, resource) async =>
-          saveStructureMap(db, resource as StructureMap);
+      return (txn, resource) async =>
+          saveStructureMap(txn, resource as StructureMap);
     case R4ResourceType.Subscription:
-      return (db, resource) async =>
-          saveSubscription(db, resource as Subscription);
+      return (txn, resource) async =>
+          saveSubscription(txn, resource as Subscription);
     case R4ResourceType.SubscriptionStatus:
-      return (db, resource) async =>
-          saveSubscriptionStatus(db, resource as SubscriptionStatus);
+      return (txn, resource) async =>
+          saveSubscriptionStatus(txn, resource as SubscriptionStatus);
     case R4ResourceType.SubscriptionTopic:
-      return (db, resource) async =>
-          saveSubscriptionTopic(db, resource as SubscriptionTopic);
+      return (txn, resource) async =>
+          saveSubscriptionTopic(txn, resource as SubscriptionTopic);
     case R4ResourceType.Substance:
-      return (db, resource) async => saveSubstance(db, resource as Substance);
+      return (txn, resource) async => saveSubstance(txn, resource as Substance);
     case R4ResourceType.SubstanceDefinition:
-      return (db, resource) async =>
-          saveSubstanceDefinition(db, resource as SubstanceDefinition);
+      return (txn, resource) async =>
+          saveSubstanceDefinition(txn, resource as SubstanceDefinition);
     case R4ResourceType.SupplyDelivery:
-      return (db, resource) async =>
-          saveSupplyDelivery(db, resource as SupplyDelivery);
+      return (txn, resource) async =>
+          saveSupplyDelivery(txn, resource as SupplyDelivery);
     case R4ResourceType.SupplyRequest:
-      return (db, resource) async =>
-          saveSupplyRequest(db, resource as SupplyRequest);
+      return (txn, resource) async =>
+          saveSupplyRequest(txn, resource as SupplyRequest);
     case R4ResourceType.Task:
-      return (db, resource) async => saveTask(db, resource as Task);
+      return (txn, resource) async => saveTask(txn, resource as Task);
     case R4ResourceType.TerminologyCapabilities:
-      return (db, resource) async => saveTerminologyCapabilities(
-            db,
+      return (txn, resource) async => saveTerminologyCapabilities(
+            txn,
             resource as TerminologyCapabilities,
           );
     case R4ResourceType.TestReport:
-      return (db, resource) async => saveTestReport(db, resource as TestReport);
+      return (txn, resource) async =>
+          saveTestReport(txn, resource as TestReport);
     case R4ResourceType.TestScript:
-      return (db, resource) async => saveTestScript(db, resource as TestScript);
+      return (txn, resource) async =>
+          saveTestScript(txn, resource as TestScript);
     case R4ResourceType.ValueSet:
-      return (db, resource) async => saveValueSet(db, resource as ValueSet);
+      return (txn, resource) async => saveValueSet(txn, resource as ValueSet);
     case R4ResourceType.VerificationResult:
-      return (db, resource) async =>
-          saveVerificationResult(db, resource as VerificationResult);
+      return (txn, resource) async =>
+          saveVerificationResult(txn, resource as VerificationResult);
     case R4ResourceType.VisionPrescription:
-      return (db, resource) async =>
-          saveVisionPrescription(db, resource as VisionPrescription);
+      return (txn, resource) async =>
+          saveVisionPrescription(txn, resource as VisionPrescription);
   }
 }

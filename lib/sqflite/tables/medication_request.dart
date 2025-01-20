@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [MedicationRequest] resources
-Future<void> createMedicationRequestTables(Database db) async {
-  await db.execute('''
+Future<void> createMedicationRequestTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS MedicationRequest (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -16,13 +16,13 @@ Future<void> createMedicationRequestTables(Database db) async {
       status TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_medication_request_patientId ON MedicationRequest (patientId);',
   );
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_medication_request_status ON MedicationRequest (status);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS MedicationRequestHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -34,7 +34,7 @@ Future<void> createMedicationRequestTables(Database db) async {
 
 /// Save a [MedicationRequest] to the database
 Future<bool> saveMedicationRequest(
-  Database db,
+  Transaction txn,
   MedicationRequest medicationRequest,
 ) async {
   final updatedRequest =
@@ -61,14 +61,14 @@ Future<bool> saveMedicationRequest(
   final status = medicationRequest.status.toString();
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM MedicationRequest WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO MedicationRequestHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -79,7 +79,7 @@ Future<bool> saveMedicationRequest(
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
     INSERT OR REPLACE INTO MedicationRequest (
       id, lastUpdated, resource, patientId, medicationId, intent, priority, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -101,9 +101,12 @@ Future<bool> saveMedicationRequest(
 }
 
 /// Get a [MedicationRequest] by its ID
-Future<MedicationRequest?> getMedicationRequest(Database db, String id) async {
+Future<MedicationRequest?> getMedicationRequest(
+  Transaction txn,
+  String id,
+) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM MedicationRequest WHERE id = ?',
       [id],
     );

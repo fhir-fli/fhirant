@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [Specimen] resources
-Future<void> createSpecimenTables(Database db) async {
-  await db.execute('''
+Future<void> createSpecimenTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS Specimen (
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
@@ -15,13 +15,13 @@ Future<void> createSpecimenTables(Database db) async {
       status TEXT
     );
   ''');
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_specimen_patientId ON Specimen (patientId);',
   );
-  await db.execute(
+  await txn.execute(
     'CREATE INDEX IF NOT EXISTS idx_specimen_status ON Specimen (status);',
   );
-  await db.execute('''
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS SpecimenHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
@@ -32,7 +32,7 @@ Future<void> createSpecimenTables(Database db) async {
 }
 
 /// Save a [Specimen] to the database
-Future<bool> saveSpecimen(Database db, Specimen specimen) async {
+Future<bool> saveSpecimen(Transaction txn, Specimen specimen) async {
   final updatedSpecimen =
       updateMeta(specimen, versionIdAsTime: true).newIdIfNoId();
   final id = specimen.id?.value;
@@ -48,14 +48,14 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) async {
   final status = specimen.status?.toString();
 
   try {
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM Specimen WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert('''
         INSERT INTO SpecimenHistory (
           id, lastUpdated, resource
         ) VALUES (?, ?, ?);
@@ -66,7 +66,7 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) async {
       ]);
     }
 
-    await db.rawInsert('''
+    await txn.rawInsert('''
       INSERT OR REPLACE INTO Specimen (
         id, lastUpdated, resource, patientId, type, collectedDateTime, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -87,9 +87,9 @@ Future<bool> saveSpecimen(Database db, Specimen specimen) async {
 }
 
 /// Get a [Specimen] by its ID
-Future<Specimen?> getSpecimen(Database db, String id) async {
+Future<Specimen?> getSpecimen(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM Specimen WHERE id = ?',
       [id],
     );

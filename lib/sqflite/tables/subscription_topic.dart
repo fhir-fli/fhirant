@@ -5,8 +5,8 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [SubscriptionTopic] canonical resources
-Future<void> createSubscriptionTopicTables(Database db) async {
-  await db.execute('''
+Future<void> createSubscriptionTopicTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopic (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
@@ -14,25 +14,29 @@ Future<void> createSubscriptionTopicTables(Database db) async {
       date INT,
       title TEXT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_url ON SubscriptionTopic (url);',);
-  await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_subscription_topic_status ON SubscriptionTopic (status);',);
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_subscription_topic_url
+    ON SubscriptionTopic (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_subscription_topic_status
+    ON SubscriptionTopic (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS SubscriptionTopicHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [SubscriptionTopic] canonical resource to the database
 Future<bool> saveSubscriptionTopic(
-    Database db, SubscriptionTopic resource,) async {
+    Transaction txn, SubscriptionTopic resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SubscriptionTopic;
   final id = updatedResource.id?.value;
@@ -45,53 +49,56 @@ Future<bool> saveSubscriptionTopic(
   final title = updatedResource.title?.value;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM SubscriptionTopic WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO SubscriptionTopicHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO SubscriptionTopic (
         id, url, status, date, title, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      title,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        title,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [SubscriptionTopic] canonical resource by its ID
-Future<SubscriptionTopic?> getSubscriptionTopic(Database db, String id) async {
+Future<SubscriptionTopic?> getSubscriptionTopic(
+    Transaction txn, String id,) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM SubscriptionTopic WHERE id = ?',
       [id],
     );
@@ -101,7 +108,6 @@ Future<SubscriptionTopic?> getSubscriptionTopic(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;

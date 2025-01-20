@@ -5,34 +5,37 @@ import 'package:sqflite/sqflite.dart';
 
 /// Create the primary and history tables for
 /// [SearchParameter] canonical resources
-Future<void> createSearchParameterTables(Database db) async {
-  await db.execute('''
+Future<void> createSearchParameterTables(Transaction txn) async {
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS SearchParameter (
       id TEXT PRIMARY KEY,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date INT,
       lastUpdated INT NOT NULL
-    );
-  ''');
-  await db.execute(
-    'CREATE INDEX IF NOT EXISTS idx_search_parameter_url ON SearchParameter (url);',
-  );
-  await db.execute(
-    'CREATE INDEX IF NOT EXISTS idx_search_parameter_status ON SearchParameter (status);',
-  );
-  await db.execute('''
+    )
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_search_parameter_url
+    ON SearchParameter (url)
+    ''');
+  await txn.execute('''
+    CREATE INDEX IF NOT EXISTS idx_search_parameter_status
+    ON SearchParameter (status)
+    ''');
+  await txn.execute('''
     CREATE TABLE IF NOT EXISTS SearchParameterHistory (
       id TEXT NOT NULL,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
       PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+    )
+    ''');
 }
 
 /// Save a [SearchParameter] canonical resource to the database
-Future<bool> saveSearchParameter(Database db, SearchParameter resource) async {
+Future<bool> saveSearchParameter(
+    Transaction txn, SearchParameter resource,) async {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SearchParameter;
   final id = updatedResource.id?.value;
@@ -44,52 +47,54 @@ Future<bool> saveSearchParameter(Database db, SearchParameter resource) async {
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
 
   try {
-    // Check if a resource with the same ID exists
-    final existingResource = await db.rawQuery(
+    final existingResource = await txn.rawQuery(
       'SELECT id, resource, lastUpdated FROM SearchParameter WHERE id = ?',
       [id],
     );
 
     if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
       final oldResource = existingResource.first;
-      await db.rawInsert('''
+      await txn.rawInsert(
+        '''
         INSERT INTO SearchParameterHistory (
           id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
+        ) VALUES (?, ?, ?)
+        ''',
+        [
+          oldResource['id'],
+          oldResource['lastUpdated'],
+          oldResource['resource'],
+        ],
+      );
     }
 
-    // Insert new version into the main table
-    await db.rawInsert('''
+    await txn.rawInsert(
+      '''
       INSERT OR REPLACE INTO SearchParameter (
         id, url, status, date, lastUpdated, resource
-      ) VALUES (?, ?, ?, ?, ?, ?);
-    ''', [
-      id,
-      url,
-      status,
-      date,
-      lastUpdated,
-      resourceJson,
-    ]);
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        url,
+        status,
+        date,
+        lastUpdated,
+        resourceJson,
+      ],
+    );
 
     return true;
   } catch (e) {
-    // ignore: avoid_print
     print('Error saving resource: $e');
     return false;
   }
 }
 
 /// Get a [SearchParameter] canonical resource by its ID
-Future<SearchParameter?> getSearchParameter(Database db, String id) async {
+Future<SearchParameter?> getSearchParameter(Transaction txn, String id) async {
   try {
-    final result = await db.rawQuery(
+    final result = await txn.rawQuery(
       'SELECT resource FROM SearchParameter WHERE id = ?',
       [id],
     );
@@ -99,7 +104,6 @@ Future<SearchParameter?> getSearchParameter(Database db, String id) async {
       );
     }
   } catch (e) {
-    // ignore: avoid_print
     print('Error retrieving resource: $e');
   }
   return null;
