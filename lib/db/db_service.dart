@@ -98,6 +98,40 @@ class DbService {
     }
   }
 
+  /// Get all resources of a specific type
+  List<Resource> getAllResources(String resourceType) {
+    try {
+      final selectQuery = 'SELECT resource FROM $resourceType';
+      final results = _db.select(selectQuery);
+      return results.map((row) {
+        final resourceJson = row['resource'] as String;
+        return Resource.fromJsonString(resourceJson);
+      }).toList();
+    } catch (e) {
+      // Log the error
+      print('Error retrieving all resources of type $resourceType: $e');
+      return [];
+    }
+  }
+
+  /// Get a resource by its ID
+  Resource? getResource(String resourceType, String id) {
+    try {
+      final result = _db.select(
+        'SELECT resource FROM $resourceType WHERE id = ?',
+        [id],
+      );
+      if (result.isNotEmpty) {
+        final resourceJson = result.first['resource'] as String;
+        return Resource.fromJsonString(resourceJson);
+      }
+    } catch (e) {
+      // Log the error
+      print('Error retrieving resource of type $resourceType with ID $id: $e');
+    }
+    return null;
+  }
+
   /// Closes the database connection
   void close() {
     _db.dispose();

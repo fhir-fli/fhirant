@@ -2,6 +2,7 @@ import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/db/db.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+/// Save a single resource to the database
 bool Function(Database, Resource) saveFunction(R4ResourceType resourceType) {
   switch (resourceType) {
     case R4ResourceType.Account:
