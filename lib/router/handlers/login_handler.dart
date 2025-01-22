@@ -20,11 +20,15 @@ Future<Response> loginHandler(Request request) async {
 
   if (_users[username] == password) {
     final token = JWT({'username': username}).sign(SecretKey(_secretKey));
-    return Response.ok(jsonEncode({'token': token}),
-        headers: {'Content-Type': 'application/json'},);
+    return Response.ok(
+      jsonEncode({'token': token}),
+      headers: {'Content-Type': 'application/json'},
+    );
   }
 
-  return Response(401,
-      body: jsonEncode({'error': 'Invalid credentials'}),
-      headers: {'Content-Type': 'application/json'},);
+  return Response(
+    401,
+    body: jsonEncode({'error': 'Invalid credentials'}),
+    headers: {'Content-Type': 'application/json'},
+  );
 }

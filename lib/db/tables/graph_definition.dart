@@ -10,10 +10,11 @@ void createGraphDefinitionTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS GraphDefinition (
       id TEXT PRIMARY KEY,
+      lastUpdated INT NOT NULL,
+      resource TEXT NOT NULL,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date INT,
-      lastUpdated INT NOT NULL
     );
   ''')
     ..execute(
@@ -33,7 +34,10 @@ void createGraphDefinitionTables(Database db) {
 }
 
 /// Save a [GraphDefinition] canonical resource to the database
-bool saveGraphDefinition(Database db, GraphDefinition resource) {
+bool saveGraphDefinition(
+  Database db,
+  GraphDefinition resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as GraphDefinition;
   final id = updatedResource.id?.value;
@@ -68,21 +72,21 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
     // Insert new version into the main table
     db.execute('''
       INSERT INTO GraphDefinition (
-        id, url, status, date, lastUpdated, resource
+        id, lastUpdated, resource, url, status, date
       ) VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        lastUpdated = excluded.lastUpdated,
+        resource = excluded.resource,
         url = excluded.url,
         status = excluded.status,
         date = excluded.date,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
     ''', [
       id,
+      lastUpdated,
+      resourceJson,
       url,
       status,
       date,
-      lastUpdated,
-      resourceJson,
     ]);
 
     return true;
@@ -96,8 +100,10 @@ bool saveGraphDefinition(Database db, GraphDefinition resource) {
 /// Get a [GraphDefinition] canonical resource by its ID
 GraphDefinition? getGraphDefinition(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM GraphDefinition WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM GraphDefinition WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return GraphDefinition.fromJsonString(
         result.first['resource'] as String,

@@ -125,6 +125,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_json:
+    dependency: "direct main"
+    description:
+      name: flutter_json
+      sha256: "133bc411cbe6363a9d6239aec7bc073e264d52614da2076aa975386d34e6f7eb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   flutter_localizations:
     dependency: "direct main"
     description: flutter

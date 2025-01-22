@@ -10,10 +10,11 @@ void createSearchParameterTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS SearchParameter (
       id TEXT PRIMARY KEY,
+      lastUpdated INT NOT NULL,
+      resource TEXT NOT NULL,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date INT,
-      lastUpdated INT NOT NULL
     );
   ''')
     ..execute(
@@ -33,7 +34,10 @@ void createSearchParameterTables(Database db) {
 }
 
 /// Save a [SearchParameter] canonical resource to the database
-bool saveSearchParameter(Database db, SearchParameter resource) {
+bool saveSearchParameter(
+  Database db,
+  SearchParameter resource,
+) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true)
       .newIdIfNoId() as SearchParameter;
   final id = updatedResource.id?.value;
@@ -68,21 +72,21 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
     // Insert new version into the main table
     db.execute('''
       INSERT INTO SearchParameter (
-        id, url, status, date, lastUpdated, resource
+        id, lastUpdated, resource, url, status, date
       ) VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        lastUpdated = excluded.lastUpdated,
+        resource = excluded.resource,
         url = excluded.url,
         status = excluded.status,
         date = excluded.date,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
     ''', [
       id,
+      lastUpdated,
+      resourceJson,
       url,
       status,
       date,
-      lastUpdated,
-      resourceJson,
     ]);
 
     return true;
@@ -96,8 +100,10 @@ bool saveSearchParameter(Database db, SearchParameter resource) {
 /// Get a [SearchParameter] canonical resource by its ID
 SearchParameter? getSearchParameter(Database db, String id) {
   try {
-    final result =
-        db.select('SELECT resource FROM SearchParameter WHERE id = ?', [id]);
+    final result = db.select(
+      'SELECT resource FROM SearchParameter WHERE id = ?',
+      [id],
+    );
     if (result.isNotEmpty) {
       return SearchParameter.fromJsonString(
         result.first['resource'] as String,

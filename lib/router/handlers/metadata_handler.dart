@@ -29,5 +29,8 @@ Response metadataHandler(Request request) {
     ],
   };
 
-  return Response.ok(capabilityStatement, headers: {'Content-Type': 'application/json'});
+  return Response.ok(
+    capabilityStatement,
+    headers: {'Content-Type': 'application/json'},
+  );
 }

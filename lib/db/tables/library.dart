@@ -10,11 +10,12 @@ void createLibraryTables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS Library (
       id TEXT PRIMARY KEY,
+      lastUpdated INT NOT NULL,
+      resource TEXT NOT NULL,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date INT,
-      title TEXT,
-      lastUpdated INT NOT NULL
+      title TEXT
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_library_url ON Library (url);')
@@ -71,23 +72,23 @@ bool saveLibrary(
     // Insert new version into the main table
     db.execute('''
       INSERT INTO Library (
-        id, url, status, date, title, lastUpdated, resource
+        id, lastUpdated, resource, url, status, date, title
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        lastUpdated = excluded.lastUpdated,
+        resource = excluded.resource,
         url = excluded.url,
         status = excluded.status,
         date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+        title = excluded.title;
     ''', [
       id,
+      lastUpdated,
+      resourceJson,
       url,
       status,
       date,
       title,
-      lastUpdated,
-      resourceJson,
     ]);
 
     return true;

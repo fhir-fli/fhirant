@@ -9,10 +9,9 @@ void createFamilyMemberHistoryTables(Database db) {
   db
     ..execute('''
     CREATE TABLE IF NOT EXISTS FamilyMemberHistory (
-      id TEXT NOT NULL,
+      id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
+      resource TEXT NOT NULL
     );
   ''')
     ..execute('''

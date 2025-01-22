@@ -13,6 +13,7 @@ dependencies:
     path: ../fhir_r4
   flutter:
     sdk: flutter
+  flutter_json: ^0.0.4
   flutter_localizations:
     sdk: flutter
   intl: ^0.19.0
@@ -37,3 +38,4 @@ flutter:
   generate: true
   assets:
     - mimic-fhir/
+    - fhir-assets/

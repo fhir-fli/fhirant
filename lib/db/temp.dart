@@ -138,11 +138,12 @@ void create${resourceType}Tables(Database db) {
     ..execute('''
     CREATE TABLE IF NOT EXISTS $resourceType (
       id TEXT PRIMARY KEY,
+      lastUpdated INT NOT NULL,
+      resource TEXT NOT NULL,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
       date INT,
-      title TEXT,
-      lastUpdated INT NOT NULL
+      title TEXT
     );
   ''')
     ..execute('CREATE INDEX IF NOT EXISTS idx_${resourceType.toLowerSnakeCase()}_url ON $resourceType (url);')
@@ -162,7 +163,7 @@ bool save$resourceType(Database db, $resourceType resource,) {
   final updatedResource = updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as $resourceType;
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
-    final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+  final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
   final url = updatedResource.url?.value;
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
@@ -192,23 +193,23 @@ bool save$resourceType(Database db, $resourceType resource,) {
     // Insert new version into the main table
     db.execute('''
       INSERT INTO $resourceType (
-        id, url, status, date, title, lastUpdated, resource
+        id, lastUpdated, resource, url, status, date, title
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        lastUpdated = excluded.lastUpdated,
+        resource = excluded.resource,
         url = excluded.url,
         status = excluded.status,
         date = excluded.date,
-        title = excluded.title,
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
+        title = excluded.title;
     ''', [
       id,
+      lastUpdated,
+      resourceJson,
       url,
       status,
       date,
       title,
-      lastUpdated,
-      resourceJson,
     ]);
 
     return true;
