@@ -13,10 +13,10 @@ dependencies:
     path: ../fhir_r4
   flutter:
     sdk: flutter
-  flutter_json: ^0.0.4
   flutter_localizations:
     sdk: flutter
   intl: ^0.19.0
+  json_view: ^0.4.2
   path: ^1.9.0
   shelf: ^1.4.2
   shelf_router: ^1.1.4

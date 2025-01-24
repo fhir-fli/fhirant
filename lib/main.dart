@@ -4,14 +4,15 @@ import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/db/db_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_json/flutter_json.dart';
+import 'package:json_view/json_view.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-/// The main application widget.
+/// MyApp
 class MyApp extends StatelessWidget {
+  /// MyApp
   const MyApp({super.key});
 
   @override
@@ -24,8 +25,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// A screen for managing FHIR resources.
+/// FhirLoaderScreen
 class FhirLoaderScreen extends StatefulWidget {
+  /// FhirLoaderScreen
   const FhirLoaderScreen({super.key});
 
   @override
@@ -33,7 +35,7 @@ class FhirLoaderScreen extends StatefulWidget {
 }
 
 class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
-  final DbService sqlite3Service = DbService(); // SQLite3 service
+  final DbService sqlite3Service = DbService();
   String resultMessage = 'Press a button to load resources.';
   List<Resource> displayedResources = [];
   String? selectedResourceType;
@@ -42,21 +44,12 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
     'Patient',
     'Observation',
     'Condition',
-    // Add more FHIR resource types as needed
   ];
 
   @override
   void dispose() {
     sqlite3Service.close();
     super.dispose();
-  }
-
-  Future<void> _loadMimicData() async {
-    await _loadFhirResources('mimic-fhir');
-  }
-
-  Future<void> _loadExampleData() async {
-    await _loadFhirResources('fhir-assets');
   }
 
   Future<void> _loadFhirResources(String directoryPrefix) async {
@@ -81,28 +74,20 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
         final fileContent = await rootBundle.loadString(file);
 
         if (file.endsWith('.ndjson')) {
-          // NDJSON: Parse line by line
           final lines =
               fileContent.split('\n').where((line) => line.isNotEmpty);
-          for (final line in lines) {
-            print(line.substring(0, 100));
-          }
           final resources = lines.map(Resource.fromJsonString).toList();
           sqlite3Service.bulkSaveResourcesOfSameType(resources);
         } else if (file.endsWith('.json')) {
-          // JSON: Parse entire file
           final resource = Resource.fromJsonString(fileContent);
-          print('Loaded resource: ${resource.path}');
 
           if (resource is Bundle) {
             final resources = <Resource>[];
-
             for (final entry in resource.entry ?? <BundleEntry>[]) {
               if (entry.resource != null) {
-                resources.add(entry.resource!); // Ensure non-null resources
+                resources.add(entry.resource!);
               }
             }
-
             sqlite3Service.bulkSaveMixedResources(resources);
           } else {
             sqlite3Service.saveResource(resource);
@@ -150,9 +135,20 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
                 child: SingleChildScrollView(
                   child: SizedBox(
                     height: 200,
-                    child: JsonWidget(
+                    child: JsonView(
                       json: resource.toJson(),
-                      initialExpandDepth: 2,
+                      styleScheme: JsonStyleScheme(
+                        keysStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                        valuesStyle: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.green,
+                        ),
+                        quotation: JsonQuotation.doubleQuote,
+                        depth: 1, // Default depth of expanded nodes
+                      ),
                     ),
                   ),
                 ),
@@ -182,11 +178,11 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                  onPressed: _loadMimicData,
+                  onPressed: () => _loadFhirResources('mimic-fhir'),
                   child: const Text('Load Mimic Data'),
                 ),
                 ElevatedButton(
-                  onPressed: _loadExampleData,
+                  onPressed: () => _loadFhirResources('fhir-assets'),
                   child: const Text('Load Example Data'),
                 ),
               ],
