@@ -118,3 +118,4 @@ app.*.map.json
 # Specifically for this project
 mimic-fhir*
 fhir-assets*
+*.db

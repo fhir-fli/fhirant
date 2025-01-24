@@ -14,7 +14,7 @@ void createSearchParameterTables(Database db) {
       resource TEXT NOT NULL,
       url TEXT NOT NULL,
       status TEXT NOT NULL,
-      date INT,
+      date INT
     );
   ''')
     ..execute(
@@ -44,7 +44,7 @@ bool saveSearchParameter(
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated =
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
-  final url = updatedResource.url?.value;
+  final url = updatedResource.url?.value?.toString();
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
 
@@ -79,7 +79,7 @@ bool saveSearchParameter(
         resource = excluded.resource,
         url = excluded.url,
         status = excluded.status,
-        date = excluded.date,
+        date = excluded.date;
     ''', [
       id,
       lastUpdated,

@@ -164,7 +164,7 @@ bool save$resourceType(Database db, $resourceType resource,) {
   final id = updatedResource.id?.value;
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated = updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
-  final url = updatedResource.url?.value;
+  final url = updatedResource.url?.value?.toString();
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
   final title = updatedResource.title?.value;

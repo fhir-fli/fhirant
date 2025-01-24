@@ -60,7 +60,7 @@ bool saveMedicationDispense(
           ?.split('/')
           .last;
   final quantity = medicationDispense.quantity?.value?.toString();
-  final daysSupply = medicationDispense.daysSupply?.value;
+  final daysSupply = medicationDispense.daysSupply?.value?.value;
   final status = medicationDispense.status.toString();
 
   try {

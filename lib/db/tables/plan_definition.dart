@@ -12,7 +12,7 @@ void createPlanDefinitionTables(Database db) {
       id TEXT PRIMARY KEY,
       lastUpdated INT NOT NULL,
       resource TEXT NOT NULL,
-      url TEXT NOT NULL,
+      url TEXT,
       status TEXT NOT NULL,
       date INT,
       title TEXT
@@ -45,7 +45,7 @@ bool savePlanDefinition(
   final resourceJson = updatedResource.toJsonString();
   final lastUpdated =
       updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
-  final url = updatedResource.url?.value;
+  final url = updatedResource.url?.value?.toString();
   final status = updatedResource.status?.toString();
   final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
   final title = updatedResource.title?.value;

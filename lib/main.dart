@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'FHIR Resource Manager',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const FhirLoaderScreen(),
+      home: const Scaffold(body: SafeArea(child: FhirLoaderScreen())),
     );
   }
 }
@@ -136,7 +136,8 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
       return const Text('No resources available.');
     }
 
-    return Expanded(
+    return SizedBox(
+      height: 400,
       child: ListView.builder(
         itemCount: displayedResources.length,
         itemBuilder: (context, index) {
@@ -146,9 +147,14 @@ class _FhirLoaderScreenState extends State<FhirLoaderScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: JsonWidget(
-                  json: json.decode(resource.toJsonString()),
-                  initialExpandDepth: 2,
+                child: SingleChildScrollView(
+                  child: SizedBox(
+                    height: 200,
+                    child: JsonWidget(
+                      json: resource.toJson(),
+                      initialExpandDepth: 2,
+                    ),
+                  ),
                 ),
               ),
             ],
