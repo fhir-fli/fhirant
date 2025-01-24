@@ -1,28 +1,44 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/db/db.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
 
 /// Service to interact with the SQLite database
 class DbService {
-  DbService() {
-    _db = _initializeDatabase();
-  }
+  /// Factory constructor to return the singleton instance
+  factory DbService() => _instance;
 
+  /// Private constructor
+  DbService._();
+
+  static final DbService _instance = DbService._();
   static const _databaseName = 'fhir_clinical.db';
   late final Database _db;
+  final SecureStorageService _secureStorageService = SecureStorageService();
 
-  /// Initialize and return the database connection
-  Database _initializeDatabase() {
+  /// Initialize the database with encryption
+  Future<void> initializeDatabase() async {
     try {
       final dbPath = path.join(Directory.current.path, _databaseName);
-      final db = sqlite3.open(dbPath);
+      _db = sqlite3.open(dbPath);
+
+      // Retrieve encryption key from secure storage
+      var encryptionKey = await _secureStorageService.getEncryptionKey();
+
+      if (encryptionKey == null) {
+        // Generate a key if it doesn't exist
+        encryptionKey = _secureStorageService.generateRandomKey();
+        await _secureStorageService.saveEncryptionKey(encryptionKey);
+      }
+
+      // Apply encryption
+      _db.execute('PRAGMA key = "$encryptionKey";');
 
       // Ensure tables are created
-      createTables(db);
-
-      return db;
+      createTables(_db);
     } catch (e) {
       print('Error initializing database: $e');
       throw Exception('Failed to initialize the database');
@@ -92,11 +108,22 @@ class DbService {
   }
 
   /// Fetch all resources of a specific type
+  List<String> getAllResourcesStrings(String resourceType) {
+    try {
+      final query = 'SELECT resource FROM $resourceType';
+      final results = _db.select(query);
+      return results.map((row) => row['resource'] as String).toList();
+    } catch (e) {
+      print('Error retrieving all resources of type $resourceType: $e');
+      return [];
+    }
+  }
+
+  /// Fetch all resources of a specific type
   List<Resource> getAllResources(String resourceType) {
     try {
       final query = 'SELECT resource FROM $resourceType';
       final results = _db.select(query);
-
       return results.map((row) {
         final resourceJson = row['resource'] as String;
         return Resource.fromJsonString(resourceJson);
@@ -146,6 +173,69 @@ class DbService {
       print('Error retrieving resource of type $resourceType with ID $id: $e');
     }
     return null;
+  }
+
+  /// Get a count of resources by type
+  int getResourceCount(String resourceType) {
+    try {
+      final query = 'SELECT COUNT(*) AS count FROM $resourceType';
+      final results = _db.select(query);
+      if (results.isNotEmpty) {
+        return results.first['count'] as int;
+      }
+    } catch (e) {
+      print('Error counting resources of type $resourceType: $e');
+    }
+    return 0;
+  }
+
+  /// Export resources of a specific type to NDJSON and compress to .tar.gz
+  Future<bool> exportResourcesToNDJSON(
+    String resourceType,
+    String filePath,
+  ) async {
+    try {
+      // Retrieve resources as JSON strings from the database
+      final resources = getAllResourcesStrings(resourceType);
+      if (resources.isEmpty) {
+        print('No resources found for type $resourceType.');
+        return false;
+      }
+
+      // Partition resources into smaller files if needed
+      // (10,000 resources per file)
+      var partitionIndex = 1;
+      final stringBuffer = StringBuffer();
+      final partitionedFiles = <String, String>{};
+
+      for (var i = 0; i < resources.length; i++) {
+        stringBuffer.writeln(resources[i]);
+
+        // Write a partition file after every 10,000 resources or at the end
+        if ((i + 1) % 10000 == 0 || i == resources.length - 1) {
+          final fileName = '$resourceType-part$partitionIndex';
+          partitionedFiles[fileName] = stringBuffer.toString();
+          partitionIndex++;
+          stringBuffer.clear();
+        }
+      }
+
+      // Compress partitioned NDJSON files into a .tar.gz archive
+      final compressedData = await FhirBulk.toTarGzFile(partitionedFiles);
+      if (compressedData == null) {
+        print('Failed to compress NDJSON files for type $resourceType.');
+        return false;
+      }
+
+      // Write the compressed data to the specified file path
+      await File(filePath).writeAsBytes(compressedData);
+      print('Resources of type $resourceType exported successfully '
+          'to $filePath.');
+      return true;
+    } catch (e) {
+      print('Error exporting resources of type $resourceType to NDJSON: $e');
+      return false;
+    }
   }
 
   /// Update a resource in the database
