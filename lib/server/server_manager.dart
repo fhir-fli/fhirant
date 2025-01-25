@@ -70,11 +70,31 @@ class ServerManager {
     final handler =
         const Pipeline().addMiddleware(logRequests()).addHandler(_router.call);
 
-    // Bind to the specified port and start listening
-    _server = await serve(handler, InternetAddress.loopbackIPv4, port);
-    print(
-      'Server started at http://${_server!.address.address}:${_server!.port}',
+    // Bind to any IPv4 address to allow external access
+    _server = await serve(handler, InternetAddress.anyIPv4, port);
+
+    // Retrieve and print the server's local IP address
+    final interfaces = await NetworkInterface.list(
+      type: InternetAddressType.IPv4,
     );
+
+    String? localIpAddress;
+    for (final interface in interfaces) {
+      for (final address in interface.addresses) {
+        if (!address.isLoopback) {
+          localIpAddress = address.address;
+          break;
+        }
+      }
+    }
+
+    if (localIpAddress != null) {
+      print('Server started at http://$localIpAddress:${_server!.port}');
+    } else {
+      print(
+        'Server started at http://${_server!.address.address}:${_server!.port}',
+      );
+    }
   }
 
   /// Stops the server if it is running

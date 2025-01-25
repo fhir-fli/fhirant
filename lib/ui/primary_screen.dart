@@ -24,6 +24,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   List<String> validResourceTypes = [];
   String? selectedResourceType;
 
+  // Store the server URL
+  String? serverUrl;
+
   @override
   void initState() {
     super.initState();
@@ -75,7 +78,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
       final port = ServerManager().port;
 
       if (ipAddress != null && port != null) {
-        final serverUrl = 'http://$ipAddress:$port';
+        setState(() {
+          serverUrl = 'http://$ipAddress:$port'; // Store the server URL
+        });
         isServerRunning.value = true;
         _showMessage('Server started at $serverUrl');
       } else {
@@ -90,6 +95,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   Future<void> _stopServer() async {
     try {
       await ServerManager().stop();
+      setState(() {
+        serverUrl = null; // Clear the server URL
+      });
       isServerRunning.value = false;
       _showMessage('Server stopped');
     } catch (e) {
@@ -142,7 +150,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
         onStartServer: _startServer,
         onStopServer: _stopServer,
         isServerRunning: isServerRunning,
-        serverUrl: 'http://localhost:8080',
+        serverUrl: serverUrl ?? 'Server not running', // Pass the stored URL
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
