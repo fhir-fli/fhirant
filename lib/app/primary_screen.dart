@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/db/db.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:json_view/json_view.dart';
 
 /// PrimaryScreen
 class PrimaryScreen extends StatefulWidget {
@@ -17,29 +14,47 @@ class PrimaryScreen extends StatefulWidget {
 }
 
 class _PrimaryScreenState extends State<PrimaryScreen> {
-  final DbService sqlite3Service = DbService();
-  String resultMessage = 'Press a button to load resources.';
+  final DbService dbService = DbService();
   List<Resource> displayedResources = [];
+  List<String> validResourceTypes = [];
   String? selectedResourceType;
 
-  final List<String> resourceTypes = [
-    'Patient',
-    'Observation',
-    'Condition',
-    // Add other resource types here
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadValidResourceTypes(); // Load valid resource types at initialization
+  }
 
   @override
   void dispose() {
-    sqlite3Service.close();
+    dbService.close();
     super.dispose();
   }
 
-  Future<void> _loadFhirResources(String directoryPrefix) async {
-    setState(() {
-      resultMessage = 'Loading resources...';
-    });
+  Future<void> _loadValidResourceTypes() async {
+    final validTypes = <String>[];
 
+    for (final resourceType in R4ResourceType.typesAsStrings) {
+      final count = dbService.getResourceCount(
+        ['Endpoint', 'Group', 'List'].contains(resourceType)
+            ? 'Fhir$resourceType'
+            : resourceType,
+      );
+      if (count > 0) {
+        validTypes.add(resourceType);
+      }
+    }
+
+    setState(() {
+      validResourceTypes = validTypes;
+      if (selectedResourceType != null &&
+          !validResourceTypes.contains(selectedResourceType)) {
+        selectedResourceType = null; // Reset if current type is no longer valid
+      }
+    });
+  }
+
+  Future<void> _loadFhirResources(String directoryPrefix) async {
     try {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final manifestMap = json.decode(manifestContent) as Map<String, dynamic>;
@@ -51,9 +66,6 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
           )
           .toList();
 
-      var totalResources = 0;
-      final stopwatch = Stopwatch()..start();
-
       for (final file in files) {
         final fileContent = await rootBundle.loadString(file);
 
@@ -61,171 +73,119 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
           final lines =
               fileContent.split('\n').where((line) => line.isNotEmpty);
           final resources = lines.map(Resource.fromJsonString).toList();
-          sqlite3Service.bulkSaveResourcesOfSameType(resources);
-          totalResources += resources.length;
+          dbService.bulkSaveResourcesOfSameType(resources);
         } else if (file.endsWith('.json')) {
           final resource = Resource.fromJsonString(fileContent);
-
           if (resource is Bundle) {
-            final resources = <Resource>[];
-            for (final entry in resource.entry ?? <BundleEntry>[]) {
-              if (entry.resource != null) {
-                resources.add(entry.resource!);
-              }
-            }
-            sqlite3Service.bulkSaveMixedResources(resources);
-            totalResources += resources.length;
+            final resources = resource.entry
+                    ?.map((entry) => entry.resource)
+                    .whereType<Resource>()
+                    .toList() ??
+                [];
+            dbService.bulkSaveMixedResources(resources);
           } else {
-            sqlite3Service.saveResource(resource);
-            totalResources++;
+            dbService.saveResource(resource);
           }
         }
       }
 
-      stopwatch.stop();
-      setState(() {
-        resultMessage = 'Loaded $totalResources resources in '
-            '${stopwatch.elapsed.inMilliseconds} ms.';
-      });
+      // Reload valid resource types after loading data
+      await _loadValidResourceTypes();
     } catch (e) {
-      setState(() {
-        resultMessage = 'Error loading resources: $e';
-      });
+      // Handle errors (e.g., show a snackbar or error message)
     }
-  }
-
-  Future<Map<String, int>> _getResourceCounts() async {
-    final counts = <String, int>{};
-    for (final resourceType in resourceTypes) {
-      final count = sqlite3Service.getResourceCount(resourceType);
-      counts[resourceType] = count;
-    }
-    return counts;
-  }
-
-  Widget _buildDatabaseOverview() {
-    return FutureBuilder<Map<String, int>>(
-      future: _getResourceCounts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
-        if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        }
-        final counts = snapshot.data ?? {};
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: counts.entries.map((entry) {
-            return Text('${entry.key}: ${entry.value}');
-          }).toList(),
-        );
-      },
-    );
   }
 
   void _showResources() {
     if (selectedResourceType == null) return;
 
-    final resources = sqlite3Service.getAllResources(selectedResourceType!);
+    final resources = dbService.getAllResources(selectedResourceType!);
     setState(() {
       displayedResources = resources;
     });
   }
 
-  Future<void> _exportData(String resourceType) async {
-    final resources = sqlite3Service.getAllResources(resourceType);
-    final output = resources.map((r) => r.toJsonString()).join('\n');
-
-    final directory = Directory.current.path; // Adjust as needed
-    final file = File('$directory/$resourceType.ndjson');
-    await file.writeAsString(output);
-
-    setState(() {
-      resultMessage = 'Exported $resourceType to ${file.path}';
-    });
-  }
-
-  Widget _buildResourceList() {
-    if (displayedResources.isEmpty) {
-      return const Text('No resources available.');
-    }
-
-    return SizedBox(
-      height: 400,
-      child: ListView.builder(
-        itemCount: displayedResources.length,
-        itemBuilder: (context, index) {
-          final resource = displayedResources[index];
-          return ExpansionTile(
-            title: Text('ID: ${resource.id?.value ?? "Unknown"}'),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: JsonView(
-                  json: resource.toJson(),
-                  styleScheme: JsonStyleScheme(
-                    keysStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                    valuesStyle: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.green,
-                    ),
-                    quotation: JsonQuotation.doubleQuote,
-                    depth: 1,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('FHIR ANT')),
+      appBar: AppBar(
+        title: const Text('FHIR ANT'),
+        backgroundColor: Colors.indigo, // Updated theme color
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.indigo, Colors.blueAccent],
+                ),
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.download, color: Colors.indigo),
+              title: const Text('Load Mimic Data'),
+              onTap: () {
+                Navigator.pop(context);
+                _loadFhirResources('mimic-fhir');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_download, color: Colors.indigo),
+              title: const Text('Load Example Data'),
+              onTap: () {
+                Navigator.pop(context);
+                _loadFhirResources('fhir-assets');
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: 
-        Column(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              resultMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _loadFhirResources('mimic-fhir'),
-                  child: const Text('Load Mimic Data'),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    DatabaseOverview(dbService),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () => _loadFhirResources('fhir-assets'),
-                  child: const Text('Load Example Data'),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Database Overview:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            _buildDatabaseOverview(),
-            const SizedBox(height: 20),
-            DropdownButton<String>(
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
               value: selectedResourceType,
               hint: const Text('Select Resource Type'),
-              items: resourceTypes.map((type) {
-                return DropdownMenuItem(value: type, child: Text(type));
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              items: validResourceTypes.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type, style: const TextStyle(fontSize: 16)),
+                );
               }).toList(),
               onChanged: (type) {
                 setState(() {
@@ -234,14 +194,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
                 });
               },
             ),
-            const SizedBox(height: 10),
-            _buildResourceList(),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: selectedResourceType != null
-                  ? () => _exportData(selectedResourceType!)
-                  : null,
-              child: const Text('Export Selected Resource'),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ResourceList(displayedResources),
             ),
           ],
         ),
