@@ -17,18 +17,39 @@ class ResourceList extends StatelessWidget {
       itemBuilder: (context, index) {
         final resource = resources[index];
         return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: ExpansionTile(
-            title: Text('ID: ${resource.id?.value ?? "Unknown"}'),
+            title: Row(
+              children: [
+                const Icon(Icons.folder, color: Colors.indigo),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'ID: ${resource.id?.value ?? "Unknown"}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Prevent overflow
+                    maxLines: 1, // Limit to one line
+                  ),
+                ),
+              ],
+            ),
             children: [
+              Divider(color: Colors.grey[300], thickness: 1),
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
-                    maxHeight: 300, // Set a maximum height for the JSON view
+                    maxHeight: 300,
                   ),
                   child: JsonView(
-                    json: resource.toJson(), // Directly display the JSON
+                    json: resource.toJson(),
                   ),
                 ),
               ),

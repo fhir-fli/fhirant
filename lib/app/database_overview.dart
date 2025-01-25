@@ -56,10 +56,11 @@ class DatabaseOverview extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
+            // Wrap content in a ConstrainedBox and a Scrollable container
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight:
+                    MediaQuery.of(context).size.height * 0.5, // Limit height
               ),
               child: Scrollbar(
                 thumbVisibility: true,
@@ -72,10 +73,9 @@ class DatabaseOverview extends StatelessWidget {
                       children: counts.entries
                           .map(
                             (entry) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     entry.key,
@@ -84,11 +84,14 @@ class DatabaseOverview extends StatelessWidget {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  Text(
-                                    '${entry.value} resource(s)',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 16),
+                                    child: Text(
+                                      '${entry.value} resource(s)',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                   ),
                                 ],

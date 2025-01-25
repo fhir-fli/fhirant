@@ -92,7 +92,48 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
       // Reload valid resource types after loading data
       await _loadValidResourceTypes();
     } catch (e) {
-      // Handle errors (e.g., show a snackbar or error message)
+      if (!mounted) return; // Ensure the widget is still part of the tree
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading resources: $e')),
+      );
+    }
+  }
+
+  Future<void> _startServer() async {
+    try {
+      await ServerManager().start();
+      // Check if the widget is still mounted before accessing context
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Server started on port 8080')),
+      );
+    } catch (e) {
+      // Check again for mounted before accessing context
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start server: $e')),
+      );
+    }
+  }
+
+  Future<void> _stopServer() async {
+    try {
+      await ServerManager().stop();
+      // Check if the widget is still mounted before accessing context
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Server stopped')),
+      );
+    } catch (e) {
+      // Check again for mounted before accessing context
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to stop server: $e')),
+      );
     }
   }
 
@@ -109,42 +150,19 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FHIR ANT'),
-        backgroundColor: Colors.indigo, // Updated theme color
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.indigo, Colors.blueAccent],
-                ),
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.download, color: Colors.indigo),
-              title: const Text('Load Mimic Data'),
-              onTap: () {
-                Navigator.pop(context);
-                _loadFhirResources('mimic-fhir');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cloud_download, color: Colors.indigo),
-              title: const Text('Load Example Data'),
-              onTap: () {
-                Navigator.pop(context);
-                _loadFhirResources('fhir-assets');
-              },
-            ),
-          ],
+        title: Center(
+          child: Image.asset(
+            'assets/fhirant_logo.png',
+            height: 78, // Adjust size as needed
+          ),
         ),
+        backgroundColor: Colors.indigo,
+      ),
+      drawer: FhirantDrawer(
+        onLoadMimicData: () => _loadFhirResources('mimic-fhir'),
+        onLoadExampleData: () => _loadFhirResources('fhir-assets'),
+        onStartServer: _startServer,
+        onStopServer: _stopServer,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
