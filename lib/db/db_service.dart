@@ -1,8 +1,10 @@
 // ignore_for_file: avoid_print
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
 
@@ -45,42 +47,13 @@ class DbService {
     }
   }
 
-  /// Save a single resource to the database
-  bool saveResource(Resource resource) {
-    try {
-      final saveFn =
-          saveFunction(resource.resourceType); // Lookup save function
-      return saveFn(_db, resource);
-    } catch (e) {
-      print('Error saving resource of type ${resource.resourceType}: $e');
-      return false;
-    }
-  }
-
-  /// Save multiple resources of the same type in a transaction
-  bool bulkSaveResourcesOfSameType<T extends Resource>(List<T> resources) {
+  /// Save resources to the database, handling single and bulk inserts
+  bool saveResources(List<Resource> resources) {
     if (resources.isEmpty) return true;
 
     try {
       _db.execute('BEGIN TRANSACTION;');
-      final saveFn = saveFunction(resources.first.resourceType);
 
-      for (final resource in resources) {
-        saveFn(_db, resource);
-      }
-
-      _db.execute('COMMIT;');
-      return true;
-    } catch (e) {
-      _db.execute('ROLLBACK;');
-      print('Error saving resources in bulk: $e');
-      return false;
-    }
-  }
-
-  /// Save a mixed list of resources of different types
-  bool bulkSaveMixedResources(List<Resource> resources) {
-    try {
       final groupedResources = <R4ResourceType, List<Resource>>{};
 
       // Group resources by type
@@ -90,7 +63,6 @@ class DbService {
             .add(resource);
       }
 
-      _db.execute('BEGIN TRANSACTION;');
       for (final entry in groupedResources.entries) {
         final saveFn = saveFunction(entry.key);
         for (final resource in entry.value) {
@@ -102,9 +74,24 @@ class DbService {
       return true;
     } catch (e) {
       _db.execute('ROLLBACK;');
-      print('Error saving mixed resources: $e');
+      print('Error saving resources: $e');
       return false;
     }
+  }
+
+  /// Save a single resource using the unified save logic
+  bool saveResource(Resource resource) {
+    return saveResources([resource]);
+  }
+
+  /// Save multiple resources of the same type
+  bool bulkSaveResourcesOfSameType<T extends Resource>(List<T> resources) {
+    return saveResources(resources);
+  }
+
+  /// Save mixed resources
+  bool bulkSaveMixedResources(List<Resource> resources) {
+    return saveResources(resources);
   }
 
   /// Fetch all resources of a specific type
@@ -267,6 +254,90 @@ class DbService {
       _db.dispose();
     } catch (e) {
       print('Error closing database connection: $e');
+    }
+  }
+
+  /// Fetch all valid resource types with resources in the database
+  Future<List<String>> getValidResourceTypes() async {
+    final validTypes = <String>[];
+
+    try {
+      for (final resourceType in R4ResourceType.typesAsStrings) {
+        final adjustedType =
+            ['Endpoint', 'Group', 'List'].contains(resourceType)
+                ? 'Fhir$resourceType'
+                : resourceType;
+
+        final count = getResourceCount(adjustedType);
+        if (count > 0) {
+          validTypes.add(resourceType);
+        }
+      }
+    } catch (e) {
+      print('Error fetching valid resource types: $e');
+    }
+
+    return validTypes;
+  }
+
+  /// Load resources from assets with a specific prefix
+  Future<List<String>> loadResourcesFromAssets(String prefix) async {
+    final loadedResourceTypes = <String>[];
+
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final manifestMap = json.decode(manifestContent) as Map<String, dynamic>;
+      final files = manifestMap.keys.where(
+        (key) =>
+            key.startsWith(prefix) &&
+            (key.endsWith('.json') || key.endsWith('.ndjson')),
+      );
+
+      for (final file in files) {
+        await _processFile(file);
+        final resourceType =
+            file.split('/').last.split('-').first; // Extract type
+        if (!loadedResourceTypes.contains(resourceType)) {
+          loadedResourceTypes.add(resourceType);
+        }
+      }
+
+      print('Resources loaded from assets with prefix $prefix.');
+    } catch (e) {
+      print('Error loading resources from assets: $e');
+    }
+
+    return loadedResourceTypes;
+  }
+
+  /// Process a single file and store resources in the database
+  Future<void> _processFile(String file) async {
+    final content = await rootBundle.loadString(file);
+
+    if (file.endsWith('.ndjson')) {
+      _processNdjson(content);
+    } else if (file.endsWith('.json')) {
+      _processJson(content);
+    }
+  }
+
+  void _processNdjson(String content) {
+    final lines = content.split('\n').where((line) => line.isNotEmpty);
+    final resources = lines.map(Resource.fromJsonString).toList();
+    bulkSaveResourcesOfSameType(resources);
+  }
+
+  void _processJson(String content) {
+    final resource = Resource.fromJsonString(content);
+    if (resource is Bundle) {
+      final bundleResources = resource.entry
+              ?.map((entry) => entry.resource)
+              .whereType<Resource>()
+              .toList() ??
+          [];
+      bulkSaveMixedResources(bundleResources);
+    } else {
+      saveResource(resource);
     }
   }
 }

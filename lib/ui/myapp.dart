@@ -1,4 +1,4 @@
-import 'package:fhirant/app/app.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:flutter/material.dart';
 
 /// MyApp
@@ -9,6 +9,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'FHIR ANT',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const Scaffold(body: SafeArea(child: PrimaryScreen())),
