@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fhirant/fhirant.dart';
-import 'package:fhirant/router/handlers/favico_handler.dart';
+import 'package:fhirant/server/handlers/favico_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
