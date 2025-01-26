@@ -69,6 +69,9 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadMimicData();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('MIMIC data loading started...')),
+              );
             },
           ),
           ListTile(
@@ -77,6 +80,9 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadExampleData();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Loading FHIR Spec examples...')),
+              );
             },
           ),
           ValueListenableBuilder<bool>(
@@ -101,7 +107,7 @@ class FhirantDrawer extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: isServerRunning,
             builder: (context, running, child) {
-              if (!running) return const SizedBox.shrink();
+              if (!running) return const Text('Server is not running.');
               return Column(
                 children: [
                   ListTile(
@@ -138,11 +144,16 @@ class QrCodeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: QrImageView(
-        data: serverUrl,
-        size: 120,
-        backgroundColor: Colors.white,
-      ),
+      child: serverUrl.isEmpty
+          ? const Text('Invalid URL')
+          : Tooltip(
+              message: 'Scan to access the server URL',
+              child: QrImageView(
+                data: serverUrl,
+                size: 120,
+                backgroundColor: Colors.white,
+              ),
+            ),
     );
   }
 }

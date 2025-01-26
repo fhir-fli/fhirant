@@ -12,8 +12,18 @@ class ResourceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    if (resources.isEmpty) {
+      return const Center(
+        child: Text(
+          'No resources available',
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+      );
+    }
+
+    return ListView.separated(
       itemCount: resources.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final resource = resources[index];
         return Card(

@@ -7,6 +7,7 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
+  basic_utils: ^5.7.0
   crypto: ^3.0.6
   dart_jsonwebtoken: ^2.15.0
   fhir_r4:

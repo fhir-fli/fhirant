@@ -17,7 +17,7 @@ class DbService {
   DbService._();
 
   static final DbService _instance = DbService._();
-  static const _databaseName = 'fhir_clinical.db';
+  static const _databaseName = 'fhirant.db';
   late final Database _db;
   final SecureStorageService _secureStorageService = SecureStorageService();
 

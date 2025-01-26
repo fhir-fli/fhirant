@@ -70,31 +70,55 @@ class ServerManager {
     final handler =
         const Pipeline().addMiddleware(logRequests()).addHandler(_router.call);
 
-    // Bind to any IPv4 address to allow external access
-    _server = await serve(handler, InternetAddress.anyIPv4, port);
-
-    // Retrieve and print the server's local IP address
-    final interfaces = await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-    );
-
-    String? localIpAddress;
+    // Log all network interfaces and their IPs
+    final interfaces =
+        await NetworkInterface.list(type: InternetAddressType.IPv4);
     for (final interface in interfaces) {
       for (final address in interface.addresses) {
-        if (!address.isLoopback) {
-          localIpAddress = address.address;
-          break;
-        }
+        print('Found interface: ${interface.name}, IP: ${address.address}');
       }
     }
 
-    if (localIpAddress != null) {
-      print('Server started at http://$localIpAddress:${_server!.port}');
-    } else {
+    // Access secure storage and check for certificates
+    final storageService = SecureStorageService();
+    var privateKeyPem = await storageService.getPrivateKey();
+    var certificatePem = await storageService.getCertificate();
+
+    // If certificates are missing, generate and save them
+    if (privateKeyPem == null || certificatePem == null) {
       print(
-        'Server started at http://${_server!.address.address}:${_server!.port}',
+        'Certificates not found. Generating new self-signed certificates...',
       );
+      final certData = await storageService.generateSelfSignedCertificate();
+      privateKeyPem = certData['privateKey'];
+      certificatePem = certData['certificate'];
+      print('New certificates generated and stored securely.');
     }
+
+    if (certificatePem == null) {
+      throw Exception('Certificate not found');
+    }
+
+    if (privateKeyPem == null) {
+      throw Exception('Private key not found');
+    }
+
+    // Create a SecurityContext for HTTPS
+    final securityContext = SecurityContext()
+      ..useCertificateChainBytes(certificatePem.codeUnits)
+      ..usePrivateKeyBytes(privateKeyPem.codeUnits);
+
+    // Bind to any IPv4 address to allow external access
+    _server = await serve(
+      handler,
+      InternetAddress.anyIPv4,
+      port,
+      securityContext: securityContext,
+    );
+
+    print(
+      'Server started at https://${_server!.address.address}:${_server!.port}',
+    );
   }
 
   /// Stops the server if it is running
