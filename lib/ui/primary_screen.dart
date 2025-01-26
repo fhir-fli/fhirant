@@ -39,9 +39,11 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     super.dispose();
   }
 
+  /// Initialize valid resource types and update the UI
   Future<void> _initializeResources() async {
     try {
       final validTypes = await dbService.getValidResourceTypes();
+      if (!mounted) return;
       setState(() {
         validResourceTypes = validTypes;
       });
@@ -50,27 +52,36 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Load FHIR resources from a directory
+  /// Load FHIR resources from a directory and update the UI
   Future<void> _loadFhirResources(String directoryPrefix) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context); // Cache context
     try {
       final resources =
           await dbService.loadResourcesFromAssets(directoryPrefix);
-      if (resources.isNotEmpty) await _initializeResources();
-    } catch (e) {
-      _showError('Error loading resources: $e');
-    }
-  }
 
-  /// Show error in a snackbar
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+      if (!mounted) return;
+
+      if (resources.isEmpty) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('No resources found in $directoryPrefix')),
+        );
+      } else {
+        await _initializeResources(); // Refresh the resource types
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content:
+                Text('Resources successfully loaded from $directoryPrefix'),
+          ),
+        );
+      }
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Error loading resources: $e')),
       );
     }
   }
 
-  /// Start the server
+  /// Start the FHIR server and provide feedback to the user
   Future<void> _startServer() async {
     try {
       await ServerManager().start();
@@ -91,7 +102,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Stop the server
+  /// Stop the FHIR server and provide feedback to the user
   Future<void> _stopServer() async {
     try {
       await ServerManager().stop();
@@ -120,6 +131,15 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
       _showError('Error retrieving local IP address: $e');
     }
     return null;
+  }
+
+  /// Show an error message in a snackbar
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
   }
 
   /// Show a success message in a snackbar

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:basic_utils/basic_utils.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -17,12 +19,25 @@ class SecureStorageService {
 
   /// Save the encryption key securely
   Future<void> saveEncryptionKey(String key) async {
-    await secureStorage.write(key: encryptionKey, value: key);
+    try {
+      await secureStorage.write(key: encryptionKey, value: key);
+      print('Encryption key saved successfully.');
+    } catch (e) {
+      print('Error saving encryption key: $e');
+      rethrow;
+    }
   }
 
   /// Retrieve the encryption key securely
   Future<String?> getEncryptionKey() async {
-    return secureStorage.read(key: encryptionKey);
+    try {
+      final key = await secureStorage.read(key: encryptionKey);
+      if (key == null) print('No encryption key found in storage.');
+      return key;
+    } catch (e) {
+      print('Error retrieving encryption key: $e');
+      rethrow;
+    }
   }
 
   /// Generate a random encryption key (for first-time setup)
@@ -32,81 +47,117 @@ class SecureStorageService {
 
   /// Save the private key securely
   Future<void> savePrivateKey(String key) async {
-    await secureStorage.write(key: privateKeyKey, value: key);
+    try {
+      await secureStorage.write(key: privateKeyKey, value: key);
+      print('Private key saved successfully.');
+    } catch (e) {
+      print('Error saving private key: $e');
+      rethrow;
+    }
   }
 
   /// Save the certificate securely
   Future<void> saveCertificate(String certificate) async {
-    await secureStorage.write(key: certificateKey, value: certificate);
+    try {
+      await secureStorage.write(key: certificateKey, value: certificate);
+      print('Certificate saved successfully.');
+    } catch (e) {
+      print('Error saving certificate: $e');
+      rethrow;
+    }
   }
 
   /// Retrieve the private key securely
   Future<String?> getPrivateKey() async {
-    return secureStorage.read(key: privateKeyKey);
+    try {
+      final key = await secureStorage.read(key: privateKeyKey);
+      if (key == null) print('No private key found in storage.');
+      return key;
+    } catch (e) {
+      print('Error retrieving private key: $e');
+      rethrow;
+    }
   }
 
   /// Retrieve the certificate securely
   Future<String?> getCertificate() async {
-    return secureStorage.read(key: certificateKey);
+    try {
+      final cert = await secureStorage.read(key: certificateKey);
+      if (cert == null) print('No certificate found in storage.');
+      return cert;
+    } catch (e) {
+      print('Error retrieving certificate: $e');
+      rethrow;
+    }
   }
 
   /// Generate a self-signed certificate
   Future<Map<String, String>> generateSelfSignedCertificate() async {
-    // Generate RSA key pair
-    final keyPair = CryptoUtils.generateRSAKeyPair();
+    try {
+      print('Generating RSA key pair...');
+      final keyPair = CryptoUtils.generateRSAKeyPair();
 
-    // Encode keys in PEM format
-    final privateKeyPem = CryptoUtils.encodeRSAPrivateKeyToPem(
-      keyPair.privateKey as RSAPrivateKey,
-    );
+      print('Encoding private key in PEM format...');
+      final privateKeyPem = CryptoUtils.encodeRSAPrivateKeyToPem(
+        keyPair.privateKey as RSAPrivateKey,
+      );
 
-    // Generate CSR (Certificate Signing Request)
-    final csr = X509Utils.generateRsaCsrPem(
-      {
-        'CN': 'localhost', // Set the subject with a Common Name
-      },
-      keyPair.privateKey as RSAPrivateKey,
-      keyPair.publicKey as RSAPublicKey,
-    );
+      print('Generating CSR...');
+      final csr = X509Utils.generateRsaCsrPem(
+        {
+          'CN': 'localhost',
+        },
+        keyPair.privateKey as RSAPrivateKey,
+        keyPair.publicKey as RSAPublicKey,
+      );
 
-    // Generate self-signed certificate
-    final certificatePem = X509Utils.generateSelfSignedCertificate(
-      keyPair.privateKey as RSAPrivateKey, // RSA private key
-      csr, // Certificate Signing Request in PEM format
-      365, // Validity in days
-      sans: ['localhost'], // Subject Alternative Names
-      keyUsage: [
-        KeyUsage.DIGITAL_SIGNATURE,
-        KeyUsage.KEY_ENCIPHERMENT,
-      ], // Define key usage
-      extKeyUsage: [
-        ExtendedKeyUsage.SERVER_AUTH,
-      ], // Define extended key usage
-    );
+      print('Generating self-signed certificate...');
+      final certificatePem = X509Utils.generateSelfSignedCertificate(
+        keyPair.privateKey as RSAPrivateKey,
+        csr,
+        365,
+        sans: ['localhost'],
+        keyUsage: [
+          KeyUsage.DIGITAL_SIGNATURE,
+          KeyUsage.KEY_ENCIPHERMENT,
+        ],
+        extKeyUsage: [
+          ExtendedKeyUsage.SERVER_AUTH,
+        ],
+      );
 
-    // Save the keys to secure storage
-    await savePrivateKey(privateKeyPem);
-    await saveCertificate(certificatePem);
+      await savePrivateKey(privateKeyPem);
+      await saveCertificate(certificatePem);
 
-    return {
-      'privateKey': privateKeyPem,
-      'certificate': certificatePem,
-      'csr': csr,
-    };
+      print('Self-signed certificate generated successfully.');
+      return {
+        'privateKey': privateKeyPem,
+        'certificate': certificatePem,
+        'csr': csr,
+      };
+    } catch (e) {
+      print('Error generating self-signed certificate: $e');
+      rethrow;
+    }
   }
 
   /// Generates a secure random key of the given [length].
   /// The key will consist of alphanumeric characters.
   static String generateSecureRandomKey(int length) {
-    final secureRandom = CryptoUtils.getSecureRandom();
-    const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    final buffer = StringBuffer();
+    try {
+      final secureRandom = CryptoUtils.getSecureRandom();
+      const characters =
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      final buffer = StringBuffer();
 
-    for (var i = 0; i < length; i++) {
-      buffer.write(characters[secureRandom.nextUint8() % characters.length]);
+      for (var i = 0; i < length; i++) {
+        buffer.write(characters[secureRandom.nextUint8() % characters.length]);
+      }
+
+      return buffer.toString();
+    } catch (e) {
+      print('Error generating secure random key: $e');
+      rethrow;
     }
-
-    return buffer.toString();
   }
 }

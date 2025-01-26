@@ -60,76 +60,86 @@ class ServerManager {
   /// Throws an exception if the server is already running
   Future<void> start({int port = 8080}) async {
     if (isRunning) {
-      throw Exception('Server is already running on http://$address:$port');
+      print('Server is already running on http://$address:$port');
+      return;
     }
 
-    // Initialize routes
-    _initializeRoutes();
+    try {
+      // Initialize routes
+      _initializeRoutes();
 
-    // Add middleware and assign handler
-    final handler =
-        const Pipeline().addMiddleware(logRequests()).addHandler(_router.call);
+      // Add middleware and assign handler
+      final handler = const Pipeline()
+          .addMiddleware(logRequests())
+          .addHandler(_router.call);
 
-    // Log all network interfaces and their IPs
-    final interfaces =
-        await NetworkInterface.list(type: InternetAddressType.IPv4);
-    for (final interface in interfaces) {
-      for (final address in interface.addresses) {
-        print('Found interface: ${interface.name}, IP: ${address.address}');
+      // Log all network interfaces and their IPs
+      final interfaces =
+          await NetworkInterface.list(type: InternetAddressType.IPv4);
+      for (final interface in interfaces) {
+        for (final address in interface.addresses) {
+          print('Found interface: ${interface.name}, IP: ${address.address}');
+        }
       }
-    }
 
-    // Access secure storage and check for certificates
-    final storageService = SecureStorageService();
-    var privateKeyPem = await storageService.getPrivateKey();
-    var certificatePem = await storageService.getCertificate();
+      // Access secure storage and check for certificates
+      final storageService = SecureStorageService();
+      var privateKeyPem = await storageService.getPrivateKey();
+      var certificatePem = await storageService.getCertificate();
 
-    // If certificates are missing, generate and save them
-    if (privateKeyPem == null || certificatePem == null) {
-      print(
-        'Certificates not found. Generating new self-signed certificates...',
+      // If certificates are missing, generate and save them
+      if (privateKeyPem == null || certificatePem == null) {
+        print(
+          'Certificates not found. Generating new self-signed certificates...',
+        );
+        final certData = await storageService.generateSelfSignedCertificate();
+        privateKeyPem = certData['privateKey'];
+        certificatePem = certData['certificate'];
+        print('New certificates generated and stored securely.');
+      }
+
+      if (certificatePem == null || privateKeyPem == null) {
+        throw Exception(
+          'Failed to retrieve or generate certificates. Cannot start server.',
+        );
+      }
+
+      // Create a SecurityContext for HTTPS
+      final securityContext = SecurityContext()
+        ..useCertificateChainBytes(certificatePem.codeUnits)
+        ..usePrivateKeyBytes(privateKeyPem.codeUnits);
+
+      // Bind to any IPv4 address to allow external access
+      _server = await serve(
+        handler,
+        InternetAddress.anyIPv4,
+        port,
+        securityContext: securityContext,
       );
-      final certData = await storageService.generateSelfSignedCertificate();
-      privateKeyPem = certData['privateKey'];
-      certificatePem = certData['certificate'];
-      print('New certificates generated and stored securely.');
+
+      print(
+        'Server started at https://${_server!.address.address}:${_server!.port}',
+      );
+    } catch (e) {
+      print('Error starting server: $e');
+      rethrow; // Rethrow if necessary for upper-level handling
     }
-
-    if (certificatePem == null) {
-      throw Exception('Certificate not found');
-    }
-
-    if (privateKeyPem == null) {
-      throw Exception('Private key not found');
-    }
-
-    // Create a SecurityContext for HTTPS
-    final securityContext = SecurityContext()
-      ..useCertificateChainBytes(certificatePem.codeUnits)
-      ..usePrivateKeyBytes(privateKeyPem.codeUnits);
-
-    // Bind to any IPv4 address to allow external access
-    _server = await serve(
-      handler,
-      InternetAddress.anyIPv4,
-      port,
-      securityContext: securityContext,
-    );
-
-    print(
-      'Server started at https://${_server!.address.address}:${_server!.port}',
-    );
   }
 
   /// Stops the server if it is running
   /// Throws an exception if the server is not running
   Future<void> stop() async {
     if (!isRunning) {
-      throw Exception('Server is not running');
+      print('Server is not running.');
+      return;
     }
 
-    await _server!.close(force: true);
-    _server = null;
-    print('Server stopped');
+    try {
+      await _server!.close(force: true);
+      _server = null;
+      print('Server stopped successfully.');
+    } catch (e) {
+      print('Error stopping the server: $e');
+    }
   }
 }

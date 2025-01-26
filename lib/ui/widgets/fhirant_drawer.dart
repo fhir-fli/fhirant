@@ -49,7 +49,7 @@ class FhirantDrawer extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/fhirant_logo.png',
-                  height: 80, // Adjust size as needed
+                  height: 80,
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -69,8 +69,9 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadMimicData();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('MIMIC data loading started...')),
+              _showSnackbar(
+                context,
+                'MIMIC data loading started...',
               );
             },
           ),
@@ -80,8 +81,9 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadExampleData();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Loading FHIR Spec examples...')),
+              _showSnackbar(
+                context,
+                'Loading FHIR Spec examples...',
               );
             },
           ),
@@ -99,6 +101,12 @@ class FhirantDrawer extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   running ? onStopServer() : onStartServer();
+                  _showSnackbar(
+                    context,
+                    running
+                        ? 'Stopping the server...'
+                        : 'Starting the server...',
+                  );
                 },
               );
             },
@@ -107,7 +115,16 @@ class FhirantDrawer extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: isServerRunning,
             builder: (context, running, child) {
-              if (!running) return const Text('Server is not running.');
+              if (!running) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Server is not running.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              }
               return Column(
                 children: [
                   ListTile(
@@ -131,6 +148,15 @@ class FhirantDrawer extends StatelessWidget {
       ),
     );
   }
+
+  /// Shows a snackbar with the provided [message].
+  void _showSnackbar(BuildContext context, String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
 }
 
 /// QrCodeWidget
@@ -143,17 +169,23 @@ class QrCodeWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: serverUrl.isEmpty
-          ? const Text('Invalid URL')
-          : Tooltip(
-              message: 'Scan to access the server URL',
-              child: QrImageView(
-                data: serverUrl,
-                size: 120,
-                backgroundColor: Colors.white,
-              ),
-            ),
+    if (serverUrl.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'Invalid server URL',
+          style: TextStyle(color: Colors.red),
+        ),
+      );
+    }
+
+    return Tooltip(
+      message: 'Scan to access the server URL',
+      child: QrImageView(
+        data: serverUrl,
+        size: 120,
+        backgroundColor: Colors.white,
+      ),
     );
   }
 }

@@ -41,6 +41,9 @@ class DbService {
 
       // Ensure tables are created
       createTables(_db);
+
+      // Provide user feedback
+      print('Database initialized successfully at $dbPath');
     } catch (e) {
       print('Error initializing database: $e');
       throw Exception('Failed to initialize the database');
@@ -49,7 +52,10 @@ class DbService {
 
   /// Save resources to the database, handling single and bulk inserts
   bool saveResources(List<Resource> resources) {
-    if (resources.isEmpty) return true;
+    if (resources.isEmpty) {
+      print('No resources to save.');
+      return true;
+    }
 
     try {
       _db.execute('BEGIN TRANSACTION;');
@@ -71,6 +77,7 @@ class DbService {
       }
 
       _db.execute('COMMIT;');
+      print('Successfully saved ${resources.length} resource(s).');
       return true;
     } catch (e) {
       _db.execute('ROLLBACK;');
@@ -182,15 +189,12 @@ class DbService {
     String filePath,
   ) async {
     try {
-      // Retrieve resources as JSON strings from the database
       final resources = getAllResourcesStrings(resourceType);
       if (resources.isEmpty) {
         print('No resources found for type $resourceType.');
         return false;
       }
 
-      // Partition resources into smaller files if needed
-      // (10,000 resources per file)
       var partitionIndex = 1;
       final stringBuffer = StringBuffer();
       final partitionedFiles = <String, String>{};
@@ -198,7 +202,6 @@ class DbService {
       for (var i = 0; i < resources.length; i++) {
         stringBuffer.writeln(resources[i]);
 
-        // Write a partition file after every 10,000 resources or at the end
         if ((i + 1) % 10000 == 0 || i == resources.length - 1) {
           final fileName = '$resourceType-part$partitionIndex';
           partitionedFiles[fileName] = stringBuffer.toString();
@@ -207,17 +210,16 @@ class DbService {
         }
       }
 
-      // Compress partitioned NDJSON files into a .tar.gz archive
       final compressedData = await FhirBulk.toTarGzFile(partitionedFiles);
       if (compressedData == null) {
         print('Failed to compress NDJSON files for type $resourceType.');
         return false;
       }
 
-      // Write the compressed data to the specified file path
       await File(filePath).writeAsBytes(compressedData);
-      print('Resources of type $resourceType exported successfully '
-          'to $filePath.');
+      print(
+        'Resources of type $resourceType exported successfully to $filePath.',
+      );
       return true;
     } catch (e) {
       print('Error exporting resources of type $resourceType to NDJSON: $e');
@@ -302,9 +304,10 @@ class DbService {
         }
       }
 
-      print('Resources loaded from assets with prefix $prefix.');
+      print('Successfully loaded ${loadedResourceTypes.length} '
+          'resource type(s) from $prefix.');
     } catch (e) {
-      print('Error loading resources from assets: $e');
+      print('Error loading resources from assets with prefix $prefix: $e');
     }
 
     return loadedResourceTypes;

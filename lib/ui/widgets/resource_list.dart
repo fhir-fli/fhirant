@@ -7,7 +7,7 @@ class ResourceList extends StatelessWidget {
   /// Constructor
   const ResourceList(this.resources, {super.key});
 
-  /// Resources
+  /// List of FHIR Resources
   final List<Resource> resources;
 
   @override
@@ -44,8 +44,8 @@ class ResourceList extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
-                    overflow: TextOverflow.ellipsis, // Prevent overflow
-                    maxLines: 1, // Limit to one line
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
@@ -58,9 +58,7 @@ class ResourceList extends StatelessWidget {
                   constraints: const BoxConstraints(
                     maxHeight: 300,
                   ),
-                  child: JsonView(
-                    json: resource.toJson(),
-                  ),
+                  child: _buildJsonView(resource, context),
                 ),
               ),
             ],
@@ -68,5 +66,23 @@ class ResourceList extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Build a JsonView widget with error handling
+  Widget _buildJsonView(Resource resource, BuildContext context) {
+    try {
+      final json = resource.toJson();
+      return JsonView(
+        json: json,
+      );
+    } catch (e) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(
+          'Error displaying resource data: $e',
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
+    }
   }
 }
