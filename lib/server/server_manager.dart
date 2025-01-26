@@ -7,7 +7,7 @@ import 'package:fhirant/fhirant.dart';
 import 'package:fhirant/server/handlers/favico_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
-import 'package:shelf_router/shelf_router.dart';
+import 'package:shelf_router/shelf_router.dart' as shelf;
 
 /// A singleton class to manage the server lifecycle and routing
 class ServerManager {
@@ -21,25 +21,94 @@ class ServerManager {
   static final ServerManager _instance = ServerManager._();
 
   HttpServer? _server; // Reference to the running server
-  final Router _router = Router(); // Router instance for defining routes
+  final shelf.Router _router = shelf.Router(); // Router instance for routes
 
-  /// Checks if the server is running
+  /// Getter to check if the server is running
   bool get isRunning => _server != null;
 
-  /// Returns the address of the running server
-  String? get address => _server?.address.address;
-
-  /// Returns the port of the running server
+  /// Getter to return the server port
   int? get port => _server?.port;
 
-  /// Initializes the router with all the predefined routes
+  /// Starts the server directly in the main isolate
+  Future<void> start({int port = 8080}) async {
+    if (isRunning) {
+      print('Server is already running.');
+      return;
+    }
+
+    try {
+      _initializeRoutes();
+
+      // Add middleware and assign the router as the handler
+      final handler = const Pipeline()
+          .addMiddleware(logRequests())
+          .addHandler(_router.call);
+
+      // Access secure storage and check for certificates
+      final storageService = SecureStorageService();
+      var privateKeyPem = await storageService.getPrivateKey();
+      var certificatePem = await storageService.getCertificate();
+
+      // Generate self-signed certificates if missing
+      if (privateKeyPem == null || certificatePem == null) {
+        print(
+          'Certificates not found. Generating new self-signed certificates...',
+        );
+        final certData = await storageService.generateSelfSignedCertificate();
+        privateKeyPem = certData['privateKey'];
+        certificatePem = certData['certificate'];
+        print('New certificates generated and stored securely.');
+      }
+
+      // Create a SecurityContext for HTTPS
+      final securityContext =
+          SecurityContext()
+            ..useCertificateChainBytes(certificatePem!.codeUnits)
+            ..usePrivateKeyBytes(privateKeyPem!.codeUnits);
+
+      // Bind the server to any IPv4 address
+      _server = await serve(
+        handler,
+        InternetAddress.anyIPv4,
+        port,
+        securityContext: securityContext,
+      );
+
+      // Print the server address
+      print(
+        'Server started at https://${_server!.address.address}:${_server!.port}',
+      );
+    } catch (e) {
+      print('Error starting the server: $e');
+      throw Exception('Failed to start the server');
+    }
+  }
+
+  /// Stops the running server
+  Future<void> stop() async {
+    if (!isRunning) {
+      print('Server is not running.');
+      return;
+    }
+
+    try {
+      await _server!.close(force: true);
+      _server = null;
+      print('Server stopped successfully.');
+    } catch (e) {
+      print('Error stopping the server: $e');
+      throw Exception('Failed to stop the server');
+    }
+  }
+
+  /// Initializes the router with all predefined routes
   void _initializeRoutes() {
     _router
       ..get('/', baseHandler) // Welcome route
       ..get('/favicon.ico', favicoHandler)
       ..post('/login', loginHandler) // Login route
       ..get('/metadata', metadataHandler) // Capability statement
-      ..all(r'/$validate', validateHandler) // Global validation (GET or POST)
+      ..all(r'/$validate', validateHandler) // Global validation
       ..all(
         r'/<resourceType>/$validate',
         validateHandler,
@@ -54,92 +123,5 @@ class ServerManager {
         '/<resourceType>/<id>',
         putResourceHandler,
       ); // Update resource by ID
-  }
-
-  /// Starts the server on the specified port
-  /// Throws an exception if the server is already running
-  Future<void> start({int port = 8080}) async {
-    if (isRunning) {
-      print('Server is already running on http://$address:$port');
-      return;
-    }
-
-    try {
-      // Initialize routes
-      _initializeRoutes();
-
-      // Add middleware and assign handler
-      final handler = const Pipeline()
-          .addMiddleware(logRequests())
-          .addHandler(_router.call);
-
-      // Log all network interfaces and their IPs
-      final interfaces =
-          await NetworkInterface.list(type: InternetAddressType.IPv4);
-      for (final interface in interfaces) {
-        for (final address in interface.addresses) {
-          print('Found interface: ${interface.name}, IP: ${address.address}');
-        }
-      }
-
-      // Access secure storage and check for certificates
-      final storageService = SecureStorageService();
-      var privateKeyPem = await storageService.getPrivateKey();
-      var certificatePem = await storageService.getCertificate();
-
-      // If certificates are missing, generate and save them
-      if (privateKeyPem == null || certificatePem == null) {
-        print(
-          'Certificates not found. Generating new self-signed certificates...',
-        );
-        final certData = await storageService.generateSelfSignedCertificate();
-        privateKeyPem = certData['privateKey'];
-        certificatePem = certData['certificate'];
-        print('New certificates generated and stored securely.');
-      }
-
-      if (certificatePem == null || privateKeyPem == null) {
-        throw Exception(
-          'Failed to retrieve or generate certificates. Cannot start server.',
-        );
-      }
-
-      // Create a SecurityContext for HTTPS
-      final securityContext = SecurityContext()
-        ..useCertificateChainBytes(certificatePem.codeUnits)
-        ..usePrivateKeyBytes(privateKeyPem.codeUnits);
-
-      // Bind to any IPv4 address to allow external access
-      _server = await serve(
-        handler,
-        InternetAddress.anyIPv4,
-        port,
-        securityContext: securityContext,
-      );
-
-      print(
-        'Server started at https://${_server!.address.address}:${_server!.port}',
-      );
-    } catch (e) {
-      print('Error starting server: $e');
-      rethrow; // Rethrow if necessary for upper-level handling
-    }
-  }
-
-  /// Stops the server if it is running
-  /// Throws an exception if the server is not running
-  Future<void> stop() async {
-    if (!isRunning) {
-      print('Server is not running.');
-      return;
-    }
-
-    try {
-      await _server!.close(force: true);
-      _server = null;
-      print('Server stopped successfully.');
-    } catch (e) {
-      print('Error stopping the server: $e');
-    }
   }
 }

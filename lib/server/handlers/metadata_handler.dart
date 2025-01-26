@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shelf/shelf.dart';
 
 /// Handler for the metadata route
@@ -30,7 +32,7 @@ Response metadataHandler(Request request) {
   };
 
   return Response.ok(
-    capabilityStatement,
+    jsonEncode(capabilityStatement),
     headers: {'Content-Type': 'application/json'},
   );
 }
