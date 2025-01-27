@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('PatientTable')
+@DataClassName('PatientDrift')
 /// [Patient]Table for Drift
 class PatientTable extends Table {
   /// ID column
@@ -40,7 +40,7 @@ class PatientTable extends Table {
   TextColumn get managingOrganization => text().nullable()();
 }
 
-@DataClassName('PatientHistoryTable')
+@DataClassName('PatientHistoryDrift')
 /// [Patient]HistoryTable for Drift
 class PatientHistoryTable extends Table {
   /// ID column

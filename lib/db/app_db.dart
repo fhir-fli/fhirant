@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant/fhirant.dart';
 import 'package:path/path.dart' as path;
 
@@ -313,3 +314,15 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
+/// AccountTableExtension
+extension AccountTableExtension on fhir.Account {
+  /// AccountTableCompanion
+  AccountTableCompanion get companion {
+    final resource = newIdIfNoId().updateVersion();
+    return AccountTableCompanion(
+      id: Value(resource.id!.value!),
+      lastUpdated: Value(resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch),
+      resource: Value(resource.toJsonString()),
+    );
+  }
+}

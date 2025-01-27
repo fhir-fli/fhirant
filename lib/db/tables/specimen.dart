@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('SpecimenTable')
+@DataClassName('SpecimenDrift')
 /// [Specimen]Table for Drift
 class SpecimenTable extends Table {
   /// ID column
@@ -29,12 +29,12 @@ class SpecimenTable extends Table {
 
   /// Indexes
   List<Set<Column>> get indexes => [
-        {patientId},
-        {status},
-      ];
+    {patientId},
+    {status},
+  ];
 }
 
-@DataClassName('SpecimenHistoryTable')
+@DataClassName('SpecimenHistoryDrift')
 /// [Specimen]HistoryTable for Drift
 class SpecimenHistoryTable extends Table {
   /// ID column

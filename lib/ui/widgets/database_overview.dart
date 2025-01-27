@@ -40,8 +40,8 @@ class DatabaseOverview extends StatelessWidget {
           );
         }
 
-        final counts = (snapshot.data ?? {})
-          ..removeWhere((key, value) => value == 0);
+        final counts =
+            (snapshot.data ?? {})..removeWhere((key, value) => value == 0);
 
         if (counts.isEmpty) {
           return const Text(
@@ -68,32 +68,32 @@ class DatabaseOverview extends StatelessWidget {
                     padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: counts.entries.map<Widget>(
-                        (entry) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  entry.key,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                      children:
+                          counts.entries.map<Widget>((entry) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  '${entry.value} resource(s)',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
+                                  Text(
+                                    '${entry.value} resource(s)',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ).toList(),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                     ),
                   ),
                 ),

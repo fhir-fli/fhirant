@@ -30,14 +30,15 @@ Future<Response> getResourcesHandler(
     // Build FHIR Bundle
     final bundle = Bundle(
       type: BundleType.searchset,
-      entry: resources
-          .map(
-            (resource) => BundleEntry(
-              resource: resource,
-              fullUrl: FhirUri('$baseUrl/$resourceType/${resource.id}'),
-            ),
-          )
-          .toList(),
+      entry:
+          resources
+              .map(
+                (resource) => BundleEntry(
+                  resource: resource,
+                  fullUrl: FhirUri('$baseUrl/$resourceType/${resource.id}'),
+                ),
+              )
+              .toList(),
       total: FhirUnsignedInt(resources.length),
     );
 
@@ -46,10 +47,7 @@ Future<Response> getResourcesHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e) {
-    return _errorResponse(
-      'Failed to fetch resources',
-      e.toString(),
-    );
+    return _errorResponse('Failed to fetch resources', e.toString());
   }
 }
 
@@ -131,10 +129,7 @@ Future<Response> putResourceHandler(
       );
     }
   } catch (e) {
-    return _errorResponse(
-      'Error updating resource',
-      e.toString(),
-    );
+    return _errorResponse('Error updating resource', e.toString());
   }
 }
 
@@ -203,8 +198,9 @@ Future<Response> getResourceByIdHandler(
           OperationOutcomeIssue(
             severity: IssueSeverity.error,
             code: IssueType.not_found,
-            diagnostics: 'Resource of type $resourceType with ID $id not found.'
-                .toFhirString,
+            diagnostics:
+                'Resource of type $resourceType with ID $id not found.'
+                    .toFhirString,
           ),
         ],
       );
@@ -217,9 +213,6 @@ Future<Response> getResourceByIdHandler(
     }
   } catch (e) {
     // Handle unexpected errors
-    return _errorResponse(
-      'Failed to fetch resource',
-      e.toString(),
-    );
+    return _errorResponse('Failed to fetch resource', e.toString());
   }
 }

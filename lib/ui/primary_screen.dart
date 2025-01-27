@@ -56,8 +56,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   Future<void> _loadFhirResources(String directoryPrefix) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context); // Cache context
     try {
-      final resources =
-          await dbService.loadResourcesFromAssets(directoryPrefix);
+      final resources = await dbService.loadResourcesFromAssets(
+        directoryPrefix,
+      );
 
       if (!mounted) return;
 
@@ -69,8 +70,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
         await _initializeResources(); // Refresh the resource types
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content:
-                Text('Resources successfully loaded from $directoryPrefix'),
+            content: Text(
+              'Resources successfully loaded from $directoryPrefix',
+            ),
           ),
         );
       }
@@ -136,18 +138,18 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   /// Show an error message in a snackbar
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   /// Show a success message in a snackbar
   void _showMessage(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -192,12 +194,10 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              items: validResourceTypes.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
+              items:
+                  validResourceTypes.map((type) {
+                    return DropdownMenuItem(value: type, child: Text(type));
+                  }).toList(),
               onChanged: (type) {
                 setState(() {
                   selectedResourceType = type;
@@ -206,9 +206,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
               },
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: ResourceList(displayedResources),
-            ),
+            Expanded(child: ResourceList(displayedResources)),
           ],
         ),
       ),

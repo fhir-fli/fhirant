@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('MedicationRequestTable')
+@DataClassName('MedicationRequestDrift')
 /// [MedicationRequest]Table for Drift
 class MedicationRequestTable extends Table {
   /// ID column
@@ -32,12 +32,12 @@ class MedicationRequestTable extends Table {
 
   /// Indexes
   List<Set<Column>> get indexes => [
-        {patientId},
-        {status},
-      ];
+    {patientId},
+    {status},
+  ];
 }
 
-@DataClassName('MedicationRequestHistoryTable')
+@DataClassName('MedicationRequestHistoryDrift')
 /// [MedicationRequest]HistoryTable for Drift
 class MedicationRequestHistoryTable extends Table {
   /// ID column

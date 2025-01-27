@@ -25,9 +25,9 @@ Response metadataHandler(Request request) {
               {'code': 'create'},
               {'code': 'search-type'},
             ],
-          }
+          },
         ],
-      }
+      },
     ],
   };
 

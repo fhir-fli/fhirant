@@ -12,6 +12,7 @@ class QuestionnaireTable extends Table {
 
   /// Resource column
   TextColumn get resource => text().customConstraint('NOT NULL')();
+
   /// URL column
   TextColumn get url => text().customConstraint('NOT NULL')();
 
@@ -26,9 +27,9 @@ class QuestionnaireTable extends Table {
 
   /// Indexes
   List<Set<Column>> get indexes => [
-        {url},
-        {status},
-      ];
+    {url},
+    {status},
+  ];
 }
 
 @DataClassName('QuestionnaireHistoryDrift')

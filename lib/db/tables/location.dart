@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('LocationTable')
+@DataClassName('LocationDrift')
 /// [Location]Table for Drift
 class LocationTable extends Table {
   /// ID column
@@ -33,7 +33,7 @@ class LocationTable extends Table {
   ];
 }
 
-@DataClassName('LocationHistoryTable')
+@DataClassName('LocationHistoryDrift')
 /// [Location]HistoryTable for Drift
 class LocationHistoryTable extends Table {
   /// ID column

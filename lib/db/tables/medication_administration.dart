@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('MedicationAdministrationTable')
+@DataClassName('MedicationAdministrationDrift')
 /// [MedicationAdministration]Table for Drift
 class MedicationAdministrationTable extends Table {
   /// ID column
@@ -34,7 +34,7 @@ class MedicationAdministrationTable extends Table {
   ];
 }
 
-@DataClassName('MedicationAdministrationHistoryTable')
+@DataClassName('MedicationAdministrationHistoryDrift')
 /// [MedicationAdministration]HistoryTable for Drift
 class MedicationAdministrationHistoryTable extends Table {
   /// ID column

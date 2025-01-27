@@ -47,10 +47,7 @@ class FhirantDrawer extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/fhirant_logo.png',
-                  height: 80,
-                ),
+                Image.asset('assets/fhirant_logo.png', height: 80),
                 const SizedBox(height: 8),
                 const Text(
                   'FHIR ANT',
@@ -69,10 +66,7 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadMimicData();
-              _showSnackbar(
-                context,
-                'MIMIC data loading started...',
-              );
+              _showSnackbar(context, 'MIMIC data loading started...');
             },
           ),
           ListTile(
@@ -81,10 +75,7 @@ class FhirantDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onLoadExampleData();
-              _showSnackbar(
-                context,
-                'Loading FHIR Spec examples...',
-              );
+              _showSnackbar(context, 'Loading FHIR Spec examples...');
             },
           ),
           ValueListenableBuilder<bool>(
@@ -137,9 +128,7 @@ class FhirantDrawer extends StatelessWidget {
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ),
-                  Center(
-                    child: QrCodeWidget(serverUrl: serverUrl),
-                  ),
+                  Center(child: QrCodeWidget(serverUrl: serverUrl)),
                 ],
               );
             },
@@ -152,9 +141,9 @@ class FhirantDrawer extends StatelessWidget {
   /// Shows a snackbar with the provided [message].
   void _showSnackbar(BuildContext context, String message) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 }
@@ -172,10 +161,7 @@ class QrCodeWidget extends StatelessWidget {
     if (serverUrl.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text(
-          'Invalid server URL',
-          style: TextStyle(color: Colors.red),
-        ),
+        child: Text('Invalid server URL', style: TextStyle(color: Colors.red)),
       );
     }
 

@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('ProcedureTable')
+@DataClassName('ProcedureDrift')
 /// [Procedure]Table for Drift
 class ProcedureTable extends Table {
   /// ID column
@@ -34,7 +34,7 @@ class ProcedureTable extends Table {
   ];
 }
 
-@DataClassName('ProcedureHistoryTable')
+@DataClassName('ProcedureHistoryDrift')
 /// [Procedure]HistoryTable for Drift
 class ProcedureHistoryTable extends Table {
   /// ID column

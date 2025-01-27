@@ -304,8 +304,10 @@ class DbService {
         }
       }
 
-      print('Successfully loaded ${loadedResourceTypes.length} '
-          'resource type(s) from $prefix.');
+      print(
+        'Successfully loaded ${loadedResourceTypes.length} '
+        'resource type(s) from $prefix.',
+      );
     } catch (e) {
       print('Error loading resources from assets with prefix $prefix: $e');
     }
@@ -333,7 +335,8 @@ class DbService {
   void _processJson(String content) {
     final resource = Resource.fromJsonString(content);
     if (resource is Bundle) {
-      final bundleResources = resource.entry
+      final bundleResources =
+          resource.entry
               ?.map((entry) => entry.resource)
               .whereType<Resource>()
               .toList() ??

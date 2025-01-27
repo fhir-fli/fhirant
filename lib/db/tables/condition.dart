@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('ConditionTable')
+@DataClassName('ConditionDrift')
 /// [Condition]Table for Drift
 class ConditionTable extends Table {
   /// ID column
@@ -31,7 +31,7 @@ class ConditionTable extends Table {
   IntColumn get onsetDateTime => integer().nullable()();
 }
 
-@DataClassName('ConditionHistoryTable')
+@DataClassName('ConditionHistoryDrift')
 /// [Condition]HistoryTable for Drift
 class ConditionHistoryTable extends Table {
   /// ID column

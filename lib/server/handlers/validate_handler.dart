@@ -9,8 +9,9 @@ Future<Response> validateHandler(Request request) async {
     final body = await request.readAsString();
 
     // Validate the FHIR resource
-    final validationResults =
-        await FhirValidator.validateFhirString(structureToValidate: body);
+    final validationResults = await FhirValidator.validateFhirString(
+      structureToValidate: body,
+    );
 
     // Generate an OperationOutcome from the results
     final operationOutcome = validationResults.toOperationOutcome();
@@ -34,10 +35,7 @@ Future<Response> validateHandler(Request request) async {
     // Handle invalid input or unexpected exceptions
     return Response(
       400,
-      body: jsonEncode({
-        'error': 'Invalid request',
-        'message': e.toString(),
-      }),
+      body: jsonEncode({'error': 'Invalid request', 'message': e.toString()}),
       headers: {'Content-Type': 'application/json'},
     );
   }

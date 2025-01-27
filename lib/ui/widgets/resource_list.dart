@@ -29,9 +29,7 @@ class ResourceList extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: ExpansionTile(
             title: Row(
               children: [
@@ -55,9 +53,7 @@ class ResourceList extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 300,
-                  ),
+                  constraints: const BoxConstraints(maxHeight: 300),
                   child: _buildJsonView(resource, context),
                 ),
               ),
@@ -72,9 +68,7 @@ class ResourceList extends StatelessWidget {
   Widget _buildJsonView(Resource resource, BuildContext context) {
     try {
       final json = resource.toJson();
-      return JsonView(
-        json: json,
-      );
+      return JsonView(json: json);
     } catch (e) {
       return Padding(
         padding: const EdgeInsets.all(8),

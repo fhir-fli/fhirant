@@ -104,9 +104,7 @@ class SecureStorageService {
 
       print('Generating CSR...');
       final csr = X509Utils.generateRsaCsrPem(
-        {
-          'CN': 'localhost',
-        },
+        {'CN': 'localhost'},
         keyPair.privateKey as RSAPrivateKey,
         keyPair.publicKey as RSAPublicKey,
       );
@@ -117,13 +115,8 @@ class SecureStorageService {
         csr,
         365,
         sans: ['localhost'],
-        keyUsage: [
-          KeyUsage.DIGITAL_SIGNATURE,
-          KeyUsage.KEY_ENCIPHERMENT,
-        ],
-        extKeyUsage: [
-          ExtendedKeyUsage.SERVER_AUTH,
-        ],
+        keyUsage: [KeyUsage.DIGITAL_SIGNATURE, KeyUsage.KEY_ENCIPHERMENT],
+        extKeyUsage: [ExtendedKeyUsage.SERVER_AUTH],
       );
 
       await savePrivateKey(privateKeyPem);

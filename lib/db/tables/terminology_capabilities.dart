@@ -12,6 +12,7 @@ class TerminologyCapabilitiesTable extends Table {
 
   /// Resource column
   TextColumn get resource => text().customConstraint('NOT NULL')();
+
   /// URL column
   TextColumn get url => text().customConstraint('NOT NULL')();
 
@@ -26,9 +27,9 @@ class TerminologyCapabilitiesTable extends Table {
 
   /// Indexes
   List<Set<Column>> get indexes => [
-        {url},
-        {status},
-      ];
+    {url},
+    {status},
+  ];
 }
 
 @DataClassName('TerminologyCapabilitiesHistoryDrift')

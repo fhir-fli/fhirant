@@ -3,7 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('EncounterTable')
+@DataClassName('EncounterDrift')
 /// [Encounter]Table for Drift
 class EncounterTable extends Table {
   /// ID column
@@ -37,7 +37,7 @@ class EncounterTable extends Table {
   ];
 }
 
-@DataClassName('EncounterHistoryTable')
+@DataClassName('EncounterHistoryDrift')
 /// [Encounter]HistoryTable for Drift
 class EncounterHistoryTable extends Table {
   /// ID column
