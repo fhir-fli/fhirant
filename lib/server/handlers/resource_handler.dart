@@ -189,7 +189,7 @@ Future<Response> getResourceByIdHandler(
 ) async {
   try {
     final type = R4ResourceType.fromString(resourceType);
-    if(type == null){
+    if (type == null) {
       return _validationErrorResponse('Invalid resource type');
     }
     // Retrieve the resource from the database

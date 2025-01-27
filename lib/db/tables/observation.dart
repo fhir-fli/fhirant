@@ -7,7 +7,7 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Observation]Table for Drift
 class ObservationTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
   /// Last updated column
   IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
@@ -29,6 +29,9 @@ class ObservationTable extends Table {
 
   /// Effective date and time column
   IntColumn get effectiveDateTime => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('ObservationHistoryDrift')

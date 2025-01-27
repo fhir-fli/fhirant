@@ -7,7 +7,7 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Specimen]Table for Drift
 class SpecimenTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
   /// Last updated column
   IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
@@ -33,7 +33,7 @@ class SpecimenTable extends Table {
     {status},
   ];
 
-    @override
+  @override
   Set<Column> get primaryKey => {id};
 }
 

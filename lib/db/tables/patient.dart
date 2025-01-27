@@ -7,7 +7,7 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Patient]Table for Drift
 class PatientTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
   /// Last updated column
   IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
@@ -39,7 +39,7 @@ class PatientTable extends Table {
   /// Managing organization column
   TextColumn get managingOrganization => text().nullable()();
 
-    @override
+  @override
   Set<Column> get primaryKey => {id};
 }
 

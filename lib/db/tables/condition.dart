@@ -7,7 +7,7 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Condition]Table for Drift
 class ConditionTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
   /// Last updated column
   IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
@@ -30,7 +30,7 @@ class ConditionTable extends Table {
   /// Onset date and time column
   IntColumn get onsetDateTime => integer().nullable()();
 
-    @override
+  @override
   Set<Column> get primaryKey => {id};
 }
 

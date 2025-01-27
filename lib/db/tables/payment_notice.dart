@@ -12,7 +12,7 @@ class PaymentNoticeTable extends Table {
 
   /// Resource column
   TextColumn get resource => text().customConstraint('NOT NULL')();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
