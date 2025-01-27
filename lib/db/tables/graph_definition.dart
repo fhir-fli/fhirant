@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('GraphDefinition')
-/// [GraphDefinition] table for Drift
+@DataClassName('GraphDefinitionDrift')
+/// [GraphDefinition]Table for Drift
 class GraphDefinitionTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class GraphDefinitionTable extends Table {
       ];
 }
 
-@DataClassName('GraphDefinitionHistory')
-/// [GraphDefinition] history table for Drift
+@DataClassName('GraphDefinitionHistoryDrift')
+/// [GraphDefinition]HistoryTable for Drift
 class GraphDefinitionHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

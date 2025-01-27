@@ -313,13 +313,3 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-/// AccountTableExtension
-extension AccountTableExtension on Account {
-  AccountTableCompanion get companion {
-    return AccountTableCompanion(
-      id: const Value(id.value),
-      lastUpdated: const Value(1674825600),
-      resource: const Value('{"key": "value"}'),
-    );
-  }
-}

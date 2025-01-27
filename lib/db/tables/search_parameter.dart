@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('SearchParameter')
-/// [SearchParameter] table for Drift
+@DataClassName('SearchParameterDrift')
+/// [SearchParameter]Table for Drift
 class SearchParameterTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class SearchParameterTable extends Table {
       ];
 }
 
-@DataClassName('SearchParameterHistory')
-/// [SearchParameter] history table for Drift
+@DataClassName('SearchParameterHistoryDrift')
+/// [SearchParameter]HistoryTable for Drift
 class SearchParameterHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

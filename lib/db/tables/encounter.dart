@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Encounter')
-/// [Encounter] table for Drift
+@DataClassName('EncounterTable')
+/// [Encounter]Table for Drift
 class EncounterTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -37,8 +37,8 @@ class EncounterTable extends Table {
   ];
 }
 
-@DataClassName('EncounterHistory')
-/// [Encounter]History table for Drift
+@DataClassName('EncounterHistoryTable')
+/// [Encounter]HistoryTable for Drift
 class EncounterHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

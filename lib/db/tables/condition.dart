@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Condition')
-/// [Condition] table for Drift
+@DataClassName('ConditionTable')
+/// [Condition]Table for Drift
 class ConditionTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class ConditionTable extends Table {
   IntColumn get onsetDateTime => integer().nullable()();
 }
 
-@DataClassName('ConditionHistory')
-/// [Condition] table for Drift
+@DataClassName('ConditionHistoryTable')
+/// [Condition]HistoryTable for Drift
 class ConditionHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

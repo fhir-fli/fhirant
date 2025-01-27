@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Citation')
-/// [Citation] table for Drift
+@DataClassName('CitationDrift')
+/// [Citation]Table for Drift
 class CitationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class CitationTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('CitationHistory')
-/// [Citation] history table for Drift
+@DataClassName('CitationHistoryDrift')
+/// [Citation]HistoryTable for Drift
 class CitationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

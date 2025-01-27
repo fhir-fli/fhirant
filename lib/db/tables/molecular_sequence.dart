@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('MolecularSequence')
-/// [MolecularSequence] table for Drift
+@DataClassName('MolecularSequenceDrift')
+/// [MolecularSequence]Table for Drift
 class MolecularSequenceTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class MolecularSequenceTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('MolecularSequenceHistory')
-/// [MolecularSequence] history table for Drift
+@DataClassName('MolecularSequenceHistoryDrift')
+/// [MolecularSequence]HistoryTable for Drift
 class MolecularSequenceHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

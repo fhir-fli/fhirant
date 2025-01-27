@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('RiskAssessment')
-/// [RiskAssessment] table for Drift
+@DataClassName('RiskAssessmentDrift')
+/// [RiskAssessment]Table for Drift
 class RiskAssessmentTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class RiskAssessmentTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('RiskAssessmentHistory')
-/// [RiskAssessment] history table for Drift
+@DataClassName('RiskAssessmentHistoryDrift')
+/// [RiskAssessment]HistoryTable for Drift
 class RiskAssessmentHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

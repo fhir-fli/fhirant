@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('BiologicallyDerivedProduct')
-/// [BiologicallyDerivedProduct] table for Drift
+@DataClassName('BiologicallyDerivedProductDrift')
+/// [BiologicallyDerivedProduct]Table for Drift
 class BiologicallyDerivedProductTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class BiologicallyDerivedProductTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('BiologicallyDerivedProductHistory')
-/// [BiologicallyDerivedProduct] history table for Drift
+@DataClassName('BiologicallyDerivedProductHistoryDrift')
+/// [BiologicallyDerivedProduct]HistoryTable for Drift
 class BiologicallyDerivedProductHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

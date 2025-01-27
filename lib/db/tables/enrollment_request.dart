@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('EnrollmentRequest')
-/// [EnrollmentRequest] table for Drift
+@DataClassName('EnrollmentRequestDrift')
+/// [EnrollmentRequest]Table for Drift
 class EnrollmentRequestTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class EnrollmentRequestTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('EnrollmentRequestHistory')
-/// [EnrollmentRequest] history table for Drift
+@DataClassName('EnrollmentRequestHistoryDrift')
+/// [EnrollmentRequest]HistoryTable for Drift
 class EnrollmentRequestHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

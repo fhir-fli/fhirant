@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Location')
-/// [Location] table for Drift
+@DataClassName('LocationTable')
+/// [Location]Table for Drift
 class LocationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -33,8 +33,8 @@ class LocationTable extends Table {
   ];
 }
 
-@DataClassName('LocationHistory')
-/// [Location]History table for Drift
+@DataClassName('LocationHistoryTable')
+/// [Location]HistoryTable for Drift
 class LocationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

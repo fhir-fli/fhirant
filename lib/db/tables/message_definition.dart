@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('MessageDefinition')
-/// [MessageDefinition] table for Drift
+@DataClassName('MessageDefinitionDrift')
+/// [MessageDefinition]Table for Drift
 class MessageDefinitionTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class MessageDefinitionTable extends Table {
       ];
 }
 
-@DataClassName('MessageDefinitionHistory')
-/// [MessageDefinition] history table for Drift
+@DataClassName('MessageDefinitionHistoryDrift')
+/// [MessageDefinition]HistoryTable for Drift
 class MessageDefinitionHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('CapabilityStatement')
-/// [CapabilityStatement] table for Drift
+@DataClassName('CapabilityStatementDrift')
+/// [CapabilityStatement]Table for Drift
 class CapabilityStatementTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class CapabilityStatementTable extends Table {
       ];
 }
 
-@DataClassName('CapabilityStatementHistory')
-/// [CapabilityStatement] history table for Drift
+@DataClassName('CapabilityStatementHistoryDrift')
+/// [CapabilityStatement]HistoryTable for Drift
 class CapabilityStatementHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

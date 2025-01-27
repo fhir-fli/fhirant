@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Consent')
-/// [Consent] table for Drift
+@DataClassName('ConsentDrift')
+/// [Consent]Table for Drift
 class ConsentTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class ConsentTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('ConsentHistory')
-/// [Consent] history table for Drift
+@DataClassName('ConsentHistoryDrift')
+/// [Consent]HistoryTable for Drift
 class ConsentHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

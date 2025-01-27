@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Specimen')
-/// [Specimen] table for Drift
+@DataClassName('SpecimenTable')
+/// [Specimen]Table for Drift
 class SpecimenTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -34,8 +34,8 @@ class SpecimenTable extends Table {
       ];
 }
 
-@DataClassName('SpecimenHistory')
-/// [Specimen]History table for Drift
+@DataClassName('SpecimenHistoryTable')
+/// [Specimen]HistoryTable for Drift
 class SpecimenHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

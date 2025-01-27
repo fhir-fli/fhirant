@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Linkage')
-/// [Linkage] table for Drift
+@DataClassName('LinkageDrift')
+/// [Linkage]Table for Drift
 class LinkageTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class LinkageTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('LinkageHistory')
-/// [Linkage] history table for Drift
+@DataClassName('LinkageHistoryDrift')
+/// [Linkage]HistoryTable for Drift
 class LinkageHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

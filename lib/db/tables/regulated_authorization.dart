@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('RegulatedAuthorization')
-/// [RegulatedAuthorization] table for Drift
+@DataClassName('RegulatedAuthorizationDrift')
+/// [RegulatedAuthorization]Table for Drift
 class RegulatedAuthorizationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class RegulatedAuthorizationTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('RegulatedAuthorizationHistory')
-/// [RegulatedAuthorization] history table for Drift
+@DataClassName('RegulatedAuthorizationHistoryDrift')
+/// [RegulatedAuthorization]HistoryTable for Drift
 class RegulatedAuthorizationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

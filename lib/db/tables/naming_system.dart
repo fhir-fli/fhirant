@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('NamingSystem')
-/// [NamingSystem] table for Drift
+@DataClassName('NamingSystemDrift')
+/// [NamingSystem]Table for Drift
 class NamingSystemTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class NamingSystemTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('NamingSystemHistory')
-/// [NamingSystem] history table for Drift
+@DataClassName('NamingSystemHistoryDrift')
+/// [NamingSystem]HistoryTable for Drift
 class NamingSystemHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

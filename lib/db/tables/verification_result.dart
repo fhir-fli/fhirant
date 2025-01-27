@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
-import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('VerificationResult')
-/// [fhir.VerificationResult] table for Drift
+@DataClassName('VerificationResultDrift')
+/// [VerificationResult]Table for Drift
 class VerificationResultTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class VerificationResultTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('VerificationResultHistory')
-/// [fhir.VerificationResult] history table for Drift
+@DataClassName('VerificationResultHistoryDrift')
+/// [VerificationResult]HistoryTable for Drift
 class VerificationResultHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

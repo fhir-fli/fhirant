@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('SupplyDelivery')
-/// [SupplyDelivery] table for Drift
+@DataClassName('SupplyDeliveryDrift')
+/// [SupplyDelivery]Table for Drift
 class SupplyDeliveryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class SupplyDeliveryTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('SupplyDeliveryHistory')
-/// [SupplyDelivery] history table for Drift
+@DataClassName('SupplyDeliveryHistoryDrift')
+/// [SupplyDelivery]HistoryTable for Drift
 class SupplyDeliveryHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

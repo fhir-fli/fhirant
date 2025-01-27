@@ -24,7 +24,7 @@ void main() {
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('${updatedResource}Table')
+@DataClassName('${updatedResource}Drift')
 /// [$updatedResource]Table for Drift
 class ${updatedResource}Table extends Table {
   /// ID column
@@ -62,8 +62,8 @@ class ${updatedResource}Table extends Table {
       fileString += """
 }
 
-@DataClassName('${updatedResource}History')
-/// [$updatedResource]History table for Drift
+@DataClassName('${updatedResource}HistoryDrift')
+/// [$updatedResource]HistoryTable for Drift
 class ${updatedResource}HistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

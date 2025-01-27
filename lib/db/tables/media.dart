@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Media')
-/// [Media] table for Drift
+@DataClassName('MediaDrift')
+/// [Media]Table for Drift
 class MediaTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class MediaTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('MediaHistory')
-/// [Media] history table for Drift
+@DataClassName('MediaHistoryDrift')
+/// [Media]HistoryTable for Drift
 class MediaHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

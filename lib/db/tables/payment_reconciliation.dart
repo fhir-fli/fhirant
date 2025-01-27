@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('PaymentReconciliation')
-/// [PaymentReconciliation] table for Drift
+@DataClassName('PaymentReconciliationDrift')
+/// [PaymentReconciliation]Table for Drift
 class PaymentReconciliationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class PaymentReconciliationTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('PaymentReconciliationHistory')
-/// [PaymentReconciliation] history table for Drift
+@DataClassName('PaymentReconciliationHistoryDrift')
+/// [PaymentReconciliation]HistoryTable for Drift
 class PaymentReconciliationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

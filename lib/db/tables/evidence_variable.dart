@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('EvidenceVariable')
-/// [EvidenceVariable] table for Drift
+@DataClassName('EvidenceVariableDrift')
+/// [EvidenceVariable]Table for Drift
 class EvidenceVariableTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class EvidenceVariableTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('EvidenceVariableHistory')
-/// [EvidenceVariable] history table for Drift
+@DataClassName('EvidenceVariableHistoryDrift')
+/// [EvidenceVariable]HistoryTable for Drift
 class EvidenceVariableHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

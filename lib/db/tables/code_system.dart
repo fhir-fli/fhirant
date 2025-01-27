@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('CodeSystem')
-/// [CodeSystem] table for Drift
+@DataClassName('CodeSystemDrift')
+/// [CodeSystem]Table for Drift
 class CodeSystemTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class CodeSystemTable extends Table {
       ];
 }
 
-@DataClassName('CodeSystemHistory')
-/// [CodeSystem] history table for Drift
+@DataClassName('CodeSystemHistoryDrift')
+/// [CodeSystem]HistoryTable for Drift
 class CodeSystemHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

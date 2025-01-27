@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('ImplementationGuide')
-/// [ImplementationGuide] table for Drift
+@DataClassName('ImplementationGuideDrift')
+/// [ImplementationGuide]Table for Drift
 class ImplementationGuideTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class ImplementationGuideTable extends Table {
       ];
 }
 
-@DataClassName('ImplementationGuideHistory')
-/// [ImplementationGuide] history table for Drift
+@DataClassName('ImplementationGuideHistoryDrift')
+/// [ImplementationGuide]HistoryTable for Drift
 class ImplementationGuideHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

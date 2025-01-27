@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('ConceptMap')
-/// [ConceptMap] table for Drift
+@DataClassName('ConceptMapDrift')
+/// [ConceptMap]Table for Drift
 class ConceptMapTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class ConceptMapTable extends Table {
       ];
 }
 
-@DataClassName('ConceptMapHistory')
-/// [ConceptMap] history table for Drift
+@DataClassName('ConceptMapHistoryDrift')
+/// [ConceptMap]HistoryTable for Drift
 class ConceptMapHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('SubscriptionTopic')
-/// [SubscriptionTopic] table for Drift
+@DataClassName('SubscriptionTopicDrift')
+/// [SubscriptionTopic]Table for Drift
 class SubscriptionTopicTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class SubscriptionTopicTable extends Table {
       ];
 }
 
-@DataClassName('SubscriptionTopicHistory')
-/// [SubscriptionTopic] history table for Drift
+@DataClassName('SubscriptionTopicHistoryDrift')
+/// [SubscriptionTopic]HistoryTable for Drift
 class SubscriptionTopicHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

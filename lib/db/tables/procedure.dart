@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Procedure')
-/// [Procedure] table for Drift
+@DataClassName('ProcedureTable')
+/// [Procedure]Table for Drift
 class ProcedureTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -29,13 +29,13 @@ class ProcedureTable extends Table {
 
   /// Indexes
   List<Set<Column>> get indexes => [
-        {patientId},
-        {status},
-      ];
+    {patientId},
+    {status},
+  ];
 }
 
-@DataClassName('ProcedureHistory')
-/// [Procedure]History table for Drift
+@DataClassName('ProcedureHistoryTable')
+/// [Procedure]HistoryTable for Drift
 class ProcedureHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

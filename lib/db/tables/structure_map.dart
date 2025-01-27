@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('StructureMap')
-/// [StructureMap] table for Drift
+@DataClassName('StructureMapDrift')
+/// [StructureMap]Table for Drift
 class StructureMapTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class StructureMapTable extends Table {
       ];
 }
 
-@DataClassName('StructureMapHistory')
-/// [StructureMap] history table for Drift
+@DataClassName('StructureMapHistoryDrift')
+/// [StructureMap]HistoryTable for Drift
 class StructureMapHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

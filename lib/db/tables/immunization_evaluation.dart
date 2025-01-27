@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('ImmunizationEvaluation')
-/// [ImmunizationEvaluation] table for Drift
+@DataClassName('ImmunizationEvaluationDrift')
+/// [ImmunizationEvaluation]Table for Drift
 class ImmunizationEvaluationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class ImmunizationEvaluationTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('ImmunizationEvaluationHistory')
-/// [ImmunizationEvaluation] history table for Drift
+@DataClassName('ImmunizationEvaluationHistoryDrift')
+/// [ImmunizationEvaluation]HistoryTable for Drift
 class ImmunizationEvaluationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

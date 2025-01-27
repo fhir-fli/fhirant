@@ -3,8 +3,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('Observation')
-/// [Observation] table for Drift
+@DataClassName('ObservationTable')
+/// [Observation]Table for Drift
 class ObservationTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class ObservationTable extends Table {
   IntColumn get effectiveDateTime => integer().nullable()();
 }
 
-@DataClassName('ObservationHistory')
-/// [Observation]History table for Drift
+@DataClassName('ObservationHistoryTable')
+/// [Observation]HistoryTable for Drift
 class ObservationHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

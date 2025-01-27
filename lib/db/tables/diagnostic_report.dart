@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('DiagnosticReport')
-/// [DiagnosticReport] table for Drift
+@DataClassName('DiagnosticReportDrift')
+/// [DiagnosticReport]Table for Drift
 class DiagnosticReportTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class DiagnosticReportTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('DiagnosticReportHistory')
-/// [DiagnosticReport] history table for Drift
+@DataClassName('DiagnosticReportHistoryDrift')
+/// [DiagnosticReport]HistoryTable for Drift
 class DiagnosticReportHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

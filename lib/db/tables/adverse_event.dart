@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('AdverseEvent')
-/// [AdverseEvent] table for Drift
+@DataClassName('AdverseEventDrift')
+/// [AdverseEvent]Table for Drift
 class AdverseEventTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class AdverseEventTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('AdverseEventHistory')
-/// [AdverseEvent] history table for Drift
+@DataClassName('AdverseEventHistoryDrift')
+/// [AdverseEvent]HistoryTable for Drift
 class AdverseEventHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

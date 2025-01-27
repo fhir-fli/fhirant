@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('AllergyIntolerance')
-/// [AllergyIntolerance] table for Drift
+@DataClassName('AllergyIntoleranceDrift')
+/// [AllergyIntolerance]Table for Drift
 class AllergyIntoleranceTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -14,8 +14,8 @@ class AllergyIntoleranceTable extends Table {
   TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-@DataClassName('AllergyIntoleranceHistory')
-/// [AllergyIntolerance] history table for Drift
+@DataClassName('AllergyIntoleranceHistoryDrift')
+/// [AllergyIntolerance]HistoryTable for Drift
 class AllergyIntoleranceHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();

@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-@DataClassName('EventDefinition')
-/// [EventDefinition] table for Drift
+@DataClassName('EventDefinitionDrift')
+/// [EventDefinition]Table for Drift
 class EventDefinitionTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
@@ -31,8 +31,8 @@ class EventDefinitionTable extends Table {
       ];
 }
 
-@DataClassName('EventDefinitionHistory')
-/// [EventDefinition] history table for Drift
+@DataClassName('EventDefinitionHistoryDrift')
+/// [EventDefinition]HistoryTable for Drift
 class EventDefinitionHistoryTable extends Table {
   /// ID column
   TextColumn get id => text().customConstraint('NOT NULL')();
