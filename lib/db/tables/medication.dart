@@ -32,6 +32,9 @@ class MedicationTable extends Table {
     {code},
     {status},
   ];
+
+    @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('MedicationHistoryDrift')

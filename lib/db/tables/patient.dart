@@ -38,6 +38,9 @@ class PatientTable extends Table {
 
   /// Managing organization column
   TextColumn get managingOrganization => text().nullable()();
+
+    @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('PatientHistoryDrift')

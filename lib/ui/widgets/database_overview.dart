@@ -10,15 +10,11 @@ class DatabaseOverview extends StatelessWidget {
   /// Database Service
   final DbService dbService;
 
-  Future<Map<String, int>> _getResourceCounts() async {
-    final counts = <String, int>{};
+  Future<Map<R4ResourceType, int>> _getResourceCounts() async {
+    final counts = <R4ResourceType, int>{};
 
-    for (final resourceType in R4ResourceType.typesAsStrings) {
-      final count = dbService.getResourceCount(
-        ['Endpoint', 'Group', 'List'].contains(resourceType)
-            ? 'Fhir$resourceType'
-            : resourceType,
-      );
+    for (final resourceType in R4ResourceType.values) {
+      final count = await dbService.getResourceCount(resourceType);
       counts[resourceType] = count;
     }
 
@@ -27,7 +23,7 @@ class DatabaseOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, int>>(
+    return FutureBuilder<Map<R4ResourceType, int>>(
       future: _getResourceCounts(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -77,7 +73,7 @@ class DatabaseOverview extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    entry.key,
+                                    entry.key.toString(),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

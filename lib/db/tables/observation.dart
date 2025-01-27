@@ -22,7 +22,7 @@ class ObservationTable extends Table {
   TextColumn get type => text().nullable()();
 
   /// Value column
-  TextColumn get value => text().nullable()();
+  RealColumn get value => real().nullable()();
 
   /// Unit column
   TextColumn get unit => text().nullable()();

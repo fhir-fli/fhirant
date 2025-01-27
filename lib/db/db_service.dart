@@ -2,150 +2,97 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
-import 'package:sqlite3/sqlite3.dart';
 
 /// Service to interact with the SQLite database
 class DbService {
-  /// Factory constructor to return the singleton instance
+  /// Factory constructor for accessing the instance
   factory DbService() => _instance;
 
-  /// Private constructor
+  /// Internal constructor
   DbService._();
 
+  // Singleton instance
   static final DbService _instance = DbService._();
-  static const _databaseName = 'fhirant.db';
-  late final Database _db;
-  final SecureStorageService _secureStorageService = SecureStorageService();
 
-  /// Initialize the database with encryption
-  Future<void> initializeDatabase() async {
+  // The actual database instance
+  late final AppDatabase _db;
+
+  /// Initialize the database
+  Future<void> initialize() async {
+    _db = AppDatabase();
+  }
+
+  /// Close the database connection
+  void close() {
     try {
-      final dbPath = path.join(Directory.current.path, _databaseName);
-      _db = sqlite3.open(dbPath);
-
-      // Retrieve encryption key from secure storage
-      var encryptionKey = await _secureStorageService.getEncryptionKey();
-
-      if (encryptionKey == null) {
-        // Generate a key if it doesn't exist
-        encryptionKey = _secureStorageService.generateRandomKey();
-        await _secureStorageService.saveEncryptionKey(encryptionKey);
-      }
-
-      // Apply encryption
-      _db.execute('PRAGMA key = "$encryptionKey";');
-
-      // Ensure tables are created
-      createTables(_db);
-
-      // Provide user feedback
-      print('Database initialized successfully at $dbPath');
+      _db.close();
     } catch (e) {
-      print('Error initializing database: $e');
-      throw Exception('Failed to initialize the database');
+      print('Error closing database connection: $e');
     }
   }
 
-  /// Save resources to the database, handling single and bulk inserts
-  bool saveResources(List<Resource> resources) {
-    if (resources.isEmpty) {
-      print('No resources to save.');
-      return true;
-    }
-
+  /// Fetch all resources of a specific type as strings
+  Future<List<String>> getAllResourcesStrings(
+    R4ResourceType resourceType,
+  ) async {
     try {
-      _db.execute('BEGIN TRANSACTION;');
+      final table = getTableByType(resourceType, _db);
 
-      final groupedResources = <R4ResourceType, List<Resource>>{};
-
-      // Group resources by type
-      for (final resource in resources) {
-        groupedResources
-            .putIfAbsent(resource.resourceType, () => [])
-            .add(resource);
-      }
-
-      for (final entry in groupedResources.entries) {
-        final saveFn = saveFunction(entry.key);
-        for (final resource in entry.value) {
-          saveFn(_db, resource);
+      final results = await _db.select(table).get();
+      return results.map((row) {
+        // ignore: avoid_dynamic_calls
+        final resource = row.resource;
+        if (resource is String) {
+          return resource;
+        } else {
+          throw Exception('Invalid resource data for type $resourceType');
         }
-      }
-
-      _db.execute('COMMIT;');
-      print('Successfully saved ${resources.length} resource(s).');
-      return true;
+      }).toList();
     } catch (e) {
-      _db.execute('ROLLBACK;');
-      print('Error saving resources: $e');
-      return false;
-    }
-  }
-
-  /// Save a single resource using the unified save logic
-  bool saveResource(Resource resource) {
-    return saveResources([resource]);
-  }
-
-  /// Save multiple resources of the same type
-  bool bulkSaveResourcesOfSameType<T extends Resource>(List<T> resources) {
-    return saveResources(resources);
-  }
-
-  /// Save mixed resources
-  bool bulkSaveMixedResources(List<Resource> resources) {
-    return saveResources(resources);
-  }
-
-  /// Fetch all resources of a specific type
-  List<String> getAllResourcesStrings(String resourceType) {
-    try {
-      final query = 'SELECT resource FROM $resourceType';
-      final results = _db.select(query);
-      return results.map((row) => row['resource'] as String).toList();
-    } catch (e) {
-      print('Error retrieving all resources of type $resourceType: $e');
+      print('Error fetching resources of type $resourceType: $e');
       return [];
     }
   }
 
   /// Fetch all resources of a specific type
-  List<Resource> getAllResources(String resourceType) {
+  Future<List<Resource>> getAllResources(R4ResourceType resourceType) async {
     try {
-      final query = 'SELECT resource FROM $resourceType';
-      final results = _db.select(query);
-      return results.map((row) {
-        final resourceJson = row['resource'] as String;
-        return Resource.fromJsonString(resourceJson);
-      }).toList();
+      final resourceStrings = await getAllResourcesStrings(resourceType);
+      return resourceStrings.map(Resource.fromJsonString).toList();
     } catch (e) {
-      print('Error retrieving all resources of type $resourceType: $e');
+      print('Error converting resources to FHIR objects: $e');
       return [];
     }
   }
 
   /// Fetch resources with pagination
-  List<Resource> getResourcesWithPagination({
-    required String resourceType,
+  Future<List<Resource>> getResourcesWithPagination({
+    required R4ResourceType resourceType,
     required int count,
     required int offset,
-  }) {
+  }) async {
     try {
-      final query = '''
-        SELECT resource 
-        FROM $resourceType 
-        LIMIT ? OFFSET ?
-      ''';
+      final table = getTableByType(resourceType, _db);
 
-      final results = _db.select(query, [count, offset]);
+      // Perform the paginated query
+      final results =
+          await (_db.select(table)..limit(count, offset: offset)).get();
 
       return results.map((row) {
-        final resourceJson = row['resource'] as String;
-        return Resource.fromJsonString(resourceJson);
+        // ignore: avoid_dynamic_calls
+        final resourceJson = row.resource;
+        if (resourceJson is String) {
+          return Resource.fromJsonString(resourceJson);
+        } else {
+          throw Exception(
+            'Invalid resource data for type $resourceType: '
+            'Expected String, got ${resourceJson.runtimeType}',
+          );
+        }
       }).toList();
     } catch (e) {
       print('Error retrieving paginated resources of type $resourceType: $e');
@@ -154,14 +101,27 @@ class DbService {
   }
 
   /// Fetch a specific resource by its ID
-  Resource? getResource(String resourceType, String id) {
+  Future<Resource?> getResource(R4ResourceType resourceType, String id) async {
     try {
-      final query = 'SELECT resource FROM $resourceType WHERE id = ?';
-      final results = _db.select(query, [id]);
+      final table = getTableByType(resourceType, _db);
+
+      final primaryKeyColumn = table.$primaryKey.first;
+      final query = _db.select(table)
+        ..where((row) => primaryKeyColumn.equals(id));
+
+      final results = await query.get();
 
       if (results.isNotEmpty) {
-        final resourceJson = results.first['resource'] as String;
-        return Resource.fromJsonString(resourceJson);
+        // ignore: avoid_dynamic_calls
+        final resourceJson = results.first.resource;
+        if (resourceJson is String) {
+          return Resource.fromJsonString(resourceJson);
+        } else {
+          throw Exception(
+            'Invalid resource data for type $resourceType: '
+            'Expected String, got ${resourceJson.runtimeType}',
+          );
+        }
       }
     } catch (e) {
       print('Error retrieving resource of type $resourceType with ID $id: $e');
@@ -170,26 +130,31 @@ class DbService {
   }
 
   /// Get a count of resources by type
-  int getResourceCount(String resourceType) {
+  Future<int> getResourceCount(R4ResourceType resourceType) async {
     try {
-      final query = 'SELECT COUNT(*) AS count FROM $resourceType';
-      final results = _db.select(query);
-      if (results.isNotEmpty) {
-        return results.first['count'] as int;
-      }
+      final table = getTableByType(resourceType, _db);
+
+      // Use the primary key column dynamically
+      final primaryKeyColumn = table.$primaryKey.first;
+      final countExpression = primaryKeyColumn.count();
+
+      final query = _db.selectOnly(table)..addColumns([countExpression]);
+      final result = await query.getSingle();
+
+      return result.read(countExpression) ?? 0;
     } catch (e) {
       print('Error counting resources of type $resourceType: $e');
+      return 0;
     }
-    return 0;
   }
 
   /// Export resources of a specific type to NDJSON and compress to .tar.gz
   Future<bool> exportResourcesToNDJSON(
-    String resourceType,
+    R4ResourceType resourceType,
     String filePath,
   ) async {
     try {
-      final resources = getAllResourcesStrings(resourceType);
+      final resources = await getAllResourcesStrings(resourceType);
       if (resources.isEmpty) {
         print('No resources found for type $resourceType.');
         return false;
@@ -228,49 +193,23 @@ class DbService {
   }
 
   /// Update a resource in the database
-  bool updateResource(Resource resource) {
+  Future<bool> saveResource(Resource resource) async {
     try {
-      final updateFn = saveFunction(resource.resourceType);
-      return updateFn(_db, resource);
+      await _db.saveResources([resource]);
+      return true;
     } catch (e) {
       print('Error updating resource of type ${resource.resourceType}: $e');
       return false;
     }
   }
 
-  /// Delete a resource by its ID
-  bool deleteResource(String resourceType, String id) {
-    try {
-      final deleteQuery = 'DELETE FROM $resourceType WHERE id = ?';
-      _db.execute(deleteQuery, [id]);
-      return true;
-    } catch (e) {
-      print('Error deleting resource of type $resourceType with ID $id: $e');
-      return false;
-    }
-  }
-
-  /// Close the database connection
-  void close() {
-    try {
-      _db.dispose();
-    } catch (e) {
-      print('Error closing database connection: $e');
-    }
-  }
-
   /// Fetch all valid resource types with resources in the database
-  Future<List<String>> getValidResourceTypes() async {
-    final validTypes = <String>[];
+  Future<List<R4ResourceType>> getValidResourceTypes() async {
+    final validTypes = <R4ResourceType>[];
 
     try {
-      for (final resourceType in R4ResourceType.typesAsStrings) {
-        final adjustedType =
-            ['Endpoint', 'Group', 'List'].contains(resourceType)
-                ? 'Fhir$resourceType'
-                : resourceType;
-
-        final count = getResourceCount(adjustedType);
+      for (final resourceType in R4ResourceType.values) {
+        final count = await getResourceCount(resourceType);
         if (count > 0) {
           validTypes.add(resourceType);
         }
@@ -320,19 +259,19 @@ class DbService {
     final content = await rootBundle.loadString(file);
 
     if (file.endsWith('.ndjson')) {
-      _processNdjson(content);
+      await _processNdjson(content);
     } else if (file.endsWith('.json')) {
-      _processJson(content);
+      await _processJson(content);
     }
   }
 
-  void _processNdjson(String content) {
+  Future<void> _processNdjson(String content) async {
     final lines = content.split('\n').where((line) => line.isNotEmpty);
     final resources = lines.map(Resource.fromJsonString).toList();
-    bulkSaveResourcesOfSameType(resources);
+    await _db.saveResources(resources);
   }
 
-  void _processJson(String content) {
+  Future<void> _processJson(String content) async {
     final resource = Resource.fromJsonString(content);
     if (resource is Bundle) {
       final bundleResources =
@@ -341,9 +280,9 @@ class DbService {
               .whereType<Resource>()
               .toList() ??
           [];
-      bulkSaveMixedResources(bundleResources);
+      await _db.saveResources(bundleResources);
     } else {
-      saveResource(resource);
+      await _db.saveResources([resource]);
     }
   }
 }

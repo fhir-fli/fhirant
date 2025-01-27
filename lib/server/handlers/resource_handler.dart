@@ -16,9 +16,15 @@ Future<Response> getResourcesHandler(
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
 
+    final type = R4ResourceType.fromString(resourceType);
+
+    if (type == null) {
+      return _validationErrorResponse('Invalid resource type');
+    }
+
     // Fetch resources with pagination
-    final resources = dbService.getResourcesWithPagination(
-      resourceType: resourceType,
+    final resources = await dbService.getResourcesWithPagination(
+      resourceType: type,
       count: count,
       offset: offset,
     );
@@ -66,7 +72,7 @@ Future<Response> postResourceHandler(
       );
     }
 
-    final result = DbService().saveResource(resource);
+    final result = await DbService().saveResource(resource);
 
     if (result) {
       return Response(
@@ -114,7 +120,7 @@ Future<Response> putResourceHandler(
       );
     }
 
-    final success = DbService().saveResource(updatedResource);
+    final success = await DbService().saveResource(updatedResource);
 
     if (success) {
       return Response(
@@ -182,8 +188,12 @@ Future<Response> getResourceByIdHandler(
   String id,
 ) async {
   try {
+    final type = R4ResourceType.fromString(resourceType);
+    if(type == null){
+      return _validationErrorResponse('Invalid resource type');
+    }
     // Retrieve the resource from the database
-    final resource = DbService().getResource(resourceType, id);
+    final resource = await DbService().getResource(type, id);
 
     if (resource != null) {
       // Resource found, return it

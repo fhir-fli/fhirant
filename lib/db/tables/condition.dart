@@ -29,6 +29,9 @@ class ConditionTable extends Table {
 
   /// Onset date and time column
   IntColumn get onsetDateTime => integer().nullable()();
+
+    @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('ConditionHistoryDrift')

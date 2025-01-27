@@ -45,7 +45,8 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
       final validTypes = await dbService.getValidResourceTypes();
       if (!mounted) return;
       setState(() {
-        validResourceTypes = validTypes;
+        validResourceTypes =
+            validTypes.map((validType) => validType.toString()).toList();
       });
     } catch (e) {
       _showError('Failed to load resource types: $e');
@@ -154,9 +155,11 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   }
 
   /// Display resources of a selected type
-  void _showResources() {
+  Future<void> _showResources() async {
     if (selectedResourceType == null) return;
-    final resources = dbService.getAllResources(selectedResourceType!);
+    final resourceType = R4ResourceType.fromString(selectedResourceType!);
+    if (resourceType == null) return;
+    final resources = await dbService.getAllResources(resourceType);
     setState(() {
       displayedResources = resources;
     });
@@ -199,9 +202,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
                     return DropdownMenuItem(value: type, child: Text(type));
                   }).toList(),
               onChanged: (type) {
-                setState(() {
+                setState(() async {
                   selectedResourceType = type;
-                  _showResources();
+                  await _showResources();
                 });
               },
             ),

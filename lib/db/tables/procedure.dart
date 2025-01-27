@@ -32,6 +32,9 @@ class ProcedureTable extends Table {
     {patientId},
     {status},
   ];
+
+    @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('ProcedureHistoryDrift')

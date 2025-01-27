@@ -1,4 +1,4 @@
-// ignore_for_file: lines_longer_than_80_chars
+// ignore_for_file: lines_longer_than_80_chars, avoid_print
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -6,295 +6,11 @@ import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant/fhirant.dart';
 import 'package:path/path.dart' as path;
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 part 'app_db.g.dart';
 
-@DriftDatabase(
-  tables: [
-    AccountTable,
-    AccountHistoryTable,
-    ActivityDefinitionTable,
-    ActivityDefinitionHistoryTable,
-    AdministrableProductDefinitionTable,
-    AdministrableProductDefinitionHistoryTable,
-    AdverseEventTable,
-    AdverseEventHistoryTable,
-    AllergyIntoleranceTable,
-    AllergyIntoleranceHistoryTable,
-    AppointmentTable,
-    AppointmentHistoryTable,
-    AppointmentResponseTable,
-    AppointmentResponseHistoryTable,
-    AuditEventTable,
-    AuditEventHistoryTable,
-    BasicTable,
-    BasicHistoryTable,
-    BinaryTable,
-    BinaryHistoryTable,
-    BiologicallyDerivedProductTable,
-    BiologicallyDerivedProductHistoryTable,
-    BodyStructureTable,
-    BodyStructureHistoryTable,
-    BundleTable,
-    BundleHistoryTable,
-    CapabilityStatementTable,
-    CapabilityStatementHistoryTable,
-    CarePlanTable,
-    CarePlanHistoryTable,
-    CareTeamTable,
-    CareTeamHistoryTable,
-    CatalogEntryTable,
-    CatalogEntryHistoryTable,
-    ChargeItemTable,
-    ChargeItemHistoryTable,
-    ChargeItemDefinitionTable,
-    ChargeItemDefinitionHistoryTable,
-    CitationTable,
-    CitationHistoryTable,
-    ClaimTable,
-    ClaimHistoryTable,
-    ClaimResponseTable,
-    ClaimResponseHistoryTable,
-    ClinicalImpressionTable,
-    ClinicalImpressionHistoryTable,
-    ClinicalUseDefinitionTable,
-    ClinicalUseDefinitionHistoryTable,
-    CodeSystemTable,
-    CodeSystemHistoryTable,
-    CommunicationTable,
-    CommunicationHistoryTable,
-    CommunicationRequestTable,
-    CommunicationRequestHistoryTable,
-    CompartmentDefinitionTable,
-    CompartmentDefinitionHistoryTable,
-    CompositionTable,
-    CompositionHistoryTable,
-    ConceptMapTable,
-    ConceptMapHistoryTable,
-    ConditionTable,
-    ConditionHistoryTable,
-    ConsentTable,
-    ConsentHistoryTable,
-    ContractTable,
-    ContractHistoryTable,
-    CoverageTable,
-    CoverageHistoryTable,
-    CoverageEligibilityRequestTable,
-    CoverageEligibilityRequestHistoryTable,
-    CoverageEligibilityResponseTable,
-    CoverageEligibilityResponseHistoryTable,
-    DetectedIssueTable,
-    DetectedIssueHistoryTable,
-    DeviceTable,
-    DeviceHistoryTable,
-    DeviceDefinitionTable,
-    DeviceDefinitionHistoryTable,
-    DeviceMetricTable,
-    DeviceMetricHistoryTable,
-    DeviceRequestTable,
-    DeviceRequestHistoryTable,
-    DeviceUseStatementTable,
-    DeviceUseStatementHistoryTable,
-    DiagnosticReportTable,
-    DiagnosticReportHistoryTable,
-    DocumentManifestTable,
-    DocumentManifestHistoryTable,
-    DocumentReferenceTable,
-    DocumentReferenceHistoryTable,
-    EncounterTable,
-    EncounterHistoryTable,
-    EnrollmentRequestTable,
-    EnrollmentRequestHistoryTable,
-    EnrollmentResponseTable,
-    EnrollmentResponseHistoryTable,
-    EpisodeOfCareTable,
-    EpisodeOfCareHistoryTable,
-    EventDefinitionTable,
-    EventDefinitionHistoryTable,
-    EvidenceTable,
-    EvidenceHistoryTable,
-    EvidenceReportTable,
-    EvidenceReportHistoryTable,
-    EvidenceVariableTable,
-    EvidenceVariableHistoryTable,
-    ExampleScenarioTable,
-    ExampleScenarioHistoryTable,
-    ExplanationOfBenefitTable,
-    ExplanationOfBenefitHistoryTable,
-    FamilyMemberHistoryTable,
-    FamilyMemberHistoryHistoryTable,
-    FhirEndpointTable,
-    FhirEndpointHistoryTable,
-    FhirGroupTable,
-    FhirGroupHistoryTable,
-    FhirListTable,
-    FhirListHistoryTable,
-    FlagTable,
-    FlagHistoryTable,
-    GoalTable,
-    GoalHistoryTable,
-    GraphDefinitionTable,
-    GraphDefinitionHistoryTable,
-    GuidanceResponseTable,
-    GuidanceResponseHistoryTable,
-    HealthcareServiceTable,
-    HealthcareServiceHistoryTable,
-    ImagingStudyTable,
-    ImagingStudyHistoryTable,
-    ImmunizationTable,
-    ImmunizationHistoryTable,
-    ImmunizationEvaluationTable,
-    ImmunizationEvaluationHistoryTable,
-    ImmunizationRecommendationTable,
-    ImmunizationRecommendationHistoryTable,
-    ImplementationGuideTable,
-    ImplementationGuideHistoryTable,
-    IngredientTable,
-    IngredientHistoryTable,
-    InsurancePlanTable,
-    InsurancePlanHistoryTable,
-    InvoiceTable,
-    InvoiceHistoryTable,
-    LibraryTable,
-    LibraryHistoryTable,
-    LinkageTable,
-    LinkageHistoryTable,
-    LocationTable,
-    LocationHistoryTable,
-    ManufacturedItemDefinitionTable,
-    ManufacturedItemDefinitionHistoryTable,
-    MeasureTable,
-    MeasureHistoryTable,
-    MeasureReportTable,
-    MeasureReportHistoryTable,
-    MediaTable,
-    MediaHistoryTable,
-    MedicationTable,
-    MedicationHistoryTable,
-    MedicationAdministrationTable,
-    MedicationAdministrationHistoryTable,
-    MedicationDispenseTable,
-    MedicationDispenseHistoryTable,
-    MedicationKnowledgeTable,
-    MedicationKnowledgeHistoryTable,
-    MedicationRequestTable,
-    MedicationRequestHistoryTable,
-    MedicationStatementTable,
-    MedicationStatementHistoryTable,
-    MedicinalProductDefinitionTable,
-    MedicinalProductDefinitionHistoryTable,
-    MessageDefinitionTable,
-    MessageDefinitionHistoryTable,
-    MessageHeaderTable,
-    MessageHeaderHistoryTable,
-    MolecularSequenceTable,
-    MolecularSequenceHistoryTable,
-    NamingSystemTable,
-    NamingSystemHistoryTable,
-    NutritionOrderTable,
-    NutritionOrderHistoryTable,
-    NutritionProductTable,
-    NutritionProductHistoryTable,
-    ObservationTable,
-    ObservationHistoryTable,
-    ObservationDefinitionTable,
-    ObservationDefinitionHistoryTable,
-    OperationDefinitionTable,
-    OperationDefinitionHistoryTable,
-    OperationOutcomeTable,
-    OperationOutcomeHistoryTable,
-    OrganizationTable,
-    OrganizationHistoryTable,
-    OrganizationAffiliationTable,
-    OrganizationAffiliationHistoryTable,
-    PackagedProductDefinitionTable,
-    PackagedProductDefinitionHistoryTable,
-    ParametersTable,
-    ParametersHistoryTable,
-    PatientTable,
-    PatientHistoryTable,
-    PaymentNoticeTable,
-    PaymentNoticeHistoryTable,
-    PaymentReconciliationTable,
-    PaymentReconciliationHistoryTable,
-    PersonTable,
-    PersonHistoryTable,
-    PlanDefinitionTable,
-    PlanDefinitionHistoryTable,
-    PractitionerTable,
-    PractitionerHistoryTable,
-    PractitionerRoleTable,
-    PractitionerRoleHistoryTable,
-    ProcedureTable,
-    ProcedureHistoryTable,
-    ProvenanceTable,
-    ProvenanceHistoryTable,
-    QuestionnaireTable,
-    QuestionnaireHistoryTable,
-    QuestionnaireResponseTable,
-    QuestionnaireResponseHistoryTable,
-    RegulatedAuthorizationTable,
-    RegulatedAuthorizationHistoryTable,
-    RelatedPersonTable,
-    RelatedPersonHistoryTable,
-    RequestGroupTable,
-    RequestGroupHistoryTable,
-    ResearchDefinitionTable,
-    ResearchDefinitionHistoryTable,
-    ResearchElementDefinitionTable,
-    ResearchElementDefinitionHistoryTable,
-    ResearchStudyTable,
-    ResearchStudyHistoryTable,
-    ResearchSubjectTable,
-    ResearchSubjectHistoryTable,
-    RiskAssessmentTable,
-    RiskAssessmentHistoryTable,
-    ScheduleTable,
-    ScheduleHistoryTable,
-    SearchParameterTable,
-    SearchParameterHistoryTable,
-    ServiceRequestTable,
-    ServiceRequestHistoryTable,
-    SlotTable,
-    SlotHistoryTable,
-    SpecimenTable,
-    SpecimenHistoryTable,
-    SpecimenDefinitionTable,
-    SpecimenDefinitionHistoryTable,
-    StructureDefinitionTable,
-    StructureDefinitionHistoryTable,
-    StructureMapTable,
-    StructureMapHistoryTable,
-    SubscriptionTable,
-    SubscriptionHistoryTable,
-    SubscriptionStatusTable,
-    SubscriptionStatusHistoryTable,
-    SubscriptionTopicTable,
-    SubscriptionTopicHistoryTable,
-    SubstanceTable,
-    SubstanceHistoryTable,
-    SubstanceDefinitionTable,
-    SubstanceDefinitionHistoryTable,
-    SupplyDeliveryTable,
-    SupplyDeliveryHistoryTable,
-    SupplyRequestTable,
-    SupplyRequestHistoryTable,
-    TaskTable,
-    TaskHistoryTable,
-    TerminologyCapabilitiesTable,
-    TerminologyCapabilitiesHistoryTable,
-    TestReportTable,
-    TestReportHistoryTable,
-    TestScriptTable,
-    TestScriptHistoryTable,
-    ValueSetTable,
-    ValueSetHistoryTable,
-    VerificationResultTable,
-    VerificationResultHistoryTable,
-    VisionPrescriptionTable,
-    VisionPrescriptionHistoryTable,
-  ],
-)
+@DriftDatabase(tables: tablesList)
 /// Database for the application
 class AppDatabase extends _$AppDatabase {
   /// Creates an instance of the database
@@ -304,13 +20,1122 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  /// Secure Storage Service instance
+  static final SecureStorageService _secureStorageService =
+      SecureStorageService();
+
   /// Opens a connection to the database
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
-      final dbFolder = Directory.current;
-      final file = File(path.join(dbFolder.path, 'app_database.sqlite'));
-      return NativeDatabase(file);
+      final dbPath = path.join(Directory.current.path, 'fhirant.db');
+
+      // Ensure SQLCipher setup (required for encrypted drift)
+      await setupSqlCipher();
+
+      // Retrieve the encryption key
+      final encryptionKey = await _secureStorageService.getEncryptionKey();
+      if (encryptionKey == null) {
+        throw Exception('Failed to retrieve encryption key.');
+      }
+
+      // Initialize an encrypted database
+      return NativeDatabase(
+        File(dbPath),
+        setup: (rawDb) {
+          rawDb.execute('PRAGMA key = "$encryptionKey";');
+
+          // Recommended option for SQLCipher (not enabled by default)
+          rawDb.config.doubleQuotedStringLiterals = false;
+
+          // Debug check to ensure SQLCipher is working
+          assert(
+            _debugCheckHasCipher(rawDb),
+            'SQLCipher encryption is not enabled. Please verify the setup.',
+          );
+        },
+      );
     });
+  }
+
+  /// Debug check to ensure SQLCipher is available
+  static bool _debugCheckHasCipher(sqlite3.Database database) {
+    try {
+      return database.select('PRAGMA cipher_version;').isNotEmpty;
+    } catch (e) {
+      print('SQLCipher not available: $e');
+      return false;
+    }
+  }
+
+  /// Save multiple FHIR resources into the database with history management.
+  Future<bool> saveResources(List<fhir.Resource> resources) async {
+    if (resources.isEmpty) {
+      print('No resources to save.');
+      return true;
+    }
+
+    // Group resources by their type
+    final groupedResources = <fhir.R4ResourceType, List<fhir.Resource>>{};
+    for (final resource in resources) {
+      final type = resource.resourceType;
+      groupedResources.putIfAbsent(type, () => []).add(resource);
+    }
+
+    try {
+      await batch((batch) async {
+        // Save each resource group into its respective table
+        for (final entry in groupedResources.entries) {
+          final type = entry.key;
+          final resourceList = entry.value;
+
+          for (final resource in resourceList) {
+            try {
+              final updatedResource = resource.newIdIfNoId().updateVersion(
+                versionIdAsTime: true,
+              );
+              final companion =
+                  updatedResource.companion; // Use companion extensions
+              _saveResourceWithHistory(batch, type, updatedResource, companion);
+            } catch (e) {
+              // Log the specific resource that failed to save
+              print(
+                'Error saving resource of type $type with ID: ${resource.id?.value}: $e',
+              );
+            }
+          }
+        }
+      });
+
+      print('Successfully saved ${resources.length} resource(s).');
+      return true;
+    } catch (e) {
+      print('Batch execution failed: $e');
+      return false;
+    }
+  }
+
+  /// Save a resource with history management
+  void _saveResourceWithHistory(
+    Batch batch,
+    fhir.R4ResourceType resourceType,
+    fhir.Resource resourceToUpdate,
+    UpdateCompanion<dynamic> companion,
+  ) {
+    switch (resourceType) {
+      case fhir.R4ResourceType.Account:
+        batch
+          ..insert(
+            accountHistoryTable,
+            companion.companion as AccountHistoryTableCompanion,
+          )
+          ..insert(accountTable, companion);
+      case fhir.R4ResourceType.ActivityDefinition:
+        batch
+          ..insert(
+            activityDefinitionHistoryTable,
+            companion.companion as ActivityDefinitionHistoryTableCompanion,
+          )
+          ..insert(activityDefinitionTable, companion);
+      case fhir.R4ResourceType.AdministrableProductDefinition:
+        batch
+          ..insert(
+            administrableProductDefinitionHistoryTable,
+            companion.companion
+                as AdministrableProductDefinitionHistoryTableCompanion,
+          )
+          ..insert(administrableProductDefinitionTable, companion);
+      case fhir.R4ResourceType.AdverseEvent:
+        batch
+          ..insert(
+            adverseEventHistoryTable,
+            companion.companion as AdverseEventHistoryTableCompanion,
+          )
+          ..insert(adverseEventTable, companion);
+      case fhir.R4ResourceType.AllergyIntolerance:
+        batch
+          ..insert(
+            allergyIntoleranceHistoryTable,
+            companion.companion as AllergyIntoleranceHistoryTableCompanion,
+          )
+          ..insert(allergyIntoleranceTable, companion);
+      case fhir.R4ResourceType.Appointment:
+        batch
+          ..insert(
+            appointmentHistoryTable,
+            companion.companion as AppointmentHistoryTableCompanion,
+          )
+          ..insert(appointmentTable, companion);
+      case fhir.R4ResourceType.AppointmentResponse:
+        batch
+          ..insert(
+            appointmentResponseHistoryTable,
+            companion.companion as AppointmentResponseHistoryTableCompanion,
+          )
+          ..insert(appointmentResponseTable, companion);
+      case fhir.R4ResourceType.AuditEvent:
+        batch
+          ..insert(
+            auditEventHistoryTable,
+            companion.companion as AuditEventHistoryTableCompanion,
+          )
+          ..insert(auditEventTable, companion);
+      case fhir.R4ResourceType.Basic:
+        batch
+          ..insert(
+            basicHistoryTable,
+            companion.companion as BasicHistoryTableCompanion,
+          )
+          ..insert(basicTable, companion);
+      case fhir.R4ResourceType.Binary:
+        batch
+          ..insert(
+            binaryHistoryTable,
+            companion.companion as BinaryHistoryTableCompanion,
+          )
+          ..insert(binaryTable, companion);
+      case fhir.R4ResourceType.BiologicallyDerivedProduct:
+        batch
+          ..insert(
+            biologicallyDerivedProductHistoryTable,
+            companion.companion
+                as BiologicallyDerivedProductHistoryTableCompanion,
+          )
+          ..insert(biologicallyDerivedProductTable, companion);
+      case fhir.R4ResourceType.BodyStructure:
+        batch
+          ..insert(
+            bodyStructureHistoryTable,
+            companion.companion as BodyStructureHistoryTableCompanion,
+          )
+          ..insert(bodyStructureTable, companion);
+      case fhir.R4ResourceType.Bundle:
+        batch
+          ..insert(
+            bundleHistoryTable,
+            companion.companion as BundleHistoryTableCompanion,
+          )
+          ..insert(bundleTable, companion);
+      case fhir.R4ResourceType.CapabilityStatement:
+        batch
+          ..insert(
+            capabilityStatementHistoryTable,
+            companion.companion as CapabilityStatementHistoryTableCompanion,
+          )
+          ..insert(capabilityStatementTable, companion);
+      case fhir.R4ResourceType.CarePlan:
+        batch
+          ..insert(
+            carePlanHistoryTable,
+            companion.companion as CarePlanHistoryTableCompanion,
+          )
+          ..insert(carePlanTable, companion);
+      case fhir.R4ResourceType.CareTeam:
+        batch
+          ..insert(
+            careTeamHistoryTable,
+            companion.companion as CareTeamHistoryTableCompanion,
+          )
+          ..insert(careTeamTable, companion);
+      case fhir.R4ResourceType.CatalogEntry:
+        batch
+          ..insert(
+            catalogEntryHistoryTable,
+            companion.companion as CatalogEntryHistoryTableCompanion,
+          )
+          ..insert(catalogEntryTable, companion);
+      case fhir.R4ResourceType.ChargeItem:
+        batch
+          ..insert(
+            chargeItemHistoryTable,
+            companion.companion as ChargeItemHistoryTableCompanion,
+          )
+          ..insert(chargeItemTable, companion);
+      case fhir.R4ResourceType.ChargeItemDefinition:
+        batch
+          ..insert(
+            chargeItemDefinitionHistoryTable,
+            companion.companion as ChargeItemDefinitionHistoryTableCompanion,
+          )
+          ..insert(chargeItemDefinitionTable, companion);
+      case fhir.R4ResourceType.Citation:
+        batch
+          ..insert(
+            citationHistoryTable,
+            companion.companion as CitationHistoryTableCompanion,
+          )
+          ..insert(citationTable, companion);
+      case fhir.R4ResourceType.Claim:
+        batch
+          ..insert(
+            claimHistoryTable,
+            companion.companion as ClaimHistoryTableCompanion,
+          )
+          ..insert(claimTable, companion);
+      case fhir.R4ResourceType.ClaimResponse:
+        batch
+          ..insert(
+            claimResponseHistoryTable,
+            companion.companion as ClaimResponseHistoryTableCompanion,
+          )
+          ..insert(claimResponseTable, companion);
+      case fhir.R4ResourceType.ClinicalImpression:
+        batch
+          ..insert(
+            clinicalImpressionHistoryTable,
+            companion.companion as ClinicalImpressionHistoryTableCompanion,
+          )
+          ..insert(clinicalImpressionTable, companion);
+      case fhir.R4ResourceType.ClinicalUseDefinition:
+        batch
+          ..insert(
+            clinicalUseDefinitionHistoryTable,
+            companion.companion as ClinicalUseDefinitionHistoryTableCompanion,
+          )
+          ..insert(clinicalUseDefinitionTable, companion);
+      case fhir.R4ResourceType.CodeSystem:
+        batch
+          ..insert(
+            codeSystemHistoryTable,
+            companion.companion as CodeSystemHistoryTableCompanion,
+          )
+          ..insert(codeSystemTable, companion);
+      case fhir.R4ResourceType.Communication:
+        batch
+          ..insert(
+            communicationHistoryTable,
+            companion.companion as CommunicationHistoryTableCompanion,
+          )
+          ..insert(communicationTable, companion);
+      case fhir.R4ResourceType.CommunicationRequest:
+        batch
+          ..insert(
+            communicationRequestHistoryTable,
+            companion.companion as CommunicationRequestHistoryTableCompanion,
+          )
+          ..insert(communicationRequestTable, companion);
+      case fhir.R4ResourceType.CompartmentDefinition:
+        batch
+          ..insert(
+            compartmentDefinitionHistoryTable,
+            companion.companion as CompartmentDefinitionHistoryTableCompanion,
+          )
+          ..insert(compartmentDefinitionTable, companion);
+      case fhir.R4ResourceType.Composition:
+        batch
+          ..insert(
+            compositionHistoryTable,
+            companion.companion as CompositionHistoryTableCompanion,
+          )
+          ..insert(compositionTable, companion);
+      case fhir.R4ResourceType.ConceptMap:
+        batch
+          ..insert(
+            conceptMapHistoryTable,
+            companion.companion as ConceptMapHistoryTableCompanion,
+          )
+          ..insert(conceptMapTable, companion);
+      case fhir.R4ResourceType.Condition:
+        batch
+          ..insert(
+            conditionHistoryTable,
+            companion.companion as ConditionHistoryTableCompanion,
+          )
+          ..insert(conditionTable, companion);
+      case fhir.R4ResourceType.Consent:
+        batch
+          ..insert(
+            consentHistoryTable,
+            companion.companion as ConsentHistoryTableCompanion,
+          )
+          ..insert(consentTable, companion);
+      case fhir.R4ResourceType.Contract:
+        batch
+          ..insert(
+            contractHistoryTable,
+            companion.companion as ContractHistoryTableCompanion,
+          )
+          ..insert(contractTable, companion);
+      case fhir.R4ResourceType.Coverage:
+        batch
+          ..insert(
+            coverageHistoryTable,
+            companion.companion as CoverageHistoryTableCompanion,
+          )
+          ..insert(coverageTable, companion);
+      case fhir.R4ResourceType.CoverageEligibilityRequest:
+        batch
+          ..insert(
+            coverageEligibilityRequestHistoryTable,
+            companion.companion
+                as CoverageEligibilityRequestHistoryTableCompanion,
+          )
+          ..insert(coverageEligibilityRequestTable, companion);
+      case fhir.R4ResourceType.CoverageEligibilityResponse:
+        batch
+          ..insert(
+            coverageEligibilityResponseHistoryTable,
+            companion.companion
+                as CoverageEligibilityResponseHistoryTableCompanion,
+          )
+          ..insert(coverageEligibilityResponseTable, companion);
+      case fhir.R4ResourceType.DetectedIssue:
+        batch
+          ..insert(
+            detectedIssueHistoryTable,
+            companion.companion as DetectedIssueHistoryTableCompanion,
+          )
+          ..insert(detectedIssueTable, companion);
+      case fhir.R4ResourceType.Device:
+        batch
+          ..insert(
+            deviceHistoryTable,
+            companion.companion as DeviceHistoryTableCompanion,
+          )
+          ..insert(deviceTable, companion);
+      case fhir.R4ResourceType.DeviceDefinition:
+        batch
+          ..insert(
+            deviceDefinitionHistoryTable,
+            companion.companion as DeviceDefinitionHistoryTableCompanion,
+          )
+          ..insert(deviceDefinitionTable, companion);
+      case fhir.R4ResourceType.DeviceMetric:
+        batch
+          ..insert(
+            deviceMetricHistoryTable,
+            companion.companion as DeviceMetricHistoryTableCompanion,
+          )
+          ..insert(deviceMetricTable, companion);
+      case fhir.R4ResourceType.DeviceRequest:
+        batch
+          ..insert(
+            deviceRequestHistoryTable,
+            companion.companion as DeviceRequestHistoryTableCompanion,
+          )
+          ..insert(deviceRequestTable, companion);
+      case fhir.R4ResourceType.DeviceUseStatement:
+        batch
+          ..insert(
+            deviceUseStatementHistoryTable,
+            companion.companion as DeviceUseStatementHistoryTableCompanion,
+          )
+          ..insert(deviceUseStatementTable, companion);
+      case fhir.R4ResourceType.DiagnosticReport:
+        batch
+          ..insert(
+            diagnosticReportHistoryTable,
+            companion.companion as DiagnosticReportHistoryTableCompanion,
+          )
+          ..insert(diagnosticReportTable, companion);
+      case fhir.R4ResourceType.DocumentManifest:
+        batch
+          ..insert(
+            documentManifestHistoryTable,
+            companion.companion as DocumentManifestHistoryTableCompanion,
+          )
+          ..insert(documentManifestTable, companion);
+      case fhir.R4ResourceType.DocumentReference:
+        batch
+          ..insert(
+            documentReferenceHistoryTable,
+            companion.companion as DocumentReferenceHistoryTableCompanion,
+          )
+          ..insert(documentReferenceTable, companion);
+      case fhir.R4ResourceType.Encounter:
+        batch
+          ..insert(
+            encounterHistoryTable,
+            companion.companion as EncounterHistoryTableCompanion,
+          )
+          ..insert(encounterTable, companion);
+      case fhir.R4ResourceType.EnrollmentRequest:
+        batch
+          ..insert(
+            enrollmentRequestHistoryTable,
+            companion.companion as EnrollmentRequestHistoryTableCompanion,
+          )
+          ..insert(enrollmentRequestTable, companion);
+      case fhir.R4ResourceType.EnrollmentResponse:
+        batch
+          ..insert(
+            enrollmentResponseHistoryTable,
+            companion.companion as EnrollmentResponseHistoryTableCompanion,
+          )
+          ..insert(enrollmentResponseTable, companion);
+      case fhir.R4ResourceType.EpisodeOfCare:
+        batch
+          ..insert(
+            episodeOfCareHistoryTable,
+            companion.companion as EpisodeOfCareHistoryTableCompanion,
+          )
+          ..insert(episodeOfCareTable, companion);
+      case fhir.R4ResourceType.EventDefinition:
+        batch
+          ..insert(
+            eventDefinitionHistoryTable,
+            companion.companion as EventDefinitionHistoryTableCompanion,
+          )
+          ..insert(eventDefinitionTable, companion);
+      case fhir.R4ResourceType.Evidence:
+        batch
+          ..insert(
+            evidenceHistoryTable,
+            companion.companion as EvidenceHistoryTableCompanion,
+          )
+          ..insert(evidenceTable, companion);
+      case fhir.R4ResourceType.EvidenceReport:
+        batch
+          ..insert(
+            evidenceReportHistoryTable,
+            companion.companion as EvidenceReportHistoryTableCompanion,
+          )
+          ..insert(evidenceReportTable, companion);
+      case fhir.R4ResourceType.EvidenceVariable:
+        batch
+          ..insert(
+            evidenceVariableHistoryTable,
+            companion.companion as EvidenceVariableHistoryTableCompanion,
+          )
+          ..insert(evidenceVariableTable, companion);
+      case fhir.R4ResourceType.ExampleScenario:
+        batch
+          ..insert(
+            exampleScenarioHistoryTable,
+            companion.companion as ExampleScenarioHistoryTableCompanion,
+          )
+          ..insert(exampleScenarioTable, companion);
+      case fhir.R4ResourceType.ExplanationOfBenefit:
+        batch
+          ..insert(
+            explanationOfBenefitHistoryTable,
+            companion.companion as ExplanationOfBenefitHistoryTableCompanion,
+          )
+          ..insert(explanationOfBenefitTable, companion);
+      case fhir.R4ResourceType.FamilyMemberHistory:
+        batch
+          ..insert(
+            familyMemberHistoryHistoryTable,
+            companion.companion as FamilyMemberHistoryHistoryTableCompanion,
+          )
+          ..insert(familyMemberHistoryTable, companion);
+      case fhir.R4ResourceType.FhirEndpoint:
+        batch
+          ..insert(
+            fhirEndpointHistoryTable,
+            companion.companion as FhirEndpointHistoryTableCompanion,
+          )
+          ..insert(fhirEndpointTable, companion);
+      case fhir.R4ResourceType.FhirGroup:
+        batch
+          ..insert(
+            fhirGroupHistoryTable,
+            companion.companion as FhirGroupHistoryTableCompanion,
+          )
+          ..insert(fhirGroupTable, companion);
+      case fhir.R4ResourceType.FhirList:
+        batch
+          ..insert(
+            fhirListHistoryTable,
+            companion.companion as FhirListHistoryTableCompanion,
+          )
+          ..insert(fhirListTable, companion);
+      case fhir.R4ResourceType.Flag:
+        batch
+          ..insert(
+            flagHistoryTable,
+            companion.companion as FlagHistoryTableCompanion,
+          )
+          ..insert(flagTable, companion);
+      case fhir.R4ResourceType.Goal:
+        batch
+          ..insert(
+            goalHistoryTable,
+            companion.companion as GoalHistoryTableCompanion,
+          )
+          ..insert(goalTable, companion);
+      case fhir.R4ResourceType.GraphDefinition:
+        batch
+          ..insert(
+            graphDefinitionHistoryTable,
+            companion.companion as GraphDefinitionHistoryTableCompanion,
+          )
+          ..insert(graphDefinitionTable, companion);
+      case fhir.R4ResourceType.GuidanceResponse:
+        batch
+          ..insert(
+            guidanceResponseHistoryTable,
+            companion.companion as GuidanceResponseHistoryTableCompanion,
+          )
+          ..insert(guidanceResponseTable, companion);
+      case fhir.R4ResourceType.HealthcareService:
+        batch
+          ..insert(
+            healthcareServiceHistoryTable,
+            companion.companion as HealthcareServiceHistoryTableCompanion,
+          )
+          ..insert(healthcareServiceTable, companion);
+      case fhir.R4ResourceType.ImagingStudy:
+        batch
+          ..insert(
+            imagingStudyHistoryTable,
+            companion.companion as ImagingStudyHistoryTableCompanion,
+          )
+          ..insert(imagingStudyTable, companion);
+      case fhir.R4ResourceType.Immunization:
+        batch
+          ..insert(
+            immunizationHistoryTable,
+            companion.companion as ImmunizationHistoryTableCompanion,
+          )
+          ..insert(immunizationTable, companion);
+      case fhir.R4ResourceType.ImmunizationEvaluation:
+        batch
+          ..insert(
+            immunizationEvaluationHistoryTable,
+            companion.companion as ImmunizationEvaluationHistoryTableCompanion,
+          )
+          ..insert(immunizationEvaluationTable, companion);
+      case fhir.R4ResourceType.ImmunizationRecommendation:
+        batch
+          ..insert(
+            immunizationRecommendationHistoryTable,
+            companion.companion
+                as ImmunizationRecommendationHistoryTableCompanion,
+          )
+          ..insert(immunizationRecommendationTable, companion);
+      case fhir.R4ResourceType.ImplementationGuide:
+        batch
+          ..insert(
+            implementationGuideHistoryTable,
+            companion.companion as ImplementationGuideHistoryTableCompanion,
+          )
+          ..insert(implementationGuideTable, companion);
+      case fhir.R4ResourceType.Ingredient:
+        batch
+          ..insert(
+            ingredientHistoryTable,
+            companion.companion as IngredientHistoryTableCompanion,
+          )
+          ..insert(ingredientTable, companion);
+      case fhir.R4ResourceType.InsurancePlan:
+        batch
+          ..insert(
+            insurancePlanHistoryTable,
+            companion.companion as InsurancePlanHistoryTableCompanion,
+          )
+          ..insert(insurancePlanTable, companion);
+      case fhir.R4ResourceType.Invoice:
+        batch
+          ..insert(
+            invoiceHistoryTable,
+            companion.companion as InvoiceHistoryTableCompanion,
+          )
+          ..insert(invoiceTable, companion);
+      case fhir.R4ResourceType.Library:
+        batch
+          ..insert(
+            libraryHistoryTable,
+            companion.companion as LibraryHistoryTableCompanion,
+          )
+          ..insert(libraryTable, companion);
+      case fhir.R4ResourceType.Linkage:
+        batch
+          ..insert(
+            linkageHistoryTable,
+            companion.companion as LinkageHistoryTableCompanion,
+          )
+          ..insert(linkageTable, companion);
+      case fhir.R4ResourceType.Location:
+        batch
+          ..insert(
+            locationHistoryTable,
+            companion.companion as LocationHistoryTableCompanion,
+          )
+          ..insert(locationTable, companion);
+      case fhir.R4ResourceType.ManufacturedItemDefinition:
+        batch
+          ..insert(
+            manufacturedItemDefinitionHistoryTable,
+            companion.companion
+                as ManufacturedItemDefinitionHistoryTableCompanion,
+          )
+          ..insert(manufacturedItemDefinitionTable, companion);
+      case fhir.R4ResourceType.Measure:
+        batch
+          ..insert(
+            measureHistoryTable,
+            companion.companion as MeasureHistoryTableCompanion,
+          )
+          ..insert(measureTable, companion);
+      case fhir.R4ResourceType.MeasureReport:
+        batch
+          ..insert(
+            measureReportHistoryTable,
+            companion.companion as MeasureReportHistoryTableCompanion,
+          )
+          ..insert(measureReportTable, companion);
+      case fhir.R4ResourceType.Media:
+        batch
+          ..insert(
+            mediaHistoryTable,
+            companion.companion as MediaHistoryTableCompanion,
+          )
+          ..insert(mediaTable, companion);
+      case fhir.R4ResourceType.Medication:
+        batch
+          ..insert(
+            medicationHistoryTable,
+            companion.companion as MedicationHistoryTableCompanion,
+          )
+          ..insert(medicationTable, companion);
+      case fhir.R4ResourceType.MedicationAdministration:
+        batch
+          ..insert(
+            medicationAdministrationHistoryTable,
+            companion.companion
+                as MedicationAdministrationHistoryTableCompanion,
+          )
+          ..insert(medicationAdministrationTable, companion);
+      case fhir.R4ResourceType.MedicationDispense:
+        batch
+          ..insert(
+            medicationDispenseHistoryTable,
+            companion.companion as MedicationDispenseHistoryTableCompanion,
+          )
+          ..insert(medicationDispenseTable, companion);
+      case fhir.R4ResourceType.MedicationKnowledge:
+        batch
+          ..insert(
+            medicationKnowledgeHistoryTable,
+            companion.companion as MedicationKnowledgeHistoryTableCompanion,
+          )
+          ..insert(medicationKnowledgeTable, companion);
+      case fhir.R4ResourceType.MedicationRequest:
+        batch
+          ..insert(
+            medicationRequestHistoryTable,
+            companion.companion as MedicationRequestHistoryTableCompanion,
+          )
+          ..insert(medicationRequestTable, companion);
+      case fhir.R4ResourceType.MedicationStatement:
+        batch
+          ..insert(
+            medicationStatementHistoryTable,
+            companion.companion as MedicationStatementHistoryTableCompanion,
+          )
+          ..insert(medicationStatementTable, companion);
+      case fhir.R4ResourceType.MedicinalProductDefinition:
+        batch
+          ..insert(
+            medicinalProductDefinitionHistoryTable,
+            companion.companion
+                as MedicinalProductDefinitionHistoryTableCompanion,
+          )
+          ..insert(medicinalProductDefinitionTable, companion);
+      case fhir.R4ResourceType.MessageDefinition:
+        batch
+          ..insert(
+            messageDefinitionHistoryTable,
+            companion.companion as MessageDefinitionHistoryTableCompanion,
+          )
+          ..insert(messageDefinitionTable, companion);
+      case fhir.R4ResourceType.MessageHeader:
+        batch
+          ..insert(
+            messageHeaderHistoryTable,
+            companion.companion as MessageHeaderHistoryTableCompanion,
+          )
+          ..insert(messageHeaderTable, companion);
+      case fhir.R4ResourceType.MolecularSequence:
+        batch
+          ..insert(
+            molecularSequenceHistoryTable,
+            companion.companion as MolecularSequenceHistoryTableCompanion,
+          )
+          ..insert(molecularSequenceTable, companion);
+      case fhir.R4ResourceType.NamingSystem:
+        batch
+          ..insert(
+            namingSystemHistoryTable,
+            companion.companion as NamingSystemHistoryTableCompanion,
+          )
+          ..insert(namingSystemTable, companion);
+      case fhir.R4ResourceType.NutritionOrder:
+        batch
+          ..insert(
+            nutritionOrderHistoryTable,
+            companion.companion as NutritionOrderHistoryTableCompanion,
+          )
+          ..insert(nutritionOrderTable, companion);
+      case fhir.R4ResourceType.NutritionProduct:
+        batch
+          ..insert(
+            nutritionProductHistoryTable,
+            companion.companion as NutritionProductHistoryTableCompanion,
+          )
+          ..insert(nutritionProductTable, companion);
+      case fhir.R4ResourceType.Observation:
+        batch
+          ..insert(
+            observationHistoryTable,
+            companion.companion as ObservationHistoryTableCompanion,
+          )
+          ..insert(observationTable, companion);
+      case fhir.R4ResourceType.ObservationDefinition:
+        batch
+          ..insert(
+            observationDefinitionHistoryTable,
+            companion.companion as ObservationDefinitionHistoryTableCompanion,
+          )
+          ..insert(observationDefinitionTable, companion);
+      case fhir.R4ResourceType.OperationDefinition:
+        batch
+          ..insert(
+            operationDefinitionHistoryTable,
+            companion.companion as OperationDefinitionHistoryTableCompanion,
+          )
+          ..insert(operationDefinitionTable, companion);
+      case fhir.R4ResourceType.OperationOutcome:
+        batch
+          ..insert(
+            operationOutcomeHistoryTable,
+            companion.companion as OperationOutcomeHistoryTableCompanion,
+          )
+          ..insert(operationOutcomeTable, companion);
+      case fhir.R4ResourceType.Organization:
+        batch
+          ..insert(
+            organizationHistoryTable,
+            companion.companion as OrganizationHistoryTableCompanion,
+          )
+          ..insert(organizationTable, companion);
+      case fhir.R4ResourceType.OrganizationAffiliation:
+        batch
+          ..insert(
+            organizationAffiliationHistoryTable,
+            companion.companion as OrganizationAffiliationHistoryTableCompanion,
+          )
+          ..insert(organizationAffiliationTable, companion);
+      case fhir.R4ResourceType.PackagedProductDefinition:
+        batch
+          ..insert(
+            packagedProductDefinitionHistoryTable,
+            companion.companion
+                as PackagedProductDefinitionHistoryTableCompanion,
+          )
+          ..insert(packagedProductDefinitionTable, companion);
+      case fhir.R4ResourceType.Parameters:
+        batch
+          ..insert(
+            parametersHistoryTable,
+            companion.companion as ParametersHistoryTableCompanion,
+          )
+          ..insert(parametersTable, companion);
+      case fhir.R4ResourceType.Patient:
+        batch
+          ..insert(
+            patientHistoryTable,
+            companion.companion as PatientHistoryTableCompanion,
+          )
+          ..insert(patientTable, companion);
+      case fhir.R4ResourceType.PaymentNotice:
+        batch
+          ..insert(
+            paymentNoticeHistoryTable,
+            companion.companion as PaymentNoticeHistoryTableCompanion,
+          )
+          ..insert(paymentNoticeTable, companion);
+      case fhir.R4ResourceType.PaymentReconciliation:
+        batch
+          ..insert(
+            paymentReconciliationHistoryTable,
+            companion.companion as PaymentReconciliationHistoryTableCompanion,
+          )
+          ..insert(paymentReconciliationTable, companion);
+      case fhir.R4ResourceType.Person:
+        batch
+          ..insert(
+            personHistoryTable,
+            companion.companion as PersonHistoryTableCompanion,
+          )
+          ..insert(personTable, companion);
+      case fhir.R4ResourceType.PlanDefinition:
+        batch
+          ..insert(
+            planDefinitionHistoryTable,
+            companion.companion as PlanDefinitionHistoryTableCompanion,
+          )
+          ..insert(planDefinitionTable, companion);
+      case fhir.R4ResourceType.Practitioner:
+        batch
+          ..insert(
+            practitionerHistoryTable,
+            companion.companion as PractitionerHistoryTableCompanion,
+          )
+          ..insert(practitionerTable, companion);
+      case fhir.R4ResourceType.PractitionerRole:
+        batch
+          ..insert(
+            practitionerRoleHistoryTable,
+            companion.companion as PractitionerRoleHistoryTableCompanion,
+          )
+          ..insert(practitionerRoleTable, companion);
+      case fhir.R4ResourceType.Procedure:
+        batch
+          ..insert(
+            procedureHistoryTable,
+            companion.companion as ProcedureHistoryTableCompanion,
+          )
+          ..insert(procedureTable, companion);
+      case fhir.R4ResourceType.Provenance:
+        batch
+          ..insert(
+            provenanceHistoryTable,
+            companion.companion as ProvenanceHistoryTableCompanion,
+          )
+          ..insert(provenanceTable, companion);
+      case fhir.R4ResourceType.Questionnaire:
+        batch
+          ..insert(
+            questionnaireHistoryTable,
+            companion.companion as QuestionnaireHistoryTableCompanion,
+          )
+          ..insert(questionnaireTable, companion);
+      case fhir.R4ResourceType.QuestionnaireResponse:
+        batch
+          ..insert(
+            questionnaireResponseHistoryTable,
+            companion.companion as QuestionnaireResponseHistoryTableCompanion,
+          )
+          ..insert(questionnaireResponseTable, companion);
+      case fhir.R4ResourceType.RegulatedAuthorization:
+        batch
+          ..insert(
+            regulatedAuthorizationHistoryTable,
+            companion.companion as RegulatedAuthorizationHistoryTableCompanion,
+          )
+          ..insert(regulatedAuthorizationTable, companion);
+      case fhir.R4ResourceType.RelatedPerson:
+        batch
+          ..insert(
+            relatedPersonHistoryTable,
+            companion.companion as RelatedPersonHistoryTableCompanion,
+          )
+          ..insert(relatedPersonTable, companion);
+      case fhir.R4ResourceType.RequestGroup:
+        batch
+          ..insert(
+            requestGroupHistoryTable,
+            companion.companion as RequestGroupHistoryTableCompanion,
+          )
+          ..insert(requestGroupTable, companion);
+      case fhir.R4ResourceType.ResearchDefinition:
+        batch
+          ..insert(
+            researchDefinitionHistoryTable,
+            companion.companion as ResearchDefinitionHistoryTableCompanion,
+          )
+          ..insert(researchDefinitionTable, companion);
+      case fhir.R4ResourceType.ResearchElementDefinition:
+        batch
+          ..insert(
+            researchElementDefinitionHistoryTable,
+            companion.companion
+                as ResearchElementDefinitionHistoryTableCompanion,
+          )
+          ..insert(researchElementDefinitionTable, companion);
+      case fhir.R4ResourceType.ResearchStudy:
+        batch
+          ..insert(
+            researchStudyHistoryTable,
+            companion.companion as ResearchStudyHistoryTableCompanion,
+          )
+          ..insert(researchStudyTable, companion);
+      case fhir.R4ResourceType.ResearchSubject:
+        batch
+          ..insert(
+            researchSubjectHistoryTable,
+            companion.companion as ResearchSubjectHistoryTableCompanion,
+          )
+          ..insert(researchSubjectTable, companion);
+      case fhir.R4ResourceType.RiskAssessment:
+        batch
+          ..insert(
+            riskAssessmentHistoryTable,
+            companion.companion as RiskAssessmentHistoryTableCompanion,
+          )
+          ..insert(riskAssessmentTable, companion);
+      case fhir.R4ResourceType.Schedule:
+        batch
+          ..insert(
+            scheduleHistoryTable,
+            companion.companion as ScheduleHistoryTableCompanion,
+          )
+          ..insert(scheduleTable, companion);
+      case fhir.R4ResourceType.SearchParameter:
+        batch
+          ..insert(
+            searchParameterHistoryTable,
+            companion.companion as SearchParameterHistoryTableCompanion,
+          )
+          ..insert(searchParameterTable, companion);
+      case fhir.R4ResourceType.ServiceRequest:
+        batch
+          ..insert(
+            serviceRequestHistoryTable,
+            companion.companion as ServiceRequestHistoryTableCompanion,
+          )
+          ..insert(serviceRequestTable, companion);
+      case fhir.R4ResourceType.Slot:
+        batch
+          ..insert(
+            slotHistoryTable,
+            companion.companion as SlotHistoryTableCompanion,
+          )
+          ..insert(slotTable, companion);
+      case fhir.R4ResourceType.Specimen:
+        batch
+          ..insert(
+            specimenHistoryTable,
+            companion.companion as SpecimenHistoryTableCompanion,
+          )
+          ..insert(specimenTable, companion);
+      case fhir.R4ResourceType.SpecimenDefinition:
+        batch
+          ..insert(
+            specimenDefinitionHistoryTable,
+            companion.companion as SpecimenDefinitionHistoryTableCompanion,
+          )
+          ..insert(specimenDefinitionTable, companion);
+      case fhir.R4ResourceType.StructureDefinition:
+        batch
+          ..insert(
+            structureDefinitionHistoryTable,
+            companion.companion as StructureDefinitionHistoryTableCompanion,
+          )
+          ..insert(structureDefinitionTable, companion);
+      case fhir.R4ResourceType.StructureMap:
+        batch
+          ..insert(
+            structureMapHistoryTable,
+            companion.companion as StructureMapHistoryTableCompanion,
+          )
+          ..insert(structureMapTable, companion);
+      case fhir.R4ResourceType.Subscription:
+        batch
+          ..insert(
+            subscriptionHistoryTable,
+            companion.companion as SubscriptionHistoryTableCompanion,
+          )
+          ..insert(subscriptionTable, companion);
+      case fhir.R4ResourceType.SubscriptionStatus:
+        batch
+          ..insert(
+            subscriptionStatusHistoryTable,
+            companion.companion as SubscriptionStatusHistoryTableCompanion,
+          )
+          ..insert(subscriptionStatusTable, companion);
+      case fhir.R4ResourceType.SubscriptionTopic:
+        batch
+          ..insert(
+            subscriptionTopicHistoryTable,
+            companion.companion as SubscriptionTopicHistoryTableCompanion,
+          )
+          ..insert(subscriptionTopicTable, companion);
+      case fhir.R4ResourceType.Substance:
+        batch
+          ..insert(
+            substanceHistoryTable,
+            companion.companion as SubstanceHistoryTableCompanion,
+          )
+          ..insert(substanceTable, companion);
+      case fhir.R4ResourceType.SubstanceDefinition:
+        batch
+          ..insert(
+            substanceDefinitionHistoryTable,
+            companion.companion as SubstanceDefinitionHistoryTableCompanion,
+          )
+          ..insert(substanceDefinitionTable, companion);
+      case fhir.R4ResourceType.SupplyDelivery:
+        batch
+          ..insert(
+            supplyDeliveryHistoryTable,
+            companion.companion as SupplyDeliveryHistoryTableCompanion,
+          )
+          ..insert(supplyDeliveryTable, companion);
+      case fhir.R4ResourceType.SupplyRequest:
+        batch
+          ..insert(
+            supplyRequestHistoryTable,
+            companion.companion as SupplyRequestHistoryTableCompanion,
+          )
+          ..insert(supplyRequestTable, companion);
+      case fhir.R4ResourceType.Task:
+        batch
+          ..insert(
+            taskHistoryTable,
+            companion.companion as TaskHistoryTableCompanion,
+          )
+          ..insert(taskTable, companion);
+      case fhir.R4ResourceType.TerminologyCapabilities:
+        batch
+          ..insert(
+            terminologyCapabilitiesHistoryTable,
+            companion.companion as TerminologyCapabilitiesHistoryTableCompanion,
+          )
+          ..insert(terminologyCapabilitiesTable, companion);
+      case fhir.R4ResourceType.TestReport:
+        batch
+          ..insert(
+            testReportHistoryTable,
+            companion.companion as TestReportHistoryTableCompanion,
+          )
+          ..insert(testReportTable, companion);
+      case fhir.R4ResourceType.TestScript:
+        batch
+          ..insert(
+            testScriptHistoryTable,
+            companion.companion as TestScriptHistoryTableCompanion,
+          )
+          ..insert(testScriptTable, companion);
+      case fhir.R4ResourceType.ValueSet:
+        batch
+          ..insert(
+            valueSetHistoryTable,
+            companion.companion as ValueSetHistoryTableCompanion,
+          )
+          ..insert(valueSetTable, companion);
+      case fhir.R4ResourceType.VerificationResult:
+        batch
+          ..insert(
+            verificationResultHistoryTable,
+            companion.companion as VerificationResultHistoryTableCompanion,
+          )
+          ..insert(verificationResultTable, companion);
+      case fhir.R4ResourceType.VisionPrescription:
+        batch
+          ..insert(
+            visionPrescriptionHistoryTable,
+            companion.companion as VisionPrescriptionHistoryTableCompanion,
+          )
+          ..insert(visionPrescriptionTable, companion);
+    }
+  }
+}
+
+/// Just to ensure it will allow us to call companion on all resources
+extension ResourceExtension on fhir.Resource {
+  /// TableCompanion
+  UpdateCompanion<dynamic> get companion {
+    throw UnimplementedError();
+  }
+}
+
+/// DataClassExtension
+extension UpdateCompantionExtension on UpdateCompanion<dynamic> {
+  /// TableCompanion
+  UpdateCompanion<dynamic> get companion {
+    throw UnimplementedError();
   }
 }
 
@@ -318,7 +1143,7 @@ class AppDatabase extends _$AppDatabase {
 extension AccountTableExtension on fhir.Account {
   /// AccountTableCompanion
   AccountTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AccountTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -330,13 +1155,13 @@ extension AccountTableExtension on fhir.Account {
 }
 
 /// AccountHistoryTableExtension
-extension AccountHistoryTableExtension on AccountDrift {
+extension AccountHistoryTableExtension on AccountTableCompanion {
   /// AccountHistoryTableCompanion
   AccountHistoryTableCompanion get companion {
     return AccountHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -345,7 +1170,7 @@ extension AccountHistoryTableExtension on AccountDrift {
 extension ActivityDefinitionTableExtension on fhir.ActivityDefinition {
   /// ActivityDefinitionTableCompanion
   ActivityDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ActivityDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -357,13 +1182,14 @@ extension ActivityDefinitionTableExtension on fhir.ActivityDefinition {
 }
 
 /// ActivityDefinitionHistoryTableExtension
-extension ActivityDefinitionHistoryTableExtension on ActivityDefinitionDrift {
+extension ActivityDefinitionHistoryTableExtension
+    on ActivityDefinitionTableCompanion {
   /// ActivityDefinitionHistoryTableCompanion
   ActivityDefinitionHistoryTableCompanion get companion {
     return ActivityDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -373,7 +1199,7 @@ extension AdministrableProductDefinitionTableExtension
     on fhir.AdministrableProductDefinition {
   /// AdministrableProductDefinitionTableCompanion
   AdministrableProductDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AdministrableProductDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -386,13 +1212,13 @@ extension AdministrableProductDefinitionTableExtension
 
 /// AdministrableProductDefinitionHistoryTableExtension
 extension AdministrableProductDefinitionHistoryTableExtension
-    on AdministrableProductDefinitionDrift {
+    on AdministrableProductDefinitionTableCompanion {
   /// AdministrableProductDefinitionHistoryTableCompanion
   AdministrableProductDefinitionHistoryTableCompanion get companion {
     return AdministrableProductDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -401,7 +1227,7 @@ extension AdministrableProductDefinitionHistoryTableExtension
 extension AdverseEventTableExtension on fhir.AdverseEvent {
   /// AdverseEventTableCompanion
   AdverseEventTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AdverseEventTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -413,13 +1239,13 @@ extension AdverseEventTableExtension on fhir.AdverseEvent {
 }
 
 /// AdverseEventHistoryTableExtension
-extension AdverseEventHistoryTableExtension on AdverseEventDrift {
+extension AdverseEventHistoryTableExtension on AdverseEventTableCompanion {
   /// AdverseEventHistoryTableCompanion
   AdverseEventHistoryTableCompanion get companion {
     return AdverseEventHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -428,7 +1254,7 @@ extension AdverseEventHistoryTableExtension on AdverseEventDrift {
 extension AllergyIntoleranceTableExtension on fhir.AllergyIntolerance {
   /// AllergyIntoleranceTableCompanion
   AllergyIntoleranceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AllergyIntoleranceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -440,13 +1266,14 @@ extension AllergyIntoleranceTableExtension on fhir.AllergyIntolerance {
 }
 
 /// AllergyIntoleranceHistoryTableExtension
-extension AllergyIntoleranceHistoryTableExtension on AllergyIntoleranceDrift {
+extension AllergyIntoleranceHistoryTableExtension
+    on AllergyIntoleranceTableCompanion {
   /// AllergyIntoleranceHistoryTableCompanion
   AllergyIntoleranceHistoryTableCompanion get companion {
     return AllergyIntoleranceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -455,7 +1282,7 @@ extension AllergyIntoleranceHistoryTableExtension on AllergyIntoleranceDrift {
 extension AppointmentTableExtension on fhir.Appointment {
   /// AppointmentTableCompanion
   AppointmentTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AppointmentTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -467,13 +1294,13 @@ extension AppointmentTableExtension on fhir.Appointment {
 }
 
 /// AppointmentHistoryTableExtension
-extension AppointmentHistoryTableExtension on AppointmentDrift {
+extension AppointmentHistoryTableExtension on AppointmentTableCompanion {
   /// AppointmentHistoryTableCompanion
   AppointmentHistoryTableCompanion get companion {
     return AppointmentHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -482,7 +1309,7 @@ extension AppointmentHistoryTableExtension on AppointmentDrift {
 extension AppointmentResponseTableExtension on fhir.AppointmentResponse {
   /// AppointmentResponseTableCompanion
   AppointmentResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AppointmentResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -494,13 +1321,14 @@ extension AppointmentResponseTableExtension on fhir.AppointmentResponse {
 }
 
 /// AppointmentResponseHistoryTableExtension
-extension AppointmentResponseHistoryTableExtension on AppointmentResponseDrift {
+extension AppointmentResponseHistoryTableExtension
+    on AppointmentResponseTableCompanion {
   /// AppointmentResponseHistoryTableCompanion
   AppointmentResponseHistoryTableCompanion get companion {
     return AppointmentResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -509,7 +1337,7 @@ extension AppointmentResponseHistoryTableExtension on AppointmentResponseDrift {
 extension AuditEventTableExtension on fhir.AuditEvent {
   /// AuditEventTableCompanion
   AuditEventTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return AuditEventTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -521,13 +1349,13 @@ extension AuditEventTableExtension on fhir.AuditEvent {
 }
 
 /// AuditEventHistoryTableExtension
-extension AuditEventHistoryTableExtension on AuditEventDrift {
+extension AuditEventHistoryTableExtension on AuditEventTableCompanion {
   /// AuditEventHistoryTableCompanion
   AuditEventHistoryTableCompanion get companion {
     return AuditEventHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -536,7 +1364,7 @@ extension AuditEventHistoryTableExtension on AuditEventDrift {
 extension BasicTableExtension on fhir.Basic {
   /// BasicTableCompanion
   BasicTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return BasicTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -548,13 +1376,13 @@ extension BasicTableExtension on fhir.Basic {
 }
 
 /// BasicHistoryTableExtension
-extension BasicHistoryTableExtension on BasicDrift {
+extension BasicHistoryTableExtension on BasicTableCompanion {
   /// BasicHistoryTableCompanion
   BasicHistoryTableCompanion get companion {
     return BasicHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -563,7 +1391,7 @@ extension BasicHistoryTableExtension on BasicDrift {
 extension BinaryTableExtension on fhir.Binary {
   /// BinaryTableCompanion
   BinaryTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return BinaryTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -575,13 +1403,13 @@ extension BinaryTableExtension on fhir.Binary {
 }
 
 /// BinaryHistoryTableExtension
-extension BinaryHistoryTableExtension on BinaryDrift {
+extension BinaryHistoryTableExtension on BinaryTableCompanion {
   /// BinaryHistoryTableCompanion
   BinaryHistoryTableCompanion get companion {
     return BinaryHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -591,7 +1419,7 @@ extension BiologicallyDerivedProductTableExtension
     on fhir.BiologicallyDerivedProduct {
   /// BiologicallyDerivedProductTableCompanion
   BiologicallyDerivedProductTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return BiologicallyDerivedProductTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -604,13 +1432,13 @@ extension BiologicallyDerivedProductTableExtension
 
 /// BiologicallyDerivedProductHistoryTableExtension
 extension BiologicallyDerivedProductHistoryTableExtension
-    on BiologicallyDerivedProductDrift {
+    on BiologicallyDerivedProductTableCompanion {
   /// BiologicallyDerivedProductHistoryTableCompanion
   BiologicallyDerivedProductHistoryTableCompanion get companion {
     return BiologicallyDerivedProductHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -619,7 +1447,7 @@ extension BiologicallyDerivedProductHistoryTableExtension
 extension BodyStructureTableExtension on fhir.BodyStructure {
   /// BodyStructureTableCompanion
   BodyStructureTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return BodyStructureTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -631,13 +1459,13 @@ extension BodyStructureTableExtension on fhir.BodyStructure {
 }
 
 /// BodyStructureHistoryTableExtension
-extension BodyStructureHistoryTableExtension on BodyStructureDrift {
+extension BodyStructureHistoryTableExtension on BodyStructureTableCompanion {
   /// BodyStructureHistoryTableCompanion
   BodyStructureHistoryTableCompanion get companion {
     return BodyStructureHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -646,7 +1474,7 @@ extension BodyStructureHistoryTableExtension on BodyStructureDrift {
 extension BundleTableExtension on fhir.Bundle {
   /// BundleTableCompanion
   BundleTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return BundleTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -658,13 +1486,13 @@ extension BundleTableExtension on fhir.Bundle {
 }
 
 /// BundleHistoryTableExtension
-extension BundleHistoryTableExtension on BundleDrift {
+extension BundleHistoryTableExtension on BundleTableCompanion {
   /// BundleHistoryTableCompanion
   BundleHistoryTableCompanion get companion {
     return BundleHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -673,7 +1501,7 @@ extension BundleHistoryTableExtension on BundleDrift {
 extension CapabilityStatementTableExtension on fhir.CapabilityStatement {
   /// CapabilityStatementTableCompanion
   CapabilityStatementTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CapabilityStatementTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -685,13 +1513,14 @@ extension CapabilityStatementTableExtension on fhir.CapabilityStatement {
 }
 
 /// CapabilityStatementHistoryTableExtension
-extension CapabilityStatementHistoryTableExtension on CapabilityStatementDrift {
+extension CapabilityStatementHistoryTableExtension
+    on CapabilityStatementTableCompanion {
   /// CapabilityStatementHistoryTableCompanion
   CapabilityStatementHistoryTableCompanion get companion {
     return CapabilityStatementHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -700,7 +1529,7 @@ extension CapabilityStatementHistoryTableExtension on CapabilityStatementDrift {
 extension CarePlanTableExtension on fhir.CarePlan {
   /// CarePlanTableCompanion
   CarePlanTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CarePlanTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -712,13 +1541,13 @@ extension CarePlanTableExtension on fhir.CarePlan {
 }
 
 /// CarePlanHistoryTableExtension
-extension CarePlanHistoryTableExtension on CarePlanDrift {
+extension CarePlanHistoryTableExtension on CarePlanTableCompanion {
   /// CarePlanHistoryTableCompanion
   CarePlanHistoryTableCompanion get companion {
     return CarePlanHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -727,7 +1556,7 @@ extension CarePlanHistoryTableExtension on CarePlanDrift {
 extension CareTeamTableExtension on fhir.CareTeam {
   /// CareTeamTableCompanion
   CareTeamTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CareTeamTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -739,13 +1568,13 @@ extension CareTeamTableExtension on fhir.CareTeam {
 }
 
 /// CareTeamHistoryTableExtension
-extension CareTeamHistoryTableExtension on CareTeamDrift {
+extension CareTeamHistoryTableExtension on CareTeamTableCompanion {
   /// CareTeamHistoryTableCompanion
   CareTeamHistoryTableCompanion get companion {
     return CareTeamHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -754,7 +1583,7 @@ extension CareTeamHistoryTableExtension on CareTeamDrift {
 extension CatalogEntryTableExtension on fhir.CatalogEntry {
   /// CatalogEntryTableCompanion
   CatalogEntryTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CatalogEntryTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -766,13 +1595,13 @@ extension CatalogEntryTableExtension on fhir.CatalogEntry {
 }
 
 /// CatalogEntryHistoryTableExtension
-extension CatalogEntryHistoryTableExtension on CatalogEntryDrift {
+extension CatalogEntryHistoryTableExtension on CatalogEntryTableCompanion {
   /// CatalogEntryHistoryTableCompanion
   CatalogEntryHistoryTableCompanion get companion {
     return CatalogEntryHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -781,7 +1610,7 @@ extension CatalogEntryHistoryTableExtension on CatalogEntryDrift {
 extension ChargeItemTableExtension on fhir.ChargeItem {
   /// ChargeItemTableCompanion
   ChargeItemTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ChargeItemTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -793,13 +1622,13 @@ extension ChargeItemTableExtension on fhir.ChargeItem {
 }
 
 /// ChargeItemHistoryTableExtension
-extension ChargeItemHistoryTableExtension on ChargeItemDrift {
+extension ChargeItemHistoryTableExtension on ChargeItemTableCompanion {
   /// ChargeItemHistoryTableCompanion
   ChargeItemHistoryTableCompanion get companion {
     return ChargeItemHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -808,7 +1637,7 @@ extension ChargeItemHistoryTableExtension on ChargeItemDrift {
 extension ChargeItemDefinitionTableExtension on fhir.ChargeItemDefinition {
   /// ChargeItemDefinitionTableCompanion
   ChargeItemDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ChargeItemDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -821,13 +1650,13 @@ extension ChargeItemDefinitionTableExtension on fhir.ChargeItemDefinition {
 
 /// ChargeItemDefinitionHistoryTableExtension
 extension ChargeItemDefinitionHistoryTableExtension
-    on ChargeItemDefinitionDrift {
+    on ChargeItemDefinitionTableCompanion {
   /// ChargeItemDefinitionHistoryTableCompanion
   ChargeItemDefinitionHistoryTableCompanion get companion {
     return ChargeItemDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -836,7 +1665,7 @@ extension ChargeItemDefinitionHistoryTableExtension
 extension CitationTableExtension on fhir.Citation {
   /// CitationTableCompanion
   CitationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CitationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -848,13 +1677,13 @@ extension CitationTableExtension on fhir.Citation {
 }
 
 /// CitationHistoryTableExtension
-extension CitationHistoryTableExtension on CitationDrift {
+extension CitationHistoryTableExtension on CitationTableCompanion {
   /// CitationHistoryTableCompanion
   CitationHistoryTableCompanion get companion {
     return CitationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -863,7 +1692,7 @@ extension CitationHistoryTableExtension on CitationDrift {
 extension ClaimTableExtension on fhir.Claim {
   /// ClaimTableCompanion
   ClaimTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ClaimTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -875,13 +1704,13 @@ extension ClaimTableExtension on fhir.Claim {
 }
 
 /// ClaimHistoryTableExtension
-extension ClaimHistoryTableExtension on ClaimDrift {
+extension ClaimHistoryTableExtension on ClaimTableCompanion {
   /// ClaimHistoryTableCompanion
   ClaimHistoryTableCompanion get companion {
     return ClaimHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -890,7 +1719,7 @@ extension ClaimHistoryTableExtension on ClaimDrift {
 extension ClaimResponseTableExtension on fhir.ClaimResponse {
   /// ClaimResponseTableCompanion
   ClaimResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ClaimResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -902,13 +1731,13 @@ extension ClaimResponseTableExtension on fhir.ClaimResponse {
 }
 
 /// ClaimResponseHistoryTableExtension
-extension ClaimResponseHistoryTableExtension on ClaimResponseDrift {
+extension ClaimResponseHistoryTableExtension on ClaimResponseTableCompanion {
   /// ClaimResponseHistoryTableCompanion
   ClaimResponseHistoryTableCompanion get companion {
     return ClaimResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -917,7 +1746,7 @@ extension ClaimResponseHistoryTableExtension on ClaimResponseDrift {
 extension ClinicalImpressionTableExtension on fhir.ClinicalImpression {
   /// ClinicalImpressionTableCompanion
   ClinicalImpressionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ClinicalImpressionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -929,13 +1758,14 @@ extension ClinicalImpressionTableExtension on fhir.ClinicalImpression {
 }
 
 /// ClinicalImpressionHistoryTableExtension
-extension ClinicalImpressionHistoryTableExtension on ClinicalImpressionDrift {
+extension ClinicalImpressionHistoryTableExtension
+    on ClinicalImpressionTableCompanion {
   /// ClinicalImpressionHistoryTableCompanion
   ClinicalImpressionHistoryTableCompanion get companion {
     return ClinicalImpressionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -944,7 +1774,7 @@ extension ClinicalImpressionHistoryTableExtension on ClinicalImpressionDrift {
 extension ClinicalUseDefinitionTableExtension on fhir.ClinicalUseDefinition {
   /// ClinicalUseDefinitionTableCompanion
   ClinicalUseDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ClinicalUseDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -957,13 +1787,13 @@ extension ClinicalUseDefinitionTableExtension on fhir.ClinicalUseDefinition {
 
 /// ClinicalUseDefinitionHistoryTableExtension
 extension ClinicalUseDefinitionHistoryTableExtension
-    on ClinicalUseDefinitionDrift {
+    on ClinicalUseDefinitionTableCompanion {
   /// ClinicalUseDefinitionHistoryTableCompanion
   ClinicalUseDefinitionHistoryTableCompanion get companion {
     return ClinicalUseDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -972,7 +1802,7 @@ extension ClinicalUseDefinitionHistoryTableExtension
 extension CodeSystemTableExtension on fhir.CodeSystem {
   /// CodeSystemTableCompanion
   CodeSystemTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CodeSystemTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -984,13 +1814,13 @@ extension CodeSystemTableExtension on fhir.CodeSystem {
 }
 
 /// CodeSystemHistoryTableExtension
-extension CodeSystemHistoryTableExtension on CodeSystemDrift {
+extension CodeSystemHistoryTableExtension on CodeSystemTableCompanion {
   /// CodeSystemHistoryTableCompanion
   CodeSystemHistoryTableCompanion get companion {
     return CodeSystemHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -999,7 +1829,7 @@ extension CodeSystemHistoryTableExtension on CodeSystemDrift {
 extension CommunicationTableExtension on fhir.Communication {
   /// CommunicationTableCompanion
   CommunicationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CommunicationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1011,13 +1841,13 @@ extension CommunicationTableExtension on fhir.Communication {
 }
 
 /// CommunicationHistoryTableExtension
-extension CommunicationHistoryTableExtension on CommunicationDrift {
+extension CommunicationHistoryTableExtension on CommunicationTableCompanion {
   /// CommunicationHistoryTableCompanion
   CommunicationHistoryTableCompanion get companion {
     return CommunicationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1026,7 +1856,7 @@ extension CommunicationHistoryTableExtension on CommunicationDrift {
 extension CommunicationRequestTableExtension on fhir.CommunicationRequest {
   /// CommunicationRequestTableCompanion
   CommunicationRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CommunicationRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1039,13 +1869,13 @@ extension CommunicationRequestTableExtension on fhir.CommunicationRequest {
 
 /// CommunicationRequestHistoryTableExtension
 extension CommunicationRequestHistoryTableExtension
-    on CommunicationRequestDrift {
+    on CommunicationRequestTableCompanion {
   /// CommunicationRequestHistoryTableCompanion
   CommunicationRequestHistoryTableCompanion get companion {
     return CommunicationRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1054,7 +1884,7 @@ extension CommunicationRequestHistoryTableExtension
 extension CompartmentDefinitionTableExtension on fhir.CompartmentDefinition {
   /// CompartmentDefinitionTableCompanion
   CompartmentDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CompartmentDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1067,13 +1897,13 @@ extension CompartmentDefinitionTableExtension on fhir.CompartmentDefinition {
 
 /// CompartmentDefinitionHistoryTableExtension
 extension CompartmentDefinitionHistoryTableExtension
-    on CompartmentDefinitionDrift {
+    on CompartmentDefinitionTableCompanion {
   /// CompartmentDefinitionHistoryTableCompanion
   CompartmentDefinitionHistoryTableCompanion get companion {
     return CompartmentDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1082,7 +1912,7 @@ extension CompartmentDefinitionHistoryTableExtension
 extension CompositionTableExtension on fhir.Composition {
   /// CompositionTableCompanion
   CompositionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CompositionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1094,13 +1924,13 @@ extension CompositionTableExtension on fhir.Composition {
 }
 
 /// CompositionHistoryTableExtension
-extension CompositionHistoryTableExtension on CompositionDrift {
+extension CompositionHistoryTableExtension on CompositionTableCompanion {
   /// CompositionHistoryTableCompanion
   CompositionHistoryTableCompanion get companion {
     return CompositionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1109,7 +1939,7 @@ extension CompositionHistoryTableExtension on CompositionDrift {
 extension ConceptMapTableExtension on fhir.ConceptMap {
   /// ConceptMapTableCompanion
   ConceptMapTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ConceptMapTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1121,13 +1951,13 @@ extension ConceptMapTableExtension on fhir.ConceptMap {
 }
 
 /// ConceptMapHistoryTableExtension
-extension ConceptMapHistoryTableExtension on ConceptMapDrift {
+extension ConceptMapHistoryTableExtension on ConceptMapTableCompanion {
   /// ConceptMapHistoryTableCompanion
   ConceptMapHistoryTableCompanion get companion {
     return ConceptMapHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1136,25 +1966,40 @@ extension ConceptMapHistoryTableExtension on ConceptMapDrift {
 extension ConditionTableExtension on fhir.Condition {
   /// ConditionTableCompanion
   ConditionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Condition;
     return ConditionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject.reference!.value!),
+      clinicalStatus: Value(
+        resource.clinicalStatus?.coding?.firstOrNull?.code?.value,
+      ),
+      verificationStatus: Value(
+        resource.verificationStatus?.coding?.firstOrNull?.code?.value,
+      ),
+      code: Value(resource.code?.coding?.firstOrNull?.code?.value),
+      onsetDateTime: Value(
+        resource.onsetX
+            ?.isAs<fhir.FhirDateTime>()
+            ?.valueDateTime
+            ?.millisecondsSinceEpoch,
+      ),
     );
   }
 }
 
 /// ConditionHistoryTableExtension
-extension ConditionHistoryTableExtension on ConditionDrift {
+extension ConditionHistoryTableExtension on ConditionTableCompanion {
   /// ConditionHistoryTableCompanion
   ConditionHistoryTableCompanion get companion {
     return ConditionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1163,7 +2008,7 @@ extension ConditionHistoryTableExtension on ConditionDrift {
 extension ConsentTableExtension on fhir.Consent {
   /// ConsentTableCompanion
   ConsentTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ConsentTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1175,13 +2020,13 @@ extension ConsentTableExtension on fhir.Consent {
 }
 
 /// ConsentHistoryTableExtension
-extension ConsentHistoryTableExtension on ConsentDrift {
+extension ConsentHistoryTableExtension on ConsentTableCompanion {
   /// ConsentHistoryTableCompanion
   ConsentHistoryTableCompanion get companion {
     return ConsentHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1190,7 +2035,7 @@ extension ConsentHistoryTableExtension on ConsentDrift {
 extension ContractTableExtension on fhir.Contract {
   /// ContractTableCompanion
   ContractTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ContractTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1202,13 +2047,13 @@ extension ContractTableExtension on fhir.Contract {
 }
 
 /// ContractHistoryTableExtension
-extension ContractHistoryTableExtension on ContractDrift {
+extension ContractHistoryTableExtension on ContractTableCompanion {
   /// ContractHistoryTableCompanion
   ContractHistoryTableCompanion get companion {
     return ContractHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1217,7 +2062,7 @@ extension ContractHistoryTableExtension on ContractDrift {
 extension CoverageTableExtension on fhir.Coverage {
   /// CoverageTableCompanion
   CoverageTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CoverageTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1229,13 +2074,13 @@ extension CoverageTableExtension on fhir.Coverage {
 }
 
 /// CoverageHistoryTableExtension
-extension CoverageHistoryTableExtension on CoverageDrift {
+extension CoverageHistoryTableExtension on CoverageTableCompanion {
   /// CoverageHistoryTableCompanion
   CoverageHistoryTableCompanion get companion {
     return CoverageHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1245,7 +2090,7 @@ extension CoverageEligibilityRequestTableExtension
     on fhir.CoverageEligibilityRequest {
   /// CoverageEligibilityRequestTableCompanion
   CoverageEligibilityRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CoverageEligibilityRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1258,13 +2103,13 @@ extension CoverageEligibilityRequestTableExtension
 
 /// CoverageEligibilityRequestHistoryTableExtension
 extension CoverageEligibilityRequestHistoryTableExtension
-    on CoverageEligibilityRequestDrift {
+    on CoverageEligibilityRequestTableCompanion {
   /// CoverageEligibilityRequestHistoryTableCompanion
   CoverageEligibilityRequestHistoryTableCompanion get companion {
     return CoverageEligibilityRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1274,7 +2119,7 @@ extension CoverageEligibilityResponseTableExtension
     on fhir.CoverageEligibilityResponse {
   /// CoverageEligibilityResponseTableCompanion
   CoverageEligibilityResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return CoverageEligibilityResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1287,13 +2132,13 @@ extension CoverageEligibilityResponseTableExtension
 
 /// CoverageEligibilityResponseHistoryTableExtension
 extension CoverageEligibilityResponseHistoryTableExtension
-    on CoverageEligibilityResponseDrift {
+    on CoverageEligibilityResponseTableCompanion {
   /// CoverageEligibilityResponseHistoryTableCompanion
   CoverageEligibilityResponseHistoryTableCompanion get companion {
     return CoverageEligibilityResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1302,7 +2147,7 @@ extension CoverageEligibilityResponseHistoryTableExtension
 extension DetectedIssueTableExtension on fhir.DetectedIssue {
   /// DetectedIssueTableCompanion
   DetectedIssueTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DetectedIssueTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1314,13 +2159,13 @@ extension DetectedIssueTableExtension on fhir.DetectedIssue {
 }
 
 /// DetectedIssueHistoryTableExtension
-extension DetectedIssueHistoryTableExtension on DetectedIssueDrift {
+extension DetectedIssueHistoryTableExtension on DetectedIssueTableCompanion {
   /// DetectedIssueHistoryTableCompanion
   DetectedIssueHistoryTableCompanion get companion {
     return DetectedIssueHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1329,7 +2174,7 @@ extension DetectedIssueHistoryTableExtension on DetectedIssueDrift {
 extension DeviceTableExtension on fhir.Device {
   /// DeviceTableCompanion
   DeviceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DeviceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1341,13 +2186,13 @@ extension DeviceTableExtension on fhir.Device {
 }
 
 /// DeviceHistoryTableExtension
-extension DeviceHistoryTableExtension on DeviceDrift {
+extension DeviceHistoryTableExtension on DeviceTableCompanion {
   /// DeviceHistoryTableCompanion
   DeviceHistoryTableCompanion get companion {
     return DeviceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1356,7 +2201,7 @@ extension DeviceHistoryTableExtension on DeviceDrift {
 extension DeviceDefinitionTableExtension on fhir.DeviceDefinition {
   /// DeviceDefinitionTableCompanion
   DeviceDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DeviceDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1368,13 +2213,14 @@ extension DeviceDefinitionTableExtension on fhir.DeviceDefinition {
 }
 
 /// DeviceDefinitionHistoryTableExtension
-extension DeviceDefinitionHistoryTableExtension on DeviceDefinitionDrift {
+extension DeviceDefinitionHistoryTableExtension
+    on DeviceDefinitionTableCompanion {
   /// DeviceDefinitionHistoryTableCompanion
   DeviceDefinitionHistoryTableCompanion get companion {
     return DeviceDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1383,7 +2229,7 @@ extension DeviceDefinitionHistoryTableExtension on DeviceDefinitionDrift {
 extension DeviceMetricTableExtension on fhir.DeviceMetric {
   /// DeviceMetricTableCompanion
   DeviceMetricTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DeviceMetricTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1395,13 +2241,13 @@ extension DeviceMetricTableExtension on fhir.DeviceMetric {
 }
 
 /// DeviceMetricHistoryTableExtension
-extension DeviceMetricHistoryTableExtension on DeviceMetricDrift {
+extension DeviceMetricHistoryTableExtension on DeviceMetricTableCompanion {
   /// DeviceMetricHistoryTableCompanion
   DeviceMetricHistoryTableCompanion get companion {
     return DeviceMetricHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1410,7 +2256,7 @@ extension DeviceMetricHistoryTableExtension on DeviceMetricDrift {
 extension DeviceRequestTableExtension on fhir.DeviceRequest {
   /// DeviceRequestTableCompanion
   DeviceRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DeviceRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1422,13 +2268,13 @@ extension DeviceRequestTableExtension on fhir.DeviceRequest {
 }
 
 /// DeviceRequestHistoryTableExtension
-extension DeviceRequestHistoryTableExtension on DeviceRequestDrift {
+extension DeviceRequestHistoryTableExtension on DeviceRequestTableCompanion {
   /// DeviceRequestHistoryTableCompanion
   DeviceRequestHistoryTableCompanion get companion {
     return DeviceRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1437,7 +2283,7 @@ extension DeviceRequestHistoryTableExtension on DeviceRequestDrift {
 extension DeviceUseStatementTableExtension on fhir.DeviceUseStatement {
   /// DeviceUseStatementTableCompanion
   DeviceUseStatementTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DeviceUseStatementTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1449,13 +2295,14 @@ extension DeviceUseStatementTableExtension on fhir.DeviceUseStatement {
 }
 
 /// DeviceUseStatementHistoryTableExtension
-extension DeviceUseStatementHistoryTableExtension on DeviceUseStatementDrift {
+extension DeviceUseStatementHistoryTableExtension
+    on DeviceUseStatementTableCompanion {
   /// DeviceUseStatementHistoryTableCompanion
   DeviceUseStatementHistoryTableCompanion get companion {
     return DeviceUseStatementHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1464,7 +2311,7 @@ extension DeviceUseStatementHistoryTableExtension on DeviceUseStatementDrift {
 extension DiagnosticReportTableExtension on fhir.DiagnosticReport {
   /// DiagnosticReportTableCompanion
   DiagnosticReportTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DiagnosticReportTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1476,13 +2323,14 @@ extension DiagnosticReportTableExtension on fhir.DiagnosticReport {
 }
 
 /// DiagnosticReportHistoryTableExtension
-extension DiagnosticReportHistoryTableExtension on DiagnosticReportDrift {
+extension DiagnosticReportHistoryTableExtension
+    on DiagnosticReportTableCompanion {
   /// DiagnosticReportHistoryTableCompanion
   DiagnosticReportHistoryTableCompanion get companion {
     return DiagnosticReportHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1491,7 +2339,7 @@ extension DiagnosticReportHistoryTableExtension on DiagnosticReportDrift {
 extension DocumentManifestTableExtension on fhir.DocumentManifest {
   /// DocumentManifestTableCompanion
   DocumentManifestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DocumentManifestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1503,13 +2351,14 @@ extension DocumentManifestTableExtension on fhir.DocumentManifest {
 }
 
 /// DocumentManifestHistoryTableExtension
-extension DocumentManifestHistoryTableExtension on DocumentManifestDrift {
+extension DocumentManifestHistoryTableExtension
+    on DocumentManifestTableCompanion {
   /// DocumentManifestHistoryTableCompanion
   DocumentManifestHistoryTableCompanion get companion {
     return DocumentManifestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1518,7 +2367,7 @@ extension DocumentManifestHistoryTableExtension on DocumentManifestDrift {
 extension DocumentReferenceTableExtension on fhir.DocumentReference {
   /// DocumentReferenceTableCompanion
   DocumentReferenceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return DocumentReferenceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1530,13 +2379,14 @@ extension DocumentReferenceTableExtension on fhir.DocumentReference {
 }
 
 /// DocumentReferenceHistoryTableExtension
-extension DocumentReferenceHistoryTableExtension on DocumentReferenceDrift {
+extension DocumentReferenceHistoryTableExtension
+    on DocumentReferenceTableCompanion {
   /// DocumentReferenceHistoryTableCompanion
   DocumentReferenceHistoryTableCompanion get companion {
     return DocumentReferenceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1545,25 +2395,35 @@ extension DocumentReferenceHistoryTableExtension on DocumentReferenceDrift {
 extension EncounterTableExtension on fhir.Encounter {
   /// EncounterTableCompanion
   EncounterTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Encounter;
     return EncounterTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject!.reference!.value!),
+      type: Value(resource.type?.firstOrNull?.coding?.firstOrNull?.code?.value),
+      startDateTime: Value(
+        resource.period?.start?.valueDateTime?.millisecondsSinceEpoch,
+      ),
+      endDateTime: Value(
+        resource.period?.end?.valueDateTime?.millisecondsSinceEpoch,
+      ),
+      status: Value(resource.status.value),
     );
   }
 }
 
 /// EncounterHistoryTableExtension
-extension EncounterHistoryTableExtension on EncounterDrift {
+extension EncounterHistoryTableExtension on EncounterTableCompanion {
   /// EncounterHistoryTableCompanion
   EncounterHistoryTableCompanion get companion {
     return EncounterHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1572,7 +2432,7 @@ extension EncounterHistoryTableExtension on EncounterDrift {
 extension EnrollmentRequestTableExtension on fhir.EnrollmentRequest {
   /// EnrollmentRequestTableCompanion
   EnrollmentRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EnrollmentRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1584,13 +2444,14 @@ extension EnrollmentRequestTableExtension on fhir.EnrollmentRequest {
 }
 
 /// EnrollmentRequestHistoryTableExtension
-extension EnrollmentRequestHistoryTableExtension on EnrollmentRequestDrift {
+extension EnrollmentRequestHistoryTableExtension
+    on EnrollmentRequestTableCompanion {
   /// EnrollmentRequestHistoryTableCompanion
   EnrollmentRequestHistoryTableCompanion get companion {
     return EnrollmentRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1599,7 +2460,7 @@ extension EnrollmentRequestHistoryTableExtension on EnrollmentRequestDrift {
 extension EnrollmentResponseTableExtension on fhir.EnrollmentResponse {
   /// EnrollmentResponseTableCompanion
   EnrollmentResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EnrollmentResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1611,13 +2472,14 @@ extension EnrollmentResponseTableExtension on fhir.EnrollmentResponse {
 }
 
 /// EnrollmentResponseHistoryTableExtension
-extension EnrollmentResponseHistoryTableExtension on EnrollmentResponseDrift {
+extension EnrollmentResponseHistoryTableExtension
+    on EnrollmentResponseTableCompanion {
   /// EnrollmentResponseHistoryTableCompanion
   EnrollmentResponseHistoryTableCompanion get companion {
     return EnrollmentResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1626,7 +2488,7 @@ extension EnrollmentResponseHistoryTableExtension on EnrollmentResponseDrift {
 extension EpisodeOfCareTableExtension on fhir.EpisodeOfCare {
   /// EpisodeOfCareTableCompanion
   EpisodeOfCareTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EpisodeOfCareTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1638,13 +2500,13 @@ extension EpisodeOfCareTableExtension on fhir.EpisodeOfCare {
 }
 
 /// EpisodeOfCareHistoryTableExtension
-extension EpisodeOfCareHistoryTableExtension on EpisodeOfCareDrift {
+extension EpisodeOfCareHistoryTableExtension on EpisodeOfCareTableCompanion {
   /// EpisodeOfCareHistoryTableCompanion
   EpisodeOfCareHistoryTableCompanion get companion {
     return EpisodeOfCareHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1653,7 +2515,7 @@ extension EpisodeOfCareHistoryTableExtension on EpisodeOfCareDrift {
 extension EventDefinitionTableExtension on fhir.EventDefinition {
   /// EventDefinitionTableCompanion
   EventDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EventDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1665,13 +2527,14 @@ extension EventDefinitionTableExtension on fhir.EventDefinition {
 }
 
 /// EventDefinitionHistoryTableExtension
-extension EventDefinitionHistoryTableExtension on EventDefinitionDrift {
+extension EventDefinitionHistoryTableExtension
+    on EventDefinitionTableCompanion {
   /// EventDefinitionHistoryTableCompanion
   EventDefinitionHistoryTableCompanion get companion {
     return EventDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1680,7 +2543,7 @@ extension EventDefinitionHistoryTableExtension on EventDefinitionDrift {
 extension EvidenceTableExtension on fhir.Evidence {
   /// EvidenceTableCompanion
   EvidenceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EvidenceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1692,13 +2555,13 @@ extension EvidenceTableExtension on fhir.Evidence {
 }
 
 /// EvidenceHistoryTableExtension
-extension EvidenceHistoryTableExtension on EvidenceDrift {
+extension EvidenceHistoryTableExtension on EvidenceTableCompanion {
   /// EvidenceHistoryTableCompanion
   EvidenceHistoryTableCompanion get companion {
     return EvidenceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1707,7 +2570,7 @@ extension EvidenceHistoryTableExtension on EvidenceDrift {
 extension EvidenceReportTableExtension on fhir.EvidenceReport {
   /// EvidenceReportTableCompanion
   EvidenceReportTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EvidenceReportTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1719,13 +2582,13 @@ extension EvidenceReportTableExtension on fhir.EvidenceReport {
 }
 
 /// EvidenceReportHistoryTableExtension
-extension EvidenceReportHistoryTableExtension on EvidenceReportDrift {
+extension EvidenceReportHistoryTableExtension on EvidenceReportTableCompanion {
   /// EvidenceReportHistoryTableCompanion
   EvidenceReportHistoryTableCompanion get companion {
     return EvidenceReportHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1734,7 +2597,7 @@ extension EvidenceReportHistoryTableExtension on EvidenceReportDrift {
 extension EvidenceVariableTableExtension on fhir.EvidenceVariable {
   /// EvidenceVariableTableCompanion
   EvidenceVariableTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return EvidenceVariableTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1746,13 +2609,14 @@ extension EvidenceVariableTableExtension on fhir.EvidenceVariable {
 }
 
 /// EvidenceVariableHistoryTableExtension
-extension EvidenceVariableHistoryTableExtension on EvidenceVariableDrift {
+extension EvidenceVariableHistoryTableExtension
+    on EvidenceVariableTableCompanion {
   /// EvidenceVariableHistoryTableCompanion
   EvidenceVariableHistoryTableCompanion get companion {
     return EvidenceVariableHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1761,7 +2625,7 @@ extension EvidenceVariableHistoryTableExtension on EvidenceVariableDrift {
 extension ExampleScenarioTableExtension on fhir.ExampleScenario {
   /// ExampleScenarioTableCompanion
   ExampleScenarioTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ExampleScenarioTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1773,13 +2637,14 @@ extension ExampleScenarioTableExtension on fhir.ExampleScenario {
 }
 
 /// ExampleScenarioHistoryTableExtension
-extension ExampleScenarioHistoryTableExtension on ExampleScenarioDrift {
+extension ExampleScenarioHistoryTableExtension
+    on ExampleScenarioTableCompanion {
   /// ExampleScenarioHistoryTableCompanion
   ExampleScenarioHistoryTableCompanion get companion {
     return ExampleScenarioHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1788,7 +2653,7 @@ extension ExampleScenarioHistoryTableExtension on ExampleScenarioDrift {
 extension ExplanationOfBenefitTableExtension on fhir.ExplanationOfBenefit {
   /// ExplanationOfBenefitTableCompanion
   ExplanationOfBenefitTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ExplanationOfBenefitTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1801,13 +2666,13 @@ extension ExplanationOfBenefitTableExtension on fhir.ExplanationOfBenefit {
 
 /// ExplanationOfBenefitHistoryTableExtension
 extension ExplanationOfBenefitHistoryTableExtension
-    on ExplanationOfBenefitDrift {
+    on ExplanationOfBenefitTableCompanion {
   /// ExplanationOfBenefitHistoryTableCompanion
   ExplanationOfBenefitHistoryTableCompanion get companion {
     return ExplanationOfBenefitHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1816,7 +2681,7 @@ extension ExplanationOfBenefitHistoryTableExtension
 extension FamilyMemberHistoryTableExtension on fhir.FamilyMemberHistory {
   /// FamilyMemberHistoryTableCompanion
   FamilyMemberHistoryTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return FamilyMemberHistoryTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1828,13 +2693,14 @@ extension FamilyMemberHistoryTableExtension on fhir.FamilyMemberHistory {
 }
 
 /// FamilyMemberHistoryHistoryTableExtension
-extension FamilyMemberHistoryHistoryTableExtension on FamilyMemberHistoryDrift {
+extension FamilyMemberHistoryHistoryTableExtension
+    on FamilyMemberHistoryTableCompanion {
   /// FamilyMemberHistoryHistoryTableCompanion
   FamilyMemberHistoryHistoryTableCompanion get companion {
     return FamilyMemberHistoryHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1843,7 +2709,7 @@ extension FamilyMemberHistoryHistoryTableExtension on FamilyMemberHistoryDrift {
 extension EndpointTableExtension on fhir.FhirEndpoint {
   /// EndpointTableCompanion
   FhirEndpointTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return FhirEndpointTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1855,13 +2721,13 @@ extension EndpointTableExtension on fhir.FhirEndpoint {
 }
 
 /// EndpointHistoryTableExtension
-extension EndpointHistoryTableExtension on FhirEndpointDrift {
+extension EndpointHistoryTableExtension on FhirEndpointTableCompanion {
   /// EndpointHistoryTableCompanion
   FhirEndpointHistoryTableCompanion get companion {
     return FhirEndpointHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1870,7 +2736,7 @@ extension EndpointHistoryTableExtension on FhirEndpointDrift {
 extension GroupTableExtension on fhir.FhirGroup {
   /// GroupTableCompanion
   FhirGroupTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return FhirGroupTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1882,13 +2748,13 @@ extension GroupTableExtension on fhir.FhirGroup {
 }
 
 /// GroupHistoryTableExtension
-extension GroupHistoryTableExtension on FhirGroupDrift {
+extension GroupHistoryTableExtension on FhirGroupTableCompanion {
   /// GroupHistoryTableCompanion
   FhirGroupHistoryTableCompanion get companion {
     return FhirGroupHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1897,7 +2763,7 @@ extension GroupHistoryTableExtension on FhirGroupDrift {
 extension ListTableExtension on fhir.FhirList {
   /// ListTableCompanion
   FhirListTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return FhirListTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1909,13 +2775,13 @@ extension ListTableExtension on fhir.FhirList {
 }
 
 /// ListHistoryTableExtension
-extension ListHistoryTableExtension on FhirListDrift {
+extension ListHistoryTableExtension on FhirListTableCompanion {
   /// ListHistoryTableCompanion
   FhirListHistoryTableCompanion get companion {
     return FhirListHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1924,7 +2790,7 @@ extension ListHistoryTableExtension on FhirListDrift {
 extension FlagTableExtension on fhir.Flag {
   /// FlagTableCompanion
   FlagTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return FlagTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1936,13 +2802,13 @@ extension FlagTableExtension on fhir.Flag {
 }
 
 /// FlagHistoryTableExtension
-extension FlagHistoryTableExtension on FlagDrift {
+extension FlagHistoryTableExtension on FlagTableCompanion {
   /// FlagHistoryTableCompanion
   FlagHistoryTableCompanion get companion {
     return FlagHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1951,7 +2817,7 @@ extension FlagHistoryTableExtension on FlagDrift {
 extension GoalTableExtension on fhir.Goal {
   /// GoalTableCompanion
   GoalTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return GoalTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1963,13 +2829,13 @@ extension GoalTableExtension on fhir.Goal {
 }
 
 /// GoalHistoryTableExtension
-extension GoalHistoryTableExtension on GoalDrift {
+extension GoalHistoryTableExtension on GoalTableCompanion {
   /// GoalHistoryTableCompanion
   GoalHistoryTableCompanion get companion {
     return GoalHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -1978,7 +2844,7 @@ extension GoalHistoryTableExtension on GoalDrift {
 extension GraphDefinitionTableExtension on fhir.GraphDefinition {
   /// GraphDefinitionTableCompanion
   GraphDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return GraphDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -1990,13 +2856,14 @@ extension GraphDefinitionTableExtension on fhir.GraphDefinition {
 }
 
 /// GraphDefinitionHistoryTableExtension
-extension GraphDefinitionHistoryTableExtension on GraphDefinitionDrift {
+extension GraphDefinitionHistoryTableExtension
+    on GraphDefinitionTableCompanion {
   /// GraphDefinitionHistoryTableCompanion
   GraphDefinitionHistoryTableCompanion get companion {
     return GraphDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2005,7 +2872,7 @@ extension GraphDefinitionHistoryTableExtension on GraphDefinitionDrift {
 extension GuidanceResponseTableExtension on fhir.GuidanceResponse {
   /// GuidanceResponseTableCompanion
   GuidanceResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return GuidanceResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2017,13 +2884,14 @@ extension GuidanceResponseTableExtension on fhir.GuidanceResponse {
 }
 
 /// GuidanceResponseHistoryTableExtension
-extension GuidanceResponseHistoryTableExtension on GuidanceResponseDrift {
+extension GuidanceResponseHistoryTableExtension
+    on GuidanceResponseTableCompanion {
   /// GuidanceResponseHistoryTableCompanion
   GuidanceResponseHistoryTableCompanion get companion {
     return GuidanceResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2032,7 +2900,7 @@ extension GuidanceResponseHistoryTableExtension on GuidanceResponseDrift {
 extension HealthcareServiceTableExtension on fhir.HealthcareService {
   /// HealthcareServiceTableCompanion
   HealthcareServiceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return HealthcareServiceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2044,13 +2912,14 @@ extension HealthcareServiceTableExtension on fhir.HealthcareService {
 }
 
 /// HealthcareServiceHistoryTableExtension
-extension HealthcareServiceHistoryTableExtension on HealthcareServiceDrift {
+extension HealthcareServiceHistoryTableExtension
+    on HealthcareServiceTableCompanion {
   /// HealthcareServiceHistoryTableCompanion
   HealthcareServiceHistoryTableCompanion get companion {
     return HealthcareServiceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2059,7 +2928,7 @@ extension HealthcareServiceHistoryTableExtension on HealthcareServiceDrift {
 extension ImagingStudyTableExtension on fhir.ImagingStudy {
   /// ImagingStudyTableCompanion
   ImagingStudyTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ImagingStudyTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2071,13 +2940,13 @@ extension ImagingStudyTableExtension on fhir.ImagingStudy {
 }
 
 /// ImagingStudyHistoryTableExtension
-extension ImagingStudyHistoryTableExtension on ImagingStudyDrift {
+extension ImagingStudyHistoryTableExtension on ImagingStudyTableCompanion {
   /// ImagingStudyHistoryTableCompanion
   ImagingStudyHistoryTableCompanion get companion {
     return ImagingStudyHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2086,7 +2955,7 @@ extension ImagingStudyHistoryTableExtension on ImagingStudyDrift {
 extension ImmunizationTableExtension on fhir.Immunization {
   /// ImmunizationTableCompanion
   ImmunizationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ImmunizationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2098,13 +2967,13 @@ extension ImmunizationTableExtension on fhir.Immunization {
 }
 
 /// ImmunizationHistoryTableExtension
-extension ImmunizationHistoryTableExtension on ImmunizationDrift {
+extension ImmunizationHistoryTableExtension on ImmunizationTableCompanion {
   /// ImmunizationHistoryTableCompanion
   ImmunizationHistoryTableCompanion get companion {
     return ImmunizationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2113,7 +2982,7 @@ extension ImmunizationHistoryTableExtension on ImmunizationDrift {
 extension ImmunizationEvaluationTableExtension on fhir.ImmunizationEvaluation {
   /// ImmunizationEvaluationTableCompanion
   ImmunizationEvaluationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ImmunizationEvaluationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2126,13 +2995,13 @@ extension ImmunizationEvaluationTableExtension on fhir.ImmunizationEvaluation {
 
 /// ImmunizationEvaluationHistoryTableExtension
 extension ImmunizationEvaluationHistoryTableExtension
-    on ImmunizationEvaluationDrift {
+    on ImmunizationEvaluationTableCompanion {
   /// ImmunizationEvaluationHistoryTableCompanion
   ImmunizationEvaluationHistoryTableCompanion get companion {
     return ImmunizationEvaluationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2142,7 +3011,7 @@ extension ImmunizationRecommendationTableExtension
     on fhir.ImmunizationRecommendation {
   /// ImmunizationRecommendationTableCompanion
   ImmunizationRecommendationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ImmunizationRecommendationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2155,13 +3024,13 @@ extension ImmunizationRecommendationTableExtension
 
 /// ImmunizationRecommendationHistoryTableExtension
 extension ImmunizationRecommendationHistoryTableExtension
-    on ImmunizationRecommendationDrift {
+    on ImmunizationRecommendationTableCompanion {
   /// ImmunizationRecommendationHistoryTableCompanion
   ImmunizationRecommendationHistoryTableCompanion get companion {
     return ImmunizationRecommendationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2170,7 +3039,7 @@ extension ImmunizationRecommendationHistoryTableExtension
 extension ImplementationGuideTableExtension on fhir.ImplementationGuide {
   /// ImplementationGuideTableCompanion
   ImplementationGuideTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ImplementationGuideTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2182,13 +3051,14 @@ extension ImplementationGuideTableExtension on fhir.ImplementationGuide {
 }
 
 /// ImplementationGuideHistoryTableExtension
-extension ImplementationGuideHistoryTableExtension on ImplementationGuideDrift {
+extension ImplementationGuideHistoryTableExtension
+    on ImplementationGuideTableCompanion {
   /// ImplementationGuideHistoryTableCompanion
   ImplementationGuideHistoryTableCompanion get companion {
     return ImplementationGuideHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2197,7 +3067,7 @@ extension ImplementationGuideHistoryTableExtension on ImplementationGuideDrift {
 extension IngredientTableExtension on fhir.Ingredient {
   /// IngredientTableCompanion
   IngredientTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return IngredientTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2209,13 +3079,13 @@ extension IngredientTableExtension on fhir.Ingredient {
 }
 
 /// IngredientHistoryTableExtension
-extension IngredientHistoryTableExtension on IngredientDrift {
+extension IngredientHistoryTableExtension on IngredientTableCompanion {
   /// IngredientHistoryTableCompanion
   IngredientHistoryTableCompanion get companion {
     return IngredientHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2224,7 +3094,7 @@ extension IngredientHistoryTableExtension on IngredientDrift {
 extension InsurancePlanTableExtension on fhir.InsurancePlan {
   /// InsurancePlanTableCompanion
   InsurancePlanTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return InsurancePlanTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2236,13 +3106,13 @@ extension InsurancePlanTableExtension on fhir.InsurancePlan {
 }
 
 /// InsurancePlanHistoryTableExtension
-extension InsurancePlanHistoryTableExtension on InsurancePlanDrift {
+extension InsurancePlanHistoryTableExtension on InsurancePlanTableCompanion {
   /// InsurancePlanHistoryTableCompanion
   InsurancePlanHistoryTableCompanion get companion {
     return InsurancePlanHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2251,7 +3121,7 @@ extension InsurancePlanHistoryTableExtension on InsurancePlanDrift {
 extension InvoiceTableExtension on fhir.Invoice {
   /// InvoiceTableCompanion
   InvoiceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return InvoiceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2263,13 +3133,13 @@ extension InvoiceTableExtension on fhir.Invoice {
 }
 
 /// InvoiceHistoryTableExtension
-extension InvoiceHistoryTableExtension on InvoiceDrift {
+extension InvoiceHistoryTableExtension on InvoiceTableCompanion {
   /// InvoiceHistoryTableCompanion
   InvoiceHistoryTableCompanion get companion {
     return InvoiceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2278,7 +3148,7 @@ extension InvoiceHistoryTableExtension on InvoiceDrift {
 extension LibraryTableExtension on fhir.Library {
   /// LibraryTableCompanion
   LibraryTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return LibraryTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2290,13 +3160,13 @@ extension LibraryTableExtension on fhir.Library {
 }
 
 /// LibraryHistoryTableExtension
-extension LibraryHistoryTableExtension on LibraryDrift {
+extension LibraryHistoryTableExtension on LibraryTableCompanion {
   /// LibraryHistoryTableCompanion
   LibraryHistoryTableCompanion get companion {
     return LibraryHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2305,7 +3175,7 @@ extension LibraryHistoryTableExtension on LibraryDrift {
 extension LinkageTableExtension on fhir.Linkage {
   /// LinkageTableCompanion
   LinkageTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return LinkageTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2317,13 +3187,13 @@ extension LinkageTableExtension on fhir.Linkage {
 }
 
 /// LinkageHistoryTableExtension
-extension LinkageHistoryTableExtension on LinkageDrift {
+extension LinkageHistoryTableExtension on LinkageTableCompanion {
   /// LinkageHistoryTableCompanion
   LinkageHistoryTableCompanion get companion {
     return LinkageHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2332,25 +3202,32 @@ extension LinkageHistoryTableExtension on LinkageDrift {
 extension LocationTableExtension on fhir.Location {
   /// LocationTableCompanion
   LocationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Location;
     return LocationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      name: Value(resource.name?.value),
+      type: Value(resource.type?.firstOrNull?.coding?.firstOrNull?.code?.value),
+      address: Value(resource.address?.text?.value),
+      managingOrganization: Value(
+        resource.managingOrganization?.reference?.value,
+      ),
     );
   }
 }
 
 /// LocationHistoryTableExtension
-extension LocationHistoryTableExtension on LocationDrift {
+extension LocationHistoryTableExtension on LocationTableCompanion {
   /// LocationHistoryTableCompanion
   LocationHistoryTableCompanion get companion {
     return LocationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2360,7 +3237,7 @@ extension ManufacturedItemDefinitionTableExtension
     on fhir.ManufacturedItemDefinition {
   /// ManufacturedItemDefinitionTableCompanion
   ManufacturedItemDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ManufacturedItemDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2373,13 +3250,13 @@ extension ManufacturedItemDefinitionTableExtension
 
 /// ManufacturedItemDefinitionHistoryTableExtension
 extension ManufacturedItemDefinitionHistoryTableExtension
-    on ManufacturedItemDefinitionDrift {
+    on ManufacturedItemDefinitionTableCompanion {
   /// ManufacturedItemDefinitionHistoryTableCompanion
   ManufacturedItemDefinitionHistoryTableCompanion get companion {
     return ManufacturedItemDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2388,7 +3265,7 @@ extension ManufacturedItemDefinitionHistoryTableExtension
 extension MeasureTableExtension on fhir.Measure {
   /// MeasureTableCompanion
   MeasureTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MeasureTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2400,13 +3277,13 @@ extension MeasureTableExtension on fhir.Measure {
 }
 
 /// MeasureHistoryTableExtension
-extension MeasureHistoryTableExtension on MeasureDrift {
+extension MeasureHistoryTableExtension on MeasureTableCompanion {
   /// MeasureHistoryTableCompanion
   MeasureHistoryTableCompanion get companion {
     return MeasureHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2415,7 +3292,7 @@ extension MeasureHistoryTableExtension on MeasureDrift {
 extension MeasureReportTableExtension on fhir.MeasureReport {
   /// MeasureReportTableCompanion
   MeasureReportTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MeasureReportTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2427,13 +3304,13 @@ extension MeasureReportTableExtension on fhir.MeasureReport {
 }
 
 /// MeasureReportHistoryTableExtension
-extension MeasureReportHistoryTableExtension on MeasureReportDrift {
+extension MeasureReportHistoryTableExtension on MeasureReportTableCompanion {
   /// MeasureReportHistoryTableCompanion
   MeasureReportHistoryTableCompanion get companion {
     return MeasureReportHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2442,7 +3319,7 @@ extension MeasureReportHistoryTableExtension on MeasureReportDrift {
 extension MediaTableExtension on fhir.Media {
   /// MediaTableCompanion
   MediaTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MediaTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2454,13 +3331,13 @@ extension MediaTableExtension on fhir.Media {
 }
 
 /// MediaHistoryTableExtension
-extension MediaHistoryTableExtension on MediaDrift {
+extension MediaHistoryTableExtension on MediaTableCompanion {
   /// MediaHistoryTableCompanion
   MediaHistoryTableCompanion get companion {
     return MediaHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2469,25 +3346,30 @@ extension MediaHistoryTableExtension on MediaDrift {
 extension MedicationTableExtension on fhir.Medication {
   /// MedicationTableCompanion
   MedicationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Medication;
     return MedicationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      code: Value(resource.code?.coding?.firstOrNull?.code?.value),
+      status: Value(resource.status?.value),
+      manufacturer: Value(resource.manufacturer?.reference?.value),
+      form: Value(resource.form?.coding?.firstOrNull?.code?.value),
     );
   }
 }
 
 /// MedicationHistoryTableExtension
-extension MedicationHistoryTableExtension on MedicationDrift {
+extension MedicationHistoryTableExtension on MedicationTableCompanion {
   /// MedicationHistoryTableCompanion
   MedicationHistoryTableCompanion get companion {
     return MedicationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2497,26 +3379,39 @@ extension MedicationAdministrationTableExtension
     on fhir.MedicationAdministration {
   /// MedicationAdministrationTableCompanion
   MedicationAdministrationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true)
+            as fhir.MedicationAdministration;
     return MedicationAdministrationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject.reference!.value!),
+      medicationId: Value(
+        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+      ),
+      effectiveDateTime: Value(
+        resource.effectiveX
+            .isAs<fhir.FhirDateTime>()
+            ?.valueDateTime
+            ?.millisecondsSinceEpoch,
+      ),
+      status: Value(resource.status.value),
     );
   }
 }
 
 /// MedicationAdministrationHistoryTableExtension
 extension MedicationAdministrationHistoryTableExtension
-    on MedicationAdministrationDrift {
+    on MedicationAdministrationTableCompanion {
   /// MedicationAdministrationHistoryTableCompanion
   MedicationAdministrationHistoryTableCompanion get companion {
     return MedicationAdministrationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2525,25 +3420,35 @@ extension MedicationAdministrationHistoryTableExtension
 extension MedicationDispenseTableExtension on fhir.MedicationDispense {
   /// MedicationDispenseTableCompanion
   MedicationDispenseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true)
+            as fhir.MedicationDispense;
     return MedicationDispenseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject!.reference!.value!),
+      medicationId: Value(
+        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+      ),
+      quantity: Value(resource.quantity?.value?.toString()),
+      daysSupply: Value(resource.daysSupply?.value?.round()),
+      status: Value(resource.status.value),
     );
   }
 }
 
 /// MedicationDispenseHistoryTableExtension
-extension MedicationDispenseHistoryTableExtension on MedicationDispenseDrift {
+extension MedicationDispenseHistoryTableExtension
+    on MedicationDispenseTableCompanion {
   /// MedicationDispenseHistoryTableCompanion
   MedicationDispenseHistoryTableCompanion get companion {
     return MedicationDispenseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2552,7 +3457,7 @@ extension MedicationDispenseHistoryTableExtension on MedicationDispenseDrift {
 extension MedicationKnowledgeTableExtension on fhir.MedicationKnowledge {
   /// MedicationKnowledgeTableCompanion
   MedicationKnowledgeTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MedicationKnowledgeTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2564,13 +3469,14 @@ extension MedicationKnowledgeTableExtension on fhir.MedicationKnowledge {
 }
 
 /// MedicationKnowledgeHistoryTableExtension
-extension MedicationKnowledgeHistoryTableExtension on MedicationKnowledgeDrift {
+extension MedicationKnowledgeHistoryTableExtension
+    on MedicationKnowledgeTableCompanion {
   /// MedicationKnowledgeHistoryTableCompanion
   MedicationKnowledgeHistoryTableCompanion get companion {
     return MedicationKnowledgeHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2579,25 +3485,35 @@ extension MedicationKnowledgeHistoryTableExtension on MedicationKnowledgeDrift {
 extension MedicationRequestTableExtension on fhir.MedicationRequest {
   /// MedicationRequestTableCompanion
   MedicationRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true)
+            as fhir.MedicationRequest;
     return MedicationRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject.reference!.value!),
+      medicationId: Value(
+        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+      ),
+      intent: Value(resource.intent.value),
+      priority: Value(resource.priority?.value),
+      status: Value(resource.status.value),
     );
   }
 }
 
 /// MedicationRequestHistoryTableExtension
-extension MedicationRequestHistoryTableExtension on MedicationRequestDrift {
+extension MedicationRequestHistoryTableExtension
+    on MedicationRequestTableCompanion {
   /// MedicationRequestHistoryTableCompanion
   MedicationRequestHistoryTableCompanion get companion {
     return MedicationRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2606,7 +3522,7 @@ extension MedicationRequestHistoryTableExtension on MedicationRequestDrift {
 extension MedicationStatementTableExtension on fhir.MedicationStatement {
   /// MedicationStatementTableCompanion
   MedicationStatementTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MedicationStatementTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2618,13 +3534,14 @@ extension MedicationStatementTableExtension on fhir.MedicationStatement {
 }
 
 /// MedicationStatementHistoryTableExtension
-extension MedicationStatementHistoryTableExtension on MedicationStatementDrift {
+extension MedicationStatementHistoryTableExtension
+    on MedicationStatementTableCompanion {
   /// MedicationStatementHistoryTableCompanion
   MedicationStatementHistoryTableCompanion get companion {
     return MedicationStatementHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2634,7 +3551,7 @@ extension MedicinalProductDefinitionTableExtension
     on fhir.MedicinalProductDefinition {
   /// MedicinalProductDefinitionTableCompanion
   MedicinalProductDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MedicinalProductDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2647,13 +3564,13 @@ extension MedicinalProductDefinitionTableExtension
 
 /// MedicinalProductDefinitionHistoryTableExtension
 extension MedicinalProductDefinitionHistoryTableExtension
-    on MedicinalProductDefinitionDrift {
+    on MedicinalProductDefinitionTableCompanion {
   /// MedicinalProductDefinitionHistoryTableCompanion
   MedicinalProductDefinitionHistoryTableCompanion get companion {
     return MedicinalProductDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2662,7 +3579,7 @@ extension MedicinalProductDefinitionHistoryTableExtension
 extension MessageDefinitionTableExtension on fhir.MessageDefinition {
   /// MessageDefinitionTableCompanion
   MessageDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MessageDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2674,13 +3591,14 @@ extension MessageDefinitionTableExtension on fhir.MessageDefinition {
 }
 
 /// MessageDefinitionHistoryTableExtension
-extension MessageDefinitionHistoryTableExtension on MessageDefinitionDrift {
+extension MessageDefinitionHistoryTableExtension
+    on MessageDefinitionTableCompanion {
   /// MessageDefinitionHistoryTableCompanion
   MessageDefinitionHistoryTableCompanion get companion {
     return MessageDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2689,7 +3607,7 @@ extension MessageDefinitionHistoryTableExtension on MessageDefinitionDrift {
 extension MessageHeaderTableExtension on fhir.MessageHeader {
   /// MessageHeaderTableCompanion
   MessageHeaderTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MessageHeaderTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2701,13 +3619,13 @@ extension MessageHeaderTableExtension on fhir.MessageHeader {
 }
 
 /// MessageHeaderHistoryTableExtension
-extension MessageHeaderHistoryTableExtension on MessageHeaderDrift {
+extension MessageHeaderHistoryTableExtension on MessageHeaderTableCompanion {
   /// MessageHeaderHistoryTableCompanion
   MessageHeaderHistoryTableCompanion get companion {
     return MessageHeaderHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2716,7 +3634,7 @@ extension MessageHeaderHistoryTableExtension on MessageHeaderDrift {
 extension MolecularSequenceTableExtension on fhir.MolecularSequence {
   /// MolecularSequenceTableCompanion
   MolecularSequenceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return MolecularSequenceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2728,13 +3646,14 @@ extension MolecularSequenceTableExtension on fhir.MolecularSequence {
 }
 
 /// MolecularSequenceHistoryTableExtension
-extension MolecularSequenceHistoryTableExtension on MolecularSequenceDrift {
+extension MolecularSequenceHistoryTableExtension
+    on MolecularSequenceTableCompanion {
   /// MolecularSequenceHistoryTableCompanion
   MolecularSequenceHistoryTableCompanion get companion {
     return MolecularSequenceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2743,7 +3662,7 @@ extension MolecularSequenceHistoryTableExtension on MolecularSequenceDrift {
 extension NamingSystemTableExtension on fhir.NamingSystem {
   /// NamingSystemTableCompanion
   NamingSystemTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return NamingSystemTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2755,13 +3674,13 @@ extension NamingSystemTableExtension on fhir.NamingSystem {
 }
 
 /// NamingSystemHistoryTableExtension
-extension NamingSystemHistoryTableExtension on NamingSystemDrift {
+extension NamingSystemHistoryTableExtension on NamingSystemTableCompanion {
   /// NamingSystemHistoryTableCompanion
   NamingSystemHistoryTableCompanion get companion {
     return NamingSystemHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2770,7 +3689,7 @@ extension NamingSystemHistoryTableExtension on NamingSystemDrift {
 extension NutritionOrderTableExtension on fhir.NutritionOrder {
   /// NutritionOrderTableCompanion
   NutritionOrderTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return NutritionOrderTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2782,13 +3701,13 @@ extension NutritionOrderTableExtension on fhir.NutritionOrder {
 }
 
 /// NutritionOrderHistoryTableExtension
-extension NutritionOrderHistoryTableExtension on NutritionOrderDrift {
+extension NutritionOrderHistoryTableExtension on NutritionOrderTableCompanion {
   /// NutritionOrderHistoryTableCompanion
   NutritionOrderHistoryTableCompanion get companion {
     return NutritionOrderHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2797,7 +3716,7 @@ extension NutritionOrderHistoryTableExtension on NutritionOrderDrift {
 extension NutritionProductTableExtension on fhir.NutritionProduct {
   /// NutritionProductTableCompanion
   NutritionProductTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return NutritionProductTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2809,13 +3728,14 @@ extension NutritionProductTableExtension on fhir.NutritionProduct {
 }
 
 /// NutritionProductHistoryTableExtension
-extension NutritionProductHistoryTableExtension on NutritionProductDrift {
+extension NutritionProductHistoryTableExtension
+    on NutritionProductTableCompanion {
   /// NutritionProductHistoryTableCompanion
   NutritionProductHistoryTableCompanion get companion {
     return NutritionProductHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2824,25 +3744,38 @@ extension NutritionProductHistoryTableExtension on NutritionProductDrift {
 extension ObservationTableExtension on fhir.Observation {
   /// ObservationTableCompanion
   ObservationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Observation;
     return ObservationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject!.reference!.value!),
+      type: Value(resource.code.coding?.firstOrNull?.code?.value),
+      value: Value(
+        resource.valueX?.isAs<fhir.Quantity>()?.value?.value?.toDouble(),
+      ),
+      unit: Value(resource.valueX?.isAs<fhir.Quantity>()?.unit?.value),
+      effectiveDateTime: Value(
+        resource.effectiveX
+            ?.isAs<fhir.FhirDateTime>()
+            ?.valueDateTime
+            ?.millisecondsSinceEpoch,
+      ),
     );
   }
 }
 
 /// ObservationHistoryTableExtension
-extension ObservationHistoryTableExtension on ObservationDrift {
+extension ObservationHistoryTableExtension on ObservationTableCompanion {
   /// ObservationHistoryTableCompanion
   ObservationHistoryTableCompanion get companion {
     return ObservationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2851,7 +3784,7 @@ extension ObservationHistoryTableExtension on ObservationDrift {
 extension ObservationDefinitionTableExtension on fhir.ObservationDefinition {
   /// ObservationDefinitionTableCompanion
   ObservationDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ObservationDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2864,13 +3797,13 @@ extension ObservationDefinitionTableExtension on fhir.ObservationDefinition {
 
 /// ObservationDefinitionHistoryTableExtension
 extension ObservationDefinitionHistoryTableExtension
-    on ObservationDefinitionDrift {
+    on ObservationDefinitionTableCompanion {
   /// ObservationDefinitionHistoryTableCompanion
   ObservationDefinitionHistoryTableCompanion get companion {
     return ObservationDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2879,7 +3812,7 @@ extension ObservationDefinitionHistoryTableExtension
 extension OperationDefinitionTableExtension on fhir.OperationDefinition {
   /// OperationDefinitionTableCompanion
   OperationDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return OperationDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2891,13 +3824,14 @@ extension OperationDefinitionTableExtension on fhir.OperationDefinition {
 }
 
 /// OperationDefinitionHistoryTableExtension
-extension OperationDefinitionHistoryTableExtension on OperationDefinitionDrift {
+extension OperationDefinitionHistoryTableExtension
+    on OperationDefinitionTableCompanion {
   /// OperationDefinitionHistoryTableCompanion
   OperationDefinitionHistoryTableCompanion get companion {
     return OperationDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2906,7 +3840,7 @@ extension OperationDefinitionHistoryTableExtension on OperationDefinitionDrift {
 extension OperationOutcomeTableExtension on fhir.OperationOutcome {
   /// OperationOutcomeTableCompanion
   OperationOutcomeTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return OperationOutcomeTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2918,13 +3852,14 @@ extension OperationOutcomeTableExtension on fhir.OperationOutcome {
 }
 
 /// OperationOutcomeHistoryTableExtension
-extension OperationOutcomeHistoryTableExtension on OperationOutcomeDrift {
+extension OperationOutcomeHistoryTableExtension
+    on OperationOutcomeTableCompanion {
   /// OperationOutcomeHistoryTableCompanion
   OperationOutcomeHistoryTableCompanion get companion {
     return OperationOutcomeHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2933,7 +3868,7 @@ extension OperationOutcomeHistoryTableExtension on OperationOutcomeDrift {
 extension OrganizationTableExtension on fhir.Organization {
   /// OrganizationTableCompanion
   OrganizationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return OrganizationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2945,13 +3880,13 @@ extension OrganizationTableExtension on fhir.Organization {
 }
 
 /// OrganizationHistoryTableExtension
-extension OrganizationHistoryTableExtension on OrganizationDrift {
+extension OrganizationHistoryTableExtension on OrganizationTableCompanion {
   /// OrganizationHistoryTableCompanion
   OrganizationHistoryTableCompanion get companion {
     return OrganizationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2961,7 +3896,7 @@ extension OrganizationAffiliationTableExtension
     on fhir.OrganizationAffiliation {
   /// OrganizationAffiliationTableCompanion
   OrganizationAffiliationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return OrganizationAffiliationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -2974,13 +3909,13 @@ extension OrganizationAffiliationTableExtension
 
 /// OrganizationAffiliationHistoryTableExtension
 extension OrganizationAffiliationHistoryTableExtension
-    on OrganizationAffiliationDrift {
+    on OrganizationAffiliationTableCompanion {
   /// OrganizationAffiliationHistoryTableCompanion
   OrganizationAffiliationHistoryTableCompanion get companion {
     return OrganizationAffiliationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -2990,7 +3925,7 @@ extension PackagedProductDefinitionTableExtension
     on fhir.PackagedProductDefinition {
   /// PackagedProductDefinitionTableCompanion
   PackagedProductDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PackagedProductDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3003,13 +3938,13 @@ extension PackagedProductDefinitionTableExtension
 
 /// PackagedProductDefinitionHistoryTableExtension
 extension PackagedProductDefinitionHistoryTableExtension
-    on PackagedProductDefinitionDrift {
+    on PackagedProductDefinitionTableCompanion {
   /// PackagedProductDefinitionHistoryTableCompanion
   PackagedProductDefinitionHistoryTableCompanion get companion {
     return PackagedProductDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3018,7 +3953,7 @@ extension PackagedProductDefinitionHistoryTableExtension
 extension ParametersTableExtension on fhir.Parameters {
   /// ParametersTableCompanion
   ParametersTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ParametersTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3030,13 +3965,13 @@ extension ParametersTableExtension on fhir.Parameters {
 }
 
 /// ParametersHistoryTableExtension
-extension ParametersHistoryTableExtension on ParametersDrift {
+extension ParametersHistoryTableExtension on ParametersTableCompanion {
   /// ParametersHistoryTableCompanion
   ParametersHistoryTableCompanion get companion {
     return ParametersHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3045,25 +3980,38 @@ extension ParametersHistoryTableExtension on ParametersDrift {
 extension PatientTableExtension on fhir.Patient {
   /// PatientTableCompanion
   PatientTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Patient;
     return PatientTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      active: Value(resource.active?.value),
+      identifier: Value(resource.identifier?.firstOrNull?.value?.value),
+      familyNames: Value(resource.name?.firstOrNull?.family?.value),
+      givenNames: Value(resource.name?.firstOrNull?.given?.join(' ')),
+      gender: Value(resource.gender?.value),
+      birthDate: Value(
+        resource.birthDate?.valueDateTime?.millisecondsSinceEpoch,
+      ),
+      deceased: Value(resource.deceasedX?.isAs<fhir.FhirBoolean>()?.value),
+      managingOrganization: Value(
+        resource.managingOrganization?.reference?.value,
+      ),
     );
   }
 }
 
 /// PatientHistoryTableExtension
-extension PatientHistoryTableExtension on PatientDrift {
+extension PatientHistoryTableExtension on PatientTableCompanion {
   /// PatientHistoryTableCompanion
   PatientHistoryTableCompanion get companion {
     return PatientHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3072,7 +4020,7 @@ extension PatientHistoryTableExtension on PatientDrift {
 extension PaymentNoticeTableExtension on fhir.PaymentNotice {
   /// PaymentNoticeTableCompanion
   PaymentNoticeTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PaymentNoticeTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3084,13 +4032,13 @@ extension PaymentNoticeTableExtension on fhir.PaymentNotice {
 }
 
 /// PaymentNoticeHistoryTableExtension
-extension PaymentNoticeHistoryTableExtension on PaymentNoticeDrift {
+extension PaymentNoticeHistoryTableExtension on PaymentNoticeTableCompanion {
   /// PaymentNoticeHistoryTableCompanion
   PaymentNoticeHistoryTableCompanion get companion {
     return PaymentNoticeHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3099,7 +4047,7 @@ extension PaymentNoticeHistoryTableExtension on PaymentNoticeDrift {
 extension PaymentReconciliationTableExtension on fhir.PaymentReconciliation {
   /// PaymentReconciliationTableCompanion
   PaymentReconciliationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PaymentReconciliationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3112,13 +4060,13 @@ extension PaymentReconciliationTableExtension on fhir.PaymentReconciliation {
 
 /// PaymentReconciliationHistoryTableExtension
 extension PaymentReconciliationHistoryTableExtension
-    on PaymentReconciliationDrift {
+    on PaymentReconciliationTableCompanion {
   /// PaymentReconciliationHistoryTableCompanion
   PaymentReconciliationHistoryTableCompanion get companion {
     return PaymentReconciliationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3127,7 +4075,7 @@ extension PaymentReconciliationHistoryTableExtension
 extension PersonTableExtension on fhir.Person {
   /// PersonTableCompanion
   PersonTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PersonTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3139,13 +4087,13 @@ extension PersonTableExtension on fhir.Person {
 }
 
 /// PersonHistoryTableExtension
-extension PersonHistoryTableExtension on PersonDrift {
+extension PersonHistoryTableExtension on PersonTableCompanion {
   /// PersonHistoryTableCompanion
   PersonHistoryTableCompanion get companion {
     return PersonHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3154,7 +4102,7 @@ extension PersonHistoryTableExtension on PersonDrift {
 extension PlanDefinitionTableExtension on fhir.PlanDefinition {
   /// PlanDefinitionTableCompanion
   PlanDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PlanDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3166,13 +4114,13 @@ extension PlanDefinitionTableExtension on fhir.PlanDefinition {
 }
 
 /// PlanDefinitionHistoryTableExtension
-extension PlanDefinitionHistoryTableExtension on PlanDefinitionDrift {
+extension PlanDefinitionHistoryTableExtension on PlanDefinitionTableCompanion {
   /// PlanDefinitionHistoryTableCompanion
   PlanDefinitionHistoryTableCompanion get companion {
     return PlanDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3181,7 +4129,7 @@ extension PlanDefinitionHistoryTableExtension on PlanDefinitionDrift {
 extension PractitionerTableExtension on fhir.Practitioner {
   /// PractitionerTableCompanion
   PractitionerTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PractitionerTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3193,13 +4141,13 @@ extension PractitionerTableExtension on fhir.Practitioner {
 }
 
 /// PractitionerHistoryTableExtension
-extension PractitionerHistoryTableExtension on PractitionerDrift {
+extension PractitionerHistoryTableExtension on PractitionerTableCompanion {
   /// PractitionerHistoryTableCompanion
   PractitionerHistoryTableCompanion get companion {
     return PractitionerHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3208,7 +4156,7 @@ extension PractitionerHistoryTableExtension on PractitionerDrift {
 extension PractitionerRoleTableExtension on fhir.PractitionerRole {
   /// PractitionerRoleTableCompanion
   PractitionerRoleTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return PractitionerRoleTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3220,13 +4168,14 @@ extension PractitionerRoleTableExtension on fhir.PractitionerRole {
 }
 
 /// PractitionerRoleHistoryTableExtension
-extension PractitionerRoleHistoryTableExtension on PractitionerRoleDrift {
+extension PractitionerRoleHistoryTableExtension
+    on PractitionerRoleTableCompanion {
   /// PractitionerRoleHistoryTableCompanion
   PractitionerRoleHistoryTableCompanion get companion {
     return PractitionerRoleHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3235,25 +4184,35 @@ extension PractitionerRoleHistoryTableExtension on PractitionerRoleDrift {
 extension ProcedureTableExtension on fhir.Procedure {
   /// ProcedureTableCompanion
   ProcedureTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Procedure;
     return ProcedureTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject.reference!.value!),
+      code: Value(resource.code!.coding!.firstOrNull!.code!.value!),
+      performedDateTime: Value(
+        resource.performedX
+            ?.isAs<fhir.FhirDateTime>()
+            ?.valueDateTime
+            ?.millisecondsSinceEpoch,
+      ),
+      status: Value(resource.status.value),
     );
   }
 }
 
 /// ProcedureHistoryTableExtension
-extension ProcedureHistoryTableExtension on ProcedureDrift {
+extension ProcedureHistoryTableExtension on ProcedureTableCompanion {
   /// ProcedureHistoryTableCompanion
   ProcedureHistoryTableCompanion get companion {
     return ProcedureHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3262,7 +4221,7 @@ extension ProcedureHistoryTableExtension on ProcedureDrift {
 extension ProvenanceTableExtension on fhir.Provenance {
   /// ProvenanceTableCompanion
   ProvenanceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ProvenanceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3274,13 +4233,13 @@ extension ProvenanceTableExtension on fhir.Provenance {
 }
 
 /// ProvenanceHistoryTableExtension
-extension ProvenanceHistoryTableExtension on ProvenanceDrift {
+extension ProvenanceHistoryTableExtension on ProvenanceTableCompanion {
   /// ProvenanceHistoryTableCompanion
   ProvenanceHistoryTableCompanion get companion {
     return ProvenanceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3289,7 +4248,7 @@ extension ProvenanceHistoryTableExtension on ProvenanceDrift {
 extension QuestionnaireTableExtension on fhir.Questionnaire {
   /// QuestionnaireTableCompanion
   QuestionnaireTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return QuestionnaireTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3301,13 +4260,13 @@ extension QuestionnaireTableExtension on fhir.Questionnaire {
 }
 
 /// QuestionnaireHistoryTableExtension
-extension QuestionnaireHistoryTableExtension on QuestionnaireDrift {
+extension QuestionnaireHistoryTableExtension on QuestionnaireTableCompanion {
   /// QuestionnaireHistoryTableCompanion
   QuestionnaireHistoryTableCompanion get companion {
     return QuestionnaireHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3316,7 +4275,7 @@ extension QuestionnaireHistoryTableExtension on QuestionnaireDrift {
 extension QuestionnaireResponseTableExtension on fhir.QuestionnaireResponse {
   /// QuestionnaireResponseTableCompanion
   QuestionnaireResponseTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return QuestionnaireResponseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3329,13 +4288,13 @@ extension QuestionnaireResponseTableExtension on fhir.QuestionnaireResponse {
 
 /// QuestionnaireResponseHistoryTableExtension
 extension QuestionnaireResponseHistoryTableExtension
-    on QuestionnaireResponseDrift {
+    on QuestionnaireResponseTableCompanion {
   /// QuestionnaireResponseHistoryTableCompanion
   QuestionnaireResponseHistoryTableCompanion get companion {
     return QuestionnaireResponseHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3344,7 +4303,7 @@ extension QuestionnaireResponseHistoryTableExtension
 extension RegulatedAuthorizationTableExtension on fhir.RegulatedAuthorization {
   /// RegulatedAuthorizationTableCompanion
   RegulatedAuthorizationTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return RegulatedAuthorizationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3357,13 +4316,13 @@ extension RegulatedAuthorizationTableExtension on fhir.RegulatedAuthorization {
 
 /// RegulatedAuthorizationHistoryTableExtension
 extension RegulatedAuthorizationHistoryTableExtension
-    on RegulatedAuthorizationDrift {
+    on RegulatedAuthorizationTableCompanion {
   /// RegulatedAuthorizationHistoryTableCompanion
   RegulatedAuthorizationHistoryTableCompanion get companion {
     return RegulatedAuthorizationHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3372,7 +4331,7 @@ extension RegulatedAuthorizationHistoryTableExtension
 extension RelatedPersonTableExtension on fhir.RelatedPerson {
   /// RelatedPersonTableCompanion
   RelatedPersonTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return RelatedPersonTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3384,13 +4343,13 @@ extension RelatedPersonTableExtension on fhir.RelatedPerson {
 }
 
 /// RelatedPersonHistoryTableExtension
-extension RelatedPersonHistoryTableExtension on RelatedPersonDrift {
+extension RelatedPersonHistoryTableExtension on RelatedPersonTableCompanion {
   /// RelatedPersonHistoryTableCompanion
   RelatedPersonHistoryTableCompanion get companion {
     return RelatedPersonHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3399,7 +4358,7 @@ extension RelatedPersonHistoryTableExtension on RelatedPersonDrift {
 extension RequestGroupTableExtension on fhir.RequestGroup {
   /// RequestGroupTableCompanion
   RequestGroupTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return RequestGroupTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3411,13 +4370,13 @@ extension RequestGroupTableExtension on fhir.RequestGroup {
 }
 
 /// RequestGroupHistoryTableExtension
-extension RequestGroupHistoryTableExtension on RequestGroupDrift {
+extension RequestGroupHistoryTableExtension on RequestGroupTableCompanion {
   /// RequestGroupHistoryTableCompanion
   RequestGroupHistoryTableCompanion get companion {
     return RequestGroupHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3426,7 +4385,7 @@ extension RequestGroupHistoryTableExtension on RequestGroupDrift {
 extension ResearchDefinitionTableExtension on fhir.ResearchDefinition {
   /// ResearchDefinitionTableCompanion
   ResearchDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ResearchDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3438,13 +4397,14 @@ extension ResearchDefinitionTableExtension on fhir.ResearchDefinition {
 }
 
 /// ResearchDefinitionHistoryTableExtension
-extension ResearchDefinitionHistoryTableExtension on ResearchDefinitionDrift {
+extension ResearchDefinitionHistoryTableExtension
+    on ResearchDefinitionTableCompanion {
   /// ResearchDefinitionHistoryTableCompanion
   ResearchDefinitionHistoryTableCompanion get companion {
     return ResearchDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3454,7 +4414,7 @@ extension ResearchElementDefinitionTableExtension
     on fhir.ResearchElementDefinition {
   /// ResearchElementDefinitionTableCompanion
   ResearchElementDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ResearchElementDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3467,13 +4427,13 @@ extension ResearchElementDefinitionTableExtension
 
 /// ResearchElementDefinitionHistoryTableExtension
 extension ResearchElementDefinitionHistoryTableExtension
-    on ResearchElementDefinitionDrift {
+    on ResearchElementDefinitionTableCompanion {
   /// ResearchElementDefinitionHistoryTableCompanion
   ResearchElementDefinitionHistoryTableCompanion get companion {
     return ResearchElementDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3482,7 +4442,7 @@ extension ResearchElementDefinitionHistoryTableExtension
 extension ResearchStudyTableExtension on fhir.ResearchStudy {
   /// ResearchStudyTableCompanion
   ResearchStudyTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ResearchStudyTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3494,13 +4454,13 @@ extension ResearchStudyTableExtension on fhir.ResearchStudy {
 }
 
 /// ResearchStudyHistoryTableExtension
-extension ResearchStudyHistoryTableExtension on ResearchStudyDrift {
+extension ResearchStudyHistoryTableExtension on ResearchStudyTableCompanion {
   /// ResearchStudyHistoryTableCompanion
   ResearchStudyHistoryTableCompanion get companion {
     return ResearchStudyHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3509,7 +4469,7 @@ extension ResearchStudyHistoryTableExtension on ResearchStudyDrift {
 extension ResearchSubjectTableExtension on fhir.ResearchSubject {
   /// ResearchSubjectTableCompanion
   ResearchSubjectTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ResearchSubjectTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3521,13 +4481,14 @@ extension ResearchSubjectTableExtension on fhir.ResearchSubject {
 }
 
 /// ResearchSubjectHistoryTableExtension
-extension ResearchSubjectHistoryTableExtension on ResearchSubjectDrift {
+extension ResearchSubjectHistoryTableExtension
+    on ResearchSubjectTableCompanion {
   /// ResearchSubjectHistoryTableCompanion
   ResearchSubjectHistoryTableCompanion get companion {
     return ResearchSubjectHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3536,7 +4497,7 @@ extension ResearchSubjectHistoryTableExtension on ResearchSubjectDrift {
 extension RiskAssessmentTableExtension on fhir.RiskAssessment {
   /// RiskAssessmentTableCompanion
   RiskAssessmentTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return RiskAssessmentTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3548,13 +4509,13 @@ extension RiskAssessmentTableExtension on fhir.RiskAssessment {
 }
 
 /// RiskAssessmentHistoryTableExtension
-extension RiskAssessmentHistoryTableExtension on RiskAssessmentDrift {
+extension RiskAssessmentHistoryTableExtension on RiskAssessmentTableCompanion {
   /// RiskAssessmentHistoryTableCompanion
   RiskAssessmentHistoryTableCompanion get companion {
     return RiskAssessmentHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3563,7 +4524,7 @@ extension RiskAssessmentHistoryTableExtension on RiskAssessmentDrift {
 extension ScheduleTableExtension on fhir.Schedule {
   /// ScheduleTableCompanion
   ScheduleTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ScheduleTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3575,13 +4536,13 @@ extension ScheduleTableExtension on fhir.Schedule {
 }
 
 /// ScheduleHistoryTableExtension
-extension ScheduleHistoryTableExtension on ScheduleDrift {
+extension ScheduleHistoryTableExtension on ScheduleTableCompanion {
   /// ScheduleHistoryTableCompanion
   ScheduleHistoryTableCompanion get companion {
     return ScheduleHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3590,7 +4551,7 @@ extension ScheduleHistoryTableExtension on ScheduleDrift {
 extension SearchParameterTableExtension on fhir.SearchParameter {
   /// SearchParameterTableCompanion
   SearchParameterTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SearchParameterTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3602,13 +4563,14 @@ extension SearchParameterTableExtension on fhir.SearchParameter {
 }
 
 /// SearchParameterHistoryTableExtension
-extension SearchParameterHistoryTableExtension on SearchParameterDrift {
+extension SearchParameterHistoryTableExtension
+    on SearchParameterTableCompanion {
   /// SearchParameterHistoryTableCompanion
   SearchParameterHistoryTableCompanion get companion {
     return SearchParameterHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3617,7 +4579,7 @@ extension SearchParameterHistoryTableExtension on SearchParameterDrift {
 extension ServiceRequestTableExtension on fhir.ServiceRequest {
   /// ServiceRequestTableCompanion
   ServiceRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ServiceRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3629,13 +4591,13 @@ extension ServiceRequestTableExtension on fhir.ServiceRequest {
 }
 
 /// ServiceRequestHistoryTableExtension
-extension ServiceRequestHistoryTableExtension on ServiceRequestDrift {
+extension ServiceRequestHistoryTableExtension on ServiceRequestTableCompanion {
   /// ServiceRequestHistoryTableCompanion
   ServiceRequestHistoryTableCompanion get companion {
     return ServiceRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3644,7 +4606,7 @@ extension ServiceRequestHistoryTableExtension on ServiceRequestDrift {
 extension SlotTableExtension on fhir.Slot {
   /// SlotTableCompanion
   SlotTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SlotTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3656,13 +4618,13 @@ extension SlotTableExtension on fhir.Slot {
 }
 
 /// SlotHistoryTableExtension
-extension SlotHistoryTableExtension on SlotDrift {
+extension SlotHistoryTableExtension on SlotTableCompanion {
   /// SlotHistoryTableCompanion
   SlotHistoryTableCompanion get companion {
     return SlotHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3671,25 +4633,35 @@ extension SlotHistoryTableExtension on SlotDrift {
 extension SpecimenTableExtension on fhir.Specimen {
   /// SpecimenTableCompanion
   SpecimenTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource =
+        newIdIfNoId().updateVersion(versionIdAsTime: true) as fhir.Specimen;
     return SpecimenTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
         resource.meta!.lastUpdated!.valueDateTime!.millisecondsSinceEpoch,
       ),
       resource: Value(resource.toJsonString()),
+      patientId: Value(resource.subject?.reference?.value ?? ''),
+      type: Value(resource.type!.coding!.firstOrNull!.code!.value!),
+      collectedDateTime: Value(
+        resource.collection?.collectedX
+            ?.isAs<fhir.FhirDateTime>()
+            ?.valueDateTime
+            ?.millisecondsSinceEpoch,
+      ),
+      status: Value(resource.status?.value),
     );
   }
 }
 
 /// SpecimenHistoryTableExtension
-extension SpecimenHistoryTableExtension on SpecimenDrift {
+extension SpecimenHistoryTableExtension on SpecimenTableCompanion {
   /// SpecimenHistoryTableCompanion
   SpecimenHistoryTableCompanion get companion {
     return SpecimenHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3698,7 +4670,7 @@ extension SpecimenHistoryTableExtension on SpecimenDrift {
 extension SpecimenDefinitionTableExtension on fhir.SpecimenDefinition {
   /// SpecimenDefinitionTableCompanion
   SpecimenDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SpecimenDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3710,13 +4682,14 @@ extension SpecimenDefinitionTableExtension on fhir.SpecimenDefinition {
 }
 
 /// SpecimenDefinitionHistoryTableExtension
-extension SpecimenDefinitionHistoryTableExtension on SpecimenDefinitionDrift {
+extension SpecimenDefinitionHistoryTableExtension
+    on SpecimenDefinitionTableCompanion {
   /// SpecimenDefinitionHistoryTableCompanion
   SpecimenDefinitionHistoryTableCompanion get companion {
     return SpecimenDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3725,7 +4698,7 @@ extension SpecimenDefinitionHistoryTableExtension on SpecimenDefinitionDrift {
 extension StructureDefinitionTableExtension on fhir.StructureDefinition {
   /// StructureDefinitionTableCompanion
   StructureDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return StructureDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3737,13 +4710,14 @@ extension StructureDefinitionTableExtension on fhir.StructureDefinition {
 }
 
 /// StructureDefinitionHistoryTableExtension
-extension StructureDefinitionHistoryTableExtension on StructureDefinitionDrift {
+extension StructureDefinitionHistoryTableExtension
+    on StructureDefinitionTableCompanion {
   /// StructureDefinitionHistoryTableCompanion
   StructureDefinitionHistoryTableCompanion get companion {
     return StructureDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3752,7 +4726,7 @@ extension StructureDefinitionHistoryTableExtension on StructureDefinitionDrift {
 extension StructureMapTableExtension on fhir.StructureMap {
   /// StructureMapTableCompanion
   StructureMapTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return StructureMapTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3764,13 +4738,13 @@ extension StructureMapTableExtension on fhir.StructureMap {
 }
 
 /// StructureMapHistoryTableExtension
-extension StructureMapHistoryTableExtension on StructureMapDrift {
+extension StructureMapHistoryTableExtension on StructureMapTableCompanion {
   /// StructureMapHistoryTableCompanion
   StructureMapHistoryTableCompanion get companion {
     return StructureMapHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3779,7 +4753,7 @@ extension StructureMapHistoryTableExtension on StructureMapDrift {
 extension SubscriptionTableExtension on fhir.Subscription {
   /// SubscriptionTableCompanion
   SubscriptionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SubscriptionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3791,13 +4765,13 @@ extension SubscriptionTableExtension on fhir.Subscription {
 }
 
 /// SubscriptionHistoryTableExtension
-extension SubscriptionHistoryTableExtension on SubscriptionDrift {
+extension SubscriptionHistoryTableExtension on SubscriptionTableCompanion {
   /// SubscriptionHistoryTableCompanion
   SubscriptionHistoryTableCompanion get companion {
     return SubscriptionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3806,7 +4780,7 @@ extension SubscriptionHistoryTableExtension on SubscriptionDrift {
 extension SubscriptionStatusTableExtension on fhir.SubscriptionStatus {
   /// SubscriptionStatusTableCompanion
   SubscriptionStatusTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SubscriptionStatusTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3818,13 +4792,14 @@ extension SubscriptionStatusTableExtension on fhir.SubscriptionStatus {
 }
 
 /// SubscriptionStatusHistoryTableExtension
-extension SubscriptionStatusHistoryTableExtension on SubscriptionStatusDrift {
+extension SubscriptionStatusHistoryTableExtension
+    on SubscriptionStatusTableCompanion {
   /// SubscriptionStatusHistoryTableCompanion
   SubscriptionStatusHistoryTableCompanion get companion {
     return SubscriptionStatusHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3833,7 +4808,7 @@ extension SubscriptionStatusHistoryTableExtension on SubscriptionStatusDrift {
 extension SubscriptionTopicTableExtension on fhir.SubscriptionTopic {
   /// SubscriptionTopicTableCompanion
   SubscriptionTopicTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SubscriptionTopicTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3845,13 +4820,14 @@ extension SubscriptionTopicTableExtension on fhir.SubscriptionTopic {
 }
 
 /// SubscriptionTopicHistoryTableExtension
-extension SubscriptionTopicHistoryTableExtension on SubscriptionTopicDrift {
+extension SubscriptionTopicHistoryTableExtension
+    on SubscriptionTopicTableCompanion {
   /// SubscriptionTopicHistoryTableCompanion
   SubscriptionTopicHistoryTableCompanion get companion {
     return SubscriptionTopicHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3860,7 +4836,7 @@ extension SubscriptionTopicHistoryTableExtension on SubscriptionTopicDrift {
 extension SubstanceTableExtension on fhir.Substance {
   /// SubstanceTableCompanion
   SubstanceTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SubstanceTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3872,13 +4848,13 @@ extension SubstanceTableExtension on fhir.Substance {
 }
 
 /// SubstanceHistoryTableExtension
-extension SubstanceHistoryTableExtension on SubstanceDrift {
+extension SubstanceHistoryTableExtension on SubstanceTableCompanion {
   /// SubstanceHistoryTableCompanion
   SubstanceHistoryTableCompanion get companion {
     return SubstanceHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3887,7 +4863,7 @@ extension SubstanceHistoryTableExtension on SubstanceDrift {
 extension SubstanceDefinitionTableExtension on fhir.SubstanceDefinition {
   /// SubstanceDefinitionTableCompanion
   SubstanceDefinitionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SubstanceDefinitionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3899,13 +4875,14 @@ extension SubstanceDefinitionTableExtension on fhir.SubstanceDefinition {
 }
 
 /// SubstanceDefinitionHistoryTableExtension
-extension SubstanceDefinitionHistoryTableExtension on SubstanceDefinitionDrift {
+extension SubstanceDefinitionHistoryTableExtension
+    on SubstanceDefinitionTableCompanion {
   /// SubstanceDefinitionHistoryTableCompanion
   SubstanceDefinitionHistoryTableCompanion get companion {
     return SubstanceDefinitionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3914,7 +4891,7 @@ extension SubstanceDefinitionHistoryTableExtension on SubstanceDefinitionDrift {
 extension SupplyDeliveryTableExtension on fhir.SupplyDelivery {
   /// SupplyDeliveryTableCompanion
   SupplyDeliveryTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SupplyDeliveryTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3926,13 +4903,13 @@ extension SupplyDeliveryTableExtension on fhir.SupplyDelivery {
 }
 
 /// SupplyDeliveryHistoryTableExtension
-extension SupplyDeliveryHistoryTableExtension on SupplyDeliveryDrift {
+extension SupplyDeliveryHistoryTableExtension on SupplyDeliveryTableCompanion {
   /// SupplyDeliveryHistoryTableCompanion
   SupplyDeliveryHistoryTableCompanion get companion {
     return SupplyDeliveryHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3941,7 +4918,7 @@ extension SupplyDeliveryHistoryTableExtension on SupplyDeliveryDrift {
 extension SupplyRequestTableExtension on fhir.SupplyRequest {
   /// SupplyRequestTableCompanion
   SupplyRequestTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return SupplyRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3953,13 +4930,13 @@ extension SupplyRequestTableExtension on fhir.SupplyRequest {
 }
 
 /// SupplyRequestHistoryTableExtension
-extension SupplyRequestHistoryTableExtension on SupplyRequestDrift {
+extension SupplyRequestHistoryTableExtension on SupplyRequestTableCompanion {
   /// SupplyRequestHistoryTableCompanion
   SupplyRequestHistoryTableCompanion get companion {
     return SupplyRequestHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3968,7 +4945,7 @@ extension SupplyRequestHistoryTableExtension on SupplyRequestDrift {
 extension TaskTableExtension on fhir.Task {
   /// TaskTableCompanion
   TaskTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return TaskTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3980,13 +4957,13 @@ extension TaskTableExtension on fhir.Task {
 }
 
 /// TaskHistoryTableExtension
-extension TaskHistoryTableExtension on TaskDrift {
+extension TaskHistoryTableExtension on TaskTableCompanion {
   /// TaskHistoryTableCompanion
   TaskHistoryTableCompanion get companion {
     return TaskHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -3996,7 +4973,7 @@ extension TerminologyCapabilitiesTableExtension
     on fhir.TerminologyCapabilities {
   /// TerminologyCapabilitiesTableCompanion
   TerminologyCapabilitiesTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return TerminologyCapabilitiesTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4009,13 +4986,13 @@ extension TerminologyCapabilitiesTableExtension
 
 /// TerminologyCapabilitiesHistoryTableExtension
 extension TerminologyCapabilitiesHistoryTableExtension
-    on TerminologyCapabilitiesDrift {
+    on TerminologyCapabilitiesTableCompanion {
   /// TerminologyCapabilitiesHistoryTableCompanion
   TerminologyCapabilitiesHistoryTableCompanion get companion {
     return TerminologyCapabilitiesHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -4024,7 +5001,7 @@ extension TerminologyCapabilitiesHistoryTableExtension
 extension TestReportTableExtension on fhir.TestReport {
   /// TestReportTableCompanion
   TestReportTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return TestReportTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4036,13 +5013,13 @@ extension TestReportTableExtension on fhir.TestReport {
 }
 
 /// TestReportHistoryTableExtension
-extension TestReportHistoryTableExtension on TestReportDrift {
+extension TestReportHistoryTableExtension on TestReportTableCompanion {
   /// TestReportHistoryTableCompanion
   TestReportHistoryTableCompanion get companion {
     return TestReportHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -4051,7 +5028,7 @@ extension TestReportHistoryTableExtension on TestReportDrift {
 extension TestScriptTableExtension on fhir.TestScript {
   /// TestScriptTableCompanion
   TestScriptTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return TestScriptTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4063,13 +5040,13 @@ extension TestScriptTableExtension on fhir.TestScript {
 }
 
 /// TestScriptHistoryTableExtension
-extension TestScriptHistoryTableExtension on TestScriptDrift {
+extension TestScriptHistoryTableExtension on TestScriptTableCompanion {
   /// TestScriptHistoryTableCompanion
   TestScriptHistoryTableCompanion get companion {
     return TestScriptHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -4078,7 +5055,7 @@ extension TestScriptHistoryTableExtension on TestScriptDrift {
 extension ValueSetTableExtension on fhir.ValueSet {
   /// ValueSetTableCompanion
   ValueSetTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return ValueSetTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4090,13 +5067,13 @@ extension ValueSetTableExtension on fhir.ValueSet {
 }
 
 /// ValueSetHistoryTableExtension
-extension ValueSetHistoryTableExtension on ValueSetDrift {
+extension ValueSetHistoryTableExtension on ValueSetTableCompanion {
   /// ValueSetHistoryTableCompanion
   ValueSetHistoryTableCompanion get companion {
     return ValueSetHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -4105,7 +5082,7 @@ extension ValueSetHistoryTableExtension on ValueSetDrift {
 extension VerificationResultTableExtension on fhir.VerificationResult {
   /// VerificationResultTableCompanion
   VerificationResultTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return VerificationResultTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4117,13 +5094,14 @@ extension VerificationResultTableExtension on fhir.VerificationResult {
 }
 
 /// VerificationResultHistoryTableExtension
-extension VerificationResultHistoryTableExtension on VerificationResultDrift {
+extension VerificationResultHistoryTableExtension
+    on VerificationResultTableCompanion {
   /// VerificationResultHistoryTableCompanion
   VerificationResultHistoryTableCompanion get companion {
     return VerificationResultHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }
@@ -4132,7 +5110,7 @@ extension VerificationResultHistoryTableExtension on VerificationResultDrift {
 extension VisionPrescriptionTableExtension on fhir.VisionPrescription {
   /// VisionPrescriptionTableCompanion
   VisionPrescriptionTableCompanion get companion {
-    final resource = newIdIfNoId().updateVersion();
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true);
     return VisionPrescriptionTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -4144,13 +5122,14 @@ extension VisionPrescriptionTableExtension on fhir.VisionPrescription {
 }
 
 /// VisionPrescriptionHistoryTableExtension
-extension VisionPrescriptionHistoryTableExtension on VisionPrescriptionDrift {
+extension VisionPrescriptionHistoryTableExtension
+    on VisionPrescriptionTableCompanion {
   /// VisionPrescriptionHistoryTableCompanion
   VisionPrescriptionHistoryTableCompanion get companion {
     return VisionPrescriptionHistoryTableCompanion(
-      id: Value(id),
-      lastUpdated: Value(lastUpdated),
-      resource: Value(resource),
+      id: id,
+      lastUpdated: lastUpdated,
+      resource: resource,
     );
   }
 }

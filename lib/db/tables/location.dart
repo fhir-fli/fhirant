@@ -31,6 +31,9 @@ class LocationTable extends Table {
   List<Set<Column>> get indexes => [
     {name},
   ];
+
+    @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('LocationHistoryDrift')

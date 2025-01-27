@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupSqlCipher();
   final dbService = DbService();
-  await dbService.initializeDatabase();
+  await dbService.initialize();
   runApp(const MyApp());
 }
