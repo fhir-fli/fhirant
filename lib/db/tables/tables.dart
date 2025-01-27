@@ -34,7 +34,6 @@ export 'contract.dart';
 export 'coverage.dart';
 export 'coverage_eligibility_request.dart';
 export 'coverage_eligibility_response.dart';
-export 'create_tables.dart';
 export 'detected_issue.dart';
 export 'device.dart';
 export 'device_definition.dart';

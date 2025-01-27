@@ -1,134 +1,51 @@
+// ignore_for_file: lines_longer_than_80_chars
+
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [MedicationAdministration] resources
-void createMedicationAdministrationTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS MedicationAdministration (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      patientId TEXT NOT NULL,
-      medicationId TEXT NOT NULL,
-      effectiveDateTime INT,
-      status TEXT
-    );
-  ''')
-    ..execute(
-      // ignore: lines_longer_than_80_chars
-      'CREATE INDEX IF NOT EXISTS idx_medication_admin_patientId ON MedicationAdministration (patientId);',
-    )
-    ..execute(
-      // ignore: lines_longer_than_80_chars
-      'CREATE INDEX IF NOT EXISTS idx_medication_admin_status ON MedicationAdministration (status);',
-    )
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS MedicationAdministrationHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('MedicationAdministration')
+/// [MedicationAdministration] table for Drift
+class MedicationAdministrationTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
+
+  /// Patient ID column
+  TextColumn get patientId => text().customConstraint('NOT NULL')();
+
+  /// Medication ID column
+  TextColumn get medicationId => text().customConstraint('NOT NULL')();
+
+  /// Effective date and time column
+  IntColumn get effectiveDateTime => integer().nullable()();
+
+  /// Status column
+  TextColumn get status => text().nullable()();
+
+  /// Indexes
+  List<Set<Column>> get indexes => [
+    {patientId},
+    {status},
+  ];
 }
 
-/// Save a [MedicationAdministration] to the database
-bool saveMedicationAdministration(
-  Database db,
-  MedicationAdministration medicationAdmin,
-) {
-  final updatedAdmin =
-      updateMeta(medicationAdmin, versionIdAsTime: true).newIdIfNoId();
-  final id = medicationAdmin.id?.value;
-  final resourceJson = updatedAdmin.toJsonString();
-  final lastUpdated =
-      updatedAdmin.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
-  final patientId = medicationAdmin.subject.reference?.value;
-  final medicationId = medicationAdmin.medicationX
-          .isAs<CodeableConcept>()
-          ?.coding
-          ?.first
-          .code
-          ?.value ??
-      medicationAdmin.medicationX
-          .isAs<Reference>()
-          ?.reference
-          ?.value
-          ?.split('/')
-          .last;
-  final effectiveDateTime = medicationAdmin.effectiveX
-      .isAs<FhirDateTimeBase>()
-      ?.valueDateTime
-      ?.millisecondsSinceEpoch;
-  final status = medicationAdmin.status.toString();
+@DataClassName('MedicationAdministrationHistory')
+/// [MedicationAdministration]History table for Drift
+class MedicationAdministrationHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      // ignore: lines_longer_than_80_chars
-      'SELECT id, resource, lastUpdated FROM MedicationAdministration WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO MedicationAdministrationHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    db.execute('''
-    INSERT INTO MedicationAdministration (
-      id, lastUpdated, resource, patientId, medicationId, effectiveDateTime, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      lastUpdated = excluded.lastUpdated,
-      resource = excluded.resource,
-      patientId = excluded.patientId,
-      medicationId = excluded.medicationId,
-      effectiveDateTime = excluded.effectiveDateTime,
-      status = excluded.status;
-  ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-      patientId,
-      medicationId,
-      effectiveDateTime,
-      status,
-    ]);
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [MedicationAdministration] by its ID
-MedicationAdministration? getMedicationAdministration(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM MedicationAdministration WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return MedicationAdministration.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

@@ -1,119 +1,48 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [ValueSet] canonical resources
-void createValueSetTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS ValueSet (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      url TEXT NOT NULL,
-      status TEXT NOT NULL,
-      date INT,
-      title TEXT
-    );
-  ''')
-    ..execute('CREATE INDEX IF NOT EXISTS idx_value_set_url ON ValueSet (url);')
-    ..execute(
-      'CREATE INDEX IF NOT EXISTS idx_value_set_status ON ValueSet (status);',
-    )
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS ValueSetHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('ValueSet')
+/// [ValueSet] table for Drift
+class ValueSetTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
+  /// URL column
+  TextColumn get url => text().customConstraint('NOT NULL')();
+
+  /// Status column
+  TextColumn get status => text().customConstraint('NOT NULL')();
+
+  /// Date column
+  IntColumn get date => integer().nullable()();
+
+  /// Title column
+  TextColumn get title => text().nullable()();
+
+  /// Indexes
+  List<Set<Column>> get indexes => [
+        {url},
+        {status},
+      ];
 }
 
-/// Save a [ValueSet] canonical resource to the database
-bool saveValueSet(
-  Database db,
-  ValueSet resource,
-) {
-  final updatedResource =
-      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as ValueSet;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
-  final url = updatedResource.url?.value?.toString();
-  final status = updatedResource.status?.toString();
-  final date = updatedResource.date?.valueDateTime?.millisecondsSinceEpoch;
-  final title = updatedResource.title?.value;
+@DataClassName('ValueSetHistory')
+/// [ValueSet] history table for Drift
+class ValueSetHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM ValueSet WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO ValueSetHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO ValueSet (
-        id, lastUpdated, resource, url, status, date, title
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource,
-        url = excluded.url,
-        status = excluded.status,
-        date = excluded.date,
-        title = excluded.title;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-      url,
-      status,
-      date,
-      title,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [ValueSet] canonical resource by its ID
-ValueSet? getValueSet(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM ValueSet WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return ValueSet.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

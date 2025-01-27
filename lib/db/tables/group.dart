@@ -1,99 +1,31 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [FhirGroup] resources
-void createFhirGroupTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS FhirGroup (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
-    );
-  ''')
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS FhirGroupHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('FhirGroup')
+/// [FhirGroup] table for Drift
+class FhirGroupTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-/// Save a [FhirGroup] to the database
-bool saveFhirGroup(
-  Database db,
-  FhirGroup resource,
-) {
-  final updatedResource =
-      updateMeta(resource, versionIdAsTime: true).newIdIfNoId() as FhirGroup;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+@DataClassName('FhirGroupHistory')
+/// [FhirGroup] history table for Drift
+class FhirGroupHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM FhirGroup WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO FhirGroupHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO FhirGroup (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [FhirGroup] by its ID
-FhirGroup? getFhirGroup(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM FhirGroup WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return FhirGroup.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

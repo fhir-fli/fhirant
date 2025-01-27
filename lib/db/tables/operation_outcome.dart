@@ -1,99 +1,31 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [OperationOutcome] resources
-void createOperationOutcomeTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS OperationOutcome (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
-    );
-  ''')
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS OperationOutcomeHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('OperationOutcome')
+/// [OperationOutcome] table for Drift
+class OperationOutcomeTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-/// Save a [OperationOutcome] to the database
-bool saveOperationOutcome(
-  Database db,
-  OperationOutcome resource,
-) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true)
-      .newIdIfNoId() as OperationOutcome;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+@DataClassName('OperationOutcomeHistory')
+/// [OperationOutcome] history table for Drift
+class OperationOutcomeHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM OperationOutcome WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO OperationOutcomeHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO OperationOutcome (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [OperationOutcome] by its ID
-OperationOutcome? getOperationOutcome(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM OperationOutcome WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return OperationOutcome.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

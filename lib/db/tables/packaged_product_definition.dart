@@ -1,102 +1,31 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [PackagedProductDefinition] resources
-void createPackagedProductDefinitionTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS PackagedProductDefinition (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
-    );
-  ''')
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS PackagedProductDefinitionHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('PackagedProductDefinition')
+/// [PackagedProductDefinition] table for Drift
+class PackagedProductDefinitionTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-/// Save a [PackagedProductDefinition] to the database
-bool savePackagedProductDefinition(
-  Database db,
-  PackagedProductDefinition resource,
-) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true)
-      .newIdIfNoId() as PackagedProductDefinition;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+@DataClassName('PackagedProductDefinitionHistory')
+/// [PackagedProductDefinition] history table for Drift
+class PackagedProductDefinitionHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM PackagedProductDefinition WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO PackagedProductDefinitionHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO PackagedProductDefinition (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [PackagedProductDefinition] by its ID
-PackagedProductDefinition? getPackagedProductDefinition(
-  Database db,
-  String id,
-) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM PackagedProductDefinition WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return PackagedProductDefinition.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

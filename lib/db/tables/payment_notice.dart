@@ -1,99 +1,31 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [PaymentNotice] resources
-void createPaymentNoticeTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS PaymentNotice (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
-    );
-  ''')
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS PaymentNoticeHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('PaymentNotice')
+/// [PaymentNotice] table for Drift
+class PaymentNoticeTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-/// Save a [PaymentNotice] to the database
-bool savePaymentNotice(
-  Database db,
-  PaymentNotice resource,
-) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true)
-      .newIdIfNoId() as PaymentNotice;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+@DataClassName('PaymentNoticeHistory')
+/// [PaymentNotice] history table for Drift
+class PaymentNoticeHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM PaymentNotice WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO PaymentNoticeHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO PaymentNotice (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [PaymentNotice] by its ID
-PaymentNotice? getPaymentNotice(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM PaymentNotice WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return PaymentNotice.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }

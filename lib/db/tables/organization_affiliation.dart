@@ -1,99 +1,31 @@
-// ignore_for_file: lines_longer_than_80_chars
-
+import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:sqlite3/sqlite3.dart';
 
-/// Create the primary and history tables for
-/// [OrganizationAffiliation] resources
-void createOrganizationAffiliationTables(Database db) {
-  db
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS OrganizationAffiliation (
-      id TEXT PRIMARY KEY,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL
-    );
-  ''')
-    ..execute('''
-    CREATE TABLE IF NOT EXISTS OrganizationAffiliationHistory (
-      id TEXT NOT NULL,
-      lastUpdated INT NOT NULL,
-      resource TEXT NOT NULL,
-      PRIMARY KEY (id, lastUpdated)
-    );
-  ''');
+@DataClassName('OrganizationAffiliation')
+/// [OrganizationAffiliation] table for Drift
+class OrganizationAffiliationTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL PRIMARY KEY')();
+
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 }
 
-/// Save a [OrganizationAffiliation] to the database
-bool saveOrganizationAffiliation(
-  Database db,
-  OrganizationAffiliation resource,
-) {
-  final updatedResource = updateMeta(resource, versionIdAsTime: true)
-      .newIdIfNoId() as OrganizationAffiliation;
-  final id = updatedResource.id?.value;
-  final resourceJson = updatedResource.toJsonString();
-  final lastUpdated =
-      updatedResource.meta?.lastUpdated?.valueDateTime?.millisecondsSinceEpoch;
+@DataClassName('OrganizationAffiliationHistory')
+/// [OrganizationAffiliation] history table for Drift
+class OrganizationAffiliationHistoryTable extends Table {
+  /// ID column
+  TextColumn get id => text().customConstraint('NOT NULL')();
 
-  try {
-    // Check if a resource with the same ID exists
-    final existingResource = db.select(
-      'SELECT id, resource, lastUpdated FROM OrganizationAffiliation WHERE id = ?',
-      [id],
-    );
+  /// Last updated column
+  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
 
-    if (existingResource.isNotEmpty) {
-      // Insert the current version into the history table before updating
-      final oldResource = existingResource.first;
-      db.execute('''
-        INSERT INTO OrganizationAffiliationHistory (
-          id, lastUpdated, resource
-        ) VALUES (?, ?, ?);
-      ''', [
-        oldResource['id'],
-        oldResource['lastUpdated'],
-        oldResource['resource'],
-      ]);
-    }
+  /// Resource column
+  TextColumn get resource => text().customConstraint('NOT NULL')();
 
-    // Insert new version into the main table
-    db.execute('''
-      INSERT INTO OrganizationAffiliation (
-        id, lastUpdated, resource
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lastUpdated = excluded.lastUpdated,
-        resource = excluded.resource;
-    ''', [
-      id,
-      lastUpdated,
-      resourceJson,
-    ]);
-
-    return true;
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error saving resource: $e');
-    return false;
-  }
-}
-
-/// Get a [OrganizationAffiliation] by its ID
-OrganizationAffiliation? getOrganizationAffiliation(Database db, String id) {
-  try {
-    final result = db.select(
-      'SELECT resource FROM OrganizationAffiliation WHERE id = ?',
-      [id],
-    );
-    if (result.isNotEmpty) {
-      return OrganizationAffiliation.fromJsonString(
-        result.first['resource'] as String,
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Error retrieving resource: $e');
-  }
-  return null;
+  @override
+  Set<Column> get primaryKey => {id, lastUpdated};
 }
