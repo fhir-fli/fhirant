@@ -5,13 +5,13 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [SupplyDelivery]Table for Drift
 class SupplyDeliveryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -21,13 +21,13 @@ class SupplyDeliveryTable extends Table {
 /// [SupplyDelivery]HistoryTable for Drift
 class SupplyDeliveryHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

@@ -5,19 +5,19 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [GraphDefinition]Table for Drift
 class GraphDefinitionTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// URL column
-  TextColumn get url => text().customConstraint('NOT NULL')();
+  TextColumn get url => text()();
 
   /// Status column
-  TextColumn get status => text().customConstraint('NOT NULL')();
+  TextColumn get status => text()();
 
   /// Date column
   IntColumn get date => integer().nullable()();
@@ -39,13 +39,13 @@ class GraphDefinitionTable extends Table {
 /// [GraphDefinition]HistoryTable for Drift
 class GraphDefinitionHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

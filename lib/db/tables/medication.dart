@@ -7,13 +7,13 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Medication]Table for Drift
 class MedicationTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// Code column
   TextColumn get code => text().nullable()();
@@ -41,13 +41,13 @@ class MedicationTable extends Table {
 /// [Medication]HistoryTable for Drift
 class MedicationHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

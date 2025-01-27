@@ -5,13 +5,13 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Person]Table for Drift
 class PersonTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -21,13 +21,13 @@ class PersonTable extends Table {
 /// [Person]HistoryTable for Drift
 class PersonHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

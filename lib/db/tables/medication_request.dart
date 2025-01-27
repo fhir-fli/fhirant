@@ -7,19 +7,19 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [MedicationRequest]Table for Drift
 class MedicationRequestTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// Patient ID column
-  TextColumn get patientId => text().customConstraint('NOT NULL')();
+  TextColumn get patientId => text()();
 
   /// Medication ID column
-  TextColumn get medicationId => text().customConstraint('NOT NULL')();
+  TextColumn get medicationId => text()();
 
   /// Intent column
   TextColumn get intent => text().nullable()();
@@ -44,13 +44,13 @@ class MedicationRequestTable extends Table {
 /// [MedicationRequest]HistoryTable for Drift
 class MedicationRequestHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

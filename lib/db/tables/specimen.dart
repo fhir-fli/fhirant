@@ -7,19 +7,19 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Specimen]Table for Drift
 class SpecimenTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// Patient ID column
-  TextColumn get patientId => text().customConstraint('NOT NULL')();
+  TextColumn get patientId => text()();
 
   /// Type column
-  TextColumn get type => text().customConstraint('NOT NULL')();
+  TextColumn get type => text()();
 
   /// Collected date and time column
   IntColumn get collectedDateTime => integer().nullable()();
@@ -41,13 +41,13 @@ class SpecimenTable extends Table {
 /// [Specimen]HistoryTable for Drift
 class SpecimenHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

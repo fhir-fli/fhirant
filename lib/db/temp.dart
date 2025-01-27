@@ -28,22 +28,22 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [$updatedResource]Table for Drift
 class ${updatedResource}Table extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 """;
 
       if (resource.isCanonicalResource) {
         fileString += """
   /// URL column
-  TextColumn get url => text().customConstraint('NOT NULL')();
+  TextColumn get url => text()();
 
   /// Status column
-  TextColumn get status => text().customConstraint('NOT NULL')();
+  TextColumn get status => text()();
 
   /// Date column
   IntColumn get date => integer().nullable()();
@@ -69,13 +69,13 @@ class ${updatedResource}Table extends Table {
 /// [$updatedResource]HistoryTable for Drift
 class ${updatedResource}HistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

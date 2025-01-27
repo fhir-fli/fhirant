@@ -7,16 +7,16 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Condition]Table for Drift
 class ConditionTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// Patient ID column
-  TextColumn get patientId => text().customConstraint('NOT NULL')();
+  TextColumn get patientId => text()();
 
   /// Clinical status column
   TextColumn get clinicalStatus => text().nullable()();
@@ -38,13 +38,13 @@ class ConditionTable extends Table {
 /// [Condition]HistoryTable for Drift
 class ConditionHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};

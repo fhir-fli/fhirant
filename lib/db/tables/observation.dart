@@ -7,16 +7,16 @@ import 'package:fhir_r4/fhir_r4.dart';
 /// [Observation]Table for Drift
 class ObservationTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   /// Patient ID column
-  TextColumn get patientId => text().customConstraint('NOT NULL')();
+  TextColumn get patientId => text()();
 
   /// Type column
   TextColumn get type => text().nullable()();
@@ -38,13 +38,13 @@ class ObservationTable extends Table {
 /// [Observation]HistoryTable for Drift
 class ObservationHistoryTable extends Table {
   /// ID column
-  TextColumn get id => text().customConstraint('NOT NULL')();
+  TextColumn get id => text()();
 
   /// Last updated column
-  IntColumn get lastUpdated => integer().customConstraint('NOT NULL')();
+  IntColumn get lastUpdated => integer()();
 
   /// Resource column
-  TextColumn get resource => text().customConstraint('NOT NULL')();
+  TextColumn get resource => text()();
 
   @override
   Set<Column> get primaryKey => {id, lastUpdated};
