@@ -81,6 +81,8 @@ class AppDatabase extends _$AppDatabase {
       groupedResources.putIfAbsent(type, () => []).add(resource);
     }
 
+    int totalErrors = 0;
+
     try {
       await batch((batch) async {
         // Save each resource group into its respective table
@@ -90,26 +92,29 @@ class AppDatabase extends _$AppDatabase {
 
           for (final resource in resourceList) {
             try {
-              final updatedResource = resource.newIdIfNoId().updateVersion(
-                versionIdAsTime: true,
+              _saveResourceWithHistory(
+                batch,
+                type,
+                resource.newIdIfNoId().updateVersion(versionIdAsTime: true),
               );
-              final companion =
-                  updatedResource.companion; // Use companion extensions
-              _saveResourceWithHistory(batch, type, updatedResource, companion);
-            } catch (e) {
+            } catch (e, s) {
+              totalErrors++;
               // Log the specific resource that failed to save
               print(
-                'Error saving resource of type $type with ID: ${resource.id?.value}: $e',
+                'Error saving resource of type $type with ID: ${resource.id?.value}: $e\n$s',
               );
+              rethrow;
             }
           }
         }
       });
 
       print('Successfully saved ${resources.length} resource(s).');
+      print('Total errors: $totalErrors');
       return true;
     } catch (e) {
       print('Batch execution failed: $e');
+      print('Total errors: $totalErrors');
       return false;
     }
   }
@@ -118,1007 +123,1154 @@ class AppDatabase extends _$AppDatabase {
   void _saveResourceWithHistory(
     Batch batch,
     fhir.R4ResourceType resourceType,
-    fhir.Resource resourceToUpdate,
-    UpdateCompanion<dynamic> companion,
+    fhir.Resource resource,
   ) {
     switch (resourceType) {
       case fhir.R4ResourceType.Account:
+        final companion = (resource as fhir.Account).companion;
         batch
-          ..insert(
-            accountHistoryTable,
-            companion.companion as AccountHistoryTableCompanion,
-          )
-          ..insert(accountTable, companion);
+          ..insert(accountHistoryTable, companion.companion)
+          ..insert(accountTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.ActivityDefinition:
+        final companion = (resource as fhir.ActivityDefinition).companion;
         batch
+          ..insert(activityDefinitionHistoryTable, companion.companion)
           ..insert(
-            activityDefinitionHistoryTable,
-            companion.companion as ActivityDefinitionHistoryTableCompanion,
-          )
-          ..insert(activityDefinitionTable, companion);
+            activityDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.AdministrableProductDefinition:
+        final companion =
+            (resource as fhir.AdministrableProductDefinition).companion;
         batch
           ..insert(
             administrableProductDefinitionHistoryTable,
-            companion.companion
-                as AdministrableProductDefinitionHistoryTableCompanion,
+            companion.companion,
           )
-          ..insert(administrableProductDefinitionTable, companion);
+          ..insert(
+            administrableProductDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.AdverseEvent:
+        final companion = (resource as fhir.AdverseEvent).companion;
         batch
+          ..insert(adverseEventHistoryTable, companion.companion)
           ..insert(
-            adverseEventHistoryTable,
-            companion.companion as AdverseEventHistoryTableCompanion,
-          )
-          ..insert(adverseEventTable, companion);
+            adverseEventTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.AllergyIntolerance:
+        final companion = (resource as fhir.AllergyIntolerance).companion;
         batch
+          ..insert(allergyIntoleranceHistoryTable, companion.companion)
           ..insert(
-            allergyIntoleranceHistoryTable,
-            companion.companion as AllergyIntoleranceHistoryTableCompanion,
-          )
-          ..insert(allergyIntoleranceTable, companion);
+            allergyIntoleranceTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Appointment:
+        final companion = (resource as fhir.Appointment).companion;
         batch
+          ..insert(appointmentHistoryTable, companion.companion)
           ..insert(
-            appointmentHistoryTable,
-            companion.companion as AppointmentHistoryTableCompanion,
-          )
-          ..insert(appointmentTable, companion);
+            appointmentTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.AppointmentResponse:
+        final companion = (resource as fhir.AppointmentResponse).companion;
         batch
+          ..insert(appointmentResponseHistoryTable, companion.companion)
           ..insert(
-            appointmentResponseHistoryTable,
-            companion.companion as AppointmentResponseHistoryTableCompanion,
-          )
-          ..insert(appointmentResponseTable, companion);
+            appointmentResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.AuditEvent:
+        final companion = (resource as fhir.AuditEvent).companion;
         batch
+          ..insert(auditEventHistoryTable, companion.companion)
           ..insert(
-            auditEventHistoryTable,
-            companion.companion as AuditEventHistoryTableCompanion,
-          )
-          ..insert(auditEventTable, companion);
+            auditEventTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Basic:
+        final companion = (resource as fhir.Basic).companion;
         batch
-          ..insert(
-            basicHistoryTable,
-            companion.companion as BasicHistoryTableCompanion,
-          )
-          ..insert(basicTable, companion);
+          ..insert(basicHistoryTable, companion.companion)
+          ..insert(basicTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Binary:
+        final companion = (resource as fhir.Binary).companion;
         batch
-          ..insert(
-            binaryHistoryTable,
-            companion.companion as BinaryHistoryTableCompanion,
-          )
-          ..insert(binaryTable, companion);
+          ..insert(binaryHistoryTable, companion.companion)
+          ..insert(binaryTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.BiologicallyDerivedProduct:
+        final companion =
+            (resource as fhir.BiologicallyDerivedProduct).companion;
         batch
+          ..insert(biologicallyDerivedProductHistoryTable, companion.companion)
           ..insert(
-            biologicallyDerivedProductHistoryTable,
-            companion.companion
-                as BiologicallyDerivedProductHistoryTableCompanion,
-          )
-          ..insert(biologicallyDerivedProductTable, companion);
+            biologicallyDerivedProductTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.BodyStructure:
+        final companion = (resource as fhir.BodyStructure).companion;
         batch
+          ..insert(bodyStructureHistoryTable, companion.companion)
           ..insert(
-            bodyStructureHistoryTable,
-            companion.companion as BodyStructureHistoryTableCompanion,
-          )
-          ..insert(bodyStructureTable, companion);
+            bodyStructureTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Bundle:
+        final companion = (resource as fhir.Bundle).companion;
         batch
-          ..insert(
-            bundleHistoryTable,
-            companion.companion as BundleHistoryTableCompanion,
-          )
-          ..insert(bundleTable, companion);
+          ..insert(bundleHistoryTable, companion.companion)
+          ..insert(bundleTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.CapabilityStatement:
+        final companion = (resource as fhir.CapabilityStatement).companion;
         batch
+          ..insert(capabilityStatementHistoryTable, companion.companion)
           ..insert(
-            capabilityStatementHistoryTable,
-            companion.companion as CapabilityStatementHistoryTableCompanion,
-          )
-          ..insert(capabilityStatementTable, companion);
+            capabilityStatementTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.CarePlan:
+        final companion = (resource as fhir.CarePlan).companion;
         batch
-          ..insert(
-            carePlanHistoryTable,
-            companion.companion as CarePlanHistoryTableCompanion,
-          )
-          ..insert(carePlanTable, companion);
+          ..insert(carePlanHistoryTable, companion.companion)
+          ..insert(carePlanTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.CareTeam:
+        final companion = (resource as fhir.CareTeam).companion;
         batch
-          ..insert(
-            careTeamHistoryTable,
-            companion.companion as CareTeamHistoryTableCompanion,
-          )
-          ..insert(careTeamTable, companion);
+          ..insert(careTeamHistoryTable, companion.companion)
+          ..insert(careTeamTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.CatalogEntry:
+        final companion = (resource as fhir.CatalogEntry).companion;
         batch
+          ..insert(catalogEntryHistoryTable, companion.companion)
           ..insert(
-            catalogEntryHistoryTable,
-            companion.companion as CatalogEntryHistoryTableCompanion,
-          )
-          ..insert(catalogEntryTable, companion);
+            catalogEntryTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ChargeItem:
+        final companion = (resource as fhir.ChargeItem).companion;
         batch
+          ..insert(chargeItemHistoryTable, companion.companion)
           ..insert(
-            chargeItemHistoryTable,
-            companion.companion as ChargeItemHistoryTableCompanion,
-          )
-          ..insert(chargeItemTable, companion);
+            chargeItemTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ChargeItemDefinition:
+        final companion = (resource as fhir.ChargeItemDefinition).companion;
         batch
+          ..insert(chargeItemDefinitionHistoryTable, companion.companion)
           ..insert(
-            chargeItemDefinitionHistoryTable,
-            companion.companion as ChargeItemDefinitionHistoryTableCompanion,
-          )
-          ..insert(chargeItemDefinitionTable, companion);
+            chargeItemDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Citation:
+        final companion = (resource as fhir.Citation).companion;
         batch
-          ..insert(
-            citationHistoryTable,
-            companion.companion as CitationHistoryTableCompanion,
-          )
-          ..insert(citationTable, companion);
+          ..insert(citationHistoryTable, companion.companion)
+          ..insert(citationTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Claim:
+        final companion = (resource as fhir.Claim).companion;
         batch
-          ..insert(
-            claimHistoryTable,
-            companion.companion as ClaimHistoryTableCompanion,
-          )
-          ..insert(claimTable, companion);
+          ..insert(claimHistoryTable, companion.companion)
+          ..insert(claimTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.ClaimResponse:
+        final companion = (resource as fhir.ClaimResponse).companion;
         batch
+          ..insert(claimResponseHistoryTable, companion.companion)
           ..insert(
-            claimResponseHistoryTable,
-            companion.companion as ClaimResponseHistoryTableCompanion,
-          )
-          ..insert(claimResponseTable, companion);
+            claimResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ClinicalImpression:
+        final companion = (resource as fhir.ClinicalImpression).companion;
         batch
+          ..insert(clinicalImpressionHistoryTable, companion.companion)
           ..insert(
-            clinicalImpressionHistoryTable,
-            companion.companion as ClinicalImpressionHistoryTableCompanion,
-          )
-          ..insert(clinicalImpressionTable, companion);
+            clinicalImpressionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ClinicalUseDefinition:
+        final companion = (resource as fhir.ClinicalUseDefinition).companion;
         batch
+          ..insert(clinicalUseDefinitionHistoryTable, companion.companion)
           ..insert(
-            clinicalUseDefinitionHistoryTable,
-            companion.companion as ClinicalUseDefinitionHistoryTableCompanion,
-          )
-          ..insert(clinicalUseDefinitionTable, companion);
+            clinicalUseDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.CodeSystem:
+        final companion = (resource as fhir.CodeSystem).companion;
         batch
+          ..insert(codeSystemHistoryTable, companion.companion)
           ..insert(
-            codeSystemHistoryTable,
-            companion.companion as CodeSystemHistoryTableCompanion,
-          )
-          ..insert(codeSystemTable, companion);
+            codeSystemTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Communication:
+        final companion = (resource as fhir.Communication).companion;
         batch
+          ..insert(communicationHistoryTable, companion.companion)
           ..insert(
-            communicationHistoryTable,
-            companion.companion as CommunicationHistoryTableCompanion,
-          )
-          ..insert(communicationTable, companion);
+            communicationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.CommunicationRequest:
+        final companion = (resource as fhir.CommunicationRequest).companion;
         batch
+          ..insert(communicationRequestHistoryTable, companion.companion)
           ..insert(
-            communicationRequestHistoryTable,
-            companion.companion as CommunicationRequestHistoryTableCompanion,
-          )
-          ..insert(communicationRequestTable, companion);
+            communicationRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.CompartmentDefinition:
+        final companion = (resource as fhir.CompartmentDefinition).companion;
         batch
+          ..insert(compartmentDefinitionHistoryTable, companion.companion)
           ..insert(
-            compartmentDefinitionHistoryTable,
-            companion.companion as CompartmentDefinitionHistoryTableCompanion,
-          )
-          ..insert(compartmentDefinitionTable, companion);
+            compartmentDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Composition:
+        final companion = (resource as fhir.Composition).companion;
         batch
+          ..insert(compositionHistoryTable, companion.companion)
           ..insert(
-            compositionHistoryTable,
-            companion.companion as CompositionHistoryTableCompanion,
-          )
-          ..insert(compositionTable, companion);
+            compositionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ConceptMap:
+        final companion = (resource as fhir.ConceptMap).companion;
         batch
+          ..insert(conceptMapHistoryTable, companion.companion)
           ..insert(
-            conceptMapHistoryTable,
-            companion.companion as ConceptMapHistoryTableCompanion,
-          )
-          ..insert(conceptMapTable, companion);
+            conceptMapTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Condition:
+        final companion = (resource as fhir.Condition).companion;
         batch
-          ..insert(
-            conditionHistoryTable,
-            companion.companion as ConditionHistoryTableCompanion,
-          )
-          ..insert(conditionTable, companion);
+          ..insert(conditionHistoryTable, companion.companion)
+          ..insert(conditionTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Consent:
+        final companion = (resource as fhir.Consent).companion;
         batch
-          ..insert(
-            consentHistoryTable,
-            companion.companion as ConsentHistoryTableCompanion,
-          )
-          ..insert(consentTable, companion);
+          ..insert(consentHistoryTable, companion.companion)
+          ..insert(consentTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Contract:
+        final companion = (resource as fhir.Contract).companion;
         batch
-          ..insert(
-            contractHistoryTable,
-            companion.companion as ContractHistoryTableCompanion,
-          )
-          ..insert(contractTable, companion);
+          ..insert(contractHistoryTable, companion.companion)
+          ..insert(contractTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Coverage:
+        final companion = (resource as fhir.Coverage).companion;
         batch
-          ..insert(
-            coverageHistoryTable,
-            companion.companion as CoverageHistoryTableCompanion,
-          )
-          ..insert(coverageTable, companion);
+          ..insert(coverageHistoryTable, companion.companion)
+          ..insert(coverageTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.CoverageEligibilityRequest:
+        final companion =
+            (resource as fhir.CoverageEligibilityRequest).companion;
         batch
+          ..insert(coverageEligibilityRequestHistoryTable, companion.companion)
           ..insert(
-            coverageEligibilityRequestHistoryTable,
-            companion.companion
-                as CoverageEligibilityRequestHistoryTableCompanion,
-          )
-          ..insert(coverageEligibilityRequestTable, companion);
+            coverageEligibilityRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.CoverageEligibilityResponse:
+        final companion =
+            (resource as fhir.CoverageEligibilityResponse).companion;
         batch
+          ..insert(coverageEligibilityResponseHistoryTable, companion.companion)
           ..insert(
-            coverageEligibilityResponseHistoryTable,
-            companion.companion
-                as CoverageEligibilityResponseHistoryTableCompanion,
-          )
-          ..insert(coverageEligibilityResponseTable, companion);
+            coverageEligibilityResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DetectedIssue:
+        final companion = (resource as fhir.DetectedIssue).companion;
         batch
+          ..insert(detectedIssueHistoryTable, companion.companion)
           ..insert(
-            detectedIssueHistoryTable,
-            companion.companion as DetectedIssueHistoryTableCompanion,
-          )
-          ..insert(detectedIssueTable, companion);
+            detectedIssueTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Device:
+        final companion = (resource as fhir.Device).companion;
         batch
-          ..insert(
-            deviceHistoryTable,
-            companion.companion as DeviceHistoryTableCompanion,
-          )
-          ..insert(deviceTable, companion);
+          ..insert(deviceHistoryTable, companion.companion)
+          ..insert(deviceTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.DeviceDefinition:
+        final companion = (resource as fhir.DeviceDefinition).companion;
         batch
+          ..insert(deviceDefinitionHistoryTable, companion.companion)
           ..insert(
-            deviceDefinitionHistoryTable,
-            companion.companion as DeviceDefinitionHistoryTableCompanion,
-          )
-          ..insert(deviceDefinitionTable, companion);
+            deviceDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DeviceMetric:
+        final companion = (resource as fhir.DeviceMetric).companion;
         batch
+          ..insert(deviceMetricHistoryTable, companion.companion)
           ..insert(
-            deviceMetricHistoryTable,
-            companion.companion as DeviceMetricHistoryTableCompanion,
-          )
-          ..insert(deviceMetricTable, companion);
+            deviceMetricTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DeviceRequest:
+        final companion = (resource as fhir.DeviceRequest).companion;
         batch
+          ..insert(deviceRequestHistoryTable, companion.companion)
           ..insert(
-            deviceRequestHistoryTable,
-            companion.companion as DeviceRequestHistoryTableCompanion,
-          )
-          ..insert(deviceRequestTable, companion);
+            deviceRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DeviceUseStatement:
+        final companion = (resource as fhir.DeviceUseStatement).companion;
         batch
+          ..insert(deviceUseStatementHistoryTable, companion.companion)
           ..insert(
-            deviceUseStatementHistoryTable,
-            companion.companion as DeviceUseStatementHistoryTableCompanion,
-          )
-          ..insert(deviceUseStatementTable, companion);
+            deviceUseStatementTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DiagnosticReport:
+        final companion = (resource as fhir.DiagnosticReport).companion;
         batch
+          ..insert(diagnosticReportHistoryTable, companion.companion)
           ..insert(
-            diagnosticReportHistoryTable,
-            companion.companion as DiagnosticReportHistoryTableCompanion,
-          )
-          ..insert(diagnosticReportTable, companion);
+            diagnosticReportTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DocumentManifest:
+        final companion = (resource as fhir.DocumentManifest).companion;
         batch
+          ..insert(documentManifestHistoryTable, companion.companion)
           ..insert(
-            documentManifestHistoryTable,
-            companion.companion as DocumentManifestHistoryTableCompanion,
-          )
-          ..insert(documentManifestTable, companion);
+            documentManifestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.DocumentReference:
+        final companion = (resource as fhir.DocumentReference).companion;
         batch
+          ..insert(documentReferenceHistoryTable, companion.companion)
           ..insert(
-            documentReferenceHistoryTable,
-            companion.companion as DocumentReferenceHistoryTableCompanion,
-          )
-          ..insert(documentReferenceTable, companion);
+            documentReferenceTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Encounter:
+        final companion = (resource as fhir.Encounter).companion;
         batch
-          ..insert(
-            encounterHistoryTable,
-            companion.companion as EncounterHistoryTableCompanion,
-          )
-          ..insert(encounterTable, companion);
+          ..insert(encounterHistoryTable, companion.companion)
+          ..insert(encounterTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.EnrollmentRequest:
+        final companion = (resource as fhir.EnrollmentRequest).companion;
         batch
+          ..insert(enrollmentRequestHistoryTable, companion.companion)
           ..insert(
-            enrollmentRequestHistoryTable,
-            companion.companion as EnrollmentRequestHistoryTableCompanion,
-          )
-          ..insert(enrollmentRequestTable, companion);
+            enrollmentRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.EnrollmentResponse:
+        final companion = (resource as fhir.EnrollmentResponse).companion;
         batch
+          ..insert(enrollmentResponseHistoryTable, companion.companion)
           ..insert(
-            enrollmentResponseHistoryTable,
-            companion.companion as EnrollmentResponseHistoryTableCompanion,
-          )
-          ..insert(enrollmentResponseTable, companion);
+            enrollmentResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.EpisodeOfCare:
+        final companion = (resource as fhir.EpisodeOfCare).companion;
         batch
+          ..insert(episodeOfCareHistoryTable, companion.companion)
           ..insert(
-            episodeOfCareHistoryTable,
-            companion.companion as EpisodeOfCareHistoryTableCompanion,
-          )
-          ..insert(episodeOfCareTable, companion);
+            episodeOfCareTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.EventDefinition:
+        final companion = (resource as fhir.EventDefinition).companion;
         batch
+          ..insert(eventDefinitionHistoryTable, companion.companion)
           ..insert(
-            eventDefinitionHistoryTable,
-            companion.companion as EventDefinitionHistoryTableCompanion,
-          )
-          ..insert(eventDefinitionTable, companion);
+            eventDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Evidence:
+        final companion = (resource as fhir.Evidence).companion;
         batch
-          ..insert(
-            evidenceHistoryTable,
-            companion.companion as EvidenceHistoryTableCompanion,
-          )
-          ..insert(evidenceTable, companion);
+          ..insert(evidenceHistoryTable, companion.companion)
+          ..insert(evidenceTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.EvidenceReport:
+        final companion = (resource as fhir.EvidenceReport).companion;
         batch
+          ..insert(evidenceReportHistoryTable, companion.companion)
           ..insert(
-            evidenceReportHistoryTable,
-            companion.companion as EvidenceReportHistoryTableCompanion,
-          )
-          ..insert(evidenceReportTable, companion);
+            evidenceReportTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.EvidenceVariable:
+        final companion = (resource as fhir.EvidenceVariable).companion;
         batch
+          ..insert(evidenceVariableHistoryTable, companion.companion)
           ..insert(
-            evidenceVariableHistoryTable,
-            companion.companion as EvidenceVariableHistoryTableCompanion,
-          )
-          ..insert(evidenceVariableTable, companion);
+            evidenceVariableTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ExampleScenario:
+        final companion = (resource as fhir.ExampleScenario).companion;
         batch
+          ..insert(exampleScenarioHistoryTable, companion.companion)
           ..insert(
-            exampleScenarioHistoryTable,
-            companion.companion as ExampleScenarioHistoryTableCompanion,
-          )
-          ..insert(exampleScenarioTable, companion);
+            exampleScenarioTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ExplanationOfBenefit:
+        final companion = (resource as fhir.ExplanationOfBenefit).companion;
         batch
+          ..insert(explanationOfBenefitHistoryTable, companion.companion)
           ..insert(
-            explanationOfBenefitHistoryTable,
-            companion.companion as ExplanationOfBenefitHistoryTableCompanion,
-          )
-          ..insert(explanationOfBenefitTable, companion);
+            explanationOfBenefitTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.FamilyMemberHistory:
+        final companion = (resource as fhir.FamilyMemberHistory).companion;
         batch
+          ..insert(familyMemberHistoryHistoryTable, companion.companion)
           ..insert(
-            familyMemberHistoryHistoryTable,
-            companion.companion as FamilyMemberHistoryHistoryTableCompanion,
-          )
-          ..insert(familyMemberHistoryTable, companion);
+            familyMemberHistoryTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.FhirEndpoint:
+        final companion = (resource as fhir.FhirEndpoint).companion;
         batch
+          ..insert(fhirEndpointHistoryTable, companion.companion)
           ..insert(
-            fhirEndpointHistoryTable,
-            companion.companion as FhirEndpointHistoryTableCompanion,
-          )
-          ..insert(fhirEndpointTable, companion);
+            fhirEndpointTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.FhirGroup:
+        final companion = (resource as fhir.FhirGroup).companion;
         batch
-          ..insert(
-            fhirGroupHistoryTable,
-            companion.companion as FhirGroupHistoryTableCompanion,
-          )
-          ..insert(fhirGroupTable, companion);
+          ..insert(fhirGroupHistoryTable, companion.companion)
+          ..insert(fhirGroupTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.FhirList:
+        final companion = (resource as fhir.FhirList).companion;
         batch
-          ..insert(
-            fhirListHistoryTable,
-            companion.companion as FhirListHistoryTableCompanion,
-          )
-          ..insert(fhirListTable, companion);
+          ..insert(fhirListHistoryTable, companion.companion)
+          ..insert(fhirListTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Flag:
+        final companion = (resource as fhir.Flag).companion;
         batch
-          ..insert(
-            flagHistoryTable,
-            companion.companion as FlagHistoryTableCompanion,
-          )
-          ..insert(flagTable, companion);
+          ..insert(flagHistoryTable, companion.companion)
+          ..insert(flagTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Goal:
+        final companion = (resource as fhir.Goal).companion;
         batch
-          ..insert(
-            goalHistoryTable,
-            companion.companion as GoalHistoryTableCompanion,
-          )
-          ..insert(goalTable, companion);
+          ..insert(goalHistoryTable, companion.companion)
+          ..insert(goalTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.GraphDefinition:
+        final companion = (resource as fhir.GraphDefinition).companion;
         batch
+          ..insert(graphDefinitionHistoryTable, companion.companion)
           ..insert(
-            graphDefinitionHistoryTable,
-            companion.companion as GraphDefinitionHistoryTableCompanion,
-          )
-          ..insert(graphDefinitionTable, companion);
+            graphDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.GuidanceResponse:
+        final companion = (resource as fhir.GuidanceResponse).companion;
         batch
+          ..insert(guidanceResponseHistoryTable, companion.companion)
           ..insert(
-            guidanceResponseHistoryTable,
-            companion.companion as GuidanceResponseHistoryTableCompanion,
-          )
-          ..insert(guidanceResponseTable, companion);
+            guidanceResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.HealthcareService:
+        final companion = (resource as fhir.HealthcareService).companion;
         batch
+          ..insert(healthcareServiceHistoryTable, companion.companion)
           ..insert(
-            healthcareServiceHistoryTable,
-            companion.companion as HealthcareServiceHistoryTableCompanion,
-          )
-          ..insert(healthcareServiceTable, companion);
+            healthcareServiceTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ImagingStudy:
+        final companion = (resource as fhir.ImagingStudy).companion;
         batch
+          ..insert(imagingStudyHistoryTable, companion.companion)
           ..insert(
-            imagingStudyHistoryTable,
-            companion.companion as ImagingStudyHistoryTableCompanion,
-          )
-          ..insert(imagingStudyTable, companion);
+            imagingStudyTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Immunization:
+        final companion = (resource as fhir.Immunization).companion;
         batch
+          ..insert(immunizationHistoryTable, companion.companion)
           ..insert(
-            immunizationHistoryTable,
-            companion.companion as ImmunizationHistoryTableCompanion,
-          )
-          ..insert(immunizationTable, companion);
+            immunizationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ImmunizationEvaluation:
+        final companion = (resource as fhir.ImmunizationEvaluation).companion;
         batch
+          ..insert(immunizationEvaluationHistoryTable, companion.companion)
           ..insert(
-            immunizationEvaluationHistoryTable,
-            companion.companion as ImmunizationEvaluationHistoryTableCompanion,
-          )
-          ..insert(immunizationEvaluationTable, companion);
+            immunizationEvaluationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ImmunizationRecommendation:
+        final companion =
+            (resource as fhir.ImmunizationRecommendation).companion;
         batch
+          ..insert(immunizationRecommendationHistoryTable, companion.companion)
           ..insert(
-            immunizationRecommendationHistoryTable,
-            companion.companion
-                as ImmunizationRecommendationHistoryTableCompanion,
-          )
-          ..insert(immunizationRecommendationTable, companion);
+            immunizationRecommendationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ImplementationGuide:
+        final companion = (resource as fhir.ImplementationGuide).companion;
         batch
+          ..insert(implementationGuideHistoryTable, companion.companion)
           ..insert(
-            implementationGuideHistoryTable,
-            companion.companion as ImplementationGuideHistoryTableCompanion,
-          )
-          ..insert(implementationGuideTable, companion);
+            implementationGuideTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Ingredient:
+        final companion = (resource as fhir.Ingredient).companion;
         batch
+          ..insert(ingredientHistoryTable, companion.companion)
           ..insert(
-            ingredientHistoryTable,
-            companion.companion as IngredientHistoryTableCompanion,
-          )
-          ..insert(ingredientTable, companion);
+            ingredientTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.InsurancePlan:
+        final companion = (resource as fhir.InsurancePlan).companion;
         batch
+          ..insert(insurancePlanHistoryTable, companion.companion)
           ..insert(
-            insurancePlanHistoryTable,
-            companion.companion as InsurancePlanHistoryTableCompanion,
-          )
-          ..insert(insurancePlanTable, companion);
+            insurancePlanTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Invoice:
+        final companion = (resource as fhir.Invoice).companion;
         batch
-          ..insert(
-            invoiceHistoryTable,
-            companion.companion as InvoiceHistoryTableCompanion,
-          )
-          ..insert(invoiceTable, companion);
+          ..insert(invoiceHistoryTable, companion.companion)
+          ..insert(invoiceTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Library:
+        final companion = (resource as fhir.Library).companion;
         batch
-          ..insert(
-            libraryHistoryTable,
-            companion.companion as LibraryHistoryTableCompanion,
-          )
-          ..insert(libraryTable, companion);
+          ..insert(libraryHistoryTable, companion.companion)
+          ..insert(libraryTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Linkage:
+        final companion = (resource as fhir.Linkage).companion;
         batch
-          ..insert(
-            linkageHistoryTable,
-            companion.companion as LinkageHistoryTableCompanion,
-          )
-          ..insert(linkageTable, companion);
+          ..insert(linkageHistoryTable, companion.companion)
+          ..insert(linkageTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Location:
+        final companion = (resource as fhir.Location).companion;
         batch
-          ..insert(
-            locationHistoryTable,
-            companion.companion as LocationHistoryTableCompanion,
-          )
-          ..insert(locationTable, companion);
+          ..insert(locationHistoryTable, companion.companion)
+          ..insert(locationTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.ManufacturedItemDefinition:
+        final companion =
+            (resource as fhir.ManufacturedItemDefinition).companion;
         batch
+          ..insert(manufacturedItemDefinitionHistoryTable, companion.companion)
           ..insert(
-            manufacturedItemDefinitionHistoryTable,
-            companion.companion
-                as ManufacturedItemDefinitionHistoryTableCompanion,
-          )
-          ..insert(manufacturedItemDefinitionTable, companion);
+            manufacturedItemDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Measure:
+        final companion = (resource as fhir.Measure).companion;
         batch
-          ..insert(
-            measureHistoryTable,
-            companion.companion as MeasureHistoryTableCompanion,
-          )
-          ..insert(measureTable, companion);
+          ..insert(measureHistoryTable, companion.companion)
+          ..insert(measureTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.MeasureReport:
+        final companion = (resource as fhir.MeasureReport).companion;
         batch
+          ..insert(measureReportHistoryTable, companion.companion)
           ..insert(
-            measureReportHistoryTable,
-            companion.companion as MeasureReportHistoryTableCompanion,
-          )
-          ..insert(measureReportTable, companion);
+            measureReportTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Media:
+        final companion = (resource as fhir.Media).companion;
         batch
-          ..insert(
-            mediaHistoryTable,
-            companion.companion as MediaHistoryTableCompanion,
-          )
-          ..insert(mediaTable, companion);
+          ..insert(mediaHistoryTable, companion.companion)
+          ..insert(mediaTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Medication:
+        final companion = (resource as fhir.Medication).companion;
         batch
+          ..insert(medicationHistoryTable, companion.companion)
           ..insert(
-            medicationHistoryTable,
-            companion.companion as MedicationHistoryTableCompanion,
-          )
-          ..insert(medicationTable, companion);
+            medicationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicationAdministration:
+        final companion = (resource as fhir.MedicationAdministration).companion;
         batch
+          ..insert(medicationAdministrationHistoryTable, companion.companion)
           ..insert(
-            medicationAdministrationHistoryTable,
-            companion.companion
-                as MedicationAdministrationHistoryTableCompanion,
-          )
-          ..insert(medicationAdministrationTable, companion);
+            medicationAdministrationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicationDispense:
+        final companion = (resource as fhir.MedicationDispense).companion;
         batch
+          ..insert(medicationDispenseHistoryTable, companion.companion)
           ..insert(
-            medicationDispenseHistoryTable,
-            companion.companion as MedicationDispenseHistoryTableCompanion,
-          )
-          ..insert(medicationDispenseTable, companion);
+            medicationDispenseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicationKnowledge:
+        final companion = (resource as fhir.MedicationKnowledge).companion;
         batch
+          ..insert(medicationKnowledgeHistoryTable, companion.companion)
           ..insert(
-            medicationKnowledgeHistoryTable,
-            companion.companion as MedicationKnowledgeHistoryTableCompanion,
-          )
-          ..insert(medicationKnowledgeTable, companion);
+            medicationKnowledgeTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicationRequest:
+        final companion = (resource as fhir.MedicationRequest).companion;
         batch
+          ..insert(medicationRequestHistoryTable, companion.companion)
           ..insert(
-            medicationRequestHistoryTable,
-            companion.companion as MedicationRequestHistoryTableCompanion,
-          )
-          ..insert(medicationRequestTable, companion);
+            medicationRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicationStatement:
+        final companion = (resource as fhir.MedicationStatement).companion;
         batch
+          ..insert(medicationStatementHistoryTable, companion.companion)
           ..insert(
-            medicationStatementHistoryTable,
-            companion.companion as MedicationStatementHistoryTableCompanion,
-          )
-          ..insert(medicationStatementTable, companion);
+            medicationStatementTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MedicinalProductDefinition:
+        final companion =
+            (resource as fhir.MedicinalProductDefinition).companion;
         batch
+          ..insert(medicinalProductDefinitionHistoryTable, companion.companion)
           ..insert(
-            medicinalProductDefinitionHistoryTable,
-            companion.companion
-                as MedicinalProductDefinitionHistoryTableCompanion,
-          )
-          ..insert(medicinalProductDefinitionTable, companion);
+            medicinalProductDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MessageDefinition:
+        final companion = (resource as fhir.MessageDefinition).companion;
         batch
+          ..insert(messageDefinitionHistoryTable, companion.companion)
           ..insert(
-            messageDefinitionHistoryTable,
-            companion.companion as MessageDefinitionHistoryTableCompanion,
-          )
-          ..insert(messageDefinitionTable, companion);
+            messageDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MessageHeader:
+        final companion = (resource as fhir.MessageHeader).companion;
         batch
+          ..insert(messageHeaderHistoryTable, companion.companion)
           ..insert(
-            messageHeaderHistoryTable,
-            companion.companion as MessageHeaderHistoryTableCompanion,
-          )
-          ..insert(messageHeaderTable, companion);
+            messageHeaderTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.MolecularSequence:
+        final companion = (resource as fhir.MolecularSequence).companion;
         batch
+          ..insert(molecularSequenceHistoryTable, companion.companion)
           ..insert(
-            molecularSequenceHistoryTable,
-            companion.companion as MolecularSequenceHistoryTableCompanion,
-          )
-          ..insert(molecularSequenceTable, companion);
+            molecularSequenceTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.NamingSystem:
+        final companion = (resource as fhir.NamingSystem).companion;
         batch
+          ..insert(namingSystemHistoryTable, companion.companion)
           ..insert(
-            namingSystemHistoryTable,
-            companion.companion as NamingSystemHistoryTableCompanion,
-          )
-          ..insert(namingSystemTable, companion);
+            namingSystemTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.NutritionOrder:
+        final companion = (resource as fhir.NutritionOrder).companion;
         batch
+          ..insert(nutritionOrderHistoryTable, companion.companion)
           ..insert(
-            nutritionOrderHistoryTable,
-            companion.companion as NutritionOrderHistoryTableCompanion,
-          )
-          ..insert(nutritionOrderTable, companion);
+            nutritionOrderTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.NutritionProduct:
+        final companion = (resource as fhir.NutritionProduct).companion;
         batch
+          ..insert(nutritionProductHistoryTable, companion.companion)
           ..insert(
-            nutritionProductHistoryTable,
-            companion.companion as NutritionProductHistoryTableCompanion,
-          )
-          ..insert(nutritionProductTable, companion);
+            nutritionProductTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Observation:
+        final companion = (resource as fhir.Observation).companion;
         batch
+          ..insert(observationHistoryTable, companion.companion)
           ..insert(
-            observationHistoryTable,
-            companion.companion as ObservationHistoryTableCompanion,
-          )
-          ..insert(observationTable, companion);
+            observationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ObservationDefinition:
+        final companion = (resource as fhir.ObservationDefinition).companion;
         batch
+          ..insert(observationDefinitionHistoryTable, companion.companion)
           ..insert(
-            observationDefinitionHistoryTable,
-            companion.companion as ObservationDefinitionHistoryTableCompanion,
-          )
-          ..insert(observationDefinitionTable, companion);
+            observationDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.OperationDefinition:
+        final companion = (resource as fhir.OperationDefinition).companion;
         batch
+          ..insert(operationDefinitionHistoryTable, companion.companion)
           ..insert(
-            operationDefinitionHistoryTable,
-            companion.companion as OperationDefinitionHistoryTableCompanion,
-          )
-          ..insert(operationDefinitionTable, companion);
+            operationDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.OperationOutcome:
+        final companion = (resource as fhir.OperationOutcome).companion;
         batch
+          ..insert(operationOutcomeHistoryTable, companion.companion)
           ..insert(
-            operationOutcomeHistoryTable,
-            companion.companion as OperationOutcomeHistoryTableCompanion,
-          )
-          ..insert(operationOutcomeTable, companion);
+            operationOutcomeTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Organization:
+        final companion = (resource as fhir.Organization).companion;
         batch
+          ..insert(organizationHistoryTable, companion.companion)
           ..insert(
-            organizationHistoryTable,
-            companion.companion as OrganizationHistoryTableCompanion,
-          )
-          ..insert(organizationTable, companion);
+            organizationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.OrganizationAffiliation:
+        final companion = (resource as fhir.OrganizationAffiliation).companion;
         batch
+          ..insert(organizationAffiliationHistoryTable, companion.companion)
           ..insert(
-            organizationAffiliationHistoryTable,
-            companion.companion as OrganizationAffiliationHistoryTableCompanion,
-          )
-          ..insert(organizationAffiliationTable, companion);
+            organizationAffiliationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.PackagedProductDefinition:
+        final companion =
+            (resource as fhir.PackagedProductDefinition).companion;
         batch
+          ..insert(packagedProductDefinitionHistoryTable, companion.companion)
           ..insert(
-            packagedProductDefinitionHistoryTable,
-            companion.companion
-                as PackagedProductDefinitionHistoryTableCompanion,
-          )
-          ..insert(packagedProductDefinitionTable, companion);
+            packagedProductDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Parameters:
+        final companion = (resource as fhir.Parameters).companion;
         batch
+          ..insert(parametersHistoryTable, companion.companion)
           ..insert(
-            parametersHistoryTable,
-            companion.companion as ParametersHistoryTableCompanion,
-          )
-          ..insert(parametersTable, companion);
+            parametersTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Patient:
+        final companion = (resource as fhir.Patient).companion;
         batch
-          ..insert(
-            patientHistoryTable,
-            companion.companion as PatientHistoryTableCompanion,
-          )
-          ..insert(patientTable, companion);
+          ..insert(patientHistoryTable, companion.companion)
+          ..insert(patientTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.PaymentNotice:
+        final companion = (resource as fhir.PaymentNotice).companion;
         batch
+          ..insert(paymentNoticeHistoryTable, companion.companion)
           ..insert(
-            paymentNoticeHistoryTable,
-            companion.companion as PaymentNoticeHistoryTableCompanion,
-          )
-          ..insert(paymentNoticeTable, companion);
+            paymentNoticeTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.PaymentReconciliation:
+        final companion = (resource as fhir.PaymentReconciliation).companion;
         batch
+          ..insert(paymentReconciliationHistoryTable, companion.companion)
           ..insert(
-            paymentReconciliationHistoryTable,
-            companion.companion as PaymentReconciliationHistoryTableCompanion,
-          )
-          ..insert(paymentReconciliationTable, companion);
+            paymentReconciliationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Person:
+        final companion = (resource as fhir.Person).companion;
         batch
-          ..insert(
-            personHistoryTable,
-            companion.companion as PersonHistoryTableCompanion,
-          )
-          ..insert(personTable, companion);
+          ..insert(personHistoryTable, companion.companion)
+          ..insert(personTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.PlanDefinition:
+        final companion = (resource as fhir.PlanDefinition).companion;
         batch
+          ..insert(planDefinitionHistoryTable, companion.companion)
           ..insert(
-            planDefinitionHistoryTable,
-            companion.companion as PlanDefinitionHistoryTableCompanion,
-          )
-          ..insert(planDefinitionTable, companion);
+            planDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Practitioner:
+        final companion = (resource as fhir.Practitioner).companion;
         batch
+          ..insert(practitionerHistoryTable, companion.companion)
           ..insert(
-            practitionerHistoryTable,
-            companion.companion as PractitionerHistoryTableCompanion,
-          )
-          ..insert(practitionerTable, companion);
+            practitionerTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.PractitionerRole:
+        final companion = (resource as fhir.PractitionerRole).companion;
         batch
+          ..insert(practitionerRoleHistoryTable, companion.companion)
           ..insert(
-            practitionerRoleHistoryTable,
-            companion.companion as PractitionerRoleHistoryTableCompanion,
-          )
-          ..insert(practitionerRoleTable, companion);
+            practitionerRoleTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Procedure:
+        final companion = (resource as fhir.Procedure).companion;
         batch
-          ..insert(
-            procedureHistoryTable,
-            companion.companion as ProcedureHistoryTableCompanion,
-          )
-          ..insert(procedureTable, companion);
+          ..insert(procedureHistoryTable, companion.companion)
+          ..insert(procedureTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Provenance:
+        final companion = (resource as fhir.Provenance).companion;
         batch
+          ..insert(provenanceHistoryTable, companion.companion)
           ..insert(
-            provenanceHistoryTable,
-            companion.companion as ProvenanceHistoryTableCompanion,
-          )
-          ..insert(provenanceTable, companion);
+            provenanceTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Questionnaire:
+        final companion = (resource as fhir.Questionnaire).companion;
         batch
+          ..insert(questionnaireHistoryTable, companion.companion)
           ..insert(
-            questionnaireHistoryTable,
-            companion.companion as QuestionnaireHistoryTableCompanion,
-          )
-          ..insert(questionnaireTable, companion);
+            questionnaireTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.QuestionnaireResponse:
+        final companion = (resource as fhir.QuestionnaireResponse).companion;
         batch
+          ..insert(questionnaireResponseHistoryTable, companion.companion)
           ..insert(
-            questionnaireResponseHistoryTable,
-            companion.companion as QuestionnaireResponseHistoryTableCompanion,
-          )
-          ..insert(questionnaireResponseTable, companion);
+            questionnaireResponseTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.RegulatedAuthorization:
+        final companion = (resource as fhir.RegulatedAuthorization).companion;
         batch
+          ..insert(regulatedAuthorizationHistoryTable, companion.companion)
           ..insert(
-            regulatedAuthorizationHistoryTable,
-            companion.companion as RegulatedAuthorizationHistoryTableCompanion,
-          )
-          ..insert(regulatedAuthorizationTable, companion);
+            regulatedAuthorizationTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.RelatedPerson:
+        final companion = (resource as fhir.RelatedPerson).companion;
         batch
+          ..insert(relatedPersonHistoryTable, companion.companion)
           ..insert(
-            relatedPersonHistoryTable,
-            companion.companion as RelatedPersonHistoryTableCompanion,
-          )
-          ..insert(relatedPersonTable, companion);
+            relatedPersonTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.RequestGroup:
+        final companion = (resource as fhir.RequestGroup).companion;
         batch
+          ..insert(requestGroupHistoryTable, companion.companion)
           ..insert(
-            requestGroupHistoryTable,
-            companion.companion as RequestGroupHistoryTableCompanion,
-          )
-          ..insert(requestGroupTable, companion);
+            requestGroupTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ResearchDefinition:
+        final companion = (resource as fhir.ResearchDefinition).companion;
         batch
+          ..insert(researchDefinitionHistoryTable, companion.companion)
           ..insert(
-            researchDefinitionHistoryTable,
-            companion.companion as ResearchDefinitionHistoryTableCompanion,
-          )
-          ..insert(researchDefinitionTable, companion);
+            researchDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ResearchElementDefinition:
+        final companion =
+            (resource as fhir.ResearchElementDefinition).companion;
         batch
+          ..insert(researchElementDefinitionHistoryTable, companion.companion)
           ..insert(
-            researchElementDefinitionHistoryTable,
-            companion.companion
-                as ResearchElementDefinitionHistoryTableCompanion,
-          )
-          ..insert(researchElementDefinitionTable, companion);
+            researchElementDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ResearchStudy:
+        final companion = (resource as fhir.ResearchStudy).companion;
         batch
+          ..insert(researchStudyHistoryTable, companion.companion)
           ..insert(
-            researchStudyHistoryTable,
-            companion.companion as ResearchStudyHistoryTableCompanion,
-          )
-          ..insert(researchStudyTable, companion);
+            researchStudyTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ResearchSubject:
+        final companion = (resource as fhir.ResearchSubject).companion;
         batch
+          ..insert(researchSubjectHistoryTable, companion.companion)
           ..insert(
-            researchSubjectHistoryTable,
-            companion.companion as ResearchSubjectHistoryTableCompanion,
-          )
-          ..insert(researchSubjectTable, companion);
+            researchSubjectTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.RiskAssessment:
+        final companion = (resource as fhir.RiskAssessment).companion;
         batch
+          ..insert(riskAssessmentHistoryTable, companion.companion)
           ..insert(
-            riskAssessmentHistoryTable,
-            companion.companion as RiskAssessmentHistoryTableCompanion,
-          )
-          ..insert(riskAssessmentTable, companion);
+            riskAssessmentTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Schedule:
+        final companion = (resource as fhir.Schedule).companion;
         batch
-          ..insert(
-            scheduleHistoryTable,
-            companion.companion as ScheduleHistoryTableCompanion,
-          )
-          ..insert(scheduleTable, companion);
+          ..insert(scheduleHistoryTable, companion.companion)
+          ..insert(scheduleTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.SearchParameter:
+        final companion = (resource as fhir.SearchParameter).companion;
         batch
+          ..insert(searchParameterHistoryTable, companion.companion)
           ..insert(
-            searchParameterHistoryTable,
-            companion.companion as SearchParameterHistoryTableCompanion,
-          )
-          ..insert(searchParameterTable, companion);
+            searchParameterTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ServiceRequest:
+        final companion = (resource as fhir.ServiceRequest).companion;
         batch
+          ..insert(serviceRequestHistoryTable, companion.companion)
           ..insert(
-            serviceRequestHistoryTable,
-            companion.companion as ServiceRequestHistoryTableCompanion,
-          )
-          ..insert(serviceRequestTable, companion);
+            serviceRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Slot:
+        final companion = (resource as fhir.Slot).companion;
         batch
-          ..insert(
-            slotHistoryTable,
-            companion.companion as SlotHistoryTableCompanion,
-          )
-          ..insert(slotTable, companion);
+          ..insert(slotHistoryTable, companion.companion)
+          ..insert(slotTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.Specimen:
+        final companion = (resource as fhir.Specimen).companion;
         batch
-          ..insert(
-            specimenHistoryTable,
-            companion.companion as SpecimenHistoryTableCompanion,
-          )
-          ..insert(specimenTable, companion);
+          ..insert(specimenHistoryTable, companion.companion)
+          ..insert(specimenTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.SpecimenDefinition:
+        final companion = (resource as fhir.SpecimenDefinition).companion;
         batch
+          ..insert(specimenDefinitionHistoryTable, companion.companion)
           ..insert(
-            specimenDefinitionHistoryTable,
-            companion.companion as SpecimenDefinitionHistoryTableCompanion,
-          )
-          ..insert(specimenDefinitionTable, companion);
+            specimenDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.StructureDefinition:
+        final companion = (resource as fhir.StructureDefinition).companion;
         batch
+          ..insert(structureDefinitionHistoryTable, companion.companion)
           ..insert(
-            structureDefinitionHistoryTable,
-            companion.companion as StructureDefinitionHistoryTableCompanion,
-          )
-          ..insert(structureDefinitionTable, companion);
+            structureDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.StructureMap:
+        final companion = (resource as fhir.StructureMap).companion;
         batch
+          ..insert(structureMapHistoryTable, companion.companion)
           ..insert(
-            structureMapHistoryTable,
-            companion.companion as StructureMapHistoryTableCompanion,
-          )
-          ..insert(structureMapTable, companion);
+            structureMapTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Subscription:
+        final companion = (resource as fhir.Subscription).companion;
         batch
+          ..insert(subscriptionHistoryTable, companion.companion)
           ..insert(
-            subscriptionHistoryTable,
-            companion.companion as SubscriptionHistoryTableCompanion,
-          )
-          ..insert(subscriptionTable, companion);
+            subscriptionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.SubscriptionStatus:
+        final companion = (resource as fhir.SubscriptionStatus).companion;
         batch
+          ..insert(subscriptionStatusHistoryTable, companion.companion)
           ..insert(
-            subscriptionStatusHistoryTable,
-            companion.companion as SubscriptionStatusHistoryTableCompanion,
-          )
-          ..insert(subscriptionStatusTable, companion);
+            subscriptionStatusTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.SubscriptionTopic:
+        final companion = (resource as fhir.SubscriptionTopic).companion;
         batch
+          ..insert(subscriptionTopicHistoryTable, companion.companion)
           ..insert(
-            subscriptionTopicHistoryTable,
-            companion.companion as SubscriptionTopicHistoryTableCompanion,
-          )
-          ..insert(subscriptionTopicTable, companion);
+            subscriptionTopicTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Substance:
+        final companion = (resource as fhir.Substance).companion;
         batch
-          ..insert(
-            substanceHistoryTable,
-            companion.companion as SubstanceHistoryTableCompanion,
-          )
-          ..insert(substanceTable, companion);
+          ..insert(substanceHistoryTable, companion.companion)
+          ..insert(substanceTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.SubstanceDefinition:
+        final companion = (resource as fhir.SubstanceDefinition).companion;
         batch
+          ..insert(substanceDefinitionHistoryTable, companion.companion)
           ..insert(
-            substanceDefinitionHistoryTable,
-            companion.companion as SubstanceDefinitionHistoryTableCompanion,
-          )
-          ..insert(substanceDefinitionTable, companion);
+            substanceDefinitionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.SupplyDelivery:
+        final companion = (resource as fhir.SupplyDelivery).companion;
         batch
+          ..insert(supplyDeliveryHistoryTable, companion.companion)
           ..insert(
-            supplyDeliveryHistoryTable,
-            companion.companion as SupplyDeliveryHistoryTableCompanion,
-          )
-          ..insert(supplyDeliveryTable, companion);
+            supplyDeliveryTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.SupplyRequest:
+        final companion = (resource as fhir.SupplyRequest).companion;
         batch
+          ..insert(supplyRequestHistoryTable, companion.companion)
           ..insert(
-            supplyRequestHistoryTable,
-            companion.companion as SupplyRequestHistoryTableCompanion,
-          )
-          ..insert(supplyRequestTable, companion);
+            supplyRequestTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.Task:
+        final companion = (resource as fhir.Task).companion;
         batch
-          ..insert(
-            taskHistoryTable,
-            companion.companion as TaskHistoryTableCompanion,
-          )
-          ..insert(taskTable, companion);
+          ..insert(taskHistoryTable, companion.companion)
+          ..insert(taskTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.TerminologyCapabilities:
+        final companion = (resource as fhir.TerminologyCapabilities).companion;
         batch
+          ..insert(terminologyCapabilitiesHistoryTable, companion.companion)
           ..insert(
-            terminologyCapabilitiesHistoryTable,
-            companion.companion as TerminologyCapabilitiesHistoryTableCompanion,
-          )
-          ..insert(terminologyCapabilitiesTable, companion);
+            terminologyCapabilitiesTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.TestReport:
+        final companion = (resource as fhir.TestReport).companion;
         batch
+          ..insert(testReportHistoryTable, companion.companion)
           ..insert(
-            testReportHistoryTable,
-            companion.companion as TestReportHistoryTableCompanion,
-          )
-          ..insert(testReportTable, companion);
+            testReportTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.TestScript:
+        final companion = (resource as fhir.TestScript).companion;
         batch
+          ..insert(testScriptHistoryTable, companion.companion)
           ..insert(
-            testScriptHistoryTable,
-            companion.companion as TestScriptHistoryTableCompanion,
-          )
-          ..insert(testScriptTable, companion);
+            testScriptTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.ValueSet:
+        final companion = (resource as fhir.ValueSet).companion;
         batch
-          ..insert(
-            valueSetHistoryTable,
-            companion.companion as ValueSetHistoryTableCompanion,
-          )
-          ..insert(valueSetTable, companion);
+          ..insert(valueSetHistoryTable, companion.companion)
+          ..insert(valueSetTable, companion, mode: InsertMode.insertOrReplace);
       case fhir.R4ResourceType.VerificationResult:
+        final companion = (resource as fhir.VerificationResult).companion;
         batch
+          ..insert(verificationResultHistoryTable, companion.companion)
           ..insert(
-            verificationResultHistoryTable,
-            companion.companion as VerificationResultHistoryTableCompanion,
-          )
-          ..insert(verificationResultTable, companion);
+            verificationResultTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
       case fhir.R4ResourceType.VisionPrescription:
+        final companion = (resource as fhir.VisionPrescription).companion;
         batch
+          ..insert(visionPrescriptionHistoryTable, companion.companion)
           ..insert(
-            visionPrescriptionHistoryTable,
-            companion.companion as VisionPrescriptionHistoryTableCompanion,
-          )
-          ..insert(visionPrescriptionTable, companion);
+            visionPrescriptionTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
     }
   }
 }
@@ -3390,7 +3542,14 @@ extension MedicationAdministrationTableExtension
       resource: Value(resource.toJsonString()),
       patientId: Value(resource.subject.reference!.value!),
       medicationId: Value(
-        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+        resource.medicationX.isAs<fhir.Reference>()?.reference?.value ??
+            resource.medicationX
+                .isAs<fhir.CodeableConcept>()
+                ?.coding
+                ?.firstOrNull
+                ?.code
+                ?.value ??
+            '',
       ),
       effectiveDateTime: Value(
         resource.effectiveX
@@ -3431,7 +3590,14 @@ extension MedicationDispenseTableExtension on fhir.MedicationDispense {
       resource: Value(resource.toJsonString()),
       patientId: Value(resource.subject!.reference!.value!),
       medicationId: Value(
-        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+        resource.medicationX.isAs<fhir.Reference>()?.reference?.value ??
+            resource.medicationX
+                .isAs<fhir.CodeableConcept>()
+                ?.coding
+                ?.firstOrNull
+                ?.code
+                ?.value ??
+            '',
       ),
       quantity: Value(resource.quantity?.value?.toString()),
       daysSupply: Value(resource.daysSupply?.value?.round()),
@@ -3496,7 +3662,14 @@ extension MedicationRequestTableExtension on fhir.MedicationRequest {
       resource: Value(resource.toJsonString()),
       patientId: Value(resource.subject.reference!.value!),
       medicationId: Value(
-        resource.medicationX.isAs<fhir.Reference>()!.reference!.value!,
+        resource.medicationX.isAs<fhir.Reference>()?.reference?.value ??
+            resource.medicationX
+                .isAs<fhir.CodeableConcept>()
+                ?.coding
+                ?.firstOrNull
+                ?.code
+                ?.value ??
+            '',
       ),
       intent: Value(resource.intent.value),
       priority: Value(resource.priority?.value),

@@ -223,6 +223,7 @@ class DbService {
 
   /// Load resources from assets with a specific prefix
   Future<List<String>> loadResourcesFromAssets(String prefix) async {
+    print('loading resources from assets with prefix $prefix');
     final loadedResourceTypes = <String>[];
 
     try {

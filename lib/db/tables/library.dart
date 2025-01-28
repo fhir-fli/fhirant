@@ -14,7 +14,7 @@ class LibraryTable extends Table {
   TextColumn get resource => text()();
 
   /// URL column
-  TextColumn get url => text()();
+  TextColumn get url => text().nullable()();
 
   /// Status column
   TextColumn get status => text()();

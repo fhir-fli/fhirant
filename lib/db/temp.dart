@@ -38,7 +38,7 @@ class ${updatedResource}Table extends Table {
 """;
 
       if (resource.isCanonicalResource) {
-        fileString += """
+        fileString += '''
   /// URL column
   TextColumn get url => text()();
 
@@ -56,7 +56,7 @@ class ${updatedResource}Table extends Table {
         {url},
         {status},
       ];
-""";
+''';
       }
 
       fileString += """
