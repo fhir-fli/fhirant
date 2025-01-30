@@ -42,6 +42,7 @@ class ServerManager {
       // Add middleware and assign the router as the handler
       final handler = const Pipeline()
           .addMiddleware(logRequests())
+          .addMiddleware(authenticate())
           .addHandler(_router.call);
 
       // Access secure storage and check for certificates
