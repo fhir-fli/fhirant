@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/db/db.dart';
+import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
+
+final Logger _logger = Logger('ResourceHandler');
 
 /// Handler to fetch all resources of a given type
 Future<Response> getResourcesHandler(
@@ -9,31 +14,26 @@ Future<Response> getResourcesHandler(
 ) async {
   final dbService = DbService();
   try {
-    // Parse query parameters
-    final queryParams = request.url.queryParameters;
+    _logger.info('Fetching resources of type: $resourceType');
 
-    // Extract pagination parameters
+    final queryParams = request.url.queryParameters;
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
 
     final type = R4ResourceType.fromString(resourceType);
-
     if (type == null) {
+      _logger.warning('Invalid resource type requested: $resourceType');
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Fetch resources with pagination
     final resources = await dbService.getResourcesWithPagination(
       resourceType: type,
       count: count,
       offset: offset,
     );
 
-    // Build the base URL dynamically from the request
     final baseUrl =
         '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
-
-    // Build FHIR Bundle
     final bundle = Bundle(
       type: BundleType.searchset,
       entry:
@@ -48,11 +48,20 @@ Future<Response> getResourcesHandler(
       total: FhirUnsignedInt(resources.length),
     );
 
+    _logger.info(
+      'Successfully fetched ${resources.length} '
+      'resources of type: $resourceType',
+    );
     return Response.ok(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    _logger.severe(
+      'Failed to fetch resources of type: $resourceType',
+      e,
+      stackTrace,
+    );
     return _errorResponse('Failed to fetch resources', e.toString());
   }
 }
@@ -67,14 +76,21 @@ Future<Response> postResourceHandler(
     final resource = Resource.fromJsonString(body);
 
     if (resource.resourceTypeString != resourceType) {
+      _logger.warning(
+        'Resource type mismatch: expected $resourceType, '
+        'got ${resource.resourceTypeString}',
+      );
       return _validationErrorResponse(
         'Resource type in URL does not match resource type in body',
       );
     }
 
     final result = await DbService().saveResource(resource);
-
     if (result) {
+      _logger.info(
+        'Resource of type $resourceType saved successfully with ID: '
+        '${resource.id}',
+      );
       return Response(
         201,
         body: resource.toJsonString(),
@@ -84,12 +100,18 @@ Future<Response> postResourceHandler(
         },
       );
     } else {
+      _logger.severe('Failed to save resource of type: $resourceType');
       return _errorResponse(
         'Failed to save resource',
         'Database operation failed',
       );
     }
-  } catch (e) {
+  } catch (e, stackTrace) {
+    _logger.severe(
+      'Error processing request for resource type: $resourceType',
+      e,
+      stackTrace,
+    );
     return _errorResponse(
       'Error processing request',
       e.toString(),
@@ -109,33 +131,89 @@ Future<Response> putResourceHandler(
     final updatedResource = Resource.fromJsonString(body);
 
     if (updatedResource.resourceTypeString != resourceType) {
+      _logger.warning(
+        'Resource type mismatch in update: expected $resourceType, '
+        'got ${updatedResource.resourceTypeString}',
+      );
       return _validationErrorResponse(
         'Resource type in URL does not match resource type in body',
       );
     }
 
     if (updatedResource.id?.value != id) {
+      _logger.warning(
+        'Resource ID mismatch in update: expected $id, '
+        'got ${updatedResource.id?.value}',
+      );
       return _validationErrorResponse(
         'Resource ID in URL does not match resource ID in body',
       );
     }
 
     final success = await DbService().saveResource(updatedResource);
-
     if (success) {
+      _logger.info(
+        'Resource of type $resourceType updated successfully with ID: $id',
+      );
       return Response(
         200,
         body: updatedResource.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     } else {
+      _logger.severe(
+        'Failed to update resource of type: $resourceType with ID: $id',
+      );
       return _errorResponse(
         'Failed to update resource',
         'Database operation failed',
       );
     }
-  } catch (e) {
+  } catch (e, stackTrace) {
+    _logger.severe(
+      'Error updating resource of type: $resourceType with ID: $id',
+      e,
+      stackTrace,
+    );
     return _errorResponse('Error updating resource', e.toString());
+  }
+}
+
+/// Handler to fetch a specific resource by its type and ID
+Future<Response> getResourceByIdHandler(
+  Request request,
+  String resourceType,
+  String id,
+) async {
+  try {
+    final type = R4ResourceType.fromString(resourceType);
+    if (type == null) {
+      _logger.warning('Invalid resource type requested: $resourceType');
+      return _validationErrorResponse('Invalid resource type');
+    }
+
+    final resource = await DbService().getResource(type, id);
+    if (resource != null) {
+      _logger.info('Resource of type $resourceType with ID $id found.');
+      return Response.ok(
+        resource.toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } else {
+      _logger.warning('Resource of type $resourceType with ID $id not found.');
+      return Response(
+        404,
+        body: jsonEncode({'error': 'Resource not found'}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+  } catch (e, stackTrace) {
+    _logger.severe(
+      'Error fetching resource of type: $resourceType with ID: $id',
+      e,
+      stackTrace,
+    );
+    return _errorResponse('Failed to fetch resource', e.toString());
   }
 }
 
@@ -155,6 +233,7 @@ Response _errorResponse(
     ],
   );
 
+  _logger.warning('Error Response: $message - $details');
   return Response(
     statusCode,
     body: operationOutcome.toJsonString(),
@@ -174,55 +253,10 @@ Response _validationErrorResponse(String message) {
     ],
   );
 
+  _logger.warning('Validation Error: $message');
   return Response(
     400,
     body: operationOutcome.toJsonString(),
     headers: {'Content-Type': 'application/json'},
   );
-}
-
-/// Handler to fetch a specific resource by its type and ID
-Future<Response> getResourceByIdHandler(
-  Request request,
-  String resourceType,
-  String id,
-) async {
-  try {
-    final type = R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      return _validationErrorResponse('Invalid resource type');
-    }
-    // Retrieve the resource from the database
-    final resource = await DbService().getResource(type, id);
-
-    if (resource != null) {
-      // Resource found, return it
-      return Response.ok(
-        resource.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    } else {
-      // Resource not found, return an error
-      final operationOutcome = OperationOutcome(
-        issue: [
-          OperationOutcomeIssue(
-            severity: IssueSeverity.error,
-            code: IssueType.not_found,
-            diagnostics:
-                'Resource of type $resourceType with ID $id not found.'
-                    .toFhirString,
-          ),
-        ],
-      );
-
-      return Response(
-        404,
-        body: operationOutcome.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-  } catch (e) {
-    // Handle unexpected errors
-    return _errorResponse('Failed to fetch resource', e.toString());
-  }
 }

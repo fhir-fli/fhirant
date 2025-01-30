@@ -37,6 +37,8 @@ class ServerManager {
     }
 
     try {
+      LoggingService.initialize(); // ✅ Initialize logging
+      LoggingService.logInfo('Initializing routes...');
       _initializeRoutes();
 
       // Add middleware and assign the router as the handler
@@ -67,6 +69,8 @@ class ServerManager {
             ..useCertificateChainBytes(certificatePem!.codeUnits)
             ..usePrivateKeyBytes(privateKeyPem!.codeUnits);
 
+      LoggingService.logInfo('Starting server on port $port...');
+
       // Bind the server to any IPv4 address
       _server = await serve(
         handler,
@@ -75,12 +79,16 @@ class ServerManager {
         securityContext: securityContext,
       );
 
+      LoggingService.logInfo(
+        'Server started at https://${_server!.address.address}:${_server!.port}',
+      );
       // Print the server address
       print(
         'Server started at https://${_server!.address.address}:${_server!.port}',
       );
-    } catch (e) {
+    } catch (e, st) {
       print('Error starting the server: $e');
+      LoggingService.logError('Error starting the server', e, st);
       throw Exception('Failed to start the server');
     }
   }

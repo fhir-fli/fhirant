@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
+
+final Logger _logger = Logger('ValidationHandler');
 
 /// Validation Handler
 Future<Response> validateHandler(Request request) async {
   try {
+    _logger.info('Received validation request');
+    
     // Read the request body
     final body = await request.readAsString();
 
@@ -16,23 +21,22 @@ Future<Response> validateHandler(Request request) async {
     // Generate an OperationOutcome from the results
     final operationOutcome = validationResults.toOperationOutcome();
 
-    // Determine the response based on the severity of results
     if (validationResults.hasErrors) {
-      // Return 400 for errors
+      _logger.warning('FHIR validation failed');
       return Response(
         400,
         body: operationOutcome.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     } else {
-      // Return 200 for valid or warnings
+      _logger.info('FHIR validation passed');
       return Response.ok(
         operationOutcome.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
-  } catch (e) {
-    // Handle invalid input or unexpected exceptions
+  } catch (e, stackTrace) {
+    _logger.severe('Validation failed due to an exception', e, stackTrace);
     return Response(
       400,
       body: jsonEncode({'error': 'Invalid request', 'message': e.toString()}),
