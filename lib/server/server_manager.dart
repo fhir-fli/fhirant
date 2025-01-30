@@ -106,6 +106,7 @@ class ServerManager {
     _router
       ..get('/', baseHandler) // Welcome route
       ..get('/favicon.ico', favicoHandler)
+      ..post('/register', registerHandler) // Register route
       ..post('/login', loginHandler) // Login route
       ..get('/metadata', metadataHandler) // Capability statement
       ..all(r'/$validate', validateHandler) // Global validation

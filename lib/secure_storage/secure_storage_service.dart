@@ -14,8 +14,36 @@ class SecureStorageService {
   /// Certificate key for secure storage
   static const certificateKey = 'fhirant_certificate_key';
 
+  /// Secure storage key prefix for passkeys
+  static const passkeyPrefix = 'fhirant_passkey_';
+
   /// FlutterSecureStorage instance
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
+
+  /// Save a passkey securely
+  Future<void> storePasskey(String username, String credential) async {
+    try {
+      final key = '$passkeyPrefix$username';
+      await secureStorage.write(key: key, value: credential);
+      print('Passkey saved successfully for $username.');
+    } catch (e) {
+      print('Error saving passkey: $e');
+      rethrow;
+    }
+  }
+
+  /// Save a passkey securely
+  Future<String?> getPasskey(String username) async {
+    try {
+      final key = '$passkeyPrefix$username';
+      final credentials = await secureStorage.read(key: key);
+      if (credentials == null) print('No Passkey found in storage.');
+      return credentials;
+    } catch (e) {
+      print('Error saving passkey: $e');
+      rethrow;
+    }
+  }
 
   /// Save the encryption key securely
   Future<void> saveEncryptionKey(String key) async {

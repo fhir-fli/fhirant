@@ -81,7 +81,7 @@ class AppDatabase extends _$AppDatabase {
       groupedResources.putIfAbsent(type, () => []).add(resource);
     }
 
-    int totalErrors = 0;
+    var totalErrors = 0;
 
     try {
       await batch((batch) async {

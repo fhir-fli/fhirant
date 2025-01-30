@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_passkey
   flutter_secure_storage_linux
   sqlcipher_flutter_libs
 )
