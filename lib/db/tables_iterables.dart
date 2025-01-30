@@ -4,6 +4,10 @@ import 'package:fhirant/fhirant.dart';
 
 /// Iterable list of all FHIR tables
 const tablesList = [
+  /// Utility tables
+  Logs,
+
+  /// ResourceType Tables
   AccountTable,
   AccountHistoryTable,
   ActivityDefinitionTable,

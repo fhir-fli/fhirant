@@ -35,6 +35,38 @@ class DbService {
     }
   }
 
+  /// Insert a structured log entry into the database
+  Future<void> insertLog({
+    required String level,
+    required String message,
+    String? method,
+    String? url,
+    int? statusCode,
+    int? responseTime,
+    String? clientIp,
+    String? user,
+    String? stackTrace,
+  }) async {
+    await _db
+        .into(_db.logs)
+        .insert(
+          LogsCompanion(
+            level: Value(level),
+            message: Value(message),
+            method: Value(method),
+            url: Value(url),
+            statusCode: Value(statusCode),
+            responseTime: Value(responseTime),
+            clientIp: Value(clientIp),
+            user: Value(user),
+            stackTrace: Value(stackTrace),
+            timestamp: Value(
+              DateTime.now(),
+            ), // Ensure correct timestamp insertion
+          ),
+        );
+  }
+
   /// Fetch all resources of a specific type as strings
   Future<List<String>> getAllResourcesStrings(
     R4ResourceType resourceType,

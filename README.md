@@ -15,23 +15,12 @@
 - Prevent unauthorized JavaScript-based requests.
 - Compression (Gzip/Deflate Support) → (Medium Priority)
 - Reduce response size for large FHIR JSON responses.
-- Logging & Monitoring
-    - Log all requests, errors, and security events.
-    - Structured logging in JSON format (for easy debugging).
-    - Store logs in SQLite or files.
-- Access Logs → (Medium Priority)
-    - Track IP addresses, request patterns, and API usage.
-    - Could be useful for detecting abuse or usage trends.
-    - Error Monitoring & Alerts → (Low Priority)
-- Store error logs and allow for later debugging.
-- Optionally, send logs remotely when online.
 - Server Execution & Performance
     - Run the FHIR Server in a Separate Isolate (Background Execution) → (High Priority)
 - Ensure the server continues running even if the app is minimized.
     - Use Isolate.spawn() and flutter_background_service.
 - Optimize Query Performance → (Low Priority)
 - Needed later for notifying clients of new data.
-Logging System (Structured Logs, Error Logs, Access Logs)	High	Implement structured JSON logging, store in SQLite
 Run Server in Background Isolate	High	Use Isolate.spawn() and flutter_background_service
 Rate Limiting & IP Blocking	Medium	Prevent abuse by limiting requests & tracking malicious activity
 CORS Policy & Security Enhancements	Medium	Restrict origins if needed, prevent unauthorized API access
