@@ -1,5 +1,8 @@
 // ignore_for_file: avoid_print
 
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:basic_utils/basic_utils.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -59,8 +62,13 @@ class SecureStorageService {
   /// Retrieve the encryption key securely
   Future<String?> getEncryptionKey() async {
     try {
-      final key = await secureStorage.read(key: encryptionKey);
-      if (key == null) print('No encryption key found in storage.');
+      var key = await secureStorage.read(key: encryptionKey);
+
+      if (key == null) {
+        key = _generateEncryptionKey();
+        await secureStorage.write(key: encryptionKey, value: key);
+        print('New encryption key generated and stored securely.');
+      }
       return key;
     } catch (e) {
       print('Error retrieving encryption key: $e');
@@ -180,5 +188,12 @@ class SecureStorageService {
       print('Error generating secure random key: $e');
       rethrow;
     }
+  }
+
+  /// Generate a secure 256-bit encryption key
+  String _generateEncryptionKey() {
+    final random = Random.secure();
+    final key = List<int>.generate(32, (i) => random.nextInt(256));
+    return base64Url.encode(key);
   }
 }
