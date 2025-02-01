@@ -1,32 +1,11 @@
 # System Design Goals
 
-## Passkey Control and JWT Authentication
-
-- **Goal:** Enforce passkey-based logins, store user credentials securely, and issue JWT tokens for session management.
-- **Approach:**
-  - Store the JWT signing `_secretKey` securely, avoiding hardcoding.
-  - Expand the `authenticate()` middleware to validate JWT scopes and roles.
-  - Consider adding passkey revocation/renewal functionality.
-- **Notes:** Since multiple users may register on the same device, consider implementing a more robust user management system if concurrency or multi-tenant usage increases.
-
----
-
 ## Restrict Access to FHIR Endpoints
 
 - **Goal:** Prevent unauthorized or anonymous modifications to resources.
 - **Approach:**
-  - Use the same JWT middleware to check roles and permissions before allowing certain routes (e.g., POST, PUT, DELETE).
-  - Consider role-based or resource-type-level restrictions.
-
----
-
-## Rate Limiting
-
-- **Goal:** Limit the number of requests per second/minute from a single IP or user.
-- **Approach:**
-  - Use an in-memory cache or SQLite table to track request counts per IP.
-  - Return a 429 (Too Many Requests) response when thresholds are exceeded.
-- **Notes:** Helps prevent denial-of-service or brute-force attempts.
+  - Use the same authentication middleware to check for user permissions before allowing certain routes (e.g., POST, PUT, DELETE).
+  - Consider implementing resource-type-level restrictions or access control lists (ACLs).
 
 ---
 
@@ -107,12 +86,6 @@
 ## Concurrency & Transaction Safety
 
 - **Notes:** If scaling to multiple isolates or devices, ensure SQLite concurrency remains safe. Drift can handle concurrency with a single writer, but you may need a single connection approach or a more robust synchronization strategy.
-
----
-
-## Real Certificates vs. Self-Signed
-
-- **Notes:** In real-world contexts, it’s better to obtain a legitimate certificate from a Certificate Authority (CA). Self-signed certificates may trigger warnings or rejections unless manually trusted.
 
 ---
 

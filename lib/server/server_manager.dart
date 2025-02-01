@@ -5,6 +5,7 @@ import 'package:fhirant/fhirant.dart';
 import 'package:fhirant/server/handlers/favico_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
+import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';  
 import 'package:shelf_router/shelf_router.dart' as shelf;
 
 /// A singleton class to manage the server lifecycle and routing
@@ -71,40 +72,48 @@ class ServerManager {
     String? privateKeyPem,
     String? certificatePem,
   ) async {
-    final router =
-        shelf.Router()
-          // ✅ Pass `_dbService` to each handler
-          ..get('/', baseHandler)
-          ..get('/favicon.ico', favicoHandler)
-          ..post('/register', registerHandler)
-          ..post('/login', loginHandler)
-          ..get('/metadata', metadataHandler)
-          ..all(r'/$validate', validateHandler)
-          ..all(r'/<resourceType>/$validate', validateHandler)
-          ..get(
-            '/<resourceType>',
-            (Request req, String resourceType) =>
-                getResourcesHandler(req, resourceType, _dbService),
-          )
-          ..post(
-            '/<resourceType>',
-            (Request req, String resourceType) =>
-                postResourceHandler(req, resourceType, _dbService),
-          )
-          ..get(
-            '/<resourceType>/<id>',
-            (Request req, String resourceType, String id) =>
-                getResourceByIdHandler(req, resourceType, id, _dbService),
-          )
-          ..put(
-            '/<resourceType>/<id>',
-            (Request req, String resourceType, String id) =>
-                putResourceHandler(req, resourceType, id, _dbService),
-          );
+    // Setup rate limiting
+    final memoryStorage = MemStorage();  // In-memory storage for rate limiting
+    final rateLimiter = ShelfRateLimiter(
+      storage: memoryStorage,
+      duration: const Duration(seconds: 60), // 60-second window
+      maxRequests: 10, // 10 requests per minute
+    );
+
+    final router = shelf.Router()
+      // ✅ Pass `_dbService` to each handler
+      ..get('/', baseHandler)
+      ..get('/favicon.ico', favicoHandler)
+      ..post('/register', registerHandler)
+      ..post('/login', loginHandler)
+      ..get('/metadata', metadataHandler)
+      ..all(r'/$validate', validateHandler)
+      ..all(r'/<resourceType>/$validate', validateHandler)
+      ..get(
+        '/<resourceType>',
+        (Request req, String resourceType) =>
+            getResourcesHandler(req, resourceType, _dbService),
+      )
+      ..post(
+        '/<resourceType>',
+        (Request req, String resourceType) =>
+            postResourceHandler(req, resourceType, _dbService),
+      )
+      ..get(
+        '/<resourceType>/<id>',
+        (Request req, String resourceType, String id) =>
+            getResourceByIdHandler(req, resourceType, id, _dbService),
+      )
+      ..put(
+        '/<resourceType>/<id>',
+        (Request req, String resourceType, String id) =>
+            putResourceHandler(req, resourceType, id, _dbService),
+      );
 
     final handler = const Pipeline()
         .addMiddleware(_logRequestsMiddleware())
         .addMiddleware(authenticate())
+        .addMiddleware(rateLimiter.rateLimiter())  // Add rate limiting here
         .addHandler(router.call);
 
     if (privateKeyPem == null || certificatePem == null) {
