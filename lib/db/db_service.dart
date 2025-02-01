@@ -26,6 +26,11 @@ class DbService {
     _db = AppDatabase();
   }
 
+  /// Initialize the database for testing
+  Future<void> initializeForTest(AppDatabase db) async {
+    _db = db;
+  }
+
   /// Close the database connection
   void close() {
     try {
