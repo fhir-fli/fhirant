@@ -1,9 +1,7 @@
-// ignore_for_file: avoid_print
-
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:basic_utils/basic_utils.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Secure Storage Service
@@ -28,22 +26,30 @@ class SecureStorageService {
     try {
       final key = '$passkeyPrefix$username';
       await secureStorage.write(key: key, value: credential);
-      print('Passkey saved successfully for $username.');
+      FhirAntLoggingService().logInfo(
+        'Passkey saved securely for user: $username.',
+      );
     } catch (e) {
-      print('Error saving passkey: $e');
+      FhirAntLoggingService().logError(
+        'Error saving passkey for user $username: $e',
+      );
       rethrow;
     }
   }
 
-  /// Save a passkey securely
+  /// Retrieve a stored passkey securely
   Future<String?> getPasskey(String username) async {
     try {
       final key = '$passkeyPrefix$username';
       final credentials = await secureStorage.read(key: key);
-      if (credentials == null) print('No Passkey found in storage.');
+      if (credentials == null) {
+        FhirAntLoggingService().logInfo('No passkey found for user $username.');
+      }
       return credentials;
     } catch (e) {
-      print('Error saving passkey: $e');
+      FhirAntLoggingService().logError(
+        'Error retrieving passkey for user $username: $e',
+      );
       rethrow;
     }
   }
@@ -52,9 +58,9 @@ class SecureStorageService {
   Future<void> saveEncryptionKey(String key) async {
     try {
       await secureStorage.write(key: encryptionKey, value: key);
-      print('Encryption key saved successfully.');
+      FhirAntLoggingService().logInfo('Encryption key saved securely.');
     } catch (e) {
-      print('Error saving encryption key: $e');
+      FhirAntLoggingService().logError('Error saving encryption key: $e');
       rethrow;
     }
   }
@@ -67,11 +73,13 @@ class SecureStorageService {
       if (key == null) {
         key = _generateEncryptionKey();
         await secureStorage.write(key: encryptionKey, value: key);
-        print('New encryption key generated and stored securely.');
+        FhirAntLoggingService().logInfo(
+          'New encryption key generated and stored securely.',
+        );
       }
       return key;
     } catch (e) {
-      print('Error retrieving encryption key: $e');
+      FhirAntLoggingService().logError('Error retrieving encryption key: $e');
       rethrow;
     }
   }
@@ -85,9 +93,9 @@ class SecureStorageService {
   Future<void> savePrivateKey(String key) async {
     try {
       await secureStorage.write(key: privateKeyKey, value: key);
-      print('Private key saved successfully.');
+      FhirAntLoggingService().logInfo('Private key saved securely.');
     } catch (e) {
-      print('Error saving private key: $e');
+      FhirAntLoggingService().logError('Error saving private key: $e');
       rethrow;
     }
   }
@@ -96,9 +104,9 @@ class SecureStorageService {
   Future<void> saveCertificate(String certificate) async {
     try {
       await secureStorage.write(key: certificateKey, value: certificate);
-      print('Certificate saved successfully.');
+      FhirAntLoggingService().logInfo('Certificate saved securely.');
     } catch (e) {
-      print('Error saving certificate: $e');
+      FhirAntLoggingService().logError('Error saving certificate: $e');
       rethrow;
     }
   }
@@ -107,10 +115,12 @@ class SecureStorageService {
   Future<String?> getPrivateKey() async {
     try {
       final key = await secureStorage.read(key: privateKeyKey);
-      if (key == null) print('No private key found in storage.');
+      if (key == null) {
+        FhirAntLoggingService().logInfo('No private key found in storage.');
+      }
       return key;
     } catch (e) {
-      print('Error retrieving private key: $e');
+      FhirAntLoggingService().logError('Error retrieving private key: $e');
       rethrow;
     }
   }
@@ -119,10 +129,12 @@ class SecureStorageService {
   Future<String?> getCertificate() async {
     try {
       final cert = await secureStorage.read(key: certificateKey);
-      if (cert == null) print('No certificate found in storage.');
+      if (cert == null) {
+        FhirAntLoggingService().logInfo('No certificate found in storage.');
+      }
       return cert;
     } catch (e) {
-      print('Error retrieving certificate: $e');
+      FhirAntLoggingService().logError('Error retrieving certificate: $e');
       rethrow;
     }
   }
@@ -130,22 +142,22 @@ class SecureStorageService {
   /// Generate a self-signed certificate
   Future<Map<String, String>> generateSelfSignedCertificate() async {
     try {
-      print('Generating RSA key pair...');
+      FhirAntLoggingService().logInfo('Generating RSA key pair...');
       final keyPair = CryptoUtils.generateRSAKeyPair();
 
-      print('Encoding private key in PEM format...');
+      FhirAntLoggingService().logInfo('Encoding private key in PEM format...');
       final privateKeyPem = CryptoUtils.encodeRSAPrivateKeyToPem(
         keyPair.privateKey as RSAPrivateKey,
       );
 
-      print('Generating CSR...');
+      FhirAntLoggingService().logInfo('Generating CSR...');
       final csr = X509Utils.generateRsaCsrPem(
         {'CN': 'localhost'},
         keyPair.privateKey as RSAPrivateKey,
         keyPair.publicKey as RSAPublicKey,
       );
 
-      print('Generating self-signed certificate...');
+      FhirAntLoggingService().logInfo('Generating self-signed certificate...');
       final certificatePem = X509Utils.generateSelfSignedCertificate(
         keyPair.privateKey as RSAPrivateKey,
         csr,
@@ -158,14 +170,18 @@ class SecureStorageService {
       await savePrivateKey(privateKeyPem);
       await saveCertificate(certificatePem);
 
-      print('Self-signed certificate generated successfully.');
+      FhirAntLoggingService().logInfo(
+        'Self-signed certificate generated successfully.',
+      );
       return {
         'privateKey': privateKeyPem,
         'certificate': certificatePem,
         'csr': csr,
       };
     } catch (e) {
-      print('Error generating self-signed certificate: $e');
+      FhirAntLoggingService().logError(
+        'Error generating self-signed certificate: $e',
+      );
       rethrow;
     }
   }
@@ -185,7 +201,9 @@ class SecureStorageService {
 
       return buffer.toString();
     } catch (e) {
-      print('Error generating secure random key: $e');
+      FhirAntLoggingService().logError(
+        'Error generating secure random key: $e',
+      );
       rethrow;
     }
   }

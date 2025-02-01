@@ -18,7 +18,7 @@ Middleware authenticate() {
 
       final authHeader = request.headers['Authorization'];
       if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-        LoggingService.logWarning('Unauthorized request to $path');
+        FhirAntLoggingService().logWarning('Unauthorized request to $path');
         return Response.forbidden(jsonEncode({'error': 'Unauthorized'}));
       }
 
@@ -26,15 +26,16 @@ Middleware authenticate() {
         final token = authHeader.substring(7);
         final jwt = JWT.verify(token, SecretKey(_secretKey));
 
-        LoggingService.logInfo(
-          // ignore: avoid_dynamic_calls
-          'Authenticated request to $path by ${jwt.payload['username']}',
+        // Log the authenticated request, but avoid logging sensitive user data
+        FhirAntLoggingService().logInfo(
+          'Authenticated request to $path by user '
+          '${(jwt.payload as Map<String, dynamic>)['username']}',
         );
 
         final updatedRequest = request.change(context: {'user': jwt.payload});
         return innerHandler(updatedRequest);
       } catch (e) {
-        LoggingService.logWarning('Invalid token used for $path');
+        FhirAntLoggingService().logWarning('Invalid token used for $path');
         return Response.forbidden(jsonEncode({'error': 'Invalid token'}));
       }
     };

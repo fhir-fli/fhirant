@@ -3,10 +3,7 @@ import 'dart:math';
 
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter_passkey/flutter_passkey.dart';
-import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
-
-final Logger _logger = Logger('RegisterHandler');
 
 /// Generates a secure random challenge for WebAuthn authentication
 String _generateChallenge() {
@@ -22,17 +19,19 @@ Future<Response> registerHandler(Request request) async {
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
 
     if (!requestData.containsKey('username')) {
-      _logger.warning('Registration attempt without username');
+      FhirAntLoggingService().logWarning(
+        'Registration attempt without username',
+      );
       return Response(400, body: jsonEncode({'error': 'Username required'}));
     }
 
     final username = requestData['username'];
     if (username is! String) {
-      _logger.warning('Invalid username format: $username');
+      FhirAntLoggingService().logWarning('Invalid username format: $username');
       return Response(400, body: jsonEncode({'error': 'Invalid username'}));
     }
 
-    _logger.info('Registration attempt for user: $username');
+    FhirAntLoggingService().logInfo('Registration attempt for user: $username');
     final challenge = _generateChallenge();
 
     // Create WebAuthn registration options
@@ -58,7 +57,9 @@ Future<Response> registerHandler(Request request) async {
     // Call `createCredential` to generate a passkey
     final credential = await FlutterPasskey().createCredential(options);
     if (credential.isEmpty) {
-      _logger.warning('Failed to generate passkey for user: $username');
+      FhirAntLoggingService().logWarning(
+        'Failed to generate passkey for user: $username',
+      );
       return Response(
         500,
         body: jsonEncode({'error': 'Passkey generation failed'}),
@@ -69,12 +70,12 @@ Future<Response> registerHandler(Request request) async {
     final storage = SecureStorageService();
     await storage.storePasskey(username, credential);
 
-    _logger.info('User registered successfully: $username');
+    FhirAntLoggingService().logInfo('User registered successfully: $username');
     return Response.ok(
       jsonEncode({'message': 'User registered', 'challenge': challenge}),
     );
   } catch (e, stackTrace) {
-    _logger.severe('Registration failed', e, stackTrace);
+    FhirAntLoggingService().logError('Registration failed', e, stackTrace);
     return Response(
       500,
       body: jsonEncode({'error': 'Registration failed: $e'}),

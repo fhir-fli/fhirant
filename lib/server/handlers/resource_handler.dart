@@ -1,20 +1,19 @@
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/db/db.dart';
-import 'package:logging/logging.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:shelf/shelf.dart';
-
-final Logger _logger = Logger('ResourceHandler');
 
 /// Handler to fetch all resources of a given type
 Future<Response> getResourcesHandler(
   Request request,
   String resourceType,
+  DbService dbService,
 ) async {
-  final dbService = DbService();
   try {
-    _logger.info('Fetching resources of type: $resourceType');
+    FhirAntLoggingService().logInfo(
+      'Fetching resources of type: $resourceType',
+    );
 
     final queryParams = request.url.queryParameters;
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
@@ -22,7 +21,9 @@ Future<Response> getResourcesHandler(
 
     final type = R4ResourceType.fromString(resourceType);
     if (type == null) {
-      _logger.warning('Invalid resource type requested: $resourceType');
+      FhirAntLoggingService().logWarning(
+        'Invalid resource type requested: $resourceType',
+      );
       return _validationErrorResponse('Invalid resource type');
     }
 
@@ -48,7 +49,7 @@ Future<Response> getResourcesHandler(
       total: FhirUnsignedInt(resources.length),
     );
 
-    _logger.info(
+    FhirAntLoggingService().logInfo(
       'Successfully fetched ${resources.length} '
       'resources of type: $resourceType',
     );
@@ -57,7 +58,7 @@ Future<Response> getResourcesHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    _logger.severe(
+    FhirAntLoggingService().logError(
       'Failed to fetch resources of type: $resourceType',
       e,
       stackTrace,
@@ -70,13 +71,14 @@ Future<Response> getResourcesHandler(
 Future<Response> postResourceHandler(
   Request request,
   String resourceType,
+  DbService dbService,
 ) async {
   try {
     final body = await request.readAsString();
     final resource = Resource.fromJsonString(body);
 
     if (resource.resourceTypeString != resourceType) {
-      _logger.warning(
+      FhirAntLoggingService().logWarning(
         'Resource type mismatch: expected $resourceType, '
         'got ${resource.resourceTypeString}',
       );
@@ -85,9 +87,9 @@ Future<Response> postResourceHandler(
       );
     }
 
-    final result = await DbService().saveResource(resource);
+    final result = await dbService.saveResource(resource);
     if (result) {
-      _logger.info(
+      FhirAntLoggingService().logInfo(
         'Resource of type $resourceType saved successfully with ID: '
         '${resource.id}',
       );
@@ -100,14 +102,16 @@ Future<Response> postResourceHandler(
         },
       );
     } else {
-      _logger.severe('Failed to save resource of type: $resourceType');
+      FhirAntLoggingService().logError(
+        'Failed to save resource of type: $resourceType',
+      );
       return _errorResponse(
         'Failed to save resource',
         'Database operation failed',
       );
     }
   } catch (e, stackTrace) {
-    _logger.severe(
+    FhirAntLoggingService().logError(
       'Error processing request for resource type: $resourceType',
       e,
       stackTrace,
@@ -125,13 +129,14 @@ Future<Response> putResourceHandler(
   Request request,
   String resourceType,
   String id,
+  DbService dbService,
 ) async {
   try {
     final body = await request.readAsString();
     final updatedResource = Resource.fromJsonString(body);
 
     if (updatedResource.resourceTypeString != resourceType) {
-      _logger.warning(
+      FhirAntLoggingService().logWarning(
         'Resource type mismatch in update: expected $resourceType, '
         'got ${updatedResource.resourceTypeString}',
       );
@@ -141,7 +146,7 @@ Future<Response> putResourceHandler(
     }
 
     if (updatedResource.id?.value != id) {
-      _logger.warning(
+      FhirAntLoggingService().logWarning(
         'Resource ID mismatch in update: expected $id, '
         'got ${updatedResource.id?.value}',
       );
@@ -150,9 +155,9 @@ Future<Response> putResourceHandler(
       );
     }
 
-    final success = await DbService().saveResource(updatedResource);
+    final success = await dbService.saveResource(updatedResource);
     if (success) {
-      _logger.info(
+      FhirAntLoggingService().logInfo(
         'Resource of type $resourceType updated successfully with ID: $id',
       );
       return Response(
@@ -161,7 +166,7 @@ Future<Response> putResourceHandler(
         headers: {'Content-Type': 'application/json'},
       );
     } else {
-      _logger.severe(
+      FhirAntLoggingService().logError(
         'Failed to update resource of type: $resourceType with ID: $id',
       );
       return _errorResponse(
@@ -170,7 +175,7 @@ Future<Response> putResourceHandler(
       );
     }
   } catch (e, stackTrace) {
-    _logger.severe(
+    FhirAntLoggingService().logError(
       'Error updating resource of type: $resourceType with ID: $id',
       e,
       stackTrace,
@@ -184,23 +189,30 @@ Future<Response> getResourceByIdHandler(
   Request request,
   String resourceType,
   String id,
+  DbService dbService,
 ) async {
   try {
     final type = R4ResourceType.fromString(resourceType);
     if (type == null) {
-      _logger.warning('Invalid resource type requested: $resourceType');
+      FhirAntLoggingService().logWarning(
+        'Invalid resource type requested: $resourceType',
+      );
       return _validationErrorResponse('Invalid resource type');
     }
 
-    final resource = await DbService().getResource(type, id);
+    final resource = await dbService.getResource(type, id);
     if (resource != null) {
-      _logger.info('Resource of type $resourceType with ID $id found.');
+      FhirAntLoggingService().logInfo(
+        'Resource of type $resourceType with ID $id found.',
+      );
       return Response.ok(
         resource.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     } else {
-      _logger.warning('Resource of type $resourceType with ID $id not found.');
+      FhirAntLoggingService().logWarning(
+        'Resource of type $resourceType with ID $id not found.',
+      );
       return Response(
         404,
         body: jsonEncode({'error': 'Resource not found'}),
@@ -208,7 +220,7 @@ Future<Response> getResourceByIdHandler(
       );
     }
   } catch (e, stackTrace) {
-    _logger.severe(
+    FhirAntLoggingService().logError(
       'Error fetching resource of type: $resourceType with ID: $id',
       e,
       stackTrace,
@@ -233,7 +245,7 @@ Response _errorResponse(
     ],
   );
 
-  _logger.warning('Error Response: $message - $details');
+  FhirAntLoggingService().logWarning('Error Response: $message - $details');
   return Response(
     statusCode,
     body: operationOutcome.toJsonString(),
@@ -253,7 +265,7 @@ Response _validationErrorResponse(String message) {
     ],
   );
 
-  _logger.warning('Validation Error: $message');
+  FhirAntLoggingService().logWarning('Validation Error: $message');
   return Response(
     400,
     body: operationOutcome.toJsonString(),

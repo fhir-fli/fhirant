@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:logging/logging.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:shelf/shelf.dart';
-
-final Logger _logger = Logger('ValidationHandler');
 
 /// Validation Handler
 Future<Response> validateHandler(Request request) async {
   try {
-    _logger.info('Received validation request');
-    
+    FhirAntLoggingService().logInfo('Received validation request');
+
     // Read the request body
     final body = await request.readAsString();
 
@@ -22,21 +20,25 @@ Future<Response> validateHandler(Request request) async {
     final operationOutcome = validationResults.toOperationOutcome();
 
     if (validationResults.hasErrors) {
-      _logger.warning('FHIR validation failed');
+      FhirAntLoggingService().logWarning('FHIR validation failed');
       return Response(
         400,
         body: operationOutcome.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     } else {
-      _logger.info('FHIR validation passed');
+      FhirAntLoggingService().logInfo('FHIR validation passed');
       return Response.ok(
         operationOutcome.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
   } catch (e, stackTrace) {
-    _logger.severe('Validation failed due to an exception', e, stackTrace);
+    FhirAntLoggingService().logError(
+      'Validation failed due to an exception',
+      e,
+      stackTrace,
+    );
     return Response(
       400,
       body: jsonEncode({'error': 'Invalid request', 'message': e.toString()}),

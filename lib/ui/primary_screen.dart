@@ -201,11 +201,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
                   validResourceTypes.map((type) {
                     return DropdownMenuItem(value: type, child: Text(type));
                   }).toList(),
-              onChanged: (type) {
-                setState(() async {
-                  selectedResourceType = type;
-                  await _showResources();
-                });
+              onChanged: (type) async {
+                selectedResourceType = type;
+                await _showResources();
               },
             ),
             const SizedBox(height: 16),

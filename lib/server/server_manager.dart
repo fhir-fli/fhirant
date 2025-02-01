@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:fhirant/fhirant.dart';
 import 'package:fhirant/server/handlers/favico_handler.dart';
-import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
@@ -20,9 +19,6 @@ class ServerManager {
   static final ServerManager _instance = ServerManager._();
 
   HttpServer? _server; // Reference to the running server
-  final shelf.Router _router = shelf.Router(); // Router instance for routes
-
-  final Logger _logger = Logger('ServerManager');
 
   /// Getter to check if the server is running
   bool get isRunning => _server != null;
@@ -30,149 +26,112 @@ class ServerManager {
   /// Getter to return the server port
   int? get port => _server?.port;
 
-  /// Database service for structured logging
-  final _dbService = DbService();
+  /// Database service instance
+  final DbService _dbService = DbService();
 
-  /// Starts the server directly in the main isolate
+  /// Start the server on the specified port
   Future<void> start({int port = 8080}) async {
     if (isRunning) {
-      _logger.warning('Server is already running.');
-      await _dbService.insertLog(
-        level: 'WARNING',
-        message: 'Server already running',
+      FhirAntLoggingService().logWarning('Server is already running.');
+      return;
+    }
+
+    // Fetch certificates before starting
+    final storageService = SecureStorageService();
+    final privateKeyPem = await storageService.getPrivateKey();
+    final certificatePem = await storageService.getCertificate();
+
+    if (privateKeyPem == null || certificatePem == null) {
+      FhirAntLoggingService().logError(
+        'Missing certificates! Cannot start the server.',
       );
       return;
     }
 
-    try {
-      LoggingService.initialize(); // ✅ Initialize logging
-      _logger.info('Initializing routes...');
-      await _dbService.insertLog(
-        level: 'INFO',
-        message: 'Initializing routes...',
-      );
-      _initializeRoutes();
-
-      // Add middleware and assign the router as the handler
-      final handler = const Pipeline()
-          .addMiddleware(
-            _logRequestsMiddleware(),
-          ) // ✅ Structured logging middleware
-          .addMiddleware(authenticate())
-          .addHandler(_router.call);
-
-      // Access secure storage and check for certificates
-      final storageService = SecureStorageService();
-      var privateKeyPem = await storageService.getPrivateKey();
-      var certificatePem = await storageService.getCertificate();
-
-      // Generate self-signed certificates if missing
-      if (privateKeyPem == null || certificatePem == null) {
-        _logger.warning(
-          'Certificates not found. Generating new self-signed certificates...',
-        );
-        await _dbService.insertLog(
-          level: 'WARNING',
-          message:
-              'Certificates not found. '
-              'Generating new self-signed certificates...',
-        );
-        final certData = await storageService.generateSelfSignedCertificate();
-        privateKeyPem = certData['privateKey'];
-        certificatePem = certData['certificate'];
-        _logger.info('New certificates generated and stored securely.');
-        await _dbService.insertLog(
-          level: 'INFO',
-          message: 'New certificates generated and stored securely.',
-        );
-      }
-
-      // Create a SecurityContext for HTTPS
-      final securityContext =
-          SecurityContext()
-            ..useCertificateChainBytes(certificatePem!.codeUnits)
-            ..usePrivateKeyBytes(privateKeyPem!.codeUnits);
-
-      _logger.info('Starting server on port $port...');
-      await _dbService.insertLog(
-        level: 'INFO',
-        message: 'Starting server on port $port...',
-      );
-
-      // Bind the server to any IPv4 address
-      _server = await serve(
-        handler,
-        InternetAddress.anyIPv4,
-        port,
-        securityContext: securityContext,
-      );
-
-      _logger.info(
-        'Server started at https://${_server!.address.address}:${_server!.port}',
-      );
-      await _dbService.insertLog(
-        level: 'INFO',
-        message:
-            'Server started at https://${_server!.address.address}:${_server!.port}',
-      );
-    } catch (e, st) {
-      _logger.severe('Error starting the server', e, st);
-      await _dbService.insertLog(
-        level: 'ERROR',
-        message: 'Error starting the server: $e',
-        stackTrace: st.toString(),
-      );
-      throw Exception('Failed to start the server');
-    }
+    // Setup and start the server
+    await _runServer(port, privateKeyPem, certificatePem);
   }
 
-  /// Stops the running server
+  /// Stop the server
   Future<void> stop() async {
     if (!isRunning) {
-      _logger.warning('Server is not running.');
-      await _dbService.insertLog(
-        level: 'WARNING',
-        message: 'Server is not running.',
+      FhirAntLoggingService().logWarning('Server is not running.');
+      return;
+    }
+
+    FhirAntLoggingService().logInfo('Stopping server...');
+    await _server!.close(force: true);
+    _server = null;
+    FhirAntLoggingService().logInfo('Server stopped.');
+  }
+
+  /// Runs the server in the main isolate
+  Future<void> _runServer(
+    int port,
+    String? privateKeyPem,
+    String? certificatePem,
+  ) async {
+    final router =
+        shelf.Router()
+          // ✅ Pass `_dbService` to each handler
+          ..get('/', baseHandler)
+          ..get('/favicon.ico', favicoHandler)
+          ..post('/register', registerHandler)
+          ..post('/login', loginHandler)
+          ..get('/metadata', metadataHandler)
+          ..all(r'/$validate', validateHandler)
+          ..all(r'/<resourceType>/$validate', validateHandler)
+          ..get(
+            '/<resourceType>',
+            (Request req, String resourceType) =>
+                getResourcesHandler(req, resourceType, _dbService),
+          )
+          ..post(
+            '/<resourceType>',
+            (Request req, String resourceType) =>
+                postResourceHandler(req, resourceType, _dbService),
+          )
+          ..get(
+            '/<resourceType>/<id>',
+            (Request req, String resourceType, String id) =>
+                getResourceByIdHandler(req, resourceType, id, _dbService),
+          )
+          ..put(
+            '/<resourceType>/<id>',
+            (Request req, String resourceType, String id) =>
+                putResourceHandler(req, resourceType, id, _dbService),
+          );
+
+    final handler = const Pipeline()
+        .addMiddleware(_logRequestsMiddleware())
+        .addMiddleware(authenticate())
+        .addHandler(router.call);
+
+    if (privateKeyPem == null || certificatePem == null) {
+      FhirAntLoggingService().logWarning(
+        'Certificates not found. Cannot start server.',
       );
       return;
     }
 
-    try {
-      await _server!.close(force: true);
-      _server = null;
-      _logger.info('Server stopped successfully.');
-      await _dbService.insertLog(
-        level: 'INFO',
-        message: 'Server stopped successfully.',
-      );
-    } catch (e, st) {
-      _logger.severe('Error stopping the server', e, st);
-      await _dbService.insertLog(
-        level: 'ERROR',
-        message: 'Error stopping the server: $e',
-        stackTrace: st.toString(),
-      );
-      throw Exception('Failed to stop the server');
-    }
+    final securityContext =
+        SecurityContext()
+          ..useCertificateChainBytes(certificatePem.codeUnits)
+          ..usePrivateKeyBytes(privateKeyPem.codeUnits);
+
+    _server = await serve(
+      handler,
+      InternetAddress.anyIPv4,
+      port,
+      securityContext: securityContext,
+    );
+
+    FhirAntLoggingService().logInfo(
+      'Server started at https://${_server!.address.address}:${_server!.port}',
+    );
   }
 
-  /// Initializes the router with all predefined routes
-  void _initializeRoutes() {
-    _router
-      ..get('/', baseHandler)
-      ..get('/favicon.ico', favicoHandler)
-      ..post('/register', registerHandler)
-      ..post('/login', loginHandler)
-      ..get('/metadata', metadataHandler)
-      ..all(r'/$validate', validateHandler)
-      ..all(r'/<resourceType>/$validate', validateHandler)
-      ..get('/<resourceType>', getResourcesHandler)
-      ..post('/<resourceType>', postResourceHandler)
-      ..get('/<resourceType>/<id>', getResourceByIdHandler)
-      ..put('/<resourceType>/<id>', putResourceHandler);
-  }
-
-  /// Middleware for structured logging
+  /// **Middleware for structured logging**
   Middleware _logRequestsMiddleware() {
     return (Handler innerHandler) {
       return (Request request) async {
@@ -180,12 +139,6 @@ class ServerManager {
         final response = await innerHandler(request);
         final duration = DateTime.now().difference(startTime);
 
-        // Extract user if available
-        final user =
-            request.context['authenticatedUser'] as String? ?? 'Anonymous';
-
-        // Extract client IP
-        // Extract client IP
         final clientIp =
             request.headers['x-forwarded-for'] ??
             (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
@@ -193,7 +146,6 @@ class ServerManager {
                 .address ??
             'Unknown';
 
-        // Log the request
         await _dbService.insertLog(
           level: 'INFO',
           message: 'Request received',
@@ -202,7 +154,7 @@ class ServerManager {
           statusCode: response.statusCode,
           responseTime: duration.inMilliseconds,
           clientIp: clientIp,
-          user: user,
+          user: request.context['authenticatedUser'] as String? ?? 'Anonymous',
         );
 
         return response;

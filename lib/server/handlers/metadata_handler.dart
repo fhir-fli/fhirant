@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:logging/logging.dart';
+import 'package:fhirant/fhirant.dart';
 import 'package:shelf/shelf.dart';
-
-final Logger _logger = Logger('MetadataHandler');
 
 /// Handler for the metadata route
 Response metadataHandler(Request request) {
   try {
-    _logger.info('Fetching metadata request from ${request.requestedUri}');
+    FhirAntLoggingService().logInfo(
+      'Fetching metadata request from ${request.requestedUri}',
+    );
 
     final capabilityStatement = {
       'resourceType': 'CapabilityStatement',
@@ -40,13 +40,13 @@ Response metadataHandler(Request request) {
       ],
     };
 
-    _logger.info('Metadata response generated successfully');
+    FhirAntLoggingService().logInfo('Metadata response generated successfully');
     return Response.ok(
       jsonEncode(capabilityStatement),
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    _logger.severe('Error fetching metadata', e, stackTrace);
+    FhirAntLoggingService().logError('Error fetching metadata', e, stackTrace);
     return Response(
       500,
       body: jsonEncode({'error': 'Failed to fetch metadata'}),
