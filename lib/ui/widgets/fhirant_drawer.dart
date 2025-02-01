@@ -11,6 +11,9 @@ class FhirantDrawer extends StatelessWidget {
     required this.onStopServer,
     required this.isServerRunning,
     required this.serverUrl,
+    required this.isRegistrationOpen,
+    required this.registrationCode,
+    required this.generateRegistrationCode,
     super.key,
   });
 
@@ -32,12 +35,22 @@ class FhirantDrawer extends StatelessWidget {
   /// Current server URL
   final String serverUrl;
 
+  /// Registration open status
+  final bool isRegistrationOpen;
+
+  /// Registration code
+  final String? registrationCode; // Registration code to display
+
+  /// Callback to generate a new registration code
+  final VoidCallback generateRegistrationCode;
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          // Drawer header with logo and title
           DrawerHeader(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -60,6 +73,7 @@ class FhirantDrawer extends StatelessWidget {
               ],
             ),
           ),
+          // List tile to load MIMIC data
           ListTile(
             leading: const Icon(Icons.download, color: Colors.indigo),
             title: const Text('Load Mimic Data'),
@@ -69,6 +83,7 @@ class FhirantDrawer extends StatelessWidget {
               _showSnackbar(context, 'MIMIC data loading started...');
             },
           ),
+          // List tile to load example data
           ListTile(
             leading: const Icon(Icons.cloud_download, color: Colors.indigo),
             title: const Text('Load Example Data'),
@@ -78,6 +93,7 @@ class FhirantDrawer extends StatelessWidget {
               _showSnackbar(context, 'Loading FHIR Spec examples...');
             },
           ),
+          // List tile to start/stop the server
           ValueListenableBuilder<bool>(
             valueListenable: isServerRunning,
             builder: (context, running, child) {
@@ -103,6 +119,41 @@ class FhirantDrawer extends StatelessWidget {
             },
           ),
           const Divider(),
+          // Show QR code only if registration is open
+          if (isRegistrationOpen && registrationCode != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text(
+                    'Scan this QR Code to Register:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  QrCodeWidget(
+                    serverUrl: registrationCode!,
+                  ), // Display QR code with registration code
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Scan the code using the registration app.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          // Button to generate a new registration code
+          if (isRegistrationOpen)
+            ListTile(
+              leading: const Icon(Icons.qr_code, color: Colors.indigo),
+              title: const Text('Generate New Registration Code'),
+              onTap: () {
+                generateRegistrationCode();
+                _showSnackbar(context, 'New registration code generated.');
+              },
+            ),
+          // Show server details when it's running
           ValueListenableBuilder<bool>(
             valueListenable: isServerRunning,
             builder: (context, running, child) {
@@ -153,7 +204,7 @@ class QrCodeWidget extends StatelessWidget {
   /// Constructor
   const QrCodeWidget({required this.serverUrl, super.key});
 
-  /// Server URL
+  /// Server URL to display
   final String serverUrl;
 
   @override

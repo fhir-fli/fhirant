@@ -13,10 +13,44 @@ String _generateChallenge() {
 }
 
 /// Handler for the register route
-Future<Response> registerHandler(Request request) async {
+Future<Response> registerHandler(
+  Request request,
+  String? registrationCode,
+) async {
   try {
     final requestData =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+
+    if (registrationCode != null) {
+      if (!requestData.containsKey('registrationCode')) {
+        FhirAntLoggingService().logWarning(
+          'Registration attempt without registration code',
+        );
+        return Response(
+          400,
+          body: jsonEncode({'error': 'Registration code required'}),
+        );
+      }
+      final userRegistrationCode = requestData['registrationCode'];
+      if (userRegistrationCode is! String) {
+        FhirAntLoggingService().logWarning(
+          'Invalid registration code format: $registrationCode',
+        );
+        return Response(
+          400,
+          body: jsonEncode({'error': 'Invalid registration code'}),
+        );
+      }
+      if (userRegistrationCode != registrationCode) {
+        FhirAntLoggingService().logWarning(
+          'Invalid registration code: $registrationCode',
+        );
+        return Response(
+          400,
+          body: jsonEncode({'error': 'Invalid registration code'}),
+        );
+      }
+    }
 
     if (!requestData.containsKey('username')) {
       FhirAntLoggingService().logWarning(

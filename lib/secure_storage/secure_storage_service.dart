@@ -71,7 +71,7 @@ class SecureStorageService {
       var key = await secureStorage.read(key: encryptionKey);
 
       if (key == null) {
-        key = _generateEncryptionKey();
+        key = generateEncryptionKey();
         await secureStorage.write(key: encryptionKey, value: key);
         FhirAntLoggingService().logInfo(
           'New encryption key generated and stored securely.',
@@ -209,7 +209,7 @@ class SecureStorageService {
   }
 
   /// Generate a secure 256-bit encryption key
-  String _generateEncryptionKey() {
+  static String generateEncryptionKey() {
     final random = Random.secure();
     final key = List<int>.generate(32, (i) => random.nextInt(256));
     return base64Url.encode(key);

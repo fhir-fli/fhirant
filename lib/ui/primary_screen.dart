@@ -14,7 +14,8 @@ class PrimaryScreen extends StatefulWidget {
 
 class _PrimaryScreenState extends State<PrimaryScreen> {
   // Database service instance
-  final DbService dbService = DbService();
+  final DbService _dbService = DbService();
+  final ServerManager _serverManager = ServerManager();
 
   // Server status notifier
   final ValueNotifier<bool> isServerRunning = ValueNotifier<bool>(false);
@@ -35,14 +36,14 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
 
   @override
   void dispose() {
-    dbService.close(); // Close database connection
+    _dbService.close(); // Close database connection
     super.dispose();
   }
 
   /// Initialize valid resource types and update the UI
   Future<void> _initializeResources() async {
     try {
-      final validTypes = await dbService.getValidResourceTypes();
+      final validTypes = await _dbService.getValidResourceTypes();
       if (!mounted) return;
       setState(() {
         validResourceTypes =
@@ -57,7 +58,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   Future<void> _loadFhirResources(String directoryPrefix) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context); // Cache context
     try {
-      final resources = await dbService.loadResourcesFromAssets(
+      final resources = await _dbService.loadResourcesFromAssets(
         directoryPrefix,
       );
 
@@ -87,9 +88,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   /// Start the FHIR server and provide feedback to the user
   Future<void> _startServer() async {
     try {
-      await ServerManager().start();
+      await _serverManager.start();
       final ipAddress = await _getLocalIpAddress();
-      final port = ServerManager().port;
+      final port = _serverManager.port;
 
       if (ipAddress != null && port != null) {
         setState(() {
@@ -108,7 +109,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   /// Stop the FHIR server and provide feedback to the user
   Future<void> _stopServer() async {
     try {
-      await ServerManager().stop();
+      await _serverManager.stop();
       setState(() {
         serverUrl = null; // Clear the server URL
       });
@@ -159,7 +160,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     if (selectedResourceType == null) return;
     final resourceType = R4ResourceType.fromString(selectedResourceType!);
     if (resourceType == null) return;
-    final resources = await dbService.getAllResources(resourceType);
+    final resources = await _dbService.getAllResources(resourceType);
     setState(() {
       displayedResources = resources;
     });
@@ -175,7 +176,10 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
         onStartServer: _startServer,
         onStopServer: _stopServer,
         isServerRunning: isServerRunning,
-        serverUrl: serverUrl ?? 'Server not running', // Pass the stored URL
+        serverUrl: serverUrl ?? 'Server not running',
+        isRegistrationOpen: _serverManager.isRegistrationOpen,
+        registrationCode: _serverManager.registrationCode,
+        generateRegistrationCode: _serverManager.generateRegistrationCode,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -183,7 +187,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            DatabaseOverview(dbService),
+            DatabaseOverview(_dbService),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: selectedResourceType,
