@@ -1,63 +1,67 @@
+// ignore_for_file: subtype_of_sealed_class
+
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-// Mock classes
+// Mock database class
 class MockAppDatabase extends Mock implements AppDatabase {}
 
-class MockGeneratedDatabase extends Mock implements GeneratedDatabase {}
+// Mock table class for Patients
+class MockPatientTable extends Mock implements $PatientTableTable {}
 
-// Create a mock for ResultSetImplementation
-class MockResultSet extends Mock
-    implements ResultSetImplementation<HasResultSet, dynamic> {}
+// Mock Drift row class
+class MockPatientDrift extends Mock implements PatientDrift {}
+
+// Mock Select Statement
+class MockSelectStatement extends Mock
+    implements SimpleSelectStatement<$PatientTableTable, PatientDrift> {}
 
 void main() {
-  late DbService dbService;
   late MockAppDatabase mockAppDatabase;
+  late DbService dbService;
+  late MockPatientTable mockPatientTable;
+  late MockSelectStatement mockSelectStatement;
 
-  setUp(() async {
+  setUp(() {
     mockAppDatabase = MockAppDatabase();
-
-    // Mock the attachedDatabase to return a valid GeneratedDatabase instance
-    when(
-      () => mockAppDatabase.attachedDatabase,
-    ).thenReturn(MockGeneratedDatabase());
-
-    dbService = DbService(); // Initialize DbService instance
-    await dbService.initializeForTest(mockAppDatabase); // Set up mock database
-
-    // Mock other database methods
-    when(() => mockAppDatabase.close()).thenAnswer((_) async {});
-
-    when(
-      () => mockAppDatabase.saveResources(any()),
-    ).thenAnswer((_) async => true);
-
-    when(() => mockAppDatabase.select(mockAppDatabase.logs)).thenAnswer(
-      (_) => SimpleSelectStatement<$LogsTable, Log>(
-        mockAppDatabase.attachedDatabase,
-        mockAppDatabase.logs,
-      ),
-    );
-
-    when(
-      () => mockAppDatabase.selectOnly<$LogsTable, Log>(mockAppDatabase.logs),
-    ).thenReturn(
-      JoinedSelectStatement<$LogsTable, Log>(
-        mockAppDatabase.attachedDatabase, // The database connection
-        mockAppDatabase.logs, // The table you want to query
-        [], // Since no joins are being made, passing an empty list
-      ),
-    );
+    dbService = DbService()..initializeForTest(mockAppDatabase);
+    mockPatientTable = MockPatientTable();
+    mockSelectStatement = MockSelectStatement();
   });
 
-  test('DbService initializes with a mock database', () async {
-    // Act: Perform an operation that uses the database
-    await dbService.insertLog(level: 'info', message: 'Test log');
+  test('getAllResourcesStrings returns list of resource strings', () async {
+    const resourceType = R4ResourceType.Patient;
 
-    // Assert: Verify that the insertLog method interacts with the mock database
-    verify(() => mockAppDatabase.into(mockAppDatabase.logs).insert(any()));
+    // Mock `getTableByType` to return the correct patient table
+    when(() => getTableByType(resourceType, mockAppDatabase))
+        .thenReturn(mockPatientTable);
+
+    // Mock `select()` to return a valid SimpleSelectStatement
+    when(() => mockAppDatabase.select(mockPatientTable))
+        .thenReturn(mockSelectStatement);
+
+    // Create mock rows that match the table schema
+    final mockRow1 = MockPatientDrift();
+    when(mockRow1.toJson)
+        .thenReturn({'resource': '{"resourceType": "Patient", "id": "123"}'});
+
+    final mockRow2 = MockPatientDrift();
+    when(mockRow2.toJson)
+        .thenReturn({'resource': '{"resourceType": "Patient", "id": "456"}'});
+
+    // Mock `.get()` to return the mocked rows
+    when(() => mockSelectStatement.get())
+        .thenAnswer((_) async => [mockRow1, mockRow2]);
+
+    // Run the method
+    final results = await dbService.getAllResourcesStrings(resourceType);
+
+    // Check the output
+    expect(results, isA<List<String>>());
+    expect(results.length, 2);
+    expect(results.first, '{"resourceType": "Patient", "id": "123"}');
   });
 }
