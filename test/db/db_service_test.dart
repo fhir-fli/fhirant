@@ -1,67 +1,60 @@
-// ignore_for_file: subtype_of_sealed_class
-
-import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-
-// Mock database class
-class MockAppDatabase extends Mock implements AppDatabase {}
-
-// Mock table class for Patients
-class MockPatientTable extends Mock implements $PatientTableTable {}
-
-// Mock Drift row class
-class MockPatientDrift extends Mock implements PatientDrift {}
-
-// Mock Select Statement
-class MockSelectStatement extends Mock
-    implements SimpleSelectStatement<$PatientTableTable, PatientDrift> {}
 
 void main() {
-  late MockAppDatabase mockAppDatabase;
+  late AppDatabase testDb;
   late DbService dbService;
-  late MockPatientTable mockPatientTable;
-  late MockSelectStatement mockSelectStatement;
 
   setUp(() {
-    mockAppDatabase = MockAppDatabase();
-    dbService = DbService()..initializeForTest(mockAppDatabase);
-    mockPatientTable = MockPatientTable();
-    mockSelectStatement = MockSelectStatement();
+    // Create an in-memory version of your database.
+    testDb = AppDatabase.forTesting(NativeDatabase.memory());
+    // Instantiate DbService by passing in the test database.
+    dbService = DbService(testDb);
   });
 
-  test('getAllResourcesStrings returns list of resource strings', () async {
-    const resourceType = R4ResourceType.Patient;
-
-    // Mock `getTableByType` to return the correct patient table
-    when(() => getTableByType(resourceType, mockAppDatabase))
-        .thenReturn(mockPatientTable);
-
-    // Mock `select()` to return a valid SimpleSelectStatement
-    when(() => mockAppDatabase.select(mockPatientTable))
-        .thenReturn(mockSelectStatement);
-
-    // Create mock rows that match the table schema
-    final mockRow1 = MockPatientDrift();
-    when(mockRow1.toJson)
-        .thenReturn({'resource': '{"resourceType": "Patient", "id": "123"}'});
-
-    final mockRow2 = MockPatientDrift();
-    when(mockRow2.toJson)
-        .thenReturn({'resource': '{"resourceType": "Patient", "id": "456"}'});
-
-    // Mock `.get()` to return the mocked rows
-    when(() => mockSelectStatement.get())
-        .thenAnswer((_) async => [mockRow1, mockRow2]);
-
-    // Run the method
-    final results = await dbService.getAllResourcesStrings(resourceType);
-
-    // Check the output
-    expect(results, isA<List<String>>());
-    expect(results.length, 2);
-    expect(results.first, '{"resourceType": "Patient", "id": "123"}');
+  tearDown(() async {
+    await testDb.close();
   });
+
+  test('insertLog should insert a log entry', () async {
+    await dbService.insertLog(
+      level: 'INFO',
+      message: 'Test log message',
+      method: 'GET',
+      url: 'https://example.com',
+    );
+
+    final logs = await testDb.select(testDb.logs).get();
+    expect(logs, isNotEmpty);
+    expect(logs.first.message, equals('Test log message'));
+  });
+
+  test(
+    'getAllResourcesStrings returns inserted account resource string',
+    () async {
+      // Prepare a test JSON string representing an Account resource.
+      const resourceJson = '{"id": "acc1", "resourceType": "Account"}';
+
+      // Insert directly into the account table using the generated companion.
+      await testDb
+          .into(testDb.accountTable)
+          .insert(
+            AccountTableCompanion.insert(
+              id: 'acc1',
+              lastUpdated: DateTime.now().millisecondsSinceEpoch,
+              resource: resourceJson,
+            ),
+          );
+
+      // Call the service method.
+      final result = await dbService.getAllResourcesStrings(
+        R4ResourceType.Account,
+      );
+
+      expect(result, isNotEmpty);
+      expect(result.first, equals(resourceJson));
+    },
+  );
 }

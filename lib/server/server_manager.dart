@@ -3,21 +3,26 @@ import 'dart:io';
 
 import 'package:fhirant/fhirant.dart';
 import 'package:fhirant/server/handlers/favico_handler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
 
+/// Provider for the server manager
+final serverManagerProvider = Provider(
+  (ref) => ServerManager(ref.watch(dbServiceProvider)),
+);
+
+/// Provider for the test server manager
+final testServerManagerProvider = Provider(
+  (ref) => ServerManager(ref.watch(testDbServiceProvider)),
+);
+
 /// A singleton class to manage the server lifecycle and routing
 class ServerManager {
-  /// Factory constructor to return the singleton instance
-  factory ServerManager() => _instance;
-
-  /// Private constructor to enforce singleton pattern
-  ServerManager._();
-
-  /// Singleton instance
-  static final ServerManager _instance = ServerManager._();
+  /// Default constructor
+  ServerManager(this._dbService);
 
   HttpServer? _server; // Reference to the running server
 
@@ -28,7 +33,7 @@ class ServerManager {
   int? get port => _server?.port;
 
   /// Database service instance
-  final DbService _dbService = DbService();
+  final DbService _dbService;
 
   /// Getter to check if registration is open
   bool isRegistrationOpen = false;

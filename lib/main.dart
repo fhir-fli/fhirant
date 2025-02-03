@@ -1,8 +1,8 @@
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await DbService().initialize();
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }

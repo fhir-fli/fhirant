@@ -3,33 +3,32 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Provider for the database service
+final dbServiceProvider = Provider<DbService>((ref) {
+  final dbService = DbService(AppDatabase());
+  ref.onDispose(dbService.close);
+  return dbService;
+});
+
+/// Provider when testing an instance of DbService
+final testDbServiceProvider = Provider<DbService>((ref) {
+  final dbService = DbService(AppDatabase.forTesting(NativeDatabase.memory()));
+  ref.onDispose(dbService.close);
+  return dbService;
+});
 
 /// Service to interact with the SQLite database
 class DbService {
-  /// Factory constructor for accessing the instance
-  factory DbService() => _instance;
-
-  /// Internal constructor
-  DbService._();
-
-  // Singleton instance
-  static final DbService _instance = DbService._();
-
+  /// Default constructor
+  DbService(this._db);
   // The actual database instance
-  late final AppDatabase _db;
-
-  /// Initialize the database
-  Future<void> initialize() async {
-    _db = AppDatabase();
-  }
-
-  /// Initialize the database for testing
-  Future<void> initializeForTest(AppDatabase db) async {
-    _db = db;
-  }
+  final AppDatabase _db;
 
   /// Close the database connection
   void close() {

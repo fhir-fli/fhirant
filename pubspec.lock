@@ -199,21 +199,13 @@ packages:
     source: hosted
     version: "3.1.2"
   crypto:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: crypto
       sha256: "1e445881f28f22d6140f181e07737b22f1e099a5e1ff94b0af2f9e4a463f4855"
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
-  cryptography:
-    dependency: transitive
-    description:
-      name: cryptography
-      sha256: d146b76d33d94548cf035233fbc2f4338c1242fa119013bead807d033fc4ae05
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.7.0"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
@@ -310,6 +302,14 @@ packages:
       relative: true
     source: path
     version: "1.0.5"
+  flutter_riverpod:
+    dependency: "direct main"
+    description:
+      name: flutter_riverpod
+      sha256: "9532ee6db4a943a1ed8383072a2e3eeda041db5657cdf6d2acecf3c21ecbe7e1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.1"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -696,6 +696,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  riverpod:
+    dependency: transitive
+    description:
+      name: riverpod
+      sha256: "59062512288d3056b2321804332a13ffdd1bf16df70dcc8e506e411280a72959"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.1"
   rxdart:
     dependency: transitive
     description:
@@ -728,16 +736,8 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.4"
-  shelf_secure_cookie:
-    dependency: "direct main"
-    description:
-      name: shelf_secure_cookie
-      sha256: c84c9dad00dc12b8c967ccd92fb6958d78ac3ec17d3f789ef8c65d16eb591dfb
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
   shelf_web_socket:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: shelf_web_socket
       sha256: cc36c297b52866d203dbf9332263c94becc2fe0ceaa9681d07b6ef9807023b67
@@ -805,6 +805,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.1"
+  state_notifier:
+    dependency: transitive
+    description:
+      name: state_notifier
+      sha256: b8677376aa54f2d7c58280d5a007f9e8774f1968d1fb1c096adcb4792fba29bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   stream_channel:
     dependency: transitive
     description:

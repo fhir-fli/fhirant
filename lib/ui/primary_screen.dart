@@ -2,20 +2,21 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// PrimaryScreen
-class PrimaryScreen extends StatefulWidget {
+/// PrimaryScreen as a ConsumerStatefulWidget to allow provider access.
+class PrimaryScreen extends ConsumerStatefulWidget {
   /// Constructor
   const PrimaryScreen({super.key});
 
   @override
-  State<PrimaryScreen> createState() => _PrimaryScreenState();
+  ConsumerState<PrimaryScreen> createState() => _PrimaryScreenState();
 }
 
-class _PrimaryScreenState extends State<PrimaryScreen> {
-  // Database service instance
-  final DbService _dbService = DbService();
-  final ServerManager _serverManager = ServerManager();
+class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
+  // Instead of creating our own _dbService and _serverManager,
+  // we will read them from Riverpod providers.
+  // Other state remains unchanged.
 
   // Server status notifier
   final ValueNotifier<bool> isServerRunning = ValueNotifier<bool>(false);
@@ -31,19 +32,18 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeResources();
+    // We want to initialize the resource types after the first frame is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeResources();
+    });
   }
 
-  @override
-  void dispose() {
-    _dbService.close(); // Close database connection
-    super.dispose();
-  }
-
-  /// Initialize valid resource types and update the UI
+  /// Initialize valid resource types and update the UI.
   Future<void> _initializeResources() async {
     try {
-      final validTypes = await _dbService.getValidResourceTypes();
+      // Read the DbService from the provider.
+      final dbService = ref.read(dbServiceProvider);
+      final validTypes = await dbService.getValidResourceTypes();
       if (!mounted) return;
       setState(() {
         validResourceTypes =
@@ -54,22 +54,21 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Load FHIR resources from a directory and update the UI
+  /// Load FHIR resources from a directory and update the UI.
   Future<void> _loadFhirResources(String directoryPrefix) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context); // Cache context
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
-      final resources = await _dbService.loadResourcesFromAssets(
+      final dbService = ref.read(dbServiceProvider);
+      final resources = await dbService.loadResourcesFromAssets(
         directoryPrefix,
       );
-
       if (!mounted) return;
-
       if (resources.isEmpty) {
         scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('No resources found in $directoryPrefix')),
         );
       } else {
-        await _initializeResources(); // Refresh the resource types
+        await _initializeResources(); // Refresh the resource types.
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -85,16 +84,16 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Start the FHIR server and provide feedback to the user
+  /// Start the FHIR server and provide feedback to the user.
   Future<void> _startServer() async {
     try {
-      await _serverManager.start();
+      final serverManager = ref.read(serverManagerProvider);
+      await serverManager.start();
       final ipAddress = await _getLocalIpAddress();
-      final port = _serverManager.port;
-
+      final port = serverManager.port;
       if (ipAddress != null && port != null) {
         setState(() {
-          serverUrl = 'http://$ipAddress:$port'; // Store the server URL
+          serverUrl = 'http://$ipAddress:$port';
         });
         isServerRunning.value = true;
         _showMessage('Server started at $serverUrl');
@@ -106,12 +105,13 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Stop the FHIR server and provide feedback to the user
+  /// Stop the FHIR server and provide feedback to the user.
   Future<void> _stopServer() async {
     try {
-      await _serverManager.stop();
+      final serverManager = ref.read(serverManagerProvider);
+      await serverManager.stop();
       setState(() {
-        serverUrl = null; // Clear the server URL
+        serverUrl = null;
       });
       isServerRunning.value = false;
       _showMessage('Server stopped');
@@ -120,7 +120,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Get the local IP address
+  /// Get the local IP address.
   Future<String?> _getLocalIpAddress() async {
     try {
       final interfaces = await NetworkInterface.list(
@@ -137,7 +137,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     return null;
   }
 
-  /// Show an error message in a snackbar
+  /// Show an error message in a snackbar.
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(
@@ -146,7 +146,7 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Show a success message in a snackbar
+  /// Show a success message in a snackbar.
   void _showMessage(String message) {
     if (mounted) {
       ScaffoldMessenger.of(
@@ -155,12 +155,13 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
     }
   }
 
-  /// Display resources of a selected type
+  /// Display resources of a selected type.
   Future<void> _showResources() async {
     if (selectedResourceType == null) return;
     final resourceType = R4ResourceType.fromString(selectedResourceType!);
     if (resourceType == null) return;
-    final resources = await _dbService.getAllResources(resourceType);
+    final dbService = ref.read(dbServiceProvider);
+    final resources = await dbService.getAllResources(resourceType);
     setState(() {
       displayedResources = resources;
     });
@@ -168,6 +169,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Optionally, if you want to rebuild on serverManager changes, 
+    // use ref.watch.
+    final serverManager = ref.watch(serverManagerProvider);
     return Scaffold(
       appBar: FhirantAppBar(isServerRunning),
       drawer: FhirantDrawer(
@@ -177,9 +181,9 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
         onStopServer: _stopServer,
         isServerRunning: isServerRunning,
         serverUrl: serverUrl ?? 'Server not running',
-        isRegistrationOpen: _serverManager.isRegistrationOpen,
-        registrationCode: _serverManager.registrationCode,
-        generateRegistrationCode: _serverManager.generateRegistrationCode,
+        isRegistrationOpen: serverManager.isRegistrationOpen,
+        registrationCode: serverManager.registrationCode,
+        generateRegistrationCode: serverManager.generateRegistrationCode,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -187,7 +191,8 @@ class _PrimaryScreenState extends State<PrimaryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            DatabaseOverview(_dbService),
+            // Pass the DbService from the provider to DatabaseOverview.
+            DatabaseOverview(ref.read(dbServiceProvider)),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: selectedResourceType,
