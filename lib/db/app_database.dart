@@ -6,11 +6,13 @@ import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant/fhirant.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: tablesList)
+
 /// Database for the application
 class AppDatabase extends _$AppDatabase {
   /// Creates an instance of the database
@@ -27,33 +29,34 @@ class AppDatabase extends _$AppDatabase {
   static final SecureStorageService _secureStorageService =
       SecureStorageService();
 
-  /// Opens a connection to the database
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
-      final dbPath = path.join(Directory.current.path, 'fhirant.db');
+      // 1. Get the correct directory for storing databases on Android (or iOS).
+      final dir = await getApplicationDocumentsDirectory();
+      final dbPath = path.join(dir.path, 'fhirant.db');
 
-      // Ensure SQLCipher setup (required for encrypted drift)
+      // 2. Ensure SQLCipher is set up
       await setupSqlCipher();
 
-      // Retrieve the encryption key
+      // 3. Retrieve the encryption key
       final encryptionKey = await _secureStorageService.getEncryptionKey();
       if (encryptionKey == null) {
         throw Exception('Failed to retrieve encryption key.');
       }
 
-      // Initialize an encrypted database
+      // 4. Initialize the encrypted database
       return NativeDatabase(
         File(dbPath),
         setup: (rawDb) {
           rawDb.execute('PRAGMA key = "$encryptionKey";');
 
-          // Recommended option for SQLCipher (not enabled by default)
+          // Recommended SQLCipher setting
           rawDb.config.doubleQuotedStringLiterals = false;
 
           // Debug check to ensure SQLCipher is working
           assert(
             _debugCheckHasCipher(rawDb),
-            'SQLCipher encryption is not enabled. Please verify the setup.',
+            'SQLCipher encryption is not enabled. Verify the setup.',
           );
         },
       );
@@ -104,8 +107,10 @@ class AppDatabase extends _$AppDatabase {
               totalErrors++;
               // Log the specific resource that failed to save
               print(
-                'Error saving resource of type $type with ID: ${resource.id?.value}: $e\n$s',
+                'Error saving resource of type $type with ID: ${resource.id?.value}: $e',
               );
+              print('\n\n');
+              print('Stack trace: $s');
               rethrow;
             }
           }
@@ -3534,9 +3539,8 @@ extension MedicationAdministrationTableExtension
     on fhir.MedicationAdministration {
   /// MedicationAdministrationTableCompanion
   MedicationAdministrationTableCompanion get companion {
-    final resource =
-        newIdIfNoId().updateVersion(versionIdAsTime: true)
-            as fhir.MedicationAdministration;
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true)
+        as fhir.MedicationAdministration;
     return MedicationAdministrationTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3582,9 +3586,8 @@ extension MedicationAdministrationHistoryTableExtension
 extension MedicationDispenseTableExtension on fhir.MedicationDispense {
   /// MedicationDispenseTableCompanion
   MedicationDispenseTableCompanion get companion {
-    final resource =
-        newIdIfNoId().updateVersion(versionIdAsTime: true)
-            as fhir.MedicationDispense;
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true)
+        as fhir.MedicationDispense;
     return MedicationDispenseTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
@@ -3654,9 +3657,8 @@ extension MedicationKnowledgeHistoryTableExtension
 extension MedicationRequestTableExtension on fhir.MedicationRequest {
   /// MedicationRequestTableCompanion
   MedicationRequestTableCompanion get companion {
-    final resource =
-        newIdIfNoId().updateVersion(versionIdAsTime: true)
-            as fhir.MedicationRequest;
+    final resource = newIdIfNoId().updateVersion(versionIdAsTime: true)
+        as fhir.MedicationRequest;
     return MedicationRequestTableCompanion(
       id: Value(resource.id!.value!),
       lastUpdated: Value(
