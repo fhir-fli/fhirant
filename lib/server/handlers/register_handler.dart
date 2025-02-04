@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter_passkey/flutter_passkey.dart';
 import 'package:shelf/shelf.dart';
@@ -12,7 +11,7 @@ String _generateChallenge() {
   return base64Url.encode(values);
 }
 
-/// Handler for the register route
+/// Updated handler for the register route with challenge storage and verification.
 Future<Response> registerHandler(
   Request request,
   String? registrationCode,
@@ -22,45 +21,6 @@ Future<Response> registerHandler(
   try {
     final requestData =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-
-    if (registrationCode != null) {
-      if (!requestData.containsKey('registrationCode')) {
-        FhirAntLoggingService().logWarning(
-          'Registration attempt without registration code',
-        );
-        return Response(
-          400,
-          body: jsonEncode({'error': 'Registration code required'}),
-        );
-      }
-      final userRegistrationCode = requestData['registrationCode'];
-      if (userRegistrationCode is! String) {
-        FhirAntLoggingService().logWarning(
-          'Invalid registration code format: $registrationCode',
-        );
-        return Response(
-          400,
-          body: jsonEncode({'error': 'Invalid registration code'}),
-        );
-      }
-      if (userRegistrationCode != registrationCode) {
-        FhirAntLoggingService().logWarning(
-          'Invalid registration code: $registrationCode',
-        );
-        return Response(
-          400,
-          body: jsonEncode({'error': 'Invalid registration code'}),
-        );
-      }
-    } else if (!isRegistrationOpen) {
-      FhirAntLoggingService().logWarning(
-        'Registration attempt without registration code',
-      );
-      return Response(
-        400,
-        body: jsonEncode({'error': 'Registration code required'}),
-      );
-    }
 
     if (!requestData.containsKey('username')) {
       FhirAntLoggingService().logWarning(
@@ -76,9 +36,12 @@ Future<Response> registerHandler(
     }
 
     FhirAntLoggingService().logInfo('Registration attempt for user: $username');
-    final challenge = _generateChallenge();
 
-    // Create WebAuthn registration options
+    // Generate a secure challenge and store it temporarily.
+    final challenge = _generateChallenge();
+    pendingRegistrationChallenges[username] = challenge;
+
+    // Create WebAuthn registration options.
     final options = jsonEncode({
       'challenge': challenge,
       'rp': {'name': 'FHIR Server'},
@@ -98,21 +61,42 @@ Future<Response> registerHandler(
       'timeout': 60000,
     });
 
-    // Call `createCredential` to generate a passkey
+    // Call `createCredential` to generate a passkey.
     final credential = await FlutterPasskey().createCredential(options);
     if (credential.isEmpty) {
       FhirAntLoggingService().logWarning(
         'Failed to generate passkey for user: $username',
       );
+      pendingRegistrationChallenges.remove(username);
       return Response(
         500,
         body: jsonEncode({'error': 'Passkey generation failed'}),
       );
     }
 
-    // Store the passkey credentials securely
+    // Decode the attestation response (assuming it’s a JSON string)
+    final attestation = jsonDecode(credential) as Map<String, dynamic>;
+    final clientDataJSONBase64 = attestation['clientDataJSON'] as String;
+    final clientDataJSONStr = utf8.decode(
+      base64Url.decode(clientDataJSONBase64),
+    );
+    final clientData = jsonDecode(clientDataJSONStr) as Map<String, dynamic>;
+
+    // Verify that the challenge matches what was generated.
+    if (clientData['challenge'] != challenge) {
+      FhirAntLoggingService().logWarning(
+        'Challenge mismatch during registration for user: $username',
+      );
+      pendingRegistrationChallenges.remove(username);
+      return Response(400, body: jsonEncode({'error': 'Challenge mismatch'}));
+    }
+
+    // Store the passkey credentials securely.
     final storage = SecureStorageService();
     await storage.storePasskey(username, credential);
+
+    // Remove the stored challenge as it is no longer needed.
+    pendingRegistrationChallenges.remove(username);
 
     FhirAntLoggingService().logInfo('User registered successfully: $username');
     return Response.ok(

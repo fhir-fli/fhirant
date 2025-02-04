@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant/fhirant.dart';
 import 'package:flutter_passkey/flutter_passkey.dart';
@@ -15,7 +14,7 @@ String _generateChallenge() {
   return base64Url.encode(values);
 }
 
-/// Handler for the login route
+/// Updated handler for the login route with challenge storage and verification.
 Future<Response> loginHandler(Request request) async {
   try {
     if (request.method != 'POST') {
@@ -40,7 +39,7 @@ Future<Response> loginHandler(Request request) async {
 
     FhirAntLoggingService().logInfo('Login attempt for user: $username');
 
-    // Retrieve stored passkey credential
+    // Retrieve stored passkey credential.
     final storage = SecureStorageService();
     final storedCredential = await storage.getPasskey(username);
 
@@ -49,10 +48,11 @@ Future<Response> loginHandler(Request request) async {
       return Response(401, body: jsonEncode({'error': 'User not registered'}));
     }
 
-    // Generate a secure challenge for authentication
+    // Generate a secure challenge for authentication and store it.
     final challenge = _generateChallenge();
+    pendingLoginChallenges[username] = challenge;
 
-    // WebAuthn authentication options
+    // Create WebAuthn authentication options.
     final options = jsonEncode({
       'challenge': challenge,
       'rpId': 'fhirserver.local',
@@ -67,24 +67,46 @@ Future<Response> loginHandler(Request request) async {
       'userVerification': 'preferred',
     });
 
-    // Authenticate using passkey
+    // Call getCredential to trigger passkey authentication.
     final authResponse = await FlutterPasskey().getCredential(options);
 
     if (authResponse.isEmpty) {
       FhirAntLoggingService().logWarning(
         'Authentication failed for user: $username',
       );
+      pendingLoginChallenges.remove(username);
       return Response(
         401,
         body: jsonEncode({'error': 'Authentication failed'}),
       );
     }
 
-    // Generate JWT token on successful authentication
+    // Decode the assertion response.
+    final assertion = jsonDecode(authResponse) as Map<String, dynamic>;
+    final clientDataJSONBase64 = assertion['clientDataJSON'] as String;
+    final clientDataJSONStr = utf8.decode(
+      base64Url.decode(clientDataJSONBase64),
+    );
+    final clientData = jsonDecode(clientDataJSONStr) as Map<String, dynamic>;
+
+    // Verify that the challenge matches the one stored.
+    if (clientData['challenge'] != challenge) {
+      FhirAntLoggingService().logWarning(
+        'Challenge mismatch during login for user: $username',
+      );
+      pendingLoginChallenges.remove(username);
+      return Response(400, body: jsonEncode({'error': 'Challenge mismatch'}));
+    }
+
+    // Remove the stored challenge.
+    pendingLoginChallenges.remove(username);
+
+    // Generate JWT token with the expiration expressed in seconds.
     final token = JWT({
       'username': username,
       'exp':
-          DateTime.now().add(const Duration(days: 90)).millisecondsSinceEpoch,
+          DateTime.now().add(const Duration(days: 90)).millisecondsSinceEpoch ~/
+          1000,
     }).sign(SecretKey(_secretKey));
 
     FhirAntLoggingService().logInfo(

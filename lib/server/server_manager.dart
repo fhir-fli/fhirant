@@ -9,6 +9,9 @@ import 'package:shelf/shelf_io.dart';
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
 
+final Map<String, String> pendingRegistrationChallenges = {};
+final Map<String, String> pendingLoginChallenges = {};
+
 /// Provider for the server manager
 final serverManagerProvider = Provider(
   (ref) => ServerManager(ref.watch(dbServiceProvider)),
