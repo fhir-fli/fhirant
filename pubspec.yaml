@@ -47,6 +47,6 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
-    - mimic-fhir/
-    - fhir-assets/
     - assets/
+    - assets/fhir_spec/
+    - assets/mimic/

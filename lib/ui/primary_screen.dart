@@ -174,8 +174,8 @@ class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
     return Scaffold(
       appBar: FhirantAppBar(isServerRunning),
       drawer: FhirantDrawer(
-        onLoadMimicData: () => _loadFhirResources('mimic-fhir'),
-        onLoadExampleData: () => _loadFhirResources('fhir-assets'),
+        onLoadMimicData: () => _loadFhirResources('assets/mimic'),
+        onLoadExampleData: () => _loadFhirResources('assets/fhir_spec'),
         onStartServer: _startServer,
         onStopServer: _stopServer,
         serverUrl: serverUrl ?? 'Server not running',

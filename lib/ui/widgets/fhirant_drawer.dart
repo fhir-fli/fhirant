@@ -78,7 +78,7 @@ class FhirantDrawer extends ConsumerWidget {
           // List tile to load example data.
           ListTile(
             leading: const Icon(Icons.cloud_download, color: Colors.indigo),
-            title: const Text('Load Example Data'),
+            title: const Text('Load FHIR Spec'),
             onTap: () {
               Navigator.pop(context);
               onLoadExampleData();
