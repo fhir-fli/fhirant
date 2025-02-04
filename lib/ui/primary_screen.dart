@@ -171,7 +171,6 @@ class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
   Widget build(BuildContext context) {
     // Optionally, if you want to rebuild on serverManager changes, 
     // use ref.watch.
-    final serverManager = ref.watch(serverManagerProvider);
     return Scaffold(
       appBar: FhirantAppBar(isServerRunning),
       drawer: FhirantDrawer(
@@ -179,11 +178,7 @@ class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
         onLoadExampleData: () => _loadFhirResources('fhir-assets'),
         onStartServer: _startServer,
         onStopServer: _stopServer,
-        isServerRunning: isServerRunning,
         serverUrl: serverUrl ?? 'Server not running',
-        isRegistrationOpen: serverManager.isRegistrationOpen,
-        registrationCode: serverManager.registrationCode,
-        generateRegistrationCode: serverManager.generateRegistrationCode,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

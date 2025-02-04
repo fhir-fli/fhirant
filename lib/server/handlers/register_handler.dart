@@ -16,6 +16,8 @@ String _generateChallenge() {
 Future<Response> registerHandler(
   Request request,
   String? registrationCode,
+  // ignore: avoid_positional_boolean_parameters
+  bool isRegistrationOpen,
 ) async {
   try {
     final requestData =
@@ -50,6 +52,14 @@ Future<Response> registerHandler(
           body: jsonEncode({'error': 'Invalid registration code'}),
         );
       }
+    } else if (!isRegistrationOpen) {
+      FhirAntLoggingService().logWarning(
+        'Registration attempt without registration code',
+      );
+      return Response(
+        400,
+        body: jsonEncode({'error': 'Registration code required'}),
+      );
     }
 
     if (!requestData.containsKey('username')) {

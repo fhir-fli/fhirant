@@ -83,14 +83,36 @@ class ServerManager {
   /// Generate a new registration code
   String generateRegistrationCode() {
     _registrationCode = SecureStorageService.generateSecureRandomKey(32);
-    resetInSeconds();
+    _resetRegistrationCodeInSeconds();
     return _registrationCode!;
   }
 
   /// Check if the registration code is active
-  Future<void> resetInSeconds([int seconds = 300]) async {
+  Future<void> _resetRegistrationCodeInSeconds([int seconds = 300]) async {
     await Future<void>.delayed(Duration(seconds: seconds));
     _registrationCode = null;
+  }
+
+  /// Cancel the registration code
+  Future<void> cancelRegistrationCode() async {
+    _registrationCode = null;
+  }
+
+  /// Allow general registration
+  void allowGeneralRegistration() {
+    isRegistrationOpen = true;
+    _resetGeneralRegistrationInSeconds();
+  }
+
+  /// Check if the registration code is active
+  Future<void> _resetGeneralRegistrationInSeconds([int seconds = 300]) async {
+    await Future<void>.delayed(Duration(seconds: seconds));
+    isRegistrationOpen = false;
+  }
+
+  /// Close general registration
+  void closeGeneralRegistration() {
+    isRegistrationOpen = false;
   }
 
   /// Runs the server in the main isolate
@@ -114,7 +136,8 @@ class ServerManager {
           ..get('/favicon.ico', favicoHandler)
           ..post(
             '/register',
-            (Request req) => registerHandler(req, _registrationCode),
+            (Request req) =>
+                registerHandler(req, _registrationCode, isRegistrationOpen),
           )
           ..post('/login', loginHandler)
           ..get('/metadata', metadataHandler)
