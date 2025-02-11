@@ -11,13 +11,13 @@ dependencies:
   dart_jsonwebtoken: ^2.15.0
   drift: ^2.24.0
   fhir_r4:
-    path: ../fhir_r4
+    path: packages/fhir_r4
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   flutter_passkey:
-    path: ../flutter_passkey
+    path: packages/flutter_passkey
   flutter_riverpod: ^2.6.1
   flutter_secure_storage: ^9.2.4
   http: ^1.3.0

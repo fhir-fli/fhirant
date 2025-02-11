@@ -265,7 +265,7 @@ packages:
   fhir_r4:
     dependency: "direct main"
     description:
-      path: "../fhir_r4"
+      path: "packages/fhir_r4"
       relative: true
     source: path
     version: "0.3.0-1"
@@ -298,7 +298,7 @@ packages:
   flutter_passkey:
     dependency: "direct main"
     description:
-      path: "../flutter_passkey"
+      path: "packages/flutter_passkey"
       relative: true
     source: path
     version: "1.0.5"
