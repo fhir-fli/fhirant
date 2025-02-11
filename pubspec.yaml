@@ -12,6 +12,12 @@ dependencies:
   drift: ^2.24.0
   fhir_r4:
     path: packages/fhir_r4
+  fhirant_db:
+    path: packages/fhirant_db
+  fhirant_logging:
+    path: packages/fhirant_logging
+  fhirant_secure_storage:
+    path: packages/fhirant_secure_storage
   flutter:
     sdk: flutter
   flutter_localizations:

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/fhirant.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for the metadata route
 Response metadataHandler(Request request) {
   try {
-    FhirAntLoggingService().logInfo(
+    FhirantLogging().logInfo(
       'Fetching metadata request from ${request.requestedUri}',
     );
 
@@ -20,33 +20,32 @@ Response metadataHandler(Request request) {
         {
           'mode': 'server',
           'documentation': 'FHIR RESTful API.',
-          'resource':
-              R4ResourceType.typesAsStrings
-                  .map(
-                    (type) => {
-                      'type': type,
-                      'interaction': [
-                        {'code': 'read'},
-                        {'code': 'vread'},
-                        {'code': 'update'},
-                        // {'code': 'delete'},
-                        {'code': 'create'},
-                        // {'code': 'search-type'},
-                      ],
-                    },
-                  )
-                  .toList(),
+          'resource': R4ResourceType.typesAsStrings
+              .map(
+                (type) => {
+                  'type': type,
+                  'interaction': [
+                    {'code': 'read'},
+                    {'code': 'vread'},
+                    {'code': 'update'},
+                    // {'code': 'delete'},
+                    {'code': 'create'},
+                    // {'code': 'search-type'},
+                  ],
+                },
+              )
+              .toList(),
         },
       ],
     };
 
-    FhirAntLoggingService().logInfo('Metadata response generated successfully');
+    FhirantLogging().logInfo('Metadata response generated successfully');
     return Response.ok(
       jsonEncode(capabilityStatement),
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirAntLoggingService().logError('Error fetching metadata', e, stackTrace);
+    FhirantLogging().logError('Error fetching metadata', e, stackTrace);
     return Response(
       500,
       body: jsonEncode({'error': 'Failed to fetch metadata'}),

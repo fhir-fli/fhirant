@@ -269,6 +269,27 @@ packages:
       relative: true
     source: path
     version: "0.3.0-1"
+  fhirant_db:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_db"
+      relative: true
+    source: path
+    version: "1.0.0+1"
+  fhirant_logging:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_logging"
+      relative: true
+    source: path
+    version: "1.0.0+1"
+  fhirant_secure_storage:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_secure_storage"
+      relative: true
+    source: path
+    version: "1.0.0+1"
   file:
     dependency: transitive
     description:
@@ -974,5 +995,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.6.0 <4.0.0"
+  dart: ">=3.6.2 <4.0.0"
   flutter: ">=3.24.0"

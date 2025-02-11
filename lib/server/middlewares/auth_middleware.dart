@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:fhirant/fhirant.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 const String _secretKey = 'your-very-secure-secret';
@@ -18,7 +18,7 @@ Middleware authenticate() {
 
       final authHeader = request.headers['Authorization'];
       if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-        FhirAntLoggingService().logWarning('Unauthorized request to $path');
+        FhirantLogging().logWarning('Unauthorized request to $path');
         return Response.forbidden(jsonEncode({'error': 'Unauthorized'}));
       }
 
@@ -27,7 +27,7 @@ Middleware authenticate() {
         final jwt = JWT.verify(token, SecretKey(_secretKey));
 
         // Log the authenticated request, but avoid logging sensitive user data
-        FhirAntLoggingService().logInfo(
+        FhirantLogging().logInfo(
           'Authenticated request to $path by user '
           '${(jwt.payload as Map<String, dynamic>)['username']}',
         );
@@ -35,7 +35,7 @@ Middleware authenticate() {
         final updatedRequest = request.change(context: {'user': jwt.payload});
         return innerHandler(updatedRequest);
       } catch (e) {
-        FhirAntLoggingService().logWarning('Invalid token used for $path');
+        FhirantLogging().logWarning('Invalid token used for $path');
         return Response.forbidden(jsonEncode({'error': 'Invalid token'}));
       }
     };

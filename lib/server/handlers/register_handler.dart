@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:fhirant/fhirant.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:flutter_passkey/flutter_passkey.dart';
 import 'package:shelf/shelf.dart';
 
@@ -23,7 +25,7 @@ Future<Response> registerHandler(
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
 
     if (!requestData.containsKey('username')) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Registration attempt without username',
       );
       return Response(400, body: jsonEncode({'error': 'Username required'}));
@@ -31,11 +33,11 @@ Future<Response> registerHandler(
 
     final username = requestData['username'];
     if (username is! String) {
-      FhirAntLoggingService().logWarning('Invalid username format: $username');
+      FhirantLogging().logWarning('Invalid username format: $username');
       return Response(400, body: jsonEncode({'error': 'Invalid username'}));
     }
 
-    FhirAntLoggingService().logInfo('Registration attempt for user: $username');
+    FhirantLogging().logInfo('Registration attempt for user: $username');
 
     // Generate a secure challenge and store it temporarily.
     final challenge = _generateChallenge();
@@ -64,7 +66,7 @@ Future<Response> registerHandler(
     // Call `createCredential` to generate a passkey.
     final credential = await FlutterPasskey().createCredential(options);
     if (credential.isEmpty) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Failed to generate passkey for user: $username',
       );
       pendingRegistrationChallenges.remove(username);
@@ -84,7 +86,7 @@ Future<Response> registerHandler(
 
     // Verify that the challenge matches what was generated.
     if (clientData['challenge'] != challenge) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Challenge mismatch during registration for user: $username',
       );
       pendingRegistrationChallenges.remove(username);
@@ -98,12 +100,12 @@ Future<Response> registerHandler(
     // Remove the stored challenge as it is no longer needed.
     pendingRegistrationChallenges.remove(username);
 
-    FhirAntLoggingService().logInfo('User registered successfully: $username');
+    FhirantLogging().logInfo('User registered successfully: $username');
     return Response.ok(
       jsonEncode({'message': 'User registered', 'challenge': challenge}),
     );
   } catch (e, stackTrace) {
-    FhirAntLoggingService().logError('Registration failed', e, stackTrace);
+    FhirantLogging().logError('Registration failed', e, stackTrace);
     return Response(
       500,
       body: jsonEncode({'error': 'Registration failed: $e'}),
