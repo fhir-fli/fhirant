@@ -169,7 +169,7 @@ class ServerManager {
 
     final handler = const Pipeline()
         .addMiddleware(_logRequestsMiddleware())
-        .addMiddleware(authenticate())
+        // .addMiddleware(authenticate())
         .addMiddleware(rateLimiter.rateLimiter()) // Add rate limiting here
         .addHandler(router.call);
 
