@@ -169,7 +169,7 @@ class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Optionally, if you want to rebuild on serverManager changes, 
+    // Optionally, if you want to rebuild on serverManager changes,
     // use ref.watch.
     return Scaffold(
       appBar: FhirantAppBar(isServerRunning),
@@ -201,10 +201,9 @@ class _PrimaryScreenState extends ConsumerState<PrimaryScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              items:
-                  validResourceTypes.map((type) {
-                    return DropdownMenuItem(value: type, child: Text(type));
-                  }).toList(),
+              items: validResourceTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
               onChanged: (type) async {
                 selectedResourceType = type;
                 await _showResources();

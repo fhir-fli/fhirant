@@ -1,7 +1,7 @@
 [submodule "packages/fhir_r4"]
 	path = packages/fhir_r4
-	url = https://github.com/FireJuun/fhir_r4.git
-	branch = db
+	url = https://github.com/fhir-fli/fhir_r4.git
+	branch = dev
 [submodule "packages/fhirant_db"]
 	path = packages/fhirant_db
 	url = https://github.com/MayJuun/fhirant_db.git
