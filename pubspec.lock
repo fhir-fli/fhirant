@@ -265,10 +265,31 @@ packages:
   fhir_r4:
     dependency: "direct main"
     description:
-      path: "../fhir_r4"
+      path: "packages/fhir_r4"
       relative: true
     source: path
     version: "0.3.0-1"
+  fhirant_db:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_db"
+      relative: true
+    source: path
+    version: "1.0.0+1"
+  fhirant_logging:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_logging"
+      relative: true
+    source: path
+    version: "1.0.0+1"
+  fhirant_secure_storage:
+    dependency: "direct main"
+    description:
+      path: "packages/fhirant_secure_storage"
+      relative: true
+    source: path
+    version: "1.0.0+1"
   file:
     dependency: transitive
     description:
@@ -298,7 +319,7 @@ packages:
   flutter_passkey:
     dependency: "direct main"
     description:
-      path: "../flutter_passkey"
+      path: "packages/flutter_passkey"
       relative: true
     source: path
     version: "1.0.5"
@@ -974,5 +995,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.6.0 <4.0.0"
+  dart: ">=3.6.2 <4.0.0"
   flutter: ">=3.24.0"

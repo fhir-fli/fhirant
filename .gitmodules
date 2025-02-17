@@ -1,0 +1,16 @@
+[submodule "packages/fhir_r4"]
+	path = packages/fhir_r4
+	url = https://github.com/fhir-fli/fhir_r4.git
+	branch = dev
+[submodule "packages/fhirant_db"]
+	path = packages/fhirant_db
+	url = https://github.com/MayJuun/fhirant_db.git
+[submodule "packages/fhirant_logging"]
+	path = packages/fhirant_logging
+	url = https://github.com/MayJuun/fhirant_logging.git
+[submodule "packages/fhirant_secure_storage"]
+	path = packages/fhirant_secure_storage
+	url = https://github.com/MayJuun/fhirant_secure_storage.git
+[submodule "packages/flutter_passkey"]
+	path = packages/flutter_passkey
+	url = https://github.com/fhir-fli/flutter_passkey.git

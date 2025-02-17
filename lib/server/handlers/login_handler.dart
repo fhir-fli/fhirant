@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant/fhirant.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:flutter_passkey/flutter_passkey.dart';
 import 'package:shelf/shelf.dart';
 
@@ -18,7 +20,7 @@ String _generateChallenge() {
 Future<Response> loginHandler(Request request) async {
   try {
     if (request.method != 'POST') {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Invalid request method: ${request.method}',
       );
       return Response(405, body: jsonEncode({'error': 'Method Not Allowed'}));
@@ -27,24 +29,24 @@ Future<Response> loginHandler(Request request) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     if (!body.containsKey('username')) {
-      FhirAntLoggingService().logWarning('Login attempt without username');
+      FhirantLogging().logWarning('Login attempt without username');
       return Response(400, body: jsonEncode({'error': 'Username required'}));
     }
 
     final username = body['username'];
     if (username is! String) {
-      FhirAntLoggingService().logWarning('Invalid username format: $username');
+      FhirantLogging().logWarning('Invalid username format: $username');
       return Response(400, body: jsonEncode({'error': 'Invalid username'}));
     }
 
-    FhirAntLoggingService().logInfo('Login attempt for user: $username');
+    FhirantLogging().logInfo('Login attempt for user: $username');
 
     // Retrieve stored passkey credential.
     final storage = SecureStorageService();
     final storedCredential = await storage.getPasskey(username);
 
     if (storedCredential == null) {
-      FhirAntLoggingService().logWarning('User not registered: $username');
+      FhirantLogging().logWarning('User not registered: $username');
       return Response(401, body: jsonEncode({'error': 'User not registered'}));
     }
 
@@ -71,7 +73,7 @@ Future<Response> loginHandler(Request request) async {
     final authResponse = await FlutterPasskey().getCredential(options);
 
     if (authResponse.isEmpty) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Authentication failed for user: $username',
       );
       pendingLoginChallenges.remove(username);
@@ -91,7 +93,7 @@ Future<Response> loginHandler(Request request) async {
 
     // Verify that the challenge matches the one stored.
     if (clientData['challenge'] != challenge) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Challenge mismatch during login for user: $username',
       );
       pendingLoginChallenges.remove(username);
@@ -106,10 +108,10 @@ Future<Response> loginHandler(Request request) async {
       'username': username,
       'exp':
           DateTime.now().add(const Duration(days: 90)).millisecondsSinceEpoch ~/
-          1000,
+              1000,
     }).sign(SecretKey(_secretKey));
 
-    FhirAntLoggingService().logInfo(
+    FhirantLogging().logInfo(
       'User authenticated successfully: $username',
     );
 
@@ -118,7 +120,7 @@ Future<Response> loginHandler(Request request) async {
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirAntLoggingService().logError('Login failed', e, stackTrace);
+    FhirantLogging().logError('Login failed', e, stackTrace);
     return Response(
       500,
       body: jsonEncode({'error': 'Login failed: $e'}),

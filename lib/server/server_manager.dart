@@ -3,6 +3,9 @@ import 'dart:io';
 
 import 'package:fhirant/fhirant.dart';
 import 'package:fhirant/server/handlers/favico_handler.dart';
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
@@ -50,7 +53,7 @@ class ServerManager {
   /// Start the server on the specified port
   Future<void> start({int port = 8080}) async {
     if (isRunning) {
-      FhirAntLoggingService().logWarning('Server is already running.');
+      FhirantLogging().logWarning('Server is already running.');
       return;
     }
 
@@ -60,7 +63,7 @@ class ServerManager {
     final certificatePem = await storageService.getCertificate();
 
     if (privateKeyPem == null || certificatePem == null) {
-      FhirAntLoggingService().logError(
+      FhirantLogging().logError(
         'Missing certificates! Cannot start the server.',
       );
       return;
@@ -73,14 +76,14 @@ class ServerManager {
   /// Stop the server
   Future<void> stop() async {
     if (!isRunning) {
-      FhirAntLoggingService().logWarning('Server is not running.');
+      FhirantLogging().logWarning('Server is not running.');
       return;
     }
 
-    FhirAntLoggingService().logInfo('Stopping server...');
+    FhirantLogging().logInfo('Stopping server...');
     await _server!.close(force: true);
     _server = null;
-    FhirAntLoggingService().logInfo('Server stopped.');
+    FhirantLogging().logInfo('Server stopped.');
   }
 
   /// Generate a new registration code
@@ -132,40 +135,39 @@ class ServerManager {
       maxRequests: 10, // 10 requests per minute
     );
 
-    final router =
-        shelf.Router()
-          // ✅ Pass `_dbService` to each handler
-          ..get('/', baseHandler)
-          ..get('/favicon.ico', favicoHandler)
-          ..post(
-            '/register',
-            (Request req) =>
-                registerHandler(req, _registrationCode, isRegistrationOpen),
-          )
-          ..post('/login', loginHandler)
-          ..get('/metadata', metadataHandler)
-          ..all(r'/$validate', validateHandler)
-          ..all(r'/<resourceType>/$validate', validateHandler)
-          ..get(
-            '/<resourceType>',
-            (Request req, String resourceType) =>
-                getResourcesHandler(req, resourceType, _dbService),
-          )
-          ..post(
-            '/<resourceType>',
-            (Request req, String resourceType) =>
-                postResourceHandler(req, resourceType, _dbService),
-          )
-          ..get(
-            '/<resourceType>/<id>',
-            (Request req, String resourceType, String id) =>
-                getResourceByIdHandler(req, resourceType, id, _dbService),
-          )
-          ..put(
-            '/<resourceType>/<id>',
-            (Request req, String resourceType, String id) =>
-                putResourceHandler(req, resourceType, id, _dbService),
-          );
+    final router = shelf.Router()
+      // ✅ Pass `_dbService` to each handler
+      ..get('/', baseHandler)
+      ..get('/favicon.ico', favicoHandler)
+      ..post(
+        '/register',
+        (Request req) =>
+            registerHandler(req, _registrationCode, isRegistrationOpen),
+      )
+      ..post('/login', loginHandler)
+      ..get('/metadata', metadataHandler)
+      ..all(r'/$validate', validateHandler)
+      ..all(r'/<resourceType>/$validate', validateHandler)
+      ..get(
+        '/<resourceType>',
+        (Request req, String resourceType) =>
+            getResourcesHandler(req, resourceType, _dbService),
+      )
+      ..post(
+        '/<resourceType>',
+        (Request req, String resourceType) =>
+            postResourceHandler(req, resourceType, _dbService),
+      )
+      ..get(
+        '/<resourceType>/<id>',
+        (Request req, String resourceType, String id) =>
+            getResourceByIdHandler(req, resourceType, id, _dbService),
+      )
+      ..put(
+        '/<resourceType>/<id>',
+        (Request req, String resourceType, String id) =>
+            putResourceHandler(req, resourceType, id, _dbService),
+      );
 
     final handler = const Pipeline()
         .addMiddleware(_logRequestsMiddleware())
@@ -174,16 +176,15 @@ class ServerManager {
         .addHandler(router.call);
 
     if (privateKeyPem == null || certificatePem == null) {
-      FhirAntLoggingService().logWarning(
+      FhirantLogging().logWarning(
         'Certificates not found. Cannot start server.',
       );
       return;
     }
 
-    final securityContext =
-        SecurityContext()
-          ..useCertificateChainBytes(certificatePem.codeUnits)
-          ..usePrivateKeyBytes(privateKeyPem.codeUnits);
+    final securityContext = SecurityContext()
+      ..useCertificateChainBytes(certificatePem.codeUnits)
+      ..usePrivateKeyBytes(privateKeyPem.codeUnits);
 
     _server = await serve(
       handler,
@@ -192,7 +193,7 @@ class ServerManager {
       securityContext: securityContext,
     );
 
-    FhirAntLoggingService().logInfo(
+    FhirantLogging().logInfo(
       'Server started at https://${_server!.address.address}:${_server!.port}',
     );
   }
@@ -205,8 +206,7 @@ class ServerManager {
         final response = await innerHandler(request);
         final duration = DateTime.now().difference(startTime);
 
-        final clientIp =
-            request.headers['x-forwarded-for'] ??
+        final clientIp = request.headers['x-forwarded-for'] ??
             (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
                 ?.remoteAddress
                 .address ??

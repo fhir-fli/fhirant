@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/fhirant.dart';
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 
@@ -42,9 +42,7 @@ void main() {
       const resourceJson = '{"id": "acc1", "resourceType": "Account"}';
 
       // Insert directly into the account table using the generated companion.
-      await testDb
-          .into(testDb.accountTable)
-          .insert(
+      await testDb.into(testDb.accountTable).insert(
             AccountTableCompanion.insert(
               id: 'acc1',
               lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -72,9 +70,7 @@ void main() {
     });
 
     // Insert the test resource into the account table.
-    await testDb
-        .into(testDb.accountTable)
-        .insert(
+    await testDb.into(testDb.accountTable).insert(
           AccountTableCompanion.insert(
             id: 'acc1',
             lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -99,9 +95,7 @@ void main() {
         'status': 'active',
         'name': 'Test Account$i',
       });
-      await testDb
-          .into(testDb.accountTable)
-          .insert(
+      await testDb.into(testDb.accountTable).insert(
             AccountTableCompanion.insert(
               id: 'acc$i',
               lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -130,9 +124,7 @@ void main() {
       'name': 'Test Account',
     });
     // Insert the test resource.
-    await testDb
-        .into(testDb.accountTable)
-        .insert(
+    await testDb.into(testDb.accountTable).insert(
           AccountTableCompanion.insert(
             id: 'acc123',
             lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -157,9 +149,7 @@ void main() {
         'status': 'active',
         'name': 'Test Account$i',
       });
-      await testDb
-          .into(testDb.accountTable)
-          .insert(
+      await testDb.into(testDb.accountTable).insert(
             AccountTableCompanion.insert(
               id: 'acc$i',
               lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -173,9 +163,7 @@ void main() {
 
   test('exportResourcesToNDJSON successfully exports resources', () async {
     const resourceJson = '{"id": "acc1", "resourceType": "Account"}';
-    await testDb
-        .into(testDb.accountTable)
-        .insert(
+    await testDb.into(testDb.accountTable).insert(
           AccountTableCompanion.insert(
             id: 'acc1',
             lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -224,9 +212,7 @@ void main() {
 
   test('getValidResourceTypes returns resource types with data', () async {
     const resourceJson = '{"id": "acc1", "resourceType": "Account"}';
-    await testDb
-        .into(testDb.accountTable)
-        .insert(
+    await testDb.into(testDb.accountTable).insert(
           AccountTableCompanion.insert(
             id: 'acc1',
             lastUpdated: DateTime.now().millisecondsSinceEpoch,
