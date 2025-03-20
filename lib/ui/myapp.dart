@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FHIR ANT',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const Scaffold(body: SafeArea(child: PrimaryScreen())),
+      home: const Scaffold(body: SafeArea(child: HomeScreen())),
     );
   }
 }
