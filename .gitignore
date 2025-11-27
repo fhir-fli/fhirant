@@ -1,0 +1,15 @@
+# See https://www.dartlang.org/guides/libraries/private-files
+
+# Files and directories created by pub
+.dart_tool/
+.DS_Store
+**/.DS_Store
+.packages
+build/
+
+# melos
+# melos does NOT want pubspec.lock files to be ignored
+*pubspec_overrides.yaml
+
+# Dart support files
+*.pubspec.lock

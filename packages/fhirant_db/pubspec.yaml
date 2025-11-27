@@ -1,0 +1,31 @@
+name: fhirant_db
+description: Fast Healthcare Interoperability Resources Agile Networking Tool
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  drift: ^2.29.0
+  fhir_r4:
+    path: ../../../fhir_r4/packages/fhir_r4
+  flutter:
+    sdk: flutter
+  fhirant_secure_storage:
+    path: ../fhirant_secure_storage
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  sqlcipher_flutter_libs: ^0.6.8
+  sqlite3: ^2.4.6
+
+dev_dependencies:
+  build_runner: ^2.10.4
+  drift_dev: ^2.29.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4
+
+flutter:
+  generate: true

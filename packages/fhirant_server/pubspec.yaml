@@ -1,0 +1,35 @@
+name: fhirant_server
+description: A standalone server for standalone use with the FhirAntDb or in combination with the FhirAnt Flutter Interface.
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  args: ^2.7.0
+  fhir_r4:
+    path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4_path:
+    path: ../../../fhir_r4/packages/fhir_r4_path
+  fhir_r4_mapping:
+    path: ../../../fhir_r4/packages/fhir_r4_mapping
+  fhir_r4_validation:
+    path: ../../../fhir_r4/packages/fhir_r4_validation
+  fhirant_db: 
+    path: ../fhirant_db
+  fhirant_logging:
+    path: ../fhirant_logging
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+  shelf_rate_limiter: ^1.0.1
+
+dependency_overrides:
+  fhir_r4:
+    path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4_path:
+    path: ../../../fhir_r4/packages/fhir_r4_path
+  fhir_r4_mapping:
+    path: ../../../fhir_r4/packages/fhir_r4_mapping
+  fhir_r4_validation:
+    path: ../../../fhir_r4/packages/fhir_r4_validation

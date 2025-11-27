@@ -1,0 +1,9 @@
+name: fhirant_logging
+publish_to: 'none' 
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.2
+
+dependencies:
+  logging: ^1.3.0
