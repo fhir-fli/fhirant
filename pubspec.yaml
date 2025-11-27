@@ -1,0 +1,28 @@
+name: fhirant
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+
+dependency_overrides:
+  fhir_r4:
+    path: ../fhir_r4/packages/fhir_r4
+  fhir_r4_path:
+    path: ../fhir_r4/packages/fhir_r4_path
+  fhir_r4_mapping:
+    path: ../fhir_r4/packages/fhir_r4_mapping
+  fhir_r4_validation:
+    path: ../fhir_r4/packages/fhir_r4_validation
+  fhirant_db:
+    path: packages/fhirant_db
+  fhirant_logging:
+    path: packages/fhirant_logging
+  fhirant_secure_storage:
+    path: packages/fhirant_secure_storage
+  fhirant_server:
+    path: packages/fhirant_server
+
+dev_dependencies:
+  melos: ^6.3.2
+

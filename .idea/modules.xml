@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/packages/fhirant_db/melos_fhirant_db.iml" filepath="$PROJECT_DIR$/packages/fhirant_db/melos_fhirant_db.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/fhirant_logging/melos_fhirant_logging.iml" filepath="$PROJECT_DIR$/packages/fhirant_logging/melos_fhirant_logging.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/fhirant_secure_storage/melos_fhirant_secure_storage.iml" filepath="$PROJECT_DIR$/packages/fhirant_secure_storage/melos_fhirant_secure_storage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/fhirant_server/melos_fhirant_server.iml" filepath="$PROJECT_DIR$/packages/fhirant_server/melos_fhirant_server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/melos_fhirant.iml" filepath="$PROJECT_DIR$/melos_fhirant.iml" />
+    </modules>
+  </component>
+</project>
