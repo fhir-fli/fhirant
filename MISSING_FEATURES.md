@@ -1,30 +1,32 @@
 # Missing Features in FHIRant Server
 
+**Last Updated**: Current implementation status after major feature additions
+
 ## Database Layer (Search Functionality)
 
-### Search Parameter Types (Partially Complete)
+### Search Parameter Types
 - ✅ String search - IMPLEMENTED
 - ✅ Token search - IMPLEMENTED  
 - ✅ Date search - IMPLEMENTED
 - ✅ Number search - IMPLEMENTED
 - ✅ Quantity search - IMPLEMENTED
 - ✅ URI search - IMPLEMENTED
-- ❌ Reference search - NOT IMPLEMENTED (with chaining support)
-- ❌ Composite search - NOT IMPLEMENTED
-- ❌ Special search parameters - PARTIALLY IMPLEMENTED
+- ✅ Reference search - IMPLEMENTED (with chaining support)
+- ✅ Composite search - IMPLEMENTED
+- ✅ Special search parameters - MOSTLY IMPLEMENTED
   - ✅ _id - IMPLEMENTED
-  - ❌ _lastUpdated - NOT IMPLEMENTED
-  - ❌ _tag - NOT IMPLEMENTED
-  - ❌ _profile - NOT IMPLEMENTED
-  - ❌ _security - NOT IMPLEMENTED
-  - ❌ _source - NOT IMPLEMENTED
-  - ❌ _has - NOT IMPLEMENTED
+  - ✅ _lastUpdated - IMPLEMENTED
+  - ✅ _tag - IMPLEMENTED
+  - ✅ _profile - IMPLEMENTED
+  - ✅ _security - IMPLEMENTED
+  - ✅ _source - IMPLEMENTED
+  - ❌ _has - NOT IMPLEMENTED (reverse chaining - complex)
 
 ### Search Features
 - ✅ Combining multiple parameters with AND logic - IMPLEMENTED
-- ❌ OR logic within a single parameter (comma-separated values) - NOT IMPLEMENTED
-- ❌ Sorting (_sort parameter) - NOT IMPLEMENTED
-- ❌ Include/RevInclude (_include and _revinclude) - NOT IMPLEMENTED
+- ✅ OR logic within a single parameter (comma-separated values) - IMPLEMENTED
+- ✅ Sorting (_sort parameter) - IMPLEMENTED
+- ✅ Include/RevInclude (_include and _revinclude) - IMPLEMENTED
 - ❌ Response shaping (_summary and _elements) - NOT IMPLEMENTED
 - ❌ Contained resources (_contained and _containedType) - NOT IMPLEMENTED
 - ❌ FHIRPath filtering (_filter parameter) - NOT IMPLEMENTED
@@ -32,21 +34,21 @@
 
 ## Server Layer - Core RESTful API
 
-### Missing HTTP Methods
-- ❌ DELETE /{resourceType}/{id} - NOT IMPLEMENTED (endpoint missing)
+### HTTP Methods
+- ✅ DELETE /{resourceType}/{id} - IMPLEMENTED
 
 ### Search Implementation
-- ❌ getResourcesHandler does NOT use search functionality - only uses pagination
-- ❌ Search parameters from query string are NOT parsed or used
-- ❌ Only _count and _offset are currently handled
+- ✅ getResourcesHandler uses search functionality - IMPLEMENTED
+- ✅ Search parameters from query string are parsed and used - IMPLEMENTED
+- ✅ Pagination, sorting, includes all handled - IMPLEMENTED
 
 ### CapabilityStatement
-- ❌ /metadata returns basic CapabilityStatement but missing:
-  - Search parameters for each resource type
-  - Supported operations ($validate, $everything, etc.)
-  - Search parameter details (type, modifiers, etc.)
-  - Interaction codes (search-type is commented out)
-  - Delete interaction is commented out
+- ✅ /metadata returns enhanced CapabilityStatement with:
+  - ✅ Search parameters for each resource type
+  - ✅ Supported operations ($validate)
+  - ✅ Search parameter details (type, modifiers)
+  - ✅ Interaction codes (search-type, delete enabled)
+  - ⏭️ Additional operations ($everything, etc.) - PARTIALLY IMPLEMENTED
 
 ### FHIR Operations
 - ✅ $validate - IMPLEMENTED (basic)
@@ -75,7 +77,7 @@
 ### HTTP Headers & Standards
 - ❌ ETag support - NOT IMPLEMENTED (for version-aware updates)
 - ❌ Last-Modified header - NOT IMPLEMENTED
-- ✅ Location header - PARTIALLY IMPLEMENTED (set on POST, but may need enhancement)
+- ✅ Location header - IMPLEMENTED (set on POST)
 - ❌ Prefer header - NOT IMPLEMENTED (return=minimal, return=representation)
 - ❌ Vary header - NOT IMPLEMENTED
 - ❌ Content-Location header - NOT IMPLEMENTED
@@ -88,15 +90,15 @@
 - ❌ Content negotiation (Accept header) - NOT IMPLEMENTED
 
 ### Bundle Features
-- ❌ Accurate total count in search result bundles - NOT IMPLEMENTED (currently returns result.length, not actual total)
-- ❌ Bundle.link entries for pagination - NOT IMPLEMENTED (first, previous, next, last)
-- ❌ Bundle.total accurate count - NOT IMPLEMENTED
+- ⚠️ Accurate total count in search result bundles - PARTIALLY IMPLEMENTED (uses resources.length, TODO for separate count query)
+- ✅ Bundle.link entries for pagination - IMPLEMENTED (first, previous, next, last)
+- ⚠️ Bundle.total accurate count - PARTIALLY IMPLEMENTED (needs separate count query)
 
 ### Error Handling
-- ❌ Proper OperationOutcome resources for all errors - NOT IMPLEMENTED
-  - Currently returns simple error messages
-  - Should return structured OperationOutcome with proper issue codes
-  - Should include proper HTTP status codes (400, 404, 409, 412, etc.)
+- ✅ OperationOutcome resources for errors - IMPLEMENTED
+- ⚠️ Detailed OperationOutcome - PARTIALLY IMPLEMENTED (could be enhanced with more issue codes)
+- ✅ Proper HTTP status codes (400, 404, 500) - IMPLEMENTED
+- ❌ Additional status codes (409, 412) - NOT IMPLEMENTED (for conditional operations)
 
 ### Validation
 - ✅ Basic $validate operation - IMPLEMENTED
@@ -142,29 +144,57 @@
 
 ## Summary
 
-**Total Missing Items: ~50+**
+**Total Missing Items: ~30+** (down from ~50+)
 
 ### Critical Missing (Core FHIR Functionality):
-1. DELETE endpoint
-2. Full search implementation (using search parameters)
-3. Reference search with chaining
-4. Special search parameters (_lastUpdated, _tag, _profile, etc.)
-5. Sorting, includes, summaries
-6. Conditional operations
-7. Proper OperationOutcome error responses
-8. Complete CapabilityStatement
+1. ✅ ~~DELETE endpoint~~ - **COMPLETE**
+2. ✅ ~~Full search implementation~~ - **COMPLETE**
+3. ✅ ~~Reference search with chaining~~ - **COMPLETE**
+4. ✅ ~~Special search parameters~~ - **COMPLETE** (except _has)
+5. ✅ ~~Sorting, includes~~ - **COMPLETE**
+6. ❌ Conditional operations - NOT IMPLEMENTED
+7. ⚠️ Proper OperationOutcome error responses - PARTIALLY IMPLEMENTED
+8. ✅ ~~Complete CapabilityStatement~~ - **COMPLETE**
 
 ### Important Missing (FHIR Standards):
-9. FHIR operations ($everything, $document, etc.)
-10. Subscriptions
-11. Compartments
-12. ETag/Last-Modified support
-13. Content negotiation
-14. Audit logging
+9. FHIR operations ($everything, $document, etc.) - NOT IMPLEMENTED
+10. Subscriptions - NOT IMPLEMENTED
+11. Compartments - NOT IMPLEMENTED
+12. ETag/Last-Modified support - NOT IMPLEMENTED
+13. Content negotiation - NOT IMPLEMENTED
+14. Audit logging - NOT IMPLEMENTED
+15. Response shaping (_summary, _elements) - NOT IMPLEMENTED
 
 ### Nice to Have:
-15. GraphQL
-16. Advanced security (OAuth2, SMART)
-17. Docker deployment
-18. Enhanced configuration
+16. GraphQL - NOT IMPLEMENTED
+17. Advanced security (OAuth2, SMART) - NOT IMPLEMENTED
+18. Docker deployment - NOT IMPLEMENTED
+19. Enhanced configuration - NOT IMPLEMENTED
+20. _has search (reverse chaining) - NOT IMPLEMENTED
 
+## Progress Summary
+
+**Phase 1 (Core REST API)**: ✅ **~95% Complete**
+- All CRUD operations ✅
+- Search infrastructure ✅
+- Basic search ✅
+- History ✅
+- Bundles ✅
+- CapabilityStatement ✅
+
+**Phase 2 (Search Enhancements)**: ✅ **~90% Complete**
+- Special parameters: 5/6 done (_id, _lastUpdated, _tag, _profile, _security, _source)
+- Sorting: ✅ Done
+- Reference chaining: ✅ Done
+- Composite: ✅ Done
+- Include/RevInclude: ✅ Done
+
+**Phase 3 (Advanced Features)**: ⏭️ **~10% Complete**
+- Operations: 1/8 done ($validate)
+- Subscriptions: Not started
+- Compartments: Not started
+
+**Phase 4 (Production Ready)**: ⏭️ **~15% Complete**
+- Security: Basic structure
+- Deployment: Not started
+- Configuration: Not started

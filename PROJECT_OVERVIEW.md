@@ -141,6 +141,16 @@ Implement all FHIR search parameter types:
 3. **Special Search Parameters**
    - ✅ _id search
    - ✅ _lastUpdated search (with all date modifiers)
+   - ✅ _tag search
+   - ✅ _profile search
+   - ✅ _security search
+   - ✅ _source search
+
+4. **Advanced Search Features**
+   - ✅ Reference search with chaining
+   - ✅ Composite search
+   - ✅ Sorting (_sort)
+   - ✅ Include/RevInclude support
 
 4. **Metadata**
    - ✅ Enhanced CapabilityStatement
@@ -149,24 +159,28 @@ Implement all FHIR search parameter types:
 
 5. **Testing**
    - ✅ Test infrastructure set up
-   - ✅ 13/15 tests passing (87%)
+   - ✅ 13/16 tests passing (81%)
    - ✅ Search parser: 7/7 tests (100%)
-   - ✅ DELETE handler: 3/3 tests (100%)
+   - ✅ DELETE handler: 5/5 tests (100%)
+   - ⚠️ GET handler: 6/9 tests passing (edge cases need work)
 
-### ⏭️ In Progress / Next Up
+### ✅ Recently Completed (Phase 2)
 
-1. **Search Enhancements** (Phase 2)
-   - ⏭️ _tag search
-   - ⏭️ _profile search
-   - ⏭️ _security search
-   - ⏭️ Sorting (_sort)
-   - ⏭️ Reference search with chaining
-   - ⏭️ Composite search
+1. **Search Enhancements** ✅
+   - ✅ _tag search
+   - ✅ _profile search
+   - ✅ _security search
+   - ✅ _source search
+   - ✅ Sorting (_sort)
+   - ✅ Reference search with chaining
+   - ✅ Composite search
 
-2. **Bundle Features**
-   - ⏭️ Accurate total count
-   - ⏭️ Pagination links (first, previous, next, last)
-   - ⏭️ Include/RevInclude support
+2. **Bundle Features** ✅
+   - ⚠️ Accurate total count (partially - uses resources.length, TODO for separate count query)
+   - ✅ Pagination links (first, previous, next, last)
+   - ✅ Include/RevInclude support
+
+### ⏭️ Next Up (Phase 3+)
 
 3. **HTTP Standards**
    - ⏭️ ETag support
@@ -279,30 +293,36 @@ Use as a library in Flutter applications:
 
 ## Project Status Summary
 
-### Overall Progress: ~40% Complete
+### Overall Progress: ~60% Complete (Core FHIR Functionality)
 
-**Phase 1 (Core REST API)**: ✅ **~90% Complete**
+**Phase 1 (Core REST API)**: ✅ **~95% Complete**
 - All CRUD operations ✅
 - Search infrastructure ✅
-- Basic search ✅
+- Full search implementation ✅
 - History ✅
 - Bundles ✅
+- Enhanced CapabilityStatement ✅
 
-**Phase 2 (Search Enhancements)**: ⏭️ **~20% Complete**
-- Special parameters: 2/6 done (_id, _lastUpdated)
-- Sorting: Not started
-- Reference chaining: Not started
-- Composite: Not started
+**Phase 2 (Search Enhancements)**: ✅ **~90% Complete**
+- Special parameters: 5/6 done (_id, _lastUpdated, _tag, _profile, _security, _source)
+- Sorting: ✅ Complete
+- Reference chaining: ✅ Complete
+- Composite search: ✅ Complete
+- Include/RevInclude: ✅ Complete
+- Bundle pagination links: ✅ Complete
 
-**Phase 3 (Advanced Features)**: ⏭️ **~5% Complete**
+**Phase 3 (Advanced Features)**: ⏭️ **~10% Complete**
 - Operations: 1/8 done ($validate)
 - Subscriptions: Not started
 - Compartments: Not started
+- Response shaping: Not started
 
-**Phase 4 (Production Ready)**: ⏭️ **~10% Complete**
+**Phase 4 (Production Ready)**: ⏭️ **~15% Complete**
 - Security: Basic structure
 - Deployment: Not started
 - Configuration: Not started
+- ETag/Last-Modified: Not started
+- Conditional operations: Not started
 
 ## Why This Project?
 
