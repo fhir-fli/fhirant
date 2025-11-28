@@ -86,7 +86,13 @@ class FhirAntServer {
         '/<resourceType>/<id>',
         (Request req, String resourceType, String id) =>
             patchResourceHandler(req, resourceType, id, dbInterface),
+      )
+      ..delete(
+        '/<resourceType>/<id>',
+        (Request req, String resourceType, String id) =>
+            deleteResourceHandler(req, resourceType, id, dbInterface),
       );
+
 
     return router;
   }

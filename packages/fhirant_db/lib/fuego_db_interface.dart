@@ -21,7 +21,17 @@ abstract class FuegoDbInterface {
   Future<List<Resource>> getResourceHistory(
       R4ResourceType resourceType, String id);
 
-  // Database Management
+
+  // Search
+  Future<List<Resource>> search({
+    required R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+    int? count,
+    int? offset,
+    List<String>? sort,
+  });
+
+    // Database Management
   Future<void> initialize();
   Future<void> close();
   Future<void> clear();
