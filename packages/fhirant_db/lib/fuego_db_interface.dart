@@ -21,28 +21,6 @@ abstract class FuegoDbInterface {
   Future<List<Resource>> getResourceHistory(
       R4ResourceType resourceType, String id);
 
-  // Audit Logging
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  });
-
   // Database Management
   Future<void> initialize();
   Future<void> close();

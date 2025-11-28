@@ -76,50 +76,6 @@ class FhirAntDb extends _$FhirAntDb {
       );
     });
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Debug check to ensure SQLCipher is available
   static bool _debugCheckHasCipher(sqlite3.Database database) {
@@ -130,50 +86,6 @@ b loop
       return false;
     }
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<fhir.Resource?> getResource(
       fhir.R4ResourceType resourceType, String id) async {
@@ -187,50 +99,6 @@ b loop
 
     return fhir.Resource.fromJsonString(resourceRow.resource);
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<bool> saveResource(fhir.Resource resource) async {
     try {
@@ -259,50 +127,6 @@ b loop
       return false;
     }
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<bool> _updateSearchParameters(fhir.Resource resource) async {
     try {
@@ -369,50 +193,6 @@ b loop
       return false;
     }
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Save multiple FHIR resources in a single batch.
   Future<bool> saveResources(List<fhir.Resource> resourcesList) async {
@@ -455,50 +235,6 @@ b loop
       return false;
     }
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<bool> _updateSearchParametersBulk(
       List<fhir.Resource> resources) async {
@@ -614,50 +350,6 @@ b loop
       return false;
     }
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<int> deleteResource(
       fhir.R4ResourceType resourceType, String id) async {
@@ -668,50 +360,6 @@ b loop
               tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id)))
         .go();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Retrieve a paginated list of resources of a given type.
   Future<List<fhir.Resource>> getResourcesWithPagination({
@@ -729,50 +377,6 @@ b loop
         .map((row) => fhir.Resource.fromJsonString(row.resource))
         .toList();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Retrieve all resources of a given type.
   Future<List<fhir.Resource>> getResourcesByType(
@@ -786,50 +390,6 @@ b loop
         .map((row) => fhir.Resource.fromJsonString(row.resource))
         .toList();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Return a count of resources for a given type.
   Future<int> getResourceCount(fhir.R4ResourceType resourceType) async {
@@ -842,50 +402,6 @@ b loop
     final row = await query.getSingle();
     return row.read(countExp) ?? 0;
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Retrieve a list of distinct resource types currently stored.
   Future<List<fhir.R4ResourceType>> getResourceTypes() async {
@@ -910,50 +426,6 @@ b loop
     }
     return resourceTypes;
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   Future<List<fhir.Resource>> getResourceHistory(
       fhir.R4ResourceType resourceType, String id) async {
@@ -968,150 +440,19 @@ b loop
       return fhir.Resource.fromJsonString(row.resource);
     }).toList();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
 
-b loop
-
-
+  /// Initialize the database (if needed).
+  Future<void> initialize() async {
     // Since LazyDatabase opens the connection on first use,
     // you can run a simple query to ensure it is ready.
     await customSelect('SELECT 1').get();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Close the database connection.
   @override
   Future<void> close() async {
     await super.close();
   }
-  /// Insert an audit log entry
-  Future<void> insertAuditLog({
-    required String level,
-    required String message,
-    String? eventType,
-    String? method,
-    String? url,
-    int? statusCode,
-    int? responseTime,
-    String? clientIp,
-    String? user,
-    String? resourceType,
-    String? resourceId,
-    String? action,
-    String? userAgent,
-    String? sessionId,
-    String? purposeOfUse,
-    String? outcome,
-    String? additionalData,
-    String? stackTrace,
-  }) async {
-    await into(logs).insert(LogsCompanion.insert(
-      level: level,
-      message: message,
-      eventType: eventType != null ? Value(eventType) : const Value.absent(),
-      method: method != null ? Value(method) : const Value.absent(),
-      url: url != null ? Value(url) : const Value.absent(),
-      statusCode: statusCode != null ? Value(statusCode) : const Value.absent(),
-      responseTime: responseTime != null ? Value(responseTime) : const Value.absent(),
-      clientIp: clientIp != null ? Value(clientIp) : const Value.absent(),
-      user: user != null ? Value(user) : const Value.absent(),
-      resourceType: resourceType != null ? Value(resourceType) : const Value.absent(),
-      resourceId: resourceId != null ? Value(resourceId) : const Value.absent(),
-      action: action != null ? Value(action) : const Value.absent(),
-      userAgent: userAgent != null ? Value(userAgent) : const Value.absent(),
-      sessionId: sessionId != null ? Value(sessionId) : const Value.absent(),
-      purposeOfUse: purposeOfUse != null ? Value(purposeOfUse) : const Value.absent(),
-      outcome: outcome != null ? Value(outcome) : const Value.absent(),
-      additionalData: additionalData != null ? Value(additionalData) : const Value.absent(),
-      stackTrace: stackTrace != null ? Value(stackTrace) : const Value.absent(),
-    ));
-  }
-
-b loop
 
   /// Clear all resources (and history) from the database.
   Future<void> clear() async {}

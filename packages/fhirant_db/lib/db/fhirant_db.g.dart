@@ -31,12 +31,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
   late final GeneratedColumn<String> message = GeneratedColumn<String>(
       'message', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _eventTypeMeta =
-      const VerificationMeta('eventType');
-  @override
-  late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
-      'event_type', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _methodMeta = const VerificationMeta('method');
   @override
   late final GeneratedColumn<String> method = GeneratedColumn<String>(
@@ -70,53 +64,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
   late final GeneratedColumn<String> user = GeneratedColumn<String>(
       'user', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _resourceTypeMeta =
-      const VerificationMeta('resourceType');
-  @override
-  late final GeneratedColumn<String> resourceType = GeneratedColumn<String>(
-      'resource_type', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _resourceIdMeta =
-      const VerificationMeta('resourceId');
-  @override
-  late final GeneratedColumn<String> resourceId = GeneratedColumn<String>(
-      'resource_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _actionMeta = const VerificationMeta('action');
-  @override
-  late final GeneratedColumn<String> action = GeneratedColumn<String>(
-      'action', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _userAgentMeta =
-      const VerificationMeta('userAgent');
-  @override
-  late final GeneratedColumn<String> userAgent = GeneratedColumn<String>(
-      'user_agent', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _sessionIdMeta =
-      const VerificationMeta('sessionId');
-  @override
-  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
-      'session_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _purposeOfUseMeta =
-      const VerificationMeta('purposeOfUse');
-  @override
-  late final GeneratedColumn<String> purposeOfUse = GeneratedColumn<String>(
-      'purpose_of_use', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _outcomeMeta =
-      const VerificationMeta('outcome');
-  @override
-  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
-      'outcome', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _additionalDataMeta =
-      const VerificationMeta('additionalData');
-  @override
-  late final GeneratedColumn<String> additionalData = GeneratedColumn<String>(
-      'additional_data', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _stackTraceMeta =
       const VerificationMeta('stackTrace');
   @override
@@ -136,21 +83,12 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
         id,
         level,
         message,
-        eventType,
         method,
         url,
         statusCode,
         responseTime,
         clientIp,
         user,
-        resourceType,
-        resourceId,
-        action,
-        userAgent,
-        sessionId,
-        purposeOfUse,
-        outcome,
-        additionalData,
         stackTrace,
         timestamp
       ];
@@ -178,10 +116,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
           message.isAcceptableOrUnknown(data['message']!, _messageMeta));
     } else if (isInserting) {
       context.missing(_messageMeta);
-    }
-    if (data.containsKey('event_type')) {
-      context.handle(_eventTypeMeta,
-          eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta));
     }
     if (data.containsKey('method')) {
       context.handle(_methodMeta,
@@ -211,46 +145,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
       context.handle(
           _userMeta, user.isAcceptableOrUnknown(data['user']!, _userMeta));
     }
-    if (data.containsKey('resource_type')) {
-      context.handle(
-          _resourceTypeMeta,
-          resourceType.isAcceptableOrUnknown(
-              data['resource_type']!, _resourceTypeMeta));
-    }
-    if (data.containsKey('resource_id')) {
-      context.handle(
-          _resourceIdMeta,
-          resourceId.isAcceptableOrUnknown(
-              data['resource_id']!, _resourceIdMeta));
-    }
-    if (data.containsKey('action')) {
-      context.handle(_actionMeta,
-          action.isAcceptableOrUnknown(data['action']!, _actionMeta));
-    }
-    if (data.containsKey('user_agent')) {
-      context.handle(_userAgentMeta,
-          userAgent.isAcceptableOrUnknown(data['user_agent']!, _userAgentMeta));
-    }
-    if (data.containsKey('session_id')) {
-      context.handle(_sessionIdMeta,
-          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
-    }
-    if (data.containsKey('purpose_of_use')) {
-      context.handle(
-          _purposeOfUseMeta,
-          purposeOfUse.isAcceptableOrUnknown(
-              data['purpose_of_use']!, _purposeOfUseMeta));
-    }
-    if (data.containsKey('outcome')) {
-      context.handle(_outcomeMeta,
-          outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta));
-    }
-    if (data.containsKey('additional_data')) {
-      context.handle(
-          _additionalDataMeta,
-          additionalData.isAcceptableOrUnknown(
-              data['additional_data']!, _additionalDataMeta));
-    }
     if (data.containsKey('stack_trace')) {
       context.handle(
           _stackTraceMeta,
@@ -276,8 +170,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
           .read(DriftSqlType.string, data['${effectivePrefix}level'])!,
       message: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}message'])!,
-      eventType: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}event_type']),
       method: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}method']),
       url: attachedDatabase.typeMapping
@@ -290,22 +182,6 @@ class $LogsTable extends Logs with TableInfo<$LogsTable, Log> {
           .read(DriftSqlType.string, data['${effectivePrefix}client_ip']),
       user: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}user']),
-      resourceType: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}resource_type']),
-      resourceId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}resource_id']),
-      action: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}action']),
-      userAgent: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}user_agent']),
-      sessionId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}session_id']),
-      purposeOfUse: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}purpose_of_use']),
-      outcome: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}outcome']),
-      additionalData: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}additional_data']),
       stackTrace: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}stack_trace']),
       timestamp: attachedDatabase.typeMapping
@@ -329,10 +205,6 @@ class Log extends DataClass implements Insertable<Log> {
   /// Message column
   final String message;
 
-  /// Event type for HIPAA audit logging
-  /// Values: authentication, phi_access, security, system
-  final String? eventType;
-
   /// Method column
   final String? method;
 
@@ -348,34 +220,10 @@ class Log extends DataClass implements Insertable<Log> {
   /// Client IP column
   final String? clientIp;
 
-  /// User column (user ID or username)
+  /// User column
   final String? user;
 
-  /// Resource type accessed (for PHI access logging)
-  final String? resourceType;
-
-  /// Resource ID accessed (for PHI access logging)
-  final String? resourceId;
-
-  /// Action performed (read, create, update, patch, delete, search, history)
-  final String? action;
-
-  /// User agent from request
-  final String? userAgent;
-
-  /// Session ID for tracking user sessions
-  final String? sessionId;
-
-  /// Purpose of use (for HIPAA compliance)
-  final String? purposeOfUse;
-
-  /// Outcome of the operation (success, failure)
-  final String? outcome;
-
-  /// Additional data as JSON string
-  final String? additionalData;
-
-  /// Stack trace column (only for errors)
+  /// Stack trace column
   final String? stackTrace;
 
   /// Timestamp column
@@ -384,21 +232,12 @@ class Log extends DataClass implements Insertable<Log> {
       {required this.id,
       required this.level,
       required this.message,
-      this.eventType,
       this.method,
       this.url,
       this.statusCode,
       this.responseTime,
       this.clientIp,
       this.user,
-      this.resourceType,
-      this.resourceId,
-      this.action,
-      this.userAgent,
-      this.sessionId,
-      this.purposeOfUse,
-      this.outcome,
-      this.additionalData,
       this.stackTrace,
       required this.timestamp});
   @override
@@ -407,9 +246,6 @@ class Log extends DataClass implements Insertable<Log> {
     map['id'] = Variable<int>(id);
     map['level'] = Variable<String>(level);
     map['message'] = Variable<String>(message);
-    if (!nullToAbsent || eventType != null) {
-      map['event_type'] = Variable<String>(eventType);
-    }
     if (!nullToAbsent || method != null) {
       map['method'] = Variable<String>(method);
     }
@@ -428,30 +264,6 @@ class Log extends DataClass implements Insertable<Log> {
     if (!nullToAbsent || user != null) {
       map['user'] = Variable<String>(user);
     }
-    if (!nullToAbsent || resourceType != null) {
-      map['resource_type'] = Variable<String>(resourceType);
-    }
-    if (!nullToAbsent || resourceId != null) {
-      map['resource_id'] = Variable<String>(resourceId);
-    }
-    if (!nullToAbsent || action != null) {
-      map['action'] = Variable<String>(action);
-    }
-    if (!nullToAbsent || userAgent != null) {
-      map['user_agent'] = Variable<String>(userAgent);
-    }
-    if (!nullToAbsent || sessionId != null) {
-      map['session_id'] = Variable<String>(sessionId);
-    }
-    if (!nullToAbsent || purposeOfUse != null) {
-      map['purpose_of_use'] = Variable<String>(purposeOfUse);
-    }
-    if (!nullToAbsent || outcome != null) {
-      map['outcome'] = Variable<String>(outcome);
-    }
-    if (!nullToAbsent || additionalData != null) {
-      map['additional_data'] = Variable<String>(additionalData);
-    }
     if (!nullToAbsent || stackTrace != null) {
       map['stack_trace'] = Variable<String>(stackTrace);
     }
@@ -464,9 +276,6 @@ class Log extends DataClass implements Insertable<Log> {
       id: Value(id),
       level: Value(level),
       message: Value(message),
-      eventType: eventType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(eventType),
       method:
           method == null && nullToAbsent ? const Value.absent() : Value(method),
       url: url == null && nullToAbsent ? const Value.absent() : Value(url),
@@ -480,29 +289,6 @@ class Log extends DataClass implements Insertable<Log> {
           ? const Value.absent()
           : Value(clientIp),
       user: user == null && nullToAbsent ? const Value.absent() : Value(user),
-      resourceType: resourceType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(resourceType),
-      resourceId: resourceId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(resourceId),
-      action:
-          action == null && nullToAbsent ? const Value.absent() : Value(action),
-      userAgent: userAgent == null && nullToAbsent
-          ? const Value.absent()
-          : Value(userAgent),
-      sessionId: sessionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(sessionId),
-      purposeOfUse: purposeOfUse == null && nullToAbsent
-          ? const Value.absent()
-          : Value(purposeOfUse),
-      outcome: outcome == null && nullToAbsent
-          ? const Value.absent()
-          : Value(outcome),
-      additionalData: additionalData == null && nullToAbsent
-          ? const Value.absent()
-          : Value(additionalData),
       stackTrace: stackTrace == null && nullToAbsent
           ? const Value.absent()
           : Value(stackTrace),
@@ -517,21 +303,12 @@ class Log extends DataClass implements Insertable<Log> {
       id: serializer.fromJson<int>(json['id']),
       level: serializer.fromJson<String>(json['level']),
       message: serializer.fromJson<String>(json['message']),
-      eventType: serializer.fromJson<String?>(json['eventType']),
       method: serializer.fromJson<String?>(json['method']),
       url: serializer.fromJson<String?>(json['url']),
       statusCode: serializer.fromJson<int?>(json['statusCode']),
       responseTime: serializer.fromJson<int?>(json['responseTime']),
       clientIp: serializer.fromJson<String?>(json['clientIp']),
       user: serializer.fromJson<String?>(json['user']),
-      resourceType: serializer.fromJson<String?>(json['resourceType']),
-      resourceId: serializer.fromJson<String?>(json['resourceId']),
-      action: serializer.fromJson<String?>(json['action']),
-      userAgent: serializer.fromJson<String?>(json['userAgent']),
-      sessionId: serializer.fromJson<String?>(json['sessionId']),
-      purposeOfUse: serializer.fromJson<String?>(json['purposeOfUse']),
-      outcome: serializer.fromJson<String?>(json['outcome']),
-      additionalData: serializer.fromJson<String?>(json['additionalData']),
       stackTrace: serializer.fromJson<String?>(json['stackTrace']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
     );
@@ -543,21 +320,12 @@ class Log extends DataClass implements Insertable<Log> {
       'id': serializer.toJson<int>(id),
       'level': serializer.toJson<String>(level),
       'message': serializer.toJson<String>(message),
-      'eventType': serializer.toJson<String?>(eventType),
       'method': serializer.toJson<String?>(method),
       'url': serializer.toJson<String?>(url),
       'statusCode': serializer.toJson<int?>(statusCode),
       'responseTime': serializer.toJson<int?>(responseTime),
       'clientIp': serializer.toJson<String?>(clientIp),
       'user': serializer.toJson<String?>(user),
-      'resourceType': serializer.toJson<String?>(resourceType),
-      'resourceId': serializer.toJson<String?>(resourceId),
-      'action': serializer.toJson<String?>(action),
-      'userAgent': serializer.toJson<String?>(userAgent),
-      'sessionId': serializer.toJson<String?>(sessionId),
-      'purposeOfUse': serializer.toJson<String?>(purposeOfUse),
-      'outcome': serializer.toJson<String?>(outcome),
-      'additionalData': serializer.toJson<String?>(additionalData),
       'stackTrace': serializer.toJson<String?>(stackTrace),
       'timestamp': serializer.toJson<DateTime>(timestamp),
     };
@@ -567,28 +335,18 @@ class Log extends DataClass implements Insertable<Log> {
           {int? id,
           String? level,
           String? message,
-          Value<String?> eventType = const Value.absent(),
           Value<String?> method = const Value.absent(),
           Value<String?> url = const Value.absent(),
           Value<int?> statusCode = const Value.absent(),
           Value<int?> responseTime = const Value.absent(),
           Value<String?> clientIp = const Value.absent(),
           Value<String?> user = const Value.absent(),
-          Value<String?> resourceType = const Value.absent(),
-          Value<String?> resourceId = const Value.absent(),
-          Value<String?> action = const Value.absent(),
-          Value<String?> userAgent = const Value.absent(),
-          Value<String?> sessionId = const Value.absent(),
-          Value<String?> purposeOfUse = const Value.absent(),
-          Value<String?> outcome = const Value.absent(),
-          Value<String?> additionalData = const Value.absent(),
           Value<String?> stackTrace = const Value.absent(),
           DateTime? timestamp}) =>
       Log(
         id: id ?? this.id,
         level: level ?? this.level,
         message: message ?? this.message,
-        eventType: eventType.present ? eventType.value : this.eventType,
         method: method.present ? method.value : this.method,
         url: url.present ? url.value : this.url,
         statusCode: statusCode.present ? statusCode.value : this.statusCode,
@@ -596,17 +354,6 @@ class Log extends DataClass implements Insertable<Log> {
             responseTime.present ? responseTime.value : this.responseTime,
         clientIp: clientIp.present ? clientIp.value : this.clientIp,
         user: user.present ? user.value : this.user,
-        resourceType:
-            resourceType.present ? resourceType.value : this.resourceType,
-        resourceId: resourceId.present ? resourceId.value : this.resourceId,
-        action: action.present ? action.value : this.action,
-        userAgent: userAgent.present ? userAgent.value : this.userAgent,
-        sessionId: sessionId.present ? sessionId.value : this.sessionId,
-        purposeOfUse:
-            purposeOfUse.present ? purposeOfUse.value : this.purposeOfUse,
-        outcome: outcome.present ? outcome.value : this.outcome,
-        additionalData:
-            additionalData.present ? additionalData.value : this.additionalData,
         stackTrace: stackTrace.present ? stackTrace.value : this.stackTrace,
         timestamp: timestamp ?? this.timestamp,
       );
@@ -615,7 +362,6 @@ class Log extends DataClass implements Insertable<Log> {
       id: data.id.present ? data.id.value : this.id,
       level: data.level.present ? data.level.value : this.level,
       message: data.message.present ? data.message.value : this.message,
-      eventType: data.eventType.present ? data.eventType.value : this.eventType,
       method: data.method.present ? data.method.value : this.method,
       url: data.url.present ? data.url.value : this.url,
       statusCode:
@@ -625,21 +371,6 @@ class Log extends DataClass implements Insertable<Log> {
           : this.responseTime,
       clientIp: data.clientIp.present ? data.clientIp.value : this.clientIp,
       user: data.user.present ? data.user.value : this.user,
-      resourceType: data.resourceType.present
-          ? data.resourceType.value
-          : this.resourceType,
-      resourceId:
-          data.resourceId.present ? data.resourceId.value : this.resourceId,
-      action: data.action.present ? data.action.value : this.action,
-      userAgent: data.userAgent.present ? data.userAgent.value : this.userAgent,
-      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
-      purposeOfUse: data.purposeOfUse.present
-          ? data.purposeOfUse.value
-          : this.purposeOfUse,
-      outcome: data.outcome.present ? data.outcome.value : this.outcome,
-      additionalData: data.additionalData.present
-          ? data.additionalData.value
-          : this.additionalData,
       stackTrace:
           data.stackTrace.present ? data.stackTrace.value : this.stackTrace,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
@@ -652,21 +383,12 @@ class Log extends DataClass implements Insertable<Log> {
           ..write('id: $id, ')
           ..write('level: $level, ')
           ..write('message: $message, ')
-          ..write('eventType: $eventType, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
           ..write('statusCode: $statusCode, ')
           ..write('responseTime: $responseTime, ')
           ..write('clientIp: $clientIp, ')
           ..write('user: $user, ')
-          ..write('resourceType: $resourceType, ')
-          ..write('resourceId: $resourceId, ')
-          ..write('action: $action, ')
-          ..write('userAgent: $userAgent, ')
-          ..write('sessionId: $sessionId, ')
-          ..write('purposeOfUse: $purposeOfUse, ')
-          ..write('outcome: $outcome, ')
-          ..write('additionalData: $additionalData, ')
           ..write('stackTrace: $stackTrace, ')
           ..write('timestamp: $timestamp')
           ..write(')'))
@@ -674,27 +396,8 @@ class Log extends DataClass implements Insertable<Log> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      level,
-      message,
-      eventType,
-      method,
-      url,
-      statusCode,
-      responseTime,
-      clientIp,
-      user,
-      resourceType,
-      resourceId,
-      action,
-      userAgent,
-      sessionId,
-      purposeOfUse,
-      outcome,
-      additionalData,
-      stackTrace,
-      timestamp);
+  int get hashCode => Object.hash(id, level, message, method, url, statusCode,
+      responseTime, clientIp, user, stackTrace, timestamp);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -702,21 +405,12 @@ class Log extends DataClass implements Insertable<Log> {
           other.id == this.id &&
           other.level == this.level &&
           other.message == this.message &&
-          other.eventType == this.eventType &&
           other.method == this.method &&
           other.url == this.url &&
           other.statusCode == this.statusCode &&
           other.responseTime == this.responseTime &&
           other.clientIp == this.clientIp &&
           other.user == this.user &&
-          other.resourceType == this.resourceType &&
-          other.resourceId == this.resourceId &&
-          other.action == this.action &&
-          other.userAgent == this.userAgent &&
-          other.sessionId == this.sessionId &&
-          other.purposeOfUse == this.purposeOfUse &&
-          other.outcome == this.outcome &&
-          other.additionalData == this.additionalData &&
           other.stackTrace == this.stackTrace &&
           other.timestamp == this.timestamp);
 }
@@ -725,42 +419,24 @@ class LogsCompanion extends UpdateCompanion<Log> {
   final Value<int> id;
   final Value<String> level;
   final Value<String> message;
-  final Value<String?> eventType;
   final Value<String?> method;
   final Value<String?> url;
   final Value<int?> statusCode;
   final Value<int?> responseTime;
   final Value<String?> clientIp;
   final Value<String?> user;
-  final Value<String?> resourceType;
-  final Value<String?> resourceId;
-  final Value<String?> action;
-  final Value<String?> userAgent;
-  final Value<String?> sessionId;
-  final Value<String?> purposeOfUse;
-  final Value<String?> outcome;
-  final Value<String?> additionalData;
   final Value<String?> stackTrace;
   final Value<DateTime> timestamp;
   const LogsCompanion({
     this.id = const Value.absent(),
     this.level = const Value.absent(),
     this.message = const Value.absent(),
-    this.eventType = const Value.absent(),
     this.method = const Value.absent(),
     this.url = const Value.absent(),
     this.statusCode = const Value.absent(),
     this.responseTime = const Value.absent(),
     this.clientIp = const Value.absent(),
     this.user = const Value.absent(),
-    this.resourceType = const Value.absent(),
-    this.resourceId = const Value.absent(),
-    this.action = const Value.absent(),
-    this.userAgent = const Value.absent(),
-    this.sessionId = const Value.absent(),
-    this.purposeOfUse = const Value.absent(),
-    this.outcome = const Value.absent(),
-    this.additionalData = const Value.absent(),
     this.stackTrace = const Value.absent(),
     this.timestamp = const Value.absent(),
   });
@@ -768,21 +444,12 @@ class LogsCompanion extends UpdateCompanion<Log> {
     this.id = const Value.absent(),
     required String level,
     required String message,
-    this.eventType = const Value.absent(),
     this.method = const Value.absent(),
     this.url = const Value.absent(),
     this.statusCode = const Value.absent(),
     this.responseTime = const Value.absent(),
     this.clientIp = const Value.absent(),
     this.user = const Value.absent(),
-    this.resourceType = const Value.absent(),
-    this.resourceId = const Value.absent(),
-    this.action = const Value.absent(),
-    this.userAgent = const Value.absent(),
-    this.sessionId = const Value.absent(),
-    this.purposeOfUse = const Value.absent(),
-    this.outcome = const Value.absent(),
-    this.additionalData = const Value.absent(),
     this.stackTrace = const Value.absent(),
     this.timestamp = const Value.absent(),
   })  : level = Value(level),
@@ -791,21 +458,12 @@ class LogsCompanion extends UpdateCompanion<Log> {
     Expression<int>? id,
     Expression<String>? level,
     Expression<String>? message,
-    Expression<String>? eventType,
     Expression<String>? method,
     Expression<String>? url,
     Expression<int>? statusCode,
     Expression<int>? responseTime,
     Expression<String>? clientIp,
     Expression<String>? user,
-    Expression<String>? resourceType,
-    Expression<String>? resourceId,
-    Expression<String>? action,
-    Expression<String>? userAgent,
-    Expression<String>? sessionId,
-    Expression<String>? purposeOfUse,
-    Expression<String>? outcome,
-    Expression<String>? additionalData,
     Expression<String>? stackTrace,
     Expression<DateTime>? timestamp,
   }) {
@@ -813,21 +471,12 @@ class LogsCompanion extends UpdateCompanion<Log> {
       if (id != null) 'id': id,
       if (level != null) 'level': level,
       if (message != null) 'message': message,
-      if (eventType != null) 'event_type': eventType,
       if (method != null) 'method': method,
       if (url != null) 'url': url,
       if (statusCode != null) 'status_code': statusCode,
       if (responseTime != null) 'response_time': responseTime,
       if (clientIp != null) 'client_ip': clientIp,
       if (user != null) 'user': user,
-      if (resourceType != null) 'resource_type': resourceType,
-      if (resourceId != null) 'resource_id': resourceId,
-      if (action != null) 'action': action,
-      if (userAgent != null) 'user_agent': userAgent,
-      if (sessionId != null) 'session_id': sessionId,
-      if (purposeOfUse != null) 'purpose_of_use': purposeOfUse,
-      if (outcome != null) 'outcome': outcome,
-      if (additionalData != null) 'additional_data': additionalData,
       if (stackTrace != null) 'stack_trace': stackTrace,
       if (timestamp != null) 'timestamp': timestamp,
     });
@@ -837,42 +486,24 @@ class LogsCompanion extends UpdateCompanion<Log> {
       {Value<int>? id,
       Value<String>? level,
       Value<String>? message,
-      Value<String?>? eventType,
       Value<String?>? method,
       Value<String?>? url,
       Value<int?>? statusCode,
       Value<int?>? responseTime,
       Value<String?>? clientIp,
       Value<String?>? user,
-      Value<String?>? resourceType,
-      Value<String?>? resourceId,
-      Value<String?>? action,
-      Value<String?>? userAgent,
-      Value<String?>? sessionId,
-      Value<String?>? purposeOfUse,
-      Value<String?>? outcome,
-      Value<String?>? additionalData,
       Value<String?>? stackTrace,
       Value<DateTime>? timestamp}) {
     return LogsCompanion(
       id: id ?? this.id,
       level: level ?? this.level,
       message: message ?? this.message,
-      eventType: eventType ?? this.eventType,
       method: method ?? this.method,
       url: url ?? this.url,
       statusCode: statusCode ?? this.statusCode,
       responseTime: responseTime ?? this.responseTime,
       clientIp: clientIp ?? this.clientIp,
       user: user ?? this.user,
-      resourceType: resourceType ?? this.resourceType,
-      resourceId: resourceId ?? this.resourceId,
-      action: action ?? this.action,
-      userAgent: userAgent ?? this.userAgent,
-      sessionId: sessionId ?? this.sessionId,
-      purposeOfUse: purposeOfUse ?? this.purposeOfUse,
-      outcome: outcome ?? this.outcome,
-      additionalData: additionalData ?? this.additionalData,
       stackTrace: stackTrace ?? this.stackTrace,
       timestamp: timestamp ?? this.timestamp,
     );
@@ -889,9 +520,6 @@ class LogsCompanion extends UpdateCompanion<Log> {
     }
     if (message.present) {
       map['message'] = Variable<String>(message.value);
-    }
-    if (eventType.present) {
-      map['event_type'] = Variable<String>(eventType.value);
     }
     if (method.present) {
       map['method'] = Variable<String>(method.value);
@@ -911,30 +539,6 @@ class LogsCompanion extends UpdateCompanion<Log> {
     if (user.present) {
       map['user'] = Variable<String>(user.value);
     }
-    if (resourceType.present) {
-      map['resource_type'] = Variable<String>(resourceType.value);
-    }
-    if (resourceId.present) {
-      map['resource_id'] = Variable<String>(resourceId.value);
-    }
-    if (action.present) {
-      map['action'] = Variable<String>(action.value);
-    }
-    if (userAgent.present) {
-      map['user_agent'] = Variable<String>(userAgent.value);
-    }
-    if (sessionId.present) {
-      map['session_id'] = Variable<String>(sessionId.value);
-    }
-    if (purposeOfUse.present) {
-      map['purpose_of_use'] = Variable<String>(purposeOfUse.value);
-    }
-    if (outcome.present) {
-      map['outcome'] = Variable<String>(outcome.value);
-    }
-    if (additionalData.present) {
-      map['additional_data'] = Variable<String>(additionalData.value);
-    }
     if (stackTrace.present) {
       map['stack_trace'] = Variable<String>(stackTrace.value);
     }
@@ -950,21 +554,12 @@ class LogsCompanion extends UpdateCompanion<Log> {
           ..write('id: $id, ')
           ..write('level: $level, ')
           ..write('message: $message, ')
-          ..write('eventType: $eventType, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
           ..write('statusCode: $statusCode, ')
           ..write('responseTime: $responseTime, ')
           ..write('clientIp: $clientIp, ')
           ..write('user: $user, ')
-          ..write('resourceType: $resourceType, ')
-          ..write('resourceId: $resourceId, ')
-          ..write('action: $action, ')
-          ..write('userAgent: $userAgent, ')
-          ..write('sessionId: $sessionId, ')
-          ..write('purposeOfUse: $purposeOfUse, ')
-          ..write('outcome: $outcome, ')
-          ..write('additionalData: $additionalData, ')
           ..write('stackTrace: $stackTrace, ')
           ..write('timestamp: $timestamp')
           ..write(')'))
@@ -3907,17 +3502,11 @@ class ReferenceSearchParameter extends DataClass
   final DateTime lastUpdated;
   final String searchPath;
   final int paramIndex;
-
-  /// Original reference string as it appears in the resource
   final String referenceValue;
-
-  /// Parsed reference components
   final String? referenceResourceType;
   final String? referenceIdPart;
   final String? referenceVersion;
   final String? referenceBaseUrl;
-
-  /// For identifier-based references (only applies to `fhir.Reference`)
   final String? identifierSystem;
   final String? identifierValue;
   const ReferenceSearchParameter(
@@ -5544,21 +5133,12 @@ typedef $$LogsTableCreateCompanionBuilder = LogsCompanion Function({
   Value<int> id,
   required String level,
   required String message,
-  Value<String?> eventType,
   Value<String?> method,
   Value<String?> url,
   Value<int?> statusCode,
   Value<int?> responseTime,
   Value<String?> clientIp,
   Value<String?> user,
-  Value<String?> resourceType,
-  Value<String?> resourceId,
-  Value<String?> action,
-  Value<String?> userAgent,
-  Value<String?> sessionId,
-  Value<String?> purposeOfUse,
-  Value<String?> outcome,
-  Value<String?> additionalData,
   Value<String?> stackTrace,
   Value<DateTime> timestamp,
 });
@@ -5566,21 +5146,12 @@ typedef $$LogsTableUpdateCompanionBuilder = LogsCompanion Function({
   Value<int> id,
   Value<String> level,
   Value<String> message,
-  Value<String?> eventType,
   Value<String?> method,
   Value<String?> url,
   Value<int?> statusCode,
   Value<int?> responseTime,
   Value<String?> clientIp,
   Value<String?> user,
-  Value<String?> resourceType,
-  Value<String?> resourceId,
-  Value<String?> action,
-  Value<String?> userAgent,
-  Value<String?> sessionId,
-  Value<String?> purposeOfUse,
-  Value<String?> outcome,
-  Value<String?> additionalData,
   Value<String?> stackTrace,
   Value<DateTime> timestamp,
 });
@@ -5602,9 +5173,6 @@ class $$LogsTableFilterComposer extends Composer<_$FhirAntDb, $LogsTable> {
   ColumnFilters<String> get message => $composableBuilder(
       column: $table.message, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get eventType => $composableBuilder(
-      column: $table.eventType, builder: (column) => ColumnFilters(column));
-
   ColumnFilters<String> get method => $composableBuilder(
       column: $table.method, builder: (column) => ColumnFilters(column));
 
@@ -5622,31 +5190,6 @@ class $$LogsTableFilterComposer extends Composer<_$FhirAntDb, $LogsTable> {
 
   ColumnFilters<String> get user => $composableBuilder(
       column: $table.user, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get resourceType => $composableBuilder(
-      column: $table.resourceType, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get resourceId => $composableBuilder(
-      column: $table.resourceId, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get action => $composableBuilder(
-      column: $table.action, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get userAgent => $composableBuilder(
-      column: $table.userAgent, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get sessionId => $composableBuilder(
-      column: $table.sessionId, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get purposeOfUse => $composableBuilder(
-      column: $table.purposeOfUse, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get outcome => $composableBuilder(
-      column: $table.outcome, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get additionalData => $composableBuilder(
-      column: $table.additionalData,
-      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get stackTrace => $composableBuilder(
       column: $table.stackTrace, builder: (column) => ColumnFilters(column));
@@ -5672,9 +5215,6 @@ class $$LogsTableOrderingComposer extends Composer<_$FhirAntDb, $LogsTable> {
   ColumnOrderings<String> get message => $composableBuilder(
       column: $table.message, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get eventType => $composableBuilder(
-      column: $table.eventType, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<String> get method => $composableBuilder(
       column: $table.method, builder: (column) => ColumnOrderings(column));
 
@@ -5693,33 +5233,6 @@ class $$LogsTableOrderingComposer extends Composer<_$FhirAntDb, $LogsTable> {
 
   ColumnOrderings<String> get user => $composableBuilder(
       column: $table.user, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get resourceType => $composableBuilder(
-      column: $table.resourceType,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get resourceId => $composableBuilder(
-      column: $table.resourceId, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get action => $composableBuilder(
-      column: $table.action, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get userAgent => $composableBuilder(
-      column: $table.userAgent, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get sessionId => $composableBuilder(
-      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get purposeOfUse => $composableBuilder(
-      column: $table.purposeOfUse,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get outcome => $composableBuilder(
-      column: $table.outcome, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get additionalData => $composableBuilder(
-      column: $table.additionalData,
-      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get stackTrace => $composableBuilder(
       column: $table.stackTrace, builder: (column) => ColumnOrderings(column));
@@ -5745,9 +5258,6 @@ class $$LogsTableAnnotationComposer extends Composer<_$FhirAntDb, $LogsTable> {
   GeneratedColumn<String> get message =>
       $composableBuilder(column: $table.message, builder: (column) => column);
 
-  GeneratedColumn<String> get eventType =>
-      $composableBuilder(column: $table.eventType, builder: (column) => column);
-
   GeneratedColumn<String> get method =>
       $composableBuilder(column: $table.method, builder: (column) => column);
 
@@ -5765,30 +5275,6 @@ class $$LogsTableAnnotationComposer extends Composer<_$FhirAntDb, $LogsTable> {
 
   GeneratedColumn<String> get user =>
       $composableBuilder(column: $table.user, builder: (column) => column);
-
-  GeneratedColumn<String> get resourceType => $composableBuilder(
-      column: $table.resourceType, builder: (column) => column);
-
-  GeneratedColumn<String> get resourceId => $composableBuilder(
-      column: $table.resourceId, builder: (column) => column);
-
-  GeneratedColumn<String> get action =>
-      $composableBuilder(column: $table.action, builder: (column) => column);
-
-  GeneratedColumn<String> get userAgent =>
-      $composableBuilder(column: $table.userAgent, builder: (column) => column);
-
-  GeneratedColumn<String> get sessionId =>
-      $composableBuilder(column: $table.sessionId, builder: (column) => column);
-
-  GeneratedColumn<String> get purposeOfUse => $composableBuilder(
-      column: $table.purposeOfUse, builder: (column) => column);
-
-  GeneratedColumn<String> get outcome =>
-      $composableBuilder(column: $table.outcome, builder: (column) => column);
-
-  GeneratedColumn<String> get additionalData => $composableBuilder(
-      column: $table.additionalData, builder: (column) => column);
 
   GeneratedColumn<String> get stackTrace => $composableBuilder(
       column: $table.stackTrace, builder: (column) => column);
@@ -5823,21 +5309,12 @@ class $$LogsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> level = const Value.absent(),
             Value<String> message = const Value.absent(),
-            Value<String?> eventType = const Value.absent(),
             Value<String?> method = const Value.absent(),
             Value<String?> url = const Value.absent(),
             Value<int?> statusCode = const Value.absent(),
             Value<int?> responseTime = const Value.absent(),
             Value<String?> clientIp = const Value.absent(),
             Value<String?> user = const Value.absent(),
-            Value<String?> resourceType = const Value.absent(),
-            Value<String?> resourceId = const Value.absent(),
-            Value<String?> action = const Value.absent(),
-            Value<String?> userAgent = const Value.absent(),
-            Value<String?> sessionId = const Value.absent(),
-            Value<String?> purposeOfUse = const Value.absent(),
-            Value<String?> outcome = const Value.absent(),
-            Value<String?> additionalData = const Value.absent(),
             Value<String?> stackTrace = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
           }) =>
@@ -5845,21 +5322,12 @@ class $$LogsTableTableManager extends RootTableManager<
             id: id,
             level: level,
             message: message,
-            eventType: eventType,
             method: method,
             url: url,
             statusCode: statusCode,
             responseTime: responseTime,
             clientIp: clientIp,
             user: user,
-            resourceType: resourceType,
-            resourceId: resourceId,
-            action: action,
-            userAgent: userAgent,
-            sessionId: sessionId,
-            purposeOfUse: purposeOfUse,
-            outcome: outcome,
-            additionalData: additionalData,
             stackTrace: stackTrace,
             timestamp: timestamp,
           ),
@@ -5867,21 +5335,12 @@ class $$LogsTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required String level,
             required String message,
-            Value<String?> eventType = const Value.absent(),
             Value<String?> method = const Value.absent(),
             Value<String?> url = const Value.absent(),
             Value<int?> statusCode = const Value.absent(),
             Value<int?> responseTime = const Value.absent(),
             Value<String?> clientIp = const Value.absent(),
             Value<String?> user = const Value.absent(),
-            Value<String?> resourceType = const Value.absent(),
-            Value<String?> resourceId = const Value.absent(),
-            Value<String?> action = const Value.absent(),
-            Value<String?> userAgent = const Value.absent(),
-            Value<String?> sessionId = const Value.absent(),
-            Value<String?> purposeOfUse = const Value.absent(),
-            Value<String?> outcome = const Value.absent(),
-            Value<String?> additionalData = const Value.absent(),
             Value<String?> stackTrace = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
           }) =>
@@ -5889,21 +5348,12 @@ class $$LogsTableTableManager extends RootTableManager<
             id: id,
             level: level,
             message: message,
-            eventType: eventType,
             method: method,
             url: url,
             statusCode: statusCode,
             responseTime: responseTime,
             clientIp: clientIp,
             user: user,
-            resourceType: resourceType,
-            resourceId: resourceId,
-            action: action,
-            userAgent: userAgent,
-            sessionId: sessionId,
-            purposeOfUse: purposeOfUse,
-            outcome: outcome,
-            additionalData: additionalData,
             stackTrace: stackTrace,
             timestamp: timestamp,
           ),
