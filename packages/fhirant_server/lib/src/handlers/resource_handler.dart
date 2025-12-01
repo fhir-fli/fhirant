@@ -61,10 +61,19 @@ Future<Response> getResourcesHandler(
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
         : '${request.requestedUri.scheme}://${request.requestedUri.host}';
     
-    // Get total count
-    // TODO: Implement accurate total count with separate count query
-    // For now, use resources.length (this is after pagination, so not accurate)
-    int totalCount = resources.length;
+    // Get total count using searchCount (accurate count query)
+    int totalCount;
+    if (searchParams != null && searchParams.isNotEmpty) {
+      // Use searchCount for accurate count with search parameters
+      totalCount = await dbInterface.searchCount(
+        resourceType: type,
+        searchParameters: searchParams,
+      );
+    } else {
+      // Use getResourceCount for simple count without search
+      totalCount = await dbInterface.getResourceCount(type);
+    }
+
     
     // Build pagination links (optional - bundle works without them)
     final links = <fhir.BundleLink>[];
@@ -124,7 +133,21 @@ Future<Response> getResourcesHandler(
     }
     // Handle empty results
     if (resources.isEmpty) {
+      final bundle = fhir.Bundle(
+        type: fhir.BundleType.searchset,
+        entry: <fhir.BundleEntry>[],
+        total: fhir.FhirUnsignedInt(0),
+      );
       
+      FhirantLogging().logInfo(
+        'Successfully fetched 0 resources of type: $resourceType',
+      );
+      return Response.ok(
+        bundle.toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+    
     // Process _include and _revinclude parameters
     final includedResources = <fhir.Resource>[];
     final includedResourceIds = <String>{};
@@ -144,7 +167,7 @@ Future<Response> getResourcesHandler(
         for (final resource in resources) {
           try {
             final resourceJson = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-            final references = _extractReferences(resourceJson as Map<String, dynamic>, includeSearchParam);
+            final references = _extractReferences(resourceJson, includeSearchParam);
             
             for (final ref in references) {
               if (ref['type'] == includeResourceType && ref['id'] != null) {
@@ -203,21 +226,6 @@ Future<Response> getResourcesHandler(
     
     // Combine search results with included resources
     final allResources = <fhir.Resource>[...resources, ...includedResources];
-    
-final bundle = fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        entry: <fhir.BundleEntry>[],
-        total: fhir.FhirUnsignedInt(0),
-      );
-      
-      FhirantLogging().logInfo(
-        'Successfully fetched 0 resources of type: $resourceType',
-      );
-      return Response.ok(
-        bundle.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
     
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
@@ -588,7 +596,7 @@ void _extractAllReferences(Map<String, dynamic> json, List<Map<String, String?>>
               references.add(ref);
             }
           } else {
-            _extractAllReferences(item, references);
+            _extractAllReferences(item as Map<String, dynamic>, references);
           }
         }
       }

@@ -176,6 +176,9 @@ void main() {
       when(() => mockRequest.url).thenReturn(
         Uri.parse('http://localhost:8080/Patient?_count=10&_offset=0'),
       );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_count=10&_offset=0'),
+      );
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -183,7 +186,9 @@ void main() {
           offset: 0,
         ),
       ).thenAnswer((_) async => patients);
-
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 2);
       final response = await getResourcesHandler(
         mockRequest,
         'Patient',
@@ -230,6 +235,9 @@ void main() {
       when(() => mockRequest.url).thenReturn(
         Uri.parse('http://localhost:8080/Patient?name=Smith&_count=10'),
       );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=Smith&_count=10'),
+      );
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
@@ -241,7 +249,12 @@ void main() {
           sort: null,
         ),
       ).thenAnswer((_) async => patients);
-
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {'name': ['Smith']},
+        ),
+      ).thenAnswer((_) async => 1);
       final response = await getResourcesHandler(
         mockRequest,
         'Patient',
@@ -308,6 +321,9 @@ void main() {
       when(
         () => mockRequest.url,
       ).thenReturn(Uri.parse('http://localhost:8080/Patient'));
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -315,7 +331,9 @@ void main() {
           offset: 0,
         ),
       ).thenAnswer((_) async => []);
-
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 0);
       final response = await getResourcesHandler(
         mockRequest,
         'Patient',

@@ -52,8 +52,8 @@ Implement all standard FHIR RESTful operations:
   - ✅ Search (GET /{resourceType}?parameters)
   - ✅ Search parameter parsing and execution
   - ✅ Pagination (_count, _offset)
-  - ⏭️ Sorting (_sort) - In progress
-  - ⏭️ Includes (_include, _revinclude) - Planned
+  - ✅ Sorting (_sort) - Complete
+  - ✅ Includes (_include, _revinclude) - Complete
 
 - ✅ **History Operations**
   - ✅ Resource history
@@ -83,18 +83,18 @@ Implement all FHIR search parameter types:
 
 - ✅ **Special Search Parameters**
   - ✅ _id
-  - ✅ _lastUpdated - **Recently implemented**
-  - ⏭️ _tag - Planned
-  - ⏭️ _profile - Planned
-  - ⏭️ _security - Planned
-  - ⏭️ _source - Planned
-  - ⏭️ _has - Planned (reverse chaining)
+  - ✅ _lastUpdated
+  - ✅ _tag
+  - ✅ _profile
+  - ✅ _security
+  - ✅ _source
+  - ⏭️ _has - Not implemented (reverse chaining - complex)
 
-- ⏭️ **Advanced Search**
-  - ⏭️ Reference search with chaining
-  - ⏭️ Composite search
-  - ⏭️ OR logic (comma-separated values)
-  - ⏭️ FHIRPath filtering (_filter)
+- ✅ **Advanced Search**
+  - ✅ Reference search with chaining
+  - ✅ Composite search
+  - ✅ OR logic (comma-separated values)
+  - ⏭️ FHIRPath filtering (_filter) - Not implemented
 
 ### 3. FHIR Compliance
 

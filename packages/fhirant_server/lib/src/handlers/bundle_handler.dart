@@ -133,9 +133,7 @@ Future<_BundleOperation> _processBundleEntry(
 ) async {
   final req = entry.request!;
   final method = req.method;
-  final url = req.url?.toString() ?? '';
-
-  if (method == null) throw FormatException('Bundle entry $entryIndex missing HTTP method');
+  final url = req.url.toString();
 
   final urlParts = url.split('/').where((p) => p.isNotEmpty).toList();
   if (urlParts.isEmpty) throw FormatException('Bundle entry $entryIndex: Invalid URL format');

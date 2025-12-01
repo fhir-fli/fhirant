@@ -132,6 +132,22 @@ class FhirAntDbInterface implements FuegoDbInterface {
     }
   }
 
+  @override
+  Future<int> searchCount({
+    required fhir.R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+  }) async {
+    try {
+      return await _db.searchCount(
+        resourceType: resourceType,
+        searchParameters: searchParameters,
+      );
+    } catch (e) {
+      print('Error getting search count: $e');
+      return 0;
+    }
+  }
+
     @override
   Future<void> initialize() async {
     try {

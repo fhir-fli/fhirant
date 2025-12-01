@@ -23,6 +23,11 @@ abstract class FuegoDbInterface {
 
 
   // Search
+  Future<int> searchCount({
+    required R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+  });
+
   Future<List<Resource>> search({
     required R4ResourceType resourceType,
     Map<String, List<String>>? searchParameters,

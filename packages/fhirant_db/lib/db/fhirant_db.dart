@@ -441,6 +441,7 @@ class FhirAntDb extends _$FhirAntDb {
       return fhir.Resource.fromJsonString(row.resource);
     }).toList();
   }
+
   /// Search resources using search parameters
   Future<List<fhir.Resource>> search({
     required fhir.R4ResourceType resourceType,
@@ -450,21 +451,21 @@ class FhirAntDb extends _$FhirAntDb {
     List<String>? sort,
   }) async {
     final resourceTypeString = resourceType.toString();
-    
+
     // If no search parameters, fall back to getResourcesByType
     if (searchParameters == null || searchParameters.isEmpty) {
       return await getResourcesByType(resourceType);
     }
-    
+
     // Start with all resources of this type
     Set<String> matchingIds = {};
     bool firstParam = true;
-    
+
     // Process each search parameter
     for (final entry in searchParameters.entries) {
       final paramName = entry.key;
       final paramValues = entry.value;
-      
+
       // Handle special parameters
       if (paramName == '_id') {
         final ids = paramValues.expand((v) => v.split(',')).toSet();
@@ -476,7 +477,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
+
       if (paramName == '_lastUpdated') {
         // _lastUpdated searches the meta.lastUpdated field directly from resources table
         final lastUpdatedIds = await _searchLastUpdatedParameter(
@@ -491,8 +492,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
-      
+
       if (paramName == '_tag') {
         // _tag searches meta.tag field
         final tagIds = await _searchTagParameter(
@@ -507,7 +507,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
+
       if (paramName == '_profile') {
         // _profile searches meta.profile field
         final profileIds = await _searchProfileParameter(
@@ -522,7 +522,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
+
       if (paramName == '_security') {
         // _security searches meta.security field
         final securityIds = await _searchSecurityParameter(
@@ -537,7 +537,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
+
       if (paramName == '_source') {
         // _source searches meta.source field
         final sourceIds = await _searchSourceParameter(
@@ -552,7 +552,7 @@ class FhirAntDb extends _$FhirAntDb {
         firstParam = false;
         continue;
       }
-      
+
       // Determine parameter type and search accordingly
       bool isDateParam = false;
       bool isTokenParam = false;
@@ -561,7 +561,7 @@ class FhirAntDb extends _$FhirAntDb {
       bool isUriParam = false;
       bool isReferenceParam = false;
       bool isCompositeParam = false;
-      
+
       // Check for composite parameter (value contains $)
       // Example: code-value-quantity=8480-6$gt100
       for (final val in paramValues) {
@@ -570,35 +570,38 @@ class FhirAntDb extends _$FhirAntDb {
           break;
         }
       }
-      
 
-      
       // Check for reference chaining (paramName contains '.')
       // Example: organization.name means search organization reference's name field
       bool isChainedReference = paramName.contains('.');
-      
+
       // Check if value looks like a reference (starts with resource type or is an ID)
-      if (!isDateParam && !isNumberParam && !isQuantityParam && !isTokenParam && !isUriParam) {
+      if (!isDateParam &&
+          !isNumberParam &&
+          !isQuantityParam &&
+          !isTokenParam &&
+          !isUriParam) {
         for (final val in paramValues) {
           final valWithoutModifier = val.split(':')[0];
           // Reference can be: ResourceType/id, just id, or just ResourceType
-          if (RegExp(r'^[A-Z][a-zA-Z]+(/[^/]+)?$').hasMatch(valWithoutModifier) ||
+          if (RegExp(r'^[A-Z][a-zA-Z]+(/[^/]+)?$')
+                  .hasMatch(valWithoutModifier) ||
               RegExp(r'^[a-f0-9-]{1,64}$').hasMatch(valWithoutModifier)) {
             isReferenceParam = true;
             break;
           }
         }
       }
-      
-      
+
       for (final val in paramValues) {
         final valWithoutModifier = val.split(':')[0];
-        
+
         // Check for token (contains | or :missing without date/number context)
         if (val.contains('|') && !valWithoutModifier.contains('|')) {
           // Token format: system|value
           isTokenParam = true;
-        } else if (val.contains('|') && valWithoutModifier.split('|').length >= 2) {
+        } else if (val.contains('|') &&
+            valWithoutModifier.split('|').length >= 2) {
           // Could be quantity: value|unit or system|value|unit
           final parts = valWithoutModifier.split('|');
           // If middle part is numeric, it's likely quantity
@@ -609,10 +612,14 @@ class FhirAntDb extends _$FhirAntDb {
             isTokenParam = true;
           }
         }
-        
+
         // Check for date modifiers
-        if (val.contains(':gt') || val.contains(':lt') || val.contains(':ge') ||
-            val.contains(':le') || val.contains(':ap') || val.contains(':sa') ||
+        if (val.contains(':gt') ||
+            val.contains(':lt') ||
+            val.contains(':ge') ||
+            val.contains(':le') ||
+            val.contains(':ap') ||
+            val.contains(':sa') ||
             val.contains(':eb')) {
           // Check if it's a date pattern
           final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
@@ -628,7 +635,7 @@ class FhirAntDb extends _$FhirAntDb {
             }
           }
         }
-        
+
         // Check if value looks like a date
         if (!isDateParam && !isNumberParam && !isQuantityParam) {
           final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
@@ -636,11 +643,14 @@ class FhirAntDb extends _$FhirAntDb {
             isDateParam = true;
           }
         }
-        
 
         // Check if value looks like a URI (starts with http://, https://, urn:, etc.)
-        if (!isDateParam && !isNumberParam && !isQuantityParam && !isTokenParam && !isUriParam) {
-          if (valWithoutModifier.startsWith('http://') || 
+        if (!isDateParam &&
+            !isNumberParam &&
+            !isQuantityParam &&
+            !isTokenParam &&
+            !isUriParam) {
+          if (valWithoutModifier.startsWith('http://') ||
               valWithoutModifier.startsWith('https://') ||
               valWithoutModifier.startsWith('urn:') ||
               valWithoutModifier.startsWith('file://')) {
@@ -648,11 +658,14 @@ class FhirAntDb extends _$FhirAntDb {
           }
         }
         // Check if value looks like a number (but not a date)
-        if (!isDateParam && !isNumberParam && !isQuantityParam && !isTokenParam) {
+        if (!isDateParam &&
+            !isNumberParam &&
+            !isQuantityParam &&
+            !isTokenParam) {
           try {
             double.parse(valWithoutModifier);
             // If param name suggests quantity (valueQuantity, etc.), treat as quantity
-            if (paramName.toLowerCase().contains('quantity') || 
+            if (paramName.toLowerCase().contains('quantity') ||
                 paramName.toLowerCase().contains('value')) {
               isQuantityParam = true;
             } else {
@@ -663,7 +676,7 @@ class FhirAntDb extends _$FhirAntDb {
           }
         }
       }
-      
+
       Set<String> paramIds;
       if (isDateParam) {
         paramIds = await _searchDateParameter(
@@ -695,7 +708,7 @@ class FhirAntDb extends _$FhirAntDb {
           paramName,
           paramValues,
         );
-            } else if (isCompositeParam) {
+      } else if (isCompositeParam) {
         paramIds = await _searchCompositeParameter(
           resourceTypeString,
           paramName,
@@ -716,7 +729,7 @@ class FhirAntDb extends _$FhirAntDb {
           paramValues,
         );
       }
-      
+
       if (firstParam) {
         matchingIds = paramIds;
         firstParam = false;
@@ -724,12 +737,12 @@ class FhirAntDb extends _$FhirAntDb {
         matchingIds = matchingIds.intersection(paramIds);
       }
     }
-    
+
     // Retrieve the matching resources
     if (matchingIds.isEmpty) {
       return [];
     }
-    
+
     final results = <fhir.Resource>[];
     for (final id in matchingIds) {
       final resource = await getResource(resourceType, id);
@@ -737,16 +750,16 @@ class FhirAntDb extends _$FhirAntDb {
         results.add(resource);
       }
     }
-    
+
     // Apply sorting if specified
     if (sort != null && sort.isNotEmpty) {
       results.sort((a, b) {
         for (final sortParam in sort) {
           final descending = sortParam.startsWith('-');
           final field = descending ? sortParam.substring(1) : sortParam;
-          
+
           int comparison = 0;
-          
+
           // Handle special fields
           if (field == '_id') {
             final aId = a.id?.toString() ?? '';
@@ -761,13 +774,15 @@ class FhirAntDb extends _$FhirAntDb {
             // This is a simplified implementation - in production you'd want
             // to use FHIRPath or a more sophisticated field extraction
             try {
-              final aJson = jsonDecode(a.toJsonString()) as Map<String, dynamic>;
-              final bJson = jsonDecode(b.toJsonString()) as Map<String, dynamic>;
-              
+              final aJson =
+                  jsonDecode(a.toJsonString()) as Map<String, dynamic>;
+              final bJson =
+                  jsonDecode(b.toJsonString()) as Map<String, dynamic>;
+
               // Try to find the field (supports dot notation like "name.family")
               dynamic aValue = _getNestedValue(aJson, field);
               dynamic bValue = _getNestedValue(bJson, field);
-              
+
               if (aValue == null && bValue == null) {
                 comparison = 0;
               } else if (aValue == null) {
@@ -784,7 +799,7 @@ class FhirAntDb extends _$FhirAntDb {
               continue;
             }
           }
-          
+
           if (comparison != 0) {
             return descending ? -comparison : comparison;
           }
@@ -792,7 +807,7 @@ class FhirAntDb extends _$FhirAntDb {
         return 0;
       });
     }
-    
+
     // Apply pagination
     if (offset != null && offset > 0) {
       results.removeRange(0, offset > results.length ? results.length : offset);
@@ -802,23 +817,322 @@ class FhirAntDb extends _$FhirAntDb {
         results.removeRange(count, results.length);
       }
     }
-    
+
     return results;
   }
-  
-  /// Search using string search parameters
+  /// Get count of resources matching search parameters
+  /// This is more efficient than search() when you only need the count
+  Future<int> searchCount({
+    required fhir.R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+  }) async {
+    final resourceTypeString = resourceType.toString();
+
+    // If no search parameters, use getResourceCount
+    if (searchParameters == null || searchParameters.isEmpty) {
+      return await getResourceCount(resourceType);
+    }
+
+
+    // Start with all resources of this type
+    Set<String> matchingIds = {};
+    bool firstParam = true;
+
+    // Process each search parameter
+    for (final entry in searchParameters.entries) {
+      final paramName = entry.key;
+      final paramValues = entry.value;
+
+      // Handle special parameters
+      if (paramName == '_id') {
+        final ids = paramValues.expand((v) => v.split(',')).toSet();
+        if (firstParam) {
+          matchingIds = ids;
+        } else {
+          matchingIds = matchingIds.intersection(ids);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      if (paramName == '_lastUpdated') {
+        // _lastUpdated searches the meta.lastUpdated field directly from resources table
+        final lastUpdatedIds = await _searchLastUpdatedParameter(
+          resourceTypeString,
+          paramValues,
+        );
+        if (firstParam) {
+          matchingIds = lastUpdatedIds;
+        } else {
+          matchingIds = matchingIds.intersection(lastUpdatedIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      if (paramName == '_tag') {
+        // _tag searches meta.tag field
+        final tagIds = await _searchTagParameter(
+          resourceTypeString,
+          paramValues,
+        );
+        if (firstParam) {
+          matchingIds = tagIds;
+        } else {
+          matchingIds = matchingIds.intersection(tagIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      if (paramName == '_profile') {
+        // _profile searches meta.profile field
+        final profileIds = await _searchProfileParameter(
+          resourceTypeString,
+          paramValues,
+        );
+        if (firstParam) {
+          matchingIds = profileIds;
+        } else {
+          matchingIds = matchingIds.intersection(profileIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      if (paramName == '_security') {
+        // _security searches meta.security field
+        final securityIds = await _searchSecurityParameter(
+          resourceTypeString,
+          paramValues,
+        );
+        if (firstParam) {
+          matchingIds = securityIds;
+        } else {
+          matchingIds = matchingIds.intersection(securityIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      if (paramName == '_source') {
+        // _source searches meta.source field
+        final sourceIds = await _searchSourceParameter(
+          resourceTypeString,
+          paramValues,
+        );
+        if (firstParam) {
+          matchingIds = sourceIds;
+        } else {
+          matchingIds = matchingIds.intersection(sourceIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
+      // Determine parameter type and search accordingly
+      bool isDateParam = false;
+      bool isTokenParam = false;
+      bool isNumberParam = false;
+      bool isQuantityParam = false;
+      bool isUriParam = false;
+      bool isReferenceParam = false;
+      bool isCompositeParam = false;
+
+      // Check for composite parameter (value contains $)
+      // Example: code-value-quantity=8480-6$gt100
+      for (final val in paramValues) {
+        if (val.contains('\$') && paramName.contains('-')) {
+          isCompositeParam = true;
+          break;
+        }
+      }
+
+      // Check for reference chaining (paramName contains '.')
+      // Example: organization.name means search organization reference's name field
+      bool isChainedReference = paramName.contains('.');
+
+      // Check if value looks like a reference (starts with resource type or is an ID)
+      if (!isDateParam &&
+          !isNumberParam &&
+          !isQuantityParam &&
+          !isTokenParam &&
+          !isUriParam) {
+        for (final val in paramValues) {
+          final valWithoutModifier = val.split(':')[0];
+          // Reference can be: ResourceType/id, just id, or just ResourceType
+          if (RegExp(r'^[A-Z][a-zA-Z]+(/[^/]+)?$')
+                  .hasMatch(valWithoutModifier) ||
+              RegExp(r'^[a-f0-9-]{1,64}$').hasMatch(valWithoutModifier)) {
+            isReferenceParam = true;
+            break;
+          }
+        }
+      }
+
+      for (final val in paramValues) {
+        final valWithoutModifier = val.split(':')[0];
+
+        // Check for token (contains | or :missing without date/number context)
+        if (val.contains('|') && !valWithoutModifier.contains('|')) {
+          // Token format: system|value
+          isTokenParam = true;
+        } else if (val.contains('|') &&
+            valWithoutModifier.split('|').length >= 2) {
+          // Could be quantity: value|unit or system|value|unit
+          final parts = valWithoutModifier.split('|');
+          // If middle part is numeric, it's likely quantity
+          try {
+            double.parse(parts.length > 1 ? parts[1] : parts[0]);
+            isQuantityParam = true;
+          } catch (e) {
+            isTokenParam = true;
+          }
+        }
+
+        // Check for date modifiers
+        if (val.contains(':gt') ||
+            val.contains(':lt') ||
+            val.contains(':ge') ||
+            val.contains(':le') ||
+            val.contains(':ap') ||
+            val.contains(':sa') ||
+            val.contains(':eb')) {
+          // Check if it's a date pattern
+          final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
+          if (datePattern.hasMatch(valWithoutModifier)) {
+            isDateParam = true;
+          } else {
+            // Could be number/quantity with modifier
+            try {
+              double.parse(valWithoutModifier);
+              isNumberParam = true;
+            } catch (e) {
+              // Not a number
+            }
+          }
+        }
+
+        // Check if value looks like a date
+        if (!isDateParam && !isNumberParam && !isQuantityParam) {
+          final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
+          if (datePattern.hasMatch(valWithoutModifier)) {
+            isDateParam = true;
+          }
+        }
+
+        // Check if value looks like a URI (starts with http://, https://, urn:, etc.)
+        if (!isDateParam &&
+            !isNumberParam &&
+            !isQuantityParam &&
+            !isTokenParam &&
+            !isUriParam) {
+          if (valWithoutModifier.startsWith('http://') ||
+              valWithoutModifier.startsWith('https://') ||
+              valWithoutModifier.startsWith('urn:') ||
+              valWithoutModifier.startsWith('file://')) {
+            isUriParam = true;
+          }
+        }
+        // Check if value looks like a number (but not a date)
+        if (!isDateParam &&
+            !isNumberParam &&
+            !isQuantityParam &&
+            !isTokenParam) {
+          try {
+            double.parse(valWithoutModifier);
+            // If param name suggests quantity (valueQuantity, etc.), treat as quantity
+            if (paramName.toLowerCase().contains('quantity') ||
+                paramName.toLowerCase().contains('value')) {
+              isQuantityParam = true;
+            } else {
+              isNumberParam = true;
+            }
+          } catch (e) {
+            // Not a number
+          }
+        }
+      }
+
+      Set<String> paramIds;
+      if (isDateParam) {
+        paramIds = await _searchDateParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isQuantityParam) {
+        paramIds = await _searchQuantityParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isNumberParam) {
+        paramIds = await _searchNumberParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isUriParam) {
+        paramIds = await _searchUriParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isTokenParam) {
+        paramIds = await _searchTokenParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isCompositeParam) {
+        paramIds = await _searchCompositeParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      } else if (isReferenceParam || isChainedReference) {
+        paramIds = await _searchReferenceParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+          isChainedReference,
+        );
+      } else {
+        // Try string search first
+        paramIds = await _searchStringParameter(
+          resourceTypeString,
+          paramName,
+          paramValues,
+        );
+      }
+
+      if (firstParam) {
+        matchingIds = paramIds;
+        firstParam = false;
+      } else {
+        matchingIds = matchingIds.intersection(paramIds);
+      }
+    }
+
+    // Retrieve the matching resources
+
+    // Return count of matching IDs
+    return matchingIds.length;
+  }
+
   Future<Set<String>> _searchStringParameter(
     String resourceType,
     String searchPath,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -826,17 +1140,17 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Normalize the search value (same as stored)
       final normalizedValue = _normalizeString(searchValue);
-      
+
       // Build query with all conditions in one where clause
       final query = select(stringSearchParameters);
-      
-      Expression<bool> whereCondition = stringSearchParameters.resourceType
-          .equals(resourceType) &
-          stringSearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          stringSearchParameters.resourceType.equals(resourceType) &
+              stringSearchParameters.searchPath.equals(searchPath);
+
       if (modifier == 'exact') {
         whereCondition = whereCondition &
             stringSearchParameters.stringValue.equals(normalizedValue);
@@ -851,18 +1165,18 @@ class FhirAntDb extends _$FhirAntDb {
         whereCondition = whereCondition &
             stringSearchParameters.stringValue.like('%$normalizedValue%');
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
-  
+
   /// Normalize string for search (case-insensitive, accent-insensitive)
   String _normalizeString(String input) {
     // Convert to lowercase and trim
@@ -870,6 +1184,7 @@ class FhirAntDb extends _$FhirAntDb {
     // For now, basic normalization - can be enhanced later
     return input.toLowerCase().trim();
   }
+
   /// Search using token search parameters
   Future<Set<String>> _searchTokenParameter(
     String resourceType,
@@ -877,12 +1192,12 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -890,35 +1205,35 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Handle missing modifier
       if (modifier == 'missing') {
         // Search for resources where this parameter is missing
         // This means no entry exists in tokenSearchParameters for this searchPath
         final allResourceIds = (await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(resourceType)))
-            .get())
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
             .map((r) => r.id)
             .toSet();
-        
+
         final resourcesWithParam = (await (selectOnly(tokenSearchParameters)
-          ..addColumns([tokenSearchParameters.id])
-          ..where(
-            tokenSearchParameters.resourceType.equals(resourceType) &
-            tokenSearchParameters.searchPath.equals(searchPath),
-          ))
-            .get())
+                  ..addColumns([tokenSearchParameters.id])
+                  ..where(
+                    tokenSearchParameters.resourceType.equals(resourceType) &
+                        tokenSearchParameters.searchPath.equals(searchPath),
+                  ))
+                .get())
             .map((r) => r.read(tokenSearchParameters.id)!)
             .toSet();
-        
+
         matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       }
-      
+
       // Parse system|value format
       String? system;
       String tokenValue = searchValue;
-      
+
       if (searchValue.contains('|')) {
         final parts = searchValue.split('|');
         if (parts.length == 2) {
@@ -934,14 +1249,14 @@ class FhirAntDb extends _$FhirAntDb {
           tokenValue = '';
         }
       }
-      
+
       // Build query
       final query = select(tokenSearchParameters);
-      
-      Expression<bool> whereCondition = tokenSearchParameters.resourceType
-          .equals(resourceType) &
-          tokenSearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          tokenSearchParameters.resourceType.equals(resourceType) &
+              tokenSearchParameters.searchPath.equals(searchPath);
+
       if (system != null && system.isNotEmpty && tokenValue.isNotEmpty) {
         // system|value - both specified
         whereCondition = whereCondition &
@@ -949,22 +1264,22 @@ class FhirAntDb extends _$FhirAntDb {
             tokenSearchParameters.tokenValue.equals(tokenValue);
       } else if (system != null && system.isNotEmpty) {
         // system| - only system specified
-        whereCondition = whereCondition &
-            tokenSearchParameters.tokenSystem.equals(system);
+        whereCondition =
+            whereCondition & tokenSearchParameters.tokenSystem.equals(system);
       } else if (tokenValue.isNotEmpty) {
         // value only - no system
         whereCondition = whereCondition &
             tokenSearchParameters.tokenValue.equals(tokenValue);
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
 
@@ -975,12 +1290,12 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -988,29 +1303,29 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Handle missing modifier
       if (modifier == 'missing') {
         final allResourceIds = (await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(resourceType)))
-            .get())
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
             .map((r) => r.id)
             .toSet();
-        
+
         final resourcesWithParam = (await (selectOnly(dateSearchParameters)
-          ..addColumns([dateSearchParameters.id])
-          ..where(
-            dateSearchParameters.resourceType.equals(resourceType) &
-            dateSearchParameters.searchPath.equals(searchPath),
-          ))
-            .get())
+                  ..addColumns([dateSearchParameters.id])
+                  ..where(
+                    dateSearchParameters.resourceType.equals(resourceType) &
+                        dateSearchParameters.searchPath.equals(searchPath),
+                  ))
+                .get())
             .map((r) => r.read(dateSearchParameters.id)!)
             .toSet();
-        
+
         matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       }
-      
+
       // Parse the date value
       late DateTime searchDate;
       try {
@@ -1044,14 +1359,14 @@ class FhirAntDb extends _$FhirAntDb {
         print('Error parsing date: $searchValue - $e');
         continue;
       }
-      
+
       // Build query based on modifier
       final query = select(dateSearchParameters);
-      
-      Expression<bool> whereCondition = dateSearchParameters.resourceType
-          .equals(resourceType) &
-          dateSearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          dateSearchParameters.resourceType.equals(resourceType) &
+              dateSearchParameters.searchPath.equals(searchPath);
+
       switch (modifier) {
         case 'gt':
           // Greater than
@@ -1072,7 +1387,8 @@ class FhirAntDb extends _$FhirAntDb {
         case 'le':
           // Less than or equal
           whereCondition = whereCondition &
-              (dateSearchParameters.dateValue.isSmallerOrEqualValue(searchDate) |
+              (dateSearchParameters.dateValue
+                      .isSmallerOrEqualValue(searchDate) |
                   dateSearchParameters.dateValue.equals(searchDate));
           break;
         case 'sa':
@@ -1091,7 +1407,8 @@ class FhirAntDb extends _$FhirAntDb {
           final dayAfter = searchDate.add(const Duration(days: 1));
           whereCondition = whereCondition &
               (dateSearchParameters.dateValue.isBiggerOrEqualValue(dayBefore) &
-                  dateSearchParameters.dateValue.isSmallerOrEqualValue(dayAfter));
+                  dateSearchParameters.dateValue
+                      .isSmallerOrEqualValue(dayAfter));
           break;
         default:
           // Default: equals or contains (for date ranges)
@@ -1101,29 +1418,30 @@ class FhirAntDb extends _$FhirAntDb {
           whereCondition = whereCondition &
               dateSearchParameters.dateValue.equals(searchDate);
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
+
   /// Search using _lastUpdated parameter (searches meta.lastUpdated directly)
   Future<Set<String>> _searchLastUpdatedParameter(
     String resourceType,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String dateValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -1131,7 +1449,7 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Parse the date value
       DateTime? searchDate;
       try {
@@ -1146,7 +1464,8 @@ class FhirAntDb extends _$FhirAntDb {
         } else if (dateValue.length == 10) {
           // Date: YYYY-MM-DD
           final parts = dateValue.split('-');
-          searchDate = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+          searchDate = DateTime(
+              int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
         } else if (dateValue.contains('T')) {
           // DateTime: YYYY-MM-DDTHH:MM:SS or with timezone
           searchDate = DateTime.parse(dateValue);
@@ -1158,27 +1477,29 @@ class FhirAntDb extends _$FhirAntDb {
         // Invalid date format, skip this value
         continue;
       }
-      
+
       // Build query on resources table
       final query = select(resources);
-      
-      Expression<bool> whereCondition = resources.resourceType.equals(resourceType);
-      
+
+      Expression<bool> whereCondition =
+          resources.resourceType.equals(resourceType);
+
       // Apply modifier
       if (modifier == null || modifier.isEmpty) {
         // Default: equals (exact match on the date part)
         // For date-only values, match any time on that date
         if (dateValue.length <= 10) {
           // Date precision: match any time on this date
-          final startOfDay = DateTime(searchDate.year, searchDate.month, searchDate.day);
+          final startOfDay =
+              DateTime(searchDate.year, searchDate.month, searchDate.day);
           final endOfDay = startOfDay.add(const Duration(days: 1));
           whereCondition = whereCondition &
               (resources.lastUpdated.isBiggerOrEqualValue(startOfDay) &
-               resources.lastUpdated.isSmallerThanValue(endOfDay));
+                  resources.lastUpdated.isSmallerThanValue(endOfDay));
         } else {
           // DateTime precision: exact match
-          whereCondition = whereCondition &
-              resources.lastUpdated.equals(searchDate);
+          whereCondition =
+              whereCondition & resources.lastUpdated.equals(searchDate);
         }
       } else if (modifier == 'gt') {
         // Greater than
@@ -1202,7 +1523,7 @@ class FhirAntDb extends _$FhirAntDb {
         final endDate = searchDate.add(const Duration(days: 1));
         whereCondition = whereCondition &
             (resources.lastUpdated.isBiggerOrEqualValue(startDate) &
-             resources.lastUpdated.isSmallerOrEqualValue(endDate));
+                resources.lastUpdated.isSmallerOrEqualValue(endDate));
       } else if (modifier == 'sa') {
         // Starts after (same as gt)
         whereCondition = whereCondition &
@@ -1215,41 +1536,39 @@ class FhirAntDb extends _$FhirAntDb {
         // Unknown modifier, skip
         continue;
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
-  
 
-  
   /// Search using _tag parameter (searches meta.tag from resource JSON)
   Future<Set<String>> _searchTagParameter(
     String resourceType,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     // Get all resources of this type
     final allResources = await (select(resources)
-      ..where((tbl) => tbl.resourceType.equals(resourceType)))
+          ..where((tbl) => tbl.resourceType.equals(resourceType)))
         .get();
-    
+
     for (final row in allResources) {
       try {
         final resourceJson = jsonDecode(row.resource) as Map<String, dynamic>;
         final meta = resourceJson['meta'] as Map<String, dynamic>?;
         if (meta == null) continue;
-        
+
         final tags = meta['tag'] as List<dynamic>?;
         if (tags == null || tags.isEmpty) continue;
-        
+
         // Check if any tag matches any of the search values
         bool matches = false;
         for (final value in values) {
@@ -1257,12 +1576,12 @@ class FhirAntDb extends _$FhirAntDb {
           final parts = value.split('|');
           final searchSystem = parts.length > 1 ? parts[0] : null;
           final searchCode = parts.length > 1 ? parts[1] : parts[0];
-          
+
           for (final tag in tags) {
             final tagMap = tag as Map<String, dynamic>;
             final system = tagMap['system'] as String?;
             final code = tagMap['code'] as String?;
-            
+
             if (searchSystem != null) {
               // Match system|code
               if (system == searchSystem && code == searchCode) {
@@ -1279,7 +1598,7 @@ class FhirAntDb extends _$FhirAntDb {
           }
           if (matches) break;
         }
-        
+
         if (matches) {
           matchingIds.add(row.id);
         }
@@ -1288,31 +1607,31 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
     }
-    
+
     return matchingIds;
   }
-  
+
   /// Search using _profile parameter (searches meta.profile from resource JSON)
   Future<Set<String>> _searchProfileParameter(
     String resourceType,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     // Get all resources of this type
     final allResources = await (select(resources)
-      ..where((tbl) => tbl.resourceType.equals(resourceType)))
+          ..where((tbl) => tbl.resourceType.equals(resourceType)))
         .get();
-    
+
     for (final row in allResources) {
       try {
         final resourceJson = jsonDecode(row.resource) as Map<String, dynamic>;
         final meta = resourceJson['meta'] as Map<String, dynamic>?;
         if (meta == null) continue;
-        
+
         final profiles = meta['profile'] as List<dynamic>?;
         if (profiles == null || profiles.isEmpty) continue;
-        
+
         // Check if any profile matches any of the search values
         for (final value in values) {
           for (final profile in profiles) {
@@ -1328,31 +1647,31 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
     }
-    
+
     return matchingIds;
   }
-  
+
   /// Search using _security parameter (searches meta.security from resource JSON)
   Future<Set<String>> _searchSecurityParameter(
     String resourceType,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     // Get all resources of this type
     final allResources = await (select(resources)
-      ..where((tbl) => tbl.resourceType.equals(resourceType)))
+          ..where((tbl) => tbl.resourceType.equals(resourceType)))
         .get();
-    
+
     for (final row in allResources) {
       try {
         final resourceJson = jsonDecode(row.resource) as Map<String, dynamic>;
         final meta = resourceJson['meta'] as Map<String, dynamic>?;
         if (meta == null) continue;
-        
+
         final securities = meta['security'] as List<dynamic>?;
         if (securities == null || securities.isEmpty) continue;
-        
+
         // Check if any security label matches any of the search values
         bool matches = false;
         for (final value in values) {
@@ -1360,12 +1679,12 @@ class FhirAntDb extends _$FhirAntDb {
           final parts = value.split('|');
           final searchSystem = parts.length > 1 ? parts[0] : null;
           final searchCode = parts.length > 1 ? parts[1] : parts[0];
-          
+
           for (final security in securities) {
             final securityMap = security as Map<String, dynamic>;
             final system = securityMap['system'] as String?;
             final code = securityMap['code'] as String?;
-            
+
             if (searchSystem != null) {
               // Match system|code
               if (system == searchSystem && code == searchCode) {
@@ -1382,7 +1701,7 @@ class FhirAntDb extends _$FhirAntDb {
           }
           if (matches) break;
         }
-        
+
         if (matches) {
           matchingIds.add(row.id);
         }
@@ -1391,31 +1710,31 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
     }
-    
+
     return matchingIds;
   }
-  
+
   /// Search using _source parameter (searches meta.source from resource JSON)
   Future<Set<String>> _searchSourceParameter(
     String resourceType,
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     // Get all resources of this type
     final allResources = await (select(resources)
-      ..where((tbl) => tbl.resourceType.equals(resourceType)))
+          ..where((tbl) => tbl.resourceType.equals(resourceType)))
         .get();
-    
+
     for (final row in allResources) {
       try {
         final resourceJson = jsonDecode(row.resource) as Map<String, dynamic>;
         final meta = resourceJson['meta'] as Map<String, dynamic>?;
         if (meta == null) continue;
-        
+
         final source = meta['source'] as String?;
         if (source == null) continue;
-        
+
         // Check if source matches any of the search values
         for (final value in values) {
           if (source == value || source.contains(value)) {
@@ -1428,37 +1747,12 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
     }
-    
+
     return matchingIds;
   }
-  /// Search using reference search parameters (with optional chaining)
-  /// 
-  /// Examples:
-  /// - organization=Organization/123 (simple reference)
-  /// - organization.name=Hospital (chained: search organization reference's name field)
-  Future<Set<String>> _searchReferenceParameter(
-    String resourceType,
-    String searchPath,
-    List<String> values,
-    bool isChained,
-  ) async {
-    final matchingIds = <String>{};
-    
-    if (isChained) {
-      // Handle chained reference search
-      // Example: organization.name=Hospital
-      // 1. Find the reference field (organization)
-      // 2. Get the referenced resource IDs
-      // 3. Search those resources for the chained field (name)
-      // 4. Return the original resource IDs that reference the matching resources
-      
-      final parts = searchPath.split('.');
-      if (parts.length < 2) {
-        // Invalid chaining syntax
-        return matchingIds;
-      }
+
   /// Search using composite search parameters
-  /// 
+  ///
   /// Composite parameters combine multiple search parameters with $ separator
   /// Example: code-value-quantity=8480-6\$gt100
   /// This searches for resources where code=8480-6 AND value-quantity>100
@@ -1468,14 +1762,14 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     // Parse composite parameter name (e.g., "code-value-quantity")
     final paramParts = compositeParamName.split('-');
     if (paramParts.length < 2) {
       // Not a valid composite parameter
       return matchingIds;
     }
-    
+
     for (final value in values) {
       // Parse composite value (e.g., "8480-6\$gt100")
       final valueParts = value.split('\$');
@@ -1483,34 +1777,35 @@ class FhirAntDb extends _$FhirAntDb {
         // Mismatch between parameter parts and value parts
         continue;
       }
-      
+
       // Build search for each component
       final componentResults = <Set<String>>[];
-      
+
       for (int i = 0; i < paramParts.length; i++) {
         final componentParam = paramParts[i];
         final componentValue = valueParts[i];
-        
+
         // Determine component parameter type and search
         Set<String> componentIds;
-        
+
         // Try to determine type from value or parameter name
-        bool isToken = componentValue.contains('|') || 
-                      componentParam.toLowerCase().contains('code') ||
-                      componentParam.toLowerCase().contains('status');
+        bool isToken = componentValue.contains('|') ||
+            componentParam.toLowerCase().contains('code') ||
+            componentParam.toLowerCase().contains('status');
         bool isNumber = false;
         bool isQuantity = componentParam.toLowerCase().contains('quantity') ||
-                         componentParam.toLowerCase().contains('value');
+            componentParam.toLowerCase().contains('value');
         bool isDate = RegExp(r'^\d{4}').hasMatch(componentValue.split(':')[0]);
-        
+
         try {
           double.parse(componentValue.split(':')[0]);
           isNumber = true;
-          isQuantity = isQuantity || componentParam.toLowerCase().contains('value');
+          isQuantity =
+              isQuantity || componentParam.toLowerCase().contains('value');
         } catch (e) {
           // Not a number
         }
-        
+
         if (isToken) {
           componentIds = await _searchTokenParameter(
             resourceType,
@@ -1543,10 +1838,10 @@ class FhirAntDb extends _$FhirAntDb {
             [componentValue],
           );
         }
-        
+
         componentResults.add(componentIds);
       }
-      
+
       // Intersect all component results (AND logic)
       if (componentResults.isNotEmpty) {
         Set<String> intersection = componentResults[0];
@@ -1556,70 +1851,99 @@ class FhirAntDb extends _$FhirAntDb {
         matchingIds.addAll(intersection);
       }
     }
-    
+
     return matchingIds;
   }
-  
 
-      
+  /// Search using reference search parameters (with optional chaining)
+  ///
+  /// Examples:
+  /// - organization=Organization/123 (simple reference)
+  /// - organization.name=Hospital (chained: search organization reference's name field)
+  Future<Set<String>> _searchReferenceParameter(
+    String resourceType,
+    String searchPath,
+    List<String> values,
+    bool isChained,
+  ) async {
+    final matchingIds = <String>{};
+
+    if (isChained) {
+      // Handle chained reference search
+      // Example: organization.name=Hospital
+      // 1. Find the reference field (organization)
+      // 2. Get the referenced resource IDs
+      // 3. Search those resources for the chained field (name)
+      // 4. Return the original resource IDs that reference the matching resources
+
+      final parts = searchPath.split('.');
+      if (parts.length < 2) {
+        // Invalid chaining syntax
+        return matchingIds;
+      }
+
       final referenceField = parts[0]; // e.g., "organization"
       final chainedField = parts[1]; // e.g., "name"
-      
+
       // Step 1: Find all resources that have this reference field
       final referenceParams = await (select(referenceSearchParameters)
-        ..where(
-          (tbl) => tbl.resourceType.equals(resourceType) &
-              tbl.searchPath.equals(referenceField),
-        ))
+            ..where(
+              (tbl) =>
+                  tbl.resourceType.equals(resourceType) &
+                  tbl.searchPath.equals(referenceField),
+            ))
           .get();
-      
+
       if (referenceParams.isEmpty) {
         return matchingIds;
       }
-      
+
       // Step 2: Get the referenced resource IDs
       final referencedResourceIds = <String>{};
       final referencedResourceTypes = <String>{};
-      
+
       for (final param in referenceParams) {
-        if (param.referenceResourceType != null && param.referenceIdPart != null) {
+        if (param.referenceResourceType != null &&
+            param.referenceIdPart != null) {
           referencedResourceTypes.add(param.referenceResourceType!);
           referencedResourceIds.add(param.referenceIdPart!);
         }
       }
-      
+
       if (referencedResourceIds.isEmpty) {
         return matchingIds;
       }
-      
+
       // Step 3: Search the referenced resources for the chained field
       // This is a simplified implementation - in production you'd want to
       // use the proper search parameter tables for the chained field
       final matchingReferencedIds = <String>{};
-      
+
       for (final refType in referencedResourceTypes) {
         // Get resources of the referenced type
         final refResources = await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(refType)))
+              ..where((tbl) => tbl.resourceType.equals(refType)))
             .get();
-        
+
         // Search in the JSON for the chained field
         for (final row in refResources) {
           if (!referencedResourceIds.contains(row.id)) continue;
-          
+
           try {
-            final resourceJson = jsonDecode(row.resource) as Map<String, dynamic>;
-            
+            final resourceJson =
+                jsonDecode(row.resource) as Map<String, dynamic>;
+
             // Try to find the chained field value
             dynamic fieldValue = _getNestedValue(resourceJson, chainedField);
-            
+
             if (fieldValue != null) {
               final fieldValueStr = fieldValue.toString().toLowerCase();
-              
+
               // Check if any search value matches
               for (final value in values) {
                 final searchValue = value.split(':')[0].toLowerCase();
-                if (fieldValueStr.contains(searchValue) || fieldValueStr == searchValue) {
+                if (fieldValueStr.contains(searchValue) ||
+                    fieldValueStr == searchValue) {
                   matchingReferencedIds.add(row.id);
                   break;
                 }
@@ -1631,10 +1955,10 @@ class FhirAntDb extends _$FhirAntDb {
           }
         }
       }
-      
+
       // Step 4: Find original resources that reference the matching resources
       for (final param in referenceParams) {
-        if (param.referenceIdPart != null && 
+        if (param.referenceIdPart != null &&
             matchingReferencedIds.contains(param.referenceIdPart!)) {
           matchingIds.add(param.id);
         }
@@ -1644,11 +1968,11 @@ class FhirAntDb extends _$FhirAntDb {
       // Example: organization=Organization/123 or organization=123
       for (final value in values) {
         final searchValue = value.split(':')[0];
-        
+
         // Parse the reference value
         String? refType;
         String? refId;
-        
+
         if (searchValue.contains('/')) {
           // Format: ResourceType/id
           final parts = searchValue.split('/');
@@ -1660,13 +1984,13 @@ class FhirAntDb extends _$FhirAntDb {
           // Just an ID - search across all reference types
           refId = searchValue;
         }
-        
+
         // Build query
         final query = select(referenceSearchParameters);
-        Expression<bool> whereCondition = referenceSearchParameters.resourceType
-            .equals(resourceType) &
-            referenceSearchParameters.searchPath.equals(searchPath);
-        
+        Expression<bool> whereCondition =
+            referenceSearchParameters.resourceType.equals(resourceType) &
+                referenceSearchParameters.searchPath.equals(searchPath);
+
         if (refType != null && refId != null) {
           // Match both type and ID
           whereCondition = whereCondition &
@@ -1681,21 +2005,19 @@ class FhirAntDb extends _$FhirAntDb {
           whereCondition = whereCondition &
               referenceSearchParameters.referenceResourceType.equals(refType);
         }
-        
+
         query.where((tbl) => whereCondition);
-        
+
         final rows = await query.get();
         for (final row in rows) {
           matchingIds.add(row.id);
         }
       }
     }
-    
+
     return matchingIds;
   }
-  
 
-  
   /// Search using number search parameters
   Future<Set<String>> _searchNumberParameter(
     String resourceType,
@@ -1703,12 +2025,12 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -1716,29 +2038,29 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Handle missing modifier
       if (modifier == 'missing') {
         final allResourceIds = (await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(resourceType)))
-            .get())
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
             .map((r) => r.id)
             .toSet();
-        
+
         final resourcesWithParam = (await (selectOnly(numberSearchParameters)
-          ..addColumns([numberSearchParameters.id])
-          ..where(
-            numberSearchParameters.resourceType.equals(resourceType) &
-            numberSearchParameters.searchPath.equals(searchPath),
-          ))
-            .get())
+                  ..addColumns([numberSearchParameters.id])
+                  ..where(
+                    numberSearchParameters.resourceType.equals(resourceType) &
+                        numberSearchParameters.searchPath.equals(searchPath),
+                  ))
+                .get())
             .map((r) => r.read(numberSearchParameters.id)!)
             .toSet();
-        
+
         matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       }
-      
+
       // Parse the number value
       double searchNumber;
       try {
@@ -1747,33 +2069,37 @@ class FhirAntDb extends _$FhirAntDb {
         print('Error parsing number: $searchValue - $e');
         continue;
       }
-      
+
       // searchNumber is assigned in all code paths above
-      
+
       // Build query based on modifier
       final query = select(numberSearchParameters);
-      
-      Expression<bool> whereCondition = numberSearchParameters.resourceType
-          .equals(resourceType) &
-          numberSearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          numberSearchParameters.resourceType.equals(resourceType) &
+              numberSearchParameters.searchPath.equals(searchPath);
+
       switch (modifier) {
         case 'gt':
           whereCondition = whereCondition &
-              numberSearchParameters.numberValue.isBiggerThanValue(searchNumber);
+              numberSearchParameters.numberValue
+                  .isBiggerThanValue(searchNumber);
           break;
         case 'lt':
           whereCondition = whereCondition &
-              numberSearchParameters.numberValue.isSmallerThanValue(searchNumber);
+              numberSearchParameters.numberValue
+                  .isSmallerThanValue(searchNumber);
           break;
         case 'ge':
           whereCondition = whereCondition &
-              (numberSearchParameters.numberValue.isBiggerOrEqualValue(searchNumber) |
+              (numberSearchParameters.numberValue
+                      .isBiggerOrEqualValue(searchNumber) |
                   numberSearchParameters.numberValue.equals(searchNumber));
           break;
         case 'le':
           whereCondition = whereCondition &
-              (numberSearchParameters.numberValue.isSmallerOrEqualValue(searchNumber) |
+              (numberSearchParameters.numberValue
+                      .isSmallerOrEqualValue(searchNumber) |
                   numberSearchParameters.numberValue.equals(searchNumber));
           break;
         case 'ap':
@@ -1782,26 +2108,28 @@ class FhirAntDb extends _$FhirAntDb {
           final lowerBound = searchNumber - tolerance;
           final upperBound = searchNumber + tolerance;
           whereCondition = whereCondition &
-              (numberSearchParameters.numberValue.isBiggerOrEqualValue(lowerBound) &
-                  numberSearchParameters.numberValue.isSmallerOrEqualValue(upperBound));
+              (numberSearchParameters.numberValue
+                      .isBiggerOrEqualValue(lowerBound) &
+                  numberSearchParameters.numberValue
+                      .isSmallerOrEqualValue(upperBound));
           break;
         default:
           // Default: exact match
           whereCondition = whereCondition &
               numberSearchParameters.numberValue.equals(searchNumber);
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
-  
+
   /// Search using quantity search parameters
   Future<Set<String>> _searchQuantityParameter(
     String resourceType,
@@ -1809,12 +2137,12 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -1822,34 +2150,34 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Handle missing modifier
       if (modifier == 'missing') {
         final allResourceIds = (await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(resourceType)))
-            .get())
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
             .map((r) => r.id)
             .toSet();
-        
+
         final resourcesWithParam = (await (selectOnly(quantitySearchParameters)
-          ..addColumns([quantitySearchParameters.id])
-          ..where(
-            quantitySearchParameters.resourceType.equals(resourceType) &
-            quantitySearchParameters.searchPath.equals(searchPath),
-          ))
-            .get())
+                  ..addColumns([quantitySearchParameters.id])
+                  ..where(
+                    quantitySearchParameters.resourceType.equals(resourceType) &
+                        quantitySearchParameters.searchPath.equals(searchPath),
+                  ))
+                .get())
             .map((r) => r.read(quantitySearchParameters.id)!)
             .toSet();
-        
+
         matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       }
-      
+
       // Parse quantity value - format can be: value, value|unit, system|value|unit, etc.
       double quantityValue;
       String? unit;
       String? system;
-      
+
       try {
         if (searchValue.contains('|')) {
           final parts = searchValue.split('|');
@@ -1880,32 +2208,36 @@ class FhirAntDb extends _$FhirAntDb {
         print('Error parsing quantity: $searchValue - $e');
         continue;
       }
-      
+
       // Build query based on modifier
       final query = select(quantitySearchParameters);
-      
-      Expression<bool> whereCondition = quantitySearchParameters.resourceType
-          .equals(resourceType) &
-          quantitySearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          quantitySearchParameters.resourceType.equals(resourceType) &
+              quantitySearchParameters.searchPath.equals(searchPath);
+
       // Add value comparison
       switch (modifier) {
         case 'gt':
           whereCondition = whereCondition &
-              quantitySearchParameters.quantityValue.isBiggerThanValue(quantityValue);
+              quantitySearchParameters.quantityValue
+                  .isBiggerThanValue(quantityValue);
           break;
         case 'lt':
           whereCondition = whereCondition &
-              quantitySearchParameters.quantityValue.isSmallerThanValue(quantityValue);
+              quantitySearchParameters.quantityValue
+                  .isSmallerThanValue(quantityValue);
           break;
         case 'ge':
           whereCondition = whereCondition &
-              (quantitySearchParameters.quantityValue.isBiggerOrEqualValue(quantityValue) |
+              (quantitySearchParameters.quantityValue
+                      .isBiggerOrEqualValue(quantityValue) |
                   quantitySearchParameters.quantityValue.equals(quantityValue));
           break;
         case 'le':
           whereCondition = whereCondition &
-              (quantitySearchParameters.quantityValue.isSmallerOrEqualValue(quantityValue) |
+              (quantitySearchParameters.quantityValue
+                      .isSmallerOrEqualValue(quantityValue) |
                   quantitySearchParameters.quantityValue.equals(quantityValue));
           break;
         case 'ap':
@@ -1914,33 +2246,35 @@ class FhirAntDb extends _$FhirAntDb {
           final lowerBound = quantityValue - tolerance;
           final upperBound = quantityValue + tolerance;
           whereCondition = whereCondition &
-              (quantitySearchParameters.quantityValue.isBiggerOrEqualValue(lowerBound) &
-                  quantitySearchParameters.quantityValue.isSmallerOrEqualValue(upperBound));
+              (quantitySearchParameters.quantityValue
+                      .isBiggerOrEqualValue(lowerBound) &
+                  quantitySearchParameters.quantityValue
+                      .isSmallerOrEqualValue(upperBound));
           break;
         default:
           // Default: exact match on value
           whereCondition = whereCondition &
               quantitySearchParameters.quantityValue.equals(quantityValue);
       }
-      
+
       // Add unit/system filters if provided
       if (unit != null) {
-        whereCondition = whereCondition &
-            quantitySearchParameters.quantityUnit.equals(unit);
+        whereCondition =
+            whereCondition & quantitySearchParameters.quantityUnit.equals(unit);
       }
       if (system != null) {
         whereCondition = whereCondition &
             quantitySearchParameters.quantitySystem.equals(system);
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
 
@@ -1951,12 +2285,12 @@ class FhirAntDb extends _$FhirAntDb {
     List<String> values,
   ) async {
     final matchingIds = <String>{};
-    
+
     for (final value in values) {
       // Handle modifiers
       String? modifier;
       String searchValue = value;
-      
+
       if (value.contains(':')) {
         final parts = value.split(':');
         if (parts.length == 2) {
@@ -1964,62 +2298,57 @@ class FhirAntDb extends _$FhirAntDb {
           modifier = parts[1];
         }
       }
-      
+
       // Handle missing modifier
       if (modifier == 'missing') {
         final allResourceIds = (await (select(resources)
-          ..where((tbl) => tbl.resourceType.equals(resourceType)))
-            .get())
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
             .map((r) => r.id)
             .toSet();
-        
+
         final resourcesWithParam = await (selectOnly(uriSearchParameters)
-          ..addColumns([uriSearchParameters.id])
-          ..where(
-            uriSearchParameters.resourceType.equals(resourceType) &
-            uriSearchParameters.searchPath.equals(searchPath),
-          ))
+              ..addColumns([uriSearchParameters.id])
+              ..where(
+                uriSearchParameters.resourceType.equals(resourceType) &
+                    uriSearchParameters.searchPath.equals(searchPath),
+              ))
             .get()
-            .then((rows) => rows.map((r) => r.read(uriSearchParameters.id)!).toSet());
-        
+            .then((rows) =>
+                rows.map((r) => r.read(uriSearchParameters.id)!).toSet());
+
         matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       }
-      
+
       // URI search is typically exact match or prefix match
       final query = select(uriSearchParameters);
-      
-      Expression<bool> whereCondition = uriSearchParameters.resourceType
-          .equals(resourceType) &
-          uriSearchParameters.searchPath.equals(searchPath);
-      
+
+      Expression<bool> whereCondition =
+          uriSearchParameters.resourceType.equals(resourceType) &
+              uriSearchParameters.searchPath.equals(searchPath);
+
       // URI search: exact match by default, or :above for prefix match
       if (modifier == 'above') {
         // Prefix match - URI starts with searchValue
-  
-            uriSearchParameters.uriValue.like('$searchValue%');
+
+        uriSearchParameters.uriValue.like('$searchValue%');
       } else {
         // Default: exact match
-        whereCondition = whereCondition &
-            uriSearchParameters.uriValue.equals(searchValue);
+        whereCondition =
+            whereCondition & uriSearchParameters.uriValue.equals(searchValue);
       }
-      
+
       query.where((tbl) => whereCondition);
-      
+
       final rows = await query.get();
       for (final row in rows) {
         matchingIds.add(row.id);
       }
     }
-    
+
     return matchingIds;
   }
-  
-  
-  
-  
-
-
 
   /// Initialize the database (if needed).
   Future<void> initialize() async {
@@ -2039,21 +2368,24 @@ class FhirAntDb extends _$FhirAntDb {
     await batch((batch) {
       // Delete all resources
       batch.deleteWhere(resources, (tbl) => const Constant(true));
-      
+
       // Delete all resource history
       batch.deleteWhere(resourcesHistory, (tbl) => const Constant(true));
-      
+
       // Delete all search parameters
       batch.deleteWhere(stringSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(tokenSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(referenceSearchParameters, (tbl) => const Constant(true));
+      batch.deleteWhere(
+          referenceSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(dateSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(numberSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(quantitySearchParameters, (tbl) => const Constant(true));
+      batch.deleteWhere(
+          quantitySearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(uriSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(compositeSearchParameters, (tbl) => const Constant(true));
+      batch.deleteWhere(
+          compositeSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(specialSearchParameters, (tbl) => const Constant(true));
-      
+
       // Note: Logs are intentionally NOT cleared to maintain audit trail
     });
   }
@@ -2062,7 +2394,7 @@ class FhirAntDb extends _$FhirAntDb {
   dynamic _getNestedValue(Map<String, dynamic> json, String path) {
     final parts = path.split('.');
     dynamic current = json;
-    
+
     for (final part in parts) {
       if (current is Map<String, dynamic>) {
         current = current[part];
@@ -2078,8 +2410,7 @@ class FhirAntDb extends _$FhirAntDb {
         return null;
       }
     }
-    
+
     return current;
   }
-
 }

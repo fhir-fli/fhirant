@@ -316,3 +316,4 @@ Tests require sqlite3 native library setup. Will work in:
 - **fhirant_db**: Target 90%+ coverage (critical package)
 - **fhirant_secure_storage**: Target 70%+ coverage
 - **fhirant_logging**: Target 60%+ coverage (simple package)
+
