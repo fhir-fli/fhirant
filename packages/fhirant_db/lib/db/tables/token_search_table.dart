@@ -106,7 +106,7 @@ extension TokenSearchParametersExtension on fhir.FhirBase {
                 id: Value(id),
                 lastUpdated: Value(lastUpdated),
                 searchPath: Value(searchPath),
-                paramIndex: Value(paramIndex ?? i),
+                paramIndex: Value(paramIndex == null ? i : paramIndex * 100 + i),
                 tokenSystem: coding.system?.valueString == null
                     ? const Value.absent()
                     : Value(coding.system!.valueString!.toString()),
@@ -127,7 +127,7 @@ extension TokenSearchParametersExtension on fhir.FhirBase {
             id: Value(id),
             lastUpdated: Value(lastUpdated),
             searchPath: Value(searchPath),
-            paramIndex: Value(paramIndex ?? textIndex),
+            paramIndex: Value(paramIndex == null ? textIndex : paramIndex * 100 + textIndex),
             tokenSystem: const Value.absent(),
             tokenValue: Value(codeableConcept.text!.valueString!),
             tokenDisplay: const Value.absent(),

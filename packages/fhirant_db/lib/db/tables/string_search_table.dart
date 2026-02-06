@@ -88,7 +88,7 @@ extension StringSearchParametersExtension on fhir.FhirBase {
             id: Value(id),
             lastUpdated: Value(lastUpdated),
             searchPath: Value(searchPath),
-            paramIndex: Value(paramIndex ?? i),
+            paramIndex: Value(paramIndex == null ? i : paramIndex * 100 + i),
             stringValue: Value(_normalizeString(nameParts[i])),
           ));
         }
@@ -137,7 +137,7 @@ extension StringSearchParametersExtension on fhir.FhirBase {
             id: Value(id),
             lastUpdated: Value(lastUpdated),
             searchPath: Value(searchPath),
-            paramIndex: Value(paramIndex ?? i),
+            paramIndex: Value(paramIndex == null ? i : paramIndex * 100 + i),
             stringValue: Value(_normalizeString(addressParts[i])),
           ));
         }
