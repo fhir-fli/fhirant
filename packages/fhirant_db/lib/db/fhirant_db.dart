@@ -352,14 +352,15 @@ class FhirAntDb extends _$FhirAntDb {
     }
   }
 
-  Future<int> deleteResource(
+  Future<bool> deleteResource(
       fhir.R4ResourceType resourceType, String id) async {
     final resourceTypeString = resourceType.toString();
     // Delete from the main table only.
-    return (delete(resources)
+    final count = await (delete(resources)
           ..where((tbl) =>
               tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id)))
         .go();
+    return count > 0;
   }
 
   /// Retrieve a paginated list of resources of a given type.

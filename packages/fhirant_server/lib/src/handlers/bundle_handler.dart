@@ -6,7 +6,7 @@ import 'package:shelf/shelf.dart';
 /// Handler for Transaction and Batch operations: POST /
 Future<Response> bundleHandler(
   Request request,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo('Processing Bundle request');
@@ -37,7 +37,7 @@ Future<Response> bundleHandler(
 
 Future<Response> _processTransaction(
   fhir.Bundle bundle,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
   Request request,
 ) async {
   FhirantLogging().logInfo('Processing Transaction Bundle with ${bundle.entry!.length} entries');
@@ -75,7 +75,7 @@ Future<Response> _processTransaction(
 
 Future<Response> _processBatch(
   fhir.Bundle bundle,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
   Request request,
 ) async {
   FhirantLogging().logInfo('Processing Batch Bundle with ${bundle.entry!.length} entries');
@@ -127,7 +127,7 @@ Future<Response> _processBatch(
 
 Future<_BundleOperation> _processBundleEntry(
   fhir.BundleEntry entry,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
   String baseUrl,
   int entryIndex,
 ) async {
@@ -212,7 +212,7 @@ Future<_BundleOperation> _processBundleEntry(
   );
 }
 
-Future<void> _rollbackOperation(_BundleOperation operation, FuegoDbInterface dbInterface) async {
+Future<void> _rollbackOperation(_BundleOperation operation, FhirAntDb dbInterface) async {
   if (operation.method == fhir.HTTPVerb.pOST) {
     FhirantLogging().logWarning(
       'Cannot fully rollback POST operation for ${operation.resourceType}/${operation.resourceId} '

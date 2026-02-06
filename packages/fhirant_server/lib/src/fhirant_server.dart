@@ -9,7 +9,7 @@ import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
-  final FuegoDbInterface dbInterface;
+  final FhirAntDb dbInterface;
   HttpServer? _server;
   bool _isRunning = false;
 

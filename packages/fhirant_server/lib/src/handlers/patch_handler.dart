@@ -11,7 +11,7 @@ Future<Response> patchResourceHandler(
   Request request,
   String resourceType,
   String id,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo(

@@ -79,7 +79,7 @@ This FHIR server handles Protected Health Information (PHI) and must comply with
      - `additional_data` (JSON/text)
    
 2. **Database Interface Methods**
-   - `insertAuditLog()` method in `FuegoDbInterface`
+   - `insertAuditLog()` method in `FhirAntDb`
    - Query methods for audit log retrieval
    - Retention policy implementation
 

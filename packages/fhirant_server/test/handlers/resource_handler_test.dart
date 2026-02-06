@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mocktail/src/mocktail.dart' show registerFallbackValue;
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
-import 'package:fhirant_db/fuego_db_interface.dart';
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
 
 // Mock classes
-class MockFuegoDbInterface extends Mock implements FuegoDbInterface {}
+class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 class MockRequest extends Mock implements Request {}
 
@@ -21,11 +21,11 @@ void main() {
   });
 
   group('deleteResourceHandler', () {
-    late MockFuegoDbInterface mockDb;
+    late MockFhirAntDb mockDb;
     late MockRequest mockRequest;
 
     setUp(() {
-      mockDb = MockFuegoDbInterface();
+      mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
     });
 
@@ -151,11 +151,11 @@ void main() {
   });
 
   group('getResourcesHandler', () {
-    late MockFuegoDbInterface mockDb;
+    late MockFhirAntDb mockDb;
     late MockRequest mockRequest;
 
     setUp(() {
-      mockDb = MockFuegoDbInterface();
+      mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
     });
 

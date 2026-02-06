@@ -4,13 +4,12 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:drift/native.dart';
 
 void main() {
-  group('FhirAntDbInterface - CRUD Operations', () {
-    late FhirAntDbInterface db;
+  group('FhirAntDb - CRUD Operations', () {
+    late FhirAntDb db;
 
     setUp(() async {
       // Use in-memory database for testing
-      final testDb = FhirAntDb.forTesting(NativeDatabase.memory());
-      db = FhirAntDbInterface(testDb);
+      db = FhirAntDb.forTesting(NativeDatabase.memory());
       await db.initialize();
     });
 
@@ -143,12 +142,11 @@ void main() {
     });
   });
 
-  group('FhirAntDbInterface - Query Operations', () {
-    late FhirAntDbInterface db;
+  group('FhirAntDb - Query Operations', () {
+    late FhirAntDb db;
 
     setUp(() async {
-      final testDb = FhirAntDb.forTesting(NativeDatabase.memory());
-      db = FhirAntDbInterface(testDb);
+      db = FhirAntDb.forTesting(NativeDatabase.memory());
       await db.initialize();
     });
 

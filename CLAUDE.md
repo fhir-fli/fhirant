@@ -83,7 +83,7 @@ Middleware pipeline: logging → rate limiting (10 req/60s) → router.
 
 ### Database Layer (`fhirant_db`)
 
-Drift ORM over SQLite with SQLCipher encryption. Key abstraction: `FuegoDbInterface` (abstract) → `FhirAntDbInterface` (concrete).
+Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
 
 **Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
 
@@ -94,7 +94,7 @@ Drift ORM over SQLite with SQLCipher encryption. Key abstraction: `FuegoDbInterf
 4. Reference chaining resolves through intermediate resource lookups
 5. Results are sorted and paginated
 
-**Interface contract** (`fuego_db_interface.dart`):
+**`FhirAntDb` API** (`db/fhirant_db.dart`):
 - CRUD: `getResource()`, `saveResource()`, `deleteResource()`
 - Search: `search()`, `searchCount()`
 - History: `getResourceHistory()`
@@ -110,7 +110,7 @@ Singleton `FhirantLogging()` that writes JSON-formatted logs to console and `ser
 
 ## Testing
 
-Tests use `flutter_test` + `mocktail`. The `FuegoDbInterface` is mocked in server handler tests.
+Tests use `flutter_test` + `mocktail`. `FhirAntDb` is mocked in server handler tests.
 
 **Test locations:**
 - `packages/fhirant_server/test/handlers/` — handler unit tests (mock DB)

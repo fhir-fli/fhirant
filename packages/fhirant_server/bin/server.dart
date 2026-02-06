@@ -59,9 +59,8 @@ void main(List<String> arguments) async {
   logger.logInfo('Initializing database at $dbPath');
   final db = FhirAntDb();
 
-  final dbInterface = FhirAntDbInterface(db);
   try {
-    await dbInterface.initialize();
+    await db.initialize();
     logger.logInfo('Database initialized successfully');
   } catch (e, stackTrace) {
     logger.logError('Failed to initialize database', e, stackTrace);
@@ -69,7 +68,7 @@ void main(List<String> arguments) async {
   }
 
   // Create and start server
-  final server = FhirAntServer(dbInterface);
+  final server = FhirAntServer(db);
 
   try {
     if (args['https']) {

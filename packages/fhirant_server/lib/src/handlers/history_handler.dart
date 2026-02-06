@@ -10,7 +10,7 @@ Future<Response> resourceHistoryHandler(
   Request request,
   String resourceType,
   String id,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo(
@@ -101,7 +101,7 @@ Future<Response> resourceHistoryHandler(
 Future<Response> typeHistoryHandler(
   Request request,
   String resourceType,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo(
@@ -206,7 +206,7 @@ Future<Response> typeHistoryHandler(
 /// Handler for system-level history: GET /_history
 Future<Response> systemHistoryHandler(
   Request request,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo('Fetching system-level history');
@@ -307,7 +307,7 @@ Future<Response> vreadResourceHandler(
   String resourceType,
   String id,
   String vid,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo(

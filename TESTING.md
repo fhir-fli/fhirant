@@ -193,7 +193,7 @@ Tests require sqlite3 native library setup. Will work in:
 
 - Tests use `mocktail` for mocking (better null-safety than `mockito`)
 - Must use `flutter_test` because `fhirant_db` has Flutter dependencies
-- Import only `fuego_db_interface.dart` in tests to avoid Flutter UI dependencies
+- Import `package:fhirant_db/fhirant_db.dart` in tests and mock `FhirAntDb`
 - Use `fromJson` for creating test resources to avoid constructor complexity
 
 
@@ -259,7 +259,7 @@ Tests require sqlite3 native library setup. Will work in:
 - ❌ Simple data structures
 
 **What We're Mocking**:
-- ✅ `FuegoDbInterface` - External dependency, correct
+- ✅ `FhirAntDb` - External dependency, correct
 - ✅ `Request` - External dependency, correct
 
 ### Continuous Integration

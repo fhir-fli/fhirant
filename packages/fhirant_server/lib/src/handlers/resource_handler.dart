@@ -10,7 +10,7 @@ import 'package:fhirant_server/src/utils/search_parser.dart';
 Future<Response> getResourcesHandler(
   Request request,
   String resourceType,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo(
@@ -269,7 +269,7 @@ Future<Response> getResourcesHandler(
 Future<Response> postResourceHandler(
   Request request,
   String resourceType,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     final body = await request.readAsString();
@@ -327,7 +327,7 @@ Future<Response> putResourceHandler(
   Request request,
   String resourceType,
   String id,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     final body = await request.readAsString();
@@ -389,7 +389,7 @@ Future<Response> getResourceByIdHandler(
   Request request,
   String resourceType,
   String id,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     final type = fhir.R4ResourceType.fromString(resourceType);
@@ -478,7 +478,7 @@ Future<Response> deleteResourceHandler(
   Request request,
   String resourceType,
   String id,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     final type = fhir.R4ResourceType.fromString(resourceType);

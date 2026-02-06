@@ -8,7 +8,7 @@ import 'package:shelf/shelf.dart';
 /// FHIRPath Handler - Evaluate FHIRPath expressions against resources
 Future<Response> fhirPathHandler(
   Request request,
-  FuegoDbInterface dbInterface,
+  FhirAntDb dbInterface,
 ) async {
   try {
     FhirantLogging().logInfo('Received FHIRPath request');
