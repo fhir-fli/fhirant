@@ -26,6 +26,7 @@ part 'fhirant_db.g.dart';
   CompositeSearchParameters,
   UriSearchParameters,
   SpecialSearchParameters,
+  Users,
 ])
 
 /// Database for the application
@@ -38,7 +39,19 @@ class FhirAntDb extends _$FhirAntDb {
 
   /// Default database version for migrations
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) async {
+          await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(users);
+          }
+        },
+      );
 
   /// Secure Storage Service instance
   static final SecureStorageService _secureStorageService =
@@ -441,6 +454,65 @@ class FhirAntDb extends _$FhirAntDb {
     return rows.map((row) {
       return fhir.Resource.fromJsonString(row.resource);
     }).toList();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // User management methods
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// Returns the total number of user accounts.
+  Future<int> getUserCount() async {
+    final countExp = users.id.count();
+    final query = selectOnly(users)..addColumns([countExp]);
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
+  }
+
+  /// Retrieves a user by username, or null if not found.
+  Future<User?> getUserByUsername(String username) async {
+    final query = select(users)
+      ..where((tbl) => tbl.username.equals(username));
+    return query.getSingleOrNull();
+  }
+
+  /// Retrieves a user by ID, or null if not found.
+  Future<User?> getUserById(int id) async {
+    final query = select(users)..where((tbl) => tbl.id.equals(id));
+    return query.getSingleOrNull();
+  }
+
+  /// Creates a new user account. Returns the auto-generated row ID.
+  Future<int> createUser({
+    required String username,
+    required String passwordHash,
+    required String salt,
+    String role = 'clinician',
+  }) async {
+    return into(users).insert(UsersCompanion(
+      username: Value(username),
+      passwordHash: Value(passwordHash),
+      salt: Value(salt),
+      role: Value(role),
+    ));
+  }
+
+  /// Updates the last login timestamp for a user.
+  Future<void> updateLastLogin(int id) async {
+    await (update(users)..where((tbl) => tbl.id.equals(id))).write(
+      UsersCompanion(lastLogin: Value(DateTime.now())),
+    );
+  }
+
+  /// Deactivates a user account.
+  Future<void> deactivateUser(int id) async {
+    await (update(users)..where((tbl) => tbl.id.equals(id))).write(
+      const UsersCompanion(active: Value(false)),
+    );
+  }
+
+  /// Returns all user accounts.
+  Future<List<User>> getAllUsers() async {
+    return select(users).get();
   }
 
   /// Search resources using search parameters

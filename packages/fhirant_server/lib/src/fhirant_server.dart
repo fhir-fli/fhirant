@@ -2,7 +2,9 @@
 import 'dart:io';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
+import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
+import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
@@ -11,10 +13,16 @@ import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
   final FhirAntDb dbInterface;
+  late final JwtService _jwtService;
   HttpServer? _server;
   bool _isRunning = false;
 
-  FhirAntServer(this.dbInterface);
+  FhirAntServer(this.dbInterface, {String? jwtSecret}) {
+    final secret = jwtSecret ??
+        Platform.environment['FHIRANT_JWT_SECRET'] ??
+        'fhirant-dev-secret-change-in-production';
+    _jwtService = JwtService(secret);
+  }
 
   bool get isRunning => _isRunning;
   int? get port => _server?.port;
@@ -22,6 +30,12 @@ class FhirAntServer {
   /// Create router with all handlers
   Router createRouter() {
     final router = Router()
+      // Auth routes
+      ..post('/auth/register',
+          (Request req) => registerHandler(req, dbInterface))
+      ..post('/auth/login',
+          (Request req) => loginHandler(req, dbInterface, _jwtService))
+      // Public routes
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)
       ..get('/metadata', metadataHandler)
@@ -111,6 +125,7 @@ class FhirAntServer {
     return Pipeline()
         .addMiddleware(_logRequestsMiddleware())
         .addMiddleware(contentNegotiationMiddleware())
+        .addMiddleware(authMiddleware(_jwtService))
         .addMiddleware(rateLimiter.rateLimiter())
         .addHandler(router);
   }

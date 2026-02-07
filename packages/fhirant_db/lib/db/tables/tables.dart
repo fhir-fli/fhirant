@@ -9,3 +9,4 @@ export 'special_search_table.dart';
 export 'string_search_table.dart';
 export 'token_search_table.dart';
 export 'uri_search_table.dart';
+export 'users_table.dart';

@@ -1,114 +1,92 @@
-// import 'dart:convert';
-// import 'dart:math';
-// import 'package:fhirant/fhirant.dart';
-// import 'package:fhirant_logging/fhirant_logging.dart';
-// import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
-// import 'package:flutter_passkey/flutter_passkey.dart';
-// import 'package:shelf/shelf.dart';
+import 'dart:convert';
 
-// /// Generates a secure random challenge for WebAuthn authentication
-// String _generateChallenge() {
-//   final random = Random.secure();
-//   final values = List<int>.generate(32, (i) => random.nextInt(256));
-//   return base64Url.encode(values);
-// }
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:shelf/shelf.dart';
 
-// /// Updated handler for the register route with challenge storage and verification.
-// Future<Response> registerHandler(
-//   Request request,
-//   String? registrationCode,
-//   // ignore: avoid_positional_boolean_parameters
-//   bool isRegistrationOpen,
-// ) async {
-//   try {
-//     final requestData =
-//         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+/// Valid user roles.
+const _validRoles = {'admin', 'clinician', 'readonly'};
 
-//     if (!requestData.containsKey('username')) {
-//       FhirantLogging().logWarning(
-//         'Registration attempt without username',
-//       );
-//       return Response(400, body: jsonEncode({'error': 'Username required'}));
-//     }
+/// Handler for user registration.
+///
+/// First-user bootstrap: if no users exist, anyone can register and is forced
+/// to admin role. Otherwise, only admins can register new users.
+Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
+  try {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
 
-//     final username = requestData['username'];
-//     if (username is! String) {
-//       FhirantLogging().logWarning('Invalid username format: $username');
-//       return Response(400, body: jsonEncode({'error': 'Invalid username'}));
-//     }
+    // Validate username
+    final username = body['username'];
+    if (username is! String || username.length < 3) {
+      return Response(400,
+          body: jsonEncode({
+            'error': 'Username must be a string of at least 3 characters'
+          }));
+    }
 
-//     FhirantLogging().logInfo('Registration attempt for user: $username');
+    // Validate password
+    final password = body['password'];
+    if (password is! String || password.length < 8) {
+      return Response(400,
+          body: jsonEncode({
+            'error': 'Password must be a string of at least 8 characters'
+          }));
+    }
 
-//     // Generate a secure challenge and store it temporarily.
-//     final challenge = _generateChallenge();
-//     pendingRegistrationChallenges[username] = challenge;
+    // Validate role
+    final requestedRole = body['role'] as String? ?? 'clinician';
+    if (!_validRoles.contains(requestedRole)) {
+      return Response(400,
+          body: jsonEncode(
+              {'error': 'Invalid role. Must be one of: ${_validRoles.join(', ')}'}));
+    }
 
-//     // Create WebAuthn registration options.
-//     final options = jsonEncode({
-//       'challenge': challenge,
-//       'rp': {'name': 'FHIR Server'},
-//       'user': {
-//         'id': base64Url.encode(utf8.encode(username)),
-//         'name': username,
-//         'displayName': username,
-//       },
-//       'pubKeyCredParams': [
-//         {'type': 'public-key', 'alg': -7}, // ES256
-//         {'type': 'public-key', 'alg': -257}, // RS256
-//       ],
-//       'authenticatorSelection': {
-//         'requireResidentKey': false,
-//         'userVerification': 'preferred',
-//       },
-//       'timeout': 60000,
-//     });
+    final userCount = await dbInterface.getUserCount();
 
-//     // Call `createCredential` to generate a passkey.
-//     final credential = await FlutterPasskey().createCredential(options);
-//     if (credential.isEmpty) {
-//       FhirantLogging().logWarning(
-//         'Failed to generate passkey for user: $username',
-//       );
-//       pendingRegistrationChallenges.remove(username);
-//       return Response(
-//         500,
-//         body: jsonEncode({'error': 'Passkey generation failed'}),
-//       );
-//     }
+    // Determine the effective role
+    String effectiveRole;
+    if (userCount == 0) {
+      // First-user bootstrap — force admin, no auth required
+      effectiveRole = 'admin';
+    } else {
+      // Require admin auth
+      final authUser =
+          request.context['auth_user'] as Map<String, dynamic>?;
+      if (authUser == null || authUser['role'] != 'admin') {
+        return Response(403,
+            body: jsonEncode(
+                {'error': 'Only administrators can register new users'}));
+      }
+      effectiveRole = requestedRole;
+    }
 
-//     // Decode the attestation response (assuming it’s a JSON string)
-//     final attestation = jsonDecode(credential) as Map<String, dynamic>;
-//     final clientDataJSONBase64 = attestation['clientDataJSON'] as String;
-//     final clientDataJSONStr = utf8.decode(
-//       base64Url.decode(clientDataJSONBase64),
-//     );
-//     final clientData = jsonDecode(clientDataJSONStr) as Map<String, dynamic>;
+    // Check for duplicate username
+    final existing = await dbInterface.getUserByUsername(username);
+    if (existing != null) {
+      return Response(409,
+          body: jsonEncode({'error': 'Username already exists'}));
+    }
 
-//     // Verify that the challenge matches what was generated.
-//     if (clientData['challenge'] != challenge) {
-//       FhirantLogging().logWarning(
-//         'Challenge mismatch during registration for user: $username',
-//       );
-//       pendingRegistrationChallenges.remove(username);
-//       return Response(400, body: jsonEncode({'error': 'Challenge mismatch'}));
-//     }
+    // Hash password and create user
+    final salt = PasswordHasher.generateSalt();
+    final hash = PasswordHasher.hashPassword(password, salt);
 
-//     // Store the passkey credentials securely.
-//     final storage = SecureStorageService();
-//     await storage.storePasskey(username, credential);
+    final userId = await dbInterface.createUser(
+      username: username,
+      passwordHash: hash,
+      salt: salt,
+      role: effectiveRole,
+    );
 
-//     // Remove the stored challenge as it is no longer needed.
-//     pendingRegistrationChallenges.remove(username);
-
-//     FhirantLogging().logInfo('User registered successfully: $username');
-//     return Response.ok(
-//       jsonEncode({'message': 'User registered', 'challenge': challenge}),
-//     );
-//   } catch (e, stackTrace) {
-//     FhirantLogging().logError('Registration failed', e, stackTrace);
-//     return Response(
-//       500,
-//       body: jsonEncode({'error': 'Registration failed: $e'}),
-//     );
-//   }
-// }
+    return Response(201,
+        body: jsonEncode({
+          'id': userId,
+          'username': username,
+          'role': effectiveRole,
+        }));
+  } catch (e) {
+    return Response.internalServerError(
+        body: jsonEncode({'error': 'Registration failed: $e'}));
+  }
+}
