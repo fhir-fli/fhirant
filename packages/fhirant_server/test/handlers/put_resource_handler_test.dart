@@ -38,9 +38,19 @@ void main() {
       when(
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
       ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => fhir.Patient.fromJson({
+            'resourceType': 'Patient',
+            'id': 'test-id',
+            'name': [
+              {'family': 'Updated'},
+            ],
+          }));
 
       final response = await putResourceHandler(
         mockRequest,
@@ -123,6 +133,7 @@ void main() {
       when(
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
       ).thenAnswer((_) async => false);
@@ -155,6 +166,7 @@ void main() {
       when(
         () => mockDb.saveResource(any()),
       ).thenThrow(Exception('Database error'));
+      when(() => mockRequest.headers).thenReturn({});
 
       final response = await putResourceHandler(
         mockRequest,
@@ -164,6 +176,218 @@ void main() {
       );
 
       expect(response.statusCode, equals(500));
+    });
+
+    test('returns ETag header on successful update', () async {
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({});
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => savedPatient);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      expect(response.headers['ETag'], equals('W/"2"'));
+    });
+
+    test('If-Match matching allows update', () async {
+      final currentPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Old'},
+        ],
+      });
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-16T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({
+        'if-match': 'W/"1"',
+      });
+      // First call is for If-Match check, second is for re-fetch after save
+      var callCount = 0;
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async {
+        callCount++;
+        return callCount == 1 ? currentPatient : savedPatient;
+      });
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      expect(response.headers['ETag'], equals('W/"2"'));
+    });
+
+    test('If-Match non-matching returns 412', () async {
+      final currentPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '5',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Current'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({
+        'if-match': 'W/"1"',
+      });
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => currentPatient);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(412));
+    });
+
+    test('If-Match when resource missing returns 412', () async {
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'New'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({
+        'if-match': 'W/"1"',
+      });
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => null);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(412));
+    });
+
+    test('no If-Match header allows update normally', () async {
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({});
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => savedPatient);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
     });
   });
 }

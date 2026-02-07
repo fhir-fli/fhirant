@@ -1231,4 +1231,686 @@ void main() {
       expect(ids(results), equals(['pt-1']));
     });
   });
+
+  // ── Number extended modifier search ──────────────────────────────────
+
+  group('Number extended modifiers', () {
+    fhir.RiskAssessment buildRisk1() => fhir.RiskAssessment.fromJson({
+          'resourceType': 'RiskAssessment',
+          'id': 'risk-1',
+          'status': 'final',
+          'subject': {'reference': 'Patient/pt-1'},
+          'prediction': [
+            {'probabilityDecimal': 0.75}
+          ],
+        });
+
+    fhir.RiskAssessment buildRisk2() => fhir.RiskAssessment.fromJson({
+          'resourceType': 'RiskAssessment',
+          'id': 'risk-2',
+          'status': 'final',
+          'subject': {'reference': 'Patient/pt-2'},
+          'prediction': [
+            {'probabilityDecimal': 0.25}
+          ],
+        });
+
+    Future<void> seedRisks() async {
+      await db.saveResource(buildRisk1());
+      await db.saveResource(buildRisk2());
+    }
+
+    test(':lt finds below threshold', () async {
+      await seedRisks();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.RiskAssessment,
+        searchParameters: {
+          'probability': ['0.5:lt'],
+        },
+      );
+
+      expect(ids(results), equals(['risk-2']));
+    });
+
+    test(':le includes boundary', () async {
+      await seedRisks();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.RiskAssessment,
+        searchParameters: {
+          'probability': ['0.75:le'],
+        },
+      );
+
+      expect(ids(results), containsAll(['risk-1', 'risk-2']));
+      expect(results.length, 2);
+    });
+
+    test(':ge includes boundary', () async {
+      await seedRisks();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.RiskAssessment,
+        searchParameters: {
+          'probability': ['0.25:ge'],
+        },
+      );
+
+      expect(ids(results), containsAll(['risk-1', 'risk-2']));
+      expect(results.length, 2);
+    });
+
+    test(':ap finds within 10% range', () async {
+      await seedRisks();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.RiskAssessment,
+        searchParameters: {
+          'probability': ['0.73:ap'],
+        },
+      );
+
+      // 0.73 ± 10% = 0.657–0.803; only risk-1 (0.75) matches
+      expect(ids(results), equals(['risk-1']));
+    });
+  });
+
+  // ── Quantity extended modifier search ────────────────────────────────
+
+  group('Quantity extended modifiers', () {
+    fhir.ChargeItem buildCI1() => fhir.ChargeItem.fromJson({
+          'resourceType': 'ChargeItem',
+          'id': 'ci-1',
+          'status': 'billable',
+          'code': {
+            'coding': [
+              {'system': 'http://example.org', 'code': 'item-a'}
+            ]
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+          'quantity': {
+            'value': 5.0,
+            'unit': 'mg',
+            'system': 'http://unitsofmeasure.org',
+            'code': 'mg',
+          },
+        });
+
+    fhir.ChargeItem buildCI2() => fhir.ChargeItem.fromJson({
+          'resourceType': 'ChargeItem',
+          'id': 'ci-2',
+          'status': 'billable',
+          'code': {
+            'coding': [
+              {'system': 'http://example.org', 'code': 'item-b'}
+            ]
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+          'quantity': {
+            'value': 10.0,
+            'unit': 'mL',
+            'system': 'http://unitsofmeasure.org',
+            'code': 'mL',
+          },
+        });
+
+    fhir.ChargeItem buildCI3() => fhir.ChargeItem.fromJson({
+          'resourceType': 'ChargeItem',
+          'id': 'ci-3',
+          'status': 'billable',
+          'code': {
+            'coding': [
+              {'system': 'http://example.org', 'code': 'item-c'}
+            ]
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+          'quantity': {
+            'value': 5.0,
+            'unit': 'mL',
+            'system': 'http://unitsofmeasure.org',
+            'code': 'mL',
+          },
+        });
+
+    Future<void> seedCIs() async {
+      await db.saveResource(buildCI1());
+      await db.saveResource(buildCI2());
+      await db.saveResource(buildCI3());
+    }
+
+    test(':lt finds below threshold', () async {
+      await seedCIs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ChargeItem,
+        searchParameters: {
+          'quantity': ['7:lt'],
+        },
+      );
+
+      expect(ids(results), containsAll(['ci-1', 'ci-3']));
+      expect(results.length, 2);
+    });
+
+    test(':le includes boundary', () async {
+      await seedCIs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ChargeItem,
+        searchParameters: {
+          'quantity': ['5:le'],
+        },
+      );
+
+      expect(ids(results), containsAll(['ci-1', 'ci-3']));
+      expect(results.length, 2);
+    });
+
+    test(':ge includes boundary', () async {
+      await seedCIs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ChargeItem,
+        searchParameters: {
+          'quantity': ['10:ge'],
+        },
+      );
+
+      expect(ids(results), equals(['ci-2']));
+    });
+
+    test(':lt with unit filter', () async {
+      await seedCIs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ChargeItem,
+        searchParameters: {
+          'quantity': ['7|mL:lt'],
+        },
+      );
+
+      expect(ids(results), equals(['ci-3']));
+    });
+  });
+
+  // ── Date extended modifier search ────────────────────────────────────
+
+  group('Date extended modifiers', () {
+    test(':le includes boundary', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1990-01-15:le'],
+        },
+      );
+
+      // pt-1 (1990-01-15) and pt-2 (1985-06-20) are <= 1990-01-15
+      expect(ids(results), containsAll(['pt-1', 'pt-2']));
+      expect(results.length, 2);
+    });
+
+    test(':ge includes boundary', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['2000-03-10:ge'],
+        },
+      );
+
+      // pt-3 (2000-03-10) is >= 2000-03-10
+      expect(ids(results), equals(['pt-3']));
+    });
+
+    test(':sa starts after', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1995-01-01:sa'],
+        },
+      );
+
+      // pt-3 (2000-03-10) starts after 1995-01-01
+      expect(ids(results), equals(['pt-3']));
+    });
+
+    test(':eb ends before', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1995-01-01:eb'],
+        },
+      );
+
+      // pt-1 (1990-01-15) and pt-2 (1985-06-20) end before 1995-01-01
+      expect(ids(results), containsAll(['pt-1', 'pt-2']));
+      expect(results.length, 2);
+    });
+
+    test(':ap approximately matches', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1990-01-15:ap'],
+        },
+      );
+
+      // Approximately 1990-01-15 (±1 day) — only pt-1 matches
+      expect(ids(results), equals(['pt-1']));
+    });
+  });
+
+  // ── _lastUpdated extended modifier search ────────────────────────────
+
+  group('_lastUpdated extended modifiers', () {
+    test(':le with tomorrow finds all', () async {
+      await seedAll();
+
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrowStr =
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$tomorrowStr:le'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':sa with yesterday finds all', () async {
+      await seedAll();
+
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yesterdayStr =
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$yesterdayStr:sa'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':eb with tomorrow finds all', () async {
+      await seedAll();
+
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrowStr =
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$tomorrowStr:eb'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+  });
+
+  // ── URI :below search ────────────────────────────────────────────────
+
+  group('URI :below search', () {
+    fhir.ValueSet buildVS1() => fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-1',
+          'url': 'http://example.org/fhir/ValueSet/my-codes',
+          'status': 'active',
+        });
+
+    fhir.ValueSet buildVS2() => fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-2',
+          'url': 'http://example.org/fhir/ValueSet/other-codes',
+          'status': 'active',
+        });
+
+    fhir.ValueSet buildVS3() => fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-3',
+          'url': 'http://different.org/fhir/ValueSet/different',
+          'status': 'active',
+        });
+
+    Future<void> seedVS() async {
+      await db.saveResource(buildVS1());
+      await db.saveResource(buildVS2());
+      await db.saveResource(buildVS3());
+    }
+
+    test(':below broad prefix finds multiple', () async {
+      await seedVS();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ValueSet,
+        searchParameters: {
+          'url': ['http://example.org/fhir/ValueSet:below'],
+        },
+      );
+
+      expect(ids(results), containsAll(['vs-1', 'vs-2']));
+      expect(results.length, 2);
+    });
+
+    test(':below narrow prefix finds one', () async {
+      await seedVS();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ValueSet,
+        searchParameters: {
+          'url': ['http://example.org/fhir/ValueSet/my:below'],
+        },
+      );
+
+      expect(ids(results), equals(['vs-1']));
+    });
+  });
+
+  // ── Token :not modifier search ──────────────────────────────────────
+
+  group('Token :not modifier search', () {
+    test(':not excludes matching gender', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'gender': ['male:not'],
+        },
+      );
+
+      // pt-2 is female, so it should be returned; pt-1 and pt-3 are male
+      expect(ids(results), equals(['pt-2']));
+    });
+
+    test(':not with system|value', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'identifier': ['http://hospital.org/mrn|MRN001:not'],
+        },
+      );
+
+      // pt-1 has that identifier; pt-2 and pt-3 don't
+      expect(ids(results), containsAll(['pt-2', 'pt-3']));
+      expect(results.length, 2);
+    });
+
+    test(':not returns all when value absent from all', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'gender': ['nonexistent:not'],
+        },
+      );
+
+      // No patient has gender=nonexistent, so all are returned
+      expect(ids(results), containsAll(['pt-1', 'pt-2', 'pt-3']));
+      expect(results.length, 3);
+    });
+
+    test(':not includes resources lacking the param', () async {
+      await seedAll();
+
+      // Save a patient without gender
+      await db.saveResource(fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-nogender',
+        'name': [
+          {'family': 'NoGender'}
+        ],
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'gender': ['male:not'],
+        },
+      );
+
+      // pt-2 (female) and pt-nogender (no gender) should match
+      expect(ids(results), containsAll(['pt-2', 'pt-nogender']));
+      expect(results.length, 2);
+    });
+  });
+
+  // ── Token :text modifier search ──────────────────────────────────────
+
+  group('Token :text modifier search', () {
+    // Use Observation.code which IS indexed as a token search parameter
+    // and stores display values via Coding.display → tokenDisplay column
+    fhir.Observation buildObsGlucose() => fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obs-glucose',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {
+                'system': 'http://loinc.org',
+                'code': '2345-7',
+                'display': 'Glucose [Mass/volume] in Serum',
+              }
+            ]
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+        });
+
+    fhir.Observation buildObsCholesterol() => fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obs-chol',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {
+                'system': 'http://loinc.org',
+                'code': '2093-3',
+                'display': 'Cholesterol in Serum',
+              }
+            ]
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+        });
+
+    Future<void> seedTextObs() async {
+      await db.saveResource(buildObsGlucose());
+      await db.saveResource(buildObsCholesterol());
+    }
+
+    test(':text finds by display substring', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code': ['Serum:text'],
+        },
+      );
+
+      // Both have 'Serum' in display
+      expect(ids(results), containsAll(['obs-glucose', 'obs-chol']));
+      expect(results.length, 2);
+    });
+
+    test(':text is case-insensitive', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code': ['serum:text'],
+        },
+      );
+
+      expect(ids(results), containsAll(['obs-glucose', 'obs-chol']));
+      expect(results.length, 2);
+    });
+
+    test(':text narrows with specific text', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code': ['Glucose:text'],
+        },
+      );
+
+      expect(ids(results), equals(['obs-glucose']));
+    });
+
+    test(':text no match returns empty', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code': ['Hemoglobin:text'],
+        },
+      );
+
+      expect(results, isEmpty);
+    });
+  });
+
+  // ── Universal :missing search ────────────────────────────────────────
+
+  group('Universal :missing search', () {
+    test('date :missing finds patient without birthDate', () async {
+      await seedAll();
+
+      // Save a patient without birthDate
+      await db.saveResource(fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-nobirth',
+        'name': [
+          {'family': 'NoBirth'}
+        ],
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['true:missing'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-nobirth']));
+    });
+
+    test('quantity :missing finds ChargeItem without quantity', () async {
+      // Seed ChargeItems with quantity
+      await db.saveResource(fhir.ChargeItem.fromJson({
+        'resourceType': 'ChargeItem',
+        'id': 'ci-1',
+        'status': 'billable',
+        'code': {
+          'coding': [
+            {'system': 'http://example.org', 'code': 'item-a'}
+          ]
+        },
+        'subject': {'reference': 'Patient/pt-1'},
+        'quantity': {
+          'value': 5.0,
+          'unit': 'mg',
+          'system': 'http://unitsofmeasure.org',
+          'code': 'mg',
+        },
+      }));
+
+      // Save a ChargeItem without quantity
+      await db.saveResource(fhir.ChargeItem.fromJson({
+        'resourceType': 'ChargeItem',
+        'id': 'ci-noqty',
+        'status': 'billable',
+        'code': {
+          'coding': [
+            {'system': 'http://example.org', 'code': 'item-x'}
+          ]
+        },
+        'subject': {'reference': 'Patient/pt-1'},
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ChargeItem,
+        searchParameters: {
+          'quantity': ['true:missing'],
+        },
+      );
+
+      expect(ids(results), equals(['ci-noqty']));
+    });
+
+    test('URI :missing finds ValueSet without url', () async {
+      // Seed ValueSets with url
+      await db.saveResource(fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.org/fhir/ValueSet/my-codes',
+        'status': 'active',
+      }));
+
+      // Save a ValueSet without url
+      await db.saveResource(fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-nourl',
+        'status': 'active',
+        'name': 'NoUrl',
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.ValueSet,
+        searchParameters: {
+          'url': ['true:missing'],
+        },
+      );
+
+      expect(ids(results), equals(['vs-nourl']));
+    });
+
+    test('reference :missing finds Observation without subject', () async {
+      await seedAll(); // includes obs-1 with subject
+
+      // Save an Observation without subject
+      await db.saveResource(fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'obs-nosub',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '99999-9'}
+          ]
+        },
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'subject': ['true:missing'],
+        },
+      );
+
+      expect(ids(results), equals(['obs-nosub']));
+    });
+  });
 }

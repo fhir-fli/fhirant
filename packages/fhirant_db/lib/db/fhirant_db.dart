@@ -550,6 +550,21 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
 
+      // Universal :missing handler — intercept before type detection
+      if (paramValues.length == 1 && paramValues[0].endsWith(':missing')) {
+        final missingIds = await _searchMissingParameter(
+          resourceTypeString,
+          paramName,
+        );
+        if (firstParam) {
+          matchingIds = missingIds;
+        } else {
+          matchingIds = matchingIds.intersection(missingIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
       // Determine parameter type and search accordingly
       bool isDateParam = false;
       bool isTokenParam = false;
@@ -756,12 +771,7 @@ class FhirAntDb extends _$FhirAntDb {
           paramName,
           paramValues,
         );
-        // For :missing modifier, use intersection (resource must be absent
-        // from ALL checked tables). For normal searches, use union.
-        final hasMissing = paramValues.any((v) => v.endsWith(':missing'));
-        paramIds = hasMissing
-            ? stringIds.intersection(tokenIds)
-            : stringIds.union(tokenIds);
+        paramIds = stringIds.union(tokenIds);
       }
 
       if (firstParam) {
@@ -973,6 +983,21 @@ class FhirAntDb extends _$FhirAntDb {
         continue;
       }
 
+      // Universal :missing handler — intercept before type detection
+      if (paramValues.length == 1 && paramValues[0].endsWith(':missing')) {
+        final missingIds = await _searchMissingParameter(
+          resourceTypeString,
+          paramName,
+        );
+        if (firstParam) {
+          matchingIds = missingIds;
+        } else {
+          matchingIds = matchingIds.intersection(missingIds);
+        }
+        firstParam = false;
+        continue;
+      }
+
       // Determine parameter type and search accordingly
       bool isDateParam = false;
       bool isTokenParam = false;
@@ -1179,12 +1204,7 @@ class FhirAntDb extends _$FhirAntDb {
           paramName,
           paramValues,
         );
-        // For :missing modifier, use intersection (resource must be absent
-        // from ALL checked tables). For normal searches, use union.
-        final hasMissing = paramValues.any((v) => v.endsWith(':missing'));
-        paramIds = hasMissing
-            ? stringIds.intersection(tokenIds)
-            : stringIds.union(tokenIds);
+        paramIds = stringIds.union(tokenIds);
       }
 
       if (firstParam) {
@@ -1292,92 +1312,110 @@ class FhirAntDb extends _$FhirAntDb {
     final matchingIds = <String>{};
 
     for (final value in values) {
-      // Handle modifiers (skip if value contains | since : may be part of a URL in system|code)
+      // Handle modifiers using suffix-based detection to avoid
+      // breaking system|code values that contain colons
       String? modifier;
       String searchValue = value;
-
-      if (value.contains(':') && !value.contains('|')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          searchValue = parts[0];
-          modifier = parts[1];
+      const knownTokenModifiers = ['missing', 'not', 'text'];
+      for (final mod in knownTokenModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          searchValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
-      // Handle missing modifier
-      if (modifier == 'missing') {
-        // Search for resources where this parameter is missing
-        // This means no entry exists in tokenSearchParameters for this searchPath
+      // Handle :not modifier — invert normal token query results
+      if (modifier == 'not') {
         final allResourceIds = (await (select(resources)
                   ..where((tbl) => tbl.resourceType.equals(resourceType)))
                 .get())
             .map((r) => r.id)
             .toSet();
-
-        final resourcesWithParam = (await (selectOnly(tokenSearchParameters)
-                  ..addColumns([tokenSearchParameters.id])
-                  ..where(
-                    tokenSearchParameters.resourceType.equals(resourceType) &
-                        (tokenSearchParameters.searchPath.like('$resourceType.$searchPath') |
-                         tokenSearchParameters.searchPath.like('$resourceType.%.$searchPath')),
-                  ))
-                .get())
-            .map((r) => r.read(tokenSearchParameters.id)!)
-            .toSet();
-
-        matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
+        final matched = await _executeTokenQuery(
+            resourceType, searchPath, searchValue);
+        matchingIds.addAll(allResourceIds.difference(matched));
         continue;
       }
 
-      // Parse system|value format
-      String? system;
-      String tokenValue = searchValue;
-
-      if (searchValue.contains('|')) {
-        final parts = searchValue.split('|');
-        if (parts.length == 2) {
-          system = parts[0].isEmpty ? null : parts[0];
-          tokenValue = parts[1];
-        } else if (parts.length == 1 && searchValue.startsWith('|')) {
-          // |value format - system is empty/null, just value
-          system = null;
-          tokenValue = parts[0];
-        } else if (parts.length == 1 && searchValue.endsWith('|')) {
-          // system| format - just system, no value
-          system = parts[0];
-          tokenValue = '';
+      // Handle :text modifier — search by display text
+      if (modifier == 'text') {
+        final query = select(tokenSearchParameters);
+        query.where((tbl) =>
+            tbl.resourceType.equals(resourceType) &
+            (tbl.searchPath.like('$resourceType.$searchPath') |
+                tbl.searchPath.like('$resourceType.%.$searchPath')) &
+            tbl.tokenDisplay.like('%${searchValue.toLowerCase()}%'));
+        final rows = await query.get();
+        for (final row in rows) {
+          matchingIds.add(row.id);
         }
+        continue;
       }
 
-      // Build query
-      final query = select(tokenSearchParameters);
+      // Normal token query
+      final matched =
+          await _executeTokenQuery(resourceType, searchPath, searchValue);
+      matchingIds.addAll(matched);
+    }
 
-      Expression<bool> whereCondition =
-          tokenSearchParameters.resourceType.equals(resourceType) &
-              (tokenSearchParameters.searchPath.like('$resourceType.$searchPath') |
-               tokenSearchParameters.searchPath.like('$resourceType.%.$searchPath'));
+    return matchingIds;
+  }
 
-      if (system != null && system.isNotEmpty && tokenValue.isNotEmpty) {
-        // system|value - both specified
-        whereCondition = whereCondition &
-            tokenSearchParameters.tokenSystem.equals(system) &
-            tokenSearchParameters.tokenValue.equals(tokenValue);
-      } else if (system != null && system.isNotEmpty) {
-        // system| - only system specified
-        whereCondition =
-            whereCondition & tokenSearchParameters.tokenSystem.equals(system);
-      } else if (tokenValue.isNotEmpty) {
-        // value only - no system
-        whereCondition = whereCondition &
-            tokenSearchParameters.tokenValue.equals(tokenValue);
+  /// Execute a standard token query (system|value parsing + DB lookup).
+  /// Returns the set of matching resource IDs.
+  Future<Set<String>> _executeTokenQuery(
+    String resourceType,
+    String searchPath,
+    String searchValue,
+  ) async {
+    final matchingIds = <String>{};
+
+    // Parse system|value format
+    String? system;
+    String tokenValue = searchValue;
+
+    if (searchValue.contains('|')) {
+      final parts = searchValue.split('|');
+      if (parts.length == 2) {
+        system = parts[0].isEmpty ? null : parts[0];
+        tokenValue = parts[1];
+      } else if (parts.length == 1 && searchValue.startsWith('|')) {
+        system = null;
+        tokenValue = parts[0];
+      } else if (parts.length == 1 && searchValue.endsWith('|')) {
+        system = parts[0];
+        tokenValue = '';
       }
+    }
 
-      query.where((tbl) => whereCondition);
+    // Build query
+    final query = select(tokenSearchParameters);
 
-      final rows = await query.get();
-      for (final row in rows) {
-        matchingIds.add(row.id);
-      }
+    Expression<bool> whereCondition =
+        tokenSearchParameters.resourceType.equals(resourceType) &
+            (tokenSearchParameters.searchPath
+                    .like('$resourceType.$searchPath') |
+                tokenSearchParameters.searchPath
+                    .like('$resourceType.%.$searchPath'));
+
+    if (system != null && system.isNotEmpty && tokenValue.isNotEmpty) {
+      whereCondition = whereCondition &
+          tokenSearchParameters.tokenSystem.equals(system) &
+          tokenSearchParameters.tokenValue.equals(tokenValue);
+    } else if (system != null && system.isNotEmpty) {
+      whereCondition =
+          whereCondition & tokenSearchParameters.tokenSystem.equals(system);
+    } else if (tokenValue.isNotEmpty) {
+      whereCondition = whereCondition &
+          tokenSearchParameters.tokenValue.equals(tokenValue);
+    }
+
+    query.where((tbl) => whereCondition);
+
+    final rows = await query.get();
+    for (final row in rows) {
+      matchingIds.add(row.id);
     }
 
     return matchingIds;
@@ -2450,7 +2488,7 @@ class FhirAntDb extends _$FhirAntDb {
                uriSearchParameters.searchPath.like('$resourceType.%.$searchPath'));
 
       // URI search: exact match by default, or :above for prefix match
-      if (modifier == 'above') {
+      if (modifier == 'above' || modifier == 'below') {
         // Prefix match - URI starts with searchValue
         whereCondition =
             whereCondition & uriSearchParameters.uriValue.like('$searchValue%');
@@ -2469,6 +2507,109 @@ class FhirAntDb extends _$FhirAntDb {
     }
 
     return matchingIds;
+  }
+
+  Future<Set<String>> _searchMissingParameter(
+    String resourceType,
+    String searchPath,
+  ) async {
+    final allResourceIds = (await (select(resources)
+              ..where((tbl) => tbl.resourceType.equals(resourceType)))
+            .get())
+        .map((r) => r.id)
+        .toSet();
+
+    final foundIds = <String>{};
+
+    // Check all 7 search parameter tables for entries matching this path
+    final pathPattern = '$resourceType.$searchPath';
+    final nestedPathPattern = '$resourceType.%.$searchPath';
+
+    // String table
+    foundIds.addAll((await (selectOnly(stringSearchParameters)
+              ..addColumns([stringSearchParameters.id])
+              ..where(
+                stringSearchParameters.resourceType.equals(resourceType) &
+                    (stringSearchParameters.searchPath.like(pathPattern) |
+                        stringSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(stringSearchParameters.id)!));
+
+    // Token table
+    foundIds.addAll((await (selectOnly(tokenSearchParameters)
+              ..addColumns([tokenSearchParameters.id])
+              ..where(
+                tokenSearchParameters.resourceType.equals(resourceType) &
+                    (tokenSearchParameters.searchPath.like(pathPattern) |
+                        tokenSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(tokenSearchParameters.id)!));
+
+    // Date table
+    foundIds.addAll((await (selectOnly(dateSearchParameters)
+              ..addColumns([dateSearchParameters.id])
+              ..where(
+                dateSearchParameters.resourceType.equals(resourceType) &
+                    (dateSearchParameters.searchPath.like(pathPattern) |
+                        dateSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(dateSearchParameters.id)!));
+
+    // Number table
+    foundIds.addAll((await (selectOnly(numberSearchParameters)
+              ..addColumns([numberSearchParameters.id])
+              ..where(
+                numberSearchParameters.resourceType.equals(resourceType) &
+                    (numberSearchParameters.searchPath.like(pathPattern) |
+                        numberSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(numberSearchParameters.id)!));
+
+    // Quantity table
+    foundIds.addAll((await (selectOnly(quantitySearchParameters)
+              ..addColumns([quantitySearchParameters.id])
+              ..where(
+                quantitySearchParameters.resourceType.equals(resourceType) &
+                    (quantitySearchParameters.searchPath.like(pathPattern) |
+                        quantitySearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(quantitySearchParameters.id)!));
+
+    // Reference table
+    foundIds.addAll((await (selectOnly(referenceSearchParameters)
+              ..addColumns([referenceSearchParameters.id])
+              ..where(
+                referenceSearchParameters.resourceType.equals(resourceType) &
+                    (referenceSearchParameters.searchPath.like(pathPattern) |
+                        referenceSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(referenceSearchParameters.id)!));
+
+    // URI table
+    foundIds.addAll((await (selectOnly(uriSearchParameters)
+              ..addColumns([uriSearchParameters.id])
+              ..where(
+                uriSearchParameters.resourceType.equals(resourceType) &
+                    (uriSearchParameters.searchPath.like(pathPattern) |
+                        uriSearchParameters.searchPath
+                            .like(nestedPathPattern)),
+              ))
+            .get())
+        .map((r) => r.read(uriSearchParameters.id)!));
+
+    return allResourceIds.difference(foundIds);
   }
 
   /// Initialize the database (if needed).

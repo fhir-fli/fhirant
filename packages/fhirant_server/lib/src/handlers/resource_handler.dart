@@ -5,6 +5,8 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:fhirant_server/src/utils/response_shaper.dart';
+import 'package:fhirant_server/src/utils/http_headers.dart';
 
 /// Handler to fetch all resources of a given type
 Future<Response> getResourcesHandler(
@@ -28,6 +30,8 @@ Future<Response> getResourcesHandler(
     final count = parsed['count'] as int? ?? 20;
     final offset = parsed['offset'] as int? ?? 0;
     final sort = parsed['sort'] as List<String>?;
+    final summary = parsed['summary'] as String?;
+    final elements = parsed['elements'] as List<String>?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -35,6 +39,27 @@ Future<Response> getResourcesHandler(
         'Invalid resource type requested: $resourceType',
       );
       return _validationErrorResponse('Invalid resource type');
+    }
+
+    // Handle _summary=count — return bundle with total only, no entries
+    if (summary == 'count') {
+      int totalCount;
+      if (searchParams != null && searchParams.isNotEmpty) {
+        totalCount = await dbInterface.searchCount(
+          resourceType: type,
+          searchParameters: searchParams,
+        );
+      } else {
+        totalCount = await dbInterface.getResourceCount(type);
+      }
+      final bundle = fhir.Bundle(
+        type: fhir.BundleType.searchset,
+        total: fhir.FhirUnsignedInt(totalCount),
+      );
+      return Response.ok(
+        bundle.toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
     }
 
     // Use search if search parameters are provided, otherwise use pagination
@@ -227,13 +252,29 @@ Future<Response> getResourcesHandler(
     // Combine search results with included resources
     final allResources = <fhir.Resource>[...resources, ...includedResources];
     
+    // Apply response shaping (_summary / _elements) to each resource
+    final shapedResources = allResources.map((resource) {
+      if (summary != null && summary != 'false') {
+        final json =
+            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+        final shaped = FhirResponseShaper.shapeSummary(json, summary);
+        return fhir.Resource.fromJson(shaped);
+      } else if (elements != null && elements.isNotEmpty) {
+        final json =
+            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+        final shaped = FhirResponseShaper.shapeElements(json, elements);
+        return fhir.Resource.fromJson(shaped);
+      }
+      return resource;
+    }).toList();
+
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
-      entry: allResources
+      entry: shapedResources
           .map(
             (resource) {
               final resourceId = resource.id?.toString() ?? '';
-              final fullUrl = resourceId.isNotEmpty 
+              final fullUrl = resourceId.isNotEmpty
                   ? fhir.FhirUri('$baseUrl/$resourceType/$resourceId')
                   : null;
               return fhir.BundleEntry(
@@ -287,17 +328,25 @@ Future<Response> postResourceHandler(
 
     final result = await dbInterface.saveResource(resource);
     if (result) {
+      // Re-fetch to get server-assigned version/lastUpdated
+      final type = fhir.R4ResourceType.fromString(resourceType);
+      final savedResource = type != null && resource.id != null
+          ? await dbInterface.getResource(type, resource.id!.toString())
+          : null;
+      final responseResource = savedResource ?? resource;
+
       FhirantLogging().logInfo(
         'Resource of type $resourceType saved successfully with ID: '
         '${resource.id}',
       );
+
+      final headers = FhirHttpHeaders.resourceHeaders(responseResource);
+      headers['Location'] = '/$resourceType/${resource.id}';
+
       return Response(
         201,
-        body: resource.toJsonString(),
-        headers: {
-          'Content-Type': 'application/json',
-          'Location': '/$resourceType/${resource.id}',
-        },
+        body: responseResource.toJsonString(),
+        headers: headers,
       );
     } else {
       FhirantLogging().logError(
@@ -355,15 +404,68 @@ Future<Response> putResourceHandler(
       );
     }
 
+    // Conditional update: If-Match header
+    final ifMatch =
+        FhirHttpHeaders.parseETag(request.headers['if-match']);
+    if (ifMatch != null) {
+      final type = fhir.R4ResourceType.fromString(resourceType);
+      if (type == null) {
+        return _validationErrorResponse('Invalid resource type');
+      }
+      final current = await dbInterface.getResource(type, id);
+      if (current == null) {
+        return Response(
+          412,
+          body: fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.conflict,
+                diagnostics:
+                    'Resource does not exist (If-Match precondition failed)'
+                        .toFhirString,
+              ),
+            ],
+          ).toJsonString(),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+      final currentVersion = current.meta?.versionId?.valueString;
+      if (currentVersion != ifMatch) {
+        return Response(
+          412,
+          body: fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.conflict,
+                diagnostics:
+                    'Version mismatch (If-Match precondition failed)'
+                        .toFhirString,
+              ),
+            ],
+          ).toJsonString(),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+    }
+
     final success = await dbInterface.saveResource(updatedResource);
     if (success) {
+      // Re-fetch to get server-assigned version/lastUpdated
+      final type = fhir.R4ResourceType.fromString(resourceType);
+      final savedResource = type != null
+          ? await dbInterface.getResource(type, id)
+          : null;
+      final responseResource = savedResource ?? updatedResource;
+
       FhirantLogging().logInfo(
         'Resource of type $resourceType updated successfully with ID: $id',
       );
       return Response(
         200,
-        body: updatedResource.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
+        body: responseResource.toJsonString(),
+        headers: FhirHttpHeaders.resourceHeaders(responseResource),
       );
     } else {
       FhirantLogging().logError(
@@ -402,12 +504,49 @@ Future<Response> getResourceByIdHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource != null) {
+      // Check If-None-Match for conditional read
+      final ifNoneMatch =
+          FhirHttpHeaders.parseETag(request.headers['if-none-match']);
+      final currentVersion = resource.meta?.versionId?.valueString;
+      if (ifNoneMatch != null &&
+          currentVersion != null &&
+          ifNoneMatch == currentVersion) {
+        return Response(304,
+            headers: FhirHttpHeaders.resourceHeaders(resource));
+      }
+
       FhirantLogging().logInfo(
         'Resource of type $resourceType with ID $id found.',
       );
+
+      // Apply response shaping
+      final queryParams = request.url.queryParameters;
+      final summary = queryParams['_summary'];
+      final elementsParam = queryParams['_elements'];
+      final elements = elementsParam
+          ?.split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      String responseBody;
+      if (summary != null && summary != 'false') {
+        final json =
+            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+        final shaped = FhirResponseShaper.shapeSummary(json, summary);
+        responseBody = jsonEncode(shaped);
+      } else if (elements != null && elements.isNotEmpty) {
+        final json =
+            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+        final shaped = FhirResponseShaper.shapeElements(json, elements);
+        responseBody = jsonEncode(shaped);
+      } else {
+        responseBody = resource.toJsonString();
+      }
+
       return Response.ok(
-        resource.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
+        responseBody,
+        headers: FhirHttpHeaders.resourceHeaders(resource),
       );
     } else {
       FhirantLogging().logWarning(

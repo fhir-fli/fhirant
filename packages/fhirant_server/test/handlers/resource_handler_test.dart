@@ -579,6 +579,221 @@ void main() {
       ).called(1);
     });
 
+    test('_summary=count returns bundle with total only, no entries', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=count'),
+      );
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 5);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('Bundle'));
+      expect(json['total'], equals(5));
+      // No entry array in count-only bundle
+      expect(json.containsKey('entry'), isFalse);
+    });
+
+    test('_summary=text returns only narrative fields', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        'text': {
+          'status': 'generated',
+          'div': '<div xmlns="http://www.w3.org/1999/xhtml">Test</div>',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+        'gender': 'male',
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=text&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=text&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entry = (json['entry'] as List).first;
+      final resource = entry['resource'] as Map<String, dynamic>;
+      expect(resource.containsKey('id'), isTrue);
+      expect(resource.containsKey('text'), isTrue);
+      expect(resource.containsKey('name'), isFalse);
+      expect(resource.containsKey('gender'), isFalse);
+      // Has SUBSETTED tag
+      final security =
+          (resource['meta'] as Map)['security'] as List;
+      expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
+    });
+
+    test('_summary=data excludes text field', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        'text': {
+          'status': 'generated',
+          'div': '<div xmlns="http://www.w3.org/1999/xhtml">Test</div>',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=data&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=data&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entry = (json['entry'] as List).first;
+      final resource = entry['resource'] as Map<String, dynamic>;
+      expect(resource.containsKey('text'), isFalse);
+      expect(resource.containsKey('name'), isTrue);
+    });
+
+    test('_elements returns subset plus SUBSETTED tag', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        'name': [
+          {'family': 'Smith'},
+        ],
+        'gender': 'male',
+        'birthDate': '1990-01-15',
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_elements=name,gender&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_elements=name,gender&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entry = (json['entry'] as List).first;
+      final resource = entry['resource'] as Map<String, dynamic>;
+      expect(resource.containsKey('name'), isTrue);
+      expect(resource.containsKey('gender'), isTrue);
+      expect(resource.containsKey('birthDate'), isFalse);
+      final security =
+          (resource['meta'] as Map)['security'] as List;
+      expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
+    });
+
+    test('_summary=false returns full resource', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        'name': [
+          {'family': 'Smith'},
+        ],
+        'gender': 'male',
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=false&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=false&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entry = (json['entry'] as List).first;
+      final resource = entry['resource'] as Map<String, dynamic>;
+      expect(resource.containsKey('name'), isTrue);
+      expect(resource.containsKey('gender'), isTrue);
+    });
+
     test('empty search results return bundle with total 0', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
