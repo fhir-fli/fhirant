@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mocktail/src/mocktail.dart' show registerFallbackValue;
 import 'package:fhir_r4/fhir_r4.dart' as fhir;

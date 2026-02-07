@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 
 void main() {

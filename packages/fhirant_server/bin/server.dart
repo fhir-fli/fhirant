@@ -1,8 +1,7 @@
 // bin/server.dart
-import 'dart:ffi';
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:sqlite3/open.dart';
+import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -54,10 +53,21 @@ void main(List<String> arguments) async {
   }
 
   // Initialize database
-  // Note: FhirAntDb() constructor takes no parameters
-  // Database path and encryption are handled internally
   logger.logInfo('Initializing database at $dbPath');
-  final db = FhirAntDb();
+  final dbDir = Directory(dbPath);
+  if (!dbDir.existsSync()) {
+    dbDir.createSync(recursive: true);
+  }
+
+  final dbFile = File('$dbPath/fhirant.db');
+  final nativeDb = NativeDatabase(
+    dbFile,
+    setup: (rawDb) {
+      rawDb.execute("PRAGMA key = '$encryptionKey';");
+      rawDb.config.doubleQuotedStringLiterals = false;
+    },
+  );
+  final db = FhirAntDb(nativeDb);
 
   try {
     await db.initialize();
@@ -113,29 +123,4 @@ void main(List<String> arguments) async {
     logger.logInfo('Server stopped successfully');
     exit(0);
   });
-}
-
-// Keep existing SQLCipher setup function
-Future<void> setupSqlCipherWithPath(String libraryPath) async {
-  if (Platform.isLinux) {
-    open.overrideFor(
-      OperatingSystem.linux,
-      () => DynamicLibrary.open(libraryPath),
-    );
-  } else if (Platform.isMacOS) {
-    open.overrideFor(
-      OperatingSystem.macOS,
-      () => DynamicLibrary.open(libraryPath),
-    );
-  } else if (Platform.isWindows) {
-    open.overrideFor(
-      OperatingSystem.windows,
-      () => DynamicLibrary.open(libraryPath),
-    );
-  } else {
-    throw UnsupportedError(
-      'Unsupported platform: ${Platform.operatingSystem}',
-    );
-  }
-  print('SQLCipher configured with library at: $libraryPath');
 }

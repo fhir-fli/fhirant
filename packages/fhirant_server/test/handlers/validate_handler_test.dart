@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/validate_handler.dart';
 

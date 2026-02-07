@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   args: ^2.7.0
+  drift: ^2.29.0
   fhir_r4:
     path: ../../../fhir_r4/packages/fhir_r4
   fhir_r4_path:
@@ -16,7 +17,7 @@ dependencies:
     path: ../../../fhir_r4/packages/fhir_r4_mapping
   fhir_r4_validation:
     path: ../../../fhir_r4/packages/fhir_r4_validation
-  fhirant_db: 
+  fhirant_db:
     path: ../fhirant_db
   fhirant_logging:
     path: ../fhirant_logging
@@ -25,12 +26,11 @@ dependencies:
   shelf: ^1.4.2
   shelf_router: ^1.1.4
   shelf_rate_limiter: ^1.0.1
+  sqlite3: ^2.4.6
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  test: ^1.25.8
   mocktail: ^1.0.0
-  drift: ^2.29.0
 
 dependency_overrides:
   fhir_r4:

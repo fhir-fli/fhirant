@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:drift/native.dart';
@@ -8,7 +8,7 @@ void main() {
     late FhirAntDb db;
 
     setUp(() async {
-      db = FhirAntDb.forTesting(NativeDatabase.memory());
+      db = FhirAntDb(NativeDatabase.memory());
       await db.initialize();
     });
 

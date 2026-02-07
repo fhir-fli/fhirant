@@ -1,0 +1,23 @@
+# docker-compose.yml for FHIRant Server
+#
+# Run from the parent monorepo directory (fhir/):
+#   docker compose -f fhirant/docker-compose.yml up
+#
+# Or set the build context explicitly:
+#   cd fhirant && docker compose up
+
+services:
+  fhirant:
+    build:
+      context: ..
+      dockerfile: fhirant/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - fhirant-data:/data
+    environment:
+      - FHIRANT_ENCRYPTION_KEY=${FHIRANT_ENCRYPTION_KEY:-change-me-in-production}
+      - FHIRANT_JWT_SECRET=${FHIRANT_JWT_SECRET:-change-me-in-production}
+
+volumes:
+  fhirant-data:

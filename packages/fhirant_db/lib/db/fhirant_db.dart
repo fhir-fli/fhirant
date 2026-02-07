@@ -1,15 +1,9 @@
 // ignore_for_file: lines_longer_than_80_chars, avoid_print
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
-import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 part 'fhirant_db.g.dart';
 
@@ -31,11 +25,13 @@ part 'fhirant_db.g.dart';
 
 /// Database for the application
 class FhirAntDb extends _$FhirAntDb {
-  /// Creates an instance of the database
-  FhirAntDb() : super(_openConnection());
-
-  /// Named constructor for testing.
-  FhirAntDb.forTesting(super.e);
+  /// Creates an instance of the database with the given [QueryExecutor].
+  ///
+  /// The caller is responsible for creating the appropriate executor:
+  /// - Server: `NativeDatabase(File(path), setup: ...)`
+  /// - Tests: `NativeDatabase.memory()`
+  /// - Mobile: `NativeDatabase` with path_provider + sqlcipher setup
+  FhirAntDb(super.executor);
 
   /// Default database version for migrations
   @override
@@ -52,54 +48,6 @@ class FhirAntDb extends _$FhirAntDb {
           }
         },
       );
-
-  /// Secure Storage Service instance
-  static final SecureStorageService _secureStorageService =
-      SecureStorageService();
-
-  static LazyDatabase _openConnection() {
-    return LazyDatabase(() async {
-      // 1. Get the correct directory for storing databases on Android (or iOS).
-      final dir = await getApplicationDocumentsDirectory();
-      final dbPath = path.join(dir.path, 'fhirant.db');
-
-      // 2. Ensure SQLCipher is set up
-      await setupSqlCipher();
-
-      // 3. Retrieve the encryption key
-      final encryptionKey = await _secureStorageService.getEncryptionKey();
-      if (encryptionKey == null) {
-        throw Exception('Failed to retrieve encryption key.');
-      }
-
-      // 4. Initialize the encrypted database
-      return NativeDatabase(
-        File(dbPath),
-        setup: (rawDb) {
-          rawDb.execute('PRAGMA key = "$encryptionKey";');
-
-          // Recommended SQLCipher setting
-          rawDb.config.doubleQuotedStringLiterals = false;
-
-          // Debug check to ensure SQLCipher is working
-          assert(
-            _debugCheckHasCipher(rawDb),
-            'SQLCipher encryption is not enabled. Verify the setup.',
-          );
-        },
-      );
-    });
-  }
-
-  /// Debug check to ensure SQLCipher is available
-  static bool _debugCheckHasCipher(sqlite3.Database database) {
-    try {
-      return database.select('PRAGMA cipher_version;').isNotEmpty;
-    } catch (e) {
-      print('SQLCipher not available: $e');
-      return false;
-    }
-  }
 
   Future<fhir.Resource?> getResource(
       fhir.R4ResourceType resourceType, String id) async {
