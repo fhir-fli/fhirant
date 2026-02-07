@@ -54,6 +54,39 @@ void main() {
       expect(body['name'][0]['family'], equals('Smith'));
     });
 
+    test('POST /Patient with no ID auto-generates one', () async {
+      // Bug 3 fix: POST with no ID should auto-generate an ID and
+      // successfully re-fetch to include server-assigned meta
+      final patient = fhir.Patient(
+        name: [
+          fhir.HumanName(
+            family: 'AutoId'.toFhirString,
+            given: ['Test'.toFhirString],
+          ),
+        ],
+      );
+
+      final response = await handler(testRequest(
+        'POST',
+        '/Patient',
+        body: patient.toJsonString(),
+        headers: {'content-type': 'application/fhir+json'},
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(201));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['resourceType'], equals('Patient'));
+      // Should have an auto-generated ID
+      expect(body['id'], isNotNull);
+      expect((body['id'] as String).isNotEmpty, isTrue);
+      // Should have server-assigned meta from re-fetch
+      expect(body['meta'], isNotNull);
+      expect(body['meta']['versionId'], isNotNull);
+      expect(body['meta']['lastUpdated'], isNotNull);
+      expect(body['name'][0]['family'], equals('AutoId'));
+    });
+
     test('GET /Patient/{id} reads created resource', () async {
       final patient = fhir.Patient(
         id: 'test-read-123'.toFhirString,

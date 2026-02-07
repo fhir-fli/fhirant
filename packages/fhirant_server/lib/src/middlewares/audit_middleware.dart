@@ -134,12 +134,18 @@ Future<void> _createAuditEvent(
       'outcome': outcome,
       'agent': [
         {
-          'who': {'display': username},
+          'who': {
+            'display': username,
+            'reference': '#$username',
+          },
           'requestor': true,
         },
       ],
       'source': {
-        'observer': {'display': 'FHIRant Server'},
+        'observer': {
+          'display': 'FHIRant Server',
+          'reference': '#fhirant-server',
+        },
       },
       if (entityRef != null)
         'entity': [

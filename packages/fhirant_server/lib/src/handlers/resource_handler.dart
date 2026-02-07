@@ -163,12 +163,16 @@ Future<Response> getResourcesHandler(
         entry: <fhir.BundleEntry>[],
         total: fhir.FhirUnsignedInt(0),
       );
-      
+
+      // Use toJson + manual entry to avoid FHIR library serializing empty list as null
+      final json = bundle.toJson();
+      json['entry'] = <dynamic>[];
+
       FhirantLogging().logInfo(
         'Successfully fetched 0 resources of type: $resourceType',
       );
       return Response.ok(
-        bundle.toJsonString(),
+        jsonEncode(json),
         headers: {'Content-Type': 'application/json'},
       );
     }
@@ -179,30 +183,38 @@ Future<Response> getResourcesHandler(
     
     if (include != null && include.isNotEmpty) {
       // _include: Include resources referenced by the search results
+      // Format: SourceType:searchParam[:targetType]
       for (final includeSpec in include) {
-        // Format: ResourceType:searchParam or ResourceType
         final parts = includeSpec.split(':');
-        final includeResourceType = parts[0];
+        // parts[0] = source type (already matched by context)
         final includeSearchParam = parts.length > 1 ? parts[1] : null;
-        
-        final includeType = fhir.R4ResourceType.fromString(includeResourceType);
-        if (includeType == null) continue;
-        
+        final targetTypeFilter = parts.length > 2 ? parts[2] : null;
+
         // Find references in the search results
         for (final resource in resources) {
           try {
             final resourceJson = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
             final references = _extractReferences(resourceJson, includeSearchParam);
-            
+
             for (final ref in references) {
-              if (ref['type'] == includeResourceType && ref['id'] != null) {
-                final refId = ref['id'] as String;
-                if (!includedResourceIds.contains(refId)) {
-                  final refResource = await dbInterface.getResource(includeType, refId);
-                  if (refResource != null) {
-                    includedResources.add(refResource);
-                    includedResourceIds.add(refId);
-                  }
+              final refType = ref['type'];
+              final refId = ref['id'];
+              if (refType == null || refId == null) continue;
+
+              // If targetType filter specified, skip non-matching types
+              if (targetTypeFilter != null && refType != targetTypeFilter) {
+                continue;
+              }
+
+              final refTypeEnum = fhir.R4ResourceType.fromString(refType);
+              if (refTypeEnum == null) continue;
+
+              final compositeKey = '$refType/$refId';
+              if (!includedResourceIds.contains(compositeKey)) {
+                final refResource = await dbInterface.getResource(refTypeEnum, refId);
+                if (refResource != null) {
+                  includedResources.add(refResource);
+                  includedResourceIds.add(compositeKey);
                 }
               }
             }
@@ -370,22 +382,24 @@ Future<Response> postResourceHandler(
       }
     }
 
-    final result = await dbInterface.saveResource(resource);
+    // Ensure resource has an ID before saving so we can re-fetch it
+    final resourceWithId = resource.newIdIfNoId();
+    final result = await dbInterface.saveResource(resourceWithId);
     if (result) {
       // Re-fetch to get server-assigned version/lastUpdated
       final type = fhir.R4ResourceType.fromString(resourceType);
-      final savedResource = type != null && resource.id != null
-          ? await dbInterface.getResource(type, resource.id!.toString())
+      final savedResource = type != null
+          ? await dbInterface.getResource(type, resourceWithId.id!.toString())
           : null;
-      final responseResource = savedResource ?? resource;
+      final responseResource = savedResource ?? resourceWithId;
 
       FhirantLogging().logInfo(
         'Resource of type $resourceType saved successfully with ID: '
-        '${resource.id}',
+        '${resourceWithId.id}',
       );
 
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
-      headers['Location'] = '/$resourceType/${resource.id}';
+      headers['Location'] = '/$resourceType/${resourceWithId.id}';
 
       final preference =
           FhirHttpHeaders.parsePreferReturn(request.headers);

@@ -78,9 +78,10 @@ Future<Response> _processTransaction(
               .logError('Error during rollback of operation $j', rollbackError);
         }
       }
+      final txnStatus = e is BundleEntryException ? e.statusCode : 400;
       return _errorResponse(
           'Transaction failed at entry $i', e.toString(),
-          statusCode: 400);
+          statusCode: txnStatus);
     }
   }
 
@@ -142,9 +143,10 @@ Future<Response> _processBatch(
       }
     } catch (e, stackTrace) {
       FhirantLogging().logError('Batch entry $i failed', e, stackTrace);
+      final statusCode = e is BundleEntryException ? e.statusCode : 400;
       resultEntries.add(fhir.BundleEntry(
         response: fhir.BundleResponse(
-          status: '400'.toFhirString,
+          status: '$statusCode'.toFhirString,
           outcome: fhir.OperationOutcome(issue: [
             fhir.OperationOutcomeIssue(
               severity: fhir.IssueSeverity.error,
@@ -249,15 +251,16 @@ Future<_BundleOperation> _processBundleEntry(
 
   final urlParts = url.split('/').where((p) => p.isNotEmpty).toList();
   if (urlParts.isEmpty) {
-    throw FormatException('Bundle entry $entryIndex: Invalid URL format');
+    throw BundleEntryException(
+        400, 'Bundle entry $entryIndex: Invalid URL format');
   }
 
   final resourceType = urlParts[0];
   final resourceId = urlParts.length > 1 ? urlParts[1] : null;
   final resourceTypeEnum = fhir.R4ResourceType.fromString(resourceType);
   if (resourceTypeEnum == null) {
-    throw FormatException(
-        'Bundle entry $entryIndex: Invalid resource type: $resourceType');
+    throw BundleEntryException(
+        400, 'Bundle entry $entryIndex: Invalid resource type: $resourceType');
   }
 
   fhir.Resource? resultResource;
@@ -270,26 +273,26 @@ Future<_BundleOperation> _processBundleEntry(
   switch (method) {
     case fhir.HTTPVerb.gET:
       if (resourceId == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: GET requires resource ID');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: GET requires resource ID');
       }
       resultResource =
           await dbInterface.getResource(resourceTypeEnum, resourceId);
       if (resultResource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource not found');
+        throw BundleEntryException(
+            404, 'Bundle entry $entryIndex: Resource not found');
       }
       status = '200';
       break;
 
     case fhir.HTTPVerb.pOST:
       if (entry.resource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: POST requires resource');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: POST requires resource');
       }
       if (entry.resource!.resourceTypeString != resourceType) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource type mismatch');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: Resource type mismatch');
       }
 
       // Conditional create: ifNoneExist
@@ -310,8 +313,8 @@ Future<_BundleOperation> _processBundleEntry(
           status = '200';
           break;
         } else if (existing.length > 1) {
-          throw FormatException(
-              'Bundle entry $entryIndex: ifNoneExist matched multiple resources');
+          throw BundleEntryException(
+              412, 'Bundle entry $entryIndex: ifNoneExist matched multiple resources');
         }
         // 0 matches → proceed with create
       }
@@ -321,16 +324,16 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         resourceJson = _resolveUrnReferences(resourceJson, urnMap);
       }
-      final resourceToSave = fhir.Resource.fromJson(resourceJson);
+      final resourceToSave = fhir.Resource.fromJson(resourceJson).newIdIfNoId();
 
       final success = await dbInterface.saveResource(resourceToSave);
       if (!success) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Failed to create resource');
+        throw BundleEntryException(
+            500, 'Bundle entry $entryIndex: Failed to create resource');
       }
 
       // Re-fetch to get server-assigned meta
-      final savedId = resourceToSave.id?.toString() ?? '';
+      final savedId = resourceToSave.id!.toString();
       final saved =
           await dbInterface.getResource(resourceTypeEnum, savedId);
       resultResource = saved ?? resourceToSave;
@@ -349,21 +352,21 @@ Future<_BundleOperation> _processBundleEntry(
 
     case fhir.HTTPVerb.pUT:
       if (resourceId == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PUT requires resource ID');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PUT requires resource ID');
       }
       if (entry.resource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PUT requires resource');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PUT requires resource');
       }
       if (entry.resource!.resourceTypeString != resourceType) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource type mismatch');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: Resource type mismatch');
       }
       final resourceIdFromBody = entry.resource!.id?.toString() ?? '';
       if (resourceIdFromBody != resourceId) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource ID mismatch');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: Resource ID mismatch');
       }
 
       // Conditional update: ifMatch
@@ -374,8 +377,8 @@ Future<_BundleOperation> _processBundleEntry(
         if (existingResource != null) {
           final currentEtag = FhirHttpHeaders.etag(existingResource);
           if (currentEtag != ifMatch) {
-            throw FormatException(
-                'Bundle entry $entryIndex: ETag mismatch (ifMatch)');
+            throw BundleEntryException(
+                412, 'Bundle entry $entryIndex: ETag mismatch (ifMatch)');
           }
           previousResource = existingResource;
         }
@@ -394,8 +397,8 @@ Future<_BundleOperation> _processBundleEntry(
 
       final putSuccess = await dbInterface.saveResource(putResource);
       if (!putSuccess) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Failed to update resource');
+        throw BundleEntryException(
+            500, 'Bundle entry $entryIndex: Failed to update resource');
       }
 
       // Re-fetch to get server-assigned meta
@@ -407,19 +410,19 @@ Future<_BundleOperation> _processBundleEntry(
 
     case fhir.HTTPVerb.pATCH:
       if (resourceId == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PATCH requires resource ID');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PATCH requires resource ID');
       }
       if (entry.resource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PATCH requires patch document');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PATCH requires patch document');
       }
 
       final currentResource =
           await dbInterface.getResource(resourceTypeEnum, resourceId);
       if (currentResource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource not found for PATCH');
+        throw BundleEntryException(
+            404, 'Bundle entry $entryIndex: Resource not found for PATCH');
       }
       previousResource = currentResource;
 
@@ -431,8 +434,8 @@ Future<_BundleOperation> _processBundleEntry(
         final patchJson = patchResource.toJson();
         final data = patchJson['data'] as String?;
         if (data == null) {
-          throw FormatException(
-              'Bundle entry $entryIndex: Binary patch missing data field');
+          throw BundleEntryException(
+              400, 'Bundle entry $entryIndex: Binary patch missing data field');
         }
         final decoded = utf8.decode(base64Decode(data));
         patchOperations = jsonDecode(decoded) as List<dynamic>;
@@ -440,8 +443,8 @@ Future<_BundleOperation> _processBundleEntry(
         patchOperations =
             convertFhirPatchToJsonPatch(patchResource.toJson());
       } else {
-        throw FormatException(
-            'Bundle entry $entryIndex: PATCH document must be Binary or Parameters');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PATCH document must be Binary or Parameters');
       }
 
       final patchedJson =
@@ -450,19 +453,19 @@ Future<_BundleOperation> _processBundleEntry(
 
       // Validate type and ID unchanged
       if (patchedResource.resourceTypeString != resourceType) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PATCH cannot change resource type');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PATCH cannot change resource type');
       }
       final patchedId = patchedResource.id?.toString() ?? '';
       if (patchedId != resourceId) {
-        throw FormatException(
-            'Bundle entry $entryIndex: PATCH cannot change resource ID');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: PATCH cannot change resource ID');
       }
 
       final patchSuccess = await dbInterface.saveResource(patchedResource);
       if (!patchSuccess) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Failed to save patched resource');
+        throw BundleEntryException(
+            500, 'Bundle entry $entryIndex: Failed to save patched resource');
       }
 
       final patchSaved =
@@ -473,23 +476,23 @@ Future<_BundleOperation> _processBundleEntry(
 
     case fhir.HTTPVerb.dELETE:
       if (resourceId == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: DELETE requires resource ID');
+        throw BundleEntryException(
+            400, 'Bundle entry $entryIndex: DELETE requires resource ID');
       }
 
       final existingResource =
           await dbInterface.getResource(resourceTypeEnum, resourceId);
       if (existingResource == null) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Resource not found for DELETE');
+        throw BundleEntryException(
+            404, 'Bundle entry $entryIndex: Resource not found for DELETE');
       }
       deletedResource = existingResource;
 
       final deleteSuccess =
           await dbInterface.deleteResource(resourceTypeEnum, resourceId);
       if (!deleteSuccess) {
-        throw FormatException(
-            'Bundle entry $entryIndex: Failed to delete resource');
+        throw BundleEntryException(
+            500, 'Bundle entry $entryIndex: Failed to delete resource');
       }
 
       resultResource = null;
@@ -497,8 +500,8 @@ Future<_BundleOperation> _processBundleEntry(
       break;
 
     default:
-      throw FormatException(
-          'Bundle entry $entryIndex: Unsupported HTTP method: $method');
+      throw BundleEntryException(
+          400, 'Bundle entry $entryIndex: Unsupported HTTP method: $method');
   }
 
   // Build response with etag/lastModified for mutating operations
@@ -594,6 +597,17 @@ class _BundleOperation {
     this.createdResource,
     this.deletedResource,
   });
+}
+
+/// Exception for bundle entry processing that carries an HTTP status code.
+class BundleEntryException implements Exception {
+  final int statusCode;
+  final String message;
+
+  BundleEntryException(this.statusCode, this.message);
+
+  @override
+  String toString() => message;
 }
 
 Response _errorResponse(String message, String details,

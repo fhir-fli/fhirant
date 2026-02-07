@@ -265,5 +265,59 @@ void main() {
       expect(body['total'], equals(1));
       expect(body['entry'][0]['resource']['id'], equals('id-search-1'));
     });
+
+    test('Search with _include returns referenced resources', () async {
+      // Create an Organization first
+      await testDb.saveResource(fhir.Organization(
+        id: 'include-org-1'.toFhirString,
+        name: 'Test Hospital'.toFhirString,
+      ));
+
+      // Create a Patient that references the Organization
+      await testDb.saveResource(fhir.Patient(
+        id: 'include-pat-1'.toFhirString,
+        name: [fhir.HumanName(family: 'IncludeTest'.toFhirString)],
+        managingOrganization: fhir.Reference(
+          reference: 'Organization/include-org-1'.toFhirString,
+        ),
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=IncludeTest&_include=Patient:managingOrganization',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      // total reflects only matched resources (the Patient), not includes
+      expect(body['total'], equals(1));
+      // entry should contain both the Patient and the included Organization
+      expect(body['entry'], hasLength(2));
+
+      final types = (body['entry'] as List)
+          .map((e) => e['resource']['resourceType'] as String)
+          .toList();
+      expect(types, contains('Patient'));
+      expect(types, contains('Organization'));
+    });
+
+    test('Search with no matches returns empty Bundle with entry array',
+        () async {
+      final response = await handler(testRequest(
+        'GET',
+        '/Condition?code=nonexistent-code',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['resourceType'], equals('Bundle'));
+      expect(body['type'], equals('searchset'));
+      expect(body['total'], equals(0));
+      // Bug 5 fix: entry should now be an empty array, not null
+      expect(body['entry'], isA<List>());
+      expect(body['entry'], isEmpty);
+    });
   });
 }

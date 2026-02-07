@@ -433,7 +433,7 @@ void main() {
       expect(entries[0]['resource'], isNull);
     });
 
-    test('transaction DELETE non-existent returns 400', () async {
+    test('transaction DELETE non-existent returns 404', () async {
       final bundleJson = jsonEncode({
         'resourceType': 'Bundle',
         'type': 'transaction',
@@ -456,7 +456,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(404));
     });
 
     test('batch DELETE failure does not block other entries', () async {
@@ -506,7 +506,7 @@ void main() {
       final entries = json['entry'] as List;
       expect(entries.length, equals(2));
       expect(entries[0]['response']['status'], equals('200'));
-      expect(entries[1]['response']['status'], equals('400'));
+      expect(entries[1]['response']['status'], equals('404'));
     });
   });
 
@@ -590,7 +590,7 @@ void main() {
       expect(resource['name'][0]['family'], equals('NewName'));
     });
 
-    test('transaction PATCH non-existent returns 400', () async {
+    test('transaction PATCH non-existent returns 404', () async {
       final patchOps = jsonEncode([
         {'op': 'replace', 'path': '/name/0/family', 'value': 'NewName'},
       ]);
@@ -623,7 +623,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(404));
     });
 
     test('PATCH that changes resource type fails', () async {
@@ -1101,7 +1101,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(404));
       verify(
         () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-post'),
       ).called(1);
@@ -1175,7 +1175,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(404));
       // Rollback should save back the original resource
       // First save: the PUT update; second save: the rollback
       final saves = verify(
@@ -1234,7 +1234,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(404));
       // Rollback should re-save the deleted resource
       final saved = verify(
         () => mockDb.saveResource(captureAny()),
@@ -1499,7 +1499,7 @@ void main() {
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(400));
+      expect(response.statusCode, equals(412));
       // saveResource should NOT have been called
       verifyNever(() => mockDb.saveResource(any()));
     });

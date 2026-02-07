@@ -184,9 +184,9 @@ void main() {
       final entry1Status = body['entry'][1]['response']['status'] as String;
       expect(entry1Status, contains('201'));
 
-      // Third entry: failed GET → 400 (bundle handler wraps all errors as 400)
+      // Third entry: failed GET → 404 (resource not found)
       final entry2Status = body['entry'][2]['response']['status'] as String;
-      expect(entry2Status, contains('400'));
+      expect(entry2Status, contains('404'));
     });
 
     test('Transaction with invalid entry rolls back all changes', () async {
