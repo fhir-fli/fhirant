@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for PATCH operation: PATCH /{resourceType}/{id}
@@ -95,13 +96,22 @@ Future<Response> patchResourceHandler(
         );
       }
 
+      // Re-fetch to get server-assigned version/lastUpdated
+      final savedResource =
+          await dbInterface.getResource(type, id);
+      final responseResource = savedResource ?? patchedResource;
+
       FhirantLogging().logInfo(
         'Successfully patched resource: $resourceType/$id',
       );
 
-      return Response.ok(
-        patchedResource.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
+      final preference =
+          FhirHttpHeaders.parsePreferReturn(request.headers);
+      return FhirHttpHeaders.preferredResponse(
+        statusCode: 200,
+        resource: responseResource,
+        headers: FhirHttpHeaders.resourceHeaders(responseResource),
+        preference: preference,
       );
     } catch (e, stackTrace) {
       FhirantLogging().logError(

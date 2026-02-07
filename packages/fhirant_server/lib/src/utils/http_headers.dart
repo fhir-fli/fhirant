@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:shelf/shelf.dart';
 
 /// Utility for FHIR HTTP headers: ETag, Last-Modified, conditional operations.
 class FhirHttpHeaders {
@@ -34,5 +35,43 @@ class FhirHttpHeaders {
     }
 
     return headers;
+  }
+
+  /// Parse the Prefer header's return preference.
+  /// Returns 'representation' (default), 'minimal', or 'OperationOutcome'.
+  static String parsePreferReturn(Map<String, String> headers) {
+    final prefer = headers['prefer'] ?? '';
+    if (prefer.contains('return=minimal')) return 'minimal';
+    if (prefer.contains('return=OperationOutcome')) return 'OperationOutcome';
+    return 'representation';
+  }
+
+  /// Build the appropriate response based on Prefer header.
+  static Response preferredResponse({
+    required int statusCode,
+    required fhir.Resource resource,
+    required Map<String, String> headers,
+    required String preference,
+  }) {
+    switch (preference) {
+      case 'minimal':
+        return Response(statusCode, headers: headers);
+      case 'OperationOutcome':
+        final oo = fhir.OperationOutcome(
+          issue: [
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.information,
+              code: fhir.IssueType.informational,
+              diagnostics:
+                  'Resource ${statusCode == 201 ? "created" : "updated"} successfully'
+                      .toFhirString,
+            ),
+          ],
+        );
+        return Response(statusCode, body: oo.toJsonString(), headers: headers);
+      default: // 'representation'
+        return Response(statusCode,
+            body: resource.toJsonString(), headers: headers);
+    }
   }
 }

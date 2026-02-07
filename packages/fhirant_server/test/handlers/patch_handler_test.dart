@@ -34,17 +34,35 @@ void main() {
           {'family': 'OldName'},
         ],
       });
+      final patchedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'NewName'},
+        ],
+      });
 
       final patchBody = jsonEncode([
         {'op': 'replace', 'path': '/name/0/family', 'value': 'NewName'},
       ]);
 
+      var callCount = 0;
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
-      ).thenAnswer((_) async => patient);
+      ).thenAnswer((_) async {
+        callCount++;
+        return callCount == 1 ? patient : patchedPatient;
+      });
       when(
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patchBody);
+      when(
+        () => mockRequest.headers,
+      ).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
       ).thenAnswer((_) async => true);
@@ -216,6 +234,110 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['resourceType'], equals('OperationOutcome'));
+    });
+
+    test('returns ETag header on successful patch', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'name': [
+          {'family': 'OldName'},
+        ],
+      });
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'NewName'},
+        ],
+      });
+
+      final patchBody = jsonEncode([
+        {'op': 'replace', 'path': '/name/0/family', 'value': 'NewName'},
+      ]);
+
+      var callCount = 0;
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async {
+        callCount++;
+        return callCount == 1 ? patient : savedPatient;
+      });
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patchBody);
+      when(() => mockRequest.headers).thenReturn({});
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+
+      final response = await patchResourceHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      expect(response.headers['ETag'], equals('W/"2"'));
+    });
+
+    test('Prefer: return=minimal returns 200 with no body', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'name': [
+          {'family': 'OldName'},
+        ],
+      });
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'NewName'},
+        ],
+      });
+
+      final patchBody = jsonEncode([
+        {'op': 'replace', 'path': '/name/0/family', 'value': 'NewName'},
+      ]);
+
+      var callCount = 0;
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async {
+        callCount++;
+        return callCount == 1 ? patient : savedPatient;
+      });
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patchBody);
+      when(() => mockRequest.headers).thenReturn({
+        'prefer': 'return=minimal',
+      });
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+
+      final response = await patchResourceHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      expect(body, isEmpty);
+      expect(response.headers['ETag'], equals('W/"2"'));
     });
   });
 }

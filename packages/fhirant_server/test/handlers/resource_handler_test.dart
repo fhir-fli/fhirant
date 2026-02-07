@@ -39,6 +39,7 @@ void main() {
       when(
         () => mockRequest.url,
       ).thenReturn(Uri.parse('http://localhost:8080/Patient/123'));
+      when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
       ).thenAnswer((_) async => patient);
@@ -111,6 +112,7 @@ void main() {
       when(
         () => mockRequest.url,
       ).thenReturn(Uri.parse('http://localhost:8080/Patient/123'));
+      when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
       ).thenAnswer((_) async => patient);
@@ -147,6 +149,103 @@ void main() {
       );
 
       expect(response.statusCode, equals(500));
+    });
+
+    test('If-Match matching allows delete', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '3',
+          'lastUpdated': DateTime.now().toIso8601String(),
+        },
+      });
+
+      when(
+        () => mockRequest.url,
+      ).thenReturn(Uri.parse('http://localhost:8080/Patient/123'));
+      when(() => mockRequest.headers).thenReturn({
+        'if-match': 'W/"3"',
+      });
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => true);
+
+      final response = await deleteResourceHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(204));
+    });
+
+    test('If-Match non-matching returns 412', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '5',
+          'lastUpdated': DateTime.now().toIso8601String(),
+        },
+      });
+
+      when(
+        () => mockRequest.url,
+      ).thenReturn(Uri.parse('http://localhost:8080/Patient/123'));
+      when(() => mockRequest.headers).thenReturn({
+        'if-match': 'W/"1"',
+      });
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+
+      final response = await deleteResourceHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(412));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+    });
+
+    test('no If-Match header allows delete normally', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '3',
+          'lastUpdated': DateTime.now().toIso8601String(),
+        },
+      });
+
+      when(
+        () => mockRequest.url,
+      ).thenReturn(Uri.parse('http://localhost:8080/Patient/123'));
+      when(() => mockRequest.headers).thenReturn({});
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => true);
+
+      final response = await deleteResourceHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(204));
     });
   });
 

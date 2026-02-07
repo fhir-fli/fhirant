@@ -326,6 +326,50 @@ Future<Response> postResourceHandler(
       );
     }
 
+    // Conditional create: If-None-Exist header
+    final ifNoneExist = request.headers['if-none-exist'];
+    if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
+      final type = fhir.R4ResourceType.fromString(resourceType);
+      if (type != null) {
+        final searchUri = Uri(query: ifNoneExist);
+        final searchParams = <String, List<String>>{};
+        for (final entry in searchUri.queryParametersAll.entries) {
+          searchParams[entry.key] = entry.value;
+        }
+
+        if (searchParams.isNotEmpty) {
+          final existing = await dbInterface.search(
+            resourceType: type,
+            searchParameters: searchParams,
+          );
+
+          if (existing.length == 1) {
+            return Response.ok(
+              existing.first.toJsonString(),
+              headers: FhirHttpHeaders.resourceHeaders(existing.first),
+            );
+          } else if (existing.length > 1) {
+            return Response(
+              412,
+              body: fhir.OperationOutcome(
+                issue: [
+                  fhir.OperationOutcomeIssue(
+                    severity: fhir.IssueSeverity.error,
+                    code: fhir.IssueType.duplicate,
+                    diagnostics:
+                        'Multiple matches found for If-None-Exist criteria'
+                            .toFhirString,
+                  ),
+                ],
+              ).toJsonString(),
+              headers: {'Content-Type': 'application/json'},
+            );
+          }
+          // No match: proceed with create
+        }
+      }
+    }
+
     final result = await dbInterface.saveResource(resource);
     if (result) {
       // Re-fetch to get server-assigned version/lastUpdated
@@ -343,10 +387,13 @@ Future<Response> postResourceHandler(
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
       headers['Location'] = '/$resourceType/${resource.id}';
 
-      return Response(
-        201,
-        body: responseResource.toJsonString(),
+      final preference =
+          FhirHttpHeaders.parsePreferReturn(request.headers);
+      return FhirHttpHeaders.preferredResponse(
+        statusCode: 201,
+        resource: responseResource,
         headers: headers,
+        preference: preference,
       );
     } else {
       FhirantLogging().logError(
@@ -462,10 +509,14 @@ Future<Response> putResourceHandler(
       FhirantLogging().logInfo(
         'Resource of type $resourceType updated successfully with ID: $id',
       );
-      return Response(
-        200,
-        body: responseResource.toJsonString(),
+
+      final preference =
+          FhirHttpHeaders.parsePreferReturn(request.headers);
+      return FhirHttpHeaders.preferredResponse(
+        statusCode: 200,
+        resource: responseResource,
         headers: FhirHttpHeaders.resourceHeaders(responseResource),
+        preference: preference,
       );
     } else {
       FhirantLogging().logError(
@@ -639,6 +690,30 @@ Future<Response> deleteResourceHandler(
         'The resource does not exist',
         statusCode: 404,
       );
+    }
+
+    // Conditional delete: If-Match header
+    final ifMatch =
+        FhirHttpHeaders.parseETag(request.headers['if-match']);
+    if (ifMatch != null) {
+      final currentVersion = resource.meta?.versionId?.valueString;
+      if (currentVersion != ifMatch) {
+        return Response(
+          412,
+          body: fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.conflict,
+                diagnostics:
+                    'Version mismatch (If-Match precondition failed)'
+                        .toFhirString,
+              ),
+            ],
+          ).toJsonString(),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
     }
 
     final success = await dbInterface.deleteResource(type, id);

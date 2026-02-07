@@ -389,5 +389,97 @@ void main() {
 
       expect(response.statusCode, equals(200));
     });
+
+    test('Prefer: return=minimal returns 200 with no body', () async {
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({
+        'prefer': 'return=minimal',
+      });
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => savedPatient);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      expect(body, isEmpty);
+      expect(response.headers['ETag'], equals('W/"2"'));
+    });
+
+    test('Prefer: return=OperationOutcome returns 200 with OO', () async {
+      final savedPatient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'meta': {
+          'versionId': '2',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+      final patientJson = jsonEncode({
+        'resourceType': 'Patient',
+        'id': 'test-id',
+        'name': [
+          {'family': 'Updated'},
+        ],
+      });
+
+      when(
+        () => mockRequest.readAsString(),
+      ).thenAnswer((_) async => patientJson);
+      when(() => mockRequest.headers).thenReturn({
+        'prefer': 'return=OperationOutcome',
+      });
+      when(
+        () => mockDb.saveResource(any()),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
+      ).thenAnswer((_) async => savedPatient);
+
+      final response = await putResourceHandler(
+        mockRequest,
+        'Patient',
+        'test-id',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+    });
   });
 }
