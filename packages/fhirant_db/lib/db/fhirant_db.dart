@@ -590,33 +590,55 @@ class FhirAntDb extends _$FhirAntDb {
       }
 
       for (final val in paramValues) {
-        final valWithoutModifier = val.split(':')[0];
-
-        // Check for token (contains | or :missing without date/number context)
-        if (val.contains('|') && !valWithoutModifier.contains('|')) {
-          // Token format: system|value
-          isTokenParam = true;
-        } else if (val.contains('|') &&
-            valWithoutModifier.split('|').length >= 2) {
-          // Could be quantity: value|unit or system|value|unit
-          final parts = valWithoutModifier.split('|');
-          // If middle part is numeric, it's likely quantity
-          try {
-            double.parse(parts.length > 1 ? parts[1] : parts[0]);
-            isQuantityParam = true;
-          } catch (e) {
-            isTokenParam = true;
+        // Strip known search modifiers from end (suffix-based to preserve URIs)
+        String valWithoutModifier = val;
+        const knownSearchModifiers = [
+          'gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb',
+          'missing', 'exact', 'contains', 'text',
+          'above', 'below', 'not', 'of-type', 'in', 'not-in',
+        ];
+        String? detectedModifier;
+        for (final mod in knownSearchModifiers) {
+          if (val.endsWith(':$mod')) {
+            valWithoutModifier =
+                val.substring(0, val.length - mod.length - 1);
+            detectedModifier = mod;
+            break;
           }
         }
 
+        // Check for token or quantity (contains |)
+        if (valWithoutModifier.contains('|')) {
+          // Could be quantity (value|unit, system|value|unit) or token (system|value)
+          final parts = valWithoutModifier.split('|');
+          bool foundNumeric = false;
+          if (parts.length == 2) {
+            // value|unit or system|value — check if first part is numeric
+            try {
+              double.parse(parts[0]);
+              foundNumeric = true;
+            } catch (_) {}
+          } else if (parts.length == 3) {
+            // system|value|unit — check if middle part is numeric
+            try {
+              double.parse(parts[1]);
+              foundNumeric = true;
+            } catch (_) {}
+          }
+          if (foundNumeric) {
+            isQuantityParam = true;
+          } else {
+            isTokenParam = true;
+          }
+        } else if (val.contains('|') && !valWithoutModifier.contains('|')) {
+          // Modifier stripped the pipe — treat as token
+          isTokenParam = true;
+        }
+
         // Check for date modifiers
-        if (val.contains(':gt') ||
-            val.contains(':lt') ||
-            val.contains(':ge') ||
-            val.contains(':le') ||
-            val.contains(':ap') ||
-            val.contains(':sa') ||
-            val.contains(':eb')) {
+        if (detectedModifier != null &&
+            const ['gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb']
+                .contains(detectedModifier)) {
           // Check if it's a date pattern
           final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
           if (datePattern.hasMatch(valWithoutModifier)) {
@@ -625,7 +647,12 @@ class FhirAntDb extends _$FhirAntDb {
             // Could be number/quantity with modifier
             try {
               double.parse(valWithoutModifier);
-              isNumberParam = true;
+              if (paramName.toLowerCase().contains('quantity') ||
+                  paramName.toLowerCase().contains('value')) {
+                isQuantityParam = true;
+              } else {
+                isNumberParam = true;
+              }
             } catch (e) {
               // Not a number
             }
@@ -981,33 +1008,55 @@ class FhirAntDb extends _$FhirAntDb {
       }
 
       for (final val in paramValues) {
-        final valWithoutModifier = val.split(':')[0];
-
-        // Check for token (contains | or :missing without date/number context)
-        if (val.contains('|') && !valWithoutModifier.contains('|')) {
-          // Token format: system|value
-          isTokenParam = true;
-        } else if (val.contains('|') &&
-            valWithoutModifier.split('|').length >= 2) {
-          // Could be quantity: value|unit or system|value|unit
-          final parts = valWithoutModifier.split('|');
-          // If middle part is numeric, it's likely quantity
-          try {
-            double.parse(parts.length > 1 ? parts[1] : parts[0]);
-            isQuantityParam = true;
-          } catch (e) {
-            isTokenParam = true;
+        // Strip known search modifiers from end (suffix-based to preserve URIs)
+        String valWithoutModifier = val;
+        const knownSearchModifiers = [
+          'gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb',
+          'missing', 'exact', 'contains', 'text',
+          'above', 'below', 'not', 'of-type', 'in', 'not-in',
+        ];
+        String? detectedModifier;
+        for (final mod in knownSearchModifiers) {
+          if (val.endsWith(':$mod')) {
+            valWithoutModifier =
+                val.substring(0, val.length - mod.length - 1);
+            detectedModifier = mod;
+            break;
           }
         }
 
+        // Check for token or quantity (contains |)
+        if (valWithoutModifier.contains('|')) {
+          // Could be quantity (value|unit, system|value|unit) or token (system|value)
+          final parts = valWithoutModifier.split('|');
+          bool foundNumeric = false;
+          if (parts.length == 2) {
+            // value|unit or system|value — check if first part is numeric
+            try {
+              double.parse(parts[0]);
+              foundNumeric = true;
+            } catch (_) {}
+          } else if (parts.length == 3) {
+            // system|value|unit — check if middle part is numeric
+            try {
+              double.parse(parts[1]);
+              foundNumeric = true;
+            } catch (_) {}
+          }
+          if (foundNumeric) {
+            isQuantityParam = true;
+          } else {
+            isTokenParam = true;
+          }
+        } else if (val.contains('|') && !valWithoutModifier.contains('|')) {
+          // Modifier stripped the pipe — treat as token
+          isTokenParam = true;
+        }
+
         // Check for date modifiers
-        if (val.contains(':gt') ||
-            val.contains(':lt') ||
-            val.contains(':ge') ||
-            val.contains(':le') ||
-            val.contains(':ap') ||
-            val.contains(':sa') ||
-            val.contains(':eb')) {
+        if (detectedModifier != null &&
+            const ['gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb']
+                .contains(detectedModifier)) {
           // Check if it's a date pattern
           final datePattern = RegExp(r'^\d{4}(-\d{2})?(-\d{2})?(T.*)?$');
           if (datePattern.hasMatch(valWithoutModifier)) {
@@ -1016,7 +1065,12 @@ class FhirAntDb extends _$FhirAntDb {
             // Could be number/quantity with modifier
             try {
               double.parse(valWithoutModifier);
-              isNumberParam = true;
+              if (paramName.toLowerCase().contains('quantity') ||
+                  paramName.toLowerCase().contains('value')) {
+                isQuantityParam = true;
+              } else {
+                isNumberParam = true;
+              }
             } catch (e) {
               // Not a number
             }
@@ -2050,15 +2104,18 @@ class FhirAntDb extends _$FhirAntDb {
     final matchingIds = <String>{};
 
     for (final value in values) {
-      // Handle modifiers
+      // Handle modifiers (suffix-based to preserve URIs)
       String? modifier;
       String searchValue = value;
 
-      if (value.contains(':')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          searchValue = parts[0];
-          modifier = parts[1];
+      const numberModifiers = [
+        'gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb', 'missing',
+      ];
+      for (final mod in numberModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          searchValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
@@ -2164,15 +2221,18 @@ class FhirAntDb extends _$FhirAntDb {
     final matchingIds = <String>{};
 
     for (final value in values) {
-      // Handle modifiers
+      // Handle modifiers (suffix-based to preserve URIs in system|value|unit)
       String? modifier;
       String searchValue = value;
 
-      if (value.contains(':')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          searchValue = parts[0];
-          modifier = parts[1];
+      const quantityModifiers = [
+        'gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb', 'missing',
+      ];
+      for (final mod in quantityModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          searchValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
@@ -2318,11 +2378,12 @@ class FhirAntDb extends _$FhirAntDb {
       String? modifier;
       String searchValue = value;
 
-      if (value.contains(':')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          searchValue = parts[0];
-          modifier = parts[1];
+      const knownUriModifiers = ['above', 'below', 'missing'];
+      for (final mod in knownUriModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          searchValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
@@ -2360,8 +2421,8 @@ class FhirAntDb extends _$FhirAntDb {
       // URI search: exact match by default, or :above for prefix match
       if (modifier == 'above') {
         // Prefix match - URI starts with searchValue
-
-        uriSearchParameters.uriValue.like('$searchValue%');
+        whereCondition =
+            whereCondition & uriSearchParameters.uriValue.like('$searchValue%');
       } else {
         // Default: exact match
         whereCondition =
