@@ -60,7 +60,7 @@ Response metadataHandler(Request request) {
     ];
 
     // Resource-specific search parameters (simplified - can be expanded)
-    // 
+    //
     // Advanced Search Features Supported:
     // - Reference Chaining: Use dot notation (e.g., organization.name=Hospital)
     // - Composite Parameters: Use $ separator (e.g., code-value-quantity=8480-6\$gt100)
@@ -100,17 +100,65 @@ Response metadataHandler(Request request) {
       'resourceType': 'CapabilityStatement',
       'status': 'active',
       'date': DateTime.now().toIso8601String(),
-      'fhirVersion': '4.3.0',
+      'kind': 'instance',
+      'fhirVersion': '4.0.1',
       'format': ['json'],
+      'patchFormat': ['application/json-patch+json'],
+      'software': {
+        'name': 'FHIRant',
+        'version': '1.0.0',
+      },
+      'implementation': {
+        'description': 'FHIRant FHIR R4 Server',
+      },
       'rest': [
         {
           'mode': 'server',
           'documentation': 'FHIR RESTful API.',
+          'security': {
+            'cors': true,
+            'service': [
+              {
+                'coding': [
+                  {
+                    'system':
+                        'http://terminology.hl7.org/CodeSystem/restful-security-service',
+                    'code': 'SMART-on-FHIR',
+                    'display': 'SMART-on-FHIR',
+                  },
+                ],
+                'text': 'JWT Bearer Token Authentication',
+              },
+            ],
+            'description':
+                'Server uses JWT Bearer tokens for authentication. '
+                    'Obtain a token via POST /auth/login.',
+          },
+          'interaction': [
+            {'code': 'transaction'},
+            {'code': 'batch'},
+            {'code': 'history-system'},
+          ],
           'operation': [
             {
               'name': 'validate',
-              'definition': 'http://hl7.org/fhir/OperationDefinition/Resource-validate',
+              'definition':
+                  'http://hl7.org/fhir/OperationDefinition/Resource-validate',
               'documentation': 'Validate a resource',
+            },
+            {
+              'name': 'fhirpath',
+              'definition':
+                  'http://hl7.org/fhir/OperationDefinition/Resource-fhirpath',
+              'documentation':
+                  'Evaluate a FHIRPath expression against a resource',
+            },
+            {
+              'name': 'transform',
+              'definition':
+                  'http://hl7.org/fhir/OperationDefinition/StructureMap-transform',
+              'documentation':
+                  'Transform a resource using FHIR Mapping Language',
             },
           ],
           'resource': R4ResourceType.typesAsStrings
@@ -120,17 +168,27 @@ Response metadataHandler(Request request) {
                     ...commonSearchParams,
                     ...(resourceSearchParams[type] ?? []),
                   ];
-                  
+
                   return {
                     'type': type,
                     'interaction': [
                       {'code': 'read'},
                       {'code': 'vread'},
                       {'code': 'update'},
+                      {'code': 'patch'},
                       {'code': 'delete'},
                       {'code': 'create'},
                       {'code': 'search-type'},
+                      {'code': 'history-instance'},
+                      {'code': 'history-type'},
                     ],
+                    'versioning': 'versioned',
+                    'readHistory': true,
+                    'updateCreate': true,
+                    'conditionalCreate': true,
+                    'conditionalRead': 'modified-since',
+                    'conditionalUpdate': true,
+                    'conditionalDelete': 'single',
                     if (resourceParams.isNotEmpty)
                       'searchParam': resourceParams,
                   };

@@ -2,8 +2,10 @@
 import 'dart:io';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
+import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
+import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -124,8 +126,10 @@ class FhirAntServer {
 
     return Pipeline()
         .addMiddleware(_logRequestsMiddleware())
+        .addMiddleware(corsMiddleware())
         .addMiddleware(contentNegotiationMiddleware())
         .addMiddleware(authMiddleware(_jwtService))
+        .addMiddleware(auditMiddleware(dbInterface))
         .addMiddleware(rateLimiter.rateLimiter())
         .addHandler(router);
   }
