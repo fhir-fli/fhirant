@@ -30,6 +30,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.0
+  drift: ^2.29.0
 
 dependency_overrides:
   fhir_r4:
