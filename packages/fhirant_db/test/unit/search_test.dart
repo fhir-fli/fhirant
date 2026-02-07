@@ -836,4 +836,399 @@ void main() {
       expect(ids(results), equals(['pt-chain-1']));
     });
   });
+
+  // ── _lastUpdated search ────────────────────────────────────────────────
+
+  group('_lastUpdated search', () {
+    test('exact date match finds resources saved today', () async {
+      await seedAll();
+
+      final today = DateTime.now();
+      final todayStr =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': [todayStr],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':gt modifier finds resources after a date', () async {
+      await seedAll();
+
+      // All resources were saved just now, so yesterday should match all
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yesterdayStr =
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$yesterdayStr:gt'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':lt modifier finds resources before a date', () async {
+      await seedAll();
+
+      // Tomorrow should match all resources saved today
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrowStr =
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$tomorrowStr:lt'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':ge modifier finds resources on or after date', () async {
+      await seedAll();
+
+      final today = DateTime.now();
+      final todayStr =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$todayStr:ge'],
+        },
+      );
+
+      expect(results.length, 3);
+    });
+
+    test(':gt with future date returns empty', () async {
+      await seedAll();
+
+      final future = DateTime.now().add(const Duration(days: 365));
+      final futureStr =
+          '${future.year}-${future.month.toString().padLeft(2, '0')}-${future.day.toString().padLeft(2, '0')}';
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_lastUpdated': ['$futureStr:gt'],
+        },
+      );
+
+      expect(results, isEmpty);
+    });
+  });
+
+  // ── Meta parameter search ──────────────────────────────────────────────
+
+  group('Meta parameter search', () {
+    fhir.Patient buildPatientWithMeta() => fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-meta-1',
+          'meta': {
+            'tag': [
+              {
+                'system': 'http://example.org/tags',
+                'code': 'research',
+              }
+            ],
+            'profile': [
+              'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient'
+            ],
+            'security': [
+              {
+                'system':
+                    'http://terminology.hl7.org/CodeSystem/v3-Confidentiality',
+                'code': 'R',
+              }
+            ],
+            'source': 'http://hospital.example.org',
+          },
+          'name': [
+            {'family': 'MetaTest'}
+          ],
+        });
+
+    fhir.Patient buildPatientWithoutMeta() => fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-meta-2',
+          'name': [
+            {'family': 'NoMeta'}
+          ],
+        });
+
+    Future<void> seedMetaPatients() async {
+      await db.saveResource(buildPatientWithMeta());
+      await db.saveResource(buildPatientWithoutMeta());
+    }
+
+    test('_tag with code only finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_tag': ['research'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+
+    test('_tag with system|code finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_tag': ['http://example.org/tags|research'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+
+    test('_tag no match returns empty', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_tag': ['nonexistent'],
+        },
+      );
+
+      expect(results, isEmpty);
+    });
+
+    test('_profile exact URL finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_profile': [
+            'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient'
+          ],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+
+    test('_profile no match returns empty', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_profile': ['http://nonexistent.org/profile'],
+        },
+      );
+
+      expect(results, isEmpty);
+    });
+
+    test('_security with system|code finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_security': [
+            'http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R'
+          ],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+
+    test('_security code only finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_security': ['R'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+
+    test('_source exact match finds matching', () async {
+      await seedMetaPatients();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          '_source': ['http://hospital.example.org'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-meta-1']));
+    });
+  });
+
+  // ── String modifier search ─────────────────────────────────────────────
+
+  group('String modifier search', () {
+    test(':exact modifier matches case-sensitive exact value', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'name': ['Smith:exact'],
+        },
+      );
+
+      // :exact uses equals on the normalized (lowercased) value
+      // 'Smith' normalized → 'smith', stored values normalized → 'smith'
+      expect(ids(results), containsAll(['pt-1', 'pt-2']));
+    });
+
+    test(':exact no match with wrong case normalization', () async {
+      await seedAll();
+
+      // 'NONEXISTENT' won't match any stored normalized value
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'name': ['NonExistentName:exact'],
+        },
+      );
+
+      expect(results, isEmpty);
+    });
+
+    test(':contains modifier finds substring match', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'name': ['mit:contains'],
+        },
+      );
+
+      // 'mit' is a substring of 'smith' (normalized)
+      expect(ids(results), containsAll(['pt-1', 'pt-2']));
+    });
+
+    test(':missing modifier finds resources without indexed string param',
+        () async {
+      // pt-2 has no address, pt-1 has address
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'address': ['true:missing'],
+        },
+      );
+
+      // pt-2 and pt-3 have no address, pt-1 has address
+      expect(ids(results), containsAll(['pt-2', 'pt-3']));
+      expect(results.length, 2);
+    });
+  });
+
+  // ── Token :missing search ──────────────────────────────────────────────
+
+  group('Token :missing search', () {
+    test(':missing finds resources without gender token', () async {
+      await seedAll();
+      // pt-3 has gender='male', pt-1 has gender='male', pt-2 has gender='female'
+      // All 3 have gender, so :missing should find none in the default seed
+
+      // Save a Patient without gender
+      await db.saveResource(fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-nogender',
+        'name': [
+          {'family': 'NoGender'}
+        ],
+      }));
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'gender': ['true:missing'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-nogender']));
+    });
+
+    test(':missing returns empty when all have gender', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'gender': ['true:missing'],
+        },
+      );
+
+      // All 3 patients have gender
+      expect(results, isEmpty);
+    });
+  });
+
+  // ── Date modifier search ───────────────────────────────────────────────
+
+  group('Date modifier search', () {
+    test(':gt finds patients born after threshold', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1995-01-01:gt'],
+        },
+      );
+
+      // pt-3 born 2000-03-10 is after 1995-01-01
+      expect(ids(results), equals(['pt-3']));
+    });
+
+    test(':lt finds patients born before threshold', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1995-01-01:lt'],
+        },
+      );
+
+      // pt-1 born 1990-01-15, pt-2 born 1985-06-20 are before 1995-01-01
+      expect(ids(results), containsAll(['pt-1', 'pt-2']));
+      expect(results.length, 2);
+    });
+
+    test('exact date match finds single patient', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'birthdate': ['1990-01-15'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-1']));
+    });
+  });
 }

@@ -756,7 +756,12 @@ class FhirAntDb extends _$FhirAntDb {
           paramName,
           paramValues,
         );
-        paramIds = stringIds.union(tokenIds);
+        // For :missing modifier, use intersection (resource must be absent
+        // from ALL checked tables). For normal searches, use union.
+        final hasMissing = paramValues.any((v) => v.endsWith(':missing'));
+        paramIds = hasMissing
+            ? stringIds.intersection(tokenIds)
+            : stringIds.union(tokenIds);
       }
 
       if (firstParam) {
@@ -1174,7 +1179,12 @@ class FhirAntDb extends _$FhirAntDb {
           paramName,
           paramValues,
         );
-        paramIds = stringIds.union(tokenIds);
+        // For :missing modifier, use intersection (resource must be absent
+        // from ALL checked tables). For normal searches, use union.
+        final hasMissing = paramValues.any((v) => v.endsWith(':missing'));
+        paramIds = hasMissing
+            ? stringIds.intersection(tokenIds)
+            : stringIds.union(tokenIds);
       }
 
       if (firstParam) {
@@ -1229,7 +1239,24 @@ class FhirAntDb extends _$FhirAntDb {
         whereCondition = whereCondition &
             stringSearchParameters.stringValue.like('%$normalizedValue%');
       } else if (modifier == 'missing') {
-        // TODO: Handle missing modifier - need to check if parameter exists
+        final allResourceIds = (await (select(resources)
+                  ..where((tbl) => tbl.resourceType.equals(resourceType)))
+                .get())
+            .map((r) => r.id)
+            .toSet();
+
+        final resourcesWithParam = (await (selectOnly(stringSearchParameters)
+                  ..addColumns([stringSearchParameters.id])
+                  ..where(
+                    stringSearchParameters.resourceType.equals(resourceType) &
+                        (stringSearchParameters.searchPath.like('$resourceType.$searchPath') |
+                         stringSearchParameters.searchPath.like('$resourceType.%.$searchPath')),
+                  ))
+                .get())
+            .map((r) => r.read(stringSearchParameters.id)!)
+            .toSet();
+
+        matchingIds.addAll(allResourceIds.difference(resourcesWithParam));
         continue;
       } else {
         // Default: contains search (case-insensitive)
@@ -1365,15 +1392,17 @@ class FhirAntDb extends _$FhirAntDb {
     final matchingIds = <String>{};
 
     for (final value in values) {
-      // Handle modifiers
+      // Handle modifiers using suffix-based detection to avoid
+      // breaking datetime values that contain colons (e.g. 2024-01-15T10:30:00)
       String? modifier;
       String searchValue = value;
 
-      if (value.contains(':')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          searchValue = parts[0];
-          modifier = parts[1];
+      const dateModifiers = ['gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb', 'missing'];
+      for (final mod in dateModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          searchValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
@@ -1513,15 +1542,17 @@ class FhirAntDb extends _$FhirAntDb {
     final matchingIds = <String>{};
 
     for (final value in values) {
-      // Handle modifiers
+      // Handle modifiers using suffix-based detection to avoid
+      // breaking datetime values that contain colons (e.g. 2024-01-15T10:30:00)
       String? modifier;
       String dateValue = value;
 
-      if (value.contains(':')) {
-        final parts = value.split(':');
-        if (parts.length == 2) {
-          dateValue = parts[0];
-          modifier = parts[1];
+      const lastUpdatedModifiers = ['gt', 'lt', 'ge', 'le', 'ap', 'sa', 'eb'];
+      for (final mod in lastUpdatedModifiers) {
+        if (value.endsWith(':$mod')) {
+          modifier = mod;
+          dateValue = value.substring(0, value.length - mod.length - 1);
+          break;
         }
       }
 
