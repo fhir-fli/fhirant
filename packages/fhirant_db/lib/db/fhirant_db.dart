@@ -2684,6 +2684,72 @@ class FhirAntDb extends _$FhirAntDb {
     return allResourceIds.difference(foundIds);
   }
 
+  /// Retrieve resource IDs that belong to a compartment.
+  ///
+  /// Queries the `referenceSearchParameters` table for rows whose
+  /// `referenceResourceType` and `referenceIdPart` point at the focal
+  /// resource, filtered by the search paths defined in the compartment.
+  ///
+  /// Returns a map of `{ resourceType: { id1, id2, … } }`.
+  Future<Map<String, Set<String>>> getCompartmentResourceIds({
+    required String compartmentType,
+    required String compartmentId,
+    required Map<String, List<String>> compartmentDefinition,
+    List<String>? typeFilter,
+    DateTime? since,
+  }) async {
+    final result = <String, Set<String>>{};
+
+    for (final entry in compartmentDefinition.entries) {
+      final resType = entry.key;
+      final searchPaths = entry.value;
+
+      // Skip the focal resource — it is handled by the caller.
+      if (searchPaths.isEmpty) continue;
+
+      // If typeFilter is provided, skip types not in the filter.
+      if (typeFilter != null && !typeFilter.contains(resType)) continue;
+
+      // Build the OR condition across all search paths for this type.
+      Expression<bool> condition =
+          referenceSearchParameters.resourceType.equals(resType) &
+              referenceSearchParameters.referenceResourceType
+                  .equals(compartmentType) &
+              referenceSearchParameters.referenceIdPart
+                  .equals(compartmentId);
+
+      // Add search path matching — use LIKE with % suffix to handle
+      // paths like `Observation.subject.where(resolve() is Patient)`.
+      Expression<bool>? pathCondition;
+      for (final sp in searchPaths) {
+        final like = referenceSearchParameters.searchPath.like('$sp%');
+        pathCondition = pathCondition == null ? like : (pathCondition | like);
+      }
+      if (pathCondition != null) {
+        condition = condition & pathCondition;
+      }
+
+      // Optional _since filter
+      if (since != null) {
+        condition = condition &
+            referenceSearchParameters.lastUpdated
+                .isBiggerOrEqualValue(since);
+      }
+
+      final query = selectOnly(referenceSearchParameters)
+        ..addColumns([referenceSearchParameters.id])
+        ..where(condition);
+
+      final rows = await query.get();
+      if (rows.isNotEmpty) {
+        final ids = rows.map((r) => r.read(referenceSearchParameters.id)!).toSet();
+        result[resType] = ids;
+      }
+    }
+
+    return result;
+  }
+
   /// Initialize the database (if needed).
   Future<void> initialize() async {
     // Since LazyDatabase opens the connection on first use,

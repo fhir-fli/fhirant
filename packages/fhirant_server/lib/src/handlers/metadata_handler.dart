@@ -160,6 +160,18 @@ Response metadataHandler(Request request) {
               'documentation':
                   'Transform a resource using FHIR Mapping Language',
             },
+            {
+              'name': 'everything',
+              'definition':
+                  'http://hl7.org/fhir/OperationDefinition/Patient-everything',
+              'documentation':
+                  'Fetch all resources in a Patient or Encounter compartment. '
+                      'Supports _type, _since, _count, _offset parameters.',
+            },
+          ],
+          'compartment': [
+            'http://hl7.org/fhir/CompartmentDefinition/patient',
+            'http://hl7.org/fhir/CompartmentDefinition/encounter',
           ],
           'resource': R4ResourceType.typesAsStrings
               .map(

@@ -52,6 +52,12 @@ class FhirAntServer {
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       // Mapping/Transform endpoint
       ..post('/\$transform', mappingHandler)
+      // $everything operation (before history to avoid /<type>/<id>/_history match)
+      ..get(
+        r'/<compartmentType>/<id>/$everything',
+        (Request req, String compartmentType, String id) =>
+            everythingHandler(req, compartmentType, id, dbInterface),
+      )
       // History endpoints (must come before resource endpoints to match correctly)
       ..get(
         r'/<resourceType>/<id>/_history/<vid>',
@@ -71,6 +77,15 @@ class FhirAntServer {
       ..get(
         r'/_history',
         (Request req) => systemHistoryHandler(req, dbInterface),
+      )
+      // Compartment search (3-segment: /Patient/123/Observation)
+      // Must come after _history routes so /<type>/<id>/_history matches first
+      ..get(
+        r'/<compartmentType>/<compartmentId>/<resourceType>',
+        (Request req, String compartmentType, String compartmentId,
+                String resourceType) =>
+            compartmentSearchHandler(
+                req, compartmentType, compartmentId, resourceType, dbInterface),
       )
       // Resource CRUD endpoints
       // Transaction/Batch endpoint
