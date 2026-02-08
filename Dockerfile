@@ -30,14 +30,11 @@ RUN cd /app/fhirant/packages/fhirant_server && \
 # --- Runtime stage ---
 FROM dart:stable
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends libsqlcipher0t64 && \
-    rm -rf /var/lib/apt/lists/*
-
 COPY --from=build /app/server /app/server
+COPY --from=build /app/fhirant/packages/fhirant_server/lib/sqlcipher/linux/libsqlcipher.so /app/lib/libsqlcipher.so
 
 EXPOSE 8080
 
 # Set secrets at runtime via -e or docker-compose environment, not here.
 
-CMD ["/app/server", "--port", "8080", "--db-path", "/data", "--sqlcipher-path", "/usr/lib/x86_64-linux-gnu/libsqlcipher.so.0"]
+CMD ["/app/server", "--port", "8080", "--db-path", "/data", "--sqlcipher-path", "/app/lib/libsqlcipher.so"]
