@@ -168,6 +168,16 @@ Response metadataHandler(Request request) {
                   'Fetch all resources in a Patient or Encounter compartment. '
                       'Supports _type, _since, _count, _offset parameters.',
             },
+            {
+              'name': 'export',
+              'definition':
+                  'http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export',
+              'documentation':
+                  'Bulk Data Export (async). System-level: GET /\$export, '
+                      'Patient-level: GET /Patient/\$export. '
+                      'Supports _type, _since, _outputFormat parameters. '
+                      'Returns 202 Accepted with Content-Location for status polling.',
+            },
           ],
           'compartment': [
             'http://hl7.org/fhir/CompartmentDefinition/patient',

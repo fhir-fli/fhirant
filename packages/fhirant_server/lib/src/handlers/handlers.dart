@@ -1,6 +1,7 @@
 export 'base_handler.dart';
 export 'bundle_handler.dart';
 export 'compartment_handler.dart';
+export 'export_handler.dart';
 export 'favico_handler.dart';
 export 'fhirpath_handler.dart';
 export 'history_handler.dart';

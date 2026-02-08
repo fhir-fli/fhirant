@@ -5520,6 +5520,689 @@ class UsersCompanion extends UpdateCompanion<User> {
   }
 }
 
+class $ExportJobsTable extends ExportJobs
+    with TableInfo<$ExportJobsTable, ExportJob> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExportJobsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _jobIdMeta = const VerificationMeta('jobId');
+  @override
+  late final GeneratedColumn<String> jobId = GeneratedColumn<String>(
+      'job_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('pending'));
+  static const VerificationMeta _requestUrlMeta =
+      const VerificationMeta('requestUrl');
+  @override
+  late final GeneratedColumn<String> requestUrl = GeneratedColumn<String>(
+      'request_url', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _transactionTimeMeta =
+      const VerificationMeta('transactionTime');
+  @override
+  late final GeneratedColumn<DateTime> transactionTime =
+      GeneratedColumn<DateTime>('transaction_time', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: DateTime.now);
+  static const VerificationMeta _completedAtMeta =
+      const VerificationMeta('completedAt');
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+      'completed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _outputJsonMeta =
+      const VerificationMeta('outputJson');
+  @override
+  late final GeneratedColumn<String> outputJson = GeneratedColumn<String>(
+      'output_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _errorJsonMeta =
+      const VerificationMeta('errorJson');
+  @override
+  late final GeneratedColumn<String> errorJson = GeneratedColumn<String>(
+      'error_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _resourceTypesMeta =
+      const VerificationMeta('resourceTypes');
+  @override
+  late final GeneratedColumn<String> resourceTypes = GeneratedColumn<String>(
+      'resource_types', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sinceMeta = const VerificationMeta('since');
+  @override
+  late final GeneratedColumn<DateTime> since = GeneratedColumn<DateTime>(
+      'since', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _exportLevelMeta =
+      const VerificationMeta('exportLevel');
+  @override
+  late final GeneratedColumn<String> exportLevel = GeneratedColumn<String>(
+      'export_level', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _patientIdMeta =
+      const VerificationMeta('patientId');
+  @override
+  late final GeneratedColumn<String> patientId = GeneratedColumn<String>(
+      'patient_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _requestedByMeta =
+      const VerificationMeta('requestedBy');
+  @override
+  late final GeneratedColumn<String> requestedBy = GeneratedColumn<String>(
+      'requested_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        jobId,
+        status,
+        requestUrl,
+        transactionTime,
+        createdAt,
+        completedAt,
+        outputJson,
+        errorJson,
+        resourceTypes,
+        since,
+        exportLevel,
+        patientId,
+        requestedBy
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'export_jobs';
+  @override
+  VerificationContext validateIntegrity(Insertable<ExportJob> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('job_id')) {
+      context.handle(
+          _jobIdMeta, jobId.isAcceptableOrUnknown(data['job_id']!, _jobIdMeta));
+    } else if (isInserting) {
+      context.missing(_jobIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('request_url')) {
+      context.handle(
+          _requestUrlMeta,
+          requestUrl.isAcceptableOrUnknown(
+              data['request_url']!, _requestUrlMeta));
+    } else if (isInserting) {
+      context.missing(_requestUrlMeta);
+    }
+    if (data.containsKey('transaction_time')) {
+      context.handle(
+          _transactionTimeMeta,
+          transactionTime.isAcceptableOrUnknown(
+              data['transaction_time']!, _transactionTimeMeta));
+    } else if (isInserting) {
+      context.missing(_transactionTimeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+          _completedAtMeta,
+          completedAt.isAcceptableOrUnknown(
+              data['completed_at']!, _completedAtMeta));
+    }
+    if (data.containsKey('output_json')) {
+      context.handle(
+          _outputJsonMeta,
+          outputJson.isAcceptableOrUnknown(
+              data['output_json']!, _outputJsonMeta));
+    }
+    if (data.containsKey('error_json')) {
+      context.handle(_errorJsonMeta,
+          errorJson.isAcceptableOrUnknown(data['error_json']!, _errorJsonMeta));
+    }
+    if (data.containsKey('resource_types')) {
+      context.handle(
+          _resourceTypesMeta,
+          resourceTypes.isAcceptableOrUnknown(
+              data['resource_types']!, _resourceTypesMeta));
+    }
+    if (data.containsKey('since')) {
+      context.handle(
+          _sinceMeta, since.isAcceptableOrUnknown(data['since']!, _sinceMeta));
+    }
+    if (data.containsKey('export_level')) {
+      context.handle(
+          _exportLevelMeta,
+          exportLevel.isAcceptableOrUnknown(
+              data['export_level']!, _exportLevelMeta));
+    } else if (isInserting) {
+      context.missing(_exportLevelMeta);
+    }
+    if (data.containsKey('patient_id')) {
+      context.handle(_patientIdMeta,
+          patientId.isAcceptableOrUnknown(data['patient_id']!, _patientIdMeta));
+    }
+    if (data.containsKey('requested_by')) {
+      context.handle(
+          _requestedByMeta,
+          requestedBy.isAcceptableOrUnknown(
+              data['requested_by']!, _requestedByMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {jobId};
+  @override
+  ExportJob map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExportJob(
+      jobId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}job_id'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      requestUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}request_url'])!,
+      transactionTime: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}transaction_time'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      completedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
+      outputJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}output_json']),
+      errorJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error_json']),
+      resourceTypes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}resource_types']),
+      since: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}since']),
+      exportLevel: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}export_level'])!,
+      patientId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}patient_id']),
+      requestedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}requested_by']),
+    );
+  }
+
+  @override
+  $ExportJobsTable createAlias(String alias) {
+    return $ExportJobsTable(attachedDatabase, alias);
+  }
+}
+
+class ExportJob extends DataClass implements Insertable<ExportJob> {
+  /// UUID job identifier (primary key)
+  final String jobId;
+
+  /// Job status: pending, in_progress, completed, error, cancelled
+  final String status;
+
+  /// Original request URL for the manifest
+  final String requestUrl;
+
+  /// Snapshot time (set at kick-off)
+  final DateTime transactionTime;
+
+  /// When the job was created
+  final DateTime createdAt;
+
+  /// When the job completed (nullable)
+  final DateTime? completedAt;
+
+  /// JSON array of {type, url, count} when complete
+  final String? outputJson;
+
+  /// JSON array of OperationOutcome NDJSON files
+  final String? errorJson;
+
+  /// Comma-separated resource type filter
+  final String? resourceTypes;
+
+  /// _since filter value
+  final DateTime? since;
+
+  /// Export level: 'system' or 'patient'
+  final String exportLevel;
+
+  /// Patient ID for patient-level exports
+  final String? patientId;
+
+  /// Username from auth context
+  final String? requestedBy;
+  const ExportJob(
+      {required this.jobId,
+      required this.status,
+      required this.requestUrl,
+      required this.transactionTime,
+      required this.createdAt,
+      this.completedAt,
+      this.outputJson,
+      this.errorJson,
+      this.resourceTypes,
+      this.since,
+      required this.exportLevel,
+      this.patientId,
+      this.requestedBy});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['job_id'] = Variable<String>(jobId);
+    map['status'] = Variable<String>(status);
+    map['request_url'] = Variable<String>(requestUrl);
+    map['transaction_time'] = Variable<DateTime>(transactionTime);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || outputJson != null) {
+      map['output_json'] = Variable<String>(outputJson);
+    }
+    if (!nullToAbsent || errorJson != null) {
+      map['error_json'] = Variable<String>(errorJson);
+    }
+    if (!nullToAbsent || resourceTypes != null) {
+      map['resource_types'] = Variable<String>(resourceTypes);
+    }
+    if (!nullToAbsent || since != null) {
+      map['since'] = Variable<DateTime>(since);
+    }
+    map['export_level'] = Variable<String>(exportLevel);
+    if (!nullToAbsent || patientId != null) {
+      map['patient_id'] = Variable<String>(patientId);
+    }
+    if (!nullToAbsent || requestedBy != null) {
+      map['requested_by'] = Variable<String>(requestedBy);
+    }
+    return map;
+  }
+
+  ExportJobsCompanion toCompanion(bool nullToAbsent) {
+    return ExportJobsCompanion(
+      jobId: Value(jobId),
+      status: Value(status),
+      requestUrl: Value(requestUrl),
+      transactionTime: Value(transactionTime),
+      createdAt: Value(createdAt),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+      outputJson: outputJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputJson),
+      errorJson: errorJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorJson),
+      resourceTypes: resourceTypes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resourceTypes),
+      since:
+          since == null && nullToAbsent ? const Value.absent() : Value(since),
+      exportLevel: Value(exportLevel),
+      patientId: patientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(patientId),
+      requestedBy: requestedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestedBy),
+    );
+  }
+
+  factory ExportJob.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExportJob(
+      jobId: serializer.fromJson<String>(json['jobId']),
+      status: serializer.fromJson<String>(json['status']),
+      requestUrl: serializer.fromJson<String>(json['requestUrl']),
+      transactionTime: serializer.fromJson<DateTime>(json['transactionTime']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      outputJson: serializer.fromJson<String?>(json['outputJson']),
+      errorJson: serializer.fromJson<String?>(json['errorJson']),
+      resourceTypes: serializer.fromJson<String?>(json['resourceTypes']),
+      since: serializer.fromJson<DateTime?>(json['since']),
+      exportLevel: serializer.fromJson<String>(json['exportLevel']),
+      patientId: serializer.fromJson<String?>(json['patientId']),
+      requestedBy: serializer.fromJson<String?>(json['requestedBy']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'jobId': serializer.toJson<String>(jobId),
+      'status': serializer.toJson<String>(status),
+      'requestUrl': serializer.toJson<String>(requestUrl),
+      'transactionTime': serializer.toJson<DateTime>(transactionTime),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'outputJson': serializer.toJson<String?>(outputJson),
+      'errorJson': serializer.toJson<String?>(errorJson),
+      'resourceTypes': serializer.toJson<String?>(resourceTypes),
+      'since': serializer.toJson<DateTime?>(since),
+      'exportLevel': serializer.toJson<String>(exportLevel),
+      'patientId': serializer.toJson<String?>(patientId),
+      'requestedBy': serializer.toJson<String?>(requestedBy),
+    };
+  }
+
+  ExportJob copyWith(
+          {String? jobId,
+          String? status,
+          String? requestUrl,
+          DateTime? transactionTime,
+          DateTime? createdAt,
+          Value<DateTime?> completedAt = const Value.absent(),
+          Value<String?> outputJson = const Value.absent(),
+          Value<String?> errorJson = const Value.absent(),
+          Value<String?> resourceTypes = const Value.absent(),
+          Value<DateTime?> since = const Value.absent(),
+          String? exportLevel,
+          Value<String?> patientId = const Value.absent(),
+          Value<String?> requestedBy = const Value.absent()}) =>
+      ExportJob(
+        jobId: jobId ?? this.jobId,
+        status: status ?? this.status,
+        requestUrl: requestUrl ?? this.requestUrl,
+        transactionTime: transactionTime ?? this.transactionTime,
+        createdAt: createdAt ?? this.createdAt,
+        completedAt: completedAt.present ? completedAt.value : this.completedAt,
+        outputJson: outputJson.present ? outputJson.value : this.outputJson,
+        errorJson: errorJson.present ? errorJson.value : this.errorJson,
+        resourceTypes:
+            resourceTypes.present ? resourceTypes.value : this.resourceTypes,
+        since: since.present ? since.value : this.since,
+        exportLevel: exportLevel ?? this.exportLevel,
+        patientId: patientId.present ? patientId.value : this.patientId,
+        requestedBy: requestedBy.present ? requestedBy.value : this.requestedBy,
+      );
+  ExportJob copyWithCompanion(ExportJobsCompanion data) {
+    return ExportJob(
+      jobId: data.jobId.present ? data.jobId.value : this.jobId,
+      status: data.status.present ? data.status.value : this.status,
+      requestUrl:
+          data.requestUrl.present ? data.requestUrl.value : this.requestUrl,
+      transactionTime: data.transactionTime.present
+          ? data.transactionTime.value
+          : this.transactionTime,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      completedAt:
+          data.completedAt.present ? data.completedAt.value : this.completedAt,
+      outputJson:
+          data.outputJson.present ? data.outputJson.value : this.outputJson,
+      errorJson: data.errorJson.present ? data.errorJson.value : this.errorJson,
+      resourceTypes: data.resourceTypes.present
+          ? data.resourceTypes.value
+          : this.resourceTypes,
+      since: data.since.present ? data.since.value : this.since,
+      exportLevel:
+          data.exportLevel.present ? data.exportLevel.value : this.exportLevel,
+      patientId: data.patientId.present ? data.patientId.value : this.patientId,
+      requestedBy:
+          data.requestedBy.present ? data.requestedBy.value : this.requestedBy,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExportJob(')
+          ..write('jobId: $jobId, ')
+          ..write('status: $status, ')
+          ..write('requestUrl: $requestUrl, ')
+          ..write('transactionTime: $transactionTime, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('outputJson: $outputJson, ')
+          ..write('errorJson: $errorJson, ')
+          ..write('resourceTypes: $resourceTypes, ')
+          ..write('since: $since, ')
+          ..write('exportLevel: $exportLevel, ')
+          ..write('patientId: $patientId, ')
+          ..write('requestedBy: $requestedBy')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      jobId,
+      status,
+      requestUrl,
+      transactionTime,
+      createdAt,
+      completedAt,
+      outputJson,
+      errorJson,
+      resourceTypes,
+      since,
+      exportLevel,
+      patientId,
+      requestedBy);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExportJob &&
+          other.jobId == this.jobId &&
+          other.status == this.status &&
+          other.requestUrl == this.requestUrl &&
+          other.transactionTime == this.transactionTime &&
+          other.createdAt == this.createdAt &&
+          other.completedAt == this.completedAt &&
+          other.outputJson == this.outputJson &&
+          other.errorJson == this.errorJson &&
+          other.resourceTypes == this.resourceTypes &&
+          other.since == this.since &&
+          other.exportLevel == this.exportLevel &&
+          other.patientId == this.patientId &&
+          other.requestedBy == this.requestedBy);
+}
+
+class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
+  final Value<String> jobId;
+  final Value<String> status;
+  final Value<String> requestUrl;
+  final Value<DateTime> transactionTime;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> completedAt;
+  final Value<String?> outputJson;
+  final Value<String?> errorJson;
+  final Value<String?> resourceTypes;
+  final Value<DateTime?> since;
+  final Value<String> exportLevel;
+  final Value<String?> patientId;
+  final Value<String?> requestedBy;
+  final Value<int> rowid;
+  const ExportJobsCompanion({
+    this.jobId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.requestUrl = const Value.absent(),
+    this.transactionTime = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.outputJson = const Value.absent(),
+    this.errorJson = const Value.absent(),
+    this.resourceTypes = const Value.absent(),
+    this.since = const Value.absent(),
+    this.exportLevel = const Value.absent(),
+    this.patientId = const Value.absent(),
+    this.requestedBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExportJobsCompanion.insert({
+    required String jobId,
+    this.status = const Value.absent(),
+    required String requestUrl,
+    required DateTime transactionTime,
+    this.createdAt = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.outputJson = const Value.absent(),
+    this.errorJson = const Value.absent(),
+    this.resourceTypes = const Value.absent(),
+    this.since = const Value.absent(),
+    required String exportLevel,
+    this.patientId = const Value.absent(),
+    this.requestedBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : jobId = Value(jobId),
+        requestUrl = Value(requestUrl),
+        transactionTime = Value(transactionTime),
+        exportLevel = Value(exportLevel);
+  static Insertable<ExportJob> custom({
+    Expression<String>? jobId,
+    Expression<String>? status,
+    Expression<String>? requestUrl,
+    Expression<DateTime>? transactionTime,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? completedAt,
+    Expression<String>? outputJson,
+    Expression<String>? errorJson,
+    Expression<String>? resourceTypes,
+    Expression<DateTime>? since,
+    Expression<String>? exportLevel,
+    Expression<String>? patientId,
+    Expression<String>? requestedBy,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (jobId != null) 'job_id': jobId,
+      if (status != null) 'status': status,
+      if (requestUrl != null) 'request_url': requestUrl,
+      if (transactionTime != null) 'transaction_time': transactionTime,
+      if (createdAt != null) 'created_at': createdAt,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (outputJson != null) 'output_json': outputJson,
+      if (errorJson != null) 'error_json': errorJson,
+      if (resourceTypes != null) 'resource_types': resourceTypes,
+      if (since != null) 'since': since,
+      if (exportLevel != null) 'export_level': exportLevel,
+      if (patientId != null) 'patient_id': patientId,
+      if (requestedBy != null) 'requested_by': requestedBy,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExportJobsCompanion copyWith(
+      {Value<String>? jobId,
+      Value<String>? status,
+      Value<String>? requestUrl,
+      Value<DateTime>? transactionTime,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? completedAt,
+      Value<String?>? outputJson,
+      Value<String?>? errorJson,
+      Value<String?>? resourceTypes,
+      Value<DateTime?>? since,
+      Value<String>? exportLevel,
+      Value<String?>? patientId,
+      Value<String?>? requestedBy,
+      Value<int>? rowid}) {
+    return ExportJobsCompanion(
+      jobId: jobId ?? this.jobId,
+      status: status ?? this.status,
+      requestUrl: requestUrl ?? this.requestUrl,
+      transactionTime: transactionTime ?? this.transactionTime,
+      createdAt: createdAt ?? this.createdAt,
+      completedAt: completedAt ?? this.completedAt,
+      outputJson: outputJson ?? this.outputJson,
+      errorJson: errorJson ?? this.errorJson,
+      resourceTypes: resourceTypes ?? this.resourceTypes,
+      since: since ?? this.since,
+      exportLevel: exportLevel ?? this.exportLevel,
+      patientId: patientId ?? this.patientId,
+      requestedBy: requestedBy ?? this.requestedBy,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (jobId.present) {
+      map['job_id'] = Variable<String>(jobId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (requestUrl.present) {
+      map['request_url'] = Variable<String>(requestUrl.value);
+    }
+    if (transactionTime.present) {
+      map['transaction_time'] = Variable<DateTime>(transactionTime.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (outputJson.present) {
+      map['output_json'] = Variable<String>(outputJson.value);
+    }
+    if (errorJson.present) {
+      map['error_json'] = Variable<String>(errorJson.value);
+    }
+    if (resourceTypes.present) {
+      map['resource_types'] = Variable<String>(resourceTypes.value);
+    }
+    if (since.present) {
+      map['since'] = Variable<DateTime>(since.value);
+    }
+    if (exportLevel.present) {
+      map['export_level'] = Variable<String>(exportLevel.value);
+    }
+    if (patientId.present) {
+      map['patient_id'] = Variable<String>(patientId.value);
+    }
+    if (requestedBy.present) {
+      map['requested_by'] = Variable<String>(requestedBy.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExportJobsCompanion(')
+          ..write('jobId: $jobId, ')
+          ..write('status: $status, ')
+          ..write('requestUrl: $requestUrl, ')
+          ..write('transactionTime: $transactionTime, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('outputJson: $outputJson, ')
+          ..write('errorJson: $errorJson, ')
+          ..write('resourceTypes: $resourceTypes, ')
+          ..write('since: $since, ')
+          ..write('exportLevel: $exportLevel, ')
+          ..write('patientId: $patientId, ')
+          ..write('requestedBy: $requestedBy, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$FhirAntDb extends GeneratedDatabase {
   _$FhirAntDb(QueryExecutor e) : super(e);
   $FhirAntDbManager get managers => $FhirAntDbManager(this);
@@ -5546,6 +6229,7 @@ abstract class _$FhirAntDb extends GeneratedDatabase {
   late final $SpecialSearchParametersTable specialSearchParameters =
       $SpecialSearchParametersTable(this);
   late final $UsersTable users = $UsersTable(this);
+  late final $ExportJobsTable exportJobs = $ExportJobsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5563,7 +6247,8 @@ abstract class _$FhirAntDb extends GeneratedDatabase {
         compositeSearchParameters,
         uriSearchParameters,
         specialSearchParameters,
-        users
+        users,
+        exportJobs
       ];
 }
 
@@ -8303,6 +8988,294 @@ typedef $$UsersTableProcessedTableManager = ProcessedTableManager<
     (User, BaseReferences<_$FhirAntDb, $UsersTable, User>),
     User,
     PrefetchHooks Function()>;
+typedef $$ExportJobsTableCreateCompanionBuilder = ExportJobsCompanion Function({
+  required String jobId,
+  Value<String> status,
+  required String requestUrl,
+  required DateTime transactionTime,
+  Value<DateTime> createdAt,
+  Value<DateTime?> completedAt,
+  Value<String?> outputJson,
+  Value<String?> errorJson,
+  Value<String?> resourceTypes,
+  Value<DateTime?> since,
+  required String exportLevel,
+  Value<String?> patientId,
+  Value<String?> requestedBy,
+  Value<int> rowid,
+});
+typedef $$ExportJobsTableUpdateCompanionBuilder = ExportJobsCompanion Function({
+  Value<String> jobId,
+  Value<String> status,
+  Value<String> requestUrl,
+  Value<DateTime> transactionTime,
+  Value<DateTime> createdAt,
+  Value<DateTime?> completedAt,
+  Value<String?> outputJson,
+  Value<String?> errorJson,
+  Value<String?> resourceTypes,
+  Value<DateTime?> since,
+  Value<String> exportLevel,
+  Value<String?> patientId,
+  Value<String?> requestedBy,
+  Value<int> rowid,
+});
+
+class $$ExportJobsTableFilterComposer
+    extends Composer<_$FhirAntDb, $ExportJobsTable> {
+  $$ExportJobsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get jobId => $composableBuilder(
+      column: $table.jobId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get requestUrl => $composableBuilder(
+      column: $table.requestUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get transactionTime => $composableBuilder(
+      column: $table.transactionTime,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get outputJson => $composableBuilder(
+      column: $table.outputJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get errorJson => $composableBuilder(
+      column: $table.errorJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get resourceTypes => $composableBuilder(
+      column: $table.resourceTypes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get since => $composableBuilder(
+      column: $table.since, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get exportLevel => $composableBuilder(
+      column: $table.exportLevel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get patientId => $composableBuilder(
+      column: $table.patientId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get requestedBy => $composableBuilder(
+      column: $table.requestedBy, builder: (column) => ColumnFilters(column));
+}
+
+class $$ExportJobsTableOrderingComposer
+    extends Composer<_$FhirAntDb, $ExportJobsTable> {
+  $$ExportJobsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get jobId => $composableBuilder(
+      column: $table.jobId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get requestUrl => $composableBuilder(
+      column: $table.requestUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get transactionTime => $composableBuilder(
+      column: $table.transactionTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get outputJson => $composableBuilder(
+      column: $table.outputJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get errorJson => $composableBuilder(
+      column: $table.errorJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get resourceTypes => $composableBuilder(
+      column: $table.resourceTypes,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get since => $composableBuilder(
+      column: $table.since, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get exportLevel => $composableBuilder(
+      column: $table.exportLevel, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get patientId => $composableBuilder(
+      column: $table.patientId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get requestedBy => $composableBuilder(
+      column: $table.requestedBy, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ExportJobsTableAnnotationComposer
+    extends Composer<_$FhirAntDb, $ExportJobsTable> {
+  $$ExportJobsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get jobId =>
+      $composableBuilder(column: $table.jobId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get requestUrl => $composableBuilder(
+      column: $table.requestUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get transactionTime => $composableBuilder(
+      column: $table.transactionTime, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get outputJson => $composableBuilder(
+      column: $table.outputJson, builder: (column) => column);
+
+  GeneratedColumn<String> get errorJson =>
+      $composableBuilder(column: $table.errorJson, builder: (column) => column);
+
+  GeneratedColumn<String> get resourceTypes => $composableBuilder(
+      column: $table.resourceTypes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get since =>
+      $composableBuilder(column: $table.since, builder: (column) => column);
+
+  GeneratedColumn<String> get exportLevel => $composableBuilder(
+      column: $table.exportLevel, builder: (column) => column);
+
+  GeneratedColumn<String> get patientId =>
+      $composableBuilder(column: $table.patientId, builder: (column) => column);
+
+  GeneratedColumn<String> get requestedBy => $composableBuilder(
+      column: $table.requestedBy, builder: (column) => column);
+}
+
+class $$ExportJobsTableTableManager extends RootTableManager<
+    _$FhirAntDb,
+    $ExportJobsTable,
+    ExportJob,
+    $$ExportJobsTableFilterComposer,
+    $$ExportJobsTableOrderingComposer,
+    $$ExportJobsTableAnnotationComposer,
+    $$ExportJobsTableCreateCompanionBuilder,
+    $$ExportJobsTableUpdateCompanionBuilder,
+    (ExportJob, BaseReferences<_$FhirAntDb, $ExportJobsTable, ExportJob>),
+    ExportJob,
+    PrefetchHooks Function()> {
+  $$ExportJobsTableTableManager(_$FhirAntDb db, $ExportJobsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExportJobsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExportJobsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExportJobsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> jobId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String> requestUrl = const Value.absent(),
+            Value<DateTime> transactionTime = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> outputJson = const Value.absent(),
+            Value<String?> errorJson = const Value.absent(),
+            Value<String?> resourceTypes = const Value.absent(),
+            Value<DateTime?> since = const Value.absent(),
+            Value<String> exportLevel = const Value.absent(),
+            Value<String?> patientId = const Value.absent(),
+            Value<String?> requestedBy = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExportJobsCompanion(
+            jobId: jobId,
+            status: status,
+            requestUrl: requestUrl,
+            transactionTime: transactionTime,
+            createdAt: createdAt,
+            completedAt: completedAt,
+            outputJson: outputJson,
+            errorJson: errorJson,
+            resourceTypes: resourceTypes,
+            since: since,
+            exportLevel: exportLevel,
+            patientId: patientId,
+            requestedBy: requestedBy,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String jobId,
+            Value<String> status = const Value.absent(),
+            required String requestUrl,
+            required DateTime transactionTime,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> outputJson = const Value.absent(),
+            Value<String?> errorJson = const Value.absent(),
+            Value<String?> resourceTypes = const Value.absent(),
+            Value<DateTime?> since = const Value.absent(),
+            required String exportLevel,
+            Value<String?> patientId = const Value.absent(),
+            Value<String?> requestedBy = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExportJobsCompanion.insert(
+            jobId: jobId,
+            status: status,
+            requestUrl: requestUrl,
+            transactionTime: transactionTime,
+            createdAt: createdAt,
+            completedAt: completedAt,
+            outputJson: outputJson,
+            errorJson: errorJson,
+            resourceTypes: resourceTypes,
+            since: since,
+            exportLevel: exportLevel,
+            patientId: patientId,
+            requestedBy: requestedBy,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ExportJobsTableProcessedTableManager = ProcessedTableManager<
+    _$FhirAntDb,
+    $ExportJobsTable,
+    ExportJob,
+    $$ExportJobsTableFilterComposer,
+    $$ExportJobsTableOrderingComposer,
+    $$ExportJobsTableAnnotationComposer,
+    $$ExportJobsTableCreateCompanionBuilder,
+    $$ExportJobsTableUpdateCompanionBuilder,
+    (ExportJob, BaseReferences<_$FhirAntDb, $ExportJobsTable, ExportJob>),
+    ExportJob,
+    PrefetchHooks Function()>;
 
 class $FhirAntDbManager {
   final _$FhirAntDb _db;
@@ -8338,4 +9311,6 @@ class $FhirAntDbManager {
           _db, _db.specialSearchParameters);
   $$UsersTableTableManager get users =>
       $$UsersTableTableManager(_db, _db.users);
+  $$ExportJobsTableTableManager get exportJobs =>
+      $$ExportJobsTableTableManager(_db, _db.exportJobs);
 }

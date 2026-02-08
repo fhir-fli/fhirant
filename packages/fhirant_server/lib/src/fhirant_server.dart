@@ -15,11 +15,13 @@ import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
   final FhirAntDb dbInterface;
+  final String exportDir;
   late final JwtService _jwtService;
   HttpServer? _server;
   bool _isRunning = false;
 
-  FhirAntServer(this.dbInterface, {String? jwtSecret}) {
+  FhirAntServer(this.dbInterface, {String? jwtSecret, String? exportDir})
+      : exportDir = exportDir ?? 'data/export' {
     final secret = jwtSecret ??
         Platform.environment['FHIRANT_JWT_SECRET'] ??
         'fhirant-dev-secret-change-in-production';
@@ -52,6 +54,34 @@ class FhirAntServer {
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       // Mapping/Transform endpoint
       ..post('/\$transform', mappingHandler)
+      // Bulk Data Export endpoints
+      ..get(
+        '/\$export',
+        (Request req) => exportKickoffHandler(
+            req, dbInterface, exportDir,
+            exportLevel: 'system'),
+      )
+      ..get(
+        '/Patient/\$export',
+        (Request req) => exportKickoffHandler(
+            req, dbInterface, exportDir,
+            exportLevel: 'patient'),
+      )
+      ..get(
+        '/\$export-poll-status/<jobId>',
+        (Request req, String jobId) =>
+            exportStatusHandler(req, dbInterface, jobId),
+      )
+      ..delete(
+        '/\$export-poll-status/<jobId>',
+        (Request req, String jobId) =>
+            exportDeleteHandler(req, dbInterface, exportDir, jobId),
+      )
+      ..get(
+        '/\$export-file/<jobId>/<fileName>',
+        (Request req, String jobId, String fileName) =>
+            exportFileHandler(req, exportDir, jobId, fileName),
+      )
       // $everything operation (before history to avoid /<type>/<id>/_history match)
       ..get(
         r'/<compartmentType>/<id>/$everything',

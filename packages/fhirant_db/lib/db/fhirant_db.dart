@@ -21,6 +21,7 @@ part 'fhirant_db.g.dart';
   UriSearchParameters,
   SpecialSearchParameters,
   Users,
+  ExportJobs,
 ])
 
 /// Database for the application
@@ -35,7 +36,7 @@ class FhirAntDb extends _$FhirAntDb {
 
   /// Default database version for migrations
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,6 +46,9 @@ class FhirAntDb extends _$FhirAntDb {
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await m.createTable(users);
+          }
+          if (from < 3) {
+            await m.createTable(exportJobs);
           }
         },
       );
@@ -2760,5 +2764,67 @@ class FhirAntDb extends _$FhirAntDb {
     }
 
     return current;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Export job management methods
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// Creates a new export job. Returns the job ID.
+  Future<void> createExportJob(ExportJobsCompanion job) async {
+    await into(exportJobs).insert(job);
+  }
+
+  /// Retrieves an export job by ID, or null if not found.
+  Future<ExportJob?> getExportJob(String jobId) async {
+    final query = select(exportJobs)
+      ..where((tbl) => tbl.jobId.equals(jobId));
+    return query.getSingleOrNull();
+  }
+
+  /// Updates an export job's fields.
+  Future<void> updateExportJob(
+    String jobId, {
+    String? status,
+    String? outputJson,
+    String? errorJson,
+    DateTime? completedAt,
+  }) async {
+    final companion = ExportJobsCompanion(
+      status: status != null ? Value(status) : const Value.absent(),
+      outputJson: outputJson != null ? Value(outputJson) : const Value.absent(),
+      errorJson: errorJson != null ? Value(errorJson) : const Value.absent(),
+      completedAt:
+          completedAt != null ? Value(completedAt) : const Value.absent(),
+    );
+    await (update(exportJobs)..where((tbl) => tbl.jobId.equals(jobId)))
+        .write(companion);
+  }
+
+  /// Deletes an export job by ID.
+  Future<void> deleteExportJob(String jobId) async {
+    await (delete(exportJobs)..where((tbl) => tbl.jobId.equals(jobId))).go();
+  }
+
+  /// Retrieves resources of a given type, optionally filtered by lastUpdated >= since.
+  Future<List<fhir.Resource>> getResourcesByTypeSince(
+    fhir.R4ResourceType resourceType, {
+    DateTime? since,
+  }) async {
+    final resourceTypeString = resourceType.toString();
+    final query = select(resources)
+      ..where((tbl) {
+        final typeCond = tbl.resourceType.equals(resourceTypeString);
+        if (since != null) {
+          return typeCond &
+              tbl.lastUpdated.isBiggerOrEqualValue(since);
+        }
+        return typeCond;
+      })
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.lastUpdated)]);
+    final rows = await query.get();
+    return rows
+        .map((row) => fhir.Resource.fromJsonString(row.resource))
+        .toList();
   }
 }

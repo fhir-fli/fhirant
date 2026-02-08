@@ -1,5 +1,6 @@
 export 'composite_search_table.dart';
 export 'date_search_table.dart';
+export 'export_jobs_table.dart';
 export 'logs_table.dart';
 export 'number_search_table.dart';
 export 'quantity_search_table.dart';
