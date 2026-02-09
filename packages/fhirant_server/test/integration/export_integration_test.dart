@@ -270,6 +270,160 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Group-level export
+  // ─────────────────────────────────────────────────────────────────────────
+  group('Group-level \$export', () {
+    test('full workflow: create Group + members -> export -> verify NDJSON', () async {
+      // 1. Create Patient member
+      await saveResource(fhir.Patient(
+        id: 'gp1'.toFhirString,
+        name: [fhir.HumanName(family: 'GroupMember1'.toFhirString)],
+      ));
+
+      // 2. Create Observation linked to group member
+      await saveResource(fhir.Observation(
+        id: 'gobs1'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+        ),
+        subject: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
+      ));
+
+      // 3. Create the Group resource
+      await saveResource(fhir.FhirGroup(
+        id: 'test-group'.toFhirString,
+        active: true.toFhirBoolean,
+        type: fhir.GroupType.person,
+        actual: true.toFhirBoolean,
+        member: [
+          fhir.GroupMember(
+            entity: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
+          ),
+        ],
+      ));
+
+      // 4. Kick off group export
+      final kickoffReq = testRequest(
+        'GET',
+        '/Group/test-group/\$export',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+      expect(kickoffResp.headers['content-location'], isNotNull);
+
+      final jobId = extractJobId(kickoffResp);
+
+      // 5. Poll until complete
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+      expect(output, isNotEmpty);
+
+      final types = output.map((o) => o['type']).toSet();
+      expect(types, contains('Patient'));
+      expect(types, contains('Observation'));
+
+      // 6. Download and verify Patient NDJSON
+      final patientEntry = output.firstWhere((o) => o['type'] == 'Patient');
+      final patientUrl = patientEntry['url'] as String;
+      final patientPath = Uri.parse(patientUrl).path;
+      final patientReq = testRequest('GET', patientPath, authToken: token);
+      final patientResp = await handler(patientReq);
+      final patientContent = await patientResp.readAsString();
+      expect(patientContent, contains('GroupMember1'));
+
+      // 7. Download and verify Observation NDJSON
+      final obsEntry = output.firstWhere((o) => o['type'] == 'Observation');
+      final obsUrl = obsEntry['url'] as String;
+      final obsPath = Uri.parse(obsUrl).path;
+      final obsReq = testRequest('GET', obsPath, authToken: token);
+      final obsResp = await handler(obsReq);
+      final obsContent = await obsResp.readAsString();
+      expect(obsContent, contains('gobs1'));
+    });
+
+    test('with _type filter restricts exported types', () async {
+      // Create members and observations
+      await saveResource(fhir.Patient(
+        id: 'gtp1'.toFhirString,
+        name: [fhir.HumanName(family: 'TypeFilter'.toFhirString)],
+      ));
+      await saveResource(fhir.Observation(
+        id: 'gtobs1'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+        ),
+        subject: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
+      ));
+
+      await saveResource(fhir.FhirGroup(
+        id: 'filter-group'.toFhirString,
+        active: true.toFhirBoolean,
+        type: fhir.GroupType.person,
+        actual: true.toFhirBoolean,
+        member: [
+          fhir.GroupMember(
+            entity: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
+          ),
+        ],
+      ));
+
+      // Kick off with _type=Patient only
+      final kickoffReq = testRequest(
+        'GET',
+        '/Group/filter-group/\$export?_type=Patient',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+
+      final jobId = extractJobId(kickoffResp);
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+      final types = output.map((o) => o['type']).toSet();
+      expect(types, contains('Patient'));
+      expect(types, isNot(contains('Observation')));
+    });
+
+    test('Group with no patient members returns empty export', () async {
+      // Create a Group with no members
+      await saveResource(fhir.FhirGroup(
+        id: 'empty-group'.toFhirString,
+        active: true.toFhirBoolean,
+        type: fhir.GroupType.person,
+        actual: true.toFhirBoolean,
+      ));
+
+      final kickoffReq = testRequest(
+        'GET',
+        '/Group/empty-group/\$export',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+
+      final jobId = extractJobId(kickoffResp);
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+      expect(output, isEmpty);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Cancel job
   // ─────────────────────────────────────────────────────────────────────────
   group('Cancel export', () {

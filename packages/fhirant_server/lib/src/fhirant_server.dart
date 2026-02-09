@@ -62,6 +62,12 @@ class FhirAntServer {
             exportLevel: 'system'),
       )
       ..get(
+        '/Group/<groupId>/\$export',
+        (Request req, String groupId) => exportKickoffHandler(
+            req, dbInterface, exportDir,
+            exportLevel: 'group', groupId: groupId),
+      )
+      ..get(
         '/Patient/\$export',
         (Request req) => exportKickoffHandler(
             req, dbInterface, exportDir,

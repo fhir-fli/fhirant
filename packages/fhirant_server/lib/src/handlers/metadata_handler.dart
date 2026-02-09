@@ -174,7 +174,8 @@ Response metadataHandler(Request request) {
                   'http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export',
               'documentation':
                   'Bulk Data Export (async). System-level: GET /\$export, '
-                      'Patient-level: GET /Patient/\$export. '
+                      'Patient-level: GET /Patient/\$export, '
+                      'Group-level: GET /Group/<id>/\$export. '
                       'Supports _type, _since, _outputFormat parameters. '
                       'Returns 202 Accepted with Content-Location for status polling.',
             },

@@ -168,6 +168,110 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Group-level kick-off
+  // ─────────────────────────────────────────────────────────────────────────
+  group('Group-level exportKickoffHandler', () {
+    test('returns 404 when Group not found', () async {
+      final request = _makeRequest(
+        '/Group/g1/\$export',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.FhirGroup, 'g1'))
+          .thenAnswer((_) async => null);
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+        exportLevel: 'group',
+        groupId: 'g1',
+      );
+
+      expect(response.statusCode, equals(404));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['resourceType'], equals('OperationOutcome'));
+      expect(body['issue'][0]['diagnostics'], contains('Group not found'));
+    });
+
+    test('returns 202 on valid group export kick-off', () async {
+      final request = _makeRequest(
+        '/Group/g1/\$export',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      final group = fhir.FhirGroup(
+        id: 'g1'.toFhirString,
+        type: fhir.GroupType.person,
+        actual: true.toFhirBoolean,
+        member: [
+          fhir.GroupMember(
+            entity: fhir.Reference(reference: 'Patient/p1'.toFhirString),
+          ),
+        ],
+      );
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.FhirGroup, 'g1'))
+          .thenAnswer((_) async => group);
+      when(() => mockDb.createExportJob(any())).thenAnswer((_) async {});
+      when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
+          .thenAnswer((_) async {});
+      when(() => mockDb.getExportJob(any())).thenAnswer((_) async => null);
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+        exportLevel: 'group',
+        groupId: 'g1',
+      );
+
+      expect(response.statusCode, equals(202));
+      expect(response.headers['content-location'], isNotNull);
+      expect(
+        response.headers['content-location'],
+        contains('\$export-poll-status/'),
+      );
+    });
+
+    test('stores groupId in export job', () async {
+      final request = _makeRequest(
+        '/Group/g1/\$export',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      final group = fhir.FhirGroup(
+        id: 'g1'.toFhirString,
+        type: fhir.GroupType.person,
+        actual: true.toFhirBoolean,
+      );
+
+      ExportJobsCompanion? captured;
+      when(() => mockDb.getResource(fhir.R4ResourceType.FhirGroup, 'g1'))
+          .thenAnswer((_) async => group);
+      when(() => mockDb.createExportJob(any())).thenAnswer((inv) async {
+        captured = inv.positionalArguments[0] as ExportJobsCompanion;
+      });
+      when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
+          .thenAnswer((_) async {});
+      when(() => mockDb.getExportJob(any())).thenAnswer((_) async => null);
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+        exportLevel: 'group',
+        groupId: 'g1',
+      );
+
+      expect(response.statusCode, equals(202));
+      expect(captured, isNotNull);
+      expect(captured!.groupId.value, equals('g1'));
+      expect(captured!.exportLevel.value, equals('group'));
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Status handler
   // ─────────────────────────────────────────────────────────────────────────
   group('exportStatusHandler', () {
@@ -396,6 +500,8 @@ ExportJob _fakeExportJob({
   String? outputJson,
   String? errorJson,
   DateTime? completedAt,
+  String? groupId,
+  String exportLevel = 'system',
 }) {
   return ExportJob(
     jobId: jobId,
@@ -408,8 +514,9 @@ ExportJob _fakeExportJob({
     errorJson: errorJson,
     resourceTypes: null,
     since: null,
-    exportLevel: 'system',
+    exportLevel: exportLevel,
     patientId: null,
+    groupId: groupId,
     requestedBy: null,
   );
 }

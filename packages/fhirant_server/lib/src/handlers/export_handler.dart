@@ -17,7 +17,8 @@ const _validFormats = [
   'ndjson',
 ];
 
-/// Handler for `GET /$export` (system-level) and `GET /Patient/$export` (patient-level).
+/// Handler for `GET /$export` (system-level), `GET /Patient/$export` (patient-level),
+/// and `GET /Group/<id>/$export` (group-level).
 ///
 /// Validates the Prefer header, parses query parameters, creates an export job,
 /// and spawns a background future to process the export.
@@ -27,6 +28,7 @@ Future<Response> exportKickoffHandler(
   String exportDir, {
   String exportLevel = 'system',
   String? patientId,
+  String? groupId,
 }) async {
   try {
     // 1. Validate Prefer: respond-async header
@@ -65,7 +67,18 @@ Future<Response> exportKickoffHandler(
       }
     }
 
-    // 5. Create the export job
+    // 5. Validate group-level: ensure the Group resource exists
+    if (exportLevel == 'group' && groupId != null) {
+      final groupResource = await dbInterface.getResource(
+        fhir.R4ResourceType.FhirGroup,
+        groupId,
+      );
+      if (groupResource == null) {
+        return _operationOutcome(404, 'Group not found: $groupId');
+      }
+    }
+
+    // 6. Create the export job
     final jobId = const Uuid().v4();
     final transactionTime = DateTime.now().toUtc();
     final requestUrl = request.requestedUri.toString();
@@ -79,6 +92,7 @@ Future<Response> exportKickoffHandler(
       since: Value(since),
       exportLevel: Value(exportLevel),
       patientId: Value(patientId),
+      groupId: Value(groupId),
     ));
 
     // 7. Spawn background processing (fire-and-forget)
@@ -314,6 +328,137 @@ Future<void> _processExport(
         typesToExport =
             typesToExport.where((t) => existingSet.contains(t)).toList();
       }
+    }
+
+    if (job.exportLevel == 'group') {
+      // Group-level export: export Patient compartment resources for group members
+      final definition = CompartmentDefinitions.getDefinition('Patient');
+      if (definition == null) {
+        await _failJob(dbInterface, jobId, 'Patient compartment not defined');
+        return;
+      }
+
+      // Fetch the Group resource
+      final groupResource = job.groupId != null
+          ? await dbInterface.getResource(
+              fhir.R4ResourceType.FhirGroup, job.groupId!)
+          : null;
+      if (groupResource == null) {
+        await _failJob(dbInterface, jobId, 'Group not found: ${job.groupId}');
+        return;
+      }
+
+      // Extract patient member references from Group.member[*].entity
+      final group = groupResource as fhir.FhirGroup;
+      final patientIds = group.member
+              ?.map((m) => m.entity.reference?.valueString)
+              .whereType<String>()
+              .where((ref) => ref.startsWith('Patient/'))
+              .map((ref) => ref.substring('Patient/'.length))
+              .toList() ??
+          [];
+
+      if (patientIds.isEmpty) {
+        // No patient members — complete with empty output
+        await dbInterface.updateExportJob(
+          jobId,
+          status: 'completed',
+          outputJson: jsonEncode(outputManifest),
+          completedAt: DateTime.now().toUtc(),
+        );
+        FhirantLogging().logInfo(
+          'Export job $jobId completed: 0 file(s) (group has no patient members)',
+        );
+        return;
+      }
+
+      // Determine resource types to export (Patient compartment ∩ _type filter)
+      final compartmentTypes = definition.keys.toSet();
+      final typeFilter = <String>[];
+      if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
+        typeFilter.addAll(job.resourceTypes!.split(',').map((s) => s.trim()));
+        // Only keep types that are in the Patient compartment
+        typeFilter.retainWhere((t) => compartmentTypes.contains(t));
+      }
+
+      // Aggregate resource IDs across all patient members
+      final allResourceIds = <String, Set<String>>{};
+      for (final patientId in patientIds) {
+        // Check for cancellation
+        final currentJob = await dbInterface.getExportJob(jobId);
+        if (currentJob == null || currentJob.status == 'cancelled') return;
+
+        final compartmentIds = await dbInterface.getCompartmentResourceIds(
+          compartmentType: 'Patient',
+          compartmentId: patientId,
+          compartmentDefinition: definition,
+          typeFilter: typeFilter.isNotEmpty ? typeFilter : null,
+          since: since,
+        );
+
+        for (final entry in compartmentIds.entries) {
+          allResourceIds.putIfAbsent(entry.key, () => {}).addAll(entry.value);
+        }
+      }
+
+      // Always include Patient resources for the group members
+      final shouldIncludePatient = typeFilter.isEmpty || typeFilter.contains('Patient');
+      if (shouldIncludePatient) {
+        allResourceIds.putIfAbsent('Patient', () => {}).addAll(patientIds.toSet());
+      }
+
+      // Fetch and write NDJSON files per resource type
+      for (final entry in allResourceIds.entries) {
+        final currentJob = await dbInterface.getExportJob(jobId);
+        if (currentJob == null || currentJob.status == 'cancelled') return;
+
+        final typeName = entry.key;
+        final ids = entry.value;
+        if (ids.isEmpty) continue;
+
+        final resourceType = fhir.R4ResourceType.fromString(typeName);
+        if (resourceType == null) continue;
+
+        // Fetch each resource by ID
+        final resources = <fhir.Resource>[];
+        for (final id in ids) {
+          final resource = await dbInterface.getResource(resourceType, id);
+          if (resource != null) {
+            // Apply _since filter for directly-included Patient resources
+            if (since != null && resource.meta?.lastUpdated != null) {
+              final lastUpdated = resource.meta!.lastUpdated!.valueDateTime;
+              if (lastUpdated != null && lastUpdated.isBefore(since)) continue;
+            }
+            resources.add(resource);
+          }
+        }
+
+        if (resources.isNotEmpty) {
+          final count = await writeNdjsonFile(
+            '$exportDir/$jobId/$typeName.ndjson',
+            resources,
+          );
+          outputManifest.add({
+            'type': typeName,
+            'url': '$baseUrl/\$export-file/$jobId/$typeName.ndjson',
+            'count': count,
+          });
+        }
+      }
+
+      // Mark job as completed
+      await dbInterface.updateExportJob(
+        jobId,
+        status: 'completed',
+        outputJson: jsonEncode(outputManifest),
+        errorJson: errorManifest.isNotEmpty ? jsonEncode(errorManifest) : null,
+        completedAt: DateTime.now().toUtc(),
+      );
+
+      FhirantLogging().logInfo(
+        'Export job $jobId completed: ${outputManifest.length} file(s)',
+      );
+      return;
     }
 
     // Export resources (works for both system and patient level)

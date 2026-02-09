@@ -5599,6 +5599,12 @@ class $ExportJobsTable extends ExportJobs
   late final GeneratedColumn<String> patientId = GeneratedColumn<String>(
       'patient_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _groupIdMeta =
+      const VerificationMeta('groupId');
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+      'group_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _requestedByMeta =
       const VerificationMeta('requestedBy');
   @override
@@ -5619,6 +5625,7 @@ class $ExportJobsTable extends ExportJobs
         since,
         exportLevel,
         patientId,
+        groupId,
         requestedBy
       ];
   @override
@@ -5699,6 +5706,10 @@ class $ExportJobsTable extends ExportJobs
       context.handle(_patientIdMeta,
           patientId.isAcceptableOrUnknown(data['patient_id']!, _patientIdMeta));
     }
+    if (data.containsKey('group_id')) {
+      context.handle(_groupIdMeta,
+          groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+    }
     if (data.containsKey('requested_by')) {
       context.handle(
           _requestedByMeta,
@@ -5738,6 +5749,8 @@ class $ExportJobsTable extends ExportJobs
           .read(DriftSqlType.string, data['${effectivePrefix}export_level'])!,
       patientId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}patient_id']),
+      groupId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}group_id']),
       requestedBy: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}requested_by']),
     );
@@ -5780,11 +5793,14 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
   /// _since filter value
   final DateTime? since;
 
-  /// Export level: 'system' or 'patient'
+  /// Export level: 'system', 'patient', or 'group'
   final String exportLevel;
 
   /// Patient ID for patient-level exports
   final String? patientId;
+
+  /// Group ID for group-level exports
+  final String? groupId;
 
   /// Username from auth context
   final String? requestedBy;
@@ -5801,6 +5817,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       this.since,
       required this.exportLevel,
       this.patientId,
+      this.groupId,
       this.requestedBy});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5828,6 +5845,9 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
     map['export_level'] = Variable<String>(exportLevel);
     if (!nullToAbsent || patientId != null) {
       map['patient_id'] = Variable<String>(patientId);
+    }
+    if (!nullToAbsent || groupId != null) {
+      map['group_id'] = Variable<String>(groupId);
     }
     if (!nullToAbsent || requestedBy != null) {
       map['requested_by'] = Variable<String>(requestedBy);
@@ -5860,6 +5880,9 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       patientId: patientId == null && nullToAbsent
           ? const Value.absent()
           : Value(patientId),
+      groupId: groupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(groupId),
       requestedBy: requestedBy == null && nullToAbsent
           ? const Value.absent()
           : Value(requestedBy),
@@ -5882,6 +5905,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       since: serializer.fromJson<DateTime?>(json['since']),
       exportLevel: serializer.fromJson<String>(json['exportLevel']),
       patientId: serializer.fromJson<String?>(json['patientId']),
+      groupId: serializer.fromJson<String?>(json['groupId']),
       requestedBy: serializer.fromJson<String?>(json['requestedBy']),
     );
   }
@@ -5901,6 +5925,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       'since': serializer.toJson<DateTime?>(since),
       'exportLevel': serializer.toJson<String>(exportLevel),
       'patientId': serializer.toJson<String?>(patientId),
+      'groupId': serializer.toJson<String?>(groupId),
       'requestedBy': serializer.toJson<String?>(requestedBy),
     };
   }
@@ -5918,6 +5943,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           Value<DateTime?> since = const Value.absent(),
           String? exportLevel,
           Value<String?> patientId = const Value.absent(),
+          Value<String?> groupId = const Value.absent(),
           Value<String?> requestedBy = const Value.absent()}) =>
       ExportJob(
         jobId: jobId ?? this.jobId,
@@ -5933,6 +5959,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
         since: since.present ? since.value : this.since,
         exportLevel: exportLevel ?? this.exportLevel,
         patientId: patientId.present ? patientId.value : this.patientId,
+        groupId: groupId.present ? groupId.value : this.groupId,
         requestedBy: requestedBy.present ? requestedBy.value : this.requestedBy,
       );
   ExportJob copyWithCompanion(ExportJobsCompanion data) {
@@ -5957,6 +5984,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       exportLevel:
           data.exportLevel.present ? data.exportLevel.value : this.exportLevel,
       patientId: data.patientId.present ? data.patientId.value : this.patientId,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
       requestedBy:
           data.requestedBy.present ? data.requestedBy.value : this.requestedBy,
     );
@@ -5977,6 +6005,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           ..write('since: $since, ')
           ..write('exportLevel: $exportLevel, ')
           ..write('patientId: $patientId, ')
+          ..write('groupId: $groupId, ')
           ..write('requestedBy: $requestedBy')
           ..write(')'))
         .toString();
@@ -5996,6 +6025,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       since,
       exportLevel,
       patientId,
+      groupId,
       requestedBy);
   @override
   bool operator ==(Object other) =>
@@ -6013,6 +6043,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           other.since == this.since &&
           other.exportLevel == this.exportLevel &&
           other.patientId == this.patientId &&
+          other.groupId == this.groupId &&
           other.requestedBy == this.requestedBy);
 }
 
@@ -6029,6 +6060,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
   final Value<DateTime?> since;
   final Value<String> exportLevel;
   final Value<String?> patientId;
+  final Value<String?> groupId;
   final Value<String?> requestedBy;
   final Value<int> rowid;
   const ExportJobsCompanion({
@@ -6044,6 +6076,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     this.since = const Value.absent(),
     this.exportLevel = const Value.absent(),
     this.patientId = const Value.absent(),
+    this.groupId = const Value.absent(),
     this.requestedBy = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6060,6 +6093,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     this.since = const Value.absent(),
     required String exportLevel,
     this.patientId = const Value.absent(),
+    this.groupId = const Value.absent(),
     this.requestedBy = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : jobId = Value(jobId),
@@ -6079,6 +6113,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     Expression<DateTime>? since,
     Expression<String>? exportLevel,
     Expression<String>? patientId,
+    Expression<String>? groupId,
     Expression<String>? requestedBy,
     Expression<int>? rowid,
   }) {
@@ -6095,6 +6130,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       if (since != null) 'since': since,
       if (exportLevel != null) 'export_level': exportLevel,
       if (patientId != null) 'patient_id': patientId,
+      if (groupId != null) 'group_id': groupId,
       if (requestedBy != null) 'requested_by': requestedBy,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6113,6 +6149,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       Value<DateTime?>? since,
       Value<String>? exportLevel,
       Value<String?>? patientId,
+      Value<String?>? groupId,
       Value<String?>? requestedBy,
       Value<int>? rowid}) {
     return ExportJobsCompanion(
@@ -6128,6 +6165,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       since: since ?? this.since,
       exportLevel: exportLevel ?? this.exportLevel,
       patientId: patientId ?? this.patientId,
+      groupId: groupId ?? this.groupId,
       requestedBy: requestedBy ?? this.requestedBy,
       rowid: rowid ?? this.rowid,
     );
@@ -6172,6 +6210,9 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     if (patientId.present) {
       map['patient_id'] = Variable<String>(patientId.value);
     }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
     if (requestedBy.present) {
       map['requested_by'] = Variable<String>(requestedBy.value);
     }
@@ -6196,6 +6237,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
           ..write('since: $since, ')
           ..write('exportLevel: $exportLevel, ')
           ..write('patientId: $patientId, ')
+          ..write('groupId: $groupId, ')
           ..write('requestedBy: $requestedBy, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9001,6 +9043,7 @@ typedef $$ExportJobsTableCreateCompanionBuilder = ExportJobsCompanion Function({
   Value<DateTime?> since,
   required String exportLevel,
   Value<String?> patientId,
+  Value<String?> groupId,
   Value<String?> requestedBy,
   Value<int> rowid,
 });
@@ -9017,6 +9060,7 @@ typedef $$ExportJobsTableUpdateCompanionBuilder = ExportJobsCompanion Function({
   Value<DateTime?> since,
   Value<String> exportLevel,
   Value<String?> patientId,
+  Value<String?> groupId,
   Value<String?> requestedBy,
   Value<int> rowid,
 });
@@ -9066,6 +9110,9 @@ class $$ExportJobsTableFilterComposer
 
   ColumnFilters<String> get patientId => $composableBuilder(
       column: $table.patientId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get groupId => $composableBuilder(
+      column: $table.groupId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => ColumnFilters(column));
@@ -9118,6 +9165,9 @@ class $$ExportJobsTableOrderingComposer
   ColumnOrderings<String> get patientId => $composableBuilder(
       column: $table.patientId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get groupId => $composableBuilder(
+      column: $table.groupId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => ColumnOrderings(column));
 }
@@ -9167,6 +9217,9 @@ class $$ExportJobsTableAnnotationComposer
   GeneratedColumn<String> get patientId =>
       $composableBuilder(column: $table.patientId, builder: (column) => column);
 
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
+
   GeneratedColumn<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => column);
 }
@@ -9206,6 +9259,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             Value<DateTime?> since = const Value.absent(),
             Value<String> exportLevel = const Value.absent(),
             Value<String?> patientId = const Value.absent(),
+            Value<String?> groupId = const Value.absent(),
             Value<String?> requestedBy = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -9222,6 +9276,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             since: since,
             exportLevel: exportLevel,
             patientId: patientId,
+            groupId: groupId,
             requestedBy: requestedBy,
             rowid: rowid,
           ),
@@ -9238,6 +9293,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             Value<DateTime?> since = const Value.absent(),
             required String exportLevel,
             Value<String?> patientId = const Value.absent(),
+            Value<String?> groupId = const Value.absent(),
             Value<String?> requestedBy = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -9254,6 +9310,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             since: since,
             exportLevel: exportLevel,
             patientId: patientId,
+            groupId: groupId,
             requestedBy: requestedBy,
             rowid: rowid,
           ),

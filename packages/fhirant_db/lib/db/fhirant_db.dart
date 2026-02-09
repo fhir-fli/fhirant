@@ -36,7 +36,7 @@ class FhirAntDb extends _$FhirAntDb {
 
   /// Default database version for migrations
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -49,6 +49,9 @@ class FhirAntDb extends _$FhirAntDb {
           }
           if (from < 3) {
             await m.createTable(exportJobs);
+          }
+          if (from < 4) {
+            await m.addColumn(exportJobs, exportJobs.groupId);
           }
         },
       );

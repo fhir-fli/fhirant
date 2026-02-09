@@ -32,11 +32,14 @@ class ExportJobs extends Table {
   /// _since filter value
   DateTimeColumn get since => dateTime().nullable()();
 
-  /// Export level: 'system' or 'patient'
+  /// Export level: 'system', 'patient', or 'group'
   TextColumn get exportLevel => text()();
 
   /// Patient ID for patient-level exports
   TextColumn get patientId => text().nullable()();
+
+  /// Group ID for group-level exports
+  TextColumn get groupId => text().nullable()();
 
   /// Username from auth context
   TextColumn get requestedBy => text().nullable()();
