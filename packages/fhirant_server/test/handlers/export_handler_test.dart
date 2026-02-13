@@ -141,6 +141,87 @@ void main() {
       expect(response.statusCode, equals(202));
     });
 
+    test('returns 400 for invalid _typeFilter format', () async {
+      final request = _makeRequest(
+        '/\$export?_typeFilter=InvalidNoQuestionMark',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['issue'][0]['diagnostics'], contains('_typeFilter'));
+    });
+
+    test('returns 400 for invalid resource type in _typeFilter', () async {
+      final request = _makeRequest(
+        '/\$export?_typeFilter=FakeResource%3Fcode%3Dabc',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['issue'][0]['diagnostics'], contains('FakeResource'));
+    });
+
+    test('passes _typeFilter to job', () async {
+      final request = _makeRequest(
+        '/\$export?_typeFilter=Condition%3Fcategory%3Dproblem-list-item',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      ExportJobsCompanion? captured;
+      when(() => mockDb.createExportJob(any())).thenAnswer((inv) async {
+        captured = inv.positionalArguments[0] as ExportJobsCompanion;
+      });
+      when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
+          .thenAnswer((_) async {});
+      when(() => mockDb.getExportJob(any())).thenAnswer((_) async => null);
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+      );
+
+      expect(response.statusCode, equals(202));
+      expect(captured, isNotNull);
+      expect(captured!.typeFilters.value, isNotNull);
+      final filters = jsonDecode(captured!.typeFilters.value!) as List;
+      expect(filters, contains('Condition?category=problem-list-item'));
+    });
+
+    test('accepts valid _typeFilter and returns 202', () async {
+      final request = _makeRequest(
+        '/\$export?_typeFilter=Observation%3Fcategory%3Dvital-signs',
+        headers: {'prefer': 'respond-async'},
+      );
+
+      when(() => mockDb.createExportJob(any())).thenAnswer((_) async {});
+      when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
+          .thenAnswer((_) async {});
+      when(() => mockDb.getExportJob(any())).thenAnswer((_) async => null);
+
+      final response = await exportKickoffHandler(
+        request,
+        mockDb,
+        exportDir,
+      );
+
+      expect(response.statusCode, equals(202));
+    });
+
     test('passes _type parameter to job', () async {
       final request = _makeRequest(
         '/\$export?_type=Patient,Observation',
@@ -502,6 +583,7 @@ ExportJob _fakeExportJob({
   DateTime? completedAt,
   String? groupId,
   String exportLevel = 'system',
+  String? typeFilters,
 }) {
   return ExportJob(
     jobId: jobId,
@@ -517,6 +599,7 @@ ExportJob _fakeExportJob({
     exportLevel: exportLevel,
     patientId: null,
     groupId: groupId,
+    typeFilters: typeFilters,
     requestedBy: null,
   );
 }

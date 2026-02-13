@@ -41,6 +41,9 @@ class ExportJobs extends Table {
   /// Group ID for group-level exports
   TextColumn get groupId => text().nullable()();
 
+  /// JSON-encoded list of _typeFilter strings (e.g. ["Condition?category=problem-list-item"])
+  TextColumn get typeFilters => text().nullable()();
+
   /// Username from auth context
   TextColumn get requestedBy => text().nullable()();
 

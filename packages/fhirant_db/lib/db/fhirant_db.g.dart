@@ -5605,6 +5605,12 @@ class $ExportJobsTable extends ExportJobs
   late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
       'group_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _typeFiltersMeta =
+      const VerificationMeta('typeFilters');
+  @override
+  late final GeneratedColumn<String> typeFilters = GeneratedColumn<String>(
+      'type_filters', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _requestedByMeta =
       const VerificationMeta('requestedBy');
   @override
@@ -5626,6 +5632,7 @@ class $ExportJobsTable extends ExportJobs
         exportLevel,
         patientId,
         groupId,
+        typeFilters,
         requestedBy
       ];
   @override
@@ -5710,6 +5717,12 @@ class $ExportJobsTable extends ExportJobs
       context.handle(_groupIdMeta,
           groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
     }
+    if (data.containsKey('type_filters')) {
+      context.handle(
+          _typeFiltersMeta,
+          typeFilters.isAcceptableOrUnknown(
+              data['type_filters']!, _typeFiltersMeta));
+    }
     if (data.containsKey('requested_by')) {
       context.handle(
           _requestedByMeta,
@@ -5751,6 +5764,8 @@ class $ExportJobsTable extends ExportJobs
           .read(DriftSqlType.string, data['${effectivePrefix}patient_id']),
       groupId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}group_id']),
+      typeFilters: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type_filters']),
       requestedBy: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}requested_by']),
     );
@@ -5802,6 +5817,9 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
   /// Group ID for group-level exports
   final String? groupId;
 
+  /// JSON-encoded list of _typeFilter strings (e.g. ["Condition?category=problem-list-item"])
+  final String? typeFilters;
+
   /// Username from auth context
   final String? requestedBy;
   const ExportJob(
@@ -5818,6 +5836,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       required this.exportLevel,
       this.patientId,
       this.groupId,
+      this.typeFilters,
       this.requestedBy});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5848,6 +5867,9 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
     }
     if (!nullToAbsent || groupId != null) {
       map['group_id'] = Variable<String>(groupId);
+    }
+    if (!nullToAbsent || typeFilters != null) {
+      map['type_filters'] = Variable<String>(typeFilters);
     }
     if (!nullToAbsent || requestedBy != null) {
       map['requested_by'] = Variable<String>(requestedBy);
@@ -5883,6 +5905,9 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       groupId: groupId == null && nullToAbsent
           ? const Value.absent()
           : Value(groupId),
+      typeFilters: typeFilters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typeFilters),
       requestedBy: requestedBy == null && nullToAbsent
           ? const Value.absent()
           : Value(requestedBy),
@@ -5906,6 +5931,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       exportLevel: serializer.fromJson<String>(json['exportLevel']),
       patientId: serializer.fromJson<String?>(json['patientId']),
       groupId: serializer.fromJson<String?>(json['groupId']),
+      typeFilters: serializer.fromJson<String?>(json['typeFilters']),
       requestedBy: serializer.fromJson<String?>(json['requestedBy']),
     );
   }
@@ -5926,6 +5952,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       'exportLevel': serializer.toJson<String>(exportLevel),
       'patientId': serializer.toJson<String?>(patientId),
       'groupId': serializer.toJson<String?>(groupId),
+      'typeFilters': serializer.toJson<String?>(typeFilters),
       'requestedBy': serializer.toJson<String?>(requestedBy),
     };
   }
@@ -5944,6 +5971,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           String? exportLevel,
           Value<String?> patientId = const Value.absent(),
           Value<String?> groupId = const Value.absent(),
+          Value<String?> typeFilters = const Value.absent(),
           Value<String?> requestedBy = const Value.absent()}) =>
       ExportJob(
         jobId: jobId ?? this.jobId,
@@ -5960,6 +5988,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
         exportLevel: exportLevel ?? this.exportLevel,
         patientId: patientId.present ? patientId.value : this.patientId,
         groupId: groupId.present ? groupId.value : this.groupId,
+        typeFilters: typeFilters.present ? typeFilters.value : this.typeFilters,
         requestedBy: requestedBy.present ? requestedBy.value : this.requestedBy,
       );
   ExportJob copyWithCompanion(ExportJobsCompanion data) {
@@ -5985,6 +6014,8 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           data.exportLevel.present ? data.exportLevel.value : this.exportLevel,
       patientId: data.patientId.present ? data.patientId.value : this.patientId,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      typeFilters:
+          data.typeFilters.present ? data.typeFilters.value : this.typeFilters,
       requestedBy:
           data.requestedBy.present ? data.requestedBy.value : this.requestedBy,
     );
@@ -6006,6 +6037,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           ..write('exportLevel: $exportLevel, ')
           ..write('patientId: $patientId, ')
           ..write('groupId: $groupId, ')
+          ..write('typeFilters: $typeFilters, ')
           ..write('requestedBy: $requestedBy')
           ..write(')'))
         .toString();
@@ -6026,6 +6058,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
       exportLevel,
       patientId,
       groupId,
+      typeFilters,
       requestedBy);
   @override
   bool operator ==(Object other) =>
@@ -6044,6 +6077,7 @@ class ExportJob extends DataClass implements Insertable<ExportJob> {
           other.exportLevel == this.exportLevel &&
           other.patientId == this.patientId &&
           other.groupId == this.groupId &&
+          other.typeFilters == this.typeFilters &&
           other.requestedBy == this.requestedBy);
 }
 
@@ -6061,6 +6095,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
   final Value<String> exportLevel;
   final Value<String?> patientId;
   final Value<String?> groupId;
+  final Value<String?> typeFilters;
   final Value<String?> requestedBy;
   final Value<int> rowid;
   const ExportJobsCompanion({
@@ -6077,6 +6112,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     this.exportLevel = const Value.absent(),
     this.patientId = const Value.absent(),
     this.groupId = const Value.absent(),
+    this.typeFilters = const Value.absent(),
     this.requestedBy = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6094,6 +6130,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     required String exportLevel,
     this.patientId = const Value.absent(),
     this.groupId = const Value.absent(),
+    this.typeFilters = const Value.absent(),
     this.requestedBy = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : jobId = Value(jobId),
@@ -6114,6 +6151,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     Expression<String>? exportLevel,
     Expression<String>? patientId,
     Expression<String>? groupId,
+    Expression<String>? typeFilters,
     Expression<String>? requestedBy,
     Expression<int>? rowid,
   }) {
@@ -6131,6 +6169,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       if (exportLevel != null) 'export_level': exportLevel,
       if (patientId != null) 'patient_id': patientId,
       if (groupId != null) 'group_id': groupId,
+      if (typeFilters != null) 'type_filters': typeFilters,
       if (requestedBy != null) 'requested_by': requestedBy,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6150,6 +6189,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       Value<String>? exportLevel,
       Value<String?>? patientId,
       Value<String?>? groupId,
+      Value<String?>? typeFilters,
       Value<String?>? requestedBy,
       Value<int>? rowid}) {
     return ExportJobsCompanion(
@@ -6166,6 +6206,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
       exportLevel: exportLevel ?? this.exportLevel,
       patientId: patientId ?? this.patientId,
       groupId: groupId ?? this.groupId,
+      typeFilters: typeFilters ?? this.typeFilters,
       requestedBy: requestedBy ?? this.requestedBy,
       rowid: rowid ?? this.rowid,
     );
@@ -6213,6 +6254,9 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
     if (groupId.present) {
       map['group_id'] = Variable<String>(groupId.value);
     }
+    if (typeFilters.present) {
+      map['type_filters'] = Variable<String>(typeFilters.value);
+    }
     if (requestedBy.present) {
       map['requested_by'] = Variable<String>(requestedBy.value);
     }
@@ -6238,6 +6282,7 @@ class ExportJobsCompanion extends UpdateCompanion<ExportJob> {
           ..write('exportLevel: $exportLevel, ')
           ..write('patientId: $patientId, ')
           ..write('groupId: $groupId, ')
+          ..write('typeFilters: $typeFilters, ')
           ..write('requestedBy: $requestedBy, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9044,6 +9089,7 @@ typedef $$ExportJobsTableCreateCompanionBuilder = ExportJobsCompanion Function({
   required String exportLevel,
   Value<String?> patientId,
   Value<String?> groupId,
+  Value<String?> typeFilters,
   Value<String?> requestedBy,
   Value<int> rowid,
 });
@@ -9061,6 +9107,7 @@ typedef $$ExportJobsTableUpdateCompanionBuilder = ExportJobsCompanion Function({
   Value<String> exportLevel,
   Value<String?> patientId,
   Value<String?> groupId,
+  Value<String?> typeFilters,
   Value<String?> requestedBy,
   Value<int> rowid,
 });
@@ -9113,6 +9160,9 @@ class $$ExportJobsTableFilterComposer
 
   ColumnFilters<String> get groupId => $composableBuilder(
       column: $table.groupId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get typeFilters => $composableBuilder(
+      column: $table.typeFilters, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => ColumnFilters(column));
@@ -9168,6 +9218,9 @@ class $$ExportJobsTableOrderingComposer
   ColumnOrderings<String> get groupId => $composableBuilder(
       column: $table.groupId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get typeFilters => $composableBuilder(
+      column: $table.typeFilters, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => ColumnOrderings(column));
 }
@@ -9220,6 +9273,9 @@ class $$ExportJobsTableAnnotationComposer
   GeneratedColumn<String> get groupId =>
       $composableBuilder(column: $table.groupId, builder: (column) => column);
 
+  GeneratedColumn<String> get typeFilters => $composableBuilder(
+      column: $table.typeFilters, builder: (column) => column);
+
   GeneratedColumn<String> get requestedBy => $composableBuilder(
       column: $table.requestedBy, builder: (column) => column);
 }
@@ -9260,6 +9316,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             Value<String> exportLevel = const Value.absent(),
             Value<String?> patientId = const Value.absent(),
             Value<String?> groupId = const Value.absent(),
+            Value<String?> typeFilters = const Value.absent(),
             Value<String?> requestedBy = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -9277,6 +9334,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             exportLevel: exportLevel,
             patientId: patientId,
             groupId: groupId,
+            typeFilters: typeFilters,
             requestedBy: requestedBy,
             rowid: rowid,
           ),
@@ -9294,6 +9352,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             required String exportLevel,
             Value<String?> patientId = const Value.absent(),
             Value<String?> groupId = const Value.absent(),
+            Value<String?> typeFilters = const Value.absent(),
             Value<String?> requestedBy = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -9311,6 +9370,7 @@ class $$ExportJobsTableTableManager extends RootTableManager<
             exportLevel: exportLevel,
             patientId: patientId,
             groupId: groupId,
+            typeFilters: typeFilters,
             requestedBy: requestedBy,
             rowid: rowid,
           ),

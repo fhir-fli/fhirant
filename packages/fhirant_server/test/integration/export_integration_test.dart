@@ -424,6 +424,154 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // _typeFilter
+  // ─────────────────────────────────────────────────────────────────────────
+  group('_typeFilter', () {
+    test('filters resources by search criteria', () async {
+      // Create Observations with different codes
+      await saveResource(fhir.Observation(
+        id: 'tf-obs1'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(
+            system: 'http://loinc.org'.toFhirUri,
+            code: '85354-9'.toFhirCode,
+          )],
+        ),
+      ));
+      await saveResource(fhir.Observation(
+        id: 'tf-obs2'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(
+            system: 'http://loinc.org'.toFhirUri,
+            code: '29463-7'.toFhirCode,
+          )],
+        ),
+      ));
+
+      // Export with _typeFilter that matches only one code
+      final kickoffReq = testRequest(
+        'GET',
+        '/\$export?_type=Observation&_typeFilter=${Uri.encodeComponent('Observation?code=85354-9')}',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+
+      final jobId = extractJobId(kickoffResp);
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+      expect(output, isNotEmpty);
+
+      // Download and verify only the matching Observation is present
+      final obsEntry = output.firstWhere((o) => o['type'] == 'Observation');
+      final url = obsEntry['url'] as String;
+      final filePath = Uri.parse(url).path;
+      final downloadReq = testRequest('GET', filePath, authToken: token);
+      final downloadResp = await handler(downloadReq);
+      final content = await downloadResp.readAsString();
+      expect(content, contains('85354-9'));
+      expect(content, isNot(contains('29463-7')));
+    });
+
+    test('_typeFilter for type not in _type is ignored', () async {
+      await saveResource(fhir.Patient(
+        id: 'tf-p1'.toFhirString,
+        name: [fhir.HumanName(family: 'TypeFilterPatient'.toFhirString)],
+      ));
+      await saveResource(fhir.Observation(
+        id: 'tf-obs3'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+        ),
+      ));
+
+      // _type=Patient but _typeFilter references Observation
+      final kickoffReq = testRequest(
+        'GET',
+        '/\$export?_type=Patient&_typeFilter=${Uri.encodeComponent('Observation?code=85354-9')}',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+
+      final jobId = extractJobId(kickoffResp);
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+      final types = output.map((o) => o['type']).toSet();
+      // Should only have Patient, not Observation
+      expect(types, contains('Patient'));
+      expect(types, isNot(contains('Observation')));
+    });
+
+    test('_typeFilter combined with _since', () async {
+      await saveResource(fhir.Observation(
+        id: 'tf-obs-old'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(
+            system: 'http://loinc.org'.toFhirUri,
+            code: '85354-9'.toFhirCode,
+          )],
+        ),
+      ));
+
+      await Future<void>.delayed(const Duration(seconds: 1));
+      final sinceTime = DateTime.now().toUtc().toIso8601String();
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      await saveResource(fhir.Observation(
+        id: 'tf-obs-new'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [fhir.Coding(
+            system: 'http://loinc.org'.toFhirUri,
+            code: '85354-9'.toFhirCode,
+          )],
+        ),
+      ));
+
+      final kickoffReq = testRequest(
+        'GET',
+        '/\$export?_type=Observation&_since=$sinceTime&_typeFilter=${Uri.encodeComponent('Observation?code=85354-9')}',
+        authToken: token,
+        headers: {'prefer': 'respond-async'},
+      );
+      final kickoffResp = await handler(kickoffReq);
+      expect(kickoffResp.statusCode, equals(202));
+
+      final jobId = extractJobId(kickoffResp);
+      final statusResp = await pollUntilComplete(jobId);
+      expect(statusResp.statusCode, equals(200));
+
+      final manifest = jsonDecode(await statusResp.readAsString());
+      final output = manifest['output'] as List;
+
+      if (output.isNotEmpty) {
+        final obsEntry = output.firstWhere((o) => o['type'] == 'Observation');
+        final url = obsEntry['url'] as String;
+        final filePath = Uri.parse(url).path;
+        final downloadReq = testRequest('GET', filePath, authToken: token);
+        final downloadResp = await handler(downloadReq);
+        final content = await downloadResp.readAsString();
+        // Should contain new but not old
+        expect(content, contains('tf-obs-new'));
+        expect(content, isNot(contains('tf-obs-old')));
+      }
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Cancel job
   // ─────────────────────────────────────────────────────────────────────────
   group('Cancel export', () {

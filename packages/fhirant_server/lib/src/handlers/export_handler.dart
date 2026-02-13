@@ -67,6 +67,25 @@ Future<Response> exportKickoffHandler(
       }
     }
 
+    // 4b. Parse _typeFilter (may appear multiple times)
+    final typeFilterParams =
+        request.url.queryParametersAll['_typeFilter'] ?? [];
+    for (final filter in typeFilterParams) {
+      if (!filter.contains('?')) {
+        return _operationOutcome(
+          400,
+          'Invalid _typeFilter: $filter. Expected format: ResourceType?searchParams',
+        );
+      }
+      final typeName = filter.split('?')[0];
+      if (fhir.R4ResourceType.fromString(typeName) == null) {
+        return _operationOutcome(
+          400,
+          'Invalid resource type in _typeFilter: $typeName',
+        );
+      }
+    }
+
     // 5. Validate group-level: ensure the Group resource exists
     if (exportLevel == 'group' && groupId != null) {
       final groupResource = await dbInterface.getResource(
@@ -93,6 +112,9 @@ Future<Response> exportKickoffHandler(
       exportLevel: Value(exportLevel),
       patientId: Value(patientId),
       groupId: Value(groupId),
+      typeFilters: Value(
+        typeFilterParams.isNotEmpty ? jsonEncode(typeFilterParams) : null,
+      ),
     ));
 
     // 7. Spawn background processing (fire-and-forget)
@@ -287,6 +309,12 @@ Future<void> _processExport(
     final baseUrl = _baseUrl(request);
     final since = job.since;
 
+    // Parse typeFilters from job
+    List<String>? typeFilters;
+    if (job.typeFilters != null) {
+      typeFilters = (jsonDecode(job.typeFilters!) as List).cast<String>();
+    }
+
     // Determine resource types to export
     List<fhir.R4ResourceType> typesToExport;
     if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
@@ -419,9 +447,40 @@ Future<void> _processExport(
         final resourceType = fhir.R4ResourceType.fromString(typeName);
         if (resourceType == null) continue;
 
+        // Check for matching _typeFilter entries
+        final matchingFilters = typeFilters
+                ?.where((f) => f.startsWith('$typeName?'))
+                .toList() ??
+            [];
+
+        // If typeFilters exist for this type, intersect compartment IDs with search results
+        Set<String>? filterIds;
+        if (matchingFilters.isNotEmpty) {
+          filterIds = {};
+          for (final filter in matchingFilters) {
+            final queryString = filter.substring(filter.indexOf('?') + 1);
+            final params = Uri.splitQueryString(queryString);
+            final searchMap = <String, List<String>>{};
+            for (final e in params.entries) {
+              searchMap.putIfAbsent(e.key, () => []).add(e.value);
+            }
+            final results = await dbInterface.search(
+              resourceType: resourceType,
+              searchParameters: searchMap,
+            );
+            for (final r in results) {
+              final rid = r.id?.toString() ?? '';
+              if (rid.isNotEmpty) filterIds.add(rid);
+            }
+          }
+        }
+
         // Fetch each resource by ID
         final resources = <fhir.Resource>[];
         for (final id in ids) {
+          // Skip if typeFilter active and this ID didn't match
+          if (filterIds != null && !filterIds.contains(id)) continue;
+
           final resource = await dbInterface.getResource(resourceType, id);
           if (resource != null) {
             // Apply _since filter for directly-included Patient resources
@@ -467,13 +526,50 @@ Future<void> _processExport(
       final currentJob = await dbInterface.getExportJob(jobId);
       if (currentJob == null || currentJob.status == 'cancelled') return;
 
-      final resources = await dbInterface.getResourcesByTypeSince(
-        resourceType,
-        since: since,
-      );
+      final typeName = resourceType.toString();
+
+      // Check for matching _typeFilter entries
+      final matchingFilters = typeFilters
+              ?.where((f) => f.startsWith('$typeName?'))
+              .toList() ??
+          [];
+
+      List<fhir.Resource> resources;
+      if (matchingFilters.isNotEmpty) {
+        // Use db.search() for each filter, union results (OR semantics)
+        final seen = <String>{};
+        resources = [];
+        for (final filter in matchingFilters) {
+          final queryString = filter.substring(filter.indexOf('?') + 1);
+          final params = Uri.splitQueryString(queryString);
+          final searchMap = <String, List<String>>{};
+          for (final e in params.entries) {
+            searchMap.putIfAbsent(e.key, () => []).add(e.value);
+          }
+          final results = await dbInterface.search(
+            resourceType: resourceType,
+            searchParameters: searchMap,
+          );
+          for (final r in results) {
+            final id = r.id?.toString() ?? '';
+            if (id.isNotEmpty && seen.add(id)) resources.add(r);
+          }
+        }
+        // Post-filter by _since
+        if (since != null) {
+          resources = resources.where((r) {
+            final lu = r.meta?.lastUpdated?.valueDateTime;
+            return lu != null && !lu.isBefore(since);
+          }).toList();
+        }
+      } else {
+        resources = await dbInterface.getResourcesByTypeSince(
+          resourceType,
+          since: since,
+        );
+      }
 
       if (resources.isNotEmpty) {
-        final typeName = resourceType.toString();
         final count = await writeNdjsonFile(
           '$exportDir/$jobId/$typeName.ndjson',
           resources,
