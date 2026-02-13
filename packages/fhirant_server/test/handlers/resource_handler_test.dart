@@ -500,7 +500,7 @@ void main() {
       expect(linkRelations, contains('first'));
     });
 
-    test('_include adds referenced resources to bundle', () async {
+    test('_include adds referenced resources to bundle with correct search.mode and fullUrl', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-inc-1',
@@ -516,11 +516,11 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Organization:managingOrganization&_count=10'),
+            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10'),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Organization:managingOrganization&_count=10'),
+            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10'),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -547,17 +547,22 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
-      // Should have 2 entries: the Patient and the included Organization
       expect(entries.length, equals(2));
 
-      final resourceTypes = entries
-          .map((e) => (e['resource'] as Map)['resourceType'] as String)
-          .toList();
-      expect(resourceTypes, contains('Patient'));
-      expect(resourceTypes, contains('Organization'));
+      // Check search.mode on entries
+      final patientEntry = entries.firstWhere(
+          (e) => (e['resource'] as Map)['resourceType'] == 'Patient');
+      final orgEntry = entries.firstWhere(
+          (e) => (e['resource'] as Map)['resourceType'] == 'Organization');
+      expect(patientEntry['search']['mode'], equals('match'));
+      expect(orgEntry['search']['mode'], equals('include'));
+
+      // Check fullUrl uses each resource's own type (Bug 2 fix)
+      expect(patientEntry['fullUrl'], contains('Patient/pt-inc-1'));
+      expect(orgEntry['fullUrl'], contains('Organization/org-inc-1'));
     });
 
-    test('_revinclude adds referencing resources to bundle', () async {
+    test('_revinclude adds referencing resources to bundle with search.mode', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-rev-1',
@@ -598,7 +603,7 @@ void main() {
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
           searchParameters: {
-            'subject': ['pt-rev-1'],
+            'subject': ['Patient/pt-rev-1'],
           },
         ),
       ).thenAnswer((_) async => [obs]);
@@ -613,14 +618,302 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
-      // Should have 2 entries: Patient and the revincluded Observation
       expect(entries.length, equals(2));
 
-      final resourceTypes = entries
+      final patientEntry = entries.firstWhere(
+          (e) => (e['resource'] as Map)['resourceType'] == 'Patient');
+      final obsEntry = entries.firstWhere(
+          (e) => (e['resource'] as Map)['resourceType'] == 'Observation');
+      expect(patientEntry['search']['mode'], equals('match'));
+      expect(obsEntry['search']['mode'], equals('include'));
+      // fullUrl uses Observation type, not Patient
+      expect(obsEntry['fullUrl'], contains('Observation/obs-rev-1'));
+    });
+
+    test('_include with wildcard (*) extracts all references', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-wild-1',
+        'managingOrganization': {'reference': 'Organization/org-wild-1'},
+        'generalPractitioner': [
+          {'reference': 'Practitioner/prac-wild-1'},
+        ],
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final org = fhir.Organization.fromJson({
+        'resourceType': 'Organization',
+        'id': 'org-wild-1',
+        'name': 'Test Hospital',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final prac = fhir.Practitioner.fromJson({
+        'resourceType': 'Practitioner',
+        'id': 'prac-wild-1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_include=Patient:*&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_include=Patient:*&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.getResource(
+            fhir.R4ResourceType.Organization, 'org-wild-1'),
+      ).thenAnswer((_) async => org);
+      when(
+        () => mockDb.getResource(
+            fhir.R4ResourceType.Practitioner, 'prac-wild-1'),
+      ).thenAnswer((_) async => prac);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entries = json['entry'] as List;
+      // Patient + Organization + Practitioner
+      expect(entries.length, equals(3));
+      final types = entries
           .map((e) => (e['resource'] as Map)['resourceType'] as String)
-          .toList();
-      expect(resourceTypes, contains('Patient'));
-      expect(resourceTypes, contains('Observation'));
+          .toSet();
+      expect(types, containsAll(['Patient', 'Organization', 'Practitioner']));
+    });
+
+    test('_include:iterate resolves transitive references', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-iter-1',
+        'managingOrganization': {'reference': 'Organization/org-iter-1'},
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final org = fhir.Organization.fromJson({
+        'resourceType': 'Organization',
+        'id': 'org-iter-1',
+        'partOf': {'reference': 'Organization/org-iter-parent'},
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final parentOrg = fhir.Organization.fromJson({
+        'resourceType': 'Organization',
+        'id': 'org-iter-parent',
+        'name': 'Parent Hospital',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.getResource(
+            fhir.R4ResourceType.Organization, 'org-iter-1'),
+      ).thenAnswer((_) async => org);
+      when(
+        () => mockDb.getResource(
+            fhir.R4ResourceType.Organization, 'org-iter-parent'),
+      ).thenAnswer((_) async => parentOrg);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entries = json['entry'] as List;
+      // Patient + org-iter-1 (from _include) + org-iter-parent (from _include:iterate)
+      expect(entries.length, equals(3));
+      final ids = entries
+          .map((e) => (e['resource'] as Map)['id'] as String)
+          .toSet();
+      expect(ids, containsAll(['pt-iter-1', 'org-iter-1', 'org-iter-parent']));
+    });
+
+    test('_revinclude:iterate resolves transitive reverse references', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-reviter-1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final encounter = fhir.Encounter.fromJson({
+        'resourceType': 'Encounter',
+        'id': 'enc-reviter-1',
+        'status': 'finished',
+        'class': {'code': 'AMB'},
+        'subject': {'reference': 'Patient/pt-reviter-1'},
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final obs = fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'obs-reviter-1',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '12345-6'}
+          ]
+        },
+        'encounter': {'reference': 'Encounter/enc-reviter-1'},
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Encounter,
+          searchParameters: {
+            'subject': ['Patient/pt-reviter-1'],
+          },
+        ),
+      ).thenAnswer((_) async => [encounter]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            'encounter': ['Encounter/enc-reviter-1'],
+          },
+        ),
+      ).thenAnswer((_) async => [obs]);
+      // Second iteration tries Observation with encounter=Observation/obs-reviter-1 — no match
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            'encounter': ['Observation/obs-reviter-1'],
+          },
+        ),
+      ).thenAnswer((_) async => []);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entries = json['entry'] as List;
+      // Patient + Encounter (revinclude) + Observation (revinclude:iterate)
+      expect(entries.length, equals(3));
+      final types = entries
+          .map((e) => (e['resource'] as Map)['resourceType'] as String)
+          .toSet();
+      expect(types, containsAll(['Patient', 'Encounter', 'Observation']));
+    });
+
+    test('_include + _summary=text returns 400', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text'),
+      );
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+    });
+
+    test('malformed _revinclude without search param is ignored', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pt-malrev-1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_revinclude=Observation&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+            'http://localhost:8080/Patient?_revinclude=Observation&_count=10'),
+      );
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 10,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final entries = json['entry'] as List;
+      // Only the Patient — malformed _revinclude is skipped
+      expect(entries.length, equals(1));
+      // No search calls made for revinclude
+      verifyNever(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: any(named: 'searchParameters'),
+        ),
+      );
     });
 
     test('sort parameter forwarded to search', () async {

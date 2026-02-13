@@ -1,7 +1,7 @@
 /// Utility for parsing FHIR search parameters from query strings
 class SearchParameterParser {
   /// Parse query parameters into search parameters and pagination parameters
-  /// 
+  ///
   /// Returns a map with:
   /// - 'searchParams': Map of search parameter name to list of values
   /// - 'count': int or null
@@ -9,6 +9,8 @@ class SearchParameterParser {
   /// - 'sort': List of sort parameters (e.g., ['name', '-date'])
   /// - 'include': List of include parameters
   /// - 'revinclude': List of revinclude parameters
+  /// - 'includeIterate': List of _include:iterate parameters
+  /// - 'revincludeIterate': List of _revinclude:iterate parameters
   /// - 'summary': String summary type or null
   /// - 'elements': List of element names or null
   static Map<String, dynamic> parseQueryParameters(
@@ -20,6 +22,8 @@ class SearchParameterParser {
     final sort = <String>[];
     final include = <String>[];
     final revinclude = <String>[];
+    final includeIterate = <String>[];
+    final revincludeIterate = <String>[];
     String? summary;
     List<String>? elements;
 
@@ -30,6 +34,8 @@ class SearchParameterParser {
       '_sort',
       '_include',
       '_revinclude',
+      '_include:iterate',
+      '_revinclude:iterate',
       '_summary',
       '_elements',
       '_format',
@@ -64,6 +70,12 @@ class SearchParameterParser {
             // Revinclude can be repeated or comma-separated
             revinclude.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
             break;
+          case '_include:iterate':
+            includeIterate.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            break;
+          case '_revinclude:iterate':
+            revincludeIterate.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            break;
           case '_summary':
             summary = value;
             break;
@@ -77,7 +89,7 @@ class SearchParameterParser {
         // Regular search parameter
         // Handle comma-separated values (OR logic)
         final values = value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        
+
         if (searchParams.containsKey(key)) {
           // Parameter already exists (can happen with repeated params)
           searchParams[key]!.addAll(values);
@@ -94,6 +106,8 @@ class SearchParameterParser {
       'sort': sort.isEmpty ? null : sort,
       'include': include.isEmpty ? null : include,
       'revinclude': revinclude.isEmpty ? null : revinclude,
+      'includeIterate': includeIterate.isEmpty ? null : includeIterate,
+      'revincludeIterate': revincludeIterate.isEmpty ? null : revincludeIterate,
       'summary': summary,
       'elements': elements,
     };
@@ -107,12 +121,14 @@ class SearchParameterParser {
       '_sort',
       '_include',
       '_revinclude',
+      '_include:iterate',
+      '_revinclude:iterate',
       '_summary',
       '_elements',
       '_format',
       '_pretty',
     };
-    
+
     return queryParams.keys.any((key) => !specialParams.contains(key));
   }
 }

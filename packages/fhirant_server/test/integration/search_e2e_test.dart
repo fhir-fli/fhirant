@@ -319,5 +319,164 @@ void main() {
       expect(body['entry'], isA<List>());
       expect(body['entry'], isEmpty);
     });
+
+    test('_include sets search.mode=match on matched and include on included',
+        () async {
+      await testDb.saveResource(fhir.Organization(
+        id: 'mode-org-1'.toFhirString,
+        name: 'Mode Hospital'.toFhirString,
+      ));
+      await testDb.saveResource(fhir.Patient(
+        id: 'mode-pat-1'.toFhirString,
+        name: [fhir.HumanName(family: 'ModeTest'.toFhirString)],
+        managingOrganization: fhir.Reference(
+          reference: 'Organization/mode-org-1'.toFhirString,
+        ),
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=ModeTest&_include=Patient:managingOrganization',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final entries = body['entry'] as List;
+      expect(entries, hasLength(2));
+
+      final patientEntry = entries.firstWhere(
+          (e) => e['resource']['resourceType'] == 'Patient');
+      final orgEntry = entries.firstWhere(
+          (e) => e['resource']['resourceType'] == 'Organization');
+      expect(patientEntry['search']['mode'], equals('match'));
+      expect(orgEntry['search']['mode'], equals('include'));
+      // fullUrl uses correct resource type
+      expect(
+          patientEntry['fullUrl'] as String, contains('Patient/mode-pat-1'));
+      expect(
+          orgEntry['fullUrl'] as String, contains('Organization/mode-org-1'));
+    });
+
+    test('_revinclude sets search.mode correctly', () async {
+      await testDb.saveResource(fhir.Patient(
+        id: 'rev-mode-pat-1'.toFhirString,
+        name: [fhir.HumanName(family: 'RevModeTest'.toFhirString)],
+      ));
+      await testDb.saveResource(fhir.Observation(
+        id: 'rev-mode-obs-1'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '12345-6'.toFhirCode,
+            ),
+          ],
+        ),
+        subject: fhir.Reference(
+          reference: 'Patient/rev-mode-pat-1'.toFhirString,
+        ),
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=RevModeTest&_revinclude=Observation:subject',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final entries = body['entry'] as List;
+      expect(entries, hasLength(2));
+
+      final patientEntry = entries.firstWhere(
+          (e) => e['resource']['resourceType'] == 'Patient');
+      final obsEntry = entries.firstWhere(
+          (e) => e['resource']['resourceType'] == 'Observation');
+      expect(patientEntry['search']['mode'], equals('match'));
+      expect(obsEntry['search']['mode'], equals('include'));
+    });
+
+    test('_include:iterate resolves multi-level references', () async {
+      // Parent org
+      await testDb.saveResource(fhir.Organization(
+        id: 'iter-parent-org'.toFhirString,
+        name: 'Parent Hospital'.toFhirString,
+      ));
+      // Child org that references parent
+      await testDb.saveResource(fhir.Organization(
+        id: 'iter-child-org'.toFhirString,
+        name: 'Child Clinic'.toFhirString,
+        partOf: fhir.Reference(
+          reference: 'Organization/iter-parent-org'.toFhirString,
+        ),
+      ));
+      // Patient referencing child org
+      await testDb.saveResource(fhir.Patient(
+        id: 'iter-pat-1'.toFhirString,
+        name: [fhir.HumanName(family: 'IterTest'.toFhirString)],
+        managingOrganization: fhir.Reference(
+          reference: 'Organization/iter-child-org'.toFhirString,
+        ),
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=IterTest&_include=Patient:managingOrganization&_include:iterate=Organization:partOf',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final entries = body['entry'] as List;
+      // Patient + child org (_include) + parent org (_include:iterate)
+      expect(entries, hasLength(3));
+
+      final ids =
+          entries.map((e) => e['resource']['id'] as String).toSet();
+      expect(ids,
+          containsAll(['iter-pat-1', 'iter-child-org', 'iter-parent-org']));
+    });
+
+    test('_include with wildcard (*) includes all referenced resources',
+        () async {
+      await testDb.saveResource(fhir.Organization(
+        id: 'wild-org-1'.toFhirString,
+        name: 'Wild Hospital'.toFhirString,
+      ));
+      await testDb.saveResource(fhir.Practitioner(
+        id: 'wild-prac-1'.toFhirString,
+        name: [fhir.HumanName(family: 'WildDoc'.toFhirString)],
+      ));
+      await testDb.saveResource(fhir.Patient(
+        id: 'wild-pat-1'.toFhirString,
+        name: [fhir.HumanName(family: 'WildTest'.toFhirString)],
+        managingOrganization: fhir.Reference(
+          reference: 'Organization/wild-org-1'.toFhirString,
+        ),
+        generalPractitioner: [
+          fhir.Reference(
+            reference: 'Practitioner/wild-prac-1'.toFhirString,
+          ),
+        ],
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=WildTest&_include=Patient:*',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final entries = body['entry'] as List;
+      // Patient + Organization + Practitioner
+      expect(entries, hasLength(3));
+      final types = entries
+          .map((e) => e['resource']['resourceType'] as String)
+          .toSet();
+      expect(types, containsAll(['Patient', 'Organization', 'Practitioner']));
+    });
   });
 }

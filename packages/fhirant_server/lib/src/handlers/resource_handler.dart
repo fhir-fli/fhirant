@@ -20,12 +20,14 @@ Future<Response> getResourcesHandler(
     );
 
     final queryParams = request.url.queryParameters;
-    
+
     // Parse query parameters into search params and pagination params
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
     final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
     final include = parsed['include'] as List<String>?;
     final revinclude = parsed['revinclude'] as List<String>?;
+    final includeIterate = parsed['includeIterate'] as List<String>?;
+    final revincludeIterate = parsed['revincludeIterate'] as List<String>?;
 
     final count = parsed['count'] as int? ?? 20;
     final offset = parsed['offset'] as int? ?? 0;
@@ -39,6 +41,17 @@ Future<Response> getResourcesHandler(
         'Invalid resource type requested: $resourceType',
       );
       return _validationErrorResponse('Invalid resource type');
+    }
+
+    // Reject _include/_revinclude combined with _summary=text (per FHIR spec)
+    final hasIncludes = (include != null && include.isNotEmpty) ||
+        (revinclude != null && revinclude.isNotEmpty) ||
+        (includeIterate != null && includeIterate.isNotEmpty) ||
+        (revincludeIterate != null && revincludeIterate.isNotEmpty);
+    if (hasIncludes && summary == 'text') {
+      return _validationErrorResponse(
+        '_include/_revinclude cannot be combined with _summary=text',
+      );
     }
 
     // Handle _summary=count — return bundle with total only, no entries
@@ -85,7 +98,7 @@ Future<Response> getResourcesHandler(
     final baseUrl = request.requestedUri.hasPort
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
         : '${request.requestedUri.scheme}://${request.requestedUri.host}';
-    
+
     // Get total count using searchCount (accurate count query)
     int totalCount;
     if (searchParams != null && searchParams.isNotEmpty) {
@@ -99,63 +112,68 @@ Future<Response> getResourcesHandler(
       totalCount = await dbInterface.getResourceCount(type);
     }
 
-    
     // Build pagination links (optional - bundle works without them)
     final links = <fhir.BundleLink>[];
     // Only try to create links if we have valid data
     if (count > 0) {
       try {
-      final currentUrl = request.requestedUri;
-      
-      // First link
-      final firstParams = Map<String, String>.from(currentUrl.queryParameters);
-      firstParams['_offset'] = '0';
-      final firstUrl = currentUrl.replace(queryParameters: firstParams);
-      links.add(fhir.BundleLink(
-        relation: fhir.FhirString('first'),
-        url: fhir.FhirUri(firstUrl.toString()),
-      ));
-      
-      // Previous link (if not on first page)
-      if (offset > 0) {
-        final prevParams = Map<String, String>.from(currentUrl.queryParameters);
-        final prevOffset = (offset - count).clamp(0, double.infinity).toInt();
-        prevParams['_offset'] = prevOffset.toString();
-        final prevUrl = currentUrl.replace(queryParameters: prevParams);
+        final currentUrl = request.requestedUri;
+
+        // First link
+        final firstParams =
+            Map<String, String>.from(currentUrl.queryParameters);
+        firstParams['_offset'] = '0';
+        final firstUrl = currentUrl.replace(queryParameters: firstParams);
         links.add(fhir.BundleLink(
-          relation: fhir.FhirString('previous'),
-          url: fhir.FhirUri(prevUrl.toString()),
+          relation: fhir.FhirString('first'),
+          url: fhir.FhirUri(firstUrl.toString()),
         ));
-      }
-      
-      // Next link (if there are more results)
-      if (offset + resources.length < totalCount) {
-        final nextParams = Map<String, String>.from(currentUrl.queryParameters);
-        final nextOffset = offset + count;
-        nextParams['_offset'] = nextOffset.toString();
-        final nextUrl = currentUrl.replace(queryParameters: nextParams);
-        links.add(fhir.BundleLink(
-          relation: fhir.FhirString('next'),
-          url: fhir.FhirUri(nextUrl.toString()),
-        ));
-      }
-      
-      // Last link
-      if (count > 0 && totalCount > 0) {
-        final lastParams = Map<String, String>.from(currentUrl.queryParameters);
-        final lastOffset = ((totalCount - 1) ~/ count) * count;
-        lastParams['_offset'] = lastOffset.toString();
-        final lastUrl = currentUrl.replace(queryParameters: lastParams);
-        links.add(fhir.BundleLink(
-          relation: fhir.FhirString('last'),
-          url: fhir.FhirUri(lastUrl.toString()),
-        ));
-      }
+
+        // Previous link (if not on first page)
+        if (offset > 0) {
+          final prevParams =
+              Map<String, String>.from(currentUrl.queryParameters);
+          final prevOffset =
+              (offset - count).clamp(0, double.infinity).toInt();
+          prevParams['_offset'] = prevOffset.toString();
+          final prevUrl = currentUrl.replace(queryParameters: prevParams);
+          links.add(fhir.BundleLink(
+            relation: fhir.FhirString('previous'),
+            url: fhir.FhirUri(prevUrl.toString()),
+          ));
+        }
+
+        // Next link (if there are more results)
+        if (offset + resources.length < totalCount) {
+          final nextParams =
+              Map<String, String>.from(currentUrl.queryParameters);
+          final nextOffset = offset + count;
+          nextParams['_offset'] = nextOffset.toString();
+          final nextUrl = currentUrl.replace(queryParameters: nextParams);
+          links.add(fhir.BundleLink(
+            relation: fhir.FhirString('next'),
+            url: fhir.FhirUri(nextUrl.toString()),
+          ));
+        }
+
+        // Last link
+        if (count > 0 && totalCount > 0) {
+          final lastParams =
+              Map<String, String>.from(currentUrl.queryParameters);
+          final lastOffset = ((totalCount - 1) ~/ count) * count;
+          lastParams['_offset'] = lastOffset.toString();
+          final lastUrl = currentUrl.replace(queryParameters: lastParams);
+          links.add(fhir.BundleLink(
+            relation: fhir.FhirString('last'),
+            url: fhir.FhirUri(lastUrl.toString()),
+          ));
+        }
       } catch (e) {
         // If link creation fails, just continue without links
         FhirantLogging().logWarning('Failed to create pagination links: $e');
       }
     }
+
     // Handle empty results
     if (resources.isEmpty) {
       final bundle = fhir.Bundle(
@@ -176,96 +194,75 @@ Future<Response> getResourcesHandler(
         headers: {'Content-Type': 'application/json'},
       );
     }
-    
+
     // Process _include and _revinclude parameters
     final includedResources = <fhir.Resource>[];
     final includedResourceIds = <String>{};
-    
+
     if (include != null && include.isNotEmpty) {
-      // _include: Include resources referenced by the search results
-      // Format: SourceType:searchParam[:targetType]
-      for (final includeSpec in include) {
-        final parts = includeSpec.split(':');
-        // parts[0] = source type (already matched by context)
-        final includeSearchParam = parts.length > 1 ? parts[1] : null;
-        final targetTypeFilter = parts.length > 2 ? parts[2] : null;
+      await _processIncludes(
+        include,
+        resources,
+        includedResources,
+        includedResourceIds,
+        dbInterface,
+      );
+    }
 
-        // Find references in the search results
-        for (final resource in resources) {
-          try {
-            final resourceJson = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-            final references = _extractReferences(resourceJson, includeSearchParam);
-
-            for (final ref in references) {
-              final refType = ref['type'];
-              final refId = ref['id'];
-              if (refType == null || refId == null) continue;
-
-              // If targetType filter specified, skip non-matching types
-              if (targetTypeFilter != null && refType != targetTypeFilter) {
-                continue;
-              }
-
-              final refTypeEnum = fhir.R4ResourceType.fromString(refType);
-              if (refTypeEnum == null) continue;
-
-              final compositeKey = '$refType/$refId';
-              if (!includedResourceIds.contains(compositeKey)) {
-                final refResource = await dbInterface.getResource(refTypeEnum, refId);
-                if (refResource != null) {
-                  includedResources.add(refResource);
-                  includedResourceIds.add(compositeKey);
-                }
-              }
-            }
-          } catch (e) {
-            // Skip invalid resources
-            continue;
-          }
-        }
+    // _include:iterate — iteratively resolve references from newly included resources
+    if (includeIterate != null && includeIterate.isNotEmpty) {
+      var newlyIncluded = List<fhir.Resource>.from(includedResources);
+      for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+        final nextBatch = <fhir.Resource>[];
+        final nextBatchIds = <String>{};
+        await _processIncludes(
+          includeIterate,
+          newlyIncluded,
+          nextBatch,
+          nextBatchIds,
+          dbInterface,
+          existingIds: includedResourceIds,
+        );
+        if (nextBatch.isEmpty) break;
+        includedResources.addAll(nextBatch);
+        includedResourceIds.addAll(nextBatchIds);
+        newlyIncluded = nextBatch;
       }
     }
-    
+
     if (revinclude != null && revinclude.isNotEmpty) {
-      // _revinclude: Include resources that reference the search results
-      for (final revincludeSpec in revinclude) {
-        // Format: ResourceType:searchParam or ResourceType
-        final parts = revincludeSpec.split(':');
-        final revincludeResourceType = parts[0];
-        final revincludeSearchParam = parts.length > 1 ? parts[1] : null;
-        
-        final revincludeType = fhir.R4ResourceType.fromString(revincludeResourceType);
-        if (revincludeType == null) continue;
-        
-        // Search for resources of revincludeType that reference our search results
-        final searchResultIds = resources.map((r) => r.id?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
-        
-        if (searchResultIds.isNotEmpty) {
-          // Use reference search to find resources that reference our results
-          final revincludeParams = <String, List<String>>{
-            revincludeSearchParam ?? 'subject': searchResultIds.toList(),
-          };
-          
-          final revincludeResults = await dbInterface.search(
-            resourceType: revincludeType,
-            searchParameters: revincludeParams,
-          );
-          
-          for (final revResource in revincludeResults) {
-            if (!includedResourceIds.contains(revResource.id?.toString() ?? '')) {
-              includedResources.add(revResource);
-              includedResourceIds.add(revResource.id?.toString() ?? '');
-            }
-          }
-        }
+      await _processRevIncludes(
+        revinclude,
+        resources,
+        includedResources,
+        includedResourceIds,
+        dbInterface,
+      );
+    }
+
+    // _revinclude:iterate — iteratively find resources referencing newly included
+    if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
+      var newlyIncluded = List<fhir.Resource>.from(includedResources);
+      for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+        final nextBatch = <fhir.Resource>[];
+        final nextBatchIds = <String>{};
+        await _processRevIncludes(
+          revincludeIterate,
+          newlyIncluded,
+          nextBatch,
+          nextBatchIds,
+          dbInterface,
+          existingIds: includedResourceIds,
+        );
+        if (nextBatch.isEmpty) break;
+        includedResources.addAll(nextBatch);
+        includedResourceIds.addAll(nextBatchIds);
+        newlyIncluded = nextBatch;
       }
     }
-    
-    // Combine search results with included resources
-    final allResources = <fhir.Resource>[...resources, ...includedResources];
-    
+
     // Apply response shaping (_summary / _elements) to each resource
-    final shapedResources = allResources.map((resource) {
+    fhir.Resource _shapeResource(fhir.Resource resource) {
       if (summary != null && summary != 'false') {
         final json =
             jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
@@ -278,24 +275,41 @@ Future<Response> getResourcesHandler(
         return fhir.Resource.fromJson(shaped);
       }
       return resource;
+    }
+
+    // Build match entries (from search results)
+    final matchEntries = resources.map((resource) {
+      final shaped = _shapeResource(resource);
+      final resourceId = shaped.id?.toString() ?? '';
+      final resType = shaped.resourceTypeString;
+      final fullUrl = resourceId.isNotEmpty
+          ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+          : null;
+      return fhir.BundleEntry(
+        resource: shaped,
+        fullUrl: fullUrl,
+        search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
+      );
+    }).toList();
+
+    // Build include entries (from _include/_revinclude results)
+    final includeEntries = includedResources.map((resource) {
+      final shaped = _shapeResource(resource);
+      final resourceId = shaped.id?.toString() ?? '';
+      final resType = shaped.resourceTypeString;
+      final fullUrl = resourceId.isNotEmpty
+          ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+          : null;
+      return fhir.BundleEntry(
+        resource: shaped,
+        fullUrl: fullUrl,
+        search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.include),
+      );
     }).toList();
 
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
-      entry: shapedResources
-          .map(
-            (resource) {
-              final resourceId = resource.id?.toString() ?? '';
-              final fullUrl = resourceId.isNotEmpty
-                  ? fhir.FhirUri('$baseUrl/$resourceType/$resourceId')
-                  : null;
-              return fhir.BundleEntry(
-                resource: resource,
-                fullUrl: fullUrl,
-              );
-            },
-          )
-          .toList(),
+      entry: [...matchEntries, ...includeEntries],
       total: fhir.FhirUnsignedInt(totalCount),
       link: links.isEmpty ? null : links,
     );
@@ -315,6 +329,115 @@ Future<Response> getResourcesHandler(
       stackTrace,
     );
     return _errorResponse('Failed to fetch resources', e.toString());
+  }
+}
+
+/// Process _include specs: extract references from [sourceResources] and fetch them.
+Future<void> _processIncludes(
+  List<String> includeSpecs,
+  List<fhir.Resource> sourceResources,
+  List<fhir.Resource> includedResources,
+  Set<String> includedResourceIds,
+  FhirAntDb dbInterface, {
+  Set<String>? existingIds,
+}) async {
+  final allIds = existingIds ?? includedResourceIds;
+
+  for (final includeSpec in includeSpecs) {
+    final parts = includeSpec.split(':');
+    // parts[0] = source type (context)
+    final includeSearchParam = parts.length > 1 ? parts[1] : null;
+    final targetTypeFilter = parts.length > 2 ? parts[2] : null;
+    final isWildcard = includeSearchParam == '*';
+
+    for (final resource in sourceResources) {
+      try {
+        final resourceJson =
+            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+        final references = _extractReferences(
+          resourceJson,
+          isWildcard ? null : includeSearchParam,
+        );
+
+        for (final ref in references) {
+          final refType = ref['type'];
+          final refId = ref['id'];
+          if (refType == null || refId == null) continue;
+
+          if (targetTypeFilter != null && refType != targetTypeFilter) {
+            continue;
+          }
+
+          final refTypeEnum = fhir.R4ResourceType.fromString(refType);
+          if (refTypeEnum == null) continue;
+
+          final compositeKey = '$refType/$refId';
+          if (!allIds.contains(compositeKey) &&
+              !includedResourceIds.contains(compositeKey)) {
+            final refResource =
+                await dbInterface.getResource(refTypeEnum, refId);
+            if (refResource != null) {
+              includedResources.add(refResource);
+              includedResourceIds.add(compositeKey);
+            }
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+}
+
+/// Process _revinclude specs: find resources that reference [sourceResources].
+Future<void> _processRevIncludes(
+  List<String> revincludeSpecs,
+  List<fhir.Resource> sourceResources,
+  List<fhir.Resource> includedResources,
+  Set<String> includedResourceIds,
+  FhirAntDb dbInterface, {
+  Set<String>? existingIds,
+}) async {
+  final allIds = existingIds ?? includedResourceIds;
+
+  for (final revincludeSpec in revincludeSpecs) {
+    final parts = revincludeSpec.split(':');
+    final revincludeResourceType = parts[0];
+    // Per FHIR spec, search param is required — skip if missing
+    if (parts.length < 2) continue;
+    final revincludeSearchParam = parts[1];
+
+    final revincludeType =
+        fhir.R4ResourceType.fromString(revincludeResourceType);
+    if (revincludeType == null) continue;
+
+    // Build full references (ResourceType/ID) for the search
+    final searchResultRefs = sourceResources
+        .where((r) => r.id != null && r.id.toString().isNotEmpty)
+        .map((r) => '${r.resourceTypeString}/${r.id}')
+        .toSet();
+
+    if (searchResultRefs.isNotEmpty) {
+      final revincludeParams = <String, List<String>>{
+        revincludeSearchParam: searchResultRefs.toList(),
+      };
+
+      final revincludeResults = await dbInterface.search(
+        resourceType: revincludeType,
+        searchParameters: revincludeParams,
+      );
+
+      for (final revResource in revincludeResults) {
+        final revType = revResource.resourceTypeString;
+        final revId = revResource.id?.toString() ?? '';
+        final compositeKey = '$revType/$revId';
+        if (!allIds.contains(compositeKey) &&
+            !includedResourceIds.contains(compositeKey)) {
+          includedResources.add(revResource);
+          includedResourceIds.add(compositeKey);
+        }
+      }
+    }
   }
 }
 

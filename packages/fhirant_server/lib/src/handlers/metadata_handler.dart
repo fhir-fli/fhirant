@@ -50,12 +50,31 @@ Response metadataHandler(Request request) {
       {
         'name': '_include',
         'type': 'special',
-        'documentation': 'Include resources referenced by the search results. Format: ResourceType:searchParam',
+        'documentation':
+            'Include resources referenced by the search results. '
+                'Format: ResourceType:searchParam[:targetType]. '
+                'Use * as searchParam for wildcard.',
+      },
+      {
+        'name': '_include:iterate',
+        'type': 'special',
+        'documentation':
+            'Iteratively include resources referenced by included resources. '
+                'Format: ResourceType:searchParam[:targetType].',
       },
       {
         'name': '_revinclude',
         'type': 'special',
-        'documentation': 'Include resources that reference the search results. Format: ResourceType:searchParam',
+        'documentation':
+            'Include resources that reference the search results. '
+                'Format: ResourceType:searchParam.',
+      },
+      {
+        'name': '_revinclude:iterate',
+        'type': 'special',
+        'documentation':
+            'Iteratively include resources that reference included resources. '
+                'Format: ResourceType:searchParam.',
       },
     ];
 

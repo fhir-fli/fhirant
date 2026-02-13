@@ -76,6 +76,38 @@ void main() {
       expect(result['summary'], equals('data'));
     });
 
+    test('parses _include:iterate into separate list', () {
+      final queryParams = {
+        '_include': 'Patient:managingOrganization',
+        '_include:iterate': 'Organization:partOf',
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      expect(result['include'], equals(['Patient:managingOrganization']));
+      expect(result['includeIterate'], equals(['Organization:partOf']));
+    });
+
+    test('parses _revinclude:iterate into separate list', () {
+      final queryParams = {
+        '_revinclude': 'Encounter:subject',
+        '_revinclude:iterate': 'Observation:encounter',
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      expect(result['revinclude'], equals(['Encounter:subject']));
+      expect(result['revincludeIterate'], equals(['Observation:encounter']));
+    });
+
+    test('_include:iterate not treated as search parameter', () {
+      final queryParams = {
+        '_include:iterate': 'Organization:partOf',
+      };
+
+      expect(SearchParameterParser.hasSearchParameters(queryParams), isFalse);
+    });
+
     test('hasSearchParameters returns true when search params exist', () {
       final queryParams = {
         'name': 'Smith',
