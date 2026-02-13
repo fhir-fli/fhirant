@@ -439,6 +439,55 @@ void main() {
           containsAll(['iter-pat-1', 'iter-child-org', 'iter-parent-org']));
     });
 
+    test('search bundle has self link matching request URL', () async {
+      await testDb.saveResource(fhir.Patient(
+        id: 'self-link-1'.toFhirString,
+        name: [fhir.HumanName(family: 'SelfLinkTest'.toFhirString)],
+      ));
+
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=SelfLinkTest',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final links = body['link'] as List?;
+      expect(links, isNotNull);
+      final selfLink = links!.firstWhere(
+        (l) => l['relation'] == 'self',
+        orElse: () => null,
+      );
+      expect(selfLink, isNotNull);
+      expect(
+        selfLink['url'] as String,
+        contains('/Patient?family=SelfLinkTest'),
+      );
+    });
+
+    test('empty search bundle has self link', () async {
+      final response = await handler(testRequest(
+        'GET',
+        '/Patient?family=NobodyHere',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      final links = body['link'] as List?;
+      expect(links, isNotNull);
+      final selfLink = links!.firstWhere(
+        (l) => l['relation'] == 'self',
+        orElse: () => null,
+      );
+      expect(selfLink, isNotNull);
+      expect(
+        selfLink['url'] as String,
+        contains('/Patient?family=NobodyHere'),
+      );
+    });
+
     test('_include with wildcard (*) includes all referenced resources',
         () async {
       await testDb.saveResource(fhir.Organization(

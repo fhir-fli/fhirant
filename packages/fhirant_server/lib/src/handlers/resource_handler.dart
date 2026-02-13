@@ -119,6 +119,12 @@ Future<Response> getResourcesHandler(
       try {
         final currentUrl = request.requestedUri;
 
+        // Self link (current request URL)
+        links.add(fhir.BundleLink(
+          relation: fhir.FhirString('self'),
+          url: fhir.FhirUri(currentUrl.toString()),
+        ));
+
         // First link
         final firstParams =
             Map<String, String>.from(currentUrl.queryParameters);
@@ -176,10 +182,15 @@ Future<Response> getResourcesHandler(
 
     // Handle empty results
     if (resources.isEmpty) {
+      final selfLink = fhir.BundleLink(
+        relation: fhir.FhirString('self'),
+        url: fhir.FhirUri(request.requestedUri.toString()),
+      );
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         entry: <fhir.BundleEntry>[],
         total: fhir.FhirUnsignedInt(0),
+        link: [selfLink],
       );
 
       // Use toJson + manual entry to avoid FHIR library serializing empty list as null
@@ -877,6 +888,101 @@ Future<Response> deleteResourceHandler(
       stackTrace,
     );
     return _errorResponse('Error deleting resource', e.toString());
+  }
+}
+
+/// Handler for conditional delete by search (DELETE /<resourceType>?params)
+///
+/// Per FHIR spec with conditionalDelete: 'single':
+/// - 0 matches: return 200 with OperationOutcome (nothing to delete)
+/// - 1 match: delete and return 204
+/// - Multiple matches: return 412 Precondition Failed
+Future<Response> conditionalDeleteHandler(
+  Request request,
+  String resourceType,
+  FhirAntDb dbInterface,
+) async {
+  try {
+    final type = fhir.R4ResourceType.fromString(resourceType);
+    if (type == null) {
+      FhirantLogging().logWarning(
+        'Invalid resource type for conditional delete: $resourceType',
+      );
+      return _validationErrorResponse('Invalid resource type');
+    }
+
+    final queryParams = request.url.queryParameters;
+    final parsed = SearchParameterParser.parseQueryParameters(queryParams);
+    final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+
+    if (searchParams == null || searchParams.isEmpty) {
+      return _validationErrorResponse(
+        'Conditional delete requires at least one search parameter',
+      );
+    }
+
+    final results = await dbInterface.search(
+      resourceType: type,
+      searchParameters: searchParams,
+    );
+
+    if (results.isEmpty) {
+      return Response.ok(
+        fhir.OperationOutcome(
+          issue: [
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.information,
+              code: fhir.IssueType.notFound,
+              diagnostics:
+                  'No resources matched the search criteria'.toFhirString,
+            ),
+          ],
+        ).toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    if (results.length > 1) {
+      return Response(
+        412,
+        body: fhir.OperationOutcome(
+          issue: [
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.error,
+              code: fhir.IssueType.multipleMatches,
+              diagnostics:
+                  'Multiple resources (${results.length}) matched the search criteria; '
+                          'conditional delete in single mode requires exactly one match'
+                      .toFhirString,
+            ),
+          ],
+        ).toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    // Exactly one match — delete it
+    final resource = results.first;
+    final id = resource.id?.toString() ?? '';
+    final success = await dbInterface.deleteResource(type, id);
+    if (success) {
+      FhirantLogging().logInfo(
+        'Conditional delete: deleted $resourceType/$id',
+      );
+      return Response(204);
+    } else {
+      return _errorResponse(
+        'Failed to delete resource',
+        'Database operation failed',
+      );
+    }
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+      'Error in conditional delete for $resourceType',
+      e,
+      stackTrace,
+    );
+    return _errorResponse('Error in conditional delete', e.toString());
   }
 }
 

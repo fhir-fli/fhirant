@@ -159,6 +159,11 @@ class FhirAntServer {
         '/<resourceType>/<id>',
         (Request req, String resourceType, String id) =>
             deleteResourceHandler(req, resourceType, id, dbInterface),
+      )
+      ..delete(
+        '/<resourceType>',
+        (Request req, String resourceType) =>
+            conditionalDeleteHandler(req, resourceType, dbInterface),
       );
 
 

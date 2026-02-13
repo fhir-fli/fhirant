@@ -1229,5 +1229,256 @@ void main() {
       final entries = json['entry'] as List?;
       expect(entries == null || entries.isEmpty, isTrue);
     });
+
+    test('search bundle includes self link', () async {
+      final patients = [
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': '1',
+          'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        }),
+      ];
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=Smith&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=Smith&_count=10'),
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            'name': ['Smith'],
+          },
+          count: 10,
+          offset: 0,
+          sort: null,
+        ),
+      ).thenAnswer((_) async => patients);
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {'name': ['Smith']},
+        ),
+      ).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final links = json['link'] as List?;
+      expect(links, isNotNull);
+      final selfLink = links!.firstWhere(
+        (l) => l['relation'] == 'self',
+        orElse: () => null,
+      );
+      expect(selfLink, isNotNull);
+      expect(
+        selfLink['url'] as String,
+        contains('Patient?name=Smith'),
+      );
+    });
+
+    test('empty search bundle includes self link', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=Nobody&_count=10'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=Nobody&_count=10'),
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            'name': ['Nobody'],
+          },
+          count: 10,
+          offset: 0,
+          sort: null,
+        ),
+      ).thenAnswer((_) async => []);
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {'name': ['Nobody']},
+        ),
+      ).thenAnswer((_) async => 0);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final links = json['link'] as List?;
+      expect(links, isNotNull);
+      final selfLink = links!.firstWhere(
+        (l) => l['relation'] == 'self',
+        orElse: () => null,
+      );
+      expect(selfLink, isNotNull);
+      expect(
+        selfLink['url'] as String,
+        contains('Patient?name=Nobody'),
+      );
+    });
+  });
+
+  group('conditionalDeleteHandler', () {
+    late MockFhirAntDb mockDb;
+    late MockRequest mockRequest;
+
+    setUp(() {
+      mockDb = MockFhirAntDb();
+      mockRequest = MockRequest();
+    });
+
+    test('returns 400 when no search params provided', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
+
+      final response = await conditionalDeleteHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+    });
+
+    test('returns 204 when single match found', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'cond-del-1',
+        'name': [
+          {'family': 'CondDelete'},
+        ],
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=CondDelete'),
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            'name': ['CondDelete'],
+          },
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.deleteResource(
+            fhir.R4ResourceType.Patient, 'cond-del-1'),
+      ).thenAnswer((_) async => true);
+
+      final response = await conditionalDeleteHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(204));
+      verify(
+        () => mockDb.deleteResource(
+            fhir.R4ResourceType.Patient, 'cond-del-1'),
+      ).called(1);
+    });
+
+    test('returns 412 when multiple matches found', () async {
+      final patient1 = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'multi-1',
+        'name': [
+          {'family': 'MultiMatch'},
+        ],
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+      final patient2 = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'multi-2',
+        'name': [
+          {'family': 'MultiMatch'},
+        ],
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=MultiMatch'),
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            'name': ['MultiMatch'],
+          },
+        ),
+      ).thenAnswer((_) async => [patient1, patient2]);
+
+      final response = await conditionalDeleteHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(412));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+      verifyNever(() => mockDb.deleteResource(any(), any()));
+    });
+
+    test('returns 200 when no matches found', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?name=NoMatch'),
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            'name': ['NoMatch'],
+          },
+        ),
+      ).thenAnswer((_) async => []);
+
+      final response = await conditionalDeleteHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
+      verifyNever(() => mockDb.deleteResource(any(), any()));
+    });
+
+    test('returns 400 for invalid resource type', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/InvalidType?name=Test'),
+      );
+
+      final response = await conditionalDeleteHandler(
+        mockRequest,
+        'InvalidType',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+    });
   });
 }

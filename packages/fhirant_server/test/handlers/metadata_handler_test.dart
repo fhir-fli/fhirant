@@ -71,7 +71,7 @@ void main() {
       final patient = resources.firstWhere(
           (r) => (r as Map)['type'] == 'Patient') as Map<String, dynamic>;
       expect(patient['conditionalCreate'], isTrue);
-      expect(patient['conditionalRead'], equals('modified-since'));
+      expect(patient['conditionalRead'], equals('not-match'));
       expect(patient['conditionalUpdate'], isTrue);
       expect(patient['conditionalDelete'], equals('single'));
     });

@@ -226,6 +226,79 @@ void main() {
       expect(body['meta']['versionId'], equals(v1Id));
     });
 
+    test('DELETE /Patient?name=X conditional delete removes single match',
+        () async {
+      await testDb.saveResource(fhir.Patient(
+        id: 'cond-del-e2e-1'.toFhirString,
+        name: [
+          fhir.HumanName(
+            family: 'CondDelUnique'.toFhirString,
+          ),
+        ],
+      ));
+
+      final response = await handler(testRequest(
+        'DELETE',
+        '/Patient?name=CondDelUnique',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(204));
+
+      // Verify resource is gone
+      final getResponse = await handler(testRequest(
+        'GET',
+        '/Patient/cond-del-e2e-1',
+        authToken: authToken,
+      ));
+      expect(getResponse.statusCode, equals(404));
+    });
+
+    test('DELETE /Patient?name=X returns 412 for multiple matches', () async {
+      await testDb.saveResource(fhir.Patient(
+        id: 'cond-del-multi-1'.toFhirString,
+        name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
+      ));
+      await testDb.saveResource(fhir.Patient(
+        id: 'cond-del-multi-2'.toFhirString,
+        name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
+      ));
+
+      final response = await handler(testRequest(
+        'DELETE',
+        '/Patient?name=CondDelMulti',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(412));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['resourceType'], equals('OperationOutcome'));
+
+      // Both resources should still exist
+      final get1 = await handler(testRequest(
+        'GET',
+        '/Patient/cond-del-multi-1',
+        authToken: authToken,
+      ));
+      expect(get1.statusCode, equals(200));
+      final get2 = await handler(testRequest(
+        'GET',
+        '/Patient/cond-del-multi-2',
+        authToken: authToken,
+      ));
+      expect(get2.statusCode, equals(200));
+    });
+
+    test('DELETE /Patient with no search params returns 400', () async {
+      final response = await handler(testRequest(
+        'DELETE',
+        '/Patient',
+        authToken: authToken,
+      ));
+
+      expect(response.statusCode, equals(400));
+    });
+
     test('GET /Patient/{id}/_history returns all versions', () async {
       final patient = fhir.Patient(
         id: 'test-history-jkl'.toFhirString,

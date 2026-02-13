@@ -228,7 +228,7 @@ Response metadataHandler(Request request) {
                     'readHistory': true,
                     'updateCreate': true,
                     'conditionalCreate': true,
-                    'conditionalRead': 'modified-since',
+                    'conditionalRead': 'not-match',
                     'conditionalUpdate': true,
                     'conditionalDelete': 'single',
                     if (resourceParams.isNotEmpty)
