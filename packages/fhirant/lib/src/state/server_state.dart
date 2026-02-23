@@ -90,7 +90,7 @@ class ServerState extends ChangeNotifier {
       // Start Android foreground service to keep server alive
       if (Platform.isAndroid) {
         await FlutterForegroundTask.startService(
-          notificationTitle: 'FHIRant Server',
+          notificationTitle: 'FHIR ANT Server',
           notificationText: 'Running on port $_port',
         );
       }

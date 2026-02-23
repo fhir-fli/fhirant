@@ -29,7 +29,7 @@ void main() async {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'fhirant_server',
-        channelName: 'FHIRant Server',
+        channelName: 'FHIR ANT Server',
         channelDescription: 'Keeps the FHIR server running in the background',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
@@ -98,7 +98,7 @@ class _FhirantAppState extends State<FhirantApp> with WidgetsBindingObserver {
     }
 
     return MaterialApp(
-      title: 'FHIRant',
+      title: 'FHIR ANT',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),

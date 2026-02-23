@@ -12,8 +12,19 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FHIRant'),
+        title: const Column(
+          children: [
+            Text('FHIR ANT'),
+            Text(
+              'Fast Healthcare Interoperability Resources\n'
+              'Agile Networking Tool',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w300),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
         centerTitle: true,
+        toolbarHeight: 72,
       ),
       body: const SafeArea(
         child: SingleChildScrollView(
