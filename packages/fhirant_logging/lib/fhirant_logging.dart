@@ -14,8 +14,15 @@ class FhirantLogging {
 
   static final Logger _logger = Logger('FHIRantServer');
 
-  /// Initialize logging (should be called once in `main`)
-  void initialize() {
+  String? _logFilePath;
+
+  /// Initialize logging (should be called once in `main`).
+  ///
+  /// [logFilePath] — path for the log file. Pass `null` to disable file
+  /// logging (useful on mobile). Defaults to `'server_logs.json'` for
+  /// backwards-compatible CLI usage.
+  void initialize({String? logFilePath = 'server_logs.json'}) {
+    _logFilePath = logFilePath;
     Logger.root.level = Level.ALL; // Log everything
     Logger.root.onRecord.listen((LogRecord record) {
       final logMessage = jsonEncode({
@@ -34,10 +41,11 @@ class FhirantLogging {
     });
   }
 
-  /// Write log message to a file
+  /// Write log message to a file (no-op if [_logFilePath] is null)
   void _writeToFile(String logMessage) {
+    if (_logFilePath == null) return;
     File(
-      'server_logs.json',
+      _logFilePath!,
     ).writeAsStringSync('$logMessage\n', mode: FileMode.append);
   }
 

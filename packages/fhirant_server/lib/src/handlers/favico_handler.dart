@@ -8,6 +8,6 @@ Future<Response> favicoHandler(Request request) async {
     final faviconBytes = await File('assets/fhirant_logo.png').readAsBytes();
     return Response.ok(faviconBytes, headers: {'Content-Type': 'image/png'});
   } catch (e) {
-    return Response.internalServerError(body: 'Error serving favicon: $e');
+    return Response.notFound('Favicon not found');
   }
 }

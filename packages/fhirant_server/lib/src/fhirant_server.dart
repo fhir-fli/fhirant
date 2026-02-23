@@ -1,4 +1,5 @@
 // lib/src/core/server_core.dart
+import 'dart:async';
 import 'dart:io';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
@@ -12,16 +13,44 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
 
+/// A single logged HTTP request.
+class RequestLogEntry {
+  final DateTime timestamp;
+  final String method;
+  final String path;
+  final int statusCode;
+  final int durationMs;
+  final String clientIp;
+
+  RequestLogEntry({
+    required this.timestamp,
+    required this.method,
+    required this.path,
+    required this.statusCode,
+    required this.durationMs,
+    required this.clientIp,
+  });
+}
+
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
   final FhirAntDb dbInterface;
   final String exportDir;
+  final int maxRequests;
+  final Duration rateLimitDuration;
   late final JwtService _jwtService;
   HttpServer? _server;
   bool _isRunning = false;
+  final StreamController<RequestLogEntry> _requestLogController =
+      StreamController<RequestLogEntry>.broadcast();
 
-  FhirAntServer(this.dbInterface, {String? jwtSecret, String? exportDir})
-      : exportDir = exportDir ?? 'data/export' {
+  FhirAntServer(
+    this.dbInterface, {
+    String? jwtSecret,
+    String? exportDir,
+    this.maxRequests = 10,
+    this.rateLimitDuration = const Duration(seconds: 60),
+  }) : exportDir = exportDir ?? 'data/export' {
     final secret = jwtSecret ??
         Platform.environment['FHIRANT_JWT_SECRET'] ??
         'fhirant-dev-secret-change-in-production';
@@ -30,6 +59,9 @@ class FhirAntServer {
 
   bool get isRunning => _isRunning;
   int? get port => _server?.port;
+
+  /// Stream of request log entries for live monitoring.
+  Stream<RequestLogEntry> get requestLog => _requestLogController.stream;
 
   /// Create router with all handlers
   Router createRouter() {
@@ -176,8 +208,8 @@ class FhirAntServer {
     final memoryStorage = MemStorage();
     final rateLimiter = ShelfRateLimiter(
       storage: memoryStorage,
-      duration: const Duration(seconds: 60),
-      maxRequests: 10,
+      duration: rateLimitDuration,
+      maxRequests: maxRequests,
     );
 
     return Pipeline()
@@ -239,6 +271,7 @@ class FhirAntServer {
     await _server!.close(force: true);
     _server = null;
     _isRunning = false;
+    await _requestLogController.close();
     print('Server stopped');
   }
 
@@ -259,6 +292,18 @@ class FhirAntServer {
         // Log the request using platform-agnostic logging
         print(
             '${request.method} ${request.requestedUri} - ${response.statusCode} (${duration.inMilliseconds}ms) from $clientIp');
+
+        // Emit to the request log stream for live monitoring
+        if (!_requestLogController.isClosed) {
+          _requestLogController.add(RequestLogEntry(
+            timestamp: startTime,
+            method: request.method,
+            path: request.requestedUri.path,
+            statusCode: response.statusCode,
+            durationMs: duration.inMilliseconds,
+            clientIp: clientIp,
+          ));
+        }
 
         return response;
       };

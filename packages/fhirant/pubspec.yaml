@@ -1,0 +1,61 @@
+name: fhirant
+description: FHIRant — a FHIR R4 server in your pocket.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # FHIR core
+  fhir_r4:
+    path: ../../../fhir_r4/packages/fhir_r4
+
+  # FHIRant packages
+  fhirant_server:
+    path: ../fhirant_server
+  fhirant_db:
+    path: ../fhirant_db
+  fhirant_logging:
+    path: ../fhirant_logging
+
+  # Database
+  drift: ^2.29.0
+  sqlite3: ^2.4.6
+  sqlcipher_flutter_libs: ^0.6.4
+
+  # Platform services
+  path_provider: ^2.1.5
+  flutter_secure_storage: ^9.2.4
+  network_info_plus: ^6.1.1
+
+  # State management
+  provider: ^6.1.2
+
+  # UI
+  qr_flutter: ^4.1.0
+
+  # Android foreground service
+  flutter_foreground_task: ^8.13.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+dependency_overrides:
+  fhir_r4:
+    path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4_path:
+    path: ../../../fhir_r4/packages/fhir_r4_path
+  fhir_r4_mapping:
+    path: ../../../fhir_r4/packages/fhir_r4_mapping
+  fhir_r4_validation:
+    path: ../../../fhir_r4/packages/fhir_r4_validation
+
+flutter:
+  uses-material-design: true
