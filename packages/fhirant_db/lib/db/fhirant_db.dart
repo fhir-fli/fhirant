@@ -36,7 +36,7 @@ class FhirAntDb extends _$FhirAntDb {
 
   /// Default database version for migrations
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,6 +55,9 @@ class FhirAntDb extends _$FhirAntDb {
           }
           if (from < 5) {
             await m.addColumn(exportJobs, exportJobs.typeFilters);
+          }
+          if (from < 6) {
+            await m.addColumn(users, users.scopes);
           }
         },
       );
@@ -445,12 +448,14 @@ class FhirAntDb extends _$FhirAntDb {
     required String passwordHash,
     required String salt,
     String role = 'clinician',
+    String? scopes,
   }) async {
     return into(users).insert(UsersCompanion(
       username: Value(username),
       passwordHash: Value(passwordHash),
       salt: Value(salt),
       role: Value(role),
+      scopes: Value(scopes),
     ));
   }
 
@@ -477,6 +482,7 @@ class FhirAntDb extends _$FhirAntDb {
   Future<List<fhir.Resource>> search({
     required fhir.R4ResourceType resourceType,
     Map<String, List<String>>? searchParameters,
+    List<HasParameter>? hasParameters,
     int? count,
     int? offset,
     List<String>? sort,
@@ -486,6 +492,20 @@ class FhirAntDb extends _$FhirAntDb {
     // Start with all resources of this type
     Set<String> matchingIds = {};
     bool firstParam = true;
+
+    // Process _has parameters first (reverse chaining)
+    if (hasParameters != null && hasParameters.isNotEmpty) {
+      for (final hasParam in hasParameters) {
+        final hasIds = await _resolveHasParameter(
+            resourceTypeString, hasParam, 0);
+        if (firstParam) {
+          matchingIds = hasIds;
+          firstParam = false;
+        } else {
+          matchingIds = matchingIds.intersection(hasIds);
+        }
+      }
+    }
 
     // Process each search parameter (skip if none provided)
     if (searchParameters != null && searchParameters.isNotEmpty) {
@@ -908,20 +928,37 @@ class FhirAntDb extends _$FhirAntDb {
   Future<int> searchCount({
     required fhir.R4ResourceType resourceType,
     Map<String, List<String>>? searchParameters,
+    List<HasParameter>? hasParameters,
   }) async {
     final resourceTypeString = resourceType.toString();
 
-    // If no search parameters, use getResourceCount
-    if (searchParameters == null || searchParameters.isEmpty) {
+    // If no search parameters and no _has, use getResourceCount
+    final hasSearch = searchParameters != null && searchParameters.isNotEmpty;
+    final hasHas = hasParameters != null && hasParameters.isNotEmpty;
+    if (!hasSearch && !hasHas) {
       return await getResourceCount(resourceType);
     }
-
 
     // Start with all resources of this type
     Set<String> matchingIds = {};
     bool firstParam = true;
 
+    // Process _has parameters first (reverse chaining)
+    if (hasHas) {
+      for (final hasParam in hasParameters) {
+        final hasIds = await _resolveHasParameter(
+            resourceTypeString, hasParam, 0);
+        if (firstParam) {
+          matchingIds = hasIds;
+          firstParam = false;
+        } else {
+          matchingIds = matchingIds.intersection(hasIds);
+        }
+      }
+    }
+
     // Process each search parameter
+    if (hasSearch) {
     for (final entry in searchParameters.entries) {
       final paramName = entry.key;
       final paramValues = entry.value;
@@ -1244,11 +1281,80 @@ class FhirAntDb extends _$FhirAntDb {
         matchingIds = matchingIds.intersection(paramIds);
       }
     }
+    }
 
-    // Retrieve the matching resources
+    // If no parameters were processed, get all resource IDs
+    if (firstParam) {
+      return await getResourceCount(resourceType);
+    }
 
     // Return count of matching IDs
     return matchingIds.length;
+  }
+
+  /// Resolves a `_has` reverse-chaining parameter to a set of matching
+  /// source resource IDs.
+  ///
+  /// For `Patient?_has:Observation:patient:code=1234`:
+  /// 1. Search Observation for code=1234 → get matching Observation IDs
+  /// 2. Look up reference_search_parameters where resourceType=Observation,
+  ///    id IN matchingIds, and referenceResourceType=sourceResourceType
+  /// 3. Return the referenceIdPart values (the Patient IDs)
+  Future<Set<String>> _resolveHasParameter(
+    String sourceResourceType,
+    HasParameter hasParam,
+    int depth,
+  ) async {
+    // Prevent runaway recursion (max depth 3)
+    if (depth > 3) return {};
+
+    final targetType = hasParam.targetType;
+    final targetResourceType = fhir.R4ResourceType.fromString(targetType);
+    if (targetResourceType == null) return {};
+
+    Set<String> targetIds;
+
+    if (hasParam.nested != null) {
+      // Nested _has: first resolve the inner _has to get target IDs,
+      // then use those as the target for reference lookup
+      targetIds = await _resolveHasParameter(
+          targetType, hasParam.nested!, depth + 1);
+    } else {
+      // Simple _has: search the target type for the search param=value
+      final results = await search(
+        resourceType: targetResourceType,
+        searchParameters: {
+          hasParam.searchParam: [hasParam.value]
+        },
+      );
+      targetIds =
+          results.map((r) => r.id?.valueString ?? '').where((id) => id.isNotEmpty).toSet();
+    }
+
+    if (targetIds.isEmpty) return {};
+
+    // Look up reference search parameters to find which source resources
+    // are referenced by the matching target resources.
+    // Filter by referenceResourceType (not searchPath) to avoid
+    // search-param-name vs JSON-field-name mismatch.
+    final matchingSourceIds = <String>{};
+
+    for (final targetId in targetIds) {
+      final refs = await (select(referenceSearchParameters)
+            ..where((tbl) =>
+                tbl.resourceType.equals(targetType) &
+                tbl.id.equals(targetId) &
+                tbl.referenceResourceType.equals(sourceResourceType)))
+          .get();
+
+      for (final ref in refs) {
+        if (ref.referenceIdPart != null) {
+          matchingSourceIds.add(ref.referenceIdPart!);
+        }
+      }
+    }
+
+    return matchingSourceIds;
   }
 
   Future<Set<String>> _searchStringParameter(

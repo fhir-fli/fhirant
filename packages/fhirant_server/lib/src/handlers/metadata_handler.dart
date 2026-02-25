@@ -10,7 +10,11 @@ Response metadataHandler(Request request) {
       'Fetching metadata request from ${request.requestedUri}',
     );
 
-        // Common search parameters for all resources
+    final host = request.requestedUri.hasPort
+        ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
+        : '${request.requestedUri.scheme}://${request.requestedUri.host}';
+
+    // Common search parameters for all resources
     final commonSearchParams = [
       {
         'name': '_id',
@@ -76,6 +80,14 @@ Response metadataHandler(Request request) {
             'Iteratively include resources that reference included resources. '
                 'Format: ResourceType:searchParam.',
       },
+      {
+        'name': '_has',
+        'type': 'special',
+        'documentation':
+            'Reverse chaining. Select resources based on properties of resources '
+                'that refer to them. Format: _has:ResourceType:referenceParam:searchParam=value. '
+                'Supports nesting for multi-hop reverse chains.',
+      },
     ];
 
     // Resource-specific search parameters (simplified - can be expanded)
@@ -135,6 +147,22 @@ Response metadataHandler(Request request) {
           'mode': 'server',
           'documentation': 'FHIR RESTful API.',
           'security': {
+            'extension': [
+              {
+                'url':
+                    'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris',
+                'extension': [
+                  {
+                    'url': 'token',
+                    'valueUri': '$host/auth/login',
+                  },
+                  {
+                    'url': 'register',
+                    'valueUri': '$host/auth/register',
+                  },
+                ],
+              },
+            ],
             'cors': true,
             'service': [
               {
@@ -146,12 +174,12 @@ Response metadataHandler(Request request) {
                     'display': 'SMART-on-FHIR',
                   },
                 ],
-                'text': 'JWT Bearer Token Authentication',
+                'text': 'SMART on FHIR with JWT Bearer Token Authentication',
               },
             ],
             'description':
-                'Server uses JWT Bearer tokens for authentication. '
-                    'Obtain a token via POST /auth/login.',
+                'Server uses SMART on FHIR scopes with JWT Bearer tokens. '
+                    'See /.well-known/smart-configuration for details.',
           },
           'interaction': [
             {'code': 'transaction'},

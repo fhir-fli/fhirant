@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for user login. Validates credentials and returns a JWT.
@@ -44,11 +45,21 @@ Future<Response> loginHandler(
     // Update last login
     await dbInterface.updateLastLogin(user.id);
 
+    // Compute effective scopes: user-specific or role defaults
+    final List<String> effectiveScopes;
+    if (user.scopes != null && user.scopes!.isNotEmpty) {
+      effectiveScopes =
+          (jsonDecode(user.scopes!) as List<dynamic>).cast<String>();
+    } else {
+      effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
+    }
+
     // Generate JWT
     final token = jwtService.generateToken(
       userId: user.id,
       username: user.username,
       role: user.role,
+      scopes: effectiveScopes,
     );
 
     return Response.ok(
@@ -56,6 +67,7 @@ Future<Response> loginHandler(
         'token': token,
         'username': user.username,
         'role': user.role,
+        'scopes': effectiveScopes,
       }),
     );
   } catch (e) {

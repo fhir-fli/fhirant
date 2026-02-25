@@ -29,6 +29,7 @@ Future<Response> getResourcesHandler(
     final includeIterate = parsed['includeIterate'] as List<String>?;
     final revincludeIterate = parsed['revincludeIterate'] as List<String>?;
 
+    final hasParams = parsed['has'] as List<HasParameter>?;
     final count = parsed['count'] as int? ?? 20;
     final offset = parsed['offset'] as int? ?? 0;
     final sort = parsed['sort'] as List<String>?;
@@ -54,13 +55,16 @@ Future<Response> getResourcesHandler(
       );
     }
 
+    final hasHasParams = hasParams != null && hasParams.isNotEmpty;
+
     // Handle _summary=count — return bundle with total only, no entries
     if (summary == 'count') {
       int totalCount;
-      if (searchParams != null && searchParams.isNotEmpty) {
+      if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
         totalCount = await dbInterface.searchCount(
           resourceType: type,
           searchParameters: searchParams,
+          hasParameters: hasParams,
         );
       } else {
         totalCount = await dbInterface.getResourceCount(type);
@@ -75,13 +79,14 @@ Future<Response> getResourcesHandler(
       );
     }
 
-    // Use search if search parameters are provided, otherwise use pagination
+    // Use search if search parameters or _has params are provided
     final List<fhir.Resource> resources;
-    if (searchParams != null && searchParams.isNotEmpty) {
+    if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
       // Use search functionality
       resources = await dbInterface.search(
         resourceType: type,
         searchParameters: searchParams,
+        hasParameters: hasParams,
         count: count,
         offset: offset,
         sort: sort,
@@ -101,11 +106,12 @@ Future<Response> getResourcesHandler(
 
     // Get total count using searchCount (accurate count query)
     int totalCount;
-    if (searchParams != null && searchParams.isNotEmpty) {
+    if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
       // Use searchCount for accurate count with search parameters
       totalCount = await dbInterface.searchCount(
         resourceType: type,
         searchParameters: searchParams,
+        hasParameters: hasParams,
       );
     } else {
       // Use getResourceCount for simple count without search

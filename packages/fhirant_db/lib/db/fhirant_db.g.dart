@@ -5155,9 +5155,23 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   late final GeneratedColumn<DateTime> lastLogin = GeneratedColumn<DateTime>(
       'last_login', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _scopesMeta = const VerificationMeta('scopes');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, username, passwordHash, salt, role, active, createdAt, lastLogin];
+  late final GeneratedColumn<String> scopes = GeneratedColumn<String>(
+      'scopes', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        username,
+        passwordHash,
+        salt,
+        role,
+        active,
+        createdAt,
+        lastLogin,
+        scopes
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5207,6 +5221,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       context.handle(_lastLoginMeta,
           lastLogin.isAcceptableOrUnknown(data['last_login']!, _lastLoginMeta));
     }
+    if (data.containsKey('scopes')) {
+      context.handle(_scopesMeta,
+          scopes.isAcceptableOrUnknown(data['scopes']!, _scopesMeta));
+    }
     return context;
   }
 
@@ -5232,6 +5250,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       lastLogin: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}last_login']),
+      scopes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}scopes']),
     );
   }
 
@@ -5265,6 +5285,10 @@ class User extends DataClass implements Insertable<User> {
 
   /// Last login timestamp
   final DateTime? lastLogin;
+
+  /// SMART on FHIR scopes (JSON-encoded list of scope strings).
+  /// Null means use default scopes for the user's role.
+  final String? scopes;
   const User(
       {required this.id,
       required this.username,
@@ -5273,7 +5297,8 @@ class User extends DataClass implements Insertable<User> {
       required this.role,
       required this.active,
       required this.createdAt,
-      this.lastLogin});
+      this.lastLogin,
+      this.scopes});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5286,6 +5311,9 @@ class User extends DataClass implements Insertable<User> {
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || lastLogin != null) {
       map['last_login'] = Variable<DateTime>(lastLogin);
+    }
+    if (!nullToAbsent || scopes != null) {
+      map['scopes'] = Variable<String>(scopes);
     }
     return map;
   }
@@ -5302,6 +5330,8 @@ class User extends DataClass implements Insertable<User> {
       lastLogin: lastLogin == null && nullToAbsent
           ? const Value.absent()
           : Value(lastLogin),
+      scopes:
+          scopes == null && nullToAbsent ? const Value.absent() : Value(scopes),
     );
   }
 
@@ -5317,6 +5347,7 @@ class User extends DataClass implements Insertable<User> {
       active: serializer.fromJson<bool>(json['active']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastLogin: serializer.fromJson<DateTime?>(json['lastLogin']),
+      scopes: serializer.fromJson<String?>(json['scopes']),
     );
   }
   @override
@@ -5331,6 +5362,7 @@ class User extends DataClass implements Insertable<User> {
       'active': serializer.toJson<bool>(active),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastLogin': serializer.toJson<DateTime?>(lastLogin),
+      'scopes': serializer.toJson<String?>(scopes),
     };
   }
 
@@ -5342,7 +5374,8 @@ class User extends DataClass implements Insertable<User> {
           String? role,
           bool? active,
           DateTime? createdAt,
-          Value<DateTime?> lastLogin = const Value.absent()}) =>
+          Value<DateTime?> lastLogin = const Value.absent(),
+          Value<String?> scopes = const Value.absent()}) =>
       User(
         id: id ?? this.id,
         username: username ?? this.username,
@@ -5352,6 +5385,7 @@ class User extends DataClass implements Insertable<User> {
         active: active ?? this.active,
         createdAt: createdAt ?? this.createdAt,
         lastLogin: lastLogin.present ? lastLogin.value : this.lastLogin,
+        scopes: scopes.present ? scopes.value : this.scopes,
       );
   User copyWithCompanion(UsersCompanion data) {
     return User(
@@ -5365,6 +5399,7 @@ class User extends DataClass implements Insertable<User> {
       active: data.active.present ? data.active.value : this.active,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       lastLogin: data.lastLogin.present ? data.lastLogin.value : this.lastLogin,
+      scopes: data.scopes.present ? data.scopes.value : this.scopes,
     );
   }
 
@@ -5378,14 +5413,15 @@ class User extends DataClass implements Insertable<User> {
           ..write('role: $role, ')
           ..write('active: $active, ')
           ..write('createdAt: $createdAt, ')
-          ..write('lastLogin: $lastLogin')
+          ..write('lastLogin: $lastLogin, ')
+          ..write('scopes: $scopes')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, username, passwordHash, salt, role, active, createdAt, lastLogin);
+  int get hashCode => Object.hash(id, username, passwordHash, salt, role,
+      active, createdAt, lastLogin, scopes);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5397,7 +5433,8 @@ class User extends DataClass implements Insertable<User> {
           other.role == this.role &&
           other.active == this.active &&
           other.createdAt == this.createdAt &&
-          other.lastLogin == this.lastLogin);
+          other.lastLogin == this.lastLogin &&
+          other.scopes == this.scopes);
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
@@ -5409,6 +5446,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<bool> active;
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastLogin;
+  final Value<String?> scopes;
   const UsersCompanion({
     this.id = const Value.absent(),
     this.username = const Value.absent(),
@@ -5418,6 +5456,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.lastLogin = const Value.absent(),
+    this.scopes = const Value.absent(),
   });
   UsersCompanion.insert({
     this.id = const Value.absent(),
@@ -5428,6 +5467,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.lastLogin = const Value.absent(),
+    this.scopes = const Value.absent(),
   })  : username = Value(username),
         passwordHash = Value(passwordHash),
         salt = Value(salt);
@@ -5440,6 +5480,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<bool>? active,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastLogin,
+    Expression<String>? scopes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5450,6 +5491,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (active != null) 'active': active,
       if (createdAt != null) 'created_at': createdAt,
       if (lastLogin != null) 'last_login': lastLogin,
+      if (scopes != null) 'scopes': scopes,
     });
   }
 
@@ -5461,7 +5503,8 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? role,
       Value<bool>? active,
       Value<DateTime>? createdAt,
-      Value<DateTime?>? lastLogin}) {
+      Value<DateTime?>? lastLogin,
+      Value<String?>? scopes}) {
     return UsersCompanion(
       id: id ?? this.id,
       username: username ?? this.username,
@@ -5471,6 +5514,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       active: active ?? this.active,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
+      scopes: scopes ?? this.scopes,
     );
   }
 
@@ -5501,6 +5545,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (lastLogin.present) {
       map['last_login'] = Variable<DateTime>(lastLogin.value);
     }
+    if (scopes.present) {
+      map['scopes'] = Variable<String>(scopes.value);
+    }
     return map;
   }
 
@@ -5514,7 +5561,8 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('role: $role, ')
           ..write('active: $active, ')
           ..write('createdAt: $createdAt, ')
-          ..write('lastLogin: $lastLogin')
+          ..write('lastLogin: $lastLogin, ')
+          ..write('scopes: $scopes')
           ..write(')'))
         .toString();
   }
@@ -8881,6 +8929,7 @@ typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<bool> active,
   Value<DateTime> createdAt,
   Value<DateTime?> lastLogin,
+  Value<String?> scopes,
 });
 typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<int> id,
@@ -8891,6 +8940,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<bool> active,
   Value<DateTime> createdAt,
   Value<DateTime?> lastLogin,
+  Value<String?> scopes,
 });
 
 class $$UsersTableFilterComposer extends Composer<_$FhirAntDb, $UsersTable> {
@@ -8924,6 +8974,9 @@ class $$UsersTableFilterComposer extends Composer<_$FhirAntDb, $UsersTable> {
 
   ColumnFilters<DateTime> get lastLogin => $composableBuilder(
       column: $table.lastLogin, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get scopes => $composableBuilder(
+      column: $table.scopes, builder: (column) => ColumnFilters(column));
 }
 
 class $$UsersTableOrderingComposer extends Composer<_$FhirAntDb, $UsersTable> {
@@ -8958,6 +9011,9 @@ class $$UsersTableOrderingComposer extends Composer<_$FhirAntDb, $UsersTable> {
 
   ColumnOrderings<DateTime> get lastLogin => $composableBuilder(
       column: $table.lastLogin, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get scopes => $composableBuilder(
+      column: $table.scopes, builder: (column) => ColumnOrderings(column));
 }
 
 class $$UsersTableAnnotationComposer
@@ -8992,6 +9048,9 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastLogin =>
       $composableBuilder(column: $table.lastLogin, builder: (column) => column);
+
+  GeneratedColumn<String> get scopes =>
+      $composableBuilder(column: $table.scopes, builder: (column) => column);
 }
 
 class $$UsersTableTableManager extends RootTableManager<
@@ -9025,6 +9084,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime?> lastLogin = const Value.absent(),
+            Value<String?> scopes = const Value.absent(),
           }) =>
               UsersCompanion(
             id: id,
@@ -9035,6 +9095,7 @@ class $$UsersTableTableManager extends RootTableManager<
             active: active,
             createdAt: createdAt,
             lastLogin: lastLogin,
+            scopes: scopes,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -9045,6 +9106,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime?> lastLogin = const Value.absent(),
+            Value<String?> scopes = const Value.absent(),
           }) =>
               UsersCompanion.insert(
             id: id,
@@ -9055,6 +9117,7 @@ class $$UsersTableTableManager extends RootTableManager<
             active: active,
             createdAt: createdAt,
             lastLogin: lastLogin,
+            scopes: scopes,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

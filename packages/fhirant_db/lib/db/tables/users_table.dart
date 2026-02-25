@@ -25,4 +25,8 @@ class Users extends Table {
 
   /// Last login timestamp
   DateTimeColumn get lastLogin => dateTime().nullable()();
+
+  /// SMART on FHIR scopes (JSON-encoded list of scope strings).
+  /// Null means use default scopes for the user's role.
+  TextColumn get scopes => text().nullable()();
 }

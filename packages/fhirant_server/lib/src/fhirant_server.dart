@@ -75,6 +75,7 @@ class FhirAntServer {
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)
       ..get('/metadata', metadataHandler)
+      ..get('/.well-known/smart-configuration', smartConfigHandler)
       // Validation endpoints
       ..all(r'/$validate', (Request req) => validateHandler(req))
       ..all(

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Valid user roles.
@@ -61,6 +62,26 @@ Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
       effectiveRole = requestedRole;
     }
 
+    // Validate optional scopes
+    final List<String> effectiveScopes;
+    final rawScopes = body['scopes'];
+    if (rawScopes != null) {
+      if (rawScopes is! List) {
+        return Response(400,
+            body: jsonEncode({'error': 'scopes must be an array of strings'}));
+      }
+      final scopeStrings = rawScopes.cast<String>() as List<String>;
+      for (final s in scopeStrings) {
+        if (SmartScope.parse(s) == null) {
+          return Response(400,
+              body: jsonEncode({'error': 'Invalid SMART scope: $s'}));
+        }
+      }
+      effectiveScopes = scopeStrings;
+    } else {
+      effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(effectiveRole);
+    }
+
     // Check for duplicate username
     final existing = await dbInterface.getUserByUsername(username);
     if (existing != null) {
@@ -77,6 +98,7 @@ Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
       passwordHash: hash,
       salt: salt,
       role: effectiveRole,
+      scopes: jsonEncode(effectiveScopes),
     );
 
     return Response(201,
@@ -84,6 +106,7 @@ Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
           'id': userId,
           'username': username,
           'role': effectiveRole,
+          'scopes': effectiveScopes,
         }));
   } catch (e) {
     return Response.internalServerError(

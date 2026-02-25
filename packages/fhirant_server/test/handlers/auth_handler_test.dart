@@ -44,6 +44,7 @@ void main() {
             passwordHash: any(named: 'passwordHash'),
             salt: any(named: 'salt'),
             role: any(named: 'role'),
+            scopes: any(named: 'scopes'),
           )).thenAnswer((_) async => 1);
 
       final response = await registerHandler(request, mockDb);
@@ -59,6 +60,7 @@ void main() {
             passwordHash: captureAny(named: 'passwordHash'),
             salt: captureAny(named: 'salt'),
             role: captureAny(named: 'role'),
+            scopes: captureAny(named: 'scopes'),
           )).captured;
       expect(captured[3], equals('admin'));
     });
@@ -103,6 +105,7 @@ void main() {
             passwordHash: any(named: 'passwordHash'),
             salt: any(named: 'salt'),
             role: any(named: 'role'),
+            scopes: any(named: 'scopes'),
           )).thenAnswer((_) async => 2);
 
       final response = await registerHandler(request, mockDb);
@@ -199,6 +202,7 @@ void main() {
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.salt).thenReturn(salt);
       when(() => mockUser.passwordHash).thenReturn(hash);
+      when(() => mockUser.scopes).thenReturn(null);
 
       final request = Request(
         'POST',

@@ -1,3 +1,5 @@
+import 'package:fhirant_db/fhirant_db.dart';
+
 /// Utility for parsing FHIR search parameters from query strings
 class SearchParameterParser {
   /// Parse query parameters into search parameters and pagination parameters
@@ -13,6 +15,7 @@ class SearchParameterParser {
   /// - 'revincludeIterate': List of _revinclude:iterate parameters
   /// - 'summary': String summary type or null
   /// - 'elements': List of element names or null
+  /// - 'has': List of HasParameter for _has reverse chaining
   static Map<String, dynamic> parseQueryParameters(
     Map<String, String> queryParams,
   ) {
@@ -26,6 +29,7 @@ class SearchParameterParser {
     final revincludeIterate = <String>[];
     String? summary;
     List<String>? elements;
+    final has = <HasParameter>[];
 
     // Special parameters that are not search parameters
     final specialParams = {
@@ -48,6 +52,15 @@ class SearchParameterParser {
     for (final entry in queryParams.entries) {
       final key = entry.key;
       final value = entry.value;
+
+      // Detect _has: prefix before checking special params
+      if (key.startsWith('_has:')) {
+        final parsed = HasParameter.parse(key, value);
+        if (parsed != null) {
+          has.add(parsed);
+        }
+        continue;
+      }
 
       if (specialParams.contains(key)) {
         // Handle special parameters
@@ -110,6 +123,7 @@ class SearchParameterParser {
       'revincludeIterate': revincludeIterate.isEmpty ? null : revincludeIterate,
       'summary': summary,
       'elements': elements,
+      'has': has.isEmpty ? null : has,
     };
   }
 
@@ -129,6 +143,7 @@ class SearchParameterParser {
       '_pretty',
     };
 
-    return queryParams.keys.any((key) => !specialParams.contains(key));
+    return queryParams.keys
+        .any((key) => !specialParams.contains(key) || key.startsWith('_has:'));
   }
 }

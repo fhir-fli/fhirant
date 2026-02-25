@@ -120,7 +120,7 @@ void main() {
       expect(response.statusCode, equals(403));
       final body = jsonDecode(await response.readAsString());
       expect(body['resourceType'], equals('OperationOutcome'));
-      expect(body['issue'][0]['diagnostics'], contains('Readonly'));
+      expect(body['issue'][0]['diagnostics'], contains('Insufficient scope'));
     });
 
     test('readonly allowed on GET', () async {

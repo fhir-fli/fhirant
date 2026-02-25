@@ -126,5 +126,69 @@ void main() {
 
       expect(SearchParameterParser.hasSearchParameters(queryParams), isFalse);
     });
+
+    test('parses _has parameter', () {
+      final queryParams = {
+        '_has:Observation:patient:code': '1234',
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      expect(result['has'], isNotNull);
+      final hasList = result['has'] as List;
+      expect(hasList, hasLength(1));
+      final hasParam = hasList[0];
+      expect(hasParam.targetType, 'Observation');
+      expect(hasParam.referenceParam, 'patient');
+      expect(hasParam.searchParam, 'code');
+      expect(hasParam.value, '1234');
+    });
+
+    test('parses multiple _has parameters', () {
+      // Note: Dart Map doesn't support duplicate keys, but different _has params
+      // have different keys
+      final queryParams = {
+        '_has:Observation:patient:code': '1234',
+        '_has:Condition:patient:code': 'I10',
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      expect(result['has'], isNotNull);
+      final hasList = result['has'] as List;
+      expect(hasList, hasLength(2));
+    });
+
+    test('hasSearchParameters returns true for _has params', () {
+      final queryParams = {
+        '_has:Observation:patient:code': '1234',
+        '_count': '10',
+      };
+
+      expect(SearchParameterParser.hasSearchParameters(queryParams), isTrue);
+    });
+
+    test('_has combined with regular search params', () {
+      final queryParams = {
+        '_has:Observation:patient:code': '1234',
+        'name': 'Smith',
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      expect(result['has'], isNotNull);
+      expect(result['searchParams'], isNotNull);
+      final searchParams = result['searchParams'] as Map<String, List<String>>;
+      expect(searchParams['name'], equals(['Smith']));
+    });
+
+    test('invalid _has format produces null (ignored)', () {
+      final queryParams = {
+        '_has:BadFormat': '1234', // only 1 segment
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+      expect(result['has'], isNull);
+    });
   });
 }

@@ -14,11 +14,13 @@ class JwtService {
     required int userId,
     required String username,
     required String role,
+    List<String>? scopes,
   }) {
     final jwt = JWT({
       'userId': userId,
       'username': username,
       'role': role,
+      if (scopes != null) 'scope': scopes.join(' '),
     });
     return jwt.sign(
       SecretKey(_secret),

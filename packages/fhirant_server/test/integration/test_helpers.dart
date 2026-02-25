@@ -38,11 +38,13 @@ String generateTestToken({
   int userId = 1,
   String username = 'testuser',
   String role = 'clinician',
+  List<String>? scopes,
 }) {
   return JwtService(testJwtSecret).generateToken(
     userId: userId,
     username: username,
     role: role,
+    scopes: scopes,
   );
 }
 

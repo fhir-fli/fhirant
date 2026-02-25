@@ -1,24 +1,36 @@
 import 'dart:convert';
 
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Paths that do not require authentication.
-const _publicPrefixes = ['auth/', 'metadata', 'favicon.ico'];
+const _publicPrefixes = ['auth/', 'metadata', 'favicon.ico', '.well-known/'];
 
-/// Middleware that validates JWT Bearer tokens and injects auth_user into
-/// the request context.
+/// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
+/// and injects auth_user into the request context.
 ///
-/// Public routes (auth/*, metadata, favicon.ico, root) pass through.
-/// Readonly users are blocked from mutating methods (POST, PUT, PATCH, DELETE).
+/// Public routes (auth/*, metadata, favicon.ico, .well-known/*, root)
+/// pass through without authentication.
 Middleware authMiddleware(JwtService jwtService) {
   return (Handler innerHandler) {
     return (Request request) async {
       final path = request.url.path;
 
-      // Allow public routes
-      if (path.isEmpty ||
-          _publicPrefixes.any((prefix) => path.startsWith(prefix))) {
+      // Public routes: auth not required, but optionally inject auth_user
+      // if a valid token is present (needed for e.g. admin registering users).
+      final isPublic = path.isEmpty ||
+          _publicPrefixes.any((prefix) => path.startsWith(prefix));
+      if (isPublic) {
+        final authHeader = request.headers['authorization'];
+        if (authHeader != null && authHeader.startsWith('Bearer ')) {
+          final payload = jwtService.verifyToken(authHeader.substring(7));
+          if (payload != null) {
+            final updatedRequest =
+                request.change(context: {'auth_user': payload});
+            return innerHandler(updatedRequest);
+          }
+        }
         return innerHandler(request);
       }
 
@@ -55,25 +67,44 @@ Middleware authMiddleware(JwtService jwtService) {
             }));
       }
 
-      // Readonly enforcement
-      if (payload['role'] == 'readonly' &&
-          const ['POST', 'PUT', 'PATCH', 'DELETE']
-              .contains(request.method)) {
-        return Response(403,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'forbidden',
-                  'diagnostics':
-                      'Readonly users cannot perform ${request.method} operations',
-                }
-              ]
-            }));
+      // Extract scopes from JWT (fall back to role defaults for legacy tokens)
+      final List<String> scopes;
+      final scopeClaim = payload['scope'];
+      if (scopeClaim is String && scopeClaim.isNotEmpty) {
+        scopes = scopeClaim.split(' ');
+      } else {
+        final role = payload['role'] as String? ?? 'readonly';
+        scopes = SmartScopeEnforcer.defaultScopesForRole(role);
       }
 
-      // Inject auth_user into context
+      // Determine the required permission for this request
+      final permission =
+          SmartScopeEnforcer.methodToPermission(request.method, path);
+      if (permission != null) {
+        final resourceType =
+            SmartScopeEnforcer.resourceTypeFromPath(path);
+        // Only enforce scopes for resource-targeted requests
+        if (resourceType != null) {
+          if (!SmartScopeEnforcer.isAuthorized(
+              scopes, resourceType, permission)) {
+            return Response(403,
+                body: jsonEncode({
+                  'resourceType': 'OperationOutcome',
+                  'issue': [
+                    {
+                      'severity': 'error',
+                      'code': 'forbidden',
+                      'diagnostics':
+                          'Insufficient scope for $permission on $resourceType',
+                    }
+                  ]
+                }));
+          }
+        }
+      }
+
+      // Inject auth_user (with scopes) into context
+      payload['scopes'] = scopes;
       final updatedRequest =
           request.change(context: {'auth_user': payload});
       return innerHandler(updatedRequest);
