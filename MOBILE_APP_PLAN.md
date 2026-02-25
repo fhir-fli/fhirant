@@ -1,8 +1,8 @@
-# FHIRant Mobile App — Implementation Plan & Status
+# FHIR ANT Mobile App — Implementation Plan & Status
 
 ## Context
 
-FHIRant is a fully-featured FHIR R4 server running as a CLI Dart process. The goal is to wrap it in a Flutter app so it runs on a phone — a FHIR server in your pocket. **Android** gets a foreground service (server survives backgrounding). **iOS** runs while the app is in the foreground.
+FHIR ANT (Fast Healthcare Interoperability Resources Agile Networking Tool) is a fully-featured FHIR R4 server running as a CLI Dart process. The goal is to wrap it in a Flutter app so it runs on a phone — a FHIR server in your pocket. **Android** gets a foreground service (server survives backgrounding). **iOS** runs while the app is in the foreground.
 
 The good news: `fhirant_server`, `fhirant_db`, and `fhirant_logging` are already pure Dart with no Flutter deps. `dart:io` (including `shelf_io.serve()`) works on Flutter mobile. The work is: (1) small surgical changes to existing packages for mobile compatibility, (2) a new Flutter app package with dashboard UI and Android foreground service.
 
@@ -25,8 +25,18 @@ The good news: `fhirant_server`, `fhirant_db`, and `fhirant_logging` are already
 | 11 | main.dart wiring | DONE |
 | 12 | Verify existing tests still pass | DONE (291 server + 108 db) |
 | 13 | flutter analyze passes | DONE (0 issues) |
-| — | Build APK and test on device | **NOT DONE** |
+| 14 | Build APK and test on Android device | DONE |
+| 15 | Custom app icons | DONE |
+| 16 | Branding update (FHIR ANT acronym) | DONE |
 | — | Build iOS and test on device/simulator | **NOT DONE** |
+
+### Git History
+
+All committed and pushed to `origin/main`:
+
+1. **`2e0de5e`** — `Add Flutter mobile app — FHIR server in your pocket` — Initial implementation (Steps 1-13)
+2. **`fc68897`** — Android SDK 36 fix: added `CHANGE_NETWORK_STATE` permission required for `connectedDevice` foreground service type
+3. **`5a2d179`** — Custom app icons (resized from `fhirant_server/assets/fhirant_logo.jpg`) + branding update from "FHIRant" to "FHIR ANT" with full acronym subtitle in dashboard
 
 ---
 
@@ -149,32 +159,51 @@ packages/fhirant/
 - Color coding: GET=blue, POST=green, PUT=orange, PATCH=purple, DELETE=red; 2xx=green, 3xx=blue, 4xx=orange, 5xx=red
 
 ### Android Configuration (`AndroidManifest.xml`)
-- Permissions: `INTERNET`, `ACCESS_WIFI_STATE`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`
-- App label: `FHIRant`
+- Permissions: `INTERNET`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`
+- App label: `FHIR ANT`
 - Foreground service declaration: `com.pravera.flutter_foreground_task.service.ForegroundService` with `foregroundServiceType="connectedDevice"`
 
 ### iOS Configuration (`Info.plist`)
-- `CFBundleDisplayName`: `FHIRant`
-- `NSLocalNetworkUsageDescription`: explains that FHIRant runs a local FHIR server
+- `CFBundleDisplayName`: `FHIR ANT`
+- `CFBundleName`: `FHIR ANT`
+- `NSLocalNetworkUsageDescription`: explains that FHIR ANT runs a local FHIR server
 - Server auto-stops when app goes to background (handled in `_FhirantAppState.didChangeAppLifecycleState`)
+
+### App Icons
+- Source: `packages/fhirant_server/assets/fhirant_logo.jpg`
+- Android: resized to mdpi (48px), hdpi (72px), xhdpi (96px), xxhdpi (144px), xxxhdpi (192px) — placed in `android/app/src/main/res/mipmap-*/ic_launcher.png`
+- iOS: resized to 15 required sizes (20px through 1024px) — placed in `ios/Runner/Assets.xcassets/AppIcon.appiconset/`
+
+### Dashboard AppBar
+- Title: "FHIR ANT"
+- Subtitle (2 lines): "Fast Healthcare Interoperability Resources" / "Agile Networking Tool"
+- `toolbarHeight: 72` to accommodate the subtitle
+
+---
+
+## Android Testing Results
+
+Successfully tested on a physical Android device:
+
+1. **Built APK**: `flutter build apk --debug` in `packages/fhirant/`
+2. **Installed**: `adb install build/app/outputs/flutter-apk/app-debug.apk`
+3. **Initial crash**: App crashed on launch due to Android SDK 36 requiring `CHANGE_NETWORK_STATE` permission for `connectedDevice` foreground service type. Diagnosed via `adb logcat -d -b crash`. Fixed by adding the permission.
+4. **Server started successfully**: Tapped "Start Server", server started on port 8080
+5. **Tested FHIR operations from laptop** (via WiFi at `http://192.168.86.20:8080`):
+   - Registered user: `POST /auth/register`
+   - Logged in: `POST /auth/login`
+   - Created resources: 3 Patients, 2 Observations, 1 Condition, 1 Practitioner, 1 Organization
+   - All resources created successfully (201 responses)
+   - Dashboard showed resource counts updating in real-time
+   - Request log showed all requests with color-coded methods and status codes
+   - QR code generated and scannable
+6. **Foreground service**: Server continued running when app was backgrounded
 
 ---
 
 ## What's Still Left To Do
 
-### 1. Build and Test on Android Device
-```bash
-cd packages/fhirant
-flutter build apk --debug
-# Install APK on device
-# Start server
-# From laptop: curl http://<phone-ip>:8080/metadata
-# Background the app — server should remain reachable via foreground service
-# Create resources via curl, verify dashboard counts update
-# Scan QR code from another device
-```
-
-### 2. Build and Test on iOS Device/Simulator
+### 1. Build and Test on iOS Device/Simulator
 ```bash
 cd packages/fhirant
 flutter build ios --debug
@@ -183,29 +212,16 @@ flutter build ios --debug
 # Background the app — server should stop (iOS limitation, by design)
 ```
 
-### 3. Potential Issues to Watch For
+### 2. Potential Issues to Watch For
 - **SQLCipher on iOS**: May need `sqlcipher_flutter_libs` to be configured in the Podfile. If the build fails on iOS, check `ios/Podfile` for SQLCipher pod inclusion.
 - **Network permissions on Android 12+**: `ACCESS_WIFI_STATE` should suffice, but if WiFi IP comes back null on newer Android, may need `ACCESS_FINE_LOCATION` with runtime permission request.
-- **Foreground service on Android 14+**: Android 14 requires user consent for foreground services. `flutter_foreground_task` should handle this, but verify the notification appears and the service stays alive.
 - **Large DB on mobile**: If the DB grows large, the 10s resource count refresh could cause UI jank. Consider making it less frequent or running in a compute isolate if this becomes an issue.
-
-### 4. Not Yet Committed
-All changes are uncommitted. When ready:
-```bash
-cd /home/grey/dev/fhir/fhirant
-git add packages/fhirant_server/lib/src/fhirant_server.dart \
-        packages/fhirant_server/lib/fhirant_server.dart \
-        packages/fhirant_server/lib/src/handlers/favico_handler.dart \
-        packages/fhirant_logging/lib/fhirant_logging.dart \
-        packages/fhirant/ \
-        MOBILE_APP_PLAN.md
-git commit -m "Add Flutter mobile app — FHIR server in your pocket"
-```
 
 ---
 
-## Test Results (as of implementation)
+## Test Results (as of final commit)
 - `dart analyze packages/fhirant_server` — 0 new warnings (1 pre-existing info about unnecessary_import)
 - `dart test packages/fhirant_server` — **291 tests pass**
 - `dart test packages/fhirant_db` — **108 tests pass**
 - `flutter analyze packages/fhirant` — **No issues found**
+- Android APK builds and runs successfully on physical device
