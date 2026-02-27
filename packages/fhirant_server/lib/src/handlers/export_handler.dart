@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -102,20 +101,19 @@ Future<Response> exportKickoffHandler(
     final transactionTime = DateTime.now().toUtc();
     final requestUrl = request.requestedUri.toString();
 
-    await dbInterface.createExportJob(ExportJobsCompanion(
-      jobId: Value(jobId),
-      status: const Value('pending'),
-      requestUrl: Value(requestUrl),
-      transactionTime: Value(transactionTime),
-      resourceTypes: Value(typeParam),
-      since: Value(since),
-      exportLevel: Value(exportLevel),
-      patientId: Value(patientId),
-      groupId: Value(groupId),
-      typeFilters: Value(
-        typeFilterParams.isNotEmpty ? jsonEncode(typeFilterParams) : null,
-      ),
-    ));
+    await dbInterface.createExportJob(
+      jobId: jobId,
+      status: 'pending',
+      requestUrl: requestUrl,
+      transactionTime: transactionTime,
+      resourceTypes: typeParam,
+      since: since,
+      exportLevel: exportLevel,
+      patientId: patientId,
+      groupId: groupId,
+      typeFilters:
+          typeFilterParams.isNotEmpty ? jsonEncode(typeFilterParams) : null,
+    );
 
     // 7. Spawn background processing (fire-and-forget)
     _processExport(dbInterface, jobId, exportDir, request).catchError((e, st) {

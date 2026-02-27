@@ -136,27 +136,34 @@ packages:
       relative: true
     source: path
     version: "0.4.3"
+  fhir_r4_db:
+    dependency: transitive
+    description:
+      path: "../../../fhir_r4/packages/fhir_r4_db"
+      relative: true
+    source: path
+    version: "1.0.0"
   fhir_r4_mapping:
     dependency: "direct main"
     description:
       path: "../../../fhir_r4/packages/fhir_r4_mapping"
       relative: true
     source: path
-    version: "0.4.2"
+    version: "0.4.3"
   fhir_r4_path:
     dependency: "direct main"
     description:
       path: "../../../fhir_r4/packages/fhir_r4_path"
       relative: true
     source: path
-    version: "0.4.5"
+    version: "0.4.6"
   fhir_r4_validation:
     dependency: "direct main"
     description:
       path: "../../../fhir_r4/packages/fhir_r4_validation"
       relative: true
     source: path
-    version: "0.4.1"
+    version: "0.4.2"
   fhirant_db:
     dependency: "direct main"
     description:
@@ -495,10 +502,10 @@ packages:
     dependency: transitive
     description:
       name: ucum
-      sha256: e92bcd575e1ac33f0eb68d9f371625365f362083d0d20873b7a6850ee81cfb8b
+      sha256: b7bcfbbc8057327cc57810127e4166eaa1994040b51594b693c2483c53bf1940
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.8.0"
   universal_io:
     dependency: transitive
     description:
@@ -511,10 +518,10 @@ packages:
     dependency: "direct main"
     description:
       name: uuid
-      sha256: a11b666489b1954e01d992f3d601b1804a33937b5a8fe677bd26b8a9f96f96e8
+      sha256: "1fef9e8e11e2991bb773070d4656b7bd5d850967a2456cfc83cf47925ba79489"
       url: "https://pub.dev"
     source: hosted
-    version: "4.5.2"
+    version: "4.5.3"
   vm_service:
     dependency: transitive
     description:
