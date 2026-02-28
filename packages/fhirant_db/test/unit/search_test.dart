@@ -454,17 +454,30 @@ void main() {
       expect(results, isEmpty);
     });
 
-    test(':above modifier prefix match finds multiple', () async {
+    test(':above modifier finds stored URIs that are prefixes of search value',
+        () async {
+      // Seed a ValueSet with a broad parent URI
+      await db.saveResource(fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-parent',
+        'url': 'http://example.org/fhir',
+        'status': 'active',
+      }));
       await seedValueSets();
 
+      // :above = stored URI is a prefix of the search value
+      // Search value is more specific; matches stored URIs that subsume it
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
-          'url': ['http://example.org/fhir/ValueSet:above'],
+          'url': ['http://example.org/fhir/ValueSet/my-codes:above'],
         },
       );
 
-      expect(ids(results), containsAll(['vs-1', 'vs-2']));
+      // vs-parent ('http://example.org/fhir') is a prefix → match
+      // vs-1 ('http://example.org/fhir/ValueSet/my-codes') is exact → match
+      // vs-2 and vs-3 are not prefixes of the search value → no match
+      expect(ids(results), containsAll(['vs-parent', 'vs-1']));
       expect(results.length, 2);
     });
 
