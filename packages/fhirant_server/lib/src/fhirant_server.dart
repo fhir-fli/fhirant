@@ -168,6 +168,12 @@ class FhirAntServer {
         (Request req, String resourceType) =>
             getResourcesHandler(req, resourceType, dbInterface),
       )
+      // POST-based search (must come before generic POST /<resourceType>)
+      ..post(
+        '/<resourceType>/_search',
+        (Request req, String resourceType) =>
+            postSearchHandler(req, resourceType, dbInterface),
+      )
       ..post(
         '/<resourceType>',
         (Request req, String resourceType) =>

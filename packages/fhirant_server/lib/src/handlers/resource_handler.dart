@@ -14,12 +14,44 @@ Future<Response> getResourcesHandler(
   String resourceType,
   FhirAntDb dbInterface,
 ) async {
+  final queryParams = request.url.queryParameters;
+  return _searchResources(request, resourceType, dbInterface, queryParams);
+}
+
+/// Handler for POST-based search: POST /{resourceType}/_search
+Future<Response> postSearchHandler(
+  Request request,
+  String resourceType,
+  FhirAntDb dbInterface,
+) async {
+  try {
+    final body = await request.readAsString();
+    // Parse form-encoded body into query parameters
+    final bodyParams = Uri.splitQueryString(body);
+    // Merge with URL query parameters (URL params take precedence)
+    final mergedParams = {...bodyParams, ...request.url.queryParameters};
+    return _searchResources(request, resourceType, dbInterface, mergedParams);
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+      'Failed to process POST _search for: $resourceType',
+      e,
+      stackTrace,
+    );
+    return _errorResponse('Failed to process search', e.toString());
+  }
+}
+
+/// Shared search logic for both GET and POST _search
+Future<Response> _searchResources(
+  Request request,
+  String resourceType,
+  FhirAntDb dbInterface,
+  Map<String, String> queryParams,
+) async {
   try {
     FhirantLogging().logInfo(
       'Fetching resources of type: $resourceType',
     );
-
-    final queryParams = request.url.queryParameters;
 
     // Parse query parameters into search params and pagination params
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);

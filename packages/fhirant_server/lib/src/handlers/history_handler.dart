@@ -25,13 +25,14 @@ Future<Response> resourceHistoryHandler(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Get pagination parameters
+    // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final since = _parseSince(queryParams['_since']);
 
-    // Get history from database
-    final history = await dbInterface.getResourceHistory(type, id);
+    // Get history from database (with optional _since filter)
+    final history = await dbInterface.getResourceHistory(type, id, since: since);
 
     if (history.isEmpty) {
       FhirantLogging().logWarning(
@@ -116,35 +117,14 @@ Future<Response> typeHistoryHandler(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Get pagination parameters
+    // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final since = _parseSince(queryParams['_since']);
 
-    // Get all resources of this type
-    final resources = await dbInterface.getResourcesByType(type);
-
-    // Get history for all resources of this type
-    final allHistory = <fhir.Resource>[];
-    for (final resource in resources) {
-      final resourceId = resource.id?.toString() ?? '';
-      if (resourceId.isNotEmpty) {
-        final history = await dbInterface.getResourceHistory(type, resourceId);
-        allHistory.addAll(history);
-      }
-    }
-
-    // Sort by lastUpdated descending (most recent first)
-    allHistory.sort(
-      (a, b) {
-        final aDate = a.meta?.lastUpdated?.valueDateTime;
-        final bDate = b.meta?.lastUpdated?.valueDateTime;
-        if (aDate == null && bDate == null) return 0;
-        if (aDate == null) return 1;
-        if (bDate == null) return -1;
-        return bDate.compareTo(aDate);
-      },
-    );
+    // Query history table directly (no more N+1 queries)
+    final allHistory = await dbInterface.getTypeHistory(type, since: since);
 
     // Apply pagination
     final total = allHistory.length;
@@ -211,39 +191,14 @@ Future<Response> systemHistoryHandler(
   try {
     FhirantLogging().logInfo('Fetching system-level history');
 
-    // Get pagination parameters
+    // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final since = _parseSince(queryParams['_since']);
 
-    // Get all resource types
-    final resourceTypes = await dbInterface.getResourceTypes();
-
-    // Get history for all resources
-    final allHistory = <fhir.Resource>[];
-    for (final resourceType in resourceTypes) {
-      final resources = await dbInterface.getResourcesByType(resourceType);
-      for (final resource in resources) {
-        final resourceId = resource.id?.toString() ?? '';
-        if (resourceId.isNotEmpty) {
-          final history =
-              await dbInterface.getResourceHistory(resourceType, resourceId);
-          allHistory.addAll(history);
-        }
-      }
-    }
-
-    // Sort by lastUpdated descending (most recent first)
-    allHistory.sort(
-      (a, b) {
-        final aDate = a.meta?.lastUpdated?.valueDateTime;
-        final bDate = b.meta?.lastUpdated?.valueDateTime;
-        if (aDate == null && bDate == null) return 0;
-        if (aDate == null) return 1;
-        if (bDate == null) return -1;
-        return bDate.compareTo(aDate);
-      },
-    );
+    // Query history table directly (no more N+1+1 queries)
+    final allHistory = await dbInterface.getSystemHistory(since: since);
 
     // Apply pagination
     final total = allHistory.length;
@@ -376,6 +331,12 @@ Future<Response> vreadResourceHandler(
       e.toString(),
     );
   }
+}
+
+/// Parse a FHIR instant/dateTime string into a [DateTime].
+DateTime? _parseSince(String? value) {
+  if (value == null || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }
 
 /// Utility for creating a generic error response

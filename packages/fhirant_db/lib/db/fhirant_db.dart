@@ -196,9 +196,66 @@ class FhirAntDb extends FhirDb {
 
   Future<List<fhir.Resource>> getResourceHistory(
     fhir.R4ResourceType resourceType,
-    String id,
-  ) =>
-      fhirDao.getResourceHistory(resourceType, id);
+    String id, {
+    DateTime? since,
+  }) async {
+    final resourceTypeString = resourceType.toString();
+    final query = select(resourcesHistory)
+      ..where((tbl) {
+        var cond =
+            tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id);
+        if (since != null) {
+          cond = cond & tbl.lastUpdated.isBiggerThanValue(since);
+        }
+        return cond;
+      })
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+    final rows = await query.get();
+    return rows
+        .map((row) => fhir.Resource.fromJsonString(row.resource))
+        .toList();
+  }
+
+  /// Get history for all resources of a given type, queried directly from the
+  /// history table (avoids N+1 queries).
+  Future<List<fhir.Resource>> getTypeHistory(
+    fhir.R4ResourceType resourceType, {
+    DateTime? since,
+  }) async {
+    final resourceTypeString = resourceType.toString();
+    final query = select(resourcesHistory)
+      ..where((tbl) {
+        var cond = tbl.resourceType.equals(resourceTypeString);
+        if (since != null) {
+          cond = cond & tbl.lastUpdated.isBiggerThanValue(since);
+        }
+        return cond;
+      })
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+    final rows = await query.get();
+    return rows
+        .map((row) => fhir.Resource.fromJsonString(row.resource))
+        .toList();
+  }
+
+  /// Get history for all resources across all types, queried directly from the
+  /// history table (avoids N+1+1 queries).
+  Future<List<fhir.Resource>> getSystemHistory({
+    DateTime? since,
+  }) async {
+    final query = select(resourcesHistory)
+      ..where((tbl) {
+        if (since != null) {
+          return tbl.lastUpdated.isBiggerThanValue(since);
+        }
+        return const Constant(true);
+      })
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+    final rows = await query.get();
+    return rows
+        .map((row) => fhir.Resource.fromJsonString(row.resource))
+        .toList();
+  }
 
   Future<List<fhir.Resource>> search({
     required fhir.R4ResourceType resourceType,
