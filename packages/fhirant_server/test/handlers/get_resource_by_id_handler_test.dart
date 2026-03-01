@@ -277,6 +277,107 @@ void main() {
       expect(json.containsKey('name'), isFalse);
     });
 
+    test('If-Modified-Since when not modified returns 304', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '42',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123'),
+      );
+      when(() => mockRequest.headers).thenReturn({
+        // Resource was last updated 2024-01-15; If-Modified-Since is later
+        'if-modified-since': 'Wed, 17 Jan 2024 00:00:00 GMT',
+      });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(304));
+    });
+
+    test('If-Modified-Since when modified returns 200', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '42',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123'),
+      );
+      when(() => mockRequest.headers).thenReturn({
+        // Resource was last updated 2024-01-15; If-Modified-Since is earlier
+        'if-modified-since': 'Sat, 13 Jan 2024 00:00:00 GMT',
+      });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+    });
+
+    test('If-Modified-Since malformed header is ignored', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '42',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123'),
+      );
+      when(() => mockRequest.headers).thenReturn({
+        'if-modified-since': 'not-a-valid-date',
+      });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+    });
+
     test('read with _elements=name returns subset', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',

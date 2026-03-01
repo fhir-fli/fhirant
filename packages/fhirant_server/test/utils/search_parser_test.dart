@@ -191,4 +191,38 @@ void main() {
       expect(result['has'], isNull);
     });
   });
+
+  group('_total parameter', () {
+    test('_total=none is parsed', () {
+      final result = SearchParameterParser.parseQueryParameters({
+        '_total': 'none',
+      });
+      expect(result['total'], equals('none'));
+      expect(result['searchParams'], isNull);
+    });
+
+    test('_total=accurate is parsed', () {
+      final result = SearchParameterParser.parseQueryParameters({
+        '_total': 'accurate',
+      });
+      expect(result['total'], equals('accurate'));
+    });
+
+    test('_total=estimate is parsed', () {
+      final result = SearchParameterParser.parseQueryParameters({
+        '_total': 'estimate',
+      });
+      expect(result['total'], equals('estimate'));
+    });
+
+    test('_total is not treated as a search parameter', () {
+      final result = SearchParameterParser.parseQueryParameters({
+        '_total': 'none',
+        'name': 'Smith',
+      });
+      final searchParams = result['searchParams'] as Map<String, List<String>>;
+      expect(searchParams.containsKey('_total'), isFalse);
+      expect(searchParams['name'], equals(['Smith']));
+    });
+  });
 }

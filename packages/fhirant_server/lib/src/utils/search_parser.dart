@@ -32,6 +32,8 @@ class SearchParameterParser {
     final has = <HasParameter>[];
 
     // Special parameters that are not search parameters
+    String? total;
+
     final specialParams = {
       '_count',
       '_offset',
@@ -42,6 +44,7 @@ class SearchParameterParser {
       '_revinclude:iterate',
       '_summary',
       '_elements',
+      '_total',
       '_format',
       '_pretty',
       '_contained',
@@ -96,7 +99,10 @@ class SearchParameterParser {
             // Elements is comma-separated
             elements = value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
             break;
-          // Other special params are not yet implemented but we capture them
+          case '_total':
+            // _total: none, accurate, estimate
+            total = value;
+            break;
         }
       } else {
         // Regular search parameter
@@ -123,6 +129,7 @@ class SearchParameterParser {
       'revincludeIterate': revincludeIterate.isEmpty ? null : revincludeIterate,
       'summary': summary,
       'elements': elements,
+      'total': total,
       'has': has.isEmpty ? null : has,
     };
   }
@@ -139,6 +146,7 @@ class SearchParameterParser {
       '_revinclude:iterate',
       '_summary',
       '_elements',
+      '_total',
       '_format',
       '_pretty',
     };

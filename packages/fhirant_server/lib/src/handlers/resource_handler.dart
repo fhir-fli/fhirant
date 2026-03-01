@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -67,6 +68,7 @@ Future<Response> _searchResources(
     final sort = parsed['sort'] as List<String>?;
     final summary = parsed['summary'] as String?;
     final elements = parsed['elements'] as List<String>?;
+    final total = parsed['total'] as String?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -136,18 +138,19 @@ Future<Response> _searchResources(
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
         : '${request.requestedUri.scheme}://${request.requestedUri.host}';
 
-    // Get total count using searchCount (accurate count query)
-    int totalCount;
-    if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
-      // Use searchCount for accurate count with search parameters
-      totalCount = await dbInterface.searchCount(
-        resourceType: type,
-        searchParameters: searchParams,
-        hasParameters: hasParams,
-      );
-    } else {
-      // Use getResourceCount for simple count without search
-      totalCount = await dbInterface.getResourceCount(type);
+    // Get total count (respects _total parameter)
+    // _total=none: skip count entirely, _total=estimate: use same as accurate
+    int? totalCount;
+    if (total != 'none') {
+      if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
+        totalCount = await dbInterface.searchCount(
+          resourceType: type,
+          searchParameters: searchParams,
+          hasParameters: hasParams,
+        );
+      } else {
+        totalCount = await dbInterface.getResourceCount(type);
+      }
     }
 
     // Build pagination links (optional - bundle works without them)
@@ -188,7 +191,7 @@ Future<Response> _searchResources(
         }
 
         // Next link (if there are more results)
-        if (offset + resources.length < totalCount) {
+        if (totalCount != null && offset + resources.length < totalCount) {
           final nextParams =
               Map<String, String>.from(currentUrl.queryParameters);
           final nextOffset = offset + count;
@@ -201,7 +204,7 @@ Future<Response> _searchResources(
         }
 
         // Last link
-        if (count > 0 && totalCount > 0) {
+        if (count > 0 && totalCount != null && totalCount > 0) {
           final lastParams =
               Map<String, String>.from(currentUrl.queryParameters);
           final lastOffset = ((totalCount - 1) ~/ count) * count;
@@ -227,7 +230,7 @@ Future<Response> _searchResources(
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         entry: <fhir.BundleEntry>[],
-        total: fhir.FhirUnsignedInt(0),
+        total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
         link: [selfLink],
       );
 
@@ -359,7 +362,7 @@ Future<Response> _searchResources(
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
       entry: [...matchEntries, ...includeEntries],
-      total: fhir.FhirUnsignedInt(totalCount),
+      total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
       link: links.isEmpty ? null : links,
     );
 
@@ -741,7 +744,7 @@ Future<Response> getResourceByIdHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource != null) {
-      // Check If-None-Match for conditional read
+      // Check If-None-Match for conditional read (ETag-based)
       final ifNoneMatch =
           FhirHttpHeaders.parseETag(request.headers['if-none-match']);
       final currentVersion = resource.meta?.versionId?.valueString;
@@ -750,6 +753,21 @@ Future<Response> getResourceByIdHandler(
           ifNoneMatch == currentVersion) {
         return Response(304,
             headers: FhirHttpHeaders.resourceHeaders(resource));
+      }
+
+      // Check If-Modified-Since for conditional read (date-based)
+      final ifModifiedSince = request.headers['if-modified-since'];
+      if (ifModifiedSince != null) {
+        try {
+          final sinceDate = HttpDate.parse(ifModifiedSince);
+          final lastUpdated = resource.meta?.lastUpdated?.valueDateTime;
+          if (lastUpdated != null && !lastUpdated.isAfter(sinceDate)) {
+            return Response(304,
+                headers: FhirHttpHeaders.resourceHeaders(resource));
+          }
+        } catch (_) {
+          // Ignore malformed If-Modified-Since headers
+        }
       }
 
       FhirantLogging().logInfo(
