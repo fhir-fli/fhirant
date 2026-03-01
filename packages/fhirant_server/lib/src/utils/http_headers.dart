@@ -46,6 +46,16 @@ class FhirHttpHeaders {
     return 'representation';
   }
 
+  /// Parse the Prefer header's handling preference.
+  /// Returns 'lenient' (default) or 'strict'.
+  /// When 'strict', the server should return 400 for unrecognized search params.
+  /// When 'lenient', unrecognized params are silently ignored.
+  static String parsePreferHandling(Map<String, String> headers) {
+    final prefer = headers['prefer'] ?? '';
+    if (prefer.contains('handling=strict')) return 'strict';
+    return 'lenient';
+  }
+
   /// Build the appropriate response based on Prefer header.
   static Response preferredResponse({
     required int statusCode,

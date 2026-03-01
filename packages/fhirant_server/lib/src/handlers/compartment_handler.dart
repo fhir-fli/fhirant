@@ -25,7 +25,7 @@ Future<Response> everythingHandler(
       return _operationOutcome(
         400,
         'Unsupported compartment type: $compartmentType. '
-            'Supported types: Patient, Encounter',
+            'Supported types: Patient, Encounter, Practitioner, RelatedPerson, Device',
       );
     }
 

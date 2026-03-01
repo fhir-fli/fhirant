@@ -127,6 +127,22 @@ class FhirAntServer {
         (Request req, String compartmentType, String id) =>
             everythingHandler(req, compartmentType, id, dbInterface),
       )
+      // $meta operations (before history to avoid /<type>/<id>/_history match)
+      ..get(
+        r'/<resourceType>/<id>/$meta',
+        (Request req, String resourceType, String id) =>
+            metaHandler(req, resourceType, id, dbInterface),
+      )
+      ..post(
+        r'/<resourceType>/<id>/$meta-add',
+        (Request req, String resourceType, String id) =>
+            metaAddHandler(req, resourceType, id, dbInterface),
+      )
+      ..post(
+        r'/<resourceType>/<id>/$meta-delete',
+        (Request req, String resourceType, String id) =>
+            metaDeleteHandler(req, resourceType, id, dbInterface),
+      )
       // History endpoints (must come before resource endpoints to match correctly)
       ..get(
         r'/<resourceType>/<id>/_history/<vid>',

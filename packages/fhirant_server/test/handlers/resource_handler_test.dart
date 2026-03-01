@@ -256,6 +256,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.headers).thenReturn({});
     });
 
     test('uses pagination when no search parameters provided', () async {

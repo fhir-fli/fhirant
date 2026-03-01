@@ -33,7 +33,9 @@ class SearchParameterParser {
 
     // Special parameters that are not search parameters
     String? total;
+    final unknownSpecialParams = <String>[];
 
+    // All known _-prefixed parameters (special params + common search params)
     final specialParams = {
       '_count',
       '_offset',
@@ -50,6 +52,20 @@ class SearchParameterParser {
       '_contained',
       '_containedType',
       '_filter',
+    };
+
+    // Common _-prefixed search parameters that are valid across all resource types
+    const knownUnderscoreSearchParams = {
+      '_id',
+      '_lastUpdated',
+      '_tag',
+      '_profile',
+      '_security',
+      '_source',
+      '_text',
+      '_content',
+      '_list',
+      '_type',
     };
 
     for (final entry in queryParams.entries) {
@@ -105,6 +121,11 @@ class SearchParameterParser {
             break;
         }
       } else {
+        // Track unrecognized _-prefixed parameters for Prefer: handling=strict
+        if (key.startsWith('_') && !knownUnderscoreSearchParams.contains(key)) {
+          unknownSpecialParams.add(key);
+        }
+
         // Regular search parameter
         // Handle comma-separated values (OR logic)
         final values = value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
@@ -130,6 +151,7 @@ class SearchParameterParser {
       'summary': summary,
       'elements': elements,
       'total': total,
+      'unknownParams': unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
       'has': has.isEmpty ? null : has,
     };
   }

@@ -69,6 +69,7 @@ Future<Response> _searchResources(
     final summary = parsed['summary'] as String?;
     final elements = parsed['elements'] as List<String>?;
     final total = parsed['total'] as String?;
+    final unknownParams = parsed['unknownParams'] as List<String>?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -76,6 +77,17 @@ Future<Response> _searchResources(
         'Invalid resource type requested: $resourceType',
       );
       return _validationErrorResponse('Invalid resource type');
+    }
+
+    // Prefer: handling=strict rejects unrecognized _-prefixed parameters
+    final handling =
+        FhirHttpHeaders.parsePreferHandling(request.headers);
+    if (handling == 'strict' &&
+        unknownParams != null &&
+        unknownParams.isNotEmpty) {
+      return _validationErrorResponse(
+        'Unrecognized search parameter(s): ${unknownParams.join(', ')}',
+      );
     }
 
     // Reject _include/_revinclude combined with _summary=text (per FHIR spec)

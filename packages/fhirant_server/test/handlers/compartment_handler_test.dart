@@ -63,12 +63,12 @@ void main() {
   group('everythingHandler', () {
     test('returns 400 for unsupported compartment type', () async {
       when(() => mockRequest.url)
-          .thenReturn(Uri.parse('Practitioner/prac-1/\$everything'));
+          .thenReturn(Uri.parse('Organization/org-1/\$everything'));
 
       final response = await everythingHandler(
         mockRequest,
-        'Practitioner',
-        'prac-1',
+        'Organization',
+        'org-1',
         mockDb,
       );
 
@@ -298,12 +298,12 @@ void main() {
   group('compartmentSearchHandler', () {
     test('returns 404 for unsupported compartment type', () async {
       when(() => mockRequest.url)
-          .thenReturn(Uri.parse('Practitioner/prac-1/Observation'));
+          .thenReturn(Uri.parse('Organization/org-1/Observation'));
 
       final response = await compartmentSearchHandler(
         mockRequest,
-        'Practitioner',
-        'prac-1',
+        'Organization',
+        'org-1',
         'Observation',
         mockDb,
       );

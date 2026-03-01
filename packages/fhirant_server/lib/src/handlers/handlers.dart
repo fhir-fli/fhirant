@@ -6,6 +6,7 @@ export 'favico_handler.dart';
 export 'fhirpath_handler.dart';
 export 'history_handler.dart';
 export 'login_handler.dart';
+export 'meta_handler.dart';
 export 'mapping_handler.dart';
 export 'metadata_handler.dart';
 export 'patch_handler.dart';
