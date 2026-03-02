@@ -16,7 +16,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -25,6 +25,7 @@ class FhirAntDb extends FhirDb {
           await _createUsersTable();
           await _createExportJobsTable();
           await _createLogsTable();
+          await _createAuthorizationCodesTable();
           await _createIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -51,6 +52,9 @@ class FhirAntDb extends FhirDb {
             await m.createTable(canonicalResources);
             await m.createTable(generalStorage);
             await _createIndexes();
+          }
+          if (from < 8) {
+            await _createAuthorizationCodesTable();
           }
         },
       );
@@ -111,6 +115,23 @@ class FhirAntDb extends FhirDb {
         "user" TEXT,
         stack_trace TEXT,
         timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      )
+    ''');
+  }
+
+  Future<void> _createAuthorizationCodesTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS authorization_codes (
+        code TEXT NOT NULL PRIMARY KEY,
+        client_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        redirect_uri TEXT NOT NULL,
+        scope TEXT NOT NULL DEFAULT '',
+        code_challenge TEXT,
+        code_challenge_method TEXT,
+        expires_at INTEGER NOT NULL,
+        used INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users(id)
       )
     ''');
   }
@@ -489,6 +510,61 @@ class FhirAntDb extends FhirDb {
   Future<List<User>> getAllUsers() async {
     final rows = await customSelect('SELECT * FROM users').get();
     return rows.map(User.fromRow).toList();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Authorization code management methods
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Future<void> createAuthorizationCode({
+    required String code,
+    required String clientId,
+    required int userId,
+    required String redirectUri,
+    required String scope,
+    String? codeChallenge,
+    String? codeChallengeMethod,
+    required DateTime expiresAt,
+  }) async {
+    final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
+    await customStatement(
+      'INSERT INTO authorization_codes (code, client_id, user_id, redirect_uri, scope, code_challenge, code_challenge_method, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        code,
+        clientId,
+        userId,
+        redirectUri,
+        scope,
+        codeChallenge,
+        codeChallengeMethod,
+        expiresAtEpoch,
+      ],
+    );
+  }
+
+  Future<AuthorizationCode?> getAuthorizationCode(String code) async {
+    final rows = await customSelect(
+      'SELECT * FROM authorization_codes WHERE code = ?',
+      variables: [Variable.withString(code)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return AuthorizationCode.fromRow(rows.first);
+  }
+
+  Future<void> markAuthorizationCodeUsed(String code) async {
+    await customStatement(
+      'UPDATE authorization_codes SET used = 1 WHERE code = ?',
+      [code],
+    );
+  }
+
+  /// Delete expired or used authorization codes (cleanup).
+  Future<void> cleanupAuthorizationCodes() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await customStatement(
+      'DELETE FROM authorization_codes WHERE used = 1 OR expires_at < ?',
+      [now],
+    );
   }
 
   // ──────────────────────────────────────────────────────────────────────────

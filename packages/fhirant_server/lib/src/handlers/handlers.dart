@@ -1,3 +1,4 @@
+export 'authorize_handler.dart';
 export 'base_handler.dart';
 export 'bundle_handler.dart';
 export 'compartment_handler.dart';

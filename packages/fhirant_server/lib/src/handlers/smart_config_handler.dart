@@ -12,9 +12,19 @@ Response smartConfigHandler(Request request) {
       : '${request.requestedUri.scheme}://${request.requestedUri.host}';
 
   final config = {
-    'token_endpoint': '$host/auth/login',
+    'issuer': host,
+    'authorization_endpoint': '$host/auth/authorize',
+    'token_endpoint': '$host/auth/token',
     'registration_endpoint': '$host/auth/register',
+    'grant_types_supported': [
+      'authorization_code',
+      'refresh_token',
+    ],
     'scopes_supported': [
+      'openid',
+      'fhirUser',
+      'launch',
+      'launch/patient',
       'system/*.*',
       'user/*.*',
       'user/*.rs',
@@ -22,10 +32,13 @@ Response smartConfigHandler(Request request) {
       'patient/*.*',
       'patient/*.rs',
     ],
-    'response_types_supported': ['token'],
+    'response_types_supported': ['code'],
+    'code_challenge_methods_supported': ['S256'],
+    'token_endpoint_auth_methods_supported': ['none'],
     'capabilities': [
       'permission-v2',
       'launch-standalone',
+      'authorize-post',
     ],
   };
 

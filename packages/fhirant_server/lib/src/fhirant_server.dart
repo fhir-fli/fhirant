@@ -73,6 +73,15 @@ class FhirAntServer {
           (Request req) => loginHandler(req, dbInterface, _jwtService))
       ..post('/auth/token',
           (Request req) => refreshHandler(req, dbInterface, _jwtService))
+      ..get('/auth/authorize',
+          (Request req) => authorizeGetHandler(req))
+      ..post('/auth/authorize', (Request req) {
+        final contentType = req.headers['content-type'] ?? '';
+        if (contentType.contains('application/json')) {
+          return authorizeJsonHandler(req, dbInterface);
+        }
+        return authorizePostHandler(req, dbInterface);
+      })
       // Public routes
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)

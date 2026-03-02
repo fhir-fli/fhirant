@@ -63,8 +63,12 @@ Response metadataHandler(Request request) {
                         .toFhirString,
                 extension_: [
                   FhirExtension(
+                    url: 'authorize'.toFhirString,
+                    valueUri: FhirUri('$host/auth/authorize'),
+                  ),
+                  FhirExtension(
                     url: 'token'.toFhirString,
-                    valueUri: FhirUri('$host/auth/login'),
+                    valueUri: FhirUri('$host/auth/token'),
                   ),
                   FhirExtension(
                     url: 'register'.toFhirString,

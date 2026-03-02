@@ -111,3 +111,46 @@ class ExportJob {
   String toString() =>
       'ExportJob(jobId: $jobId, status: $status, exportLevel: $exportLevel)';
 }
+
+/// An OAuth 2.0 authorization code for the authorization code flow.
+class AuthorizationCode {
+  final String code;
+  final String clientId;
+  final int userId;
+  final String redirectUri;
+  final String scope;
+  final String? codeChallenge;
+  final String? codeChallengeMethod;
+  final DateTime expiresAt;
+  final bool used;
+
+  const AuthorizationCode({
+    required this.code,
+    required this.clientId,
+    required this.userId,
+    required this.redirectUri,
+    required this.scope,
+    this.codeChallenge,
+    this.codeChallengeMethod,
+    required this.expiresAt,
+    required this.used,
+  });
+
+  factory AuthorizationCode.fromRow(QueryRow row) {
+    return AuthorizationCode(
+      code: row.read<String>('code'),
+      clientId: row.read<String>('client_id'),
+      userId: row.read<int>('user_id'),
+      redirectUri: row.read<String>('redirect_uri'),
+      scope: row.read<String>('scope'),
+      codeChallenge: row.readNullable<String>('code_challenge'),
+      codeChallengeMethod: row.readNullable<String>('code_challenge_method'),
+      expiresAt: row.read<DateTime>('expires_at'),
+      used: row.read<bool>('used'),
+    );
+  }
+
+  @override
+  String toString() =>
+      'AuthorizationCode(code: $code, clientId: $clientId, userId: $userId, used: $used)';
+}
