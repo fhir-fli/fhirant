@@ -206,6 +206,14 @@ Response metadataHandler(Request request) {
                     'http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup',
                   ),
                 ),
+              // $expand on ValueSet
+              if (SearchParamDefinitions.expandTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'expand'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/ValueSet-expand',
+                  ),
+                ),
             ];
 
             final includeList =

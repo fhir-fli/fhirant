@@ -254,6 +254,191 @@ Future<Response> lookupHandler(
   }
 }
 
+/// Handler for ValueSet/$expand.
+///
+/// Expands a ValueSet by resolving compose.include rules against stored
+/// CodeSystems. Supports both instance-level (ValueSet/<id>/$expand) and
+/// type-level (ValueSet/$expand?url=...) invocation.
+///
+/// Parameters: url, filter, offset, count.
+Future<Response> expandHandler(
+  Request request,
+  FhirAntDb dbInterface, [
+  String? id,
+]) async {
+  try {
+    final params = await _extractOperationParams(request);
+
+    final url = params['url'] as String?;
+    final filter = params['filter'] as String?;
+    final offsetStr = params['offset'] as String?;
+    final countStr = params['count'] as String?;
+    final offset = offsetStr != null ? int.tryParse(offsetStr) : null;
+    final count = countStr != null ? int.tryParse(countStr) : null;
+
+    // Find the ValueSet
+    fhir.ValueSet? valueSet;
+    if (id != null) {
+      final resource =
+          await dbInterface.getResource(fhir.R4ResourceType.ValueSet, id);
+      if (resource == null) {
+        return _errorResponse(404, 'ValueSet/$id not found');
+      }
+      valueSet = resource as fhir.ValueSet;
+    } else if (url != null) {
+      valueSet = await _findValueSetByUrl(url, dbInterface);
+      if (valueSet == null) {
+        return _errorResponse(404, 'ValueSet not found: $url');
+      }
+    } else {
+      return _errorResponse(
+          400, 'Parameter "url" is required for type-level \$expand');
+    }
+
+    // If already has an expansion, optionally filter it
+    if (valueSet.expansion?.contains != null &&
+        valueSet.expansion!.contains!.isNotEmpty) {
+      var contains = valueSet.expansion!.contains!;
+      if (filter != null && filter.isNotEmpty) {
+        contains = _filterContains(contains, filter);
+      }
+      final total = contains.length;
+      if (offset != null && offset > 0) {
+        contains =
+            contains.skip(offset).toList();
+      }
+      if (count != null) {
+        contains = contains.take(count).toList();
+      }
+      final expanded = valueSet.copyWith(
+        expansion: fhir.ValueSetExpansion(
+          timestamp: DateTime.now().toFhirDateTime,
+          total: fhir.FhirInteger(total),
+          offset: offset != null ? fhir.FhirInteger(offset) : null,
+          contains: contains,
+        ),
+      );
+      return Response.ok(
+        expanded.toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    // Expand from compose.include
+    final allContains = <fhir.ValueSetContains>[];
+    if (valueSet.compose?.include != null) {
+      for (final include in valueSet.compose!.include) {
+        final includeSystem = include.system?.valueString;
+
+        if (include.concept != null && include.concept!.isNotEmpty) {
+          // Explicit concept list
+          for (final c in include.concept!) {
+            allContains.add(fhir.ValueSetContains(
+              system: includeSystem != null
+                  ? fhir.FhirUri(includeSystem)
+                  : null,
+              code: c.code,
+              display: c.display,
+            ));
+          }
+        } else if (includeSystem != null) {
+          // Include all codes from the CodeSystem
+          final cs =
+              await _findCodeSystemByUrl(includeSystem, dbInterface);
+          if (cs != null && cs.concept != null) {
+            _flattenConcepts(cs.concept!, includeSystem, allContains);
+          }
+        }
+
+        // Apply filter from include rules (ValueSet.compose.include.filter)
+        // These are CodeSystem-level filters, not the $expand filter param.
+        // For simplicity, we don't apply compose-level filters here —
+        // full filter support requires property-based CodeSystem filtering.
+      }
+    }
+
+    // Apply exclude rules
+    if (valueSet.compose?.exclude != null) {
+      for (final exclude in valueSet.compose!.exclude!) {
+        final excludeSystem = exclude.system?.valueString;
+        if (exclude.concept != null) {
+          for (final c in exclude.concept!) {
+            allContains.removeWhere((entry) =>
+                entry.code?.valueString == c.code.valueString &&
+                (excludeSystem == null ||
+                    entry.system?.valueString == excludeSystem));
+          }
+        }
+      }
+    }
+
+    // Apply $expand filter parameter (text match on display/code)
+    var filtered = allContains;
+    if (filter != null && filter.isNotEmpty) {
+      filtered = _filterContains(filtered, filter);
+    }
+
+    final total = filtered.length;
+    if (offset != null && offset > 0) {
+      filtered = filtered.skip(offset).toList();
+    }
+    if (count != null) {
+      filtered = filtered.take(count).toList();
+    }
+
+    final expanded = valueSet.copyWith(
+      expansion: fhir.ValueSetExpansion(
+        timestamp: DateTime.now().toFhirDateTime,
+        total: fhir.FhirInteger(total),
+        offset: offset != null ? fhir.FhirInteger(offset) : null,
+        contains: filtered,
+      ),
+    );
+
+    FhirantLogging().logInfo(
+        'Expanded ValueSet with ${filtered.length} concepts');
+    return Response.ok(
+      expanded.toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Terminology \$expand failed', e, stackTrace);
+    return _errorResponse(500, 'Internal error: $e');
+  }
+}
+
+/// Flatten a hierarchical CodeSystem concept list into ValueSetContains entries.
+void _flattenConcepts(
+  List<fhir.CodeSystemConcept> concepts,
+  String system,
+  List<fhir.ValueSetContains> out,
+) {
+  for (final c in concepts) {
+    out.add(fhir.ValueSetContains(
+      system: fhir.FhirUri(system),
+      code: c.code,
+      display: c.display,
+    ));
+    if (c.concept != null) {
+      _flattenConcepts(c.concept!, system, out);
+    }
+  }
+}
+
+/// Filter ValueSetContains entries by a text filter (case-insensitive match
+/// on display or code).
+List<fhir.ValueSetContains> _filterContains(
+  List<fhir.ValueSetContains> contains,
+  String filter,
+) {
+  final lowerFilter = filter.toLowerCase();
+  return contains.where((entry) {
+    final display = entry.display?.valueString?.toLowerCase() ?? '';
+    final code = entry.code?.valueString?.toLowerCase() ?? '';
+    return display.contains(lowerFilter) || code.contains(lowerFilter);
+  }).toList();
+}
+
 // ── Private helpers ────────────────────────────────────────────────────
 
 /// Extract operation parameters from GET query params or POST body.

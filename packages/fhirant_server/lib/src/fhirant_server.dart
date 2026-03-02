@@ -137,6 +137,23 @@ class FhirAntServer {
         r'/CodeSystem/$lookup',
         (Request req) => lookupHandler(req, dbInterface),
       )
+      // ValueSet $expand
+      ..get(
+        r'/ValueSet/<id>/$expand',
+        (Request req, String id) => expandHandler(req, dbInterface, id),
+      )
+      ..post(
+        r'/ValueSet/<id>/$expand',
+        (Request req, String id) => expandHandler(req, dbInterface, id),
+      )
+      ..get(
+        r'/ValueSet/$expand',
+        (Request req) => expandHandler(req, dbInterface),
+      )
+      ..post(
+        r'/ValueSet/$expand',
+        (Request req) => expandHandler(req, dbInterface),
+      )
       // FHIRPath endpoint - supports GET and POST
       ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))

@@ -427,4 +427,356 @@ void main() {
       expect(response.statusCode, 404);
     });
   });
+
+  group('expandHandler', () {
+    late MockFhirAntDb mockDb;
+
+    setUp(() {
+      mockDb = MockFhirAntDb();
+    });
+
+    Request _makeGetRequest(String path) {
+      return Request('GET', Uri.parse('http://localhost:8080/$path'));
+    }
+
+    test('returns 400 when no id or url provided', () async {
+      final request = _makeGetRequest('ValueSet/\$expand');
+
+      final response = await expandHandler(request, mockDb);
+      expect(response.statusCode, 400);
+    });
+
+    test('returns 404 when ValueSet not found by id', () async {
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'missing'))
+          .thenAnswer((_) async => null);
+
+      final request = _makeGetRequest('ValueSet/missing/\$expand');
+
+      final response = await expandHandler(request, mockDb, 'missing');
+      expect(response.statusCode, 404);
+    });
+
+    test('returns 404 when ValueSet not found by url', () async {
+      when(() => mockDb.search(
+            resourceType: fhir.R4ResourceType.ValueSet,
+            searchParameters: {'url': ['http://missing.com/vs']},
+            count: 1,
+            hasParameters: any(named: 'hasParameters'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => []);
+
+      final request = _makeGetRequest(
+          'ValueSet/\$expand?url=http://missing.com/vs');
+
+      final response = await expandHandler(request, mockDb);
+      expect(response.statusCode, 404);
+    });
+
+    test('returns existing expansion when already expanded', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'expansion': {
+          'timestamp': '2024-01-01T00:00:00Z',
+          'contains': [
+            {
+              'system': 'http://loinc.org',
+              'code': '1234-5',
+              'display': 'Blood glucose',
+            },
+            {
+              'system': 'http://loinc.org',
+              'code': '5678-9',
+              'display': 'Blood pressure',
+            },
+          ],
+        },
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+
+      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      expect(body['resourceType'], 'ValueSet');
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 2);
+      expect(contains[0]['code'], '1234-5');
+      expect(contains[1]['code'], '5678-9');
+    });
+
+    test('expands ValueSet from compose.include with explicit concepts',
+        () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'compose': {
+          'include': [
+            {
+              'system': 'http://example.com/cs',
+              'concept': [
+                {'code': 'A', 'display': 'Alpha'},
+                {'code': 'B', 'display': 'Beta'},
+              ],
+            },
+          ],
+        },
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+
+      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 2);
+      expect(contains[0]['system'], 'http://example.com/cs');
+      expect(contains[0]['code'], 'A');
+      expect(contains[1]['code'], 'B');
+      expect(expansion['total'], 2);
+    });
+
+    test('expands ValueSet by resolving CodeSystem from DB', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'compose': {
+          'include': [
+            {
+              'system': 'http://example.com/cs',
+            },
+          ],
+        },
+      });
+
+      final cs = fhir.CodeSystem.fromJson({
+        'resourceType': 'CodeSystem',
+        'id': 'cs-1',
+        'url': 'http://example.com/cs',
+        'status': 'active',
+        'content': 'complete',
+        'concept': [
+          {'code': 'X', 'display': 'X-ray'},
+          {
+            'code': 'Y',
+            'display': 'Yankee',
+            'concept': [
+              {'code': 'Y1', 'display': 'Yankee-One'},
+            ],
+          },
+        ],
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+      when(() => mockDb.search(
+            resourceType: fhir.R4ResourceType.CodeSystem,
+            searchParameters: {'url': ['http://example.com/cs']},
+            count: 1,
+            hasParameters: any(named: 'hasParameters'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => [cs]);
+
+      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      // Flattened hierarchy: X, Y, Y1
+      expect(contains.length, 3);
+      expect(contains.map((c) => c['code']).toList(), ['X', 'Y', 'Y1']);
+    });
+
+    test('applies filter parameter to expansion', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'expansion': {
+          'timestamp': '2024-01-01T00:00:00Z',
+          'contains': [
+            {
+              'system': 'http://loinc.org',
+              'code': '1234-5',
+              'display': 'Blood glucose',
+            },
+            {
+              'system': 'http://loinc.org',
+              'code': '5678-9',
+              'display': 'Blood pressure',
+            },
+            {
+              'system': 'http://loinc.org',
+              'code': '9999-0',
+              'display': 'Heart rate',
+            },
+          ],
+        },
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+
+      final request = _makeGetRequest(
+          'ValueSet/vs-1/\$expand?filter=blood');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 2);
+      expect(contains[0]['display'], 'Blood glucose');
+      expect(contains[1]['display'], 'Blood pressure');
+    });
+
+    test('applies offset and count to expansion', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'expansion': {
+          'timestamp': '2024-01-01T00:00:00Z',
+          'contains': [
+            {'system': 'http://ex.com', 'code': 'A', 'display': 'Alpha'},
+            {'system': 'http://ex.com', 'code': 'B', 'display': 'Beta'},
+            {'system': 'http://ex.com', 'code': 'C', 'display': 'Charlie'},
+            {'system': 'http://ex.com', 'code': 'D', 'display': 'Delta'},
+          ],
+        },
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+
+      final request = _makeGetRequest(
+          'ValueSet/vs-1/\$expand?offset=1&count=2');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 2);
+      expect(contains[0]['code'], 'B');
+      expect(contains[1]['code'], 'C');
+      expect(expansion['total'], 4);
+      expect(expansion['offset'], 1);
+    });
+
+    test('applies exclude rules during expansion', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'compose': {
+          'include': [
+            {
+              'system': 'http://example.com/cs',
+              'concept': [
+                {'code': 'A', 'display': 'Alpha'},
+                {'code': 'B', 'display': 'Beta'},
+                {'code': 'C', 'display': 'Charlie'},
+              ],
+            },
+          ],
+          'exclude': [
+            {
+              'system': 'http://example.com/cs',
+              'concept': [
+                {'code': 'B'},
+              ],
+            },
+          ],
+        },
+      });
+
+      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
+          .thenAnswer((_) async => vs);
+
+      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+
+      final response = await expandHandler(request, mockDb, 'vs-1');
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 2);
+      expect(contains.map((c) => c['code']).toList(), ['A', 'C']);
+    });
+
+    test('type-level expand by url parameter', () async {
+      final vs = fhir.ValueSet.fromJson({
+        'resourceType': 'ValueSet',
+        'id': 'vs-1',
+        'url': 'http://example.com/vs',
+        'status': 'active',
+        'compose': {
+          'include': [
+            {
+              'system': 'http://example.com/cs',
+              'concept': [
+                {'code': 'A', 'display': 'Alpha'},
+              ],
+            },
+          ],
+        },
+      });
+
+      when(() => mockDb.search(
+            resourceType: fhir.R4ResourceType.ValueSet,
+            searchParameters: {'url': ['http://example.com/vs']},
+            count: 1,
+            hasParameters: any(named: 'hasParameters'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => [vs]);
+
+      final request = _makeGetRequest(
+          'ValueSet/\$expand?url=http://example.com/vs');
+
+      final response = await expandHandler(request, mockDb);
+      expect(response.statusCode, 200);
+
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final expansion = body['expansion'] as Map<String, dynamic>;
+      final contains = expansion['contains'] as List;
+      expect(contains.length, 1);
+      expect(contains[0]['code'], 'A');
+    });
+  });
 }

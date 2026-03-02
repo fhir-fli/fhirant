@@ -314,4 +314,7 @@ class SearchParamDefinitions {
 
   /// Resource types that support $lookup.
   static const Set<String> lookupTypes = {'CodeSystem'};
+
+  /// Resource types that support $expand.
+  static const Set<String> expandTypes = {'ValueSet'};
 }
