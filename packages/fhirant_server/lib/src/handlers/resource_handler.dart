@@ -42,6 +42,123 @@ Future<Response> postSearchHandler(
   }
 }
 
+/// Handler for POST system-level search: POST /_search
+///
+/// Requires `_type` parameter to specify which resource types to search.
+/// Aggregates results into a single searchset Bundle.
+Future<Response> postSystemSearchHandler(
+  Request request,
+  FhirAntDb dbInterface,
+) async {
+  try {
+    final body = await request.readAsString();
+    // Parse form-encoded body into query parameters
+    final bodyParams = Uri.splitQueryString(body);
+    // Merge with URL query parameters (URL params take precedence)
+    final mergedParams = {...bodyParams, ...request.url.queryParameters};
+
+    // _type is required for system-level search
+    final typeParam = mergedParams['_type'];
+    if (typeParam == null || typeParam.isEmpty) {
+      return _validationErrorResponse(
+        'System-level search requires _type parameter',
+      );
+    }
+
+    final typeNames =
+        typeParam.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+    final searchParams =
+        Map<String, String>.from(mergedParams)..remove('_type');
+
+    final baseUrl = request.requestedUri.hasPort
+        ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
+        : '${request.requestedUri.scheme}://${request.requestedUri.host}';
+
+    final allEntries = <fhir.BundleEntry>[];
+    int totalCount = 0;
+
+    for (final typeName in typeNames) {
+      final type = fhir.R4ResourceType.fromString(typeName);
+      if (type == null) {
+        return _validationErrorResponse(
+          'Invalid resource type in _type: $typeName',
+        );
+      }
+
+      final parsed =
+          SearchParameterParser.parseQueryParameters(searchParams);
+      final searchParameters =
+          parsed['searchParams'] as Map<String, List<String>>?;
+      final hasParams = parsed['has'] as List<HasParameter>?;
+      final count = parsed['count'] as int? ?? 20;
+      final offset = parsed['offset'] as int? ?? 0;
+      final sort = parsed['sort'] as List<String>?;
+
+      final List<fhir.Resource> resources;
+      final hasSearchParams =
+          searchParameters != null && searchParameters.isNotEmpty;
+      final hasHasParams = hasParams != null && hasParams.isNotEmpty;
+
+      if (hasSearchParams || hasHasParams) {
+        resources = await dbInterface.search(
+          resourceType: type,
+          searchParameters: searchParameters,
+          hasParameters: hasParams,
+          count: count,
+          offset: offset,
+          sort: sort,
+        );
+      } else {
+        resources = await dbInterface.getResourcesWithPagination(
+          resourceType: type,
+          count: count,
+          offset: offset,
+        );
+      }
+
+      for (final resource in resources) {
+        final resourceId = resource.id?.toString() ?? '';
+        final resType = resource.resourceTypeString;
+        allEntries.add(fhir.BundleEntry(
+          resource: resource,
+          fullUrl: resourceId.isNotEmpty
+              ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+              : null,
+          search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
+        ));
+      }
+      totalCount += resources.length;
+    }
+
+    final bundle = fhir.Bundle(
+      type: fhir.BundleType.searchset,
+      entry: allEntries,
+      total: fhir.FhirUnsignedInt(totalCount),
+      link: [
+        fhir.BundleLink(
+          relation: fhir.FhirString('self'),
+          url: fhir.FhirUri(request.requestedUri.toString()),
+        ),
+      ],
+    );
+
+    FhirantLogging().logInfo(
+      'System search returned $totalCount resources across ${typeNames.length} types',
+    );
+    return Response.ok(
+      bundle.toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+      'Failed to process POST /_search',
+      e,
+      stackTrace,
+    );
+    return _errorResponse('Failed to process system search', e.toString());
+  }
+}
+
 /// Shared search logic for both GET and POST _search
 Future<Response> _searchResources(
   Request request,

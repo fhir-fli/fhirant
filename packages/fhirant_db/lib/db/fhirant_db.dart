@@ -1,6 +1,4 @@
 // ignore_for_file: lines_longer_than_80_chars, avoid_print
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
@@ -198,18 +196,25 @@ class FhirAntDb extends FhirDb {
     fhir.R4ResourceType resourceType,
     String id, {
     DateTime? since,
+    DateTime? at,
   }) async {
     final resourceTypeString = resourceType.toString();
     final query = select(resourcesHistory)
       ..where((tbl) {
         var cond =
             tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id);
-        if (since != null) {
+        if (at != null) {
+          // _at: return the single version current at that point in time
+          cond = cond & tbl.lastUpdated.isSmallerOrEqualValue(at);
+        } else if (since != null) {
           cond = cond & tbl.lastUpdated.isBiggerThanValue(since);
         }
         return cond;
       })
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+    if (at != null) {
+      query.limit(1);
+    }
     final rows = await query.get();
     return rows
         .map((row) => fhir.Resource.fromJsonString(row.resource))
@@ -221,7 +226,33 @@ class FhirAntDb extends FhirDb {
   Future<List<fhir.Resource>> getTypeHistory(
     fhir.R4ResourceType resourceType, {
     DateTime? since,
+    DateTime? at,
   }) async {
+    if (at != null) {
+      // _at: return the latest version per (resourceType, id) where
+      // lastUpdated <= at.  Requires a grouped MAX subquery.
+      final atSeconds = at.millisecondsSinceEpoch ~/ 1000;
+      final resourceTypeString = resourceType.toString();
+      final rows = await customSelect(
+        'SELECT rh.resource FROM resources_history rh '
+        'INNER JOIN ('
+        '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
+        '  FROM resources_history '
+        '  WHERE resource_type = ? AND last_updated <= ? '
+        '  GROUP BY resource_type, id'
+        ') sub ON rh.resource_type = sub.resource_type '
+        '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
+        'ORDER BY rh.last_updated DESC',
+        variables: [
+          Variable.withString(resourceTypeString),
+          Variable.withInt(atSeconds),
+        ],
+      ).get();
+      return rows
+          .map((row) => fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .toList();
+    }
+
     final resourceTypeString = resourceType.toString();
     final query = select(resourcesHistory)
       ..where((tbl) {
@@ -242,7 +273,29 @@ class FhirAntDb extends FhirDb {
   /// history table (avoids N+1+1 queries).
   Future<List<fhir.Resource>> getSystemHistory({
     DateTime? since,
+    DateTime? at,
   }) async {
+    if (at != null) {
+      // _at: return the latest version per (resourceType, id) where
+      // lastUpdated <= at.  Requires a grouped MAX subquery.
+      final atSeconds = at.millisecondsSinceEpoch ~/ 1000;
+      final rows = await customSelect(
+        'SELECT rh.resource FROM resources_history rh '
+        'INNER JOIN ('
+        '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
+        '  FROM resources_history '
+        '  WHERE last_updated <= ? '
+        '  GROUP BY resource_type, id'
+        ') sub ON rh.resource_type = sub.resource_type '
+        '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
+        'ORDER BY rh.last_updated DESC',
+        variables: [Variable.withInt(atSeconds)],
+      ).get();
+      return rows
+          .map((row) => fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .toList();
+    }
+
     final query = select(resourcesHistory)
       ..where((tbl) {
         if (since != null) {

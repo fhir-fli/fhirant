@@ -172,7 +172,11 @@ class FhirAntServer {
             compartmentSearchHandler(
                 req, compartmentType, compartmentId, resourceType, dbInterface),
       )
-      // Resource CRUD endpoints
+      // System-level POST search (before bundle handler)
+      ..post(
+        '/_search',
+        (Request req) => postSystemSearchHandler(req, dbInterface),
+      )
       // Transaction/Batch endpoint
       ..post(
         '/',

@@ -30,9 +30,19 @@ Future<Response> resourceHistoryHandler(
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
     final since = _parseSince(queryParams['_since']);
+    final at = _parseSince(queryParams['_at']);
 
-    // Get history from database (with optional _since filter)
-    final history = await dbInterface.getResourceHistory(type, id, since: since);
+    // _since and _at are mutually exclusive
+    if (since != null && at != null) {
+      return _validationErrorResponse(
+        '_since and _at are mutually exclusive; specify only one',
+      );
+    }
+
+    // Get history from database (with optional _since or _at filter)
+    final history = await dbInterface.getResourceHistory(
+      type, id, since: since, at: at,
+    );
 
     if (history.isEmpty) {
       FhirantLogging().logWarning(
@@ -122,9 +132,19 @@ Future<Response> typeHistoryHandler(
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
     final since = _parseSince(queryParams['_since']);
+    final at = _parseSince(queryParams['_at']);
+
+    // _since and _at are mutually exclusive
+    if (since != null && at != null) {
+      return _validationErrorResponse(
+        '_since and _at are mutually exclusive; specify only one',
+      );
+    }
 
     // Query history table directly (no more N+1 queries)
-    final allHistory = await dbInterface.getTypeHistory(type, since: since);
+    final allHistory = await dbInterface.getTypeHistory(
+      type, since: since, at: at,
+    );
 
     // Apply pagination
     final total = allHistory.length;
@@ -196,9 +216,19 @@ Future<Response> systemHistoryHandler(
     final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
     final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
     final since = _parseSince(queryParams['_since']);
+    final at = _parseSince(queryParams['_at']);
+
+    // _since and _at are mutually exclusive
+    if (since != null && at != null) {
+      return _validationErrorResponse(
+        '_since and _at are mutually exclusive; specify only one',
+      );
+    }
 
     // Query history table directly (no more N+1+1 queries)
-    final allHistory = await dbInterface.getSystemHistory(since: since);
+    final allHistory = await dbInterface.getSystemHistory(
+      since: since, at: at,
+    );
 
     // Apply pagination
     final total = allHistory.length;

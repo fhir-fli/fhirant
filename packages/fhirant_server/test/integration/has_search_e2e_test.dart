@@ -200,7 +200,7 @@ void main() {
   });
 
   group('_has in CapabilityStatement', () {
-    test('metadata advertises _has search parameter', () async {
+    test('metadata advertises search-system interaction', () async {
       final response = await handler(testRequest(
         'GET',
         '/metadata',
@@ -209,16 +209,15 @@ void main() {
       expect(response.statusCode, 200);
       final cs =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-      final rest = cs['rest'] as List;
-      final resources = rest[0]['resource'] as List;
-      // Check first resource has _has in searchParam
-      final firstResource = resources[0] as Map<String, dynamic>;
-      final searchParams = firstResource['searchParam'] as List;
-      final hasParam = searchParams.firstWhere(
-        (p) => (p as Map)['name'] == '_has',
-        orElse: () => null,
-      );
-      expect(hasParam, isNotNull);
+      final rest = (cs['rest'] as List)[0] as Map<String, dynamic>;
+      // The search-system interaction indicates system-level search is supported
+      // (which includes _has). Per the CapabilityStatement overhaul, _has is
+      // not listed per-resource but is an implicit server capability.
+      final interactions = rest['interaction'] as List;
+      final codes = interactions
+          .map((i) => (i as Map)['code'] as String)
+          .toList();
+      expect(codes, contains('search-system'));
     });
   });
 }

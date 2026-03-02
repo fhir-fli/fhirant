@@ -1482,4 +1482,149 @@ void main() {
       expect(response.statusCode, equals(400));
     });
   });
+
+  group('postSystemSearchHandler', () {
+    late MockFhirAntDb mockDb;
+    late MockRequest mockRequest;
+
+    setUp(() {
+      mockDb = MockFhirAntDb();
+      mockRequest = MockRequest();
+    });
+
+    test('returns 400 when _type is missing', () async {
+      when(() => mockRequest.url).thenReturn(Uri.parse('_search'));
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/_search'));
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => 'name=Smith');
+
+      final response = await postSystemSearchHandler(mockRequest, mockDb);
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      expect(body, contains('_type'));
+    });
+
+    test('returns 400 for invalid resource type in _type', () async {
+      when(() => mockRequest.url).thenReturn(Uri.parse('_search'));
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/_search'));
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => '_type=InvalidType');
+
+      final response = await postSystemSearchHandler(mockRequest, mockDb);
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      expect(body, contains('InvalidType'));
+    });
+
+    test('searches single type and returns results', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'p1',
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(() => mockRequest.url).thenReturn(Uri.parse('_search'));
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/_search'));
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => '_type=Patient&name=Smith');
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+
+      final response = await postSystemSearchHandler(mockRequest, mockDb);
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('Bundle'));
+      expect(json['type'], equals('searchset'));
+      expect(json['total'], equals(1));
+      final entries = json['entry'] as List;
+      expect(entries.length, equals(1));
+    });
+
+    test('searches multiple types and aggregates results', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'p1',
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+      final observation = fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'o1',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '12345'},
+          ],
+        },
+      });
+
+      when(() => mockRequest.url).thenReturn(Uri.parse('_search'));
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/_search'));
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => '_type=Patient,Observation');
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Observation,
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+        ),
+      ).thenAnswer((_) async => [observation]);
+
+      final response = await postSystemSearchHandler(mockRequest, mockDb);
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['total'], equals(2));
+      final entries = json['entry'] as List;
+      expect(entries.length, equals(2));
+    });
+
+    test('URL query params merged with body params', () async {
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('_search?_type=Patient'));
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/_search?_type=Patient'));
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => 'name=Smith');
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => []);
+
+      final response = await postSystemSearchHandler(mockRequest, mockDb);
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['total'], equals(0));
+    });
+  });
 }

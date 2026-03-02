@@ -54,6 +54,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patient2, patient1]);
 
@@ -84,6 +85,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => []);
 
@@ -141,6 +143,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => patients);
 
@@ -185,6 +188,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patient1]);
 
@@ -206,9 +210,113 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: captureAny(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).captured;
       expect(captured.single, isA<DateTime>());
+    });
+
+    test('_at returns single version at that point in time', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {'versionId': 'v1', 'lastUpdated': '2024-01-01T00:00:00Z'},
+        'name': [
+          {'family': 'AtVersion'},
+        ],
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123/_history?_at=2024-02-01T00:00:00Z'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/Patient/123/_history?_at=2024-02-01T00:00:00Z',
+        ),
+      );
+      when(
+        () => mockDb.getResourceHistory(
+          fhir.R4ResourceType.Patient,
+          '123',
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+
+      final response = await resourceHistoryHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect((json['entry'] as List).length, equals(1));
+
+      final captured = verify(
+        () => mockDb.getResourceHistory(
+          fhir.R4ResourceType.Patient,
+          '123',
+          since: any(named: 'since'),
+          at: captureAny(named: 'at'),
+        ),
+      ).captured;
+      expect(captured.single, isA<DateTime>());
+    });
+
+    test('_at returns 404 when no version exists at that time', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123/_history?_at=2020-01-01T00:00:00Z'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/Patient/123/_history?_at=2020-01-01T00:00:00Z',
+        ),
+      );
+      when(
+        () => mockDb.getResourceHistory(
+          fhir.R4ResourceType.Patient,
+          '123',
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
+      ).thenAnswer((_) async => []);
+
+      final response = await resourceHistoryHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(404));
+    });
+
+    test('_since and _at together returns 400', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+          'Patient/123/_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/Patient/123/_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+
+      final response = await resourceHistoryHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
     });
   });
 
@@ -249,6 +357,7 @@ void main() {
         () => mockDb.getTypeHistory(
           fhir.R4ResourceType.Patient,
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patientV2, patient]);
 
@@ -301,6 +410,7 @@ void main() {
         () => mockDb.getTypeHistory(
           fhir.R4ResourceType.Patient,
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patient]);
 
@@ -319,9 +429,81 @@ void main() {
         () => mockDb.getTypeHistory(
           fhir.R4ResourceType.Patient,
           since: captureAny(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).captured;
       expect(captured.single, isA<DateTime>());
+    });
+
+    test('_at returns versions at that point in time', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '456',
+        'meta': {'versionId': 'v1', 'lastUpdated': '2024-01-01T00:00:00Z'},
+        'name': [
+          {'family': 'AtVersion'},
+        ],
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/_history?_at=2024-02-01T00:00:00Z'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/Patient/_history?_at=2024-02-01T00:00:00Z',
+        ),
+      );
+      when(
+        () => mockDb.getTypeHistory(
+          fhir.R4ResourceType.Patient,
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+
+      final response = await typeHistoryHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect((json['entry'] as List).length, equals(1));
+
+      final captured = verify(
+        () => mockDb.getTypeHistory(
+          fhir.R4ResourceType.Patient,
+          since: any(named: 'since'),
+          at: captureAny(named: 'at'),
+        ),
+      ).captured;
+      expect(captured.single, isA<DateTime>());
+    });
+
+    test('_since and _at together returns 400', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+          'Patient/_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/Patient/_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+
+      final response = await typeHistoryHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
     });
   });
 
@@ -359,7 +541,10 @@ void main() {
         Uri.parse('http://localhost:8080/_history'),
       );
       when(
-        () => mockDb.getSystemHistory(since: any(named: 'since')),
+        () => mockDb.getSystemHistory(
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
       ).thenAnswer((_) async => [patientV2, patient]);
 
       final response = await systemHistoryHandler(
@@ -383,7 +568,10 @@ void main() {
         Uri.parse('http://localhost:8080/_history'),
       );
       when(
-        () => mockDb.getSystemHistory(since: any(named: 'since')),
+        () => mockDb.getSystemHistory(
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
       ).thenAnswer((_) async => []);
 
       final response = await systemHistoryHandler(
@@ -416,7 +604,10 @@ void main() {
         Uri.parse('http://localhost:8080/_history?_since=2024-03-01T00:00:00Z'),
       );
       when(
-        () => mockDb.getSystemHistory(since: any(named: 'since')),
+        () => mockDb.getSystemHistory(
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
       ).thenAnswer((_) async => [patient]);
 
       final response = await systemHistoryHandler(
@@ -430,9 +621,77 @@ void main() {
       expect((json['entry'] as List).length, equals(1));
 
       final captured = verify(
-        () => mockDb.getSystemHistory(since: captureAny(named: 'since')),
+        () => mockDb.getSystemHistory(
+          since: captureAny(named: 'since'),
+          at: any(named: 'at'),
+        ),
       ).captured;
       expect(captured.single, isA<DateTime>());
+    });
+
+    test('_at returns versions at that point in time', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '789',
+        'meta': {'versionId': 'v1', 'lastUpdated': '2024-01-01T00:00:00Z'},
+        'name': [
+          {'family': 'AtVersion'},
+        ],
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('_history?_at=2024-02-01T00:00:00Z'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/_history?_at=2024-02-01T00:00:00Z'),
+      );
+      when(
+        () => mockDb.getSystemHistory(
+          since: any(named: 'since'),
+          at: any(named: 'at'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+
+      final response = await systemHistoryHandler(
+        mockRequest,
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect((json['entry'] as List).length, equals(1));
+
+      final captured = verify(
+        () => mockDb.getSystemHistory(
+          since: any(named: 'since'),
+          at: captureAny(named: 'at'),
+        ),
+      ).captured;
+      expect(captured.single, isA<DateTime>());
+    });
+
+    test('_since and _at together returns 400', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse(
+          '_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse(
+          'http://localhost:8080/_history?_since=2024-01-01T00:00:00Z&_at=2024-06-01T00:00:00Z',
+        ),
+      );
+
+      final response = await systemHistoryHandler(
+        mockRequest,
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(400));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      expect(json['resourceType'], equals('OperationOutcome'));
     });
   });
 
@@ -468,6 +727,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patient2, patient1]);
 
@@ -493,6 +753,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => []);
 
@@ -525,6 +786,7 @@ void main() {
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
+          at: any(named: 'at'),
         ),
       ).thenAnswer((_) async => [patient1]);
 
