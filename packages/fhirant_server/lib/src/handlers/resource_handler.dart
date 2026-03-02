@@ -5,8 +5,10 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
+import 'package:fhirant_server/src/utils/compartment_definitions.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 
 /// Handler to fetch all resources of a given type
@@ -242,13 +244,52 @@ Future<Response> _searchResources(
       );
     }
 
+    // Patient-level scope enforcement: restrict results to patient compartment
+    final patientId = _extractPatientContext(request);
+    Map<String, List<String>>? effectiveSearchParams = searchParams;
+
+    if (patientId != null) {
+      effectiveSearchParams = Map<String, List<String>>.from(
+        searchParams ?? {},
+      );
+      // Get the patient compartment definition
+      final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
+      if (compartmentDef != null &&
+          compartmentDef.containsKey(resourceType)) {
+        final paths = compartmentDef[resourceType]!;
+        if (paths.isEmpty) {
+          // Focal resource (Patient) — restrict to the patient's own ID
+          effectiveSearchParams['_id'] = [patientId];
+        } else {
+          // Non-focal resource — get IDs in the patient compartment
+          final compartmentIds =
+              await dbInterface.getCompartmentResourceIds(
+            compartmentType: 'Patient',
+            compartmentId: patientId,
+            compartmentDefinition: {resourceType: paths},
+          );
+          final allowedIds = compartmentIds[resourceType] ?? {};
+          if (allowedIds.isEmpty) {
+            // No resources in compartment for this type
+            return _emptySearchBundle(request, total);
+          }
+          effectiveSearchParams['_id'] = allowedIds.toList();
+        }
+      } else {
+        // Resource type not in patient compartment — return empty
+        return _emptySearchBundle(request, total);
+      }
+    }
+
     // Use search if search parameters or _has params are provided
     final List<fhir.Resource> resources;
-    if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
+    final hasSearchParams =
+        effectiveSearchParams != null && effectiveSearchParams.isNotEmpty;
+    if (hasSearchParams || hasHasParams) {
       // Use search functionality
       resources = await dbInterface.search(
         resourceType: type,
-        searchParameters: searchParams,
+        searchParameters: effectiveSearchParams,
         hasParameters: hasParams,
         count: count,
         offset: offset,
@@ -271,10 +312,10 @@ Future<Response> _searchResources(
     // _total=none: skip count entirely, _total=estimate: use same as accurate
     int? totalCount;
     if (total != 'none') {
-      if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
+      if (hasSearchParams || hasHasParams) {
         totalCount = await dbInterface.searchCount(
           resourceType: type,
-          searchParameters: searchParams,
+          searchParameters: effectiveSearchParams,
           hasParameters: hasParams,
         );
       } else {
@@ -873,6 +914,28 @@ Future<Response> getResourceByIdHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource != null) {
+      // Patient-level scope enforcement: verify resource is in patient compartment
+      final readPatientId = _extractPatientContext(request);
+      if (readPatientId != null) {
+        if (!await _isInPatientCompartment(
+            resourceType, id, readPatientId, dbInterface)) {
+          return Response(403,
+              body: jsonEncode({
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'forbidden',
+                    'diagnostics':
+                        '$resourceType/$id is not in the patient compartment '
+                        'for Patient/$readPatientId',
+                  }
+                ]
+              }),
+              headers: {'Content-Type': 'application/json'});
+        }
+      }
+
       // Check If-None-Match for conditional read (ETag-based)
       final ifNoneMatch =
           FhirHttpHeaders.parseETag(request.headers['if-none-match']);
@@ -1244,6 +1307,63 @@ void _extractAllReferences(Map<String, dynamic> json, List<Map<String, String?>>
       }
     }
   }
+}
+
+/// Extracts the patient ID from the request context if patient-level
+/// scopes are in effect. Returns null if no patient context.
+String? _extractPatientContext(Request request) {
+  final authUser = request.context['auth_user'] as Map<String, dynamic>?;
+  if (authUser == null) return null;
+
+  final scopes = authUser['scopes'] as List<String>?;
+  if (scopes == null) return null;
+
+  // Only enforce patient filtering if scopes are patient-only context
+  if (!SmartScopeEnforcer.isPatientOnlyContext(scopes)) return null;
+
+  return authUser['patientId'] as String?;
+}
+
+/// Checks if a resource is in the patient compartment for the given patient.
+Future<bool> _isInPatientCompartment(
+  String resourceType,
+  String resourceId,
+  String patientId,
+  FhirAntDb dbInterface,
+) async {
+  // Patient accessing their own record
+  if (resourceType == 'Patient' && resourceId == patientId) return true;
+
+  final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
+  if (compartmentDef == null || !compartmentDef.containsKey(resourceType)) {
+    return false;
+  }
+
+  final paths = compartmentDef[resourceType]!;
+  if (paths.isEmpty) return resourceId == patientId;
+
+  final compartmentIds = await dbInterface.getCompartmentResourceIds(
+    compartmentType: 'Patient',
+    compartmentId: patientId,
+    compartmentDefinition: {resourceType: paths},
+  );
+
+  return (compartmentIds[resourceType] ?? {}).contains(resourceId);
+}
+
+/// Returns an empty searchset Bundle response.
+Response _emptySearchBundle(Request request, String? total) {
+  final bundle = fhir.Bundle(
+    type: fhir.BundleType.searchset,
+    total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
+    entry: <fhir.BundleEntry>[],
+  );
+  final json = bundle.toJson();
+  json['entry'] = <dynamic>[];
+  return Response.ok(
+    jsonEncode(json),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
 
 dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {

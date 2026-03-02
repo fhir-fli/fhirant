@@ -71,6 +71,8 @@ class FhirAntServer {
           (Request req) => registerHandler(req, dbInterface))
       ..post('/auth/login',
           (Request req) => loginHandler(req, dbInterface, _jwtService))
+      ..post('/auth/token',
+          (Request req) => refreshHandler(req, dbInterface, _jwtService))
       // Public routes
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)

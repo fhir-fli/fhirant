@@ -77,6 +77,9 @@ Middleware authMiddleware(JwtService jwtService) {
         scopes = SmartScopeEnforcer.defaultScopesForRole(role);
       }
 
+      // Extract patient context from JWT (for patient-level scopes)
+      final patientId = payload['patient'] as String?;
+
       // Determine the required permission for this request
       final permission =
           SmartScopeEnforcer.methodToPermission(request.method, path);
@@ -100,11 +103,32 @@ Middleware authMiddleware(JwtService jwtService) {
                   ]
                 }));
           }
+
+          // If patient/ scopes are present but no patient context, reject
+          if (SmartScopeEnforcer.hasPatientScopes(scopes) &&
+              patientId == null) {
+            return Response(403,
+                body: jsonEncode({
+                  'resourceType': 'OperationOutcome',
+                  'issue': [
+                    {
+                      'severity': 'error',
+                      'code': 'forbidden',
+                      'diagnostics':
+                          'patient/ scopes require a patient context '
+                          '(patient claim in JWT)',
+                    }
+                  ]
+                }));
+          }
         }
       }
 
-      // Inject auth_user (with scopes) into context
+      // Inject auth_user (with scopes and patient context) into context
       payload['scopes'] = scopes;
+      if (patientId != null) {
+        payload['patientId'] = patientId;
+      }
       final updatedRequest =
           request.change(context: {'auth_user': payload});
       return innerHandler(updatedRequest);

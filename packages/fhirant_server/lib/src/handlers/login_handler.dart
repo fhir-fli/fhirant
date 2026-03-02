@@ -54,20 +54,36 @@ Future<Response> loginHandler(
       effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
     }
 
-    // Generate JWT
+    // Check for optional patient context (for patient-facing apps)
+    final patientId = body['patient_id'] as String?;
+
+    // Generate JWT access token
     final token = jwtService.generateToken(
       userId: user.id,
       username: user.username,
       role: user.role,
       scopes: effectiveScopes,
+      patientId: patientId,
+    );
+
+    // Generate refresh token
+    final refreshToken = jwtService.generateRefreshToken(
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      scopes: effectiveScopes,
+      patientId: patientId,
     );
 
     return Response.ok(
       jsonEncode({
         'token': token,
+        'refresh_token': refreshToken,
+        'token_type': 'Bearer',
         'username': user.username,
         'role': user.role,
         'scopes': effectiveScopes,
+        if (patientId != null) 'patient': patientId,
       }),
     );
   } catch (e) {

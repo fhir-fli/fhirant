@@ -23,6 +23,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn({});
     });
 
     test('returns 200 with resource when found', () async {
@@ -412,6 +413,244 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json.containsKey('name'), isTrue);
       expect(json.containsKey('gender'), isFalse);
+      final security =
+          (json['meta'] as Map)['security'] as List;
+      expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
+    });
+
+    test('patient scope allows read of own Patient resource', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pat-1',
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/pat-1'),
+      );
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.r'],
+          'patientId': 'pat-1',
+        },
+      });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        'pat-1',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+    });
+
+    test('patient scope denies read of other Patient resource', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pat-2',
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Jones'},
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-2'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/pat-2'),
+      );
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.r'],
+          'patientId': 'pat-1',
+        },
+      });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        'pat-2',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(403));
+    });
+
+    test('patient scope allows Observation in compartment', () async {
+      final obs = fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'obs-1',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '1234-5'}
+          ]
+        },
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-1'),
+      ).thenAnswer((_) async => obs);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Observation/obs-1'),
+      );
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Observation.r'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.getCompartmentResourceIds(
+            compartmentType: 'Patient',
+            compartmentId: 'pat-1',
+            compartmentDefinition: any(named: 'compartmentDefinition'),
+            typeFilter: any(named: 'typeFilter'),
+            since: any(named: 'since'),
+          )).thenAnswer((_) async => {
+            'Observation': {'obs-1'},
+          });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Observation',
+        'obs-1',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+    });
+
+    test('patient scope denies Observation not in compartment', () async {
+      final obs = fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'obs-other',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '1234-5'}
+          ]
+        },
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-other'),
+      ).thenAnswer((_) async => obs);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Observation/obs-other'),
+      );
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Observation.r'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.getCompartmentResourceIds(
+            compartmentType: 'Patient',
+            compartmentId: 'pat-1',
+            compartmentDefinition: any(named: 'compartmentDefinition'),
+            typeFilter: any(named: 'typeFilter'),
+            since: any(named: 'since'),
+          )).thenAnswer((_) async => {
+            'Observation': <String>{},
+          });
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Observation',
+        'obs-other',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(403));
+    });
+
+    test('_summary=true returns isSummary fields for Patient', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': '123',
+        'meta': {
+          'versionId': '1',
+          'lastUpdated': '2024-01-15T10:30:00.000Z',
+        },
+        'name': [
+          {'family': 'Smith'},
+        ],
+        'gender': 'male',
+        'birthDate': '1990-01-01',
+        'text': {
+          'status': 'generated',
+          'div': '<div xmlns="http://www.w3.org/1999/xhtml">Test</div>',
+        },
+        'generalPractitioner': [
+          {'reference': 'Practitioner/prac-1'}
+        ],
+        'contact': [
+          {
+            'name': {'family': 'ContactPerson'}
+          }
+        ],
+        'extension': [
+          {
+            'url': 'http://example.com/ext',
+            'valueString': 'extra',
+          }
+        ],
+      });
+
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => patient);
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('Patient/123?_summary=true'),
+      );
+      when(() => mockRequest.headers).thenReturn({});
+
+      final response = await getResourceByIdHandler(
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      // Summary fields should be present
+      expect(json.containsKey('name'), isTrue);
+      expect(json.containsKey('gender'), isTrue);
+      expect(json.containsKey('birthDate'), isTrue);
+      expect(json.containsKey('contact'), isTrue);
+      expect(json.containsKey('generalPractitioner'), isTrue);
+      // Non-summary fields should be absent
+      expect(json.containsKey('text'), isFalse);
+      expect(json.containsKey('extension'), isFalse);
+      // SUBSETTED tag should be present
       final security =
           (json['meta'] as Map)['security'] as List;
       expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);

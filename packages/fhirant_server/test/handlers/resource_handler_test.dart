@@ -257,6 +257,7 @@ void main() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
       when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({});
     });
 
     test('uses pagination when no search parameters provided', () async {
@@ -1331,6 +1332,181 @@ void main() {
         selfLink['url'] as String,
         contains('Patient?name=Nobody'),
       );
+    });
+
+    test('patient scope restricts Patient search to own ID', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pat-1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.r', 'patient/Observation.r'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.search(
+            resourceType: fhir.R4ResourceType.Patient,
+            searchParameters: {'_id': ['pat-1']},
+            hasParameters: any(named: 'hasParameters'),
+            count: any(named: 'count'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => [patient]);
+      when(() => mockDb.searchCount(
+            resourceType: fhir.R4ResourceType.Patient,
+            searchParameters: {'_id': ['pat-1']},
+            hasParameters: any(named: 'hasParameters'),
+          )).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString()) as Map;
+      final entries = body['entry'] as List;
+      expect(entries.length, 1);
+      expect((entries[0]['resource'] as Map)['id'], 'pat-1');
+    });
+
+    test('patient scope returns empty for non-compartment resource type',
+        () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/StructureDefinition'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/StructureDefinition'),
+      );
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.r'],
+          'patientId': 'pat-1',
+        },
+      });
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'StructureDefinition',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['total'], 0);
+      expect(body['entry'], isEmpty);
+    });
+
+    test('patient scope restricts Observation search to compartment',
+        () async {
+      final obs = fhir.Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'obs-1',
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '1234-5'}
+          ]
+        },
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Observation'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Observation'),
+      );
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Observation.r'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.getCompartmentResourceIds(
+            compartmentType: 'Patient',
+            compartmentId: 'pat-1',
+            compartmentDefinition: any(named: 'compartmentDefinition'),
+            typeFilter: any(named: 'typeFilter'),
+            since: any(named: 'since'),
+          )).thenAnswer((_) async => {
+            'Observation': {'obs-1', 'obs-2'},
+          });
+      when(() => mockDb.search(
+            resourceType: fhir.R4ResourceType.Observation,
+            searchParameters: {
+              '_id': ['obs-1', 'obs-2']
+            },
+            hasParameters: any(named: 'hasParameters'),
+            count: any(named: 'count'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => [obs]);
+      when(() => mockDb.searchCount(
+            resourceType: fhir.R4ResourceType.Observation,
+            searchParameters: {
+              '_id': ['obs-1', 'obs-2']
+            },
+            hasParameters: any(named: 'hasParameters'),
+          )).thenAnswer((_) async => 1);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Observation',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['total'], 1);
+    });
+
+    test('no patient scope does not restrict search', () async {
+      when(() => mockRequest.url).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient'),
+      );
+      // system-level scopes — no patient restriction
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['system/Patient.r'],
+        },
+      });
+      when(() => mockDb.getResourcesWithPagination(
+            resourceType: fhir.R4ResourceType.Patient,
+            count: 20,
+            offset: 0,
+          )).thenAnswer((_) async => []);
+      when(() => mockDb.getResourceCount(fhir.R4ResourceType.Patient))
+          .thenAnswer((_) async => 0);
+
+      final response = await getResourcesHandler(
+        mockRequest,
+        'Patient',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(200));
+      // Should NOT have called getCompartmentResourceIds
+      verifyNever(() => mockDb.getCompartmentResourceIds(
+            compartmentType: any(named: 'compartmentType'),
+            compartmentId: any(named: 'compartmentId'),
+            compartmentDefinition: any(named: 'compartmentDefinition'),
+            typeFilter: any(named: 'typeFilter'),
+            since: any(named: 'since'),
+          ));
     });
   });
 

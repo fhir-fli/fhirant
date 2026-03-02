@@ -107,6 +107,22 @@ class SmartScopeEnforcer {
     return false;
   }
 
+  /// Returns true if any of the scopes use the `patient/` context.
+  static bool hasPatientScopes(List<String> scopes) {
+    return scopes.any((s) {
+      final parsed = SmartScope.parse(s);
+      return parsed != null && parsed.context == 'patient';
+    });
+  }
+
+  /// Returns true if the scopes are exclusively `patient/` context
+  /// (no `user/` or `system/` scopes that would bypass patient filtering).
+  static bool isPatientOnlyContext(List<String> scopes) {
+    final parsed = scopes.map(SmartScope.parse).whereType<SmartScope>();
+    if (parsed.isEmpty) return false;
+    return parsed.every((s) => s.context == 'patient');
+  }
+
   /// Maps an HTTP method + URL path to a SMART permission character.
   ///
   /// Returns null for paths that don't map to a FHIR permission

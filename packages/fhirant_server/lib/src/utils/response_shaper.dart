@@ -1,3 +1,5 @@
+import 'summary_fields.dart';
+
 /// Utility for shaping FHIR resource responses based on _summary and _elements parameters.
 class FhirResponseShaper {
   static const _subsettedTag = {
@@ -12,7 +14,8 @@ class FhirResponseShaper {
   /// Modes:
   /// - `text`: keep resourceType, id, meta, text only
   /// - `data`: remove text field
-  /// - `true`: same as text (full isSummary requires StructureDefinition)
+  /// - `true`: keep fields marked isSummary in the StructureDefinition
+  ///   (falls back to text behavior for unknown resource types)
   /// - `false` / unknown: return unchanged
   /// - `count`: handled at the handler level (bundle with total only)
   static Map<String, dynamic> shapeSummary(
@@ -21,7 +24,36 @@ class FhirResponseShaper {
   ) {
     switch (mode) {
       case 'text':
+        final shaped = <String, dynamic>{};
+        for (final key in ['resourceType', 'id', 'meta', 'text']) {
+          if (json.containsKey(key)) {
+            shaped[key] = json[key];
+          }
+        }
+        _addSubsettedTag(shaped);
+        return shaped;
+
       case 'true':
+        // Use isSummary field definitions when available
+        final resourceType = json['resourceType'] as String?;
+        final summaryKeys = resourceType != null
+            ? SummaryFields.forType(resourceType)
+            : null;
+
+        if (summaryKeys != null) {
+          // Keep mandatory fields + isSummary fields
+          final allowedKeys = {'resourceType', 'id', 'meta', ...summaryKeys};
+          final shaped = <String, dynamic>{};
+          for (final key in json.keys) {
+            if (allowedKeys.contains(key)) {
+              shaped[key] = json[key];
+            }
+          }
+          _addSubsettedTag(shaped);
+          return shaped;
+        }
+
+        // Fallback for unknown types: same as text
         final shaped = <String, dynamic>{};
         for (final key in ['resourceType', 'id', 'meta', 'text']) {
           if (json.containsKey(key)) {
