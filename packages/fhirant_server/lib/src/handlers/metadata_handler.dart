@@ -190,6 +190,22 @@ Response metadataHandler(Request request) {
                     'http://hl7.org/fhir/OperationDefinition/Composition-document',
                   ),
                 ),
+              // $validate-code on CodeSystem/ValueSet
+              if (SearchParamDefinitions.validateCodeTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'validate-code'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/$type-validate-code',
+                  ),
+                ),
+              // $lookup on CodeSystem
+              if (SearchParamDefinitions.lookupTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'lookup'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup',
+                  ),
+                ),
             ];
 
             final includeList =

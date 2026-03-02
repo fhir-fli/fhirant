@@ -5,6 +5,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for PATCH operation: PATCH /{resourceType}/{id}
@@ -39,6 +40,16 @@ Future<Response> patchResourceHandler(
         body: jsonEncode({'error': 'Resource not found'}),
         headers: {'Content-Type': 'application/json'},
       );
+    }
+
+    // Patient-level scope enforcement for patch
+    final patchPatientId = extractPatientContext(request);
+    if (patchPatientId != null) {
+      if (!await isInPatientCompartment(
+          resourceType, id, patchPatientId, dbInterface)) {
+        return patientScopeForbiddenResponse(
+            resourceType, id, patchPatientId);
+      }
     }
 
     // Read and parse the patch document

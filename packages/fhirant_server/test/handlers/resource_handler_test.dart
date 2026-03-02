@@ -27,6 +27,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn({});
     });
 
     test('returns 204 when resource is successfully deleted', () async {
@@ -242,6 +243,67 @@ void main() {
         mockRequest,
         'Patient',
         '123',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(204));
+    });
+
+    test('patient scope denies delete of resource outside compartment',
+        () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pat-2',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+          Uri.parse('http://localhost:8080/Patient/pat-2'));
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.r', 'patient/Patient.d'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-2'))
+          .thenAnswer((_) async => patient);
+
+      final response = await deleteResourceHandler(
+        mockRequest,
+        'Patient',
+        'pat-2',
+        mockDb,
+      );
+
+      expect(response.statusCode, equals(403));
+    });
+
+    test('patient scope allows delete of own Patient resource', () async {
+      final patient = fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pat-1',
+        'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+      });
+
+      when(() => mockRequest.url).thenReturn(
+          Uri.parse('http://localhost:8080/Patient/pat-1'));
+      when(() => mockRequest.headers).thenReturn({});
+      when(() => mockRequest.context).thenReturn({
+        'auth_user': {
+          'scopes': ['patient/Patient.d'],
+          'patientId': 'pat-1',
+        },
+      });
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
+          .thenAnswer((_) async => patient);
+      when(() => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'pat-1'))
+          .thenAnswer((_) async => true);
+
+      final response = await deleteResourceHandler(
+        mockRequest,
+        'Patient',
+        'pat-1',
         mockDb,
       );
 

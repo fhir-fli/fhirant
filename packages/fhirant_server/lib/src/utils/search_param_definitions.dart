@@ -308,4 +308,10 @@ class SearchParamDefinitions {
 
   /// Resource types that support $document.
   static const Set<String> documentTypes = {'Composition'};
+
+  /// Resource types that support $validate-code.
+  static const Set<String> validateCodeTypes = {'CodeSystem', 'ValueSet'};
+
+  /// Resource types that support $lookup.
+  static const Set<String> lookupTypes = {'CodeSystem'};
 }

@@ -24,6 +24,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn({});
     });
 
     test('returns 200 when resource updated successfully', () async {

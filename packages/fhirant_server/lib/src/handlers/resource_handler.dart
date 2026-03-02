@@ -6,9 +6,9 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/utils/compartment_definitions.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
-import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 
 /// Handler to fetch all resources of a given type
@@ -245,7 +245,7 @@ Future<Response> _searchResources(
     }
 
     // Patient-level scope enforcement: restrict results to patient compartment
-    final patientId = _extractPatientContext(request);
+    final patientId = extractPatientContext(request);
     Map<String, List<String>>? effectiveSearchParams = searchParams;
 
     if (patientId != null) {
@@ -727,6 +727,17 @@ Future<Response> postResourceHandler(
       }
     }
 
+    // Patient-level scope enforcement for create
+    final createPatientId = extractPatientContext(request);
+    if (createPatientId != null) {
+      final resourceJson = resource.toJson();
+      if (!await isNewResourceInPatientCompartment(
+          resourceType, resourceJson, createPatientId)) {
+        return patientScopeForbiddenResponse(
+            resourceType, resource.id?.toString() ?? 'new', createPatientId);
+      }
+    }
+
     // Ensure resource has an ID before saving so we can re-fetch it
     final resourceWithId = resource.newIdIfNoId();
     final result = await dbInterface.saveResource(resourceWithId);
@@ -808,6 +819,16 @@ Future<Response> putResourceHandler(
       return _validationErrorResponse(
         'Resource ID in URL does not match resource ID in body',
       );
+    }
+
+    // Patient-level scope enforcement for update
+    final updatePatientId = extractPatientContext(request);
+    if (updatePatientId != null) {
+      if (!await isInPatientCompartment(
+          resourceType, id, updatePatientId, dbInterface)) {
+        return patientScopeForbiddenResponse(
+            resourceType, id, updatePatientId);
+      }
     }
 
     // Conditional update: If-Match header
@@ -915,24 +936,12 @@ Future<Response> getResourceByIdHandler(
     final resource = await dbInterface.getResource(type, id);
     if (resource != null) {
       // Patient-level scope enforcement: verify resource is in patient compartment
-      final readPatientId = _extractPatientContext(request);
+      final readPatientId = extractPatientContext(request);
       if (readPatientId != null) {
-        if (!await _isInPatientCompartment(
+        if (!await isInPatientCompartment(
             resourceType, id, readPatientId, dbInterface)) {
-          return Response(403,
-              body: jsonEncode({
-                'resourceType': 'OperationOutcome',
-                'issue': [
-                  {
-                    'severity': 'error',
-                    'code': 'forbidden',
-                    'diagnostics':
-                        '$resourceType/$id is not in the patient compartment '
-                        'for Patient/$readPatientId',
-                  }
-                ]
-              }),
-              headers: {'Content-Type': 'application/json'});
+          return patientScopeForbiddenResponse(
+              resourceType, id, readPatientId);
         }
       }
 
@@ -1086,6 +1095,16 @@ Future<Response> deleteResourceHandler(
         'The resource does not exist',
         statusCode: 404,
       );
+    }
+
+    // Patient-level scope enforcement for delete
+    final deletePatientId = extractPatientContext(request);
+    if (deletePatientId != null) {
+      if (!await isInPatientCompartment(
+          resourceType, id, deletePatientId, dbInterface)) {
+        return patientScopeForbiddenResponse(
+            resourceType, id, deletePatientId);
+      }
     }
 
     // Conditional delete: If-Match header
@@ -1311,46 +1330,6 @@ void _extractAllReferences(Map<String, dynamic> json, List<Map<String, String?>>
 
 /// Extracts the patient ID from the request context if patient-level
 /// scopes are in effect. Returns null if no patient context.
-String? _extractPatientContext(Request request) {
-  final authUser = request.context['auth_user'] as Map<String, dynamic>?;
-  if (authUser == null) return null;
-
-  final scopes = authUser['scopes'] as List<String>?;
-  if (scopes == null) return null;
-
-  // Only enforce patient filtering if scopes are patient-only context
-  if (!SmartScopeEnforcer.isPatientOnlyContext(scopes)) return null;
-
-  return authUser['patientId'] as String?;
-}
-
-/// Checks if a resource is in the patient compartment for the given patient.
-Future<bool> _isInPatientCompartment(
-  String resourceType,
-  String resourceId,
-  String patientId,
-  FhirAntDb dbInterface,
-) async {
-  // Patient accessing their own record
-  if (resourceType == 'Patient' && resourceId == patientId) return true;
-
-  final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
-  if (compartmentDef == null || !compartmentDef.containsKey(resourceType)) {
-    return false;
-  }
-
-  final paths = compartmentDef[resourceType]!;
-  if (paths.isEmpty) return resourceId == patientId;
-
-  final compartmentIds = await dbInterface.getCompartmentResourceIds(
-    compartmentType: 'Patient',
-    compartmentId: patientId,
-    compartmentDefinition: {resourceType: paths},
-  );
-
-  return (compartmentIds[resourceType] ?? {}).contains(resourceId);
-}
-
 /// Returns an empty searchset Bundle response.
 Response _emptySearchBundle(Request request, String? total) {
   final bundle = fhir.Bundle(

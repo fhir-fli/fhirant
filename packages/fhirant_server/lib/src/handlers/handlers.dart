@@ -15,5 +15,6 @@ export 'refresh_handler.dart';
 export 'register_handler.dart';
 export 'resource_handler.dart';
 export 'smart_config_handler.dart';
+export 'terminology_handler.dart';
 export 'validate_handler.dart';
 export 'websocket_handler.dart';

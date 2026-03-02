@@ -84,6 +84,59 @@ class FhirAntServer {
           r'/<resourceType>/$validate',
           (Request req, String resourceType) =>
               validateHandler(req, resourceType))
+      // Terminology operations
+      ..get(
+        r'/CodeSystem/<id>/$validate-code',
+        (Request req, String id) => validateCodeHandler(
+            req, dbInterface, 'CodeSystem', id),
+      )
+      ..post(
+        r'/CodeSystem/<id>/$validate-code',
+        (Request req, String id) => validateCodeHandler(
+            req, dbInterface, 'CodeSystem', id),
+      )
+      ..get(
+        r'/CodeSystem/$validate-code',
+        (Request req) => validateCodeHandler(req, dbInterface, 'CodeSystem'),
+      )
+      ..post(
+        r'/CodeSystem/$validate-code',
+        (Request req) => validateCodeHandler(req, dbInterface, 'CodeSystem'),
+      )
+      ..get(
+        r'/ValueSet/<id>/$validate-code',
+        (Request req, String id) => validateCodeHandler(
+            req, dbInterface, 'ValueSet', id),
+      )
+      ..post(
+        r'/ValueSet/<id>/$validate-code',
+        (Request req, String id) => validateCodeHandler(
+            req, dbInterface, 'ValueSet', id),
+      )
+      ..get(
+        r'/ValueSet/$validate-code',
+        (Request req) => validateCodeHandler(req, dbInterface, 'ValueSet'),
+      )
+      ..post(
+        r'/ValueSet/$validate-code',
+        (Request req) => validateCodeHandler(req, dbInterface, 'ValueSet'),
+      )
+      ..get(
+        r'/CodeSystem/<id>/$lookup',
+        (Request req, String id) => lookupHandler(req, dbInterface, id),
+      )
+      ..post(
+        r'/CodeSystem/<id>/$lookup',
+        (Request req, String id) => lookupHandler(req, dbInterface, id),
+      )
+      ..get(
+        r'/CodeSystem/$lookup',
+        (Request req) => lookupHandler(req, dbInterface),
+      )
+      ..post(
+        r'/CodeSystem/$lookup',
+        (Request req) => lookupHandler(req, dbInterface),
+      )
       // FHIRPath endpoint - supports GET and POST
       ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
