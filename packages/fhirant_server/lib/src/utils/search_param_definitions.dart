@@ -305,4 +305,7 @@ class SearchParamDefinitions {
 
   /// Resource types that support $export.
   static const Set<String> exportTypes = {'Patient', 'Group'};
+
+  /// Resource types that support $document.
+  static const Set<String> documentTypes = {'Composition'};
 }

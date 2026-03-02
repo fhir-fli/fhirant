@@ -182,6 +182,14 @@ Response metadataHandler(Request request) {
                     'http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export',
                   ),
                 ),
+              // $document on Composition
+              if (SearchParamDefinitions.documentTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'document'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/Composition-document',
+                  ),
+                ),
             ];
 
             final includeList =

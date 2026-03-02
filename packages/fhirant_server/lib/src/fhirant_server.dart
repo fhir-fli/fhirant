@@ -121,6 +121,12 @@ class FhirAntServer {
         (Request req, String jobId, String fileName) =>
             exportFileHandler(req, exportDir, jobId, fileName),
       )
+      // $document operation on Composition
+      ..get(
+        r'/Composition/<id>/$document',
+        (Request req, String id) =>
+            documentHandler(req, id, dbInterface),
+      )
       // $everything operation (before history to avoid /<type>/<id>/_history match)
       ..get(
         r'/<compartmentType>/<id>/$everything',

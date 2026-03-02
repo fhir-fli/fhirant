@@ -214,6 +214,20 @@ void main() {
       expect(obsOps, contains('validate'));
     });
 
+    test('\$document on Composition but not on Patient', () {
+      final composition = rest.resource!.firstWhere(
+          (r) => r.type.valueString == 'Composition');
+      final compOps =
+          composition.operation!.map((o) => o.name.valueString).toList();
+      expect(compOps, contains('document'));
+
+      final patient = rest.resource!.firstWhere(
+          (r) => r.type.valueString == 'Patient');
+      final patientOps =
+          patient.operation!.map((o) => o.name.valueString).toList();
+      expect(patientOps, isNot(contains('document')));
+    });
+
     test('all resource types are present', () {
       final types =
           rest.resource!.map((r) => r.type.valueString).toSet();
