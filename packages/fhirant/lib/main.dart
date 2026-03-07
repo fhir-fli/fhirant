@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'src/screens/dashboard_screen.dart';
+import 'src/screens/onboarding_screen.dart';
 import 'src/services/database_service.dart';
 import 'src/services/server_service.dart';
 import 'src/state/server_state.dart';
@@ -50,19 +51,24 @@ void main() async {
   // Create server service
   final serverService = ServerService(dbService);
 
+  // Check if onboarding has been completed
+  final showOnboarding = !await isOnboardingComplete();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ServerState(
         dbService: dbService,
         serverService: serverService,
       ),
-      child: const FhirantApp(),
+      child: FhirantApp(showOnboarding: showOnboarding),
     ),
   );
 }
 
 class FhirantApp extends StatefulWidget {
-  const FhirantApp({super.key});
+  final bool showOnboarding;
+
+  const FhirantApp({super.key, this.showOnboarding = false});
 
   @override
   State<FhirantApp> createState() => _FhirantAppState();
@@ -91,8 +97,10 @@ class _FhirantAppState extends State<FhirantApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap with WithForegroundTask on Android for foreground service support
-    Widget home = const DashboardScreen();
+    // Show onboarding on first launch, otherwise dashboard
+    Widget home = widget.showOnboarding
+        ? const OnboardingScreen()
+        : const DashboardScreen();
     if (Platform.isAndroid) {
       home = WithForegroundTask(child: home);
     }

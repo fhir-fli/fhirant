@@ -39,6 +39,9 @@ dependencies:
   # UI
   qr_flutter: ^4.1.0
 
+  # Storage
+  shared_preferences: ^2.3.0
+
   # Android foreground service
   flutter_foreground_task: ^8.13.4
 
@@ -61,3 +64,5 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

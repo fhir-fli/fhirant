@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
+import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
 import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -38,6 +39,7 @@ class ServerState extends ChangeNotifier {
     _detectWifiIp();
   }
 
+  FhirAntDb get db => _dbService.db;
   ServerStatus get status => _status;
   String? get errorMessage => _errorMessage;
   String? get wifiIp => _wifiIp;
