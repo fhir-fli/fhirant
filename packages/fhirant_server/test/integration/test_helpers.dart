@@ -51,6 +51,7 @@ String generateTestToken({
 /// Creates a fresh in-memory DB and full-pipeline handler for integration tests.
 Future<({FhirAntDb db, Handler handler})> createTestServer({
   String? exportDir,
+  bool devMode = false,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
@@ -58,6 +59,7 @@ Future<({FhirAntDb db, Handler handler})> createTestServer({
     db,
     jwtSecret: testJwtSecret,
     exportDir: exportDir,
+    devMode: devMode,
   );
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler);

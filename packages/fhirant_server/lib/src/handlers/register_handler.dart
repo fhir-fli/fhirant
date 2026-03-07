@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:fhirant_server/src/utils/password_policy.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
@@ -28,11 +29,13 @@ Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
 
     // Validate password
     final password = body['password'];
-    if (password is! String || password.length < 8) {
+    if (password is! String) {
       return Response(400,
-          body: jsonEncode({
-            'error': 'Password must be a string of at least 8 characters'
-          }));
+          body: jsonEncode({'error': 'Password must be a string'}));
+    }
+    final policyError = PasswordPolicy.validate(password);
+    if (policyError != null) {
+      return Response(400, body: jsonEncode({'error': policyError}));
     }
 
     // Validate role

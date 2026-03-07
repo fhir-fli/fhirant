@@ -16,7 +16,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -26,6 +26,7 @@ class FhirAntDb extends FhirDb {
           await _createExportJobsTable();
           await _createLogsTable();
           await _createAuthorizationCodesTable();
+          await _createRevokedTokensTable();
           await _createIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -56,6 +57,15 @@ class FhirAntDb extends FhirDb {
           if (from < 8) {
             await _createAuthorizationCodesTable();
           }
+          if (from < 9) {
+            await _createRevokedTokensTable();
+          }
+          if (from < 10) {
+            await customStatement(
+                'ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0');
+            await customStatement(
+                'ALTER TABLE users ADD COLUMN locked_until INTEGER');
+          }
         },
       );
 
@@ -74,7 +84,9 @@ class FhirAntDb extends FhirDb {
         active INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
         last_login INTEGER,
-        scopes TEXT
+        scopes TEXT,
+        failed_login_count INTEGER NOT NULL DEFAULT 0,
+        locked_until INTEGER
       )
     ''');
   }
@@ -132,6 +144,16 @@ class FhirAntDb extends FhirDb {
         expires_at INTEGER NOT NULL,
         used INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    ''');
+  }
+
+  Future<void> _createRevokedTokensTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS revoked_tokens (
+        token_hash TEXT NOT NULL PRIMARY KEY,
+        revoked_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
       )
     ''');
   }
@@ -512,6 +534,39 @@ class FhirAntDb extends FhirDb {
     return rows.map(User.fromRow).toList();
   }
 
+  /// Increment the failed login counter for a user and return the new count.
+  Future<int> incrementFailedLogins(int id) async {
+    await customStatement(
+      'UPDATE users SET failed_login_count = failed_login_count + 1 WHERE id = ?',
+      [id],
+    );
+    final rows = await customSelect(
+      'SELECT failed_login_count FROM users WHERE id = ?',
+      variables: [Variable.withInt(id)],
+    ).get();
+    return rows.first.read<int>('failed_login_count');
+  }
+
+  /// Reset the failed login counter and clear any lockout for a user.
+  Future<void> resetFailedLogins(int id) async {
+    await customStatement(
+      'UPDATE users SET failed_login_count = 0, locked_until = NULL WHERE id = ?',
+      [id],
+    );
+  }
+
+  /// Lock an account until the given time.
+  Future<void> lockAccount(int id, DateTime until) async {
+    final untilEpoch = until.millisecondsSinceEpoch ~/ 1000;
+    await customStatement(
+      'UPDATE users SET locked_until = ? WHERE id = ?',
+      [untilEpoch, id],
+    );
+  }
+
+  /// Unlock an account (admin action). Alias for [resetFailedLogins].
+  Future<void> unlockAccount(int id) => resetFailedLogins(id);
+
   // ──────────────────────────────────────────────────────────────────────────
   // Authorization code management methods
   // ──────────────────────────────────────────────────────────────────────────
@@ -563,6 +618,38 @@ class FhirAntDb extends FhirDb {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await customStatement(
       'DELETE FROM authorization_codes WHERE used = 1 OR expires_at < ?',
+      [now],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Revoked token management methods
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// Store a revoked token hash with its expiration time.
+  Future<void> revokeToken(String tokenHash, DateTime expiresAt) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
+    await customStatement(
+      'INSERT OR IGNORE INTO revoked_tokens (token_hash, revoked_at, expires_at) VALUES (?, ?, ?)',
+      [tokenHash, now, expiresAtEpoch],
+    );
+  }
+
+  /// Check whether a token hash has been revoked.
+  Future<bool> isTokenRevoked(String tokenHash) async {
+    final rows = await customSelect(
+      'SELECT 1 FROM revoked_tokens WHERE token_hash = ?',
+      variables: [Variable.withString(tokenHash)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  /// Delete expired revoked-token entries (garbage collection).
+  Future<void> cleanupRevokedTokens() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await customStatement(
+      'DELETE FROM revoked_tokens WHERE expires_at < ?',
       [now],
     );
   }

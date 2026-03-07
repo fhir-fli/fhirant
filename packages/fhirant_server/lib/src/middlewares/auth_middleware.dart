@@ -1,18 +1,20 @@
 import 'dart:convert';
 
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
+import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
 /// Paths that do not require authentication.
-const _publicPrefixes = ['auth/', 'metadata', 'favicon.ico', '.well-known/'];
+const _publicPrefixes = ['auth/', 'metadata', 'favicon.ico', '.well-known/', 'health'];
 
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context.
 ///
 /// Public routes (auth/*, metadata, favicon.ico, .well-known/*, root)
 /// pass through without authentication.
-Middleware authMiddleware(JwtService jwtService) {
+Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
   return (Handler innerHandler) {
     return (Request request) async {
       final path = request.url.path;
@@ -24,11 +26,17 @@ Middleware authMiddleware(JwtService jwtService) {
       if (isPublic) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
-          final payload = jwtService.verifyToken(authHeader.substring(7));
+          final rawToken = authHeader.substring(7);
+          final payload = jwtService.verifyToken(rawToken);
           if (payload != null) {
-            final updatedRequest =
-                request.change(context: {'auth_user': payload});
-            return innerHandler(updatedRequest);
+            // Check revocation — skip injecting auth_user if revoked
+            final revoked =
+                await dbInterface.isTokenRevoked(TokenHasher.hash(rawToken));
+            if (!revoked) {
+              final updatedRequest =
+                  request.change(context: {'auth_user': payload});
+              return innerHandler(updatedRequest);
+            }
           }
         }
         return innerHandler(request);
@@ -62,6 +70,23 @@ Middleware authMiddleware(JwtService jwtService) {
                   'severity': 'error',
                   'code': 'login',
                   'diagnostics': 'Token is invalid or expired',
+                }
+              ]
+            }));
+      }
+
+      // Check if the token has been revoked
+      final revoked =
+          await dbInterface.isTokenRevoked(TokenHasher.hash(token));
+      if (revoked) {
+        return Response(401,
+            body: jsonEncode({
+              'resourceType': 'OperationOutcome',
+              'issue': [
+                {
+                  'severity': 'error',
+                  'code': 'login',
+                  'diagnostics': 'Token has been revoked',
                 }
               ]
             }));

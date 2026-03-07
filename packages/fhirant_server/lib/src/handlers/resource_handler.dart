@@ -209,6 +209,16 @@ Future<Response> _searchResources(
       );
     }
 
+    // _summary and _elements are mutually exclusive (per FHIR spec)
+    if (summary != null &&
+        summary != 'false' &&
+        elements != null &&
+        elements.isNotEmpty) {
+      return _validationErrorResponse(
+        '_summary and _elements are mutually exclusive; specify only one',
+      );
+    }
+
     // Reject _include/_revinclude combined with _summary=text (per FHIR spec)
     final hasIncludes = (include != null && include.isNotEmpty) ||
         (revinclude != null && revinclude.isNotEmpty) ||
@@ -984,6 +994,16 @@ Future<Response> getResourceByIdHandler(
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
           .toList();
+
+      // _summary and _elements are mutually exclusive (per FHIR spec)
+      if (summary != null &&
+          summary != 'false' &&
+          elements != null &&
+          elements.isNotEmpty) {
+        return _validationErrorResponse(
+          '_summary and _elements are mutually exclusive; specify only one',
+        );
+      }
 
       String responseBody;
       if (summary != null && summary != 'false') {

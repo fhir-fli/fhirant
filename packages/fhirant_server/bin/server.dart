@@ -18,6 +18,9 @@ void main(List<String> arguments) async {
     ..addFlag('https', defaultsTo: false, help: 'Enable HTTPS')
     ..addOption('cert-path', help: 'Path to HTTPS certificate file')
     ..addOption('key-path', help: 'Path to HTTPS private key file')
+    ..addFlag('dev-mode',
+        defaultsTo: false,
+        help: 'Disable authentication (for testing only)')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
@@ -78,7 +81,15 @@ void main(List<String> arguments) async {
   }
 
   // Create and start server
-  final server = FhirAntServer(db);
+  final devMode = args['dev-mode'] as bool;
+  final server = FhirAntServer(db, devMode: devMode);
+
+  if (devMode) {
+    logger.logWarning(
+      'Dev mode enabled — authentication is disabled. '
+      'Do not use in production.',
+    );
+  }
 
   try {
     if (args['https']) {

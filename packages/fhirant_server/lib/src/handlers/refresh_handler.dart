@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/pkce.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
+import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for token exchange and refresh.
@@ -224,6 +226,16 @@ Future<Response> _handleRefreshTokenGrant(
         }));
   }
 
+  // Check if the refresh token has been revoked
+  final refreshHash = TokenHasher.hash(refreshToken);
+  if (await dbInterface.isTokenRevoked(refreshHash)) {
+    return Response(401,
+        body: jsonEncode({
+          'error': 'invalid_grant',
+          'error_description': 'Refresh token has been revoked',
+        }));
+  }
+
   // Verify the refresh token
   final payload = jwtService.verifyRefreshToken(refreshToken);
   if (payload == null) {
@@ -286,6 +298,10 @@ Future<Response> _handleRefreshTokenGrant(
     patientId: patientId,
   );
 
+  // Revoke the old refresh token (rotation revocation)
+  final oldExpiresAt = _extractExpiresAt(refreshToken);
+  await dbInterface.revokeToken(refreshHash, oldExpiresAt);
+
   return Response.ok(
     jsonEncode({
       'access_token': newAccessToken,
@@ -299,4 +315,20 @@ Future<Response> _handleRefreshTokenGrant(
     }),
     headers: {'Content-Type': 'application/json'},
   );
+}
+
+/// Extract expiration from a JWT without signature verification.
+/// Falls back to now + 24 hours if the token can't be decoded.
+DateTime _extractExpiresAt(String token) {
+  try {
+    final jwt = JWT.decode(token);
+    final payload = jwt.payload as Map<String, dynamic>?;
+    if (payload != null && payload.containsKey('exp')) {
+      return DateTime.fromMillisecondsSinceEpoch(
+          (payload['exp'] as num).toInt() * 1000);
+    }
+  } catch (_) {
+    // Not a valid JWT — use fallback
+  }
+  return DateTime.now().add(const Duration(hours: 24));
 }

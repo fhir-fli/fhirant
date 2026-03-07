@@ -27,7 +27,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
 
@@ -44,7 +44,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
 
@@ -54,7 +54,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
       final adminToken =
@@ -66,7 +66,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'nurse',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
           'role': 'clinician',
           'scopes': ['user/Patient.rs', 'user/Observation.rs'],
         }),
@@ -86,7 +86,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
       final loginResp = await handler(testRequest(
@@ -94,7 +94,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
       final adminToken =
@@ -105,7 +105,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'baduser',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
           'scopes': ['not-a-valid-scope'],
         }),
         authToken: adminToken,
@@ -125,7 +125,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
 
@@ -134,7 +134,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
 
@@ -155,7 +155,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
 
@@ -165,7 +165,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'admin',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
       final adminToken =
@@ -177,7 +177,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'reader',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
           'role': 'readonly',
         }),
         authToken: adminToken,
@@ -189,7 +189,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'reader',
-          'password': 'password123',
+          'password': 'scopeTestPass1',
         }),
       ));
       readOnlyToken =

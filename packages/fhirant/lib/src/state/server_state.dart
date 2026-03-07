@@ -21,6 +21,7 @@ class ServerState extends ChangeNotifier {
   String? _errorMessage;
   String? _wifiIp;
   int _port = 8080;
+  bool _devMode = true;
 
   final Queue<RequestLogEntry> _requestLog = Queue<RequestLogEntry>();
   static const int _maxLogEntries = 200;
@@ -42,6 +43,7 @@ class ServerState extends ChangeNotifier {
   String? get wifiIp => _wifiIp;
   int get port => _port;
   bool get isRunning => _status == ServerStatus.running;
+  bool get devMode => _devMode;
 
   List<RequestLogEntry> get requestLog => _requestLog.toList().reversed.toList();
   Map<R4ResourceType, int> get resourceCounts =>
@@ -58,6 +60,12 @@ class ServerState extends ChangeNotifier {
     notifyListeners();
   }
 
+  set devMode(bool value) {
+    if (_status != ServerStatus.stopped) return;
+    _devMode = value;
+    notifyListeners();
+  }
+
   Future<void> startServer() async {
     if (_status != ServerStatus.stopped && _status != ServerStatus.error) return;
 
@@ -66,7 +74,7 @@ class ServerState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _serverService.start(_port);
+      await _serverService.start(_port, devMode: _devMode);
       _status = ServerStatus.running;
 
       // Listen to request log stream

@@ -15,6 +15,7 @@ Response smartConfigHandler(Request request) {
     'issuer': host,
     'authorization_endpoint': '$host/auth/authorize',
     'token_endpoint': '$host/auth/token',
+    'revocation_endpoint': '$host/auth/revoke',
     'registration_endpoint': '$host/auth/register',
     'grant_types_supported': [
       'authorization_code',

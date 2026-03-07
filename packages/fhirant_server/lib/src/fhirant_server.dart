@@ -39,10 +39,14 @@ class FhirAntServer {
   final int maxRequests;
   final Duration rateLimitDuration;
   late final JwtService _jwtService;
+  final DateTime _startTime;
   HttpServer? _server;
+  Timer? _cleanupTimer;
   bool _isRunning = false;
   final StreamController<RequestLogEntry> _requestLogController =
       StreamController<RequestLogEntry>.broadcast();
+
+  final bool devMode;
 
   FhirAntServer(
     this.dbInterface, {
@@ -50,7 +54,9 @@ class FhirAntServer {
     String? exportDir,
     this.maxRequests = 10,
     this.rateLimitDuration = const Duration(seconds: 60),
-  }) : exportDir = exportDir ?? 'data/export' {
+    this.devMode = false,
+  })  : exportDir = exportDir ?? 'data/export',
+        _startTime = DateTime.now() {
     final secret = jwtSecret ??
         Platform.environment['FHIRANT_JWT_SECRET'] ??
         'fhirant-dev-secret-change-in-production';
@@ -73,6 +79,10 @@ class FhirAntServer {
           (Request req) => loginHandler(req, dbInterface, _jwtService))
       ..post('/auth/token',
           (Request req) => refreshHandler(req, dbInterface, _jwtService))
+      ..post('/auth/revoke',
+          (Request req) => revokeHandler(req, dbInterface))
+      ..post('/auth/logout',
+          (Request req) => logoutHandler(req, dbInterface))
       ..get('/auth/authorize',
           (Request req) => authorizeGetHandler(req))
       ..post('/auth/authorize', (Request req) {
@@ -82,9 +92,21 @@ class FhirAntServer {
         }
         return authorizePostHandler(req, dbInterface);
       })
+      // Admin routes (protected by auth middleware — not under auth/ prefix)
+      ..post('/admin/unlock/<userId>',
+          (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400,
+              body: '{"error": "Invalid user ID"}');
+        }
+        return unlockAccountHandler(req, id, dbInterface);
+      })
       // Public routes
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)
+      ..get('/health',
+          (Request req) => healthHandler(req, dbInterface, _startTime))
       ..get('/metadata', metadataHandler)
       ..get('/.well-known/smart-configuration', smartConfigHandler)
       // Validation endpoints
@@ -163,6 +185,11 @@ class FhirAntServer {
         r'/ValueSet/$expand',
         (Request req) => expandHandler(req, dbInterface),
       )
+      // Backup/Restore endpoints
+      ..post(r'/$backup',
+          (Request req) => backupHandler(req, dbInterface))
+      ..post(r'/$restore',
+          (Request req) => restoreHandler(req, dbInterface))
       // FHIRPath endpoint - supports GET and POST
       ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
@@ -326,11 +353,18 @@ class FhirAntServer {
       maxRequests: maxRequests,
     );
 
-    return Pipeline()
+    var pipeline = Pipeline()
         .addMiddleware(_logRequestsMiddleware())
         .addMiddleware(corsMiddleware())
-        .addMiddleware(contentNegotiationMiddleware())
-        .addMiddleware(authMiddleware(_jwtService))
+        .addMiddleware(contentNegotiationMiddleware());
+
+    if (devMode) {
+      pipeline = pipeline.addMiddleware(_devModeMiddleware());
+    } else {
+      pipeline = pipeline.addMiddleware(authMiddleware(_jwtService, dbInterface));
+    }
+
+    return pipeline
         .addMiddleware(auditMiddleware(dbInterface))
         .addMiddleware(rateLimiter.rateLimiter())
         .addHandler(router);
@@ -350,8 +384,12 @@ class FhirAntServer {
     );
 
     _isRunning = true;
+    _startCleanupTimer();
     print(
         'Server started at http://${_server!.address.address}:${_server!.port}');
+    if (devMode) {
+      print('WARNING: Dev mode enabled — authentication is disabled');
+    }
   }
 
   /// Start the server with HTTPS if cert/key available
@@ -374,19 +412,53 @@ class FhirAntServer {
     );
 
     _isRunning = true;
+    _startCleanupTimer();
     print(
         'Server started at https://${_server!.address.address}:${_server!.port}');
+    if (devMode) {
+      print('WARNING: Dev mode enabled — authentication is disabled');
+    }
   }
 
   /// Stop the server
   Future<void> stop() async {
     if (!_isRunning) return;
 
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
     await _server!.close(force: true);
     _server = null;
     _isRunning = false;
     await _requestLogController.close();
     print('Server stopped');
+  }
+
+  /// Start periodic cleanup of expired revoked tokens (every hour).
+  void _startCleanupTimer() {
+    _cleanupTimer = Timer.periodic(
+      const Duration(hours: 1),
+      (_) => dbInterface.cleanupRevokedTokens(),
+    );
+  }
+
+  /// Middleware that bypasses authentication in dev mode.
+  ///
+  /// Injects a synthetic admin auth_user into every request so that
+  /// downstream middleware (audit, scope enforcement) still functions.
+  Middleware _devModeMiddleware() {
+    return (Handler innerHandler) {
+      return (Request request) {
+        final devUser = <String, dynamic>{
+          'sub': 'dev-mode',
+          'username': 'dev-mode',
+          'role': 'admin',
+          'scopes': ['system/*.*'],
+        };
+        final updatedRequest =
+            request.change(context: {'auth_user': devUser});
+        return innerHandler(updatedRequest);
+      };
+    };
   }
 
   /// Middleware for logging

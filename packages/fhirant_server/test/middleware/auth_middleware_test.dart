@@ -1,17 +1,26 @@
 import 'dart:convert';
 
 import 'package:test/test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/token_hasher.dart';
+
+class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 void main() {
   late JwtService jwtService;
+  late MockFhirAntDb mockDb;
   late Middleware middleware;
 
   setUp(() {
     jwtService = JwtService('test-secret-key');
-    middleware = authMiddleware(jwtService);
+    mockDb = MockFhirAntDb();
+    // Default: no tokens are revoked
+    when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
+    middleware = authMiddleware(jwtService, mockDb);
   });
 
   /// Wraps [middleware] around a simple handler that echoes the auth_user
@@ -141,6 +150,55 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
       expect(body['username'], equals('reader'));
+    });
+
+    test('revoked token on protected route returns 401', () async {
+      final handler = _createHandler();
+
+      final token = jwtService.generateToken(
+        userId: 1,
+        username: 'testuser',
+        role: 'clinician',
+      );
+
+      // Mark this token as revoked
+      when(() => mockDb.isTokenRevoked(TokenHasher.hash(token)))
+          .thenAnswer((_) async => true);
+
+      final response = await handler(Request(
+        'GET',
+        Uri.parse('http://localhost:8080/Patient'),
+        headers: {'authorization': 'Bearer $token'},
+      ));
+
+      expect(response.statusCode, equals(401));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['issue'][0]['diagnostics'], contains('revoked'));
+    });
+
+    test('revoked token on public route does not inject auth_user', () async {
+      final handler = _createHandler();
+
+      final token = jwtService.generateToken(
+        userId: 1,
+        username: 'testuser',
+        role: 'admin',
+      );
+
+      // Mark this token as revoked
+      when(() => mockDb.isTokenRevoked(TokenHasher.hash(token)))
+          .thenAnswer((_) async => true);
+
+      final response = await handler(Request(
+        'GET',
+        Uri.parse('http://localhost:8080/metadata'),
+        headers: {'authorization': 'Bearer $token'},
+      ));
+
+      // Should still return 200 (public route) but with no auth_user
+      expect(response.statusCode, equals(200));
+      final body = await response.readAsString();
+      expect(body, equals('ok'));
     });
   });
 }

@@ -122,6 +122,59 @@ class _ServerControlCardState extends State<ServerControlCard> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Dev Mode',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                    Text(
+                      state.devMode ? 'No Auth' : 'Auth Required',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: state.devMode
+                            ? Colors.orange.shade700
+                            : Colors.green.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: state.devMode,
+                      onChanged: state.status == ServerStatus.stopped ||
+                              state.status == ServerStatus.error
+                          ? (value) => state.devMode = value
+                          : null,
+                    ),
+                  ],
+                ),
+                if (state.devMode && state.isRunning)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber,
+                            size: 16, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Authentication disabled — for testing only',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: 8),
                   Text(

@@ -1,5 +1,7 @@
 export 'authorize_handler.dart';
+export 'backup_handler.dart';
 export 'base_handler.dart';
+export 'health_handler.dart';
 export 'bundle_handler.dart';
 export 'compartment_handler.dart';
 export 'document_handler.dart';
@@ -14,6 +16,7 @@ export 'metadata_handler.dart';
 export 'patch_handler.dart';
 export 'refresh_handler.dart';
 export 'register_handler.dart';
+export 'revoke_handler.dart';
 export 'resource_handler.dart';
 export 'smart_config_handler.dart';
 export 'terminology_handler.dart';

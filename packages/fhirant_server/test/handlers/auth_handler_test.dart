@@ -22,6 +22,11 @@ void main() {
   setUp(() {
     mockDb = MockFhirAntDb();
     jwtService = JwtService('test-secret-key');
+    // Default stubs for lockout methods
+    when(() => mockDb.incrementFailedLogins(any())).thenAnswer((_) async => 1);
+    when(() => mockDb.resetFailedLogins(any())).thenAnswer((_) async {});
+    when(() => mockDb.lockAccount(any(), any())).thenAnswer((_) async {});
+    when(() => mockDb.unlockAccount(any())).thenAnswer((_) async {});
   });
 
   group('registerHandler', () {
@@ -31,7 +36,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'admin_user',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
           'role': 'clinician', // should be overridden to admin
         }),
       );
@@ -71,7 +76,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'new_user',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
         context: {}, // no auth_user
       );
@@ -89,7 +94,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'new_clinician',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
           'role': 'clinician',
         }),
         context: {
@@ -120,7 +125,7 @@ void main() {
         'POST',
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
       );
 
@@ -158,7 +163,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'existing',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
       );
 
@@ -177,7 +182,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'validuser',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
           'role': 'superadmin',
         }),
       );
@@ -191,25 +196,41 @@ void main() {
   });
 
   group('loginHandler', () {
-    test('valid login returns JWT', () async {
+    /// Creates a standard MockUser with valid credentials and no lockout.
+    MockUser _createMockUser({
+      int id = 1,
+      String username = 'testuser',
+      String role = 'clinician',
+      bool active = true,
+      String password = 'secureP@ss12',
+      String? scopes,
+      int failedLoginCount = 0,
+      DateTime? lockedUntil,
+    }) {
       final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('secureP@ss1', salt);
-
+      final hash = PasswordHasher.hashPassword(password, salt);
       final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.role).thenReturn('clinician');
-      when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.id).thenReturn(id);
+      when(() => mockUser.username).thenReturn(username);
+      when(() => mockUser.role).thenReturn(role);
+      when(() => mockUser.active).thenReturn(active);
       when(() => mockUser.salt).thenReturn(salt);
       when(() => mockUser.passwordHash).thenReturn(hash);
-      when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.scopes).thenReturn(scopes);
+      when(() => mockUser.failedLoginCount).thenReturn(failedLoginCount);
+      when(() => mockUser.lockedUntil).thenReturn(lockedUntil);
+      return mockUser;
+    }
+
+    test('valid login returns JWT', () async {
+      final mockUser = _createMockUser();
 
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/login'),
         body: jsonEncode({
           'username': 'testuser',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
       );
 
@@ -237,7 +258,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/login'),
         body: jsonEncode({
           'username': 'nobody',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
       );
 
@@ -250,22 +271,14 @@ void main() {
     });
 
     test('wrong password returns 401', () async {
-      final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('correctPassword', salt);
-
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.active).thenReturn(true);
-      when(() => mockUser.salt).thenReturn(salt);
-      when(() => mockUser.passwordHash).thenReturn(hash);
+      final mockUser = _createMockUser(password: 'correctPassword');
 
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/login'),
         body: jsonEncode({
           'username': 'testuser',
-          'password': 'wrongPassword',
+          'password': 'wrongPassword1',
         }),
       );
 
@@ -278,17 +291,14 @@ void main() {
     });
 
     test('deactivated user returns 403', () async {
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.active).thenReturn(false);
+      final mockUser = _createMockUser(active: false);
 
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/login'),
         body: jsonEncode({
           'username': 'testuser',
-          'password': 'secureP@ss1',
+          'password': 'secureP@ss12',
         }),
       );
 
@@ -310,6 +320,181 @@ void main() {
       final response = await loginHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(400));
+    });
+
+    test('locked account returns 423', () async {
+      final mockUser = _createMockUser(
+        lockedUntil: DateTime.now().add(const Duration(minutes: 10)),
+      );
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/login'),
+        body: jsonEncode({
+          'username': 'testuser',
+          'password': 'secureP@ss12',
+        }),
+      );
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+
+      final response = await loginHandler(request, mockDb, jwtService);
+
+      expect(response.statusCode, equals(423));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['error'], contains('locked'));
+    });
+
+    test('expired lockout auto-unlocks and allows login', () async {
+      final mockUser = _createMockUser(
+        lockedUntil: DateTime.now().subtract(const Duration(minutes: 1)),
+        failedLoginCount: 5,
+      );
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/login'),
+        body: jsonEncode({
+          'username': 'testuser',
+          'password': 'secureP@ss12',
+        }),
+      );
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+      when(() => mockDb.updateLastLogin(1)).thenAnswer((_) async {});
+
+      final response = await loginHandler(request, mockDb, jwtService);
+
+      expect(response.statusCode, equals(200));
+      // Verify resetFailedLogins was called (auto-unlock)
+      verify(() => mockDb.resetFailedLogins(1)).called(greaterThanOrEqualTo(1));
+    });
+
+    test('failed login increments counter', () async {
+      final mockUser = _createMockUser(password: 'correctPassword');
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/login'),
+        body: jsonEncode({
+          'username': 'testuser',
+          'password': 'wrongPassword1',
+        }),
+      );
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+
+      final response = await loginHandler(request, mockDb, jwtService);
+
+      expect(response.statusCode, equals(401));
+      verify(() => mockDb.incrementFailedLogins(1)).called(1);
+    });
+
+    test('account locked after max failed attempts', () async {
+      final mockUser = _createMockUser(
+        password: 'correctPassword',
+        failedLoginCount: 4,
+      );
+
+      // This is the 5th failed attempt — should trigger lockout
+      when(() => mockDb.incrementFailedLogins(1)).thenAnswer((_) async => 5);
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/login'),
+        body: jsonEncode({
+          'username': 'testuser',
+          'password': 'wrongPassword1',
+        }),
+      );
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+
+      final response = await loginHandler(request, mockDb, jwtService);
+
+      expect(response.statusCode, equals(423));
+      verify(() => mockDb.lockAccount(1, any())).called(1);
+    });
+
+    test('successful login resets failed count', () async {
+      final mockUser = _createMockUser(failedLoginCount: 3);
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/login'),
+        body: jsonEncode({
+          'username': 'testuser',
+          'password': 'secureP@ss12',
+        }),
+      );
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+      when(() => mockDb.updateLastLogin(1)).thenAnswer((_) async {});
+
+      final response = await loginHandler(request, mockDb, jwtService);
+
+      expect(response.statusCode, equals(200));
+      verify(() => mockDb.resetFailedLogins(1)).called(1);
+    });
+  });
+
+  group('unlockAccountHandler', () {
+    test('non-admin returns 403', () async {
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/admin/unlock/1'),
+        context: {
+          'auth_user': {'userId': 2, 'username': 'nurse', 'role': 'clinician'}
+        },
+      );
+
+      final response = await unlockAccountHandler(request, 1, mockDb);
+
+      expect(response.statusCode, equals(403));
+    });
+
+    test('unknown user returns 404', () async {
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/admin/unlock/999'),
+        context: {
+          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'}
+        },
+      );
+
+      when(() => mockDb.getUserById(999)).thenAnswer((_) async => null);
+
+      final response = await unlockAccountHandler(request, 999, mockDb);
+
+      expect(response.statusCode, equals(404));
+    });
+
+    test('admin can unlock account', () async {
+      final mockUser = MockUser();
+      when(() => mockUser.id).thenReturn(2);
+      when(() => mockUser.username).thenReturn('lockeduser');
+
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/admin/unlock/2'),
+        context: {
+          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'}
+        },
+      );
+
+      when(() => mockDb.getUserById(2)).thenAnswer((_) async => mockUser);
+
+      final response = await unlockAccountHandler(request, 2, mockDb);
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['message'], contains('unlocked'));
+      verify(() => mockDb.unlockAccount(2)).called(1);
     });
   });
 }

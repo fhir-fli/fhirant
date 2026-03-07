@@ -12,11 +12,12 @@ class ServerService {
   ServerService(this._dbService);
 
   bool get isRunning => _server?.isRunning ?? false;
+  bool get devMode => _server?.devMode ?? false;
   int? get port => _server?.port;
 
   Stream<RequestLogEntry>? get requestLog => _server?.requestLog;
 
-  Future<void> start(int port) async {
+  Future<void> start(int port, {bool devMode = false}) async {
     if (_server?.isRunning ?? false) return;
 
     // Get or generate JWT secret
@@ -37,6 +38,7 @@ class ServerService {
       exportDir: exportDir,
       maxRequests: 100,
       rateLimitDuration: const Duration(seconds: 60),
+      devMode: devMode,
     );
 
     await _server!.startHttp(port);

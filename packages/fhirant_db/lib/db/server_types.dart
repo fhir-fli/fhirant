@@ -19,6 +19,8 @@ class User {
   final DateTime createdAt;
   final DateTime? lastLogin;
   final String? scopes;
+  final int failedLoginCount;
+  final DateTime? lockedUntil;
 
   const User({
     required this.id,
@@ -30,6 +32,8 @@ class User {
     required this.createdAt,
     this.lastLogin,
     this.scopes,
+    this.failedLoginCount = 0,
+    this.lockedUntil,
   });
 
   factory User.fromRow(QueryRow row) {
@@ -43,6 +47,8 @@ class User {
       createdAt: row.read<DateTime>('created_at'),
       lastLogin: row.readNullable<DateTime>('last_login'),
       scopes: row.readNullable<String>('scopes'),
+      failedLoginCount: row.read<int>('failed_login_count'),
+      lockedUntil: row.readNullable<DateTime>('locked_until'),
     );
   }
 

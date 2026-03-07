@@ -46,7 +46,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'logintest',
-          'password': 'testpass123',
+          'password': 'testpass1234',
         }),
         headers: {'content-type': 'application/fhir+json'},
       ));
@@ -57,7 +57,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'logintest',
-          'password': 'testpass123',
+          'password': 'testpass1234',
         }),
         headers: {'content-type': 'application/fhir+json'},
       ));
@@ -77,7 +77,7 @@ void main() {
         '/auth/register',
         body: jsonEncode({
           'username': 'authuser',
-          'password': 'authpass123',
+          'password': 'authpass1234',
         }),
         headers: {'content-type': 'application/fhir+json'},
       ));
@@ -87,7 +87,7 @@ void main() {
         '/auth/login',
         body: jsonEncode({
           'username': 'authuser',
-          'password': 'authpass123',
+          'password': 'authpass1234',
         }),
         headers: {'content-type': 'application/fhir+json'},
       ));

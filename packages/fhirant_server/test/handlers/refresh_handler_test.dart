@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/refresh_handler.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
@@ -21,6 +22,9 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       jwtService = JwtService('test-secret');
+      // Default stubs for token revocation
+      when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
+      when(() => mockDb.revokeToken(any(), any())).thenAnswer((_) async {});
     });
 
     Request _makeRequest(Map<String, dynamic> body) {
@@ -237,6 +241,61 @@ void main() {
 
       final response = await refreshHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
+    });
+
+    test('old refresh token is revoked after rotation', () async {
+      final refreshToken = jwtService.generateRefreshToken(
+        userId: 1,
+        username: 'testuser',
+        role: 'admin',
+        scopes: ['system/*.*'],
+      );
+
+      final mockUser = MockUser();
+      when(() => mockUser.id).thenReturn(1);
+      when(() => mockUser.username).thenReturn('testuser');
+      when(() => mockUser.role).thenReturn('admin');
+      when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.scopes).thenReturn(null);
+
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+
+      final request = _makeRequest({
+        'grant_type': 'refresh_token',
+        'refresh_token': refreshToken,
+      });
+
+      final response = await refreshHandler(request, mockDb, jwtService);
+      expect(response.statusCode, 200);
+
+      // Verify the old refresh token hash was passed to revokeToken
+      final expectedHash = TokenHasher.hash(refreshToken);
+      verify(() => mockDb.revokeToken(expectedHash, any())).called(1);
+    });
+
+    test('revoked refresh token is rejected', () async {
+      final refreshToken = jwtService.generateRefreshToken(
+        userId: 1,
+        username: 'testuser',
+        role: 'admin',
+      );
+
+      final refreshHash = TokenHasher.hash(refreshToken);
+      when(() => mockDb.isTokenRevoked(refreshHash))
+          .thenAnswer((_) async => true);
+
+      final request = _makeRequest({
+        'grant_type': 'refresh_token',
+        'refresh_token': refreshToken,
+      });
+
+      final response = await refreshHandler(request, mockDb, jwtService);
+      expect(response.statusCode, 401);
+
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['error'], 'invalid_grant');
+      expect(body['error_description'], contains('revoked'));
     });
   });
 
