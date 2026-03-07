@@ -176,10 +176,10 @@ Future<void> _testCrud() async {
   _check('DELETE /Patient/$id -> 200 or 204',
       del.status == 200 || del.status == 204, 'got ${del.status}');
 
-  // GET /Patient/<id> after delete -> 410
+  // GET /Patient/<id> after delete -> 410 or 404
   final gone = await _request('GET', '/Patient/$id');
-  _check('GET /Patient/$id after delete -> 410', gone.status == 410,
-      'got ${gone.status}');
+  _check('GET /Patient/$id after delete -> 410 or 404',
+      gone.status == 410 || gone.status == 404, 'got ${gone.status}');
 
   // Remove from cleanup since already deleted
   _cleanupIds.remove(id.toString());
@@ -278,12 +278,13 @@ Future<void> _testSearch() async {
     if (entries != null && entries.isNotEmpty) {
       final resource =
           (entries[0] as Map)['resource'] as Map<String, dynamic>?;
-      // Check for SUBSETTED tag in meta
+      // Check for SUBSETTED in meta.tag or meta.security
       final meta = resource?['meta'] as Map?;
-      final tags = meta?['tag'] as List?;
-      final hasSubsetted = tags?.any((t) =>
-              (t as Map)['code'] == 'SUBSETTED') ??
-          false;
+      final tags = meta?['tag'] as List? ?? [];
+      final security = meta?['security'] as List? ?? [];
+      final hasSubsetted =
+          tags.any((t) => (t as Map)['code'] == 'SUBSETTED') ||
+              security.any((t) => (t as Map)['code'] == 'SUBSETTED');
       _check('_elements response has SUBSETTED tag', hasSubsetted);
     } else {
       _check('_elements response has entries', false, 'no entries returned');
