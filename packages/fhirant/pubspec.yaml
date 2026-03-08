@@ -57,10 +57,14 @@ dependency_overrides:
     path: ../../../fhir_r4/packages/fhir_r4
   fhir_r4_path:
     path: ../../../fhir_r4/packages/fhir_r4_path
+  fhir_r4_cql:
+    path: ../../../fhir_r4/packages/fhir_r4_cql
   fhir_r4_mapping:
     path: ../../../fhir_r4/packages/fhir_r4_mapping
   fhir_r4_validation:
     path: ../../../fhir_r4/packages/fhir_r4_validation
+  cicada:
+    path: ../../../cicada/cicada
 
 flutter:
   uses-material-design: true
