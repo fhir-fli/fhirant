@@ -109,6 +109,16 @@ class FhirAntServer {
           (Request req) => healthHandler(req, dbInterface, _startTime))
       ..get('/metadata', metadataHandler)
       ..get('/.well-known/smart-configuration', smartConfigHandler)
+      // Library/$evaluate (must be before generic /<resourceType>/$validate)
+      ..post(
+        r'/Library/<id>/$evaluate',
+        (Request req, String id) =>
+            libraryEvaluateHandler(req, id, dbInterface),
+      )
+      ..post(
+        r'/Library/$evaluate',
+        (Request req) => libraryEvaluateByUrlHandler(req, dbInterface),
+      )
       // Validation endpoints
       ..all(r'/$validate', (Request req) => validateHandler(req))
       ..all(
@@ -193,6 +203,17 @@ class FhirAntServer {
       // FHIRPath endpoint - supports GET and POST
       ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
+      // CQL endpoint (convenience)
+      ..post('/\$cql', (Request req) => cqlHandler(req, dbInterface))
+      // Immunization forecasting (Cicada)
+      ..post(
+        '/\$immds-forecast',
+        (Request req) => immdsForecastHandler(req, dbInterface),
+      )
+      ..post(
+        '/\$immds-forecast-who',
+        (Request req) => immdsForecastWhoHandler(req, dbInterface),
+      )
       // Mapping/Transform endpoint
       ..post('/\$transform', mappingHandler)
       // Bulk Data Export endpoints

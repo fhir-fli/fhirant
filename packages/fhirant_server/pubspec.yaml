@@ -7,10 +7,15 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
+  antlr4: ^4.13.2
   args: ^2.7.0
+  cicada:
+    path: ../../../cicada/cicada
   drift: ^2.29.0
   fhir_r4:
     path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4_cql:
+    path: ../../../fhir_r4/packages/fhir_r4_cql
   fhir_r4_path:
     path: ../../../fhir_r4/packages/fhir_r4_path
   fhir_r4_mapping:
@@ -36,6 +41,8 @@ dev_dependencies:
 dependency_overrides:
   fhir_r4:
     path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4_cql:
+    path: ../../../fhir_r4/packages/fhir_r4_cql
   fhir_r4_path:
     path: ../../../fhir_r4/packages/fhir_r4_path
   fhir_r4_mapping:

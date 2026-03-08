@@ -1,6 +1,7 @@
 export 'authorize_handler.dart';
 export 'backup_handler.dart';
 export 'base_handler.dart';
+export 'cql_handler.dart';
 export 'health_handler.dart';
 export 'bundle_handler.dart';
 export 'compartment_handler.dart';
@@ -8,6 +9,7 @@ export 'document_handler.dart';
 export 'export_handler.dart';
 export 'favico_handler.dart';
 export 'fhirpath_handler.dart';
+export 'forecast_handler.dart';
 export 'history_handler.dart';
 export 'login_handler.dart';
 export 'meta_handler.dart';
