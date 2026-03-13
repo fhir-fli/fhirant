@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
@@ -8,6 +9,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../state/server_state.dart';
 import 'dashboard_screen.dart';
+
+/// Parse JSON bundle and deserialize resources off the main isolate.
+List<Map<String, dynamic>> _parseBundle(String jsonStr) {
+  final bundle = jsonDecode(jsonStr) as Map<String, dynamic>;
+  final entries = bundle['entry'] as List? ?? [];
+  return entries
+      .map((e) => (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
+      .whereType<Map<String, dynamic>>()
+      .toList();
+}
 
 const _onboardingCompleteKey = 'onboarding_complete';
 
@@ -67,27 +78,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      // Load sample data from assets
+      // Parse JSON off the main isolate to avoid ANR
       final jsonStr = await rootBundle.loadString('assets/sample_data.json');
-      final bundle = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final entries = bundle['entry'] as List? ?? [];
+      final resourceJsons = await compute(_parseBundle, jsonStr);
 
-      // Save each resource directly via the DB
-      final db = state.db;
-      var saved = 0;
+      // Deserialize all resources
+      final resources = <Resource>[];
       var errors = 0;
-      for (final entry in entries) {
+      for (final json in resourceJsons) {
         try {
-          final resourceJson = entry['resource'] as Map<String, dynamic>?;
-          if (resourceJson != null) {
-            final resource = Resource.fromJson(resourceJson);
-            await db.saveResource(resource);
-            saved++;
-          }
+          resources.add(Resource.fromJson(json));
         } catch (_) {
           errors++;
         }
       }
+
+      if (mounted) {
+        setState(() {
+          _sampleDataResult =
+              'Saving ${resources.length} resources to database...';
+        });
+      }
+      await Future<void>.delayed(Duration.zero);
+
+      // Batch save — single transaction, much faster than individual saves
+      final db = state.db;
+      await db.saveResources(resources);
+      final saved = resources.length;
 
       // Stop server if we started it
       if (!wasRunning) {

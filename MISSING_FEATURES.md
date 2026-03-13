@@ -1,5 +1,10 @@
 # Missing Features in FHIRant Server
 
+## Errors/User suggestions
+- "Application not responding" on first load, continuously displayed on first run
+- Easier display, allow individual resources to be seen (yaml/json)
+  - ideally with links
+
 **Last Updated**: Current implementation status after major feature additions
 
 ## Database Layer (Search Functionality)
