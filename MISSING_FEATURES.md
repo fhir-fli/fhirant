@@ -1,9 +1,8 @@
 # Missing Features in FHIRant Server
 
 ## Errors/User suggestions
-- "Application not responding" on first load, continuously displayed on first run
-- Easier display, allow individual resources to be seen (yaml/json)
-  - ideally with links
+- ✅ ~~"Application not responding" on first load~~ - FIXED (batch saves via saveResources(), JSON parsing offloaded to isolate)
+- ✅ ~~Easier display, allow individual resources to be seen (yaml/json) with links~~ - IMPLEMENTED (Resource Browser screen with JSON/YAML toggle, clickable FHIR references with in-place navigation stack, URLs open in system browser)
 
 **Last Updated**: Current implementation status after major feature additions
 
