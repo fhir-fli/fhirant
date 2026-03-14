@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -13,7 +14,8 @@ const _validRoles = {'admin', 'clinician', 'readonly'};
 ///
 /// First-user bootstrap: if no users exist, anyone can register and is forced
 /// to admin role. Otherwise, only admins can register new users.
-Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
+Future<Response> registerHandler(
+    Request request, FhirAntDb dbInterface, JwtService jwtService) async {
   try {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
@@ -104,9 +106,26 @@ Future<Response> registerHandler(Request request, FhirAntDb dbInterface) async {
       scopes: jsonEncode(effectiveScopes),
     );
 
+    // Generate JWT tokens so the user is logged in immediately
+    final token = jwtService.generateToken(
+      userId: userId,
+      username: username,
+      role: effectiveRole,
+      scopes: effectiveScopes,
+    );
+    final refreshToken = jwtService.generateRefreshToken(
+      userId: userId,
+      username: username,
+      role: effectiveRole,
+      scopes: effectiveScopes,
+    );
+
     return Response(201,
         body: jsonEncode({
           'id': userId,
+          'token': token,
+          'refresh_token': refreshToken,
+          'token_type': 'Bearer',
           'username': username,
           'role': effectiveRole,
           'scopes': effectiveScopes,

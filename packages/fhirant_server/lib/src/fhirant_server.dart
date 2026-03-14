@@ -73,8 +73,10 @@ class FhirAntServer {
   Router createRouter() {
     final router = Router()
       // Auth routes
+      ..get('/auth/status',
+          (Request req) => authStatusHandler(req, dbInterface))
       ..post('/auth/register',
-          (Request req) => registerHandler(req, dbInterface))
+          (Request req) => registerHandler(req, dbInterface, _jwtService))
       ..post('/auth/login',
           (Request req) => loginHandler(req, dbInterface, _jwtService))
       ..post('/auth/token',

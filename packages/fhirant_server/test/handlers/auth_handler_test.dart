@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:shelf/shelf.dart';
+import 'package:fhirant_server/src/handlers/auth_status_handler.dart';
 import 'package:fhirant_server/src/handlers/register_handler.dart';
 import 'package:fhirant_server/src/handlers/login_handler.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
@@ -29,8 +30,40 @@ void main() {
     when(() => mockDb.unlockAccount(any())).thenAnswer((_) async {});
   });
 
+  group('authStatusHandler', () {
+    test('returns firstUser: true when no users exist', () async {
+      final request = Request(
+        'GET',
+        Uri.parse('http://localhost:8080/auth/status'),
+      );
+
+      when(() => mockDb.getUserCount()).thenAnswer((_) async => 0);
+
+      final response = await authStatusHandler(request, mockDb);
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['firstUser'], isTrue);
+    });
+
+    test('returns firstUser: false when users exist', () async {
+      final request = Request(
+        'GET',
+        Uri.parse('http://localhost:8080/auth/status'),
+      );
+
+      when(() => mockDb.getUserCount()).thenAnswer((_) async => 3);
+
+      final response = await authStatusHandler(request, mockDb);
+
+      expect(response.statusCode, equals(200));
+      final body = jsonDecode(await response.readAsString());
+      expect(body['firstUser'], isFalse);
+    });
+  });
+
   group('registerHandler', () {
-    test('first-user bootstrap creates admin', () async {
+    test('first-user bootstrap creates admin and returns JWT', () async {
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/register'),
@@ -52,12 +85,21 @@ void main() {
             scopes: any(named: 'scopes'),
           )).thenAnswer((_) async => 1);
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
       expect(body['role'], equals('admin'));
       expect(body['username'], equals('admin_user'));
+      expect(body['token'], isA<String>());
+      expect(body['refresh_token'], isA<String>());
+      expect(body['token_type'], equals('Bearer'));
+
+      // Verify the token is valid and contains correct claims
+      final payload = jwtService.verifyToken(body['token']);
+      expect(payload, isNotNull);
+      expect(payload!['username'], equals('admin_user'));
+      expect(payload['role'], equals('admin'));
 
       // Verify createUser was called with role=admin
       final captured = verify(() => mockDb.createUser(
@@ -83,7 +125,7 @@ void main() {
 
       when(() => mockDb.getUserCount()).thenAnswer((_) async => 1);
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(403));
     });
@@ -113,11 +155,14 @@ void main() {
             scopes: any(named: 'scopes'),
           )).thenAnswer((_) async => 2);
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
       expect(body['role'], equals('clinician'));
+      expect(body['token'], isA<String>());
+      expect(body['refresh_token'], isA<String>());
+      expect(body['token_type'], equals('Bearer'));
     });
 
     test('missing username returns 400', () async {
@@ -129,7 +174,7 @@ void main() {
         }),
       );
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(400));
       final body = jsonDecode(await response.readAsString());
@@ -146,7 +191,7 @@ void main() {
         }),
       );
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(400));
       final body = jsonDecode(await response.readAsString());
@@ -171,7 +216,7 @@ void main() {
       when(() => mockDb.getUserByUsername('existing'))
           .thenAnswer((_) async => mockUser);
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(409));
     });
@@ -187,7 +232,7 @@ void main() {
         }),
       );
 
-      final response = await registerHandler(request, mockDb);
+      final response = await registerHandler(request, mockDb, jwtService);
 
       expect(response.statusCode, equals(400));
       final body = jsonDecode(await response.readAsString());
