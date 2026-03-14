@@ -282,7 +282,7 @@ void main() {
 
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());
-      expect(body['token_endpoint'], contains('/auth/login'));
+      expect(body['token_endpoint'], contains('/auth/token'));
       expect(body['scopes_supported'], isA<List>());
       expect(body['capabilities'], contains('permission-v2'));
     });
