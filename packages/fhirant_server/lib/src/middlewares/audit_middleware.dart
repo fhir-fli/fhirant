@@ -86,15 +86,15 @@ String _mapOutcome(int statusCode) {
 }
 
 /// Extracts an entity reference from the URL path (e.g., `Patient/123`).
+/// Returns null for type-level operations (no resource ID) since bare
+/// resource type names are not valid FHIR references.
 String? _entityReference(Request request) {
   final path = request.url.path;
-  // Match ResourceType or ResourceType/id
   final segments = path.split('/');
-  if (segments.isNotEmpty) {
-    if (segments.length >= 2) {
-      return '${segments[0]}/${segments[1]}';
-    }
-    return segments[0];
+  if (segments.length >= 2 &&
+      segments[1].isNotEmpty &&
+      !segments[1].startsWith('_')) {
+    return '${segments[0]}/${segments[1]}';
   }
   return null;
 }
@@ -136,7 +136,6 @@ Future<void> _createAuditEvent(
         {
           'who': {
             'display': username,
-            'reference': '#$username',
           },
           'requestor': true,
         },
@@ -144,7 +143,6 @@ Future<void> _createAuditEvent(
       'source': {
         'observer': {
           'display': 'FHIRant Server',
-          'reference': '#fhirant-server',
         },
       },
       if (entityRef != null)

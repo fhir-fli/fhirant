@@ -180,6 +180,9 @@ void main() {
           verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['agent'][0]['who']['display'], equals('dr_smith'));
+      // No fragment reference — display-only is spec-compliant
+      expect(json['agent'][0]['who']['reference'], isNull);
+      expect(json['source']['observer']['reference'], isNull);
     });
 
     test('anonymous agent when no auth_user in context', () async {
@@ -196,6 +199,45 @@ void main() {
           verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['agent'][0]['who']['display'], equals('anonymous'));
+    });
+
+    test('type-level request has no entity (no bare resource type ref)',
+        () async {
+      final handler = _wrapHandler();
+      final request = Request(
+        'GET',
+        Uri.parse('http://localhost:8080/Patient'),
+        context: {
+          'auth_user': {'username': 'doc', 'role': 'clinician'}
+        },
+      );
+
+      await handler(request);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final captured =
+          verify(() => mockDb.saveResource(captureAny())).captured;
+      final json = (captured.last as fhir.Resource).toJson();
+      expect(json['entity'], isNull);
+    });
+
+    test('_search request has no entity', () async {
+      final handler = _wrapHandler();
+      final request = Request(
+        'POST',
+        Uri.parse('http://localhost:8080/Patient/_search'),
+        context: {
+          'auth_user': {'username': 'doc', 'role': 'clinician'}
+        },
+      );
+
+      await handler(request);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final captured =
+          verify(() => mockDb.saveResource(captureAny())).captured;
+      final json = (captured.last as fhir.Resource).toJson();
+      expect(json['entity'], isNull);
     });
 
     test('metadata requests not audited', () async {
