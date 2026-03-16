@@ -105,6 +105,15 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Forwarded-For: $TEST_IP" "
 assert_status "GET /Patient without auth returns 401" 401 "$STATUS"
 echo ""
 
+# --- Test 2b: GET /auth/status (first user detection) ---
+echo "=== Test: GET /auth/status (before registration) ==="
+RESPONSE=$(curl -s -w "\n%{http_code}" -H "X-Forwarded-For: $TEST_IP" "$BASE/auth/status")
+BODY=$(echo "$RESPONSE" | head -n -1)
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "GET /auth/status returns 200" 200 "$STATUS"
+assert_contains "firstUser is true before registration" '"firstUser":true' "$BODY"
+echo ""
+
 # --- Test 3: Register first user (bootstrap) ---
 echo "=== Test: Register first user ==="
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/register" \
@@ -115,6 +124,17 @@ BODY=$(echo "$RESPONSE" | head -n -1)
 STATUS=$(echo "$RESPONSE" | tail -1)
 assert_status "POST /auth/register returns 201" 201 "$STATUS"
 assert_contains "First user gets admin role" '"role":"admin"' "$BODY"
+assert_contains "Register returns a JWT token" '"token":"' "$BODY"
+assert_contains "Register returns a refresh token" '"refresh_token":"' "$BODY"
+echo ""
+
+# --- Test 3b: GET /auth/status (after registration) ---
+echo "=== Test: GET /auth/status (after registration) ==="
+RESPONSE=$(curl -s -w "\n%{http_code}" -H "X-Forwarded-For: $TEST_IP" "$BASE/auth/status")
+BODY=$(echo "$RESPONSE" | head -n -1)
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "GET /auth/status returns 200" 200 "$STATUS"
+assert_contains "firstUser is false after registration" '"firstUser":false' "$BODY"
 echo ""
 
 # --- Test 4: Login ---

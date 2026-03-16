@@ -1,6 +1,4 @@
 // ignore_for_file: lines_longer_than_80_chars
-import 'dart:convert';
-
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -89,14 +87,12 @@ Future<Response> everythingHandler(
     final baseUrl = _baseUrl(request);
 
     if (paged.isEmpty) {
-      final json = fhir.Bundle(
+      final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         total: fhir.FhirUnsignedInt(total),
-        entry: <fhir.BundleEntry>[],
-      ).toJson();
-      json['entry'] = <dynamic>[];
+      );
       return Response.ok(
-        jsonEncode(json),
+        bundle.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
@@ -260,14 +256,12 @@ Response _buildSearchsetBundle(
   int total,
 ) {
   if (resources.isEmpty) {
-    final json = fhir.Bundle(
+    final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
       total: fhir.FhirUnsignedInt(total),
-      entry: <fhir.BundleEntry>[],
-    ).toJson();
-    json['entry'] = <dynamic>[];
+    );
     return Response.ok(
-      jsonEncode(json),
+      bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
   }

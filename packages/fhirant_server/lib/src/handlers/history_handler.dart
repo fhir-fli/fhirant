@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for resource-level history: GET /{resourceType}/{id}/_history
@@ -70,14 +71,22 @@ Future<Response> resourceHistoryHandler(
           .map(
             (resource) {
               final versionId = resource.meta?.versionId?.toString() ?? '1';
+              final lastUpdated = resource.meta?.lastUpdated?.valueString;
               return fhir.BundleEntry(
                 resource: resource,
                 fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceType/$id/_history/$versionId',
+                  '$baseUrl/$resourceType/$id',
                 ),
                 request: fhir.BundleRequest(
                   method: fhir.HTTPVerb.gET,
-                  url: fhir.FhirUri('$resourceType/$id/_history/$versionId'),
+                  url: fhir.FhirUri('$resourceType/$id'),
+                ),
+                response: fhir.BundleResponse(
+                  status: '200'.toFhirString,
+                  etag: 'W/"$versionId"'.toFhirString,
+                  lastModified: lastUpdated != null
+                      ? fhir.FhirInstant.fromString(lastUpdated)
+                      : null,
                 ),
               );
             },
@@ -163,16 +172,24 @@ Future<Response> typeHistoryHandler(
               final resourceTypeString = resource.resourceTypeString;
               final resourceId = resource.id?.toString() ?? '';
               final versionId = resource.meta?.versionId?.toString() ?? '1';
+              final lastUpdated = resource.meta?.lastUpdated?.valueString;
               return fhir.BundleEntry(
                 resource: resource,
                 fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceTypeString/$resourceId/_history/$versionId',
+                  '$baseUrl/$resourceTypeString/$resourceId',
                 ),
                 request: fhir.BundleRequest(
                   method: fhir.HTTPVerb.gET,
                   url: fhir.FhirUri(
-                    '$resourceTypeString/$resourceId/_history/$versionId',
+                    '$resourceTypeString/$resourceId',
                   ),
+                ),
+                response: fhir.BundleResponse(
+                  status: '200'.toFhirString,
+                  etag: 'W/"$versionId"'.toFhirString,
+                  lastModified: lastUpdated != null
+                      ? fhir.FhirInstant.fromString(lastUpdated)
+                      : null,
                 ),
               );
             },
@@ -247,16 +264,24 @@ Future<Response> systemHistoryHandler(
               final resourceTypeString = resource.resourceTypeString;
               final resourceId = resource.id?.toString() ?? '';
               final versionId = resource.meta?.versionId?.toString() ?? '1';
+              final lastUpdated = resource.meta?.lastUpdated?.valueString;
               return fhir.BundleEntry(
                 resource: resource,
                 fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceTypeString/$resourceId/_history/$versionId',
+                  '$baseUrl/$resourceTypeString/$resourceId',
                 ),
                 request: fhir.BundleRequest(
                   method: fhir.HTTPVerb.gET,
                   url: fhir.FhirUri(
-                    '$resourceTypeString/$resourceId/_history/$versionId',
+                    '$resourceTypeString/$resourceId',
                   ),
+                ),
+                response: fhir.BundleResponse(
+                  status: '200'.toFhirString,
+                  etag: 'W/"$versionId"'.toFhirString,
+                  lastModified: lastUpdated != null
+                      ? fhir.FhirInstant.fromString(lastUpdated)
+                      : null,
                 ),
               );
             },
@@ -348,7 +373,7 @@ Future<Response> vreadResourceHandler(
 
     return Response.ok(
       versionedResource.toJsonString(),
-      headers: {'Content-Type': 'application/json'},
+      headers: FhirHttpHeaders.resourceHeaders(versionedResource),
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(

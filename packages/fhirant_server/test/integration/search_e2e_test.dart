@@ -315,9 +315,8 @@ void main() {
       expect(body['resourceType'], equals('Bundle'));
       expect(body['type'], equals('searchset'));
       expect(body['total'], equals(0));
-      // Bug 5 fix: entry should now be an empty array, not null
-      expect(body['entry'], isA<List>());
-      expect(body['entry'], isEmpty);
+      // FHIR spec: entry must be absent (not empty array) when no results
+      expect(body['entry'], isNull);
     });
 
     test('_include sets search.mode=match on matched and include on included',

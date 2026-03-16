@@ -409,20 +409,15 @@ Future<Response> _searchResources(
       );
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
-        entry: <fhir.BundleEntry>[],
         total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
         link: [selfLink],
       );
-
-      // Use toJson + manual entry to avoid FHIR library serializing empty list as null
-      final json = bundle.toJson();
-      json['entry'] = <dynamic>[];
 
       FhirantLogging().logInfo(
         'Successfully fetched 0 resources of type: $resourceType',
       );
       return Response.ok(
-        jsonEncode(json),
+        bundle.toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
@@ -887,23 +882,29 @@ Future<Response> putResourceHandler(
       }
     }
 
+    // Check if this is a create (resource doesn't exist) or update
+    final type = fhir.R4ResourceType.fromString(resourceType);
+    final existingResource =
+        type != null ? await dbInterface.getResource(type, id) : null;
+    final isCreate = existingResource == null;
+
     final success = await dbInterface.saveResource(updatedResource);
     if (success) {
       // Re-fetch to get server-assigned version/lastUpdated
-      final type = fhir.R4ResourceType.fromString(resourceType);
       final savedResource = type != null
           ? await dbInterface.getResource(type, id)
           : null;
       final responseResource = savedResource ?? updatedResource;
 
       FhirantLogging().logInfo(
-        'Resource of type $resourceType updated successfully with ID: $id',
+        'Resource of type $resourceType '
+        '${isCreate ? "created" : "updated"} successfully with ID: $id',
       );
 
       final preference =
           FhirHttpHeaders.parsePreferReturn(request.headers);
       return FhirHttpHeaders.preferredResponse(
-        statusCode: 200,
+        statusCode: isCreate ? 201 : 200,
         resource: responseResource,
         headers: FhirHttpHeaders.resourceHeaders(responseResource),
         preference: preference,
@@ -1355,12 +1356,9 @@ Response _emptySearchBundle(Request request, String? total) {
   final bundle = fhir.Bundle(
     type: fhir.BundleType.searchset,
     total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
-    entry: <fhir.BundleEntry>[],
   );
-  final json = bundle.toJson();
-  json['entry'] = <dynamic>[];
   return Response.ok(
-    jsonEncode(json),
+    bundle.toJsonString(),
     headers: {'Content-Type': 'application/json'},
   );
 }

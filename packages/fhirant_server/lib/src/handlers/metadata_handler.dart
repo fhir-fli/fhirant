@@ -19,7 +19,7 @@ Response metadataHandler(Request request) {
       status: PublicationStatus.active,
       date: DateTime.now().toFhirDateTime,
       kind: CapabilityStatementKind.instance,
-      fhirVersion: FHIRVersion.value401,
+      fhirVersion: FHIRVersion.value430,
       format: [FhirCode('json')],
       patchFormat: [FhirCode('application/json-patch+json')],
       software: CapabilityStatementSoftware(
@@ -27,7 +27,7 @@ Response metadataHandler(Request request) {
         version: '1.0.0'.toFhirString,
       ),
       implementation: CapabilityStatementImplementation(
-        description: 'FHIRant FHIR R4 Server'.toFhirString,
+        description: 'FHIRant FHIR R4B Server'.toFhirString,
       ),
       rest: [
         CapabilityStatementRest(

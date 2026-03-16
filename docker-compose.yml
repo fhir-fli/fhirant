@@ -1,10 +1,10 @@
 # docker-compose.yml for FHIRant Server
 #
 # Run from the parent monorepo directory (fhir/):
-#   docker compose -f fhirant/docker-compose.yml up
+#   docker compose -f fhirant/docker-compose.yml up --build
 #
-# Or set the build context explicitly:
-#   cd fhirant && docker compose up
+# Or from the fhirant directory (context resolves to parent via ..):
+#   cd fhirant && docker compose up --build
 
 services:
   fhirant:

@@ -82,7 +82,11 @@ void main(List<String> arguments) async {
 
   // Create and start server
   final devMode = args['dev-mode'] as bool;
-  final server = FhirAntServer(db, devMode: devMode);
+  final server = FhirAntServer(
+    db,
+    devMode: devMode,
+    maxRequests: devMode ? 1000 : 10,
+  );
 
   if (devMode) {
     logger.logWarning(

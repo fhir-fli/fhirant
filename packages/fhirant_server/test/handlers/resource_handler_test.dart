@@ -1466,7 +1466,7 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString()) as Map;
       expect(body['total'], 0);
-      expect(body['entry'], isEmpty);
+      expect(body['entry'], isNull);
     });
 
     test('patient scope restricts Observation search to compartment',

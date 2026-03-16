@@ -25,7 +25,7 @@ void main() {
       expect(cs.resourceType, equals(fhir.R4ResourceType.CapabilityStatement));
       expect(cs.status, equals(fhir.PublicationStatus.active));
       expect(cs.kind, equals(fhir.CapabilityStatementKind.instance));
-      expect(cs.fhirVersion, equals(fhir.FHIRVersion.value401));
+      expect(cs.fhirVersion, equals(fhir.FHIRVersion.value430));
       expect(
         cs.format?.map((f) => f.valueString).toList() ?? [],
         contains('json'),

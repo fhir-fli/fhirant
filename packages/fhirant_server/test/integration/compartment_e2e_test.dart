@@ -288,7 +288,7 @@ void main() {
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
-      expect(body['entry'], isEmpty);
+      expect(body['entry'], isNull);
     });
 
     test('compartment search returns 404 for nonexistent patient', () async {
