@@ -200,6 +200,41 @@ void main() {
       expect(ids(results), equals(['pt-1']));
     });
 
+    test('search by identifier value only (no system)', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'identifier': ['MRN001'],
+        },
+      );
+
+      expect(ids(results), equals(['pt-1']));
+    });
+
+    test('search by identifier on List resource', () async {
+      final list = fhir.Resource.fromJson({
+        'resourceType': 'List',
+        'id': 'list-1',
+        'status': 'current',
+        'mode': 'working',
+        'identifier': [
+          {'value': 'test-list-id-456'}
+        ],
+      });
+      await db.saveResource(list);
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.FhirList,
+        searchParameters: {
+          'identifier': ['test-list-id-456'],
+        },
+      );
+
+      expect(results.length, 1);
+    });
+
     test('search by active boolean token', () async {
       await seedAll();
 
