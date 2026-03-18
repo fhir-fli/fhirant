@@ -100,8 +100,9 @@ Future<Response> postSystemSearchHandler(
       final hasSearchParams =
           searchParameters != null && searchParameters.isNotEmpty;
       final hasHasParams = hasParams != null && hasParams.isNotEmpty;
+      final hasSort = sort != null && sort.isNotEmpty;
 
-      if (hasSearchParams || hasHasParams) {
+      if (hasSearchParams || hasHasParams || hasSort) {
         resources = await dbInterface.search(
           resourceType: type,
           searchParameters: searchParameters,
@@ -291,11 +292,12 @@ Future<Response> _searchResources(
       }
     }
 
-    // Use search if search parameters or _has params are provided
+    // Use search if search parameters, _has params, or _sort are provided
     final List<fhir.Resource> resources;
     final hasSearchParams =
         effectiveSearchParams != null && effectiveSearchParams.isNotEmpty;
-    if (hasSearchParams || hasHasParams) {
+    final hasSort = sort != null && sort.isNotEmpty;
+    if (hasSearchParams || hasHasParams || hasSort) {
       // Use search functionality
       resources = await dbInterface.search(
         resourceType: type,
