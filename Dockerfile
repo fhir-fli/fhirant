@@ -40,6 +40,7 @@ FROM dart:stable
 COPY --from=build /app/server /app/server
 COPY --from=build /app/fhirant/packages/fhirant_server/lib/sqlcipher/linux/libsqlcipher.so /app/lib/libsqlcipher.so
 COPY --from=build /app/fhirant/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
+COPY --from=build /app/fhirant/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
 
 # Ensure the dynamic linker can find libsqlcipher
 ENV LD_LIBRARY_PATH=/app/lib

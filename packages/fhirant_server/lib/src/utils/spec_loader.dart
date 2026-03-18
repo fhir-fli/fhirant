@@ -85,6 +85,30 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
     }
   }
 
+  // Load Touchstone terminology test fixtures (individual JSON files)
+  final fixturesPath = specPath.replaceAll('/fhir_spec', '/terminology_fixtures');
+  final fixturesDir = Directory(fixturesPath);
+  if (fixturesDir.existsSync()) {
+    final fixtureFiles = fixturesDir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.json'));
+    for (final file in fixtureFiles) {
+      try {
+        final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+        final resource = fhir.Resource.fromJson(json);
+        await db.saveResource(resource);
+        totalLoaded++;
+      } catch (e) {
+        totalErrors++;
+        logger.logWarning('Failed to load fixture ${file.path}: $e');
+      }
+    }
+    logger.logInfo(
+      'Loaded ${fixtureFiles.length} terminology test fixtures',
+    );
+  }
+
   if (totalErrors > 0) {
     logger.logWarning('$totalErrors resources failed to parse');
   }
