@@ -317,4 +317,13 @@ class SearchParamDefinitions {
 
   /// Resource types that support $expand.
   static const Set<String> expandTypes = {'ValueSet'};
+
+  /// Resource types that support $subsumes.
+  static const Set<String> subsumesTypes = {'CodeSystem'};
+
+  /// Resource types that support $translate.
+  static const Set<String> translateTypes = {'ConceptMap'};
+
+  /// Resource types that support $preferred-id.
+  static const Set<String> preferredIdTypes = {'NamingSystem'};
 }

@@ -218,6 +218,30 @@ Response metadataHandler(Request request) {
                     'http://hl7.org/fhir/OperationDefinition/ValueSet-expand',
                   ),
                 ),
+              // $subsumes on CodeSystem
+              if (SearchParamDefinitions.subsumesTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'subsumes'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes',
+                  ),
+                ),
+              // $translate on ConceptMap
+              if (SearchParamDefinitions.translateTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'translate'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/ConceptMap-translate',
+                  ),
+                ),
+              // $preferred-id on NamingSystem
+              if (SearchParamDefinitions.preferredIdTypes.contains(type))
+                CapabilityStatementOperation(
+                  name: 'preferred-id'.toFhirString,
+                  definition: FhirCanonical(
+                    'http://hl7.org/fhir/OperationDefinition/NamingSystem-preferred-id',
+                  ),
+                ),
             ];
 
             final includeList =

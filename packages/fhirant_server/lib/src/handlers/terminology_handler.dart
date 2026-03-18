@@ -271,6 +271,8 @@ Future<Response> expandHandler(
 
     final url = params['url'] as String?;
     final filter = params['filter'] as String?;
+    final valueSetVersion = params['valueSetVersion'] as String? ??
+        params['version'] as String?;
     final offsetStr = params['offset'] as String?;
     final countStr = params['count'] as String?;
     final offset = offsetStr != null ? int.tryParse(offsetStr) : null;
@@ -293,6 +295,18 @@ Future<Response> expandHandler(
     } else {
       return _errorResponse(
           400, 'Parameter "url" is required for type-level \$expand');
+    }
+
+    // Check version if specified
+    if (valueSetVersion != null) {
+      final vsVersion = valueSet.version?.valueString;
+      if (vsVersion == null || vsVersion != valueSetVersion) {
+        return _errorResponse(
+          404,
+          'ValueSet version "$valueSetVersion" not found'
+          '${vsVersion != null ? ' (available: $vsVersion)' : ''}',
+        );
+      }
     }
 
     // If already has an expansion, optionally filter it
