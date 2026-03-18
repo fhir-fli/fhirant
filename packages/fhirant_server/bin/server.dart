@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/spec_loader.dart';
 import 'package:fhirant_server/src/utils/sqlcipher_loader.dart';
 
 void main(List<String> arguments) async {
@@ -21,6 +22,9 @@ void main(List<String> arguments) async {
     ..addFlag('dev-mode',
         defaultsTo: false,
         help: 'Disable authentication (for testing only)')
+    ..addOption('spec-path',
+        defaultsTo: '/app/fhir_spec',
+        help: 'Path to FHIR spec NDJSON files')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
@@ -78,6 +82,15 @@ void main(List<String> arguments) async {
   } catch (e, stackTrace) {
     logger.logError('Failed to initialize database', e, stackTrace);
     exit(1);
+  }
+
+  // Load FHIR spec terminology resources on first boot
+  try {
+    await loadSpecResources(db, args['spec-path']);
+  } catch (e, stackTrace) {
+    logger.logWarning('Failed to load spec resources: $e');
+    logger.logError('Spec loading error', e, stackTrace);
+    // Non-fatal — server can still operate without spec resources
   }
 
   // Create and start server
