@@ -5,8 +5,12 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 
-/// Loads FHIR R4 spec terminology resources (CodeSystem, ValueSet, ConceptMap,
-/// NamingSystem) from NDJSON files into the database on first boot.
+/// Loads all FHIR R4 spec canonical resources from NDJSON files into the
+/// database on first boot.
+///
+/// This includes StructureDefinitions, SearchParameters, ValueSets,
+/// CodeSystems, ConceptMaps, NamingSystems, OperationDefinitions,
+/// CompartmentDefinitions, and CapabilityStatements.
 ///
 /// Skips loading if the database already contains CodeSystem resources.
 Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
@@ -27,32 +31,21 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
     return;
   }
 
-  logger.logInfo('Loading FHIR R4 spec terminology resources from $specPath');
-
-  // Resource types we want to load for terminology support
-  const targetTypes = {
-    'CodeSystem',
-    'ValueSet',
-    'ConceptMap',
-    'NamingSystem',
-  };
-
-  // Files that contain terminology resources
-  const filesToLoad = [
-    'valuesets.ndjson', // Contains CodeSystem + ValueSet
-    'conceptmaps.ndjson', // Contains ConceptMap
-  ];
+  logger.logInfo('Loading FHIR R4 spec canonical resources from $specPath');
 
   var totalLoaded = 0;
   var totalErrors = 0;
 
-  for (final fileName in filesToLoad) {
-    final file = File('$specPath/$fileName');
-    if (!file.existsSync()) {
-      logger.logWarning('Spec file not found: $specPath/$fileName');
-      continue;
-    }
+  // Load all NDJSON files in the spec directory
+  final ndjsonFiles = specDir
+      .listSync()
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.ndjson'))
+      .toList()
+    ..sort((a, b) => a.path.compareTo(b.path));
 
+  for (final file in ndjsonFiles) {
+    final fileName = file.path.split('/').last;
     final resources = <fhir.Resource>[];
     final lines = await file.readAsLines();
 
@@ -60,10 +53,7 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
       if (line.trim().isEmpty) continue;
       try {
         final json = jsonDecode(line) as Map<String, dynamic>;
-        final resourceType = json['resourceType'] as String?;
-        if (resourceType != null && targetTypes.contains(resourceType)) {
-          resources.add(fhir.Resource.fromJson(json));
-        }
+        resources.add(fhir.Resource.fromJson(json));
       } catch (e) {
         totalErrors++;
       }
@@ -85,8 +75,9 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
     }
   }
 
-  // Load Touchstone terminology test fixtures (individual JSON files)
-  final fixturesPath = specPath.replaceAll('/fhir_spec', '/terminology_fixtures');
+  // Load individual JSON fixtures (e.g. NamingSystem example)
+  final fixturesPath =
+      specPath.replaceAll('/fhir_spec', '/terminology_fixtures');
   final fixturesDir = Directory(fixturesPath);
   if (fixturesDir.existsSync()) {
     final fixtureFiles = fixturesDir
@@ -95,7 +86,8 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
         .where((f) => f.path.endsWith('.json'));
     for (final file in fixtureFiles) {
       try {
-        final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+        final json =
+            jsonDecode(await file.readAsString()) as Map<String, dynamic>;
         final resource = fhir.Resource.fromJson(json);
         await db.saveResource(resource);
         totalLoaded++;
@@ -104,15 +96,12 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
         logger.logWarning('Failed to load fixture ${file.path}: $e');
       }
     }
-    logger.logInfo(
-      'Loaded ${fixtureFiles.length} terminology test fixtures',
-    );
   }
 
   if (totalErrors > 0) {
     logger.logWarning('$totalErrors resources failed to parse');
   }
   logger.logInfo(
-    'Spec loading complete: $totalLoaded terminology resources loaded',
+    'Spec loading complete: $totalLoaded canonical resources loaded',
   );
 }
