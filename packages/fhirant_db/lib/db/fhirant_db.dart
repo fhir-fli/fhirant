@@ -11,12 +11,12 @@ import 'package:fhirant_db/db/server_types.dart';
 /// Users, ExportJobs, and Logs tables (managed via raw SQL).
 class FhirAntDb extends FhirDb {
   FhirAntDb(super.executor) {
-    // Server uses timestamp-based version IDs.
-    fhirDao.versionIdAsTime = true;
+    // Server uses integer version IDs (1, 2, 3, ...).
+    fhirDao.versionIdAsTime = false;
   }
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +97,57 @@ class FhirAntDb extends FhirDb {
               'ALTER TABLE reference_search_parameters_new '
               'RENAME TO reference_search_parameters',
             );
+          }
+          if (from < 12) {
+            // Add versionId column to resources_history with new primary key.
+            await customStatement(
+              'CREATE TABLE resources_history_new ('
+              'resource_type TEXT NOT NULL, '
+              'id TEXT NOT NULL, '
+              'version_id TEXT NOT NULL, '
+              'resource TEXT NOT NULL, '
+              'last_updated INTEGER NOT NULL, '
+              'PRIMARY KEY (resource_type, id, version_id)'
+              ')',
+            );
+            await customStatement(
+              "INSERT OR IGNORE INTO resources_history_new "
+              "(resource_type, id, version_id, resource, last_updated) "
+              "SELECT resource_type, id, "
+              "COALESCE("
+              "json_extract(resource, '\$.meta.versionId'), "
+              "CAST(last_updated AS TEXT)"
+              "), "
+              "resource, last_updated "
+              "FROM resources_history",
+            );
+            await customStatement('DROP TABLE resources_history');
+            await customStatement(
+              'ALTER TABLE resources_history_new '
+              'RENAME TO resources_history',
+            );
+          }
+          if (from < 13) {
+            // Convert lastUpdated from seconds to milliseconds.
+            const tables = [
+              'resources',
+              'resources_history',
+              'string_search_parameters',
+              'token_search_parameters',
+              'reference_search_parameters',
+              'date_search_parameters',
+              'number_search_parameters',
+              'quantity_search_parameters',
+              'uri_search_parameters',
+              'composite_search_parameters',
+              'special_search_parameters',
+              'sync_resources',
+            ];
+            for (final table in tables) {
+              await customStatement(
+                'UPDATE $table SET last_updated = last_updated * 1000',
+              );
+            }
           }
         },
       );
@@ -280,13 +331,16 @@ class FhirAntDb extends FhirDb {
             tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id);
         if (at != null) {
           // _at: return the single version current at that point in time
-          cond = cond & tbl.lastUpdated.isSmallerOrEqualValue(at);
+          cond = cond & tbl.lastUpdated.isSmallerOrEqualValue(at.millisecondsSinceEpoch);
         } else if (since != null) {
-          cond = cond & tbl.lastUpdated.isBiggerThanValue(since);
+          cond = cond & tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return cond;
       })
-      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+      ..orderBy([
+        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
+        (tbl) => OrderingTerm.desc(tbl.versionId),
+      ]);
     if (at != null) {
       query.limit(1);
     }
@@ -306,7 +360,7 @@ class FhirAntDb extends FhirDb {
     if (at != null) {
       // _at: return the latest version per (resourceType, id) where
       // lastUpdated <= at.  Requires a grouped MAX subquery.
-      final atSeconds = at.millisecondsSinceEpoch ~/ 1000;
+      final atMillis = at.millisecondsSinceEpoch;
       final resourceTypeString = resourceType.toString();
       final rows = await customSelect(
         'SELECT rh.resource FROM resources_history rh '
@@ -317,10 +371,10 @@ class FhirAntDb extends FhirDb {
         '  GROUP BY resource_type, id'
         ') sub ON rh.resource_type = sub.resource_type '
         '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
-        'ORDER BY rh.last_updated DESC',
+        'ORDER BY rh.last_updated DESC, rh.version_id DESC',
         variables: [
           Variable.withString(resourceTypeString),
-          Variable.withInt(atSeconds),
+          Variable.withInt(atMillis),
         ],
       ).get();
       return rows
@@ -333,11 +387,14 @@ class FhirAntDb extends FhirDb {
       ..where((tbl) {
         var cond = tbl.resourceType.equals(resourceTypeString);
         if (since != null) {
-          cond = cond & tbl.lastUpdated.isBiggerThanValue(since);
+          cond = cond & tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return cond;
       })
-      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+      ..orderBy([
+        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
+        (tbl) => OrderingTerm.desc(tbl.versionId),
+      ]);
     final rows = await query.get();
     return rows
         .map((row) => fhir.Resource.fromJsonString(row.resource))
@@ -353,7 +410,7 @@ class FhirAntDb extends FhirDb {
     if (at != null) {
       // _at: return the latest version per (resourceType, id) where
       // lastUpdated <= at.  Requires a grouped MAX subquery.
-      final atSeconds = at.millisecondsSinceEpoch ~/ 1000;
+      final atMillis = at.millisecondsSinceEpoch;
       final rows = await customSelect(
         'SELECT rh.resource FROM resources_history rh '
         'INNER JOIN ('
@@ -363,8 +420,8 @@ class FhirAntDb extends FhirDb {
         '  GROUP BY resource_type, id'
         ') sub ON rh.resource_type = sub.resource_type '
         '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
-        'ORDER BY rh.last_updated DESC',
-        variables: [Variable.withInt(atSeconds)],
+        'ORDER BY rh.last_updated DESC, rh.version_id DESC',
+        variables: [Variable.withInt(atMillis)],
       ).get();
       return rows
           .map((row) => fhir.Resource.fromJsonString(row.read<String>('resource')))
@@ -374,11 +431,14 @@ class FhirAntDb extends FhirDb {
     final query = select(resourcesHistory)
       ..where((tbl) {
         if (since != null) {
-          return tbl.lastUpdated.isBiggerThanValue(since);
+          return tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return const Constant(true);
       })
-      ..orderBy([(tbl) => OrderingTerm.desc(tbl.lastUpdated)]);
+      ..orderBy([
+        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
+        (tbl) => OrderingTerm.desc(tbl.versionId),
+      ]);
     final rows = await query.get();
     return rows
         .map((row) => fhir.Resource.fromJsonString(row.resource))
@@ -426,7 +486,7 @@ class FhirAntDb extends FhirDb {
       ..where((tbl) {
         final typeCond = tbl.resourceType.equals(resourceTypeString);
         if (since != null) {
-          return typeCond & tbl.lastUpdated.isBiggerOrEqualValue(since);
+          return typeCond & tbl.lastUpdated.isBiggerOrEqualValue(since.millisecondsSinceEpoch);
         }
         return typeCond;
       })
@@ -483,7 +543,7 @@ class FhirAntDb extends FhirDb {
       if (since != null) {
         condition = condition &
             referenceSearchParameters.lastUpdated
-                .isBiggerOrEqualValue(since);
+                .isBiggerOrEqualValue(since.millisecondsSinceEpoch);
       }
 
       final query = selectOnly(referenceSearchParameters)
