@@ -262,7 +262,7 @@ Response metadataHandler(Request request) {
               conditionalCreate: FhirBoolean(true),
               conditionalRead: ConditionalReadStatus.fullSupport,
               conditionalUpdate: FhirBoolean(true),
-              conditionalDelete: ConditionalDeleteStatus.single,
+              conditionalDelete: ConditionalDeleteStatus.multiple,
               searchParam: allParams,
               operation: operations,
               searchInclude: includeList

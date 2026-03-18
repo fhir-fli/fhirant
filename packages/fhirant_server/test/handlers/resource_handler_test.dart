@@ -1637,7 +1637,7 @@ void main() {
       ).called(1);
     });
 
-    test('returns 412 when multiple matches found', () async {
+    test('returns 204 when multiple matches found (deletes all)', () async {
       final patient1 = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'multi-1',
@@ -1666,6 +1666,12 @@ void main() {
           },
         ),
       ).thenAnswer((_) async => [patient1, patient2]);
+      when(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-1'),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-2'),
+      ).thenAnswer((_) async => true);
 
       final response = await conditionalDeleteHandler(
         mockRequest,
@@ -1673,11 +1679,11 @@ void main() {
         mockDb,
       );
 
-      expect(response.statusCode, equals(412));
-      final body = await response.readAsString();
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['resourceType'], equals('OperationOutcome'));
-      verifyNever(() => mockDb.deleteResource(any(), any()));
+      expect(response.statusCode, equals(204));
+      verify(() => mockDb.deleteResource(
+          fhir.R4ResourceType.Patient, 'multi-1')).called(1);
+      verify(() => mockDb.deleteResource(
+          fhir.R4ResourceType.Patient, 'multi-2')).called(1);
     });
 
     test('returns 200 when no matches found', () async {

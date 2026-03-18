@@ -1028,6 +1028,29 @@ Future<Response> getResourceByIdHandler(
         headers: FhirHttpHeaders.resourceHeaders(resource),
       );
     } else {
+      // Check if resource was previously deleted (has history but no current)
+      final history = await dbInterface.getResourceHistory(type, id);
+      if (history.isNotEmpty) {
+        FhirantLogging().logWarning(
+          'Resource $resourceType/$id was deleted (410 Gone).',
+        );
+        return Response(
+          410,
+          body: fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.deleted,
+                diagnostics:
+                    'Resource $resourceType/$id has been deleted'
+                        .toFhirString,
+              ),
+            ],
+          ).toJsonString(),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
       FhirantLogging().logWarning(
         'Resource of type $resourceType with ID $id not found.',
       );
@@ -1183,10 +1206,9 @@ Future<Response> deleteResourceHandler(
 
 /// Handler for conditional delete by search (DELETE /<resourceType>?params)
 ///
-/// Per FHIR spec with conditionalDelete: 'single':
+/// Supports both single and multiple deletion:
 /// - 0 matches: return 200 with OperationOutcome (nothing to delete)
-/// - 1 match: delete and return 204
-/// - Multiple matches: return 412 Precondition Failed
+/// - 1+ matches: delete all and return 204
 Future<Response> conditionalDeleteHandler(
   Request request,
   String resourceType,
@@ -1232,40 +1254,20 @@ Future<Response> conditionalDeleteHandler(
       );
     }
 
-    if (results.length > 1) {
-      return Response(
-        412,
-        body: fhir.OperationOutcome(
-          issue: [
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.error,
-              code: fhir.IssueType.multipleMatches,
-              diagnostics:
-                  'Multiple resources (${results.length}) matched the search criteria; '
-                          'conditional delete in single mode requires exactly one match'
-                      .toFhirString,
-            ),
-          ],
-        ).toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
+    // Delete all matching resources
+    var deleted = 0;
+    for (final resource in results) {
+      final id = resource.id?.toString() ?? '';
+      if (await dbInterface.deleteResource(type, id)) {
+        deleted++;
+      }
     }
 
-    // Exactly one match — delete it
-    final resource = results.first;
-    final id = resource.id?.toString() ?? '';
-    final success = await dbInterface.deleteResource(type, id);
-    if (success) {
-      FhirantLogging().logInfo(
-        'Conditional delete: deleted $resourceType/$id',
-      );
-      return Response(204);
-    } else {
-      return _errorResponse(
-        'Failed to delete resource',
-        'Database operation failed',
-      );
-    }
+    FhirantLogging().logInfo(
+      'Conditional delete: deleted $deleted of ${results.length} '
+      '$resourceType resources',
+    );
+    return Response(204);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Error in conditional delete for $resourceType',

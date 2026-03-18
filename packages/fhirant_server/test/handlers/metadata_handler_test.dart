@@ -124,7 +124,7 @@ void main() {
           equals(fhir.ConditionalReadStatus.fullSupport));
       expect(patient.conditionalUpdate!.valueBoolean, isTrue);
       expect(patient.conditionalDelete,
-          equals(fhir.ConditionalDeleteStatus.single));
+          equals(fhir.ConditionalDeleteStatus.multiple));
     });
 
     test('Patient has >10 search params', () {

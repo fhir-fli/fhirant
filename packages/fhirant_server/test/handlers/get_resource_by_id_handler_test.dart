@@ -64,6 +64,9 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
       ).thenAnswer((_) async => null);
+      when(
+        () => mockDb.getResourceHistory(fhir.R4ResourceType.Patient, '123'),
+      ).thenAnswer((_) async => []);
 
       final response = await getResourceByIdHandler(
         mockRequest,

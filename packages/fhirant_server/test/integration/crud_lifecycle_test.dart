@@ -174,7 +174,7 @@ void main() {
       expect(response.statusCode, equals(204));
     });
 
-    test('GET deleted Patient returns 404', () async {
+    test('GET deleted Patient returns 410 Gone', () async {
       final patient = fhir.Patient(
         id: 'test-gone-def'.toFhirString,
         name: [fhir.HumanName(family: 'WillBeGone'.toFhirString)],
@@ -189,7 +189,7 @@ void main() {
         authToken: authToken,
       ));
 
-      expect(response.statusCode, equals(404));
+      expect(response.statusCode, equals(410));
     });
 
     test('GET /Patient/{id}/_history/{vid} returns specific version',
@@ -245,16 +245,16 @@ void main() {
 
       expect(response.statusCode, equals(204));
 
-      // Verify resource is gone
+      // Verify resource is gone (410 because it existed in history)
       final getResponse = await handler(testRequest(
         'GET',
         '/Patient/cond-del-e2e-1',
         authToken: authToken,
       ));
-      expect(getResponse.statusCode, equals(404));
+      expect(getResponse.statusCode, equals(410));
     });
 
-    test('DELETE /Patient?name=X returns 412 for multiple matches', () async {
+    test('DELETE /Patient?name=X deletes all multiple matches', () async {
       await testDb.saveResource(fhir.Patient(
         id: 'cond-del-multi-1'.toFhirString,
         name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
@@ -270,23 +270,21 @@ void main() {
         authToken: authToken,
       ));
 
-      expect(response.statusCode, equals(412));
-      final body = jsonDecode(await response.readAsString());
-      expect(body['resourceType'], equals('OperationOutcome'));
+      expect(response.statusCode, equals(204));
 
-      // Both resources should still exist
+      // Both resources should be deleted
       final get1 = await handler(testRequest(
         'GET',
         '/Patient/cond-del-multi-1',
         authToken: authToken,
       ));
-      expect(get1.statusCode, equals(200));
+      expect(get1.statusCode, equals(410));
       final get2 = await handler(testRequest(
         'GET',
         '/Patient/cond-del-multi-2',
         authToken: authToken,
       ));
-      expect(get2.statusCode, equals(200));
+      expect(get2.statusCode, equals(410));
     });
 
     test('DELETE /Patient with no search params returns 400', () async {
