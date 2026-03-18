@@ -72,17 +72,25 @@ Future<Response> resourceHistoryHandler(
             (resource) {
               final versionId = resource.meta?.versionId?.toString() ?? '1';
               final lastUpdated = resource.meta?.lastUpdated?.valueString;
+              final tags = resource.meta?.tag;
+              final isDeleted = tags != null &&
+                  tags.any((t) => t.code?.valueString == 'DELETED');
+
               return fhir.BundleEntry(
-                resource: resource,
+                resource: isDeleted ? null : resource,
                 fullUrl: fhir.FhirUri(
                   '$baseUrl/$resourceType/$id',
                 ),
                 request: fhir.BundleRequest(
-                  method: fhir.HTTPVerb.gET,
+                  method: isDeleted
+                      ? fhir.HTTPVerb.dELETE
+                      : fhir.HTTPVerb.gET,
                   url: fhir.FhirUri('$resourceType/$id'),
                 ),
                 response: fhir.BundleResponse(
-                  status: '200'.toFhirString,
+                  status: isDeleted
+                      ? '204'.toFhirString
+                      : '200'.toFhirString,
                   etag: 'W/"$versionId"'.toFhirString,
                   lastModified: lastUpdated != null
                       ? fhir.FhirInstant.fromString(lastUpdated)
@@ -363,6 +371,31 @@ Future<Response> vreadResourceHandler(
       return Response(
         404,
         body: jsonEncode({'error': 'Version not found'}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    // Check if this version is a deletion tombstone
+    final tags = versionedResource.meta?.tag;
+    final isDeleted = tags != null &&
+        tags.any((t) => t.code?.valueString == 'DELETED');
+    if (isDeleted) {
+      FhirantLogging().logInfo(
+        'Version $vid of $resourceType/$id is a deletion tombstone (410)',
+      );
+      return Response(
+        410,
+        body: fhir.OperationOutcome(
+          issue: [
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.error,
+              code: fhir.IssueType.deleted,
+              diagnostics:
+                  'Resource $resourceType/$id version $vid has been deleted'
+                      .toFhirString,
+            ),
+          ],
+        ).toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
