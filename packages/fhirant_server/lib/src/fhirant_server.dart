@@ -197,6 +197,49 @@ class FhirAntServer {
         r'/ValueSet/$expand',
         (Request req) => expandHandler(req, dbInterface),
       )
+      // NamingSystem $preferred-id
+      ..get(
+        r'/NamingSystem/$preferred-id',
+        (Request req) => preferredIdHandler(req, dbInterface),
+      )
+      ..post(
+        r'/NamingSystem/$preferred-id',
+        (Request req) => preferredIdHandler(req, dbInterface),
+      )
+      // ConceptMap $translate
+      ..get(
+        r'/ConceptMap/<id>/$translate',
+        (Request req, String id) => translateHandler(req, dbInterface, id),
+      )
+      ..post(
+        r'/ConceptMap/<id>/$translate',
+        (Request req, String id) => translateHandler(req, dbInterface, id),
+      )
+      ..get(
+        r'/ConceptMap/$translate',
+        (Request req) => translateHandler(req, dbInterface),
+      )
+      ..post(
+        r'/ConceptMap/$translate',
+        (Request req) => translateHandler(req, dbInterface),
+      )
+      // CodeSystem $subsumes
+      ..get(
+        r'/CodeSystem/<id>/$subsumes',
+        (Request req, String id) => subsumesHandler(req, dbInterface, id),
+      )
+      ..post(
+        r'/CodeSystem/<id>/$subsumes',
+        (Request req, String id) => subsumesHandler(req, dbInterface, id),
+      )
+      ..get(
+        r'/CodeSystem/$subsumes',
+        (Request req) => subsumesHandler(req, dbInterface),
+      )
+      ..post(
+        r'/CodeSystem/$subsumes',
+        (Request req) => subsumesHandler(req, dbInterface),
+      )
       // Backup/Restore endpoints
       ..post(r'/$backup',
           (Request req) => backupHandler(req, dbInterface))

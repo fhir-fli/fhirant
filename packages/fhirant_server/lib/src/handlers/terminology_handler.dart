@@ -724,3 +724,365 @@ Response _errorResponse(int statusCode, String message) {
     headers: {'Content-Type': 'application/json'},
   );
 }
+
+// ── NamingSystem $preferred-id ─────────────────────────────────────────
+
+/// Handler for NamingSystem/$preferred-id.
+///
+/// Returns the preferred identifier of the requested type for a NamingSystem.
+/// Parameters: id (NamingSystem id or name), type (oid|uri|uuid|other).
+Future<Response> preferredIdHandler(
+  Request request,
+  FhirAntDb dbInterface,
+) async {
+  try {
+    final params = await _extractOperationParams(request);
+
+    final id = params['id'] as String?;
+    final type = params['type'] as String?;
+
+    if (id == null) {
+      return _errorResponse(400, 'Parameter "id" is required');
+    }
+    if (type == null) {
+      return _errorResponse(400, 'Parameter "type" is required');
+    }
+
+    // Try to find the NamingSystem by resource id first, then by name
+    fhir.NamingSystem? namingSystem;
+    final byId = await dbInterface.getResource(
+        fhir.R4ResourceType.NamingSystem, id);
+    if (byId != null && byId is fhir.NamingSystem) {
+      namingSystem = byId;
+    } else {
+      // Search by name
+      final results = await dbInterface.search(
+        resourceType: fhir.R4ResourceType.NamingSystem,
+        searchParameters: {'name': [id]},
+        count: 1,
+      );
+      if (results.isNotEmpty && results.first is fhir.NamingSystem) {
+        namingSystem = results.first as fhir.NamingSystem;
+      }
+    }
+
+    if (namingSystem == null) {
+      return _errorResponse(404, 'NamingSystem not found: $id');
+    }
+
+    // Find the uniqueId entry matching the requested type.
+    // Prefer entries with preferred=true.
+    fhir.NamingSystemUniqueId? match;
+    fhir.NamingSystemUniqueId? preferredMatch;
+
+    for (final uid in namingSystem.uniqueId) {
+      if (uid.type.valueString == type) {
+        match ??= uid;
+        if (uid.preferred?.valueBoolean == true) {
+          preferredMatch = uid;
+        }
+      }
+    }
+
+    final chosen = preferredMatch ?? match;
+    if (chosen == null) {
+      return _errorResponse(
+          404, 'No uniqueId of type "$type" found in NamingSystem');
+    }
+
+    final result = fhir.Parameters(parameter: [
+      fhir.ParametersParameter(
+        name: fhir.FhirString('result'),
+        valueString: chosen.value,
+      ),
+    ]);
+
+    FhirantLogging().logInfo(
+        'NamingSystem \$preferred-id: found $type for "$id"');
+    return Response.ok(
+      result.toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+        'Terminology \$preferred-id failed', e, stackTrace);
+    return _errorResponse(500, 'Internal error: $e');
+  }
+}
+
+// ── ConceptMap $translate ──────────────────────────────────────────────
+
+/// Handler for ConceptMap/$translate.
+///
+/// Translates a code from one value set to another using a ConceptMap.
+/// Parameters: code, system, source, target, coding, url.
+Future<Response> translateHandler(
+  Request request,
+  FhirAntDb dbInterface, [
+  String? id,
+]) async {
+  try {
+    final params = await _extractOperationParams(request);
+
+    final code = params['code'] as String?;
+    final system = params['system'] as String?;
+    final source = params['source'] as String?;
+    final target = params['target'] as String?;
+    final url = params['url'] as String?;
+    final coding = params['coding'] as Map<String, dynamic>?;
+
+    final effectiveCode = code ?? (coding?['code'] as String?);
+    final effectiveSystem = system ?? (coding?['system'] as String?);
+
+    if (effectiveCode == null) {
+      return _errorResponse(
+          400, 'Parameter "code" or "coding" is required');
+    }
+
+    // Find the ConceptMap
+    fhir.ConceptMap? conceptMap;
+    if (id != null) {
+      final resource = await dbInterface.getResource(
+          fhir.R4ResourceType.ConceptMap, id);
+      if (resource == null) {
+        return _errorResponse(404, 'ConceptMap/$id not found');
+      }
+      conceptMap = resource as fhir.ConceptMap;
+    } else if (url != null) {
+      conceptMap = await _findConceptMapByUrl(url, dbInterface);
+    } else if (source != null || target != null) {
+      // Search by source and/or target
+      final searchParams = <String, List<String>>{};
+      if (source != null) searchParams['source'] = [source];
+      if (target != null) searchParams['target'] = [target];
+      final results = await dbInterface.search(
+        resourceType: fhir.R4ResourceType.ConceptMap,
+        searchParameters: searchParams,
+        count: 1,
+      );
+      if (results.isNotEmpty && results.first is fhir.ConceptMap) {
+        conceptMap = results.first as fhir.ConceptMap;
+      }
+    }
+
+    if (conceptMap == null) {
+      return _errorResponse(404, 'ConceptMap not found');
+    }
+
+    // Search through groups for a matching source code
+    if (conceptMap.group != null) {
+      for (final group in conceptMap.group!) {
+        // Check if the group's source system matches
+        final groupSource = group.source?.valueString;
+        if (effectiveSystem != null &&
+            groupSource != null &&
+            effectiveSystem != groupSource) {
+          continue;
+        }
+
+        for (final element in group.element) {
+          if (element.code?.valueString == effectiveCode) {
+            // Found the source code — return the first target
+            if (element.target != null && element.target!.isNotEmpty) {
+              final t = element.target!.first;
+              final matchParams = <fhir.ParametersParameter>[
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('equivalence'),
+                  valueCode: fhir.FhirCode(
+                      t.equivalence.valueString ?? 'equivalent'),
+                ),
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('concept'),
+                  valueCoding: fhir.Coding(
+                    system: group.target,
+                    code: t.code,
+                    display: t.display,
+                  ),
+                ),
+              ];
+
+              final result = fhir.Parameters(parameter: [
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('result'),
+                  valueBoolean: fhir.FhirBoolean(true),
+                ),
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('match'),
+                  part_: matchParams,
+                ),
+              ]);
+
+              FhirantLogging().logInfo(
+                  'ConceptMap \$translate: translated "$effectiveCode"');
+              return Response.ok(
+                result.toJsonString(),
+                headers: {'Content-Type': 'application/json'},
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // No match found
+    final result = fhir.Parameters(parameter: [
+      fhir.ParametersParameter(
+        name: fhir.FhirString('result'),
+        valueBoolean: fhir.FhirBoolean(false),
+      ),
+    ]);
+
+    FhirantLogging().logInfo(
+        'ConceptMap \$translate: no match for "$effectiveCode"');
+    return Response.ok(
+      result.toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+        'Terminology \$translate failed', e, stackTrace);
+    return _errorResponse(500, 'Internal error: $e');
+  }
+}
+
+/// Find a ConceptMap by its canonical URL.
+Future<fhir.ConceptMap?> _findConceptMapByUrl(
+    String url, FhirAntDb dbInterface) async {
+  final results = await dbInterface.search(
+    resourceType: fhir.R4ResourceType.ConceptMap,
+    searchParameters: {'url': [url]},
+    count: 1,
+  );
+  if (results.isEmpty) return null;
+  return results.first as fhir.ConceptMap;
+}
+
+// ── CodeSystem $subsumes ───────────────────────────────────────────────
+
+/// Handler for CodeSystem/$subsumes.
+///
+/// Tests the subsumption relationship between two codes.
+/// Parameters: codeA, codeB, system, codingA, codingB.
+Future<Response> subsumesHandler(
+  Request request,
+  FhirAntDb dbInterface, [
+  String? id,
+]) async {
+  try {
+    final params = await _extractOperationParams(request);
+
+    final codeA = params['codeA'] as String?;
+    final codeB = params['codeB'] as String?;
+    final system = params['system'] as String?;
+    final codingA = params['codingA'] as Map<String, dynamic>?;
+    final codingB = params['codingB'] as Map<String, dynamic>?;
+
+    final effectiveCodeA = codeA ?? (codingA?['code'] as String?);
+    final effectiveCodeB = codeB ?? (codingB?['code'] as String?);
+    final effectiveSystem =
+        system ?? (codingA?['system'] as String?) ?? (codingB?['system'] as String?);
+
+    if (effectiveCodeA == null || effectiveCodeB == null) {
+      return _errorResponse(
+          400, 'Parameters "codeA" and "codeB" (or "codingA"/"codingB") '
+          'are required');
+    }
+
+    // Find the CodeSystem
+    fhir.CodeSystem? codeSystem;
+    if (id != null) {
+      final resource = await dbInterface.getResource(
+          fhir.R4ResourceType.CodeSystem, id);
+      if (resource == null) {
+        return _errorResponse(404, 'CodeSystem/$id not found');
+      }
+      codeSystem = resource as fhir.CodeSystem;
+    } else if (effectiveSystem != null) {
+      codeSystem =
+          await _findCodeSystemByUrl(effectiveSystem, dbInterface);
+      if (codeSystem == null) {
+        return _errorResponse(
+            404, 'CodeSystem not found: $effectiveSystem');
+      }
+    } else {
+      return _errorResponse(
+          400, 'Parameter "system" is required when no id is provided');
+    }
+
+    // Verify both codes exist in the CodeSystem
+    final conceptA = _findConcept(codeSystem.concept, effectiveCodeA);
+    if (conceptA == null) {
+      return _errorResponse(
+          400, 'Code "$effectiveCodeA" not found in CodeSystem');
+    }
+    final conceptB = _findConcept(codeSystem.concept, effectiveCodeB);
+    if (conceptB == null) {
+      return _errorResponse(
+          400, 'Code "$effectiveCodeB" not found in CodeSystem');
+    }
+
+    // Determine subsumption relationship
+    String outcome;
+    if (effectiveCodeA == effectiveCodeB) {
+      outcome = 'equivalent';
+    } else if (_isAncestor(
+        codeSystem.concept, effectiveCodeA, effectiveCodeB)) {
+      outcome = 'subsumes';
+    } else if (_isAncestor(
+        codeSystem.concept, effectiveCodeB, effectiveCodeA)) {
+      outcome = 'subsumed-by';
+    } else {
+      outcome = 'not-subsumed';
+    }
+
+    final result = fhir.Parameters(parameter: [
+      fhir.ParametersParameter(
+        name: fhir.FhirString('outcome'),
+        valueCode: fhir.FhirCode(outcome),
+      ),
+    ]);
+
+    FhirantLogging().logInfo(
+        'CodeSystem \$subsumes: $effectiveCodeA vs $effectiveCodeB = $outcome');
+    return Response.ok(
+      result.toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError(
+        'Terminology \$subsumes failed', e, stackTrace);
+    return _errorResponse(500, 'Internal error: $e');
+  }
+}
+
+/// Check if [ancestor] is an ancestor of [descendant] in the concept
+/// hierarchy. Returns true if [descendant] appears somewhere under
+/// the subtree rooted at [ancestor].
+bool _isAncestor(
+  List<fhir.CodeSystemConcept>? concepts,
+  String ancestor,
+  String descendant,
+) {
+  if (concepts == null) return false;
+  for (final concept in concepts) {
+    if (concept.code.valueString == ancestor) {
+      // ancestor found — check if descendant is in its subtree
+      return _containsCode(concept.concept, descendant);
+    }
+    // Recurse into children
+    if (_isAncestor(concept.concept, ancestor, descendant)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Check if [code] exists anywhere in the given concept tree.
+bool _containsCode(List<fhir.CodeSystemConcept>? concepts, String code) {
+  if (concepts == null) return false;
+  for (final concept in concepts) {
+    if (concept.code.valueString == code) return true;
+    if (_containsCode(concept.concept, code)) return true;
+  }
+  return false;
+}
