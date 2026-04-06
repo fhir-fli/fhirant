@@ -12,69 +12,140 @@ import 'src/services/database_service.dart';
 import 'src/services/server_service.dart';
 import 'src/state/server_state.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(const FhirantStartup());
+}
 
-  // Initialize logging — write to app docs dir on mobile, or skip file logging
-  String? logFilePath;
-  try {
-    final docsDir = await getApplicationDocumentsDirectory();
-    logFilePath = '${docsDir.path}/fhirant_server_logs.json';
-  } catch (_) {
-    // path_provider may fail on some platforms — skip file logging
+/// Shown while the app initializes (database, logging, etc.).
+class FhirantStartup extends StatefulWidget {
+  const FhirantStartup({super.key});
+
+  @override
+  State<FhirantStartup> createState() => _FhirantStartupState();
+}
+
+class _FhirantStartupState extends State<FhirantStartup> {
+  late Future<_InitResult> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = _initialize();
   }
-  FhirantLogging().initialize(logFilePath: logFilePath);
 
-  // Initialize foreground task for Android
-  if (Platform.isAndroid) {
-    FlutterForegroundTask.init(
-      androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'fhirant_server',
-        channelName: 'FHIR ANT Server',
-        channelDescription: 'Keeps the FHIR server running in the background',
-        channelImportance: NotificationChannelImportance.LOW,
-        priority: NotificationPriority.LOW,
-      ),
-      iosNotificationOptions: const IOSNotificationOptions(),
-      foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.nothing(),
-        allowWakeLock: true,
-        allowWifiLock: true,
-      ),
+  Future<_InitResult> _initialize() async {
+    // Initialize logging
+    String? logFilePath;
+    try {
+      final docsDir = await getApplicationDocumentsDirectory();
+      logFilePath = '${docsDir.path}/fhirant_server_logs.json';
+    } catch (_) {
+      // path_provider may fail on some platforms — skip file logging
+    }
+    FhirantLogging().initialize(logFilePath: logFilePath);
+
+    // Initialize foreground task for Android
+    if (Platform.isAndroid) {
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'fhirant_server',
+          channelName: 'FHIR ANT Server',
+          channelDescription:
+              'Keeps the FHIR server running in the background',
+          channelImportance: NotificationChannelImportance.LOW,
+          priority: NotificationPriority.LOW,
+        ),
+        iosNotificationOptions: const IOSNotificationOptions(),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.nothing(),
+          allowWakeLock: true,
+          allowWifiLock: true,
+        ),
+      );
+    }
+
+    // Initialize database
+    final dbService = DatabaseService();
+    await dbService.initialize();
+
+    // Create server service
+    final serverService = ServerService(dbService);
+
+    // Check if onboarding has been completed
+    final showOnboarding = !await isOnboardingComplete();
+
+    return _InitResult(
+      dbService: dbService,
+      serverService: serverService,
+      showOnboarding: showOnboarding,
     );
   }
 
-  // Initialize database
-  final dbService = DatabaseService();
-  await dbService.initialize();
-
-  // Create server service
-  final serverService = ServerService(dbService);
-
-  // Check if onboarding has been completed
-  final showOnboarding = !await isOnboardingComplete();
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ServerState(
-        dbService: dbService,
-        serverService: serverService,
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'FHIR ANT',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
       ),
-      child: FhirantApp(showOnboarding: showOnboarding),
-    ),
-  );
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: FutureBuilder<_InitResult>(
+        future: _initFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _ErrorScreen(
+              error: snapshot.error!,
+              onRetry: () => setState(() => _initFuture = _initialize()),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const _LoadingScreen();
+          }
+          final result = snapshot.data!;
+          return ChangeNotifierProvider(
+            create: (_) => ServerState(
+              dbService: result.dbService,
+              serverService: result.serverService,
+            ),
+            child: _AppShell(showOnboarding: result.showOnboarding),
+          );
+        },
+      ),
+    );
+  }
 }
 
-class FhirantApp extends StatefulWidget {
+class _InitResult {
+  final DatabaseService dbService;
+  final ServerService serverService;
   final bool showOnboarding;
 
-  const FhirantApp({super.key, this.showOnboarding = false});
-
-  @override
-  State<FhirantApp> createState() => _FhirantAppState();
+  _InitResult({
+    required this.dbService,
+    required this.serverService,
+    required this.showOnboarding,
+  });
 }
 
-class _FhirantAppState extends State<FhirantApp> with WidgetsBindingObserver {
+class _AppShell extends StatefulWidget {
+  final bool showOnboarding;
+
+  const _AppShell({required this.showOnboarding});
+
+  @override
+  State<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -90,36 +161,106 @@ class _FhirantAppState extends State<FhirantApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (Platform.isIOS && state == AppLifecycleState.paused) {
-      // Stop the server when the app goes to the background on iOS
       context.read<ServerState>().stopServer();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show onboarding on first launch, otherwise dashboard
     Widget home = widget.showOnboarding
         ? const OnboardingScreen()
         : const DashboardScreen();
     if (Platform.isAndroid) {
       home = WithForegroundTask(child: home);
     }
+    return home;
+  }
+}
 
-    return MaterialApp(
-      title: 'FHIR ANT',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.dark,
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.dns_rounded,
+              size: 64,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'FHIR ANT',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 32),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Initializing...',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        useMaterial3: true,
       ),
-      home: home,
+    );
+  }
+}
+
+class _ErrorScreen extends StatelessWidget {
+  final Object error;
+  final VoidCallback onRetry;
+
+  const _ErrorScreen({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Failed to start',
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                error.toString(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
