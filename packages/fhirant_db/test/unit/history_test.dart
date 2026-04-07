@@ -187,13 +187,13 @@ void main() {
           await db.getResource(fhir.R4ResourceType.Patient, 'hist-4');
       expect(after, isNull);
 
-      // Verify history entries are still present
+      // Verify history entries are still present (original + deletion tombstone)
       final history = await db.getResourceHistory(
         fhir.R4ResourceType.Patient,
         'hist-4',
       );
       expect(history, isNotEmpty);
-      expect(history.length, equals(1));
+      expect(history.length, equals(2));
     });
   });
 }

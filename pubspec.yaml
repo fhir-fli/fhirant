@@ -8,6 +8,8 @@ dependencies:
 dependency_overrides:
   fhir_r4:
     path: ../fhir_r4/packages/fhir_r4
+  fhir_r4_db:
+    path: ../fhir_r4/packages/fhir_r4_db
   fhir_r4_path:
     path: ../fhir_r4/packages/fhir_r4_path
   fhir_r4_mapping:

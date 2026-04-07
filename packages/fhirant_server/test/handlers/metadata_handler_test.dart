@@ -27,7 +27,7 @@ void main() {
       expect(cs.kind, equals(fhir.CapabilityStatementKind.instance));
       expect(cs.fhirVersion, equals(fhir.FHIRVersion.value430));
       expect(
-        cs.format?.map((f) => f.valueString).toList() ?? [],
+        cs.format.map((f) => f.valueString).toList(),
         contains('json'),
       );
     });

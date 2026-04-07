@@ -103,14 +103,14 @@ packages:
       path: "../../../fhir_r4/packages/fhir_r4"
       relative: true
     source: path
-    version: "0.4.3"
+    version: "0.5.1"
   fhir_r4_db:
     dependency: "direct main"
     description:
       path: "../../../fhir_r4/packages/fhir_r4_db"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.5.1"
   file:
     dependency: transitive
     description:

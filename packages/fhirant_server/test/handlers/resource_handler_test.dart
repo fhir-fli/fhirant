@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:mocktail/src/mocktail.dart' show registerFallbackValue;
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:shelf/shelf.dart';

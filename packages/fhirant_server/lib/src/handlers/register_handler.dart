@@ -75,7 +75,7 @@ Future<Response> registerHandler(
         return Response(400,
             body: jsonEncode({'error': 'scopes must be an array of strings'}));
       }
-      final scopeStrings = rawScopes.cast<String>() as List<String>;
+      final scopeStrings = rawScopes.cast<String>();
       for (final s in scopeStrings) {
         if (SmartScope.parse(s) == null) {
           return Response(400,

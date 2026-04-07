@@ -5,6 +5,7 @@
 /// These replace Drift-generated classes so that FhirAntDb can extend FhirDb
 /// without needing its own @DriftDatabase annotation or code generation.
 /// Field names match the previous Drift-generated classes exactly.
+library;
 
 import 'package:drift/drift.dart';
 

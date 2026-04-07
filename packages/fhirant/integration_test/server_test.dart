@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:fhirant/main.dart' show FhirantApp;
+import 'package:fhirant/main.dart' show FhirantStartup;
 import 'package:fhirant/src/services/database_service.dart';
 import 'package:fhirant/src/services/server_service.dart';
 import 'package:fhirant/src/state/server_state.dart';
@@ -67,7 +67,7 @@ void main() {
             dbService: dbService,
             serverService: serverService,
           ),
-          child: const FhirantApp(),
+          child: const FhirantStartup(),
         ),
       );
       await tester.pumpAndSettle();
@@ -88,7 +88,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: state,
-          child: const FhirantApp(),
+          child: const FhirantStartup(),
         ),
       );
       await tester.pumpAndSettle();
