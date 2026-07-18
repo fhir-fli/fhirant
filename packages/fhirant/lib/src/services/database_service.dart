@@ -4,8 +4,6 @@ import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
-import 'package:sqlite3/open.dart';
 
 const _encryptionKeyName = 'fhirant_db_encryption_key';
 
@@ -20,11 +18,6 @@ class DatabaseService {
   bool get isInitialized => _db != null;
 
   Future<void> initialize() async {
-    // Load SQLCipher native library on Android
-    if (Platform.isAndroid) {
-      open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
-    }
-
     // Get or generate encryption key
     const secureStorage = FlutterSecureStorage();
     var encryptionKey = await secureStorage.read(key: _encryptionKeyName);
@@ -43,10 +36,17 @@ class DatabaseService {
     }
     final dbFile = File('${dbDir.path}/fhirant.db');
 
+    // SQLite is built from the sqlite3mc source (SQLite3 Multiple Ciphers)
+    // via the build hook declared in pubspec.yaml. The cipher/legacy PRAGMAs
+    // select the SQLCipher-v4-compatible scheme so databases created by the
+    // previous sqlcipher_flutter_libs builds keep opening.
     final nativeDb = NativeDatabase(
       dbFile,
       setup: (rawDb) {
-        rawDb.execute("PRAGMA key = '$encryptionKey';");
+        rawDb
+          ..execute("PRAGMA cipher = 'sqlcipher';")
+          ..execute('PRAGMA legacy = 4;')
+          ..execute("PRAGMA key = '$encryptionKey';");
         rawDb.config.doubleQuotedStringLiterals = false;
       },
     );

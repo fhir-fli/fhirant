@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:antlr4/antlr4.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_cql/fhir_r4_cql.dart';
 import 'package:fhirant_db/fhirant_db.dart';
@@ -423,7 +422,7 @@ Future<Map<String, dynamic>> _buildContext(
 
   // Load data from inline bundle
   if (params.dataBundle != null) {
-    context.addAll(BundleDataProvider.fromBundle(params.dataBundle!));
+    context.addAll(_bundleToContext(params.dataBundle!));
   }
 
   // Load patient context from subject reference
@@ -465,19 +464,34 @@ Future<Map<String, dynamic>> _buildContext(
   return context;
 }
 
-/// Parse CQL source text into a CqlLibrary using the ANTLR pipeline.
-CqlLibrary _parseCql(String cqlSource) {
-  final input = InputStream.fromString(cqlSource);
-  final lexer = cqlLexer(input);
-  final tokens = CommonTokenStream(lexer);
-  final parser = cqlParser(tokens);
-  parser.addErrorListener(ElmErrorListener());
-  parser.buildParseTree = true;
+/// Parse CQL source text into a CqlLibrary (CQL -> ELM translation).
+CqlLibrary _parseCql(String cqlSource) => libraryFromCql(cqlSource);
 
-  final libraryContext = parser.library_();
-  final visitor = CqlBaseVisitor();
-  visitor.visitLibrary(libraryContext);
-  return visitor.library;
+/// Converts a FHIR Bundle (as JSON) into the `Map<String, dynamic>` context
+/// format the CQL engine expects: `Patient` as a single resource (CQL uses
+/// `context Patient`), every other resource type grouped into a list.
+Map<String, dynamic> _bundleToContext(Map<String, dynamic> bundle) {
+  final context = <String, dynamic>{};
+  final entries = bundle['entry'];
+  if (entries is! List) return context;
+
+  for (final entry in entries) {
+    if (entry is! Map<String, dynamic>) continue;
+    final resource = entry['resource'];
+    if (resource is! Map<String, dynamic>) continue;
+
+    final resourceType = resource['resourceType'];
+    if (resourceType is! String || resourceType.isEmpty) continue;
+
+    if (resourceType == 'Patient') {
+      context['Patient'] = resource;
+    } else {
+      (context.putIfAbsent(resourceType, () => <dynamic>[]) as List)
+          .add(resource);
+    }
+  }
+
+  return context;
 }
 
 /// Load common resource types for a patient from the database.
@@ -564,6 +578,29 @@ Map<String, dynamic>? _resultToParameter(String name, dynamic value) {
   }
   if (value is String) {
     return {'name': name, 'valueString': value};
+  }
+
+  // CQL engine primitive types (package:cql cql_primitives)
+  if (value is CqlBoolean) {
+    return {'name': name, 'valueBoolean': value.valueBoolean};
+  }
+  if (value is CqlInteger) {
+    return {'name': name, 'valueInteger': value.valueInt};
+  }
+  if (value is CqlDecimal) {
+    return {'name': name, 'valueDecimal': value.valueNum};
+  }
+  if (value is CqlString) {
+    return {'name': name, 'valueString': value.valueString};
+  }
+  if (value is CqlDateTime) {
+    return {'name': name, 'valueDateTime': value.valueString};
+  }
+  if (value is CqlDate) {
+    return {'name': name, 'valueDate': value.valueString};
+  }
+  if (value is CqlTime) {
+    return {'name': name, 'valueTime': value.valueString};
   }
 
   // FHIR primitive types

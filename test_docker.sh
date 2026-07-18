@@ -248,7 +248,9 @@ echo "=== Test: Read deleted Patient ==="
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/Patient/$PATIENT_ID" \
   -H "X-Forwarded-For: $TEST_IP2" \
   -H "Authorization: Bearer $TOKEN")
-assert_status "GET deleted patient returns 404" 404 "$STATUS"
+# FHIR spec: reading a deleted resource returns 410 Gone when the server
+# tracks deletions (fhirant keeps delete tombstones in resource history).
+assert_status "GET deleted patient returns 410" 410 "$STATUS"
 echo ""
 
 # --- Summary ---

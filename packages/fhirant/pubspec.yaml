@@ -12,8 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # FHIR core
-  fhir_r4:
-    path: ../../../fhir_r4/packages/fhir_r4
+  fhir_r4: ^0.6.1
 
   # FHIRant packages
   fhirant_server:
@@ -25,8 +24,7 @@ dependencies:
 
   # Database
   drift: ^2.29.0
-  sqlite3: ^2.4.6
-  sqlcipher_flutter_libs: ^0.6.4
+  sqlite3: ^3.1.5
 
   # Platform services
   path_provider: ^2.1.5
@@ -53,19 +51,14 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-dependency_overrides:
-  fhir_r4:
-    path: ../../../fhir_r4/packages/fhir_r4
-  fhir_r4_path:
-    path: ../../../fhir_r4/packages/fhir_r4_path
-  fhir_r4_cql:
-    path: ../../../fhir_r4/packages/fhir_r4_cql
-  fhir_r4_mapping:
-    path: ../../../fhir_r4/packages/fhir_r4_mapping
-  fhir_r4_validation:
-    path: ../../../fhir_r4/packages/fhir_r4_validation
-  cicada:
-    path: ../../../cicada/cicada
+# Build SQLite from the sqlite3mc source (SQLite3 Multiple Ciphers) so the
+# on-device database keeps SQLCipher-compatible encryption (see
+# DatabaseService cipher PRAGMAs). Replaces sqlcipher_flutter_libs, which is
+# unsupported with sqlite3 3.x build hooks.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 flutter:
   uses-material-design: true

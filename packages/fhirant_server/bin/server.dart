@@ -6,7 +6,6 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
-import 'package:fhirant_server/src/utils/sqlcipher_loader.dart';
 
 void main(List<String> arguments) async {
   final logger = FhirantLogging();
@@ -14,7 +13,6 @@ void main(List<String> arguments) async {
   final parser = ArgParser()
     ..addOption('port', abbr: 'p', defaultsTo: '8080', help: 'Server port')
     ..addOption('db-path', defaultsTo: 'data/db', help: 'Database file path')
-    ..addOption('sqlcipher-path', help: 'Path to SQLCipher library')
     ..addOption('config', abbr: 'c', help: 'Path to config file (YAML)')
     ..addFlag('https', defaultsTo: false, help: 'Enable HTTPS')
     ..addOption('cert-path', help: 'Path to HTTPS certificate file')
@@ -50,15 +48,6 @@ void main(List<String> arguments) async {
     );
   }
 
-  // Load SQLCipher with SqlCipherLoader
-  try {
-    SqlCipherLoader.load(customPath: args['sqlcipher-path']);
-    logger.logInfo('SQLCipher loaded successfully');
-  } catch (e, stackTrace) {
-    logger.logError('Failed to load SQLCipher', e, stackTrace);
-    exit(1);
-  }
-
   // Initialize database
   logger.logInfo('Initializing database at $dbPath');
   final dbDir = Directory(dbPath);
@@ -67,10 +56,17 @@ void main(List<String> arguments) async {
   }
 
   final dbFile = File('$dbPath/fhirant.db');
+  // SQLite is built from the sqlite3mc source (SQLite3 Multiple Ciphers)
+  // via the build hook declared in pubspec.yaml. The cipher/legacy PRAGMAs
+  // select the SQLCipher-v4-compatible scheme so databases created by the
+  // previous SQLCipher-based builds keep opening.
   final nativeDb = NativeDatabase(
     dbFile,
     setup: (rawDb) {
-      rawDb.execute("PRAGMA key = '$encryptionKey';");
+      rawDb
+        ..execute("PRAGMA cipher = 'sqlcipher';")
+        ..execute('PRAGMA legacy = 4;')
+        ..execute("PRAGMA key = '$encryptionKey';");
       rawDb.config.doubleQuotedStringLiterals = false;
     },
   );

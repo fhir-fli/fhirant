@@ -3,21 +3,20 @@
 # Build context must be the parent monorepo directory (fhir/):
 #   cd /path/to/fhir && docker build -f fhirant/Dockerfile -t fhirant .
 #
-# This is required because fhirant has path dependencies on sibling packages.
+# This is required because fhirant_server has a path dependency on cicada
+# (unpublished). The fhir_r4 family resolves from pub.dev.
 
 FROM dart:stable AS build
 
+# The sqlite3 build hook compiles SQLite from the sqlite3mc source
+# (SQLite3 Multiple Ciphers — SQLCipher-compatible encryption), which
+# needs a C toolchain.
+RUN apt-get update && apt-get install -y --no-install-recommends clang && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy fhir_r4 packages (path dependencies)
-COPY fhir_r4/packages/fhir_r4/ /app/fhir_r4/packages/fhir_r4/
-COPY fhir_r4/packages/fhir_r4_path/ /app/fhir_r4/packages/fhir_r4_path/
-COPY fhir_r4/packages/fhir_r4_mapping/ /app/fhir_r4/packages/fhir_r4_mapping/
-COPY fhir_r4/packages/fhir_r4_validation/ /app/fhir_r4/packages/fhir_r4_validation/
-COPY fhir_r4/packages/fhir_r4_cql/ /app/fhir_r4/packages/fhir_r4_cql/
-COPY fhir_r4/packages/fhir_r4_db/ /app/fhir_r4/packages/fhir_r4_db/
-
-# Copy cicada (immunization forecasting dependency)
+# Copy cicada (immunization forecasting dependency — unpublished path dep)
 COPY cicada/cicada/ /app/cicada/cicada/
 
 # Copy fhirant packages
@@ -28,23 +27,21 @@ COPY fhirant/packages/fhirant_server/ /app/fhirant/packages/fhirant_server/
 # Resolve dependencies
 RUN cd /app/fhirant/packages/fhirant_server && dart pub get
 
-# Compile to native executable
+# Compile to a native bundle (dart build cli runs the sqlite3mc build hook
+# and places libsqlite3mc.so next to the executable; `dart compile exe`
+# does not support build hooks)
 RUN cd /app/fhirant/packages/fhirant_server && \
-    dart compile exe bin/server.dart -o /app/server
+    dart build cli -o /app/out
 
 # --- Runtime stage ---
-# Must match the glibc version that libsqlcipher.so was compiled against.
-# dart:stable is based on Debian with a recent glibc.
 FROM dart:stable
 
-COPY --from=build /app/server /app/server
-COPY --from=build /app/fhirant/packages/fhirant_server/lib/sqlcipher/linux/libsqlcipher.so /app/lib/libsqlcipher.so
+# bundle/ contains bin/server plus lib/libsqlite3mc.so, which the
+# executable resolves relative to itself
+COPY --from=build /app/out/bundle/ /app/
 COPY --from=build /app/fhirant/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
 COPY --from=build /app/fhirant/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
 
-# Ensure the dynamic linker can find libsqlcipher
-ENV LD_LIBRARY_PATH=/app/lib
-
 EXPOSE 8080
 
-CMD ["/app/server", "--port", "8080", "--db-path", "/data", "--sqlcipher-path", "/app/lib/libsqlcipher.so"]
+CMD ["/app/bin/server", "--port", "8080", "--db-path", "/data"]

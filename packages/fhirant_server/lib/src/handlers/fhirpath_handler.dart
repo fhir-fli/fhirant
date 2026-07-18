@@ -5,6 +5,13 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
+/// Shared FHIRPath engine — created once (creation is async and non-trivial)
+/// and reused across requests.
+Future<FHIRPathEngine>? _fhirPathEngineFuture;
+
+Future<FHIRPathEngine> get _fhirPathEngine =>
+    _fhirPathEngineFuture ??= FHIRPathEngine.create(WorkerContext());
+
 /// FHIRPath Handler - Evaluate FHIRPath expressions against resources
 Future<Response> fhirPathHandler(
   Request request,
@@ -117,11 +124,10 @@ Future<Response> fhirPathHandler(
       );
     }
 
-    // Evaluate FHIRPath expression using walkFhirPath (simpler API)
-    final result = await walkFhirPath(
-      context: resource,
-      pathExpression: expression,
-    );
+    // Evaluate the FHIRPath expression
+    final engine = await _fhirPathEngine;
+    final result = (await engine.evaluate(resource, engine.parse(expression)))
+        .cast<fhir.FhirBase>();
 
     // Convert result to JSON
     final resultJson = result.map((e) => e.toJson()).toList();

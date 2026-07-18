@@ -26,7 +26,7 @@ packages:
     source: hosted
     version: "10.2.0"
   antlr4:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: antlr4
       sha256: "752b4a6e4ad97953652a2b2bbf5377f46c94b579d3372b50080c7e5858234a05"
@@ -88,6 +88,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.2"
+  code_assets:
+    dependency: transitive
+    description:
+      name: code_assets
+      sha256: bf394f466ba9205f1812a0433b392d6af280f155f56651eda7c18cc32ed493b8
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
   collection:
     dependency: transitive
     description:
@@ -112,6 +120,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.15.0"
+  cql:
+    dependency: transitive
+    description:
+      name: cql
+      sha256: b7e88e68c807641ee8f3c8b3193458793858c045b80412b06572d8161293f600
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.2"
   crypto:
     dependency: "direct main"
     description:
@@ -132,10 +148,10 @@ packages:
     dependency: "direct main"
     description:
       name: drift
-      sha256: "970cd188fddb111b26ea6a9b07a62bf5c2432d74147b8122c67044ae3b97e99e"
+      sha256: "84688491040b0ceb26575709a84d701c84ad4df4d8aff020adf6d85f155fb0dd"
       url: "https://pub.dev"
     source: hosted
-    version: "2.31.0"
+    version: "2.34.2"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -152,56 +168,78 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  fhir_node:
+    dependency: transitive
+    description:
+      name: fhir_node
+      sha256: "904b145b4a967c2b7a94f3b2f9946fd9136bf1e0d3b879a9b191e7a507cf29da"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
+  fhir_path:
+    dependency: transitive
+    description:
+      name: fhir_path
+      sha256: f133ab2dd55e23b243e994815d2c972d09ef16cf430bbd3617cc445e6d97979f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
   fhir_r4:
     dependency: "direct main"
     description:
-      path: "../../../fhir_r4/packages/fhir_r4"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4
+      sha256: eec0907c6d8cb4bff1a8f46eaa4511da46cd65028d411484337694e1bf0f0f68
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.1"
   fhir_r4_bulk:
     dependency: transitive
     description:
       name: fhir_r4_bulk
-      sha256: "57ab0e0ddac1b864a7283b8543c42507a77c5a646624427ca9b5750182aff921"
+      sha256: bab28ea24760017af02c66ba9383a009ec64ae4984925eb02f13d75bee18169c
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.2"
+    version: "0.6.0"
   fhir_r4_cql:
     dependency: "direct main"
     description:
-      path: "../../../fhir_r4/packages/fhir_r4_cql"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4_cql
+      sha256: fdaef25723baa106d9c114ae8b6ec3c7daa738ceac96e39cf5e267a7687d69a0
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   fhir_r4_db:
     dependency: transitive
     description:
-      path: "../../../fhir_r4/packages/fhir_r4_db"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4_db
+      sha256: "46040cb70dcc675cc42498f83899ad0d60679b162b50a0a8f024bcff72923dbb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   fhir_r4_mapping:
     dependency: "direct main"
     description:
-      path: "../../../fhir_r4/packages/fhir_r4_mapping"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4_mapping
+      sha256: "92846790904867a5ffb75b4a7e3d2965fb0975b5f7ac3b371aadfc0608f75183"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   fhir_r4_path:
     dependency: "direct main"
     description:
-      path: "../../../fhir_r4/packages/fhir_r4_path"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4_path
+      sha256: d3450ce822728064419a34d12e145d4679df15c3c99e65f87250c009dd26afe0
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   fhir_r4_validation:
     dependency: "direct main"
     description:
-      path: "../../../fhir_r4/packages/fhir_r4_validation"
-      relative: true
-    source: path
-    version: "0.5.1"
+      name: fhir_r4_validation
+      sha256: "7ee2b307c93afa16a6c715fe54ca972ff4ee2b959af2e5eb5ad952c4c180b09e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   fhirant_db:
     dependency: "direct main"
     description:
@@ -248,6 +286,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.3"
+  hooks:
+    dependency: transitive
+    description:
+      name: hooks
+      sha256: "9a62a50b50b769a737bc0a8ff381f333529df3ab746b2f6b02e83760231455ba"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   http:
     dependency: transitive
     description:
@@ -292,10 +338,10 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: cb09e7dac6210041fad964ed7fbee004f14258b4eca4040f72d1234062ace4c8
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
       url: "https://pub.dev"
     source: hosted
-    version: "4.11.0"
+    version: "4.12.0"
   logging:
     dependency: transitive
     description:
@@ -336,6 +382,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  native_toolchain_c:
+    dependency: transitive
+    description:
+      name: native_toolchain_c
+      sha256: f9c168717100ae6d9fee9ffb0be379bf1f8b26b0f6bcbd4fdddcd931993a6a72
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.19.2"
   node_preamble:
     dependency: transitive
     description:
@@ -400,6 +454,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  record_use:
+    dependency: transitive
+    description:
+      name: record_use
+      sha256: "2551bd8eecfe95d14ae75f6021ad0248be5c27f138c2ec12fcb52b500b3ba1ed"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   riverpod:
     dependency: transitive
     description:
@@ -492,10 +554,10 @@ packages:
     dependency: "direct main"
     description:
       name: sqlite3
-      sha256: "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
+      sha256: "61c7930bebf32c552ac5808c91bf33802e66711c9216090d3b5579c9f862e80c"
       url: "https://pub.dev"
     source: hosted
-    version: "2.9.4"
+    version: "3.4.0"
   stack_trace:
     dependency: transitive
     description:
@@ -572,10 +634,10 @@ packages:
     dependency: transitive
     description:
       name: ucum
-      sha256: b7bcfbbc8057327cc57810127e4166eaa1994040b51594b693c2483c53bf1940
+      sha256: "4050dc5c4b45fe769ef7e2174b1de055eae3447977024b307ff5e0a3172e3302"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.9.0"
   universal_io:
     dependency: transitive
     description:
@@ -665,4 +727,4 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.9.0 <4.0.0"
+  dart: ">=3.10.0 <4.0.0"
