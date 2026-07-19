@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fhirant/main.dart' show FhirantStartup;
 import 'package:fhirant/src/services/database_service.dart';
@@ -48,6 +49,11 @@ void main() {
   }
 
   setUpAll(() async {
+    // A fresh install shows the onboarding screen instead of the dashboard;
+    // mark it complete so the UI tests land on the dashboard.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+
     httpClient = HttpClient();
     dbService = DatabaseService();
     await dbService.initialize();
@@ -58,6 +64,22 @@ void main() {
     await serverService.stop();
     httpClient.close();
   });
+
+  /// Pumps frames until [finder] matches, or fails after [timeout].
+  /// (pumpAndSettle returns as soon as no frame is scheduled, which happens
+  /// while FhirantStartup's real async database init is still pending.)
+  Future<void> pumpUntilFound(
+    WidgetTester tester,
+    Finder finder, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (finder.evaluate().isNotEmpty) return;
+    }
+    fail('Timed out waiting for $finder');
+  }
 
   group('App UI', () {
     testWidgets('launches and shows dashboard', (tester) async {
@@ -70,7 +92,7 @@ void main() {
           child: const FhirantStartup(),
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpUntilFound(tester, find.text('FHIR Server'));
 
       // Verify dashboard elements are present
       expect(find.text('FHIR ANT'), findsOneWidget);
@@ -80,34 +102,23 @@ void main() {
     });
 
     testWidgets('can start server in dev mode', (tester) async {
-      final state = ServerState(
-        dbService: dbService,
-        serverService: serverService,
-      );
+      // FhirantStartup builds and provides its OWN ServerState internally,
+      // so the running state must be observed through the UI, not through
+      // an externally-created ServerState instance.
+      await tester.pumpWidget(const FhirantStartup());
+      await pumpUntilFound(tester, find.byType(Switch));
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: state,
-          child: const FhirantStartup(),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // Verify dev mode switch is present
+      expect(find.byType(Switch), findsOneWidget);
 
-      // Verify dev mode is on by default
-      final devSwitch = find.byType(Switch);
-      expect(devSwitch, findsOneWidget);
-
-      // Set port to our test port
-      state.port = port;
-      await tester.pumpAndSettle();
-
-      // Tap Start
+      // Tap Start and wait for the control card to reach the running state
       await tester.tap(find.text('Start'));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await pumpUntilFound(tester, find.text('Stop'));
+      await pumpUntilFound(tester, find.text('Running'));
 
-      // Server should be running
-      expect(state.status, ServerStatus.running);
-      expect(state.devMode, isTrue);
+      // Stop it again so it doesn't hold the default port
+      await tester.tap(find.text('Stop'));
+      await pumpUntilFound(tester, find.text('Start'));
     });
   });
 
@@ -158,8 +169,7 @@ void main() {
 
     test('CRUD lifecycle works', () async {
       // Create
-      final (createStatus, created) =
-          await request('POST', '/Patient', body: {
+      final (createStatus, created) = await request('POST', '/Patient', body: {
         'resourceType': 'Patient',
         'name': [
           {'family': 'CrudTest'}
@@ -262,8 +272,7 @@ void main() {
       await request('PUT', '/Patient/$id', body: created);
 
       // Get history
-      final (status, body) =
-          await request('GET', '/Patient/$id/_history');
+      final (status, body) = await request('GET', '/Patient/$id/_history');
       expect(status, 200);
       expect(body['resourceType'], 'Bundle');
       expect(body['type'], 'history');
