@@ -7,9 +7,11 @@
 .packages
 build/
 
-# melos
-# melos does NOT want pubspec.lock files to be ignored
 *pubspec_overrides.yaml
+
+# IDE files
+.idea/
+*.iml
 
 # Dart support files
 *.pubspec.lock
