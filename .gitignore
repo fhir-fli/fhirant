@@ -15,3 +15,6 @@ build/
 
 # Dart support files
 *.pubspec.lock
+
+# Flutter-generated plugin metadata
+**/.flutter-plugins-dependencies
