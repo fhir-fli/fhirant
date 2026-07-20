@@ -43,6 +43,7 @@ class FhirAntServer {
     this.maxRequests = 10,
     this.rateLimitDuration = const Duration(seconds: 60),
     this.devMode = false,
+    this.corsAllowOrigin = '*',
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     // Resolve the signing secret without ever falling back to a shared,
@@ -63,6 +64,12 @@ class FhirAntServer {
   final FhirAntDb dbInterface;
   final String exportDir;
   final int maxRequests;
+
+  /// The `Access-Control-Allow-Origin` value for browser clients. Defaults to
+  /// `*` — appropriate for the open LAN/native-client model (fhirant uses
+  /// bearer tokens, not cookies, so this is not a CSRF vector) — but a
+  /// deployment that serves a known web origin can lock it down here.
+  final String corsAllowOrigin;
   final Duration rateLimitDuration;
   late final JwtService _jwtService;
   final DateTime _startTime;
@@ -456,7 +463,9 @@ class FhirAntServer {
         // X-Forwarded-For header.
         .addMiddleware(_trustedClientIpMiddleware())
         .addMiddleware(_logRequestsMiddleware())
-        .addMiddleware(corsMiddleware())
+        .addMiddleware(
+          corsMiddleware(config: CorsConfig(allowOrigin: corsAllowOrigin)),
+        )
         .addMiddleware(contentNegotiationMiddleware());
 
     if (devMode) {
