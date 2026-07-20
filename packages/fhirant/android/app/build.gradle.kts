@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.fhirfli.fhirant"
+        applicationId = "dev.fhirfli.fhirant.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
