@@ -23,7 +23,8 @@ Future<Response> libraryEvaluateHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    FhirantLogging().logInfo('Library/${'evaluate'}: loading Library/$libraryId');
+    FhirantLogging()
+        .logInfo('Library/${'evaluate'}: loading Library/$libraryId');
 
     // Load the Library resource from the database
     final libraryResource = await dbInterface.getResource(
@@ -118,7 +119,9 @@ Future<Response> libraryEvaluateByUrlHandler(
       // Look up by canonical URL
       final results = await dbInterface.search(
         resourceType: fhir.R4ResourceType.Library,
-        searchParameters: {'url': [evalParams.url!]},
+        searchParameters: {
+          'url': [evalParams.url!]
+        },
       );
       if (results.isEmpty) {
         return _errorResponse(
@@ -209,8 +212,7 @@ Future<Response> cqlHandler(
     CqlLibrary cqlLibrary;
     try {
       if (evalParams.elmJson != null) {
-        final elmMap =
-            jsonDecode(evalParams.elmJson!) as Map<String, dynamic>;
+        final elmMap = jsonDecode(evalParams.elmJson!) as Map<String, dynamic>;
         cqlLibrary = CqlLibrary.fromJson(elmMap);
       } else {
         cqlLibrary = _parseCql(evalParams.cqlSource!);
@@ -329,7 +331,8 @@ _EvalParams _parsePlainJson(Map<String, dynamic> json) {
   String? subject = json['subject'] as String?;
   final patientId = json['patientId'] as String?;
   if (subject == null && patientId != null) {
-    subject = patientId.startsWith('Patient/') ? patientId : 'Patient/$patientId';
+    subject =
+        patientId.startsWith('Patient/') ? patientId : 'Patient/$patientId';
   }
 
   return _EvalParams(
@@ -422,7 +425,7 @@ Future<Map<String, dynamic>> _buildContext(
 
   // Load data from inline bundle
   if (params.dataBundle != null) {
-    context.addAll(_bundleToContext(params.dataBundle!));
+    context.addAll(BundleDataProvider.fromBundle(params.dataBundle!));
   }
 
   // Load patient context from subject reference
@@ -467,33 +470,6 @@ Future<Map<String, dynamic>> _buildContext(
 /// Parse CQL source text into a CqlLibrary (CQL -> ELM translation).
 CqlLibrary _parseCql(String cqlSource) => libraryFromCql(cqlSource);
 
-/// Converts a FHIR Bundle (as JSON) into the `Map<String, dynamic>` context
-/// format the CQL engine expects: `Patient` as a single resource (CQL uses
-/// `context Patient`), every other resource type grouped into a list.
-Map<String, dynamic> _bundleToContext(Map<String, dynamic> bundle) {
-  final context = <String, dynamic>{};
-  final entries = bundle['entry'];
-  if (entries is! List) return context;
-
-  for (final entry in entries) {
-    if (entry is! Map<String, dynamic>) continue;
-    final resource = entry['resource'];
-    if (resource is! Map<String, dynamic>) continue;
-
-    final resourceType = resource['resourceType'];
-    if (resourceType is! String || resourceType.isEmpty) continue;
-
-    if (resourceType == 'Patient') {
-      context['Patient'] = resource;
-    } else {
-      (context.putIfAbsent(resourceType, () => <dynamic>[]) as List)
-          .add(resource);
-    }
-  }
-
-  return context;
-}
-
 /// Load common resource types for a patient from the database.
 Future<void> _loadPatientData(
   Map<String, dynamic> context,
@@ -517,7 +493,9 @@ Future<void> _loadPatientData(
     try {
       final results = await dbInterface.search(
         resourceType: type,
-        searchParameters: {'patient': ['Patient/$patientId']},
+        searchParameters: {
+          'patient': ['Patient/$patientId']
+        },
       );
       if (results.isNotEmpty) {
         context[type.name] = results.map((r) => r.toJson()).toList();

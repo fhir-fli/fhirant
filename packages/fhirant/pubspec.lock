@@ -220,58 +220,58 @@ packages:
     dependency: "direct main"
     description:
       name: fhir_r4
-      sha256: eec0907c6d8cb4bff1a8f46eaa4511da46cd65028d411484337694e1bf0f0f68
+      sha256: "627aa618b2ea7499c9568d7ab8cf58469a4e51f38932d724dd119c28dda5d8cc"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.1"
+    version: "0.7.0"
   fhir_r4_bulk:
     dependency: transitive
     description:
       name: fhir_r4_bulk
-      sha256: bab28ea24760017af02c66ba9383a009ec64ae4984925eb02f13d75bee18169c
+      sha256: fbcd101b7edea11d4569f9988b35756d4b3a7d0d13836c51c7581213d5852dea
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhir_r4_cql:
     dependency: transitive
     description:
       name: fhir_r4_cql
-      sha256: fdaef25723baa106d9c114ae8b6ec3c7daa738ceac96e39cf5e267a7687d69a0
+      sha256: "1e9daad7e9e507f86fda8d70b1a422a330107bc3f744bf4c1ed7420da67c006b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhir_r4_db:
     dependency: transitive
     description:
       name: fhir_r4_db
-      sha256: "46040cb70dcc675cc42498f83899ad0d60679b162b50a0a8f024bcff72923dbb"
+      sha256: "098fc46e6051535eac21eea5676b9132900aadf14c6dc6269c8c3cd9f53f0bff"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhir_r4_mapping:
     dependency: transitive
     description:
       name: fhir_r4_mapping
-      sha256: "92846790904867a5ffb75b4a7e3d2965fb0975b5f7ac3b371aadfc0608f75183"
+      sha256: "128d3d748d585ad021c4fbf2230015739ff1099df4c3dc320461a5436b04d803"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhir_r4_path:
     dependency: transitive
     description:
       name: fhir_r4_path
-      sha256: d3450ce822728064419a34d12e145d4679df15c3c99e65f87250c009dd26afe0
+      sha256: d9b4b85784929ac0050a079b0c266b076f10be25430cb839e557e4efe4ca8ca9
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhir_r4_validation:
     dependency: transitive
     description:
       name: fhir_r4_validation
-      sha256: "7ee2b307c93afa16a6c715fe54ca972ff4ee2b959af2e5eb5ad952c4c180b09e"
+      sha256: f264c8a56b63f3618e87707f99d02f6c10b4e9face20cd62cad4f637edbd2b03
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   fhirant_db:
     dependency: "direct main"
     description:
@@ -1008,14 +1008,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.0"
-  universal_io:
-    dependency: transitive
-    description:
-      name: universal_io
-      sha256: f63cbc48103236abf48e345e07a03ce5757ea86285ed313a6a032596ed9301e2
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.1"
   url_launcher:
     dependency: "direct main"
     description:
