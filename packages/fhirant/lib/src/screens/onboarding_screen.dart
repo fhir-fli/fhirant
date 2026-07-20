@@ -257,9 +257,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildFeatureRow(
             theme,
             Icons.shield_rounded,
-            'Dev Mode for testing',
-            'Dev Mode skips authentication so you can explore '
-                'the API immediately. Turn it off for secure access.',
+            'Experimentation vs Secure',
+            'Experimentation mode skips authentication for quick testing with '
+                'sample data. Switch to Secure mode (with an admin account) '
+                'before storing any real patient data.',
           ),
           const SizedBox(height: 24),
           _buildFeatureRow(

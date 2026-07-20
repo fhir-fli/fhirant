@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fhirant/src/state/server_state.dart';
+import 'package:fhirant/src/widgets/admin_setup_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +27,26 @@ class _ServerControlCardState extends State<ServerControlCard> {
   void dispose() {
     _portController.dispose();
     super.dispose();
+  }
+
+  /// Handles the Experimentation/Secure switch. Switching to Secure requires an
+  /// admin account to exist first — otherwise the server would enforce auth
+  /// with no valid credentials, and the first-user bootstrap would let anyone
+  /// claim admin. Prompts to create one when none exists; the switch only
+  /// completes if an admin then exists.
+  Future<void> _onModeChanged(ServerState state, bool experimentation) async {
+    if (experimentation) {
+      state.devMode = true;
+      return;
+    }
+
+    final userCount = await state.db.getUserCount();
+    if (userCount == 0) {
+      if (!mounted) return;
+      final created = await showAdminSetupDialog(context, state.db);
+      if (created != true) return; // no admin created — stay in Experimentation
+    }
+    state.devMode = false;
   }
 
   @override
@@ -129,12 +150,12 @@ class _ServerControlCardState extends State<ServerControlCard> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Dev Mode',
+                        'Authentication',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                     Text(
-                      state.devMode ? 'No Auth' : 'Auth Required',
+                      state.devMode ? 'Experimentation' : 'Secure',
                       style: TextStyle(
                         fontSize: 12,
                         color: state.devMode
@@ -144,15 +165,16 @@ class _ServerControlCardState extends State<ServerControlCard> {
                     ),
                     const SizedBox(width: 8),
                     Switch(
+                      // On = Experimentation (no auth); off = Secure.
                       value: state.devMode,
                       onChanged: state.status == ServerStatus.stopped ||
                               state.status == ServerStatus.error
-                          ? (value) => state.devMode = value
+                          ? (value) => unawaited(_onModeChanged(state, value))
                           : null,
                     ),
                   ],
                 ),
-                if (state.devMode && state.isRunning)
+                if (state.devMode)
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -170,7 +192,8 @@ class _ServerControlCardState extends State<ServerControlCard> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Authentication disabled — for testing only',
+                            'Authentication is disabled. TEST DATA ONLY — do '
+                            'not store real patient data (PHI) in this mode.',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.orange.shade900,
