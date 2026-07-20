@@ -11,18 +11,6 @@ import 'package:drift/drift.dart';
 
 /// A user account in the FHIR server.
 class User {
-  final int id;
-  final String username;
-  final String passwordHash;
-  final String salt;
-  final String role;
-  final bool active;
-  final DateTime createdAt;
-  final DateTime? lastLogin;
-  final String? scopes;
-  final int failedLoginCount;
-  final DateTime? lockedUntil;
-
   const User({
     required this.id,
     required this.username,
@@ -52,6 +40,17 @@ class User {
       lockedUntil: row.readNullable<DateTime>('locked_until'),
     );
   }
+  final int id;
+  final String username;
+  final String passwordHash;
+  final String salt;
+  final String role;
+  final bool active;
+  final DateTime createdAt;
+  final DateTime? lastLogin;
+  final String? scopes;
+  final int failedLoginCount;
+  final DateTime? lockedUntil;
 
   @override
   String toString() =>
@@ -60,22 +59,6 @@ class User {
 
 /// A bulk export job tracked by the FHIR server.
 class ExportJob {
-  final String jobId;
-  final String status;
-  final String requestUrl;
-  final DateTime transactionTime;
-  final DateTime createdAt;
-  final DateTime? completedAt;
-  final String? outputJson;
-  final String? errorJson;
-  final String? resourceTypes;
-  final DateTime? since;
-  final String exportLevel;
-  final String? patientId;
-  final String? groupId;
-  final String? typeFilters;
-  final String? requestedBy;
-
   const ExportJob({
     required this.jobId,
     required this.status,
@@ -113,6 +96,21 @@ class ExportJob {
       requestedBy: row.readNullable<String>('requested_by'),
     );
   }
+  final String jobId;
+  final String status;
+  final String requestUrl;
+  final DateTime transactionTime;
+  final DateTime createdAt;
+  final DateTime? completedAt;
+  final String? outputJson;
+  final String? errorJson;
+  final String? resourceTypes;
+  final DateTime? since;
+  final String exportLevel;
+  final String? patientId;
+  final String? groupId;
+  final String? typeFilters;
+  final String? requestedBy;
 
   @override
   String toString() =>
@@ -121,16 +119,6 @@ class ExportJob {
 
 /// An OAuth 2.0 authorization code for the authorization code flow.
 class AuthorizationCode {
-  final String code;
-  final String clientId;
-  final int userId;
-  final String redirectUri;
-  final String scope;
-  final String? codeChallenge;
-  final String? codeChallengeMethod;
-  final DateTime expiresAt;
-  final bool used;
-
   const AuthorizationCode({
     required this.code,
     required this.clientId,
@@ -156,6 +144,15 @@ class AuthorizationCode {
       used: row.read<bool>('used'),
     );
   }
+  final String code;
+  final String clientId;
+  final int userId;
+  final String redirectUri;
+  final String scope;
+  final String? codeChallenge;
+  final String? codeChallengeMethod;
+  final DateTime expiresAt;
+  final bool used;
 
   @override
   String toString() =>

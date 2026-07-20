@@ -1,11 +1,12 @@
 // bin/server.dart
 import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
-import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
 
 void main(List<String> arguments) async {
@@ -15,19 +16,24 @@ void main(List<String> arguments) async {
     ..addOption('port', abbr: 'p', defaultsTo: '8080', help: 'Server port')
     ..addOption('db-path', defaultsTo: 'data/db', help: 'Database file path')
     ..addOption('config', abbr: 'c', help: 'Path to config file (YAML)')
-    ..addFlag('https', defaultsTo: false, help: 'Enable HTTPS')
+    ..addFlag('https', help: 'Enable HTTPS')
     ..addOption('cert-path', help: 'Path to HTTPS certificate file')
     ..addOption('key-path', help: 'Path to HTTPS private key file')
-    ..addFlag('dev-mode',
-        defaultsTo: false, help: 'Disable authentication (for testing only)')
-    ..addOption('spec-path',
-        defaultsTo: '/app/fhir_spec', help: 'Path to FHIR spec NDJSON files')
+    ..addFlag(
+      'dev-mode',
+      help: 'Disable authentication (for testing only)',
+    )
+    ..addOption(
+      'spec-path',
+      defaultsTo: '/app/fhir_spec',
+      help: 'Path to FHIR spec NDJSON files',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
   try {
     args = parser.parse(arguments);
-    if (args['help']) {
+    if (args['help'] as bool) {
       print('FHIR ANT Server\n\nUsage:\n${parser.usage}');
       exit(0);
     }
@@ -36,8 +42,8 @@ void main(List<String> arguments) async {
     exit(1);
   }
 
-  final port = int.parse(args['port']);
-  final dbPath = args['db-path'];
+  final port = int.parse(args['port'] as String);
+  final dbPath = args['db-path'] as String;
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
 
@@ -98,7 +104,7 @@ void main(List<String> arguments) async {
 
   // Load FHIR spec terminology resources on first boot
   try {
-    await loadSpecResources(db, args['spec-path']);
+    await loadSpecResources(db, args['spec-path'] as String);
   } catch (e, stackTrace) {
     logger.logWarning('Failed to load spec resources: $e');
     logger.logError('Spec loading error', e, stackTrace);
@@ -122,11 +128,14 @@ void main(List<String> arguments) async {
   }
 
   try {
-    if (args['https']) {
-      final certPath = args['cert-path'];
-      final keyPath = args['key-path'];
+    if (args['https'] as bool) {
+      final certPath = args['cert-path'] as String?;
+      final keyPath = args['key-path'] as String?;
 
-      if (!File(certPath).existsSync() || !File(keyPath).existsSync()) {
+      if (certPath == null ||
+          keyPath == null ||
+          !File(certPath).existsSync() ||
+          !File(keyPath).existsSync()) {
         logger.logError('HTTPS certificate or key not found');
         exit(1);
       }

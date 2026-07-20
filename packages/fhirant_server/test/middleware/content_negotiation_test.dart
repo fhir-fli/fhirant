@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('contentNegotiationMiddleware', () {
@@ -12,18 +12,19 @@ void main() {
       middleware = contentNegotiationMiddleware();
     });
 
-    Handler _wrapHandler({
+    Handler wrapHandler({
       String contentType = 'application/json',
       String body = '{"resourceType":"Patient"}',
     }) {
-      final inner = (Request request) async {
+      Future<Response> inner(Request request) async {
         return Response.ok(body, headers: {'content-type': contentType});
-      };
+      }
+
       return middleware(inner);
     }
 
     test('rewrites Content-Type to application/fhir+json', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -40,7 +41,7 @@ void main() {
     });
 
     test('Accept: application/fhir+json passes through', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -57,7 +58,7 @@ void main() {
     });
 
     test('Accept: application/xml returns 406', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -73,7 +74,7 @@ void main() {
     });
 
     test('Accept: application/fhir+xml returns 406', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -86,7 +87,7 @@ void main() {
     });
 
     test('_format=json overrides Accept header', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient?_format=json'),
@@ -99,7 +100,7 @@ void main() {
     });
 
     test('non-JSON responses not rewritten', () async {
-      final handler = _wrapHandler(
+      final handler = wrapHandler(
         contentType: 'text/plain',
         body: 'hello',
       );

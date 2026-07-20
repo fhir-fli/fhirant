@@ -116,7 +116,8 @@ Future<Response> exportKickoffHandler(
     );
 
     // 7. Spawn background processing (fire-and-forget)
-    _processExport(dbInterface, jobId, exportDir, request).catchError((e, st) {
+    _processExport(dbInterface, jobId, exportDir, request)
+        .catchError((Object e, StackTrace st) {
       FhirantLogging().logError('Export job $jobId failed', e, st);
     });
 
@@ -319,7 +320,7 @@ Future<void> _processExport(
       typesToExport = job.resourceTypes!
           .split(',')
           .map((s) => s.trim())
-          .map((s) => fhir.R4ResourceType.fromString(s))
+          .map(fhir.R4ResourceType.fromString)
           .whereType<fhir.R4ResourceType>()
           .toList();
     } else {
@@ -345,14 +346,13 @@ Future<void> _processExport(
             .toList();
       } else {
         typesToExport = compartmentTypes
-            .map((s) => fhir.R4ResourceType.fromString(s))
+            .map(fhir.R4ResourceType.fromString)
             .whereType<fhir.R4ResourceType>()
             .toList();
         // Only export types that actually exist in the DB
         final existingTypes = await dbInterface.getResourceTypes();
         final existingSet = existingTypes.toSet();
-        typesToExport =
-            typesToExport.where((t) => existingSet.contains(t)).toList();
+        typesToExport = typesToExport.where(existingSet.contains).toList();
       }
     }
 
@@ -367,7 +367,9 @@ Future<void> _processExport(
       // Fetch the Group resource
       final groupResource = job.groupId != null
           ? await dbInterface.getResource(
-              fhir.R4ResourceType.FhirGroup, job.groupId!)
+              fhir.R4ResourceType.FhirGroup,
+              job.groupId!,
+            )
           : null;
       if (groupResource == null) {
         await _failJob(dbInterface, jobId, 'Group not found: ${job.groupId}');
@@ -404,7 +406,7 @@ Future<void> _processExport(
       if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
         typeFilter.addAll(job.resourceTypes!.split(',').map((s) => s.trim()));
         // Only keep types that are in the Patient compartment
-        typeFilter.retainWhere((t) => compartmentTypes.contains(t));
+        typeFilter.retainWhere(compartmentTypes.contains);
       }
 
       // Aggregate resource IDs across all patient members

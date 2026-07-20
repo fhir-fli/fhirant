@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('SmartScope.parse', () {
@@ -141,7 +141,10 @@ void main() {
     test('invalid scope strings are skipped', () {
       expect(
         SmartScopeEnforcer.isAuthorized(
-            ['garbage', 'user/Patient.r'], 'Patient', 'r'),
+          ['garbage', 'user/Patient.r'],
+          'Patient',
+          'r',
+        ),
         isTrue,
       );
     });
@@ -173,17 +176,23 @@ void main() {
 
     test('PATCH is update', () {
       expect(
-          SmartScopeEnforcer.methodToPermission('PATCH', '/Patient/123'), 'u');
+        SmartScopeEnforcer.methodToPermission('PATCH', '/Patient/123'),
+        'u',
+      );
     });
 
     test('DELETE is delete', () {
       expect(
-          SmartScopeEnforcer.methodToPermission('DELETE', '/Patient/123'), 'd');
+        SmartScopeEnforcer.methodToPermission('DELETE', '/Patient/123'),
+        'd',
+      );
     });
 
     test('auth routes return null', () {
       expect(
-          SmartScopeEnforcer.methodToPermission('POST', '/auth/login'), isNull);
+        SmartScopeEnforcer.methodToPermission('POST', '/auth/login'),
+        isNull,
+      );
     });
 
     test('metadata returns null', () {
@@ -192,9 +201,12 @@ void main() {
 
     test('.well-known returns null', () {
       expect(
-          SmartScopeEnforcer.methodToPermission(
-              'GET', '/.well-known/smart-configuration'),
-          isNull);
+        SmartScopeEnforcer.methodToPermission(
+          'GET',
+          '/.well-known/smart-configuration',
+        ),
+        isNull,
+      );
     });
   });
 
@@ -205,15 +217,17 @@ void main() {
 
     test('extracts Patient from /Patient/123', () {
       expect(
-          SmartScopeEnforcer.resourceTypeFromPath('/Patient/123'), 'Patient');
+        SmartScopeEnforcer.resourceTypeFromPath('/Patient/123'),
+        'Patient',
+      );
     });
 
     test('returns null for root', () {
       expect(SmartScopeEnforcer.resourceTypeFromPath('/'), isNull);
     });
 
-    test('returns null for \$operations', () {
-      expect(SmartScopeEnforcer.resourceTypeFromPath('/\$export'), isNull);
+    test(r'returns null for $operations', () {
+      expect(SmartScopeEnforcer.resourceTypeFromPath(r'/$export'), isNull);
     });
 
     test('returns null for auth', () {
@@ -228,36 +242,44 @@ void main() {
   group('SmartScopeEnforcer.isPrivilegedSystemOperation', () {
     test('flags root system operations', () {
       for (final path in [
-        '/\$backup',
-        '/\$restore',
-        '/\$export',
-        '/\$export-poll-status/abc',
-        '/\$export-file/abc/Patient.ndjson',
+        r'/$backup',
+        r'/$restore',
+        r'/$export',
+        r'/$export-poll-status/abc',
+        r'/$export-file/abc/Patient.ndjson',
       ]) {
-        expect(SmartScopeEnforcer.isPrivilegedSystemOperation(path), isTrue,
-            reason: path);
+        expect(
+          SmartScopeEnforcer.isPrivilegedSystemOperation(path),
+          isTrue,
+          reason: path,
+        );
       }
     });
 
     test('does not flag instance/type-scoped operations', () {
       for (final path in [
-        '/Patient/\$export', // patient-level: governed by resource scope
-        '/Group/g1/\$export', // group-level
-        '/Patient/123/\$everything',
-        '/CodeSystem/\$lookup',
-        '/\$validate', // compute op, not a whole-DB dump/overwrite
-        '/\$cql',
+        r'/Patient/$export', // patient-level: governed by resource scope
+        r'/Group/g1/$export', // group-level
+        r'/Patient/123/$everything',
+        r'/CodeSystem/$lookup',
+        r'/$validate', // compute op, not a whole-DB dump/overwrite
+        r'/$cql',
         '/Patient',
         '/',
       ]) {
-        expect(SmartScopeEnforcer.isPrivilegedSystemOperation(path), isFalse,
-            reason: path);
+        expect(
+          SmartScopeEnforcer.isPrivilegedSystemOperation(path),
+          isFalse,
+          reason: path,
+        );
       }
     });
 
     test('tolerates a missing leading slash', () {
       expect(
-          SmartScopeEnforcer.isPrivilegedSystemOperation('\$backup'), isTrue);
+        SmartScopeEnforcer.isPrivilegedSystemOperation(r'$backup'),
+        isTrue,
+      );
     });
   });
 
@@ -268,21 +290,27 @@ void main() {
 
     test('a system/ scope authorizes a non-admin role', () {
       expect(
-          SmartScopeEnforcer.isSystemAuthorized(['system/*.rs'], 'clinician'),
-          isTrue);
+        SmartScopeEnforcer.isSystemAuthorized(['system/*.rs'], 'clinician'),
+        isTrue,
+      );
     });
 
     test('user/ and patient/ scopes are not sufficient', () {
-      expect(SmartScopeEnforcer.isSystemAuthorized(['user/*.*'], 'clinician'),
-          isFalse);
       expect(
-          SmartScopeEnforcer.isSystemAuthorized(['patient/*.rs'], 'readonly'),
-          isFalse);
+        SmartScopeEnforcer.isSystemAuthorized(['user/*.*'], 'clinician'),
+        isFalse,
+      );
+      expect(
+        SmartScopeEnforcer.isSystemAuthorized(['patient/*.rs'], 'readonly'),
+        isFalse,
+      );
     });
 
     test('readonly with default scopes is not authorized', () {
-      expect(SmartScopeEnforcer.isSystemAuthorized(['user/*.rs'], 'readonly'),
-          isFalse);
+      expect(
+        SmartScopeEnforcer.isSystemAuthorized(['user/*.rs'], 'readonly'),
+        isFalse,
+      );
     });
   });
 }

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:basic_utils/basic_utils.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Secure Storage Service
 class SecureStorageService {

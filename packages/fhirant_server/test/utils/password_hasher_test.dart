@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('PasswordHasher', () {
@@ -8,7 +8,9 @@ void main() {
       final hash = PasswordHasher.hashPassword('MySecureP@ss1', salt);
 
       expect(
-          PasswordHasher.verifyPassword('MySecureP@ss1', salt, hash), isTrue);
+        PasswordHasher.verifyPassword('MySecureP@ss1', salt, hash),
+        isTrue,
+      );
     });
 
     test('wrong password fails verification', () {
@@ -16,7 +18,9 @@ void main() {
       final hash = PasswordHasher.hashPassword('MySecureP@ss1', salt);
 
       expect(
-          PasswordHasher.verifyPassword('WrongPassword', salt, hash), isFalse);
+        PasswordHasher.verifyPassword('WrongPassword', salt, hash),
+        isFalse,
+      );
     });
   });
 }

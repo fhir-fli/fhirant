@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/bundle_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -14,7 +14,7 @@ class MockRequest extends Mock implements Request {}
 void main() {
   setUpAll(() {
     registerFallbackValue(fhir.R4ResourceType.Patient);
-    registerFallbackValue(fhir.Patient());
+    registerFallbackValue(const fhir.Patient());
   });
 
   group('bundleHandler - transaction', () {
@@ -937,23 +937,25 @@ void main() {
       ).thenAnswer((_) async => true);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-bad'),
-      ).thenAnswer((_) async => fhir.Observation.fromJson({
-            'resourceType': 'Observation',
-            'id': 'obs-bad',
-            'meta': {
-              'versionId': '1',
-              'lastUpdated': '2024-01-15T10:30:00.000Z',
-            },
-            'status': 'final',
-            'code': {
-              'coding': [
-                {'system': 'http://loinc.org', 'code': '12345'},
-              ],
-            },
-            'subject': {
-              'reference': 'urn:uuid:nonexistent',
-            },
-          }));
+      ).thenAnswer(
+        (_) async => fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obs-bad',
+          'meta': {
+            'versionId': '1',
+            'lastUpdated': '2024-01-15T10:30:00.000Z',
+          },
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '12345'},
+            ],
+          },
+          'subject': {
+            'reference': 'urn:uuid:nonexistent',
+          },
+        }),
+      );
 
       final response = await bundleHandler(mockRequest, mockDb);
 

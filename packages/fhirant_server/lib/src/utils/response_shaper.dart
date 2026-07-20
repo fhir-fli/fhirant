@@ -1,4 +1,4 @@
-import 'summary_fields.dart';
+import 'package:fhirant_server/src/utils/summary_fields.dart';
 
 /// Utility for shaping FHIR resource responses based on _summary and _elements parameters.
 class FhirResponseShaper {

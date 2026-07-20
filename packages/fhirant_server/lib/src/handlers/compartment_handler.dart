@@ -171,7 +171,9 @@ Future<Response> compartmentSearchHandler(
     final focalType = fhir.R4ResourceType.fromString(compartmentType);
     if (focalType == null) {
       return _operationOutcome(
-          400, 'Invalid compartment type: $compartmentType');
+        400,
+        'Invalid compartment type: $compartmentType',
+      );
     }
     final focalResource =
         await dbInterface.getResource(focalType, compartmentId);

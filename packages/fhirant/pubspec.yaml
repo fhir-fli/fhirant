@@ -49,12 +49,7 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-
-# Build SQLite from the sqlite3mc source (SQLite3 Multiple Ciphers) so the
-# on-device database keeps SQLCipher-compatible encryption (see
-# DatabaseService cipher PRAGMAs). Replaces sqlcipher_flutter_libs, which is
-# unsupported with sqlite3 3.x build hooks.
+  very_good_analysis: ^10.0.0
 hooks:
   user_defines:
     sqlite3:

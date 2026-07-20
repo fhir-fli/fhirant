@@ -1,6 +1,7 @@
 // lib/src/core/server_core.dart
 import 'dart:async';
 import 'dart:io';
+
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
@@ -11,18 +12,11 @@ import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
+import 'package:shelf_router/shelf_router.dart';
 
 /// A single logged HTTP request.
 class RequestLogEntry {
-  final DateTime timestamp;
-  final String method;
-  final String path;
-  final int statusCode;
-  final int durationMs;
-  final String clientIp;
-
   RequestLogEntry({
     required this.timestamp,
     required this.method,
@@ -31,24 +25,16 @@ class RequestLogEntry {
     required this.durationMs,
     required this.clientIp,
   });
+  final DateTime timestamp;
+  final String method;
+  final String path;
+  final int statusCode;
+  final int durationMs;
+  final String clientIp;
 }
 
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
-  final FhirAntDb dbInterface;
-  final String exportDir;
-  final int maxRequests;
-  final Duration rateLimitDuration;
-  late final JwtService _jwtService;
-  final DateTime _startTime;
-  HttpServer? _server;
-  Timer? _cleanupTimer;
-  bool _isRunning = false;
-  final StreamController<RequestLogEntry> _requestLogController =
-      StreamController<RequestLogEntry>.broadcast();
-
-  final bool devMode;
-
   FhirAntServer(
     this.dbInterface, {
     String? jwtSecret,
@@ -73,6 +59,19 @@ class FhirAntServer {
             : JwtSecret.generate();
     _jwtService = JwtService(secret);
   }
+  final FhirAntDb dbInterface;
+  final String exportDir;
+  final int maxRequests;
+  final Duration rateLimitDuration;
+  late final JwtService _jwtService;
+  final DateTime _startTime;
+  HttpServer? _server;
+  Timer? _cleanupTimer;
+  bool _isRunning = false;
+  final StreamController<RequestLogEntry> _requestLogController =
+      StreamController<RequestLogEntry>.broadcast();
+
+  final bool devMode;
 
   bool get isRunning => _isRunning;
   int? get port => _server?.port;
@@ -85,16 +84,24 @@ class FhirAntServer {
     final router = Router()
       // Auth routes
       ..get(
-          '/auth/status', (Request req) => authStatusHandler(req, dbInterface))
-      ..post('/auth/register',
-          (Request req) => registerHandler(req, dbInterface, _jwtService))
-      ..post('/auth/login',
-          (Request req) => loginHandler(req, dbInterface, _jwtService))
-      ..post('/auth/token',
-          (Request req) => refreshHandler(req, dbInterface, _jwtService))
+        '/auth/status',
+        (Request req) => authStatusHandler(req, dbInterface),
+      )
+      ..post(
+        '/auth/register',
+        (Request req) => registerHandler(req, dbInterface, _jwtService),
+      )
+      ..post(
+        '/auth/login',
+        (Request req) => loginHandler(req, dbInterface, _jwtService),
+      )
+      ..post(
+        '/auth/token',
+        (Request req) => refreshHandler(req, dbInterface, _jwtService),
+      )
       ..post('/auth/revoke', (Request req) => revokeHandler(req, dbInterface))
       ..post('/auth/logout', (Request req) => logoutHandler(req, dbInterface))
-      ..get('/auth/authorize', (Request req) => authorizeGetHandler(req))
+      ..get('/auth/authorize', authorizeGetHandler)
       ..post('/auth/authorize', (Request req) {
         final contentType = req.headers['content-type'] ?? '';
         if (contentType.contains('application/json')) {
@@ -113,8 +120,10 @@ class FhirAntServer {
       // Public routes
       ..get('/', baseHandler)
       ..get('/favicon.ico', favicoHandler)
-      ..get('/health',
-          (Request req) => healthHandler(req, dbInterface, _startTime))
+      ..get(
+        '/health',
+        (Request req) => healthHandler(req, dbInterface, _startTime),
+      )
       ..get('/metadata', metadataHandler)
       ..get('/.well-known/smart-configuration', smartConfigHandler)
       // Library/$evaluate (must be before generic /<resourceType>/$validate)
@@ -128,11 +137,11 @@ class FhirAntServer {
         (Request req) => libraryEvaluateByUrlHandler(req, dbInterface),
       )
       // Validation endpoints
-      ..all(r'/$validate', (Request req) => validateHandler(req))
+      ..all(r'/$validate', validateHandler)
       ..all(
-          r'/<resourceType>/$validate',
-          (Request req, String resourceType) =>
-              validateHandler(req, resourceType))
+        r'/<resourceType>/$validate',
+        validateHandler,
+      )
       // Terminology operations
       ..get(
         r'/CodeSystem/<id>/$validate-code',
@@ -250,50 +259,61 @@ class FhirAntServer {
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(r'/$restore', (Request req) => restoreHandler(req, dbInterface))
       // FHIRPath endpoint - supports GET and POST
-      ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
-      ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
+      ..get(r'/$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
+      ..post(r'/$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       // CQL endpoint (convenience)
-      ..post('/\$cql', (Request req) => cqlHandler(req, dbInterface))
+      ..post(r'/$cql', (Request req) => cqlHandler(req, dbInterface))
       // Immunization forecasting (Cicada)
       ..post(
-        '/\$immds-forecast',
+        r'/$immds-forecast',
         (Request req) => immdsForecastHandler(req, dbInterface),
       )
       ..post(
-        '/\$immds-forecast-who',
+        r'/$immds-forecast-who',
         (Request req) => immdsForecastWhoHandler(req, dbInterface),
       )
       // Mapping/Transform endpoint
-      ..post('/\$transform', mappingHandler)
+      ..post(r'/$transform', mappingHandler)
       // Bulk Data Export endpoints
       ..get(
-        '/\$export',
-        (Request req) => exportKickoffHandler(req, dbInterface, exportDir,
-            exportLevel: 'system'),
+        r'/$export',
+        (Request req) => exportKickoffHandler(
+          req,
+          dbInterface,
+          exportDir,
+        ),
       )
       ..get(
-        '/Group/<groupId>/\$export',
+        r'/Group/<groupId>/$export',
         (Request req, String groupId) => exportKickoffHandler(
-            req, dbInterface, exportDir,
-            exportLevel: 'group', groupId: groupId),
+          req,
+          dbInterface,
+          exportDir,
+          exportLevel: 'group',
+          groupId: groupId,
+        ),
       )
       ..get(
-        '/Patient/\$export',
-        (Request req) => exportKickoffHandler(req, dbInterface, exportDir,
-            exportLevel: 'patient'),
+        r'/Patient/$export',
+        (Request req) => exportKickoffHandler(
+          req,
+          dbInterface,
+          exportDir,
+          exportLevel: 'patient',
+        ),
       )
       ..get(
-        '/\$export-poll-status/<jobId>',
+        r'/$export-poll-status/<jobId>',
         (Request req, String jobId) =>
             exportStatusHandler(req, dbInterface, jobId),
       )
       ..delete(
-        '/\$export-poll-status/<jobId>',
+        r'/$export-poll-status/<jobId>',
         (Request req, String jobId) =>
             exportDeleteHandler(req, dbInterface, exportDir, jobId),
       )
       ..get(
-        '/\$export-file/<jobId>/<fileName>',
+        r'/$export-file/<jobId>/<fileName>',
         (Request req, String jobId, String fileName) =>
             exportFileHandler(req, exportDir, jobId, fileName),
       )
@@ -326,32 +346,41 @@ class FhirAntServer {
       )
       // History endpoints (must come before resource endpoints to match correctly)
       ..get(
-        r'/<resourceType>/<id>/_history/<vid>',
+        '/<resourceType>/<id>/_history/<vid>',
         (Request req, String resourceType, String id, String vid) =>
             vreadResourceHandler(req, resourceType, id, vid, dbInterface),
       )
       ..get(
-        r'/<resourceType>/<id>/_history',
+        '/<resourceType>/<id>/_history',
         (Request req, String resourceType, String id) =>
             resourceHistoryHandler(req, resourceType, id, dbInterface),
       )
       ..get(
-        r'/<resourceType>/_history',
+        '/<resourceType>/_history',
         (Request req, String resourceType) =>
             typeHistoryHandler(req, resourceType, dbInterface),
       )
       ..get(
-        r'/_history',
+        '/_history',
         (Request req) => systemHistoryHandler(req, dbInterface),
       )
       // Compartment search (3-segment: /Patient/123/Observation)
       // Must come after _history routes so /<type>/<id>/_history matches first
       ..get(
-        r'/<compartmentType>/<compartmentId>/<resourceType>',
-        (Request req, String compartmentType, String compartmentId,
-                String resourceType) =>
+        '/<compartmentType>/<compartmentId>/<resourceType>',
+        (
+          Request req,
+          String compartmentType,
+          String compartmentId,
+          String resourceType,
+        ) =>
             compartmentSearchHandler(
-                req, compartmentType, compartmentId, resourceType, dbInterface),
+          req,
+          compartmentType,
+          compartmentId,
+          resourceType,
+          dbInterface,
+        ),
       )
       // System-level POST search (before bundle handler)
       ..post(
@@ -419,7 +448,7 @@ class FhirAntServer {
       maxRequests: maxRequests,
     );
 
-    var pipeline = Pipeline()
+    var pipeline = const Pipeline()
         .addMiddleware(_logRequestsMiddleware())
         .addMiddleware(corsMiddleware())
         .addMiddleware(contentNegotiationMiddleware());
@@ -434,7 +463,7 @@ class FhirAntServer {
     return pipeline
         .addMiddleware(auditMiddleware(dbInterface))
         .addMiddleware(rateLimiter.rateLimiter())
-        .addHandler(router);
+        .addHandler(router.call);
   }
 
   /// Start the server with HTTP
@@ -453,7 +482,8 @@ class FhirAntServer {
     _isRunning = true;
     _startCleanupTimer();
     print(
-        'Server started at http://${_server!.address.address}:${_server!.port}');
+      'Server started at http://${_server!.address.address}:${_server!.port}',
+    );
     if (devMode) {
       print('WARNING: Dev mode enabled — authentication is disabled');
     }
@@ -461,7 +491,10 @@ class FhirAntServer {
 
   /// Start the server with HTTPS if cert/key available
   Future<void> startHttps(
-      int port, String privateKeyPem, String certificatePem) async {
+    int port,
+    String privateKeyPem,
+    String certificatePem,
+  ) async {
     if (_isRunning) return;
 
     final router = createRouter();
@@ -481,7 +514,8 @@ class FhirAntServer {
     _isRunning = true;
     _startCleanupTimer();
     print(
-        'Server started at https://${_server!.address.address}:${_server!.port}');
+      'Server started at https://${_server!.address.address}:${_server!.port}',
+    );
     if (devMode) {
       print('WARNING: Dev mode enabled — authentication is disabled');
     }
@@ -543,18 +577,21 @@ class FhirAntServer {
 
         // Log the request using platform-agnostic logging
         print(
-            '${request.method} ${request.requestedUri} - ${response.statusCode} (${duration.inMilliseconds}ms) from $clientIp');
+          '${request.method} ${request.requestedUri} - ${response.statusCode} (${duration.inMilliseconds}ms) from $clientIp',
+        );
 
         // Emit to the request log stream for live monitoring
         if (!_requestLogController.isClosed) {
-          _requestLogController.add(RequestLogEntry(
-            timestamp: startTime,
-            method: request.method,
-            path: request.requestedUri.path,
-            statusCode: response.statusCode,
-            durationMs: duration.inMilliseconds,
-            clientIp: clientIp,
-          ));
+          _requestLogController.add(
+            RequestLogEntry(
+              timestamp: startTime,
+              method: request.method,
+              path: request.requestedUri.path,
+              statusCode: response.statusCode,
+              durationMs: duration.inMilliseconds,
+              clientIp: clientIp,
+            ),
+          );
         }
 
         return response;

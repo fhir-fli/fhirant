@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -501,8 +501,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '1234-5'}
-          ]
+            {'system': 'http://loinc.org', 'code': '1234-5'},
+          ],
         },
         'meta': {
           'versionId': '1',
@@ -523,15 +523,19 @@ void main() {
           'patientId': 'pat-1',
         },
       });
-      when(() => mockDb.getCompartmentResourceIds(
-            compartmentType: 'Patient',
-            compartmentId: 'pat-1',
-            compartmentDefinition: any(named: 'compartmentDefinition'),
-            typeFilter: any(named: 'typeFilter'),
-            since: any(named: 'since'),
-          )).thenAnswer((_) async => {
-            'Observation': {'obs-1'},
-          });
+      when(
+        () => mockDb.getCompartmentResourceIds(
+          compartmentType: 'Patient',
+          compartmentId: 'pat-1',
+          compartmentDefinition: any(named: 'compartmentDefinition'),
+          typeFilter: any(named: 'typeFilter'),
+          since: any(named: 'since'),
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'Observation': {'obs-1'},
+        },
+      );
 
       final response = await getResourceByIdHandler(
         mockRequest,
@@ -550,8 +554,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '1234-5'}
-          ]
+            {'system': 'http://loinc.org', 'code': '1234-5'},
+          ],
         },
         'meta': {
           'versionId': '1',
@@ -572,15 +576,19 @@ void main() {
           'patientId': 'pat-1',
         },
       });
-      when(() => mockDb.getCompartmentResourceIds(
-            compartmentType: 'Patient',
-            compartmentId: 'pat-1',
-            compartmentDefinition: any(named: 'compartmentDefinition'),
-            typeFilter: any(named: 'typeFilter'),
-            since: any(named: 'since'),
-          )).thenAnswer((_) async => {
-            'Observation': <String>{},
-          });
+      when(
+        () => mockDb.getCompartmentResourceIds(
+          compartmentType: 'Patient',
+          compartmentId: 'pat-1',
+          compartmentDefinition: any(named: 'compartmentDefinition'),
+          typeFilter: any(named: 'typeFilter'),
+          since: any(named: 'since'),
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'Observation': <String>{},
+        },
+      );
 
       final response = await getResourceByIdHandler(
         mockRequest,
@@ -610,11 +618,11 @@ void main() {
           'div': '<div xmlns="http://www.w3.org/1999/xhtml">Test</div>',
         },
         'generalPractitioner': [
-          {'reference': 'Practitioner/prac-1'}
+          {'reference': 'Practitioner/prac-1'},
         ],
         'contact': [
           {
-            'name': {'family': 'ContactPerson'}
+            'name': {'family': 'ContactPerson'},
           }
         ],
         'extension': [

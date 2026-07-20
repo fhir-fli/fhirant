@@ -49,15 +49,19 @@ Future<Response> authorizeGetHandler(Request request) async {
   }
 
   if (clientId == null || clientId.isEmpty) {
-    return Response(400,
-        body: _errorPage('Missing required parameter: client_id'),
-        headers: {'Content-Type': 'text/html'});
+    return Response(
+      400,
+      body: _errorPage('Missing required parameter: client_id'),
+      headers: {'Content-Type': 'text/html'},
+    );
   }
 
   if (redirectUri == null || redirectUri.isEmpty) {
-    return Response(400,
-        body: _errorPage('Missing required parameter: redirect_uri'),
-        headers: {'Content-Type': 'text/html'});
+    return Response(
+      400,
+      body: _errorPage('Missing required parameter: redirect_uri'),
+      headers: {'Content-Type': 'text/html'},
+    );
   }
 
   // Return the login form
@@ -77,7 +81,9 @@ Future<Response> authorizeGetHandler(Request request) async {
 
 /// Handle POST /auth/authorize — validate credentials and issue code.
 Future<Response> authorizePostHandler(
-    Request request, FhirAntDb dbInterface) async {
+  Request request,
+  FhirAntDb dbInterface,
+) async {
   try {
     // Parse form body
     final body = await request.readAsString();
@@ -103,15 +109,19 @@ Future<Response> authorizePostHandler(
     }
 
     if (clientId == null || clientId.isEmpty) {
-      return Response(400,
-          body: _errorPage('Missing client_id'),
-          headers: {'Content-Type': 'text/html'});
+      return Response(
+        400,
+        body: _errorPage('Missing client_id'),
+        headers: {'Content-Type': 'text/html'},
+      );
     }
 
     if (redirectUri == null || redirectUri.isEmpty) {
-      return Response(400,
-          body: _errorPage('Missing redirect_uri'),
-          headers: {'Content-Type': 'text/html'});
+      return Response(
+        400,
+        body: _errorPage('Missing redirect_uri'),
+        headers: {'Content-Type': 'text/html'},
+      );
     }
 
     if (username == null ||
@@ -137,7 +147,10 @@ Future<Response> authorizePostHandler(
     final user = await dbInterface.getUserByUsername(username);
     if (user == null ||
         !PasswordHasher.verifyPassword(
-            password, user.salt, user.passwordHash)) {
+          password,
+          user.salt,
+          user.passwordHash,
+        )) {
       return Response.ok(
         _loginForm(
           clientId: clientId,
@@ -200,9 +213,11 @@ Future<Response> authorizePostHandler(
 
     return Response(302, headers: {'Location': redirectUrl});
   } catch (e) {
-    return Response(400,
-        body: _errorPage('Authorization failed: $e'),
-        headers: {'Content-Type': 'text/html'});
+    return Response(
+      400,
+      body: _errorPage('Authorization failed: $e'),
+      headers: {'Content-Type': 'text/html'},
+    );
   }
 }
 
@@ -212,7 +227,9 @@ Future<Response> authorizePostHandler(
 /// Returns JSON { "code": "...", "redirect_uri": "...?code=...&state=..." }
 /// instead of an HTTP redirect.
 Future<Response> authorizeJsonHandler(
-    Request request, FhirAntDb dbInterface) async {
+  Request request,
+  FhirAntDb dbInterface,
+) async {
   try {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
@@ -228,55 +245,70 @@ Future<Response> authorizeJsonHandler(
     final password = body['password'] as String?;
 
     if (responseType != 'code') {
-      return Response(400,
-          body: jsonEncode({
-            'error': 'unsupported_response_type',
-            'error_description': 'Only response_type=code is supported',
-          }));
+      return Response(
+        400,
+        body: jsonEncode({
+          'error': 'unsupported_response_type',
+          'error_description': 'Only response_type=code is supported',
+        }),
+      );
     }
 
     if (clientId == null || clientId.isEmpty) {
-      return Response(400,
-          body: jsonEncode({
-            'error': 'invalid_request',
-            'error_description': 'client_id is required',
-          }));
+      return Response(
+        400,
+        body: jsonEncode({
+          'error': 'invalid_request',
+          'error_description': 'client_id is required',
+        }),
+      );
     }
 
     if (redirectUri == null || redirectUri.isEmpty) {
-      return Response(400,
-          body: jsonEncode({
-            'error': 'invalid_request',
-            'error_description': 'redirect_uri is required',
-          }));
+      return Response(
+        400,
+        body: jsonEncode({
+          'error': 'invalid_request',
+          'error_description': 'redirect_uri is required',
+        }),
+      );
     }
 
     if (username == null || password == null) {
-      return Response(400,
-          body: jsonEncode({
-            'error': 'invalid_request',
-            'error_description': 'username and password are required',
-          }));
+      return Response(
+        400,
+        body: jsonEncode({
+          'error': 'invalid_request',
+          'error_description': 'username and password are required',
+        }),
+      );
     }
 
     // Authenticate
     final user = await dbInterface.getUserByUsername(username);
     if (user == null ||
         !PasswordHasher.verifyPassword(
-            password, user.salt, user.passwordHash)) {
-      return Response(401,
-          body: jsonEncode({
-            'error': 'access_denied',
-            'error_description': 'Invalid credentials',
-          }));
+          password,
+          user.salt,
+          user.passwordHash,
+        )) {
+      return Response(
+        401,
+        body: jsonEncode({
+          'error': 'access_denied',
+          'error_description': 'Invalid credentials',
+        }),
+      );
     }
 
     if (!user.active) {
-      return Response(403,
-          body: jsonEncode({
-            'error': 'access_denied',
-            'error_description': 'Account is deactivated',
-          }));
+      return Response(
+        403,
+        body: jsonEncode({
+          'error': 'access_denied',
+          'error_description': 'Account is deactivated',
+        }),
+      );
     }
 
     // Generate authorization code
@@ -317,11 +349,13 @@ Future<Response> authorizeJsonHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e) {
-    return Response(400,
-        body: jsonEncode({
-          'error': 'server_error',
-          'error_description': 'Authorization failed: $e',
-        }));
+    return Response(
+      400,
+      body: jsonEncode({
+        'error': 'server_error',
+        'error_description': 'Authorization failed: $e',
+      }),
+    );
   }
 }
 
@@ -397,10 +431,17 @@ String _errorPage(String message) {
 }
 
 Response _errorRedirect(
-    String? redirectUri, String state, String error, String description) {
+  String? redirectUri,
+  String state,
+  String error,
+  String description,
+) {
   if (redirectUri == null || redirectUri.isEmpty) {
-    return Response(400,
-        body: _errorPage(description), headers: {'Content-Type': 'text/html'});
+    return Response(
+      400,
+      body: _errorPage(description),
+      headers: {'Content-Type': 'text/html'},
+    );
   }
   final params = {
     'error': error,

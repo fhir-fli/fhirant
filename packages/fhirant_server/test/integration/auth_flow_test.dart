@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -23,15 +23,17 @@ void main() {
 
   group('Auth Flow Integration Tests', () {
     test('First-user register creates admin without auth', () async {
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'firstadmin',
-          'password': 'securepass123',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'firstadmin',
+            'password': 'securepass123',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
@@ -41,26 +43,30 @@ void main() {
 
     test('Login with registered user returns JWT token', () async {
       // Register first user (bootstrap admin)
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'logintest',
-          'password': 'testpass1234',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'logintest',
+            'password': 'testpass1234',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       // Login
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'logintest',
-          'password': 'testpass1234',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'logintest',
+            'password': 'testpass1234',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -72,41 +78,49 @@ void main() {
 
     test('Authenticated GET /Patient works with login token', () async {
       // Register + Login
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'authuser',
-          'password': 'authpass1234',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'authuser',
+            'password': 'authpass1234',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
-      final loginResponse = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'authuser',
-          'password': 'authpass1234',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final loginResponse = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'authuser',
+            'password': 'authpass1234',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       final loginBody = jsonDecode(await loginResponse.readAsString());
       final token = loginBody['token'] as String;
 
       // Create a patient via DB directly
-      await testDb.saveResource(fhir.Patient(
-        id: 'auth-test-1'.toFhirString,
-        name: [fhir.HumanName(family: 'AuthTest'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'auth-test-1'.toFhirString,
+          name: [fhir.HumanName(family: 'AuthTest'.toFhirString)],
+        ),
+      );
 
       // Use the login token to GET patient
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/auth-test-1',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/auth-test-1',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -114,10 +128,12 @@ void main() {
     });
 
     test('Unauthenticated GET /Patient returns 401', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient',
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient',
+        ),
+      );
 
       expect(response.statusCode, equals(401));
       final body = jsonDecode(await response.readAsString());
@@ -127,15 +143,17 @@ void main() {
     test('Readonly user POST /Patient returns 403', () async {
       final readonlyToken = generateTestToken(role: 'readonly');
 
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: fhir.Patient(
-          name: [fhir.HumanName(family: 'Forbidden'.toFhirString)],
-        ).toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: readonlyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: fhir.Patient(
+            name: [fhir.HumanName(family: 'Forbidden'.toFhirString)],
+          ).toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: readonlyToken,
+        ),
+      );
 
       expect(response.statusCode, equals(403));
       final body = jsonDecode(await response.readAsString());

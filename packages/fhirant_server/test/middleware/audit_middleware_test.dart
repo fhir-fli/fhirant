@@ -1,9 +1,9 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -12,7 +12,7 @@ void main() {
   late Middleware middleware;
 
   setUpAll(() {
-    registerFallbackValue(fhir.Patient());
+    registerFallbackValue(const fhir.Patient());
   });
 
   setUp(() {
@@ -23,26 +23,30 @@ void main() {
     when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
   });
 
-  Handler _wrapHandler({
+  Handler wrapHandler({
     int statusCode = 200,
     String body = '{"resourceType":"Patient"}',
     Map<String, Object>? context,
   }) {
-    final inner = (Request request) async {
-      return Response(statusCode,
-          body: body, headers: {'content-type': 'application/json'});
-    };
+    Future<Response> inner(Request request) async {
+      return Response(
+        statusCode,
+        body: body,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
     return middleware(inner);
   }
 
   group('auditMiddleware', () {
     test('audit event created on POST (action=C, subtype=create)', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/Patient'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -61,12 +65,12 @@ void main() {
     });
 
     test('audit event created on GET by ID (action=R, subtype=read)', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient/123'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -83,12 +87,12 @@ void main() {
     });
 
     test('audit event created on PUT (action=U, subtype=update)', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'PUT',
         Uri.parse('http://localhost:8080/Patient/123'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -102,12 +106,12 @@ void main() {
     });
 
     test('audit event created on DELETE (action=D, subtype=delete)', () async {
-      final handler = _wrapHandler(statusCode: 204, body: '');
+      final handler = wrapHandler(statusCode: 204, body: '');
       final request = Request(
         'DELETE',
         Uri.parse('http://localhost:8080/Patient/123'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -121,12 +125,12 @@ void main() {
     });
 
     test('failed request records minor failure outcome (4xx)', () async {
-      final handler = _wrapHandler(statusCode: 404);
+      final handler = wrapHandler(statusCode: 404);
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient/999'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -139,12 +143,12 @@ void main() {
     });
 
     test('server error records serious failure outcome (5xx)', () async {
-      final handler = _wrapHandler(statusCode: 500);
+      final handler = wrapHandler(statusCode: 500);
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient/123'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -157,12 +161,12 @@ void main() {
     });
 
     test('auth user captured in agent (username from context)', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
         context: {
-          'auth_user': {'username': 'dr_smith', 'role': 'admin'}
+          'auth_user': {'username': 'dr_smith', 'role': 'admin'},
         },
       );
 
@@ -178,7 +182,7 @@ void main() {
     });
 
     test('anonymous agent when no auth_user in context', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -194,12 +198,12 @@ void main() {
 
     test('type-level request has no entity (no bare resource type ref)',
         () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -212,12 +216,12 @@ void main() {
     });
 
     test('_search request has no entity', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/Patient/_search'),
         context: {
-          'auth_user': {'username': 'doc', 'role': 'clinician'}
+          'auth_user': {'username': 'doc', 'role': 'clinician'},
         },
       );
 
@@ -230,7 +234,7 @@ void main() {
     });
 
     test('metadata requests not audited', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/metadata'),
@@ -243,7 +247,7 @@ void main() {
     });
 
     test('AuditEvent POST not audited (infinite loop prevention)', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/AuditEvent'),

@@ -11,7 +11,9 @@ class SimpleResourceCache implements ResourceCache {
   final Map<String, fhir.Resource> _cache = {};
 
   Future<fhir.Resource?> findResourceById(
-      String resourceType, String id) async {
+    String resourceType,
+    String id,
+  ) async {
     return _cache['$resourceType/$id'];
   }
 
@@ -26,6 +28,7 @@ class SimpleResourceCache implements ResourceCache {
     }
   }
 
+  @override
   Future<T?> getCanonicalResource<T extends fhir.CanonicalResource>(
     String url, [
     String? version,
@@ -84,9 +87,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Request body is empty'
+              'diagnostics': 'Request body is empty',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -104,9 +107,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Invalid JSON format: ${e.toString()}'
+              'diagnostics': 'Invalid JSON format: $e',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -121,9 +124,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Missing required field: map (StructureMap)'
+              'diagnostics': 'Missing required field: map (StructureMap)',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -138,9 +141,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Missing required field: source (source resource)'
+              'diagnostics': 'Missing required field: source (source resource)',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -149,7 +152,9 @@ Future<Response> mappingHandler(Request request) async {
     // Parse StructureMap
     fhir.StructureMap structureMap;
     try {
-      structureMap = fhir.StructureMap.fromJson(requestJson['map']);
+      structureMap = fhir.StructureMap.fromJson(
+        requestJson['map'] as Map<String, dynamic>,
+      );
     } catch (e) {
       return Response(
         400,
@@ -159,9 +164,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Invalid StructureMap: ${e.toString()}'
+              'diagnostics': 'Invalid StructureMap: $e',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -183,9 +188,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Invalid source resource: ${e.toString()}'
+              'diagnostics': 'Invalid source resource: $e',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -215,9 +220,9 @@ Future<Response> mappingHandler(Request request) async {
             {
               'severity': 'error',
               'code': 'exception',
-              'diagnostics': 'Mapping returned null result'
+              'diagnostics': 'Mapping returned null result',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -245,9 +250,9 @@ Future<Response> mappingHandler(Request request) async {
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'Mapping error: ${e.toString()}'
+            'diagnostics': 'Mapping error: $e',
           }
-        ]
+        ],
       }),
       headers: {'Content-Type': 'application/json'},
     );

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/health_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 

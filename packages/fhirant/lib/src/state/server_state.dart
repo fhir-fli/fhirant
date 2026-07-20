@@ -3,18 +3,24 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
+import 'package:fhirant/src/services/database_service.dart';
+import 'package:fhirant/src/services/server_service.dart';
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
 import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
-import '../services/database_service.dart';
-import '../services/server_service.dart';
-
 enum ServerStatus { stopped, starting, running, stopping, error }
 
 class ServerState extends ChangeNotifier {
+  ServerState({
+    required DatabaseService dbService,
+    required ServerService serverService,
+  })  : _dbService = dbService,
+        _serverService = serverService {
+    _detectWifiIp();
+  }
   final DatabaseService _dbService;
   final ServerService _serverService;
 
@@ -30,14 +36,6 @@ class ServerState extends ChangeNotifier {
   Map<R4ResourceType, int> _resourceCounts = {};
   Timer? _countsTimer;
   StreamSubscription<RequestLogEntry>? _logSubscription;
-
-  ServerState({
-    required DatabaseService dbService,
-    required ServerService serverService,
-  })  : _dbService = dbService,
-        _serverService = serverService {
-    _detectWifiIp();
-  }
 
   FhirAntDb get db => _dbService.db;
   ServerStatus get status => _status;
@@ -70,8 +68,9 @@ class ServerState extends ChangeNotifier {
   }
 
   Future<void> startServer() async {
-    if (_status != ServerStatus.stopped && _status != ServerStatus.error)
+    if (_status != ServerStatus.stopped && _status != ServerStatus.error) {
       return;
+    }
 
     _status = ServerStatus.starting;
     _errorMessage = null;

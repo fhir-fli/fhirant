@@ -22,14 +22,16 @@ void main() {
 
   group('Register with scopes', () {
     test('first user gets default admin scopes in response', () async {
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
 
       expect(response.statusCode, 201);
       final body = jsonDecode(await response.readAsString());
@@ -39,39 +41,45 @@ void main() {
 
     test('admin can register user with custom scopes', () async {
       // Bootstrap admin
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
 
       // Login admin
-      final loginResp = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      final loginResp = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
       final adminToken =
           jsonDecode(await loginResp.readAsString())['token'] as String;
 
       // Register user with custom scopes
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'nurse',
-          'password': 'scopeTestPass1',
-          'role': 'clinician',
-          'scopes': ['user/Patient.rs', 'user/Observation.rs'],
-        }),
-        authToken: adminToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'nurse',
+            'password': 'scopeTestPass1',
+            'role': 'clinician',
+            'scopes': ['user/Patient.rs', 'user/Observation.rs'],
+          }),
+          authToken: adminToken,
+        ),
+      );
 
       expect(response.statusCode, 201);
       final body = jsonDecode(await response.readAsString());
@@ -81,35 +89,41 @@ void main() {
 
     test('invalid scope string returns 400', () async {
       // Bootstrap admin
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
-      final loginResp = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
+      final loginResp = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
       final adminToken =
           jsonDecode(await loginResp.readAsString())['token'] as String;
 
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'baduser',
-          'password': 'scopeTestPass1',
-          'scopes': ['not-a-valid-scope'],
-        }),
-        authToken: adminToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'baduser',
+            'password': 'scopeTestPass1',
+            'scopes': ['not-a-valid-scope'],
+          }),
+          authToken: adminToken,
+        ),
+      );
 
       expect(response.statusCode, 400);
       final body = jsonDecode(await response.readAsString());
@@ -120,23 +134,27 @@ void main() {
   group('Login returns scopes', () {
     test('login response includes scopes', () async {
       // Bootstrap admin
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
 
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());
@@ -150,87 +168,101 @@ void main() {
 
     setUp(() async {
       // Bootstrap admin
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
 
       // Login admin
-      final loginResp = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'admin',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      final loginResp = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'admin',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
       final adminToken =
           jsonDecode(await loginResp.readAsString())['token'] as String;
 
       // Register readonly user
-      await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'reader',
-          'password': 'scopeTestPass1',
-          'role': 'readonly',
-        }),
-        authToken: adminToken,
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'reader',
+            'password': 'scopeTestPass1',
+            'role': 'readonly',
+          }),
+          authToken: adminToken,
+        ),
+      );
 
       // Login readonly user
-      final readerLogin = await handler(testRequest(
-        'POST',
-        '/auth/login',
-        body: jsonEncode({
-          'username': 'reader',
-          'password': 'scopeTestPass1',
-        }),
-      ));
+      final readerLogin = await handler(
+        testRequest(
+          'POST',
+          '/auth/login',
+          body: jsonEncode({
+            'username': 'reader',
+            'password': 'scopeTestPass1',
+          }),
+        ),
+      );
       readOnlyToken =
           jsonDecode(await readerLogin.readAsString())['token'] as String;
     });
 
     test('readonly user can search (GET)', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient',
-        authToken: readOnlyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient',
+          authToken: readOnlyToken,
+        ),
+      );
 
       expect(response.statusCode, 200);
     });
 
     test('readonly user blocked from creating (POST)', () async {
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: jsonEncode({
-          'resourceType': 'Patient',
-          'name': [
-            {
-              'family': 'Test',
-              'given': ['User']
-            }
-          ]
-        }),
-        authToken: readOnlyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: jsonEncode({
+            'resourceType': 'Patient',
+            'name': [
+              {
+                'family': 'Test',
+                'given': ['User'],
+              }
+            ],
+          }),
+          authToken: readOnlyToken,
+        ),
+      );
 
       expect(response.statusCode, 403);
     });
 
     test('readonly user blocked from delete', () async {
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient/123',
-        authToken: readOnlyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient/123',
+          authToken: readOnlyToken,
+        ),
+      );
 
       expect(response.statusCode, 403);
     });
@@ -239,14 +271,16 @@ void main() {
   group('Backward compatibility', () {
     test('legacy token without scope claim uses role defaults', () async {
       // Generate a token without scopes (like old tokens)
-      final legacyToken = generateTestToken(role: 'clinician');
+      final legacyToken = generateTestToken();
 
       // Should still work — clinician defaults to user/*.*
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient',
-        authToken: legacyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient',
+          authToken: legacyToken,
+        ),
+      );
 
       expect(response.statusCode, 200);
     });
@@ -254,20 +288,22 @@ void main() {
     test('legacy readonly token still blocked from writes', () async {
       final legacyToken = generateTestToken(role: 'readonly');
 
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: jsonEncode({
-          'resourceType': 'Patient',
-          'name': [
-            {
-              'family': 'Test',
-              'given': ['User']
-            }
-          ]
-        }),
-        authToken: legacyToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: jsonEncode({
+            'resourceType': 'Patient',
+            'name': [
+              {
+                'family': 'Test',
+                'given': ['User'],
+              }
+            ],
+          }),
+          authToken: legacyToken,
+        ),
+      );
 
       expect(response.statusCode, 403);
     });
@@ -275,10 +311,12 @@ void main() {
 
   group('.well-known/smart-configuration', () {
     test('returns SMART config', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/.well-known/smart-configuration',
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/.well-known/smart-configuration',
+        ),
+      );
 
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());

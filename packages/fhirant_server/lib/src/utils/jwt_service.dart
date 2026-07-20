@@ -2,10 +2,6 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 /// Service for generating and verifying JWT tokens.
 class JwtService {
-  final String _secret;
-  final Duration _tokenLifetime;
-  final Duration _refreshTokenLifetime;
-
   /// Creates a JwtService with the given secret and optional token lifetimes.
   JwtService(
     this._secret, {
@@ -13,6 +9,9 @@ class JwtService {
     Duration refreshTokenLifetime = const Duration(days: 7),
   })  : _tokenLifetime = tokenLifetime,
         _refreshTokenLifetime = refreshTokenLifetime;
+  final String _secret;
+  final Duration _tokenLifetime;
+  final Duration _refreshTokenLifetime;
 
   /// Generates a signed JWT containing user claims.
   String generateToken({

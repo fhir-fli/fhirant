@@ -20,10 +20,12 @@ Future<Response> backupHandler(
       for (final resource in resources) {
         final typeString = resource.resourceTypeString;
         final id = resource.id?.toString();
-        entries.add(fhir.BundleEntry(
-          fullUrl: id != null ? '$typeString/$id'.toFhirUri : null,
-          resource: resource,
-        ));
+        entries.add(
+          fhir.BundleEntry(
+            fullUrl: id != null ? '$typeString/$id'.toFhirUri : null,
+            resource: resource,
+          ),
+        );
       }
     }
 
@@ -69,15 +71,17 @@ Future<Response> restoreHandler(
     if (body.isEmpty) {
       return Response(
         400,
-        body: jsonEncode(fhir.OperationOutcome(
-          issue: [
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.error,
-              code: fhir.IssueType.invalid,
-              diagnostics: 'Request body is empty'.toFhirString,
-            ),
-          ],
-        ).toJson()),
+        body: jsonEncode(
+          fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.invalid,
+                diagnostics: 'Request body is empty'.toFhirString,
+              ),
+            ],
+          ).toJson(),
+        ),
         headers: {'content-type': 'application/fhir+json'},
       );
     }
@@ -88,15 +92,17 @@ Future<Response> restoreHandler(
     } catch (e) {
       return Response(
         400,
-        body: jsonEncode(fhir.OperationOutcome(
-          issue: [
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.error,
-              code: fhir.IssueType.invalid,
-              diagnostics: 'Invalid JSON: $e'.toFhirString,
-            ),
-          ],
-        ).toJson()),
+        body: jsonEncode(
+          fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.invalid,
+                diagnostics: 'Invalid JSON: $e'.toFhirString,
+              ),
+            ],
+          ).toJson(),
+        ),
         headers: {'content-type': 'application/fhir+json'},
       );
     }
@@ -105,15 +111,18 @@ Future<Response> restoreHandler(
     if (resourceType != 'Bundle') {
       return Response(
         400,
-        body: jsonEncode(fhir.OperationOutcome(
-          issue: [
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.error,
-              code: fhir.IssueType.invalid,
-              diagnostics: 'Expected a Bundle, got: $resourceType'.toFhirString,
-            ),
-          ],
-        ).toJson()),
+        body: jsonEncode(
+          fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.invalid,
+                diagnostics:
+                    'Expected a Bundle, got: $resourceType'.toFhirString,
+              ),
+            ],
+          ).toJson(),
+        ),
         headers: {'content-type': 'application/fhir+json'},
       );
     }
@@ -121,19 +130,21 @@ Future<Response> restoreHandler(
     final bundle = fhir.Bundle.fromJson(json);
     final bundleEntries = bundle.entry ?? [];
 
-    int savedCount = 0;
-    int errorCount = 0;
+    var savedCount = 0;
+    var errorCount = 0;
     final issues = <fhir.OperationOutcomeIssue>[];
 
     for (final entry in bundleEntries) {
       final resource = entry.resource;
       if (resource == null) {
         errorCount++;
-        issues.add(fhir.OperationOutcomeIssue(
-          severity: fhir.IssueSeverity.warning,
-          code: fhir.IssueType.incomplete,
-          diagnostics: 'Bundle entry has no resource'.toFhirString,
-        ));
+        issues.add(
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.warning,
+            code: fhir.IssueType.incomplete,
+            diagnostics: 'Bundle entry has no resource'.toFhirString,
+          ),
+        );
         continue;
       }
 
@@ -143,23 +154,27 @@ Future<Response> restoreHandler(
           savedCount++;
         } else {
           errorCount++;
-          issues.add(fhir.OperationOutcomeIssue(
-            severity: fhir.IssueSeverity.error,
-            code: fhir.IssueType.exception,
-            diagnostics:
-                'Failed to save ${resource.resourceTypeString}/${resource.id}'
-                    .toFhirString,
-          ));
+          issues.add(
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.error,
+              code: fhir.IssueType.exception,
+              diagnostics:
+                  'Failed to save ${resource.resourceTypeString}/${resource.id}'
+                      .toFhirString,
+            ),
+          );
         }
       } catch (e) {
         errorCount++;
-        issues.add(fhir.OperationOutcomeIssue(
-          severity: fhir.IssueSeverity.error,
-          code: fhir.IssueType.exception,
-          diagnostics:
-              'Error saving ${resource.resourceTypeString}/${resource.id}: $e'
-                  .toFhirString,
-        ));
+        issues.add(
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.error,
+            code: fhir.IssueType.exception,
+            diagnostics:
+                'Error saving ${resource.resourceTypeString}/${resource.id}: $e'
+                    .toFhirString,
+          ),
+        );
       }
     }
 

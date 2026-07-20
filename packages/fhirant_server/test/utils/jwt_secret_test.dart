@@ -100,8 +100,10 @@ void main() {
       final path = '${tmp.path}/.jwt_secret';
       JwtSecret.resolveForServer(persistPath: path);
       final mode = File(path).statSync().mode & 0x1FF; // low 9 permission bits
-      expect(mode, 0x180, // 0o600
-          reason: 'expected rw------- (0600), got ${mode.toRadixString(8)}');
+      expect(
+        mode, 0x180, // 0o600
+        reason: 'expected rw------- (0600), got ${mode.toRadixString(8)}',
+      );
     });
   });
 }

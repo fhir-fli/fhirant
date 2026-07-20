@@ -2,11 +2,10 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/handlers/backup_handler.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-
-import 'package:fhirant_server/src/handlers/backup_handler.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -14,7 +13,7 @@ void main() {
   late MockFhirAntDb mockDb;
 
   setUpAll(() {
-    registerFallbackValue(fhir.Patient());
+    registerFallbackValue(const fhir.Patient());
   });
 
   setUp(() {
@@ -47,7 +46,7 @@ void main() {
           .thenAnswer((_) async => [observation]);
 
       final request =
-          Request('POST', Uri.parse('http://localhost:8080/\$backup'));
+          Request('POST', Uri.parse(r'http://localhost:8080/$backup'));
       final response = await backupHandler(request, mockDb);
 
       expect(response.statusCode, equals(200));
@@ -80,7 +79,7 @@ void main() {
       when(() => mockDb.getResourceTypes()).thenAnswer((_) async => []);
 
       final request =
-          Request('POST', Uri.parse('http://localhost:8080/\$backup'));
+          Request('POST', Uri.parse(r'http://localhost:8080/$backup'));
       final response = await backupHandler(request, mockDb);
 
       expect(response.statusCode, equals(200));
@@ -98,7 +97,7 @@ void main() {
           .thenThrow(Exception('DB connection lost'));
 
       final request =
-          Request('POST', Uri.parse('http://localhost:8080/\$backup'));
+          Request('POST', Uri.parse(r'http://localhost:8080/$backup'));
       final response = await backupHandler(request, mockDb);
 
       expect(response.statusCode, equals(500));
@@ -135,7 +134,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: jsonEncode(bundle.toJson()),
         headers: {'content-type': 'application/fhir+json'},
       );
@@ -161,7 +160,7 @@ void main() {
     test('returns 400 for empty body', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: '',
         headers: {'content-type': 'application/fhir+json'},
       );
@@ -178,7 +177,7 @@ void main() {
     test('returns 400 for invalid JSON', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: 'not-json{{{',
         headers: {'content-type': 'application/fhir+json'},
       );
@@ -190,7 +189,9 @@ void main() {
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('OperationOutcome'));
       expect(
-          (body['issue'] as List)[0]['diagnostics'], contains('Invalid JSON'));
+        (body['issue'] as List)[0]['diagnostics'],
+        contains('Invalid JSON'),
+      );
     });
 
     test('returns 400 for non-Bundle resource', () async {
@@ -198,7 +199,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: jsonEncode(patient.toJson()),
         headers: {'content-type': 'application/fhir+json'},
       );
@@ -209,8 +210,10 @@ void main() {
       final body =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('OperationOutcome'));
-      expect((body['issue'] as List)[0]['diagnostics'],
-          contains('Expected a Bundle'));
+      expect(
+        (body['issue'] as List)[0]['diagnostics'],
+        contains('Expected a Bundle'),
+      );
     });
 
     test('reports errors for entries that fail to save', () async {
@@ -234,7 +237,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: jsonEncode(bundle.toJson()),
         headers: {'content-type': 'application/fhir+json'},
       );
@@ -262,7 +265,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$restore'),
+        Uri.parse(r'http://localhost:8080/$restore'),
         body: jsonEncode(bundle.toJson()),
         headers: {'content-type': 'application/fhir+json'},
       );

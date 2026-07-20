@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/terminology_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -21,11 +21,11 @@ void main() {
       mockDb = MockFhirAntDb();
     });
 
-    Request _makeGetRequest(String path) {
+    Request makeGetRequest(String path) {
       return Request('GET', Uri.parse('http://localhost:8080/$path'));
     }
 
-    Request _makePostRequest(String path, Map<String, dynamic> body) {
+    Request makePostRequest(String path, Map<String, dynamic> body) {
       return Request(
         'POST',
         Uri.parse('http://localhost:8080/$path'),
@@ -34,8 +34,9 @@ void main() {
     }
 
     test('returns 400 when code is missing', () async {
-      final request = _makeGetRequest(
-          'CodeSystem/\$validate-code?system=http://example.com');
+      final request = makeGetRequest(
+        r'CodeSystem/$validate-code?system=http://example.com',
+      );
 
       final response = await validateCodeHandler(request, mockDb);
       expect(response.statusCode, 400);
@@ -63,7 +64,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.CodeSystem, 'cs-1'))
           .thenAnswer((_) async => cs);
 
-      final request = _makeGetRequest('CodeSystem/cs-1/\$validate-code?code=A');
+      final request = makeGetRequest(r'CodeSystem/cs-1/$validate-code?code=A');
 
       final response =
           await validateCodeHandler(request, mockDb, 'CodeSystem', 'cs-1');
@@ -100,7 +101,7 @@ void main() {
           .thenAnswer((_) async => cs);
 
       final request =
-          _makeGetRequest('CodeSystem/cs-1/\$validate-code?code=child');
+          makeGetRequest(r'CodeSystem/cs-1/$validate-code?code=child');
 
       final response =
           await validateCodeHandler(request, mockDb, 'CodeSystem', 'cs-1');
@@ -127,7 +128,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.CodeSystem, 'cs-1'))
           .thenAnswer((_) async => cs);
 
-      final request = _makeGetRequest('CodeSystem/cs-1/\$validate-code?code=Z');
+      final request = makeGetRequest(r'CodeSystem/cs-1/$validate-code?code=Z');
 
       final response =
           await validateCodeHandler(request, mockDb, 'CodeSystem', 'cs-1');
@@ -151,19 +152,22 @@ void main() {
         ],
       });
 
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.CodeSystem,
-            searchParameters: {
-              'url': ['http://example.com/cs']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [cs]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.CodeSystem,
+          searchParameters: {
+            'url': ['http://example.com/cs'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [cs]);
 
-      final request = _makeGetRequest(
-          'CodeSystem/\$validate-code?system=http://example.com/cs&code=X');
+      final request = makeGetRequest(
+        r'CodeSystem/$validate-code?system=http://example.com/cs&code=X',
+      );
 
       final response = await validateCodeHandler(request, mockDb, 'CodeSystem');
       expect(response.statusCode, 200);
@@ -196,8 +200,9 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest(
-          'ValueSet/vs-1/\$validate-code?code=A&system=http://example.com/cs');
+      final request = makeGetRequest(
+        r'ValueSet/vs-1/$validate-code?code=A&system=http://example.com/cs',
+      );
 
       final response =
           await validateCodeHandler(request, mockDb, 'ValueSet', 'vs-1');
@@ -230,8 +235,9 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest(
-          'ValueSet/vs-1/\$validate-code?code=1234-5&system=http://loinc.org');
+      final request = makeGetRequest(
+        r'ValueSet/vs-1/$validate-code?code=1234-5&system=http://loinc.org',
+      );
 
       final response =
           await validateCodeHandler(request, mockDb, 'ValueSet', 'vs-1');
@@ -258,8 +264,8 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.CodeSystem, 'cs-1'))
           .thenAnswer((_) async => cs);
 
-      final request = _makePostRequest(
-        'CodeSystem/cs-1/\$validate-code',
+      final request = makePostRequest(
+        r'CodeSystem/cs-1/$validate-code',
         {
           'resourceType': 'Parameters',
           'parameter': [
@@ -283,7 +289,7 @@ void main() {
           .thenAnswer((_) async => null);
 
       final request =
-          _makeGetRequest('CodeSystem/missing/\$validate-code?code=X');
+          makeGetRequest(r'CodeSystem/missing/$validate-code?code=X');
 
       final response =
           await validateCodeHandler(request, mockDb, 'CodeSystem', 'missing');
@@ -298,13 +304,13 @@ void main() {
       mockDb = MockFhirAntDb();
     });
 
-    Request _makeGetRequest(String path) {
+    Request makeGetRequest(String path) {
       return Request('GET', Uri.parse('http://localhost:8080/$path'));
     }
 
     test('returns 400 when code is missing', () async {
       final request =
-          _makeGetRequest('CodeSystem/\$lookup?system=http://example.com');
+          makeGetRequest(r'CodeSystem/$lookup?system=http://example.com');
 
       final response = await lookupHandler(request, mockDb);
       expect(response.statusCode, 400);
@@ -331,7 +337,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.CodeSystem, 'cs-1'))
           .thenAnswer((_) async => cs);
 
-      final request = _makeGetRequest('CodeSystem/cs-1/\$lookup?code=A');
+      final request = makeGetRequest(r'CodeSystem/cs-1/$lookup?code=A');
 
       final response = await lookupHandler(request, mockDb, 'cs-1');
       expect(response.statusCode, 200);
@@ -365,19 +371,22 @@ void main() {
         ],
       });
 
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.CodeSystem,
-            searchParameters: {
-              'url': ['http://example.com/cs']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [cs]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.CodeSystem,
+          searchParameters: {
+            'url': ['http://example.com/cs'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [cs]);
 
-      final request = _makeGetRequest(
-          'CodeSystem/\$lookup?system=http://example.com/cs&code=B');
+      final request = makeGetRequest(
+        r'CodeSystem/$lookup?system=http://example.com/cs&code=B',
+      );
 
       final response = await lookupHandler(request, mockDb);
       expect(response.statusCode, 200);
@@ -403,26 +412,29 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.CodeSystem, 'cs-1'))
           .thenAnswer((_) async => cs);
 
-      final request = _makeGetRequest('CodeSystem/cs-1/\$lookup?code=Z');
+      final request = makeGetRequest(r'CodeSystem/cs-1/$lookup?code=Z');
 
       final response = await lookupHandler(request, mockDb, 'cs-1');
       expect(response.statusCode, 404);
     });
 
     test('returns 404 when CodeSystem not found by URL', () async {
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.CodeSystem,
-            searchParameters: {
-              'url': ['http://missing.com']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => []);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.CodeSystem,
+          searchParameters: {
+            'url': ['http://missing.com'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => []);
 
-      final request = _makeGetRequest(
-          'CodeSystem/\$lookup?system=http://missing.com&code=X');
+      final request = makeGetRequest(
+        r'CodeSystem/$lookup?system=http://missing.com&code=X',
+      );
 
       final response = await lookupHandler(request, mockDb);
       expect(response.statusCode, 404);
@@ -436,12 +448,12 @@ void main() {
       mockDb = MockFhirAntDb();
     });
 
-    Request _makeGetRequest(String path) {
+    Request makeGetRequest(String path) {
       return Request('GET', Uri.parse('http://localhost:8080/$path'));
     }
 
     test('returns 400 when no id or url provided', () async {
-      final request = _makeGetRequest('ValueSet/\$expand');
+      final request = makeGetRequest(r'ValueSet/$expand');
 
       final response = await expandHandler(request, mockDb);
       expect(response.statusCode, 400);
@@ -451,26 +463,28 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'missing'))
           .thenAnswer((_) async => null);
 
-      final request = _makeGetRequest('ValueSet/missing/\$expand');
+      final request = makeGetRequest(r'ValueSet/missing/$expand');
 
       final response = await expandHandler(request, mockDb, 'missing');
       expect(response.statusCode, 404);
     });
 
     test('returns 404 when ValueSet not found by url', () async {
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.ValueSet,
-            searchParameters: {
-              'url': ['http://missing.com/vs']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => []);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.ValueSet,
+          searchParameters: {
+            'url': ['http://missing.com/vs'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => []);
 
       final request =
-          _makeGetRequest('ValueSet/\$expand?url=http://missing.com/vs');
+          makeGetRequest(r'ValueSet/$expand?url=http://missing.com/vs');
 
       final response = await expandHandler(request, mockDb);
       expect(response.statusCode, 404);
@@ -502,7 +516,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -540,7 +554,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -591,18 +605,20 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.CodeSystem,
-            searchParameters: {
-              'url': ['http://example.com/cs']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [cs]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.CodeSystem,
+          searchParameters: {
+            'url': ['http://example.com/cs'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [cs]);
 
-      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -647,7 +663,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest('ValueSet/vs-1/\$expand?filter=blood');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand?filter=blood');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -681,8 +697,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request =
-          _makeGetRequest('ValueSet/vs-1/\$expand?offset=1&count=2');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand?offset=1&count=2');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -729,7 +744,7 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
           .thenAnswer((_) async => vs);
 
-      final request = _makeGetRequest('ValueSet/vs-1/\$expand');
+      final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
       final response = await expandHandler(request, mockDb, 'vs-1');
       expect(response.statusCode, 200);
@@ -760,19 +775,21 @@ void main() {
         },
       });
 
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.ValueSet,
-            searchParameters: {
-              'url': ['http://example.com/vs']
-            },
-            count: 1,
-            hasParameters: any(named: 'hasParameters'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [vs]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.ValueSet,
+          searchParameters: {
+            'url': ['http://example.com/vs'],
+          },
+          count: 1,
+          hasParameters: any(named: 'hasParameters'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [vs]);
 
       final request =
-          _makeGetRequest('ValueSet/\$expand?url=http://example.com/vs');
+          makeGetRequest(r'ValueSet/$expand?url=http://example.com/vs');
 
       final response = await expandHandler(request, mockDb);
       expect(response.statusCode, 200);

@@ -14,7 +14,10 @@ const lockoutDuration = Duration(minutes: 15);
 
 /// Handler for user login. Validates credentials and returns a JWT.
 Future<Response> loginHandler(
-    Request request, FhirAntDb dbInterface, JwtService jwtService) async {
+  Request request,
+  FhirAntDb dbInterface,
+  JwtService jwtService,
+) async {
   try {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
@@ -23,21 +26,27 @@ Future<Response> loginHandler(
     final username = body['username'];
     final password = body['password'];
     if (username is! String || password is! String) {
-      return Response(400,
-          body: jsonEncode({'error': 'Username and password are required'}));
+      return Response(
+        400,
+        body: jsonEncode({'error': 'Username and password are required'}),
+      );
     }
 
     // Look up user
     final user = await dbInterface.getUserByUsername(username);
     if (user == null) {
-      return Response(401,
-          body: jsonEncode({'error': 'Invalid username or password'}));
+      return Response(
+        401,
+        body: jsonEncode({'error': 'Invalid username or password'}),
+      );
     }
 
     // Check if account is active
     if (!user.active) {
-      return Response(403,
-          body: jsonEncode({'error': 'Account is deactivated'}));
+      return Response(
+        403,
+        body: jsonEncode({'error': 'Account is deactivated'}),
+      );
     }
 
     // Check account lockout
@@ -45,10 +54,12 @@ Future<Response> loginHandler(
       if (user.lockedUntil!.isAfter(DateTime.now())) {
         final remaining =
             user.lockedUntil!.difference(DateTime.now()).inMinutes + 1;
-        return Response(423,
-            body: jsonEncode({
-              'error': 'Account is locked. Try again in $remaining minute(s).'
-            }));
+        return Response(
+          423,
+          body: jsonEncode({
+            'error': 'Account is locked. Try again in $remaining minute(s).',
+          }),
+        );
       }
       // Lock has expired — auto-unlock
       await dbInterface.resetFailedLogins(user.id);
@@ -56,20 +67,29 @@ Future<Response> loginHandler(
 
     // Verify password
     if (!PasswordHasher.verifyPassword(
-        password, user.salt, user.passwordHash)) {
+      password,
+      user.salt,
+      user.passwordHash,
+    )) {
       // Increment failed login counter
       final newCount = await dbInterface.incrementFailedLogins(user.id);
       if (newCount >= maxFailedAttempts) {
         await dbInterface.lockAccount(
-            user.id, DateTime.now().add(lockoutDuration));
-        return Response(423,
-            body: jsonEncode({
-              'error':
-                  'Account locked due to too many failed attempts. Try again in ${lockoutDuration.inMinutes} minutes.'
-            }));
+          user.id,
+          DateTime.now().add(lockoutDuration),
+        );
+        return Response(
+          423,
+          body: jsonEncode({
+            'error':
+                'Account locked due to too many failed attempts. Try again in ${lockoutDuration.inMinutes} minutes.',
+          }),
+        );
       }
-      return Response(401,
-          body: jsonEncode({'error': 'Invalid username or password'}));
+      return Response(
+        401,
+        body: jsonEncode({'error': 'Invalid username or password'}),
+      );
     }
 
     // Successful login — reset failed login counter
@@ -123,20 +143,25 @@ Future<Response> loginHandler(
     );
   } catch (e) {
     return Response.internalServerError(
-        body: jsonEncode({'error': 'Login failed: $e'}));
+      body: jsonEncode({'error': 'Login failed: $e'}),
+    );
   }
 }
 
 /// Admin-only handler to unlock a locked user account.
 Future<Response> unlockAccountHandler(
-    Request request, int userId, FhirAntDb dbInterface) async {
+  Request request,
+  int userId,
+  FhirAntDb dbInterface,
+) async {
   try {
     // Require admin role
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     if (authUser == null || authUser['role'] != 'admin') {
-      return Response(403,
-          body:
-              jsonEncode({'error': 'Only administrators can unlock accounts'}));
+      return Response(
+        403,
+        body: jsonEncode({'error': 'Only administrators can unlock accounts'}),
+      );
     }
 
     // Verify user exists
@@ -156,6 +181,7 @@ Future<Response> unlockAccountHandler(
     );
   } catch (e) {
     return Response.internalServerError(
-        body: jsonEncode({'error': 'Unlock failed: $e'}));
+      body: jsonEncode({'error': 'Unlock failed: $e'}),
+    );
   }
 }

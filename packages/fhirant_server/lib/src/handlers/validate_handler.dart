@@ -4,8 +4,10 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 /// Validation Handler with full fhir_r4_validation support
-Future<Response> validateHandler(Request request,
-    [String? resourceType]) async {
+Future<Response> validateHandler(
+  Request request, [
+  String? resourceType,
+]) async {
   try {
     FhirantLogging().logInfo('Received validation request');
 
@@ -20,9 +22,9 @@ Future<Response> validateHandler(Request request,
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Request body is empty'
+              'diagnostics': 'Request body is empty',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -41,9 +43,9 @@ Future<Response> validateHandler(Request request,
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Invalid JSON format: ${e.toString()}'
+              'diagnostics': 'Invalid JSON format: $e',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -62,9 +64,9 @@ Future<Response> validateHandler(Request request,
                 'severity': 'error',
                 'code': 'invalid',
                 'diagnostics':
-                    'Resource type in body ($bodyResourceType) does not match URL path ($resourceType)'
+                    'Resource type in body ($bodyResourceType) does not match URL path ($resourceType)',
               }
-            ]
+            ],
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -113,9 +115,9 @@ Future<Response> validateHandler(Request request,
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'Validation error: ${e.toString()}'
+            'diagnostics': 'Validation error: $e',
           }
-        ]
+        ],
       }),
       headers: {'Content-Type': 'application/json'},
     );

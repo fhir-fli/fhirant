@@ -24,7 +24,7 @@ class FhirantLogging {
   void initialize({String? logFilePath = 'server_logs.json'}) {
     _logFilePath = logFilePath;
     Logger.root.level = Level.ALL; // Log everything
-    Logger.root.onRecord.listen((LogRecord record) {
+    Logger.root.onRecord.listen((record) {
       final logMessage = jsonEncode({
         'timestamp': record.time.toIso8601String(),
         'level': record.level.name,

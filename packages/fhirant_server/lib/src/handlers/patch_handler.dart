@@ -46,7 +46,11 @@ Future<Response> patchResourceHandler(
     final patchPatientId = extractPatientContext(request);
     if (patchPatientId != null) {
       if (!await isInPatientCompartment(
-          resourceType, id, patchPatientId, dbInterface)) {
+        resourceType,
+        id,
+        patchPatientId,
+        dbInterface,
+      )) {
         return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
       }
     }

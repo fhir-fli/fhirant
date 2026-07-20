@@ -1,16 +1,14 @@
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../state/server_state.dart';
-
 class ResourceBrowserScreen extends StatefulWidget {
-  final R4ResourceType? initialType;
-
   const ResourceBrowserScreen({super.key, this.initialType});
+  final R4ResourceType? initialType;
 
   @override
   State<ResourceBrowserScreen> createState() => _ResourceBrowserScreenState();
@@ -99,7 +97,7 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
             leading: showingRef
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: () => setState(() => _refStack.removeLast()),
+                    onPressed: () => setState(_refStack.removeLast),
                   )
                 : null,
             actions: [
@@ -147,7 +145,9 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
   }
 
   Widget _buildTypeList(
-      List<R4ResourceType> types, Map<R4ResourceType, int> counts) {
+    List<R4ResourceType> types,
+    Map<R4ResourceType, int> counts,
+  ) {
     if (types.isEmpty) {
       return const Center(child: Text('No resources in database'));
     }
@@ -277,7 +277,7 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
     return '';
   }
 
-  void _handleReferenceTap(String reference) async {
+  Future<void> _handleReferenceTap(String reference) async {
     // Check if it's a URL
     if (reference.startsWith('http://') || reference.startsWith('https://')) {
       final uri = Uri.tryParse(reference);
@@ -318,13 +318,6 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
 }
 
 class _ResourceTile extends StatefulWidget {
-  final Resource resource;
-  final String id;
-  final String subtitle;
-  final bool showYaml;
-  final void Function(String reference) onReferenceTap;
-  final bool initiallyExpanded;
-
   const _ResourceTile({
     super.key,
     required this.resource,
@@ -334,6 +327,12 @@ class _ResourceTile extends StatefulWidget {
     required this.onReferenceTap,
     this.initiallyExpanded = false,
   });
+  final Resource resource;
+  final String id;
+  final String subtitle;
+  final bool showYaml;
+  final void Function(String reference) onReferenceTap;
+  final bool initiallyExpanded;
 
   @override
   State<_ResourceTile> createState() => _ResourceTileState();
@@ -421,7 +420,7 @@ class _ResourceTileState extends State<_ResourceTile> {
     // Match URLs and FHIR references (ResourceType/id patterns)
     final urlRegex = RegExp(r'https?://[^\s",}\]]+');
     // Match "SomeType/some-id" patterns — validated against R4ResourceType
-    final refRegex = RegExp(r'"([A-Z][a-zA-Z]+/[A-Za-z0-9._-]+)"');
+    final refRegex = RegExp('"([A-Z][a-zA-Z]+/[A-Za-z0-9._-]+)"');
 
     var lastEnd = 0;
     final allMatches = <_LinkMatch>[];
@@ -488,10 +487,10 @@ class _ResourceTileState extends State<_ResourceTile> {
 }
 
 class _LinkMatch {
+  _LinkMatch(this.start, this.end, this.text);
   final int start;
   final int end;
   final String text;
-  _LinkMatch(this.start, this.end, this.text);
 }
 
 String _jsonToYaml(dynamic value, int indent) {

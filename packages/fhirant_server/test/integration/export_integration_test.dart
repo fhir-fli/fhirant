@@ -1,4 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
 import 'dart:convert';
 import 'dart:io';
 
@@ -55,8 +54,10 @@ void main() {
   }
 
   /// Helper: Poll until export job is complete (or timeout).
-  Future<Response> pollUntilComplete(String jobId,
-      {int maxAttempts = 20}) async {
+  Future<Response> pollUntilComplete(
+    String jobId, {
+    int maxAttempts = 20,
+  }) async {
     for (var i = 0; i < maxAttempts; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       final req = testRequest(
@@ -75,26 +76,30 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   // System-level export: full workflow
   // ─────────────────────────────────────────────────────────────────────────
-  group('System-level \$export', () {
+  group(r'System-level $export', () {
     test('full workflow: kick off -> poll -> download', () async {
       // 1. Create some test resources
-      await saveResource(fhir.Patient(
-        id: 'p1'.toFhirString,
-        name: [fhir.HumanName(family: 'Smith'.toFhirString)],
-      ));
-      await saveResource(fhir.Observation(
-        id: 'obs1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Patient(
+          id: 'p1'.toFhirString,
+          name: [fhir.HumanName(family: 'Smith'.toFhirString)],
         ),
-        subject: fhir.Reference(reference: 'Patient/p1'.toFhirString),
-      ));
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'obs1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+          ),
+          subject: fhir.Reference(reference: 'Patient/p1'.toFhirString),
+        ),
+      );
 
       // 2. Kick off export
       final kickoffReq = testRequest(
         'GET',
-        '/\$export',
+        r'/$export',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -149,21 +154,25 @@ void main() {
     });
 
     test('with _type filter', () async {
-      await saveResource(fhir.Patient(
-        id: 'p2'.toFhirString,
-        name: [fhir.HumanName(family: 'Jones'.toFhirString)],
-      ));
-      await saveResource(fhir.Observation(
-        id: 'obs2'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Patient(
+          id: 'p2'.toFhirString,
+          name: [fhir.HumanName(family: 'Jones'.toFhirString)],
         ),
-      ));
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'obs2'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+          ),
+        ),
+      );
 
       final kickoffReq = testRequest(
         'GET',
-        '/\$export?_type=Patient',
+        r'/$export?_type=Patient',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -182,20 +191,24 @@ void main() {
     });
 
     test('with _since filter', () async {
-      await saveResource(fhir.Patient(
-        id: 'p3'.toFhirString,
-        name: [fhir.HumanName(family: 'OldPatient'.toFhirString)],
-      ));
+      await saveResource(
+        fhir.Patient(
+          id: 'p3'.toFhirString,
+          name: [fhir.HumanName(family: 'OldPatient'.toFhirString)],
+        ),
+      );
 
       // Wait briefly, then record the _since timestamp
       await Future<void>.delayed(const Duration(seconds: 1));
       final sinceTime = DateTime.now().toUtc().toIso8601String();
       await Future<void>.delayed(const Duration(seconds: 1));
 
-      await saveResource(fhir.Patient(
-        id: 'p4'.toFhirString,
-        name: [fhir.HumanName(family: 'NewPatient'.toFhirString)],
-      ));
+      await saveResource(
+        fhir.Patient(
+          id: 'p4'.toFhirString,
+          name: [fhir.HumanName(family: 'NewPatient'.toFhirString)],
+        ),
+      );
 
       final kickoffReq = testRequest(
         'GET',
@@ -231,24 +244,28 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   // Patient-level export
   // ─────────────────────────────────────────────────────────────────────────
-  group('Patient-level \$export', () {
+  group(r'Patient-level $export', () {
     test('exports only patient-compartment resource types', () async {
-      await saveResource(fhir.Patient(
-        id: 'pp1'.toFhirString,
-        name: [fhir.HumanName(family: 'PatExport'.toFhirString)],
-      ));
-      await saveResource(fhir.Observation(
-        id: 'pobs1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Patient(
+          id: 'pp1'.toFhirString,
+          name: [fhir.HumanName(family: 'PatExport'.toFhirString)],
         ),
-        subject: fhir.Reference(reference: 'Patient/pp1'.toFhirString),
-      ));
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'pobs1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+          ),
+          subject: fhir.Reference(reference: 'Patient/pp1'.toFhirString),
+        ),
+      );
 
       final kickoffReq = testRequest(
         'GET',
-        '/Patient/\$export',
+        r'/Patient/$export',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -275,42 +292,48 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   // Group-level export
   // ─────────────────────────────────────────────────────────────────────────
-  group('Group-level \$export', () {
+  group(r'Group-level $export', () {
     test('full workflow: create Group + members -> export -> verify NDJSON',
         () async {
       // 1. Create Patient member
-      await saveResource(fhir.Patient(
-        id: 'gp1'.toFhirString,
-        name: [fhir.HumanName(family: 'GroupMember1'.toFhirString)],
-      ));
+      await saveResource(
+        fhir.Patient(
+          id: 'gp1'.toFhirString,
+          name: [fhir.HumanName(family: 'GroupMember1'.toFhirString)],
+        ),
+      );
 
       // 2. Create Observation linked to group member
-      await saveResource(fhir.Observation(
-        id: 'gobs1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Observation(
+          id: 'gobs1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+          ),
+          subject: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
         ),
-        subject: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
-      ));
+      );
 
       // 3. Create the Group resource
-      await saveResource(fhir.FhirGroup(
-        id: 'test-group'.toFhirString,
-        active: true.toFhirBoolean,
-        type: fhir.GroupType.person,
-        actual: true.toFhirBoolean,
-        member: [
-          fhir.GroupMember(
-            entity: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
-          ),
-        ],
-      ));
+      await saveResource(
+        fhir.FhirGroup(
+          id: 'test-group'.toFhirString,
+          active: true.toFhirBoolean,
+          type: fhir.GroupType.person,
+          actual: true.toFhirBoolean,
+          member: [
+            fhir.GroupMember(
+              entity: fhir.Reference(reference: 'Patient/gp1'.toFhirString),
+            ),
+          ],
+        ),
+      );
 
       // 4. Kick off group export
       final kickoffReq = testRequest(
         'GET',
-        '/Group/test-group/\$export',
+        r'/Group/test-group/$export',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -353,35 +376,41 @@ void main() {
 
     test('with _type filter restricts exported types', () async {
       // Create members and observations
-      await saveResource(fhir.Patient(
-        id: 'gtp1'.toFhirString,
-        name: [fhir.HumanName(family: 'TypeFilter'.toFhirString)],
-      ));
-      await saveResource(fhir.Observation(
-        id: 'gtobs1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Patient(
+          id: 'gtp1'.toFhirString,
+          name: [fhir.HumanName(family: 'TypeFilter'.toFhirString)],
         ),
-        subject: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
-      ));
-
-      await saveResource(fhir.FhirGroup(
-        id: 'filter-group'.toFhirString,
-        active: true.toFhirBoolean,
-        type: fhir.GroupType.person,
-        actual: true.toFhirBoolean,
-        member: [
-          fhir.GroupMember(
-            entity: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'gtobs1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
           ),
-        ],
-      ));
+          subject: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
+        ),
+      );
+
+      await saveResource(
+        fhir.FhirGroup(
+          id: 'filter-group'.toFhirString,
+          active: true.toFhirBoolean,
+          type: fhir.GroupType.person,
+          actual: true.toFhirBoolean,
+          member: [
+            fhir.GroupMember(
+              entity: fhir.Reference(reference: 'Patient/gtp1'.toFhirString),
+            ),
+          ],
+        ),
+      );
 
       // Kick off with _type=Patient only
       final kickoffReq = testRequest(
         'GET',
-        '/Group/filter-group/\$export?_type=Patient',
+        r'/Group/filter-group/$export?_type=Patient',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -401,16 +430,18 @@ void main() {
 
     test('Group with no patient members returns empty export', () async {
       // Create a Group with no members
-      await saveResource(fhir.FhirGroup(
-        id: 'empty-group'.toFhirString,
-        active: true.toFhirBoolean,
-        type: fhir.GroupType.person,
-        actual: true.toFhirBoolean,
-      ));
+      await saveResource(
+        fhir.FhirGroup(
+          id: 'empty-group'.toFhirString,
+          active: true.toFhirBoolean,
+          type: fhir.GroupType.person,
+          actual: true.toFhirBoolean,
+        ),
+      );
 
       final kickoffReq = testRequest(
         'GET',
-        '/Group/empty-group/\$export',
+        r'/Group/empty-group/$export',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -433,30 +464,34 @@ void main() {
   group('_typeFilter', () {
     test('filters resources by search criteria', () async {
       // Create Observations with different codes
-      await saveResource(fhir.Observation(
-        id: 'tf-obs1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '85354-9'.toFhirCode,
-            )
-          ],
+      await saveResource(
+        fhir.Observation(
+          id: 'tf-obs1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '85354-9'.toFhirCode,
+              ),
+            ],
+          ),
         ),
-      ));
-      await saveResource(fhir.Observation(
-        id: 'tf-obs2'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '29463-7'.toFhirCode,
-            )
-          ],
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'tf-obs2'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '29463-7'.toFhirCode,
+              ),
+            ],
+          ),
         ),
-      ));
+      );
 
       // Export with _typeFilter that matches only one code
       final kickoffReq = testRequest(
@@ -488,17 +523,21 @@ void main() {
     });
 
     test('_typeFilter for type not in _type is ignored', () async {
-      await saveResource(fhir.Patient(
-        id: 'tf-p1'.toFhirString,
-        name: [fhir.HumanName(family: 'TypeFilterPatient'.toFhirString)],
-      ));
-      await saveResource(fhir.Observation(
-        id: 'tf-obs3'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+      await saveResource(
+        fhir.Patient(
+          id: 'tf-p1'.toFhirString,
+          name: [fhir.HumanName(family: 'TypeFilterPatient'.toFhirString)],
         ),
-      ));
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'tf-obs3'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [fhir.Coding(code: '85354-9'.toFhirCode)],
+          ),
+        ),
+      );
 
       // _type=Patient but _typeFilter references Observation
       final kickoffReq = testRequest(
@@ -523,35 +562,39 @@ void main() {
     });
 
     test('_typeFilter combined with _since', () async {
-      await saveResource(fhir.Observation(
-        id: 'tf-obs-old'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '85354-9'.toFhirCode,
-            )
-          ],
+      await saveResource(
+        fhir.Observation(
+          id: 'tf-obs-old'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '85354-9'.toFhirCode,
+              ),
+            ],
+          ),
         ),
-      ));
+      );
 
       await Future<void>.delayed(const Duration(seconds: 1));
       final sinceTime = DateTime.now().toUtc().toIso8601String();
       await Future<void>.delayed(const Duration(seconds: 1));
 
-      await saveResource(fhir.Observation(
-        id: 'tf-obs-new'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '85354-9'.toFhirCode,
-            )
-          ],
+      await saveResource(
+        fhir.Observation(
+          id: 'tf-obs-new'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '85354-9'.toFhirCode,
+              ),
+            ],
+          ),
         ),
-      ));
+      );
 
       final kickoffReq = testRequest(
         'GET',
@@ -588,15 +631,17 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   group('Cancel export', () {
     test('DELETE cancels and cleans up', () async {
-      await saveResource(fhir.Patient(
-        id: 'cp1'.toFhirString,
-        name: [fhir.HumanName(family: 'CancelTest'.toFhirString)],
-      ));
+      await saveResource(
+        fhir.Patient(
+          id: 'cp1'.toFhirString,
+          name: [fhir.HumanName(family: 'CancelTest'.toFhirString)],
+        ),
+      );
 
       // Kick off
       final kickoffReq = testRequest(
         'GET',
-        '/\$export',
+        r'/$export',
         authToken: token,
         headers: {'prefer': 'respond-async'},
       );
@@ -637,7 +682,7 @@ void main() {
     test('rejects request without Prefer: respond-async', () async {
       final req = testRequest(
         'GET',
-        '/\$export',
+        r'/$export',
         authToken: token,
       );
       final resp = await handler(req);

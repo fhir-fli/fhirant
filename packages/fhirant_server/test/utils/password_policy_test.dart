@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('PasswordPolicy', () {

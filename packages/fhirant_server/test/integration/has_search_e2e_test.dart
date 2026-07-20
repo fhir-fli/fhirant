@@ -24,14 +24,19 @@ void main() {
 
   /// Helper to create a resource and return its assigned ID.
   Future<String> createResource(Map<String, dynamic> resource) async {
-    final response = await handler(testRequest(
-      'POST',
-      '/${resource['resourceType']}',
-      body: jsonEncode(resource),
-      authToken: token,
-    ));
-    expect(response.statusCode, 201,
-        reason: 'Failed to create ${resource['resourceType']}');
+    final response = await handler(
+      testRequest(
+        'POST',
+        '/${resource['resourceType']}',
+        body: jsonEncode(resource),
+        authToken: token,
+      ),
+    );
+    expect(
+      response.statusCode,
+      201,
+      reason: 'Failed to create ${resource['resourceType']}',
+    );
     final body = jsonDecode(await response.readAsString()) as Map;
     return body['id'] as String;
   }
@@ -47,7 +52,7 @@ void main() {
         'name': [
           {
             'family': 'HasTest',
-            'given': ['Alice']
+            'given': ['Alice'],
           }
         ],
       });
@@ -57,7 +62,7 @@ void main() {
         'name': [
           {
             'family': 'HasTest',
-            'given': ['Bob']
+            'given': ['Bob'],
           }
         ],
       });
@@ -73,7 +78,7 @@ void main() {
               'code': '85354-9',
               'display': 'Blood pressure panel',
             }
-          ]
+          ],
         },
         'subject': {'reference': 'Patient/$patientId'},
       });
@@ -89,7 +94,7 @@ void main() {
               'code': '29463-7',
               'display': 'Body weight',
             }
-          ]
+          ],
         },
         'subject': {'reference': 'Patient/$otherPatientId'},
       });
@@ -97,11 +102,13 @@ void main() {
 
     test('Patient?_has:Observation:patient:code=85354-9 finds correct patient',
         () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_has:Observation:patient:code=85354-9',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_has:Observation:patient:code=85354-9',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, 200);
       final bundle =
@@ -115,11 +122,13 @@ void main() {
     });
 
     test('_has with no matching observations returns empty bundle', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_has:Observation:patient:code=nonexistent-code',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_has:Observation:patient:code=nonexistent-code',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, 200);
       final bundle =
@@ -130,11 +139,13 @@ void main() {
     });
 
     test('_has combined with regular search params (AND logic)', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_has:Observation:patient:code=85354-9&name=HasTest',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_has:Observation:patient:code=85354-9&name=HasTest',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, 200);
       final bundle =
@@ -149,11 +160,13 @@ void main() {
 
     test('_has combined with non-matching regular param returns empty',
         () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_has:Observation:patient:code=85354-9&name=Nonexistent',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_has:Observation:patient:code=85354-9&name=Nonexistent',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, 200);
       final bundle =
@@ -174,19 +187,21 @@ void main() {
               'code': '29463-7',
               'display': 'Body weight',
             }
-          ]
+          ],
         },
         'subject': {'reference': 'Patient/$patientId'},
       });
 
       // Patient must have BOTH 85354-9 AND 29463-7
-      final response = await handler(testRequest(
-        'GET',
-        // Note: Dart Uri doesn't support duplicate keys, so we use
-        // the full pipeline which handles one-key-per-has-variant
-        '/Patient?_has:Observation:patient:code=85354-9',
-        authToken: token,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          // Note: Dart Uri doesn't support duplicate keys, so we use
+          // the full pipeline which handles one-key-per-has-variant
+          '/Patient?_has:Observation:patient:code=85354-9',
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, 200);
       final bundle =
@@ -194,17 +209,21 @@ void main() {
       final entries = bundle['entry'] as List?;
       expect(entries, isNotNull);
       // patientId has both observations
-      expect(entries!.any((e) => (e['resource'] as Map)['id'] == patientId),
-          isTrue);
+      expect(
+        entries!.any((e) => (e['resource'] as Map)['id'] == patientId),
+        isTrue,
+      );
     });
   });
 
   group('_has in CapabilityStatement', () {
     test('metadata advertises search-system interaction', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/metadata',
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/metadata',
+        ),
+      );
 
       expect(response.statusCode, 200);
       final cs =

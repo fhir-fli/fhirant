@@ -1,8 +1,7 @@
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../state/server_state.dart';
 
 class RequestLogCard extends StatelessWidget {
   const RequestLogCard({super.key});

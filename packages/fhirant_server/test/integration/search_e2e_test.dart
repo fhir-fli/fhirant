@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -25,39 +25,47 @@ void main() {
 
   group('Search E2E Integration Tests', () {
     test('Search by name returns matching Patients', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-name-1'.toFhirString,
-        name: [
-          fhir.HumanName(
-            family: 'Johnson'.toFhirString,
-            given: ['Alice'.toFhirString],
-          ),
-        ],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-name-2'.toFhirString,
-        name: [
-          fhir.HumanName(
-            family: 'Williams'.toFhirString,
-            given: ['Bob'.toFhirString],
-          ),
-        ],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-name-3'.toFhirString,
-        name: [
-          fhir.HumanName(
-            family: 'Johnson'.toFhirString,
-            given: ['Charlie'.toFhirString],
-          ),
-        ],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-name-1'.toFhirString,
+          name: [
+            fhir.HumanName(
+              family: 'Johnson'.toFhirString,
+              given: ['Alice'.toFhirString],
+            ),
+          ],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-name-2'.toFhirString,
+          name: [
+            fhir.HumanName(
+              family: 'Williams'.toFhirString,
+              given: ['Bob'.toFhirString],
+            ),
+          ],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-name-3'.toFhirString,
+          name: [
+            fhir.HumanName(
+              family: 'Johnson'.toFhirString,
+              given: ['Charlie'.toFhirString],
+            ),
+          ],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=Johnson',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=Johnson',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -68,32 +76,38 @@ void main() {
     });
 
     test('Search by identifier (token) returns matching Patient', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-token-1'.toFhirString,
-        identifier: [
-          fhir.Identifier(
-            system: 'http://hospital.example/mrn'.toFhirUri,
-            value: 'MRN-12345'.toFhirString,
-          ),
-        ],
-        name: [fhir.HumanName(family: 'TokenPatient'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-token-2'.toFhirString,
-        identifier: [
-          fhir.Identifier(
-            system: 'http://hospital.example/mrn'.toFhirUri,
-            value: 'MRN-67890'.toFhirString,
-          ),
-        ],
-        name: [fhir.HumanName(family: 'OtherPatient'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-token-1'.toFhirString,
+          identifier: [
+            fhir.Identifier(
+              system: 'http://hospital.example/mrn'.toFhirUri,
+              value: 'MRN-12345'.toFhirString,
+            ),
+          ],
+          name: [fhir.HumanName(family: 'TokenPatient'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-token-2'.toFhirString,
+          identifier: [
+            fhir.Identifier(
+              system: 'http://hospital.example/mrn'.toFhirUri,
+              value: 'MRN-67890'.toFhirString,
+            ),
+          ],
+          name: [fhir.HumanName(family: 'OtherPatient'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?identifier=http://hospital.example/mrn|MRN-12345',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?identifier=http://hospital.example/mrn|MRN-12345',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -105,17 +119,21 @@ void main() {
     test('Search with _count=1 returns paginated Bundle with next link',
         () async {
       for (var i = 1; i <= 3; i++) {
-        await testDb.saveResource(fhir.Patient(
-          id: 'page-$i'.toFhirString,
-          name: [fhir.HumanName(family: 'PageTest'.toFhirString)],
-        ));
+        await testDb.saveResource(
+          fhir.Patient(
+            id: 'page-$i'.toFhirString,
+            name: [fhir.HumanName(family: 'PageTest'.toFhirString)],
+          ),
+        );
       }
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=PageTest&_count=1',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=PageTest&_count=1',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -133,24 +151,32 @@ void main() {
     });
 
     test('Search with _sort=family returns ordered results', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'sort-z'.toFhirString,
-        name: [fhir.HumanName(family: 'Zebra'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'sort-a'.toFhirString,
-        name: [fhir.HumanName(family: 'Apple'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'sort-m'.toFhirString,
-        name: [fhir.HumanName(family: 'Mango'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'sort-z'.toFhirString,
+          name: [fhir.HumanName(family: 'Zebra'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'sort-a'.toFhirString,
+          name: [fhir.HumanName(family: 'Apple'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'sort-m'.toFhirString,
+          name: [fhir.HumanName(family: 'Mango'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_sort=family',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_sort=family',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -164,11 +190,13 @@ void main() {
     });
 
     test('Search with no matches returns empty Bundle', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=NonExistentFamilyName',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=NonExistentFamilyName',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -181,22 +209,28 @@ void main() {
     });
 
     test('Search by birthdate returns matching Patient', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-dob-1'.toFhirString,
-        name: [fhir.HumanName(family: 'DobTest'.toFhirString)],
-        birthDate: fhir.FhirDate.fromString('1985-06-15'),
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'search-dob-2'.toFhirString,
-        name: [fhir.HumanName(family: 'DobTest2'.toFhirString)],
-        birthDate: fhir.FhirDate.fromString('2000-03-20'),
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-dob-1'.toFhirString,
+          name: [fhir.HumanName(family: 'DobTest'.toFhirString)],
+          birthDate: fhir.FhirDate.fromString('1985-06-15'),
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'search-dob-2'.toFhirString,
+          name: [fhir.HumanName(family: 'DobTest2'.toFhirString)],
+          birthDate: fhir.FhirDate.fromString('2000-03-20'),
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?birthdate=1985-06-15',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?birthdate=1985-06-15',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -205,38 +239,44 @@ void main() {
     });
 
     test('Search Observation by code returns matching resource', () async {
-      await testDb.saveResource(fhir.Observation(
-        id: 'obs-bp'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '85354-9'.toFhirCode,
-              display: 'Blood pressure panel'.toFhirString,
-            ),
-          ],
+      await testDb.saveResource(
+        fhir.Observation(
+          id: 'obs-bp'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '85354-9'.toFhirCode,
+                display: 'Blood pressure panel'.toFhirString,
+              ),
+            ],
+          ),
         ),
-      ));
-      await testDb.saveResource(fhir.Observation(
-        id: 'obs-hr'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '8867-4'.toFhirCode,
-              display: 'Heart rate'.toFhirString,
-            ),
-          ],
+      );
+      await testDb.saveResource(
+        fhir.Observation(
+          id: 'obs-hr'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '8867-4'.toFhirCode,
+                display: 'Heart rate'.toFhirString,
+              ),
+            ],
+          ),
         ),
-      ));
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Observation?code=http://loinc.org|85354-9',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Observation?code=http://loinc.org|85354-9',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -245,20 +285,26 @@ void main() {
     });
 
     test('Search by _id returns specific resource', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'id-search-1'.toFhirString,
-        name: [fhir.HumanName(family: 'IdSearch'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'id-search-2'.toFhirString,
-        name: [fhir.HumanName(family: 'IdSearch'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'id-search-1'.toFhirString,
+          name: [fhir.HumanName(family: 'IdSearch'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'id-search-2'.toFhirString,
+          name: [fhir.HumanName(family: 'IdSearch'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?_id=id-search-1',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?_id=id-search-1',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -268,25 +314,31 @@ void main() {
 
     test('Search with _include returns referenced resources', () async {
       // Create an Organization first
-      await testDb.saveResource(fhir.Organization(
-        id: 'include-org-1'.toFhirString,
-        name: 'Test Hospital'.toFhirString,
-      ));
+      await testDb.saveResource(
+        fhir.Organization(
+          id: 'include-org-1'.toFhirString,
+          name: 'Test Hospital'.toFhirString,
+        ),
+      );
 
       // Create a Patient that references the Organization
-      await testDb.saveResource(fhir.Patient(
-        id: 'include-pat-1'.toFhirString,
-        name: [fhir.HumanName(family: 'IncludeTest'.toFhirString)],
-        managingOrganization: fhir.Reference(
-          reference: 'Organization/include-org-1'.toFhirString,
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'include-pat-1'.toFhirString,
+          name: [fhir.HumanName(family: 'IncludeTest'.toFhirString)],
+          managingOrganization: fhir.Reference(
+            reference: 'Organization/include-org-1'.toFhirString,
+          ),
         ),
-      ));
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=IncludeTest&_include=Patient:managingOrganization',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=IncludeTest&_include=Patient:managingOrganization',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -304,11 +356,13 @@ void main() {
 
     test('Search with no matches returns empty Bundle with entry array',
         () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Condition?code=nonexistent-code',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Condition?code=nonexistent-code',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -321,23 +375,29 @@ void main() {
 
     test('_include sets search.mode=match on matched and include on included',
         () async {
-      await testDb.saveResource(fhir.Organization(
-        id: 'mode-org-1'.toFhirString,
-        name: 'Mode Hospital'.toFhirString,
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'mode-pat-1'.toFhirString,
-        name: [fhir.HumanName(family: 'ModeTest'.toFhirString)],
-        managingOrganization: fhir.Reference(
-          reference: 'Organization/mode-org-1'.toFhirString,
+      await testDb.saveResource(
+        fhir.Organization(
+          id: 'mode-org-1'.toFhirString,
+          name: 'Mode Hospital'.toFhirString,
         ),
-      ));
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'mode-pat-1'.toFhirString,
+          name: [fhir.HumanName(family: 'ModeTest'.toFhirString)],
+          managingOrganization: fhir.Reference(
+            reference: 'Organization/mode-org-1'.toFhirString,
+          ),
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=ModeTest&_include=Patient:managingOrganization',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=ModeTest&_include=Patient:managingOrganization',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -353,35 +413,43 @@ void main() {
       // fullUrl uses correct resource type
       expect(patientEntry['fullUrl'] as String, contains('Patient/mode-pat-1'));
       expect(
-          orgEntry['fullUrl'] as String, contains('Organization/mode-org-1'));
+        orgEntry['fullUrl'] as String,
+        contains('Organization/mode-org-1'),
+      );
     });
 
     test('_revinclude sets search.mode correctly', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'rev-mode-pat-1'.toFhirString,
-        name: [fhir.HumanName(family: 'RevModeTest'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Observation(
-        id: 'rev-mode-obs-1'.toFhirString,
-        status: fhir.ObservationStatus.final_,
-        code: fhir.CodeableConcept(
-          coding: [
-            fhir.Coding(
-              system: 'http://loinc.org'.toFhirUri,
-              code: '12345-6'.toFhirCode,
-            ),
-          ],
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'rev-mode-pat-1'.toFhirString,
+          name: [fhir.HumanName(family: 'RevModeTest'.toFhirString)],
         ),
-        subject: fhir.Reference(
-          reference: 'Patient/rev-mode-pat-1'.toFhirString,
+      );
+      await testDb.saveResource(
+        fhir.Observation(
+          id: 'rev-mode-obs-1'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(
+            coding: [
+              fhir.Coding(
+                system: 'http://loinc.org'.toFhirUri,
+                code: '12345-6'.toFhirCode,
+              ),
+            ],
+          ),
+          subject: fhir.Reference(
+            reference: 'Patient/rev-mode-pat-1'.toFhirString,
+          ),
         ),
-      ));
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=RevModeTest&_revinclude=Observation:subject',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=RevModeTest&_revinclude=Observation:subject',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -398,32 +466,40 @@ void main() {
 
     test('_include:iterate resolves multi-level references', () async {
       // Parent org
-      await testDb.saveResource(fhir.Organization(
-        id: 'iter-parent-org'.toFhirString,
-        name: 'Parent Hospital'.toFhirString,
-      ));
+      await testDb.saveResource(
+        fhir.Organization(
+          id: 'iter-parent-org'.toFhirString,
+          name: 'Parent Hospital'.toFhirString,
+        ),
+      );
       // Child org that references parent
-      await testDb.saveResource(fhir.Organization(
-        id: 'iter-child-org'.toFhirString,
-        name: 'Child Clinic'.toFhirString,
-        partOf: fhir.Reference(
-          reference: 'Organization/iter-parent-org'.toFhirString,
+      await testDb.saveResource(
+        fhir.Organization(
+          id: 'iter-child-org'.toFhirString,
+          name: 'Child Clinic'.toFhirString,
+          partOf: fhir.Reference(
+            reference: 'Organization/iter-parent-org'.toFhirString,
+          ),
         ),
-      ));
+      );
       // Patient referencing child org
-      await testDb.saveResource(fhir.Patient(
-        id: 'iter-pat-1'.toFhirString,
-        name: [fhir.HumanName(family: 'IterTest'.toFhirString)],
-        managingOrganization: fhir.Reference(
-          reference: 'Organization/iter-child-org'.toFhirString,
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'iter-pat-1'.toFhirString,
+          name: [fhir.HumanName(family: 'IterTest'.toFhirString)],
+          managingOrganization: fhir.Reference(
+            reference: 'Organization/iter-child-org'.toFhirString,
+          ),
         ),
-      ));
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=IterTest&_include=Patient:managingOrganization&_include:iterate=Organization:partOf',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=IterTest&_include=Patient:managingOrganization&_include:iterate=Organization:partOf',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -432,21 +508,27 @@ void main() {
       expect(entries, hasLength(3));
 
       final ids = entries.map((e) => e['resource']['id'] as String).toSet();
-      expect(ids,
-          containsAll(['iter-pat-1', 'iter-child-org', 'iter-parent-org']));
+      expect(
+        ids,
+        containsAll(['iter-pat-1', 'iter-child-org', 'iter-parent-org']),
+      );
     });
 
     test('search bundle has self link matching request URL', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'self-link-1'.toFhirString,
-        name: [fhir.HumanName(family: 'SelfLinkTest'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'self-link-1'.toFhirString,
+          name: [fhir.HumanName(family: 'SelfLinkTest'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=SelfLinkTest',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=SelfLinkTest',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -464,11 +546,13 @@ void main() {
     });
 
     test('empty search bundle has self link', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=NobodyHere',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=NobodyHere',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -487,32 +571,40 @@ void main() {
 
     test('_include with wildcard (*) includes all referenced resources',
         () async {
-      await testDb.saveResource(fhir.Organization(
-        id: 'wild-org-1'.toFhirString,
-        name: 'Wild Hospital'.toFhirString,
-      ));
-      await testDb.saveResource(fhir.Practitioner(
-        id: 'wild-prac-1'.toFhirString,
-        name: [fhir.HumanName(family: 'WildDoc'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'wild-pat-1'.toFhirString,
-        name: [fhir.HumanName(family: 'WildTest'.toFhirString)],
-        managingOrganization: fhir.Reference(
-          reference: 'Organization/wild-org-1'.toFhirString,
+      await testDb.saveResource(
+        fhir.Organization(
+          id: 'wild-org-1'.toFhirString,
+          name: 'Wild Hospital'.toFhirString,
         ),
-        generalPractitioner: [
-          fhir.Reference(
-            reference: 'Practitioner/wild-prac-1'.toFhirString,
+      );
+      await testDb.saveResource(
+        fhir.Practitioner(
+          id: 'wild-prac-1'.toFhirString,
+          name: [fhir.HumanName(family: 'WildDoc'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'wild-pat-1'.toFhirString,
+          name: [fhir.HumanName(family: 'WildTest'.toFhirString)],
+          managingOrganization: fhir.Reference(
+            reference: 'Organization/wild-org-1'.toFhirString,
           ),
-        ],
-      ));
+          generalPractitioner: [
+            fhir.Reference(
+              reference: 'Practitioner/wild-prac-1'.toFhirString,
+            ),
+          ],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient?family=WildTest&_include=Patient:*',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient?family=WildTest&_include=Patient:*',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());

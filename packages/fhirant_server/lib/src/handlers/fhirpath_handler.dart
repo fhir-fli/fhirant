@@ -34,9 +34,9 @@ Future<Response> fhirPathHandler(
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics': 'Missing required parameter: expression'
+              'diagnostics': 'Missing required parameter: expression',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -56,9 +56,9 @@ Future<Response> fhirPathHandler(
               {
                 'severity': 'error',
                 'code': 'invalid',
-                'diagnostics': 'Invalid resource type: $resourceType'
+                'diagnostics': 'Invalid resource type: $resourceType',
               }
-            ]
+            ],
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -74,9 +74,9 @@ Future<Response> fhirPathHandler(
               {
                 'severity': 'error',
                 'code': 'not-found',
-                'diagnostics': 'Resource not found: $resourceType/$resourceId'
+                'diagnostics': 'Resource not found: $resourceType/$resourceId',
               }
-            ]
+            ],
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -96,10 +96,9 @@ Future<Response> fhirPathHandler(
                 {
                   'severity': 'error',
                   'code': 'invalid',
-                  'diagnostics':
-                      'Invalid resource in request body: ${e.toString()}'
+                  'diagnostics': 'Invalid resource in request body: $e',
                 }
-              ]
+              ],
             }),
             headers: {'Content-Type': 'application/json'},
           );
@@ -117,9 +116,9 @@ Future<Response> fhirPathHandler(
               'severity': 'error',
               'code': 'invalid',
               'diagnostics':
-                  'No resource provided. Use query params (resourceType & resourceId) or request body'
+                  'No resource provided. Use query params (resourceType & resourceId) or request body',
             }
-          ]
+          ],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -154,9 +153,9 @@ Future<Response> fhirPathHandler(
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'FHIRPath evaluation error: ${e.toString()}'
+            'diagnostics': 'FHIRPath evaluation error: $e',
           }
-        ]
+        ],
       }),
       headers: {'Content-Type': 'application/json'},
     );

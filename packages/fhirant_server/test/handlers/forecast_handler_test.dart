@@ -20,7 +20,7 @@ void main() {
     mockDb = MockFhirAntDb();
   });
 
-  Request _postJson(String path, dynamic body) {
+  Request postJson(String path, dynamic body) {
     return Request(
       'POST',
       Uri.parse('http://localhost$path'),
@@ -30,7 +30,7 @@ void main() {
   }
 
   /// A minimal valid Parameters resource for Cicada.
-  Map<String, dynamic> _minimalForecastParams({
+  Map<String, dynamic> minimalForecastParams({
     String patientId = 'pat-1',
     String birthDate = '2020-06-15',
     List<Map<String, dynamic>> immunizations = const [],
@@ -50,7 +50,8 @@ void main() {
         },
       },
       ...immunizations.map(
-          (imm) => <String, dynamic>{'name': 'immunization', 'resource': imm}),
+        (imm) => <String, dynamic>{'name': 'immunization', 'resource': imm},
+      ),
     ];
     return {
       'resourceType': 'Parameters',
@@ -58,11 +59,11 @@ void main() {
     };
   }
 
-  group('\$immds-forecast (CDC)', () {
+  group(r'$immds-forecast (CDC)', () {
     test('returns 400 when body is empty', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/\$immds-forecast'),
+        Uri.parse(r'http://localhost/$immds-forecast'),
         body: '',
       );
       final response = await immdsForecastHandler(request, mockDb);
@@ -72,7 +73,7 @@ void main() {
     test('returns 400 for invalid JSON', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/\$immds-forecast'),
+        Uri.parse(r'http://localhost/$immds-forecast'),
         body: 'not json',
         headers: {'Content-Type': 'application/json'},
       );
@@ -82,17 +83,17 @@ void main() {
 
     test('returns 400 when no Parameters or patientId', () async {
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', {'foo': 'bar'}),
+        postJson(r'/$immds-forecast', {'foo': 'bar'}),
         mockDb,
       );
       expect(response.statusCode, 400);
     });
 
     test('evaluates forecast with inline Parameters', () async {
-      final params = _minimalForecastParams();
+      final params = minimalForecastParams();
 
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', params),
+        postJson(r'/$immds-forecast', params),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -105,12 +106,12 @@ void main() {
     });
 
     test('returns recommendations for unvaccinated infant', () async {
-      final params = _minimalForecastParams(
+      final params = minimalForecastParams(
         birthDate: '2023-06-15',
       );
 
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', params),
+        postJson(r'/$immds-forecast', params),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -125,8 +126,7 @@ void main() {
     });
 
     test('evaluates forecast with immunization history', () async {
-      final params = _minimalForecastParams(
-        birthDate: '2020-06-15',
+      final params = minimalForecastParams(
         immunizations: [
           {
             'resourceType': 'Immunization',
@@ -147,7 +147,7 @@ void main() {
       );
 
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', params),
+        postJson(r'/$immds-forecast', params),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -169,17 +169,19 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'db-pat'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.search(
-            resourceType: any(named: 'resourceType'),
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => <fhir.Resource>[]);
+      when(
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => <fhir.Resource>[]);
 
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', {'patientId': 'db-pat'}),
+        postJson(r'/$immds-forecast', {'patientId': 'db-pat'}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -187,14 +189,16 @@ void main() {
       verify(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'db-pat'))
           .called(1);
       // Should have searched for Immunizations, Conditions, AllergyIntolerances
-      verify(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.Immunization,
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).called(1);
+      verify(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Immunization,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).called(1);
     });
 
     test('patientId in Parameters triggers DB lookup', () async {
@@ -206,17 +210,19 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'params-pat'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.search(
-            resourceType: any(named: 'resourceType'),
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => <fhir.Resource>[]);
+      when(
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => <fhir.Resource>[]);
 
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', {
+        postJson(r'/$immds-forecast', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'patientId', 'valueString': 'params-pat'},
@@ -226,29 +232,29 @@ void main() {
         mockDb,
       );
       expect(response.statusCode, 200);
-      verify(() =>
-              mockDb.getResource(fhir.R4ResourceType.Patient, 'params-pat'))
-          .called(1);
+      verify(
+        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'params-pat'),
+      ).called(1);
     });
 
     test('response has correct content type', () async {
-      final params = _minimalForecastParams();
+      final params = minimalForecastParams();
       final response = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', params),
+        postJson(r'/$immds-forecast', params),
         mockDb,
       );
       expect(response.headers['content-type'], 'application/fhir+json');
     });
   });
 
-  group('\$immds-forecast-who', () {
+  group(r'$immds-forecast-who', () {
     test('evaluates WHO forecast with inline Parameters', () async {
-      final params = _minimalForecastParams(
+      final params = minimalForecastParams(
         birthDate: '2023-01-01',
       );
 
       final response = await immdsForecastWhoHandler(
-        _postJson('/\$immds-forecast-who', params),
+        postJson(r'/$immds-forecast-who', params),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -260,16 +266,16 @@ void main() {
     });
 
     test('WHO recommendations differ from CDC', () async {
-      final params = _minimalForecastParams(
+      final params = minimalForecastParams(
         birthDate: '2023-06-01',
       );
 
       final cdcResponse = await immdsForecastHandler(
-        _postJson('/\$immds-forecast', params),
+        postJson(r'/$immds-forecast', params),
         mockDb,
       );
       final whoResponse = await immdsForecastWhoHandler(
-        _postJson('/\$immds-forecast-who', params),
+        postJson(r'/$immds-forecast-who', params),
         mockDb,
       );
 

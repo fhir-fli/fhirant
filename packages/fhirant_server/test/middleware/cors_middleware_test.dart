@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('corsMiddleware', () {
@@ -10,19 +10,23 @@ void main() {
       middleware = corsMiddleware();
     });
 
-    Handler _wrapHandler({
+    Handler wrapHandler({
       int statusCode = 200,
       String body = '{"resourceType":"Patient"}',
     }) {
-      final inner = (Request request) async {
-        return Response(statusCode,
-            body: body, headers: {'content-type': 'application/json'});
-      };
+      Future<Response> inner(Request request) async {
+        return Response(
+          statusCode,
+          body: body,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+
       return middleware(inner);
     }
 
     test('OPTIONS preflight returns 204 with CORS headers', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'OPTIONS',
         Uri.parse('http://localhost:8080/Patient'),
@@ -37,7 +41,7 @@ void main() {
     });
 
     test('GET response includes CORS headers', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -50,7 +54,7 @@ void main() {
     });
 
     test('POST response includes CORS headers', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/Patient'),
@@ -64,9 +68,9 @@ void main() {
 
     test('custom allowed origin is used', () async {
       final customMiddleware = corsMiddleware(
-        config: CorsConfig(allowOrigin: 'https://example.com'),
+        config: const CorsConfig(allowOrigin: 'https://example.com'),
       );
-      final handler = customMiddleware((Request request) async {
+      final handler = customMiddleware((request) async {
         return Response.ok('ok', headers: {'content-type': 'application/json'});
       });
 
@@ -77,12 +81,14 @@ void main() {
 
       final response = await handler(request);
 
-      expect(response.headers['access-control-allow-origin'],
-          equals('https://example.com'));
+      expect(
+        response.headers['access-control-allow-origin'],
+        equals('https://example.com'),
+      );
     });
 
     test('Expose-Headers lists FHIR headers', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
@@ -99,7 +105,7 @@ void main() {
     });
 
     test('Allow-Headers lists required headers', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'OPTIONS',
         Uri.parse('http://localhost:8080/Patient'),
@@ -118,7 +124,7 @@ void main() {
     });
 
     test('Allow-Methods lists all HTTP methods', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'OPTIONS',
         Uri.parse('http://localhost:8080/Patient'),
@@ -137,7 +143,7 @@ void main() {
     });
 
     test('Max-Age is present with configured value', () async {
-      final handler = _wrapHandler();
+      final handler = wrapHandler();
       final request = Request(
         'OPTIONS',
         Uri.parse('http://localhost:8080/Patient'),

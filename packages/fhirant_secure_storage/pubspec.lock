@@ -101,14 +101,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_lints:
-    dependency: "direct dev"
-    description:
-      name: flutter_lints
-      sha256: "3105dc8492f6183fb076ccf1f351ac3d60564bff92e20bfc4af9cc1651f4e7e1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -223,14 +215,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  lints:
-    dependency: transitive
-    description:
-      name: lints
-      sha256: a5e2b223cb7c9c8efdc663ef484fdd95bb243bff242ef5b13e26883547fce9a0
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
   logging:
     dependency: transitive
     description:
@@ -420,6 +404,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  very_good_analysis:
+    dependency: "direct dev"
+    description:
+      name: very_good_analysis
+      sha256: "481af67ab5877af20325251dc215a4ebac7666a1c8cf09198ffd457bc612b33d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.3.0"
   vm_service:
     dependency: transitive
     description:
@@ -453,5 +445,5 @@ packages:
     source: hosted
     version: "1.1.0"
 sdks:
-  dart: ">=3.10.0-0 <4.0.0"
+  dart: ">=3.12.0 <4.0.0"
   flutter: ">=3.24.0"

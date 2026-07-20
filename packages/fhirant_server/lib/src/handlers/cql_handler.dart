@@ -72,7 +72,7 @@ Future<Response> libraryEvaluateHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: ${e.toString()}',
+      'CQL evaluation error: $e',
     );
   }
 }
@@ -120,7 +120,7 @@ Future<Response> libraryEvaluateByUrlHandler(
       final results = await dbInterface.search(
         resourceType: fhir.R4ResourceType.Library,
         searchParameters: {
-          'url': [evalParams.url!]
+          'url': [evalParams.url!],
         },
       );
       if (results.isEmpty) {
@@ -163,7 +163,7 @@ Future<Response> libraryEvaluateByUrlHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: ${e.toString()}',
+      'CQL evaluation error: $e',
     );
   }
 }
@@ -182,7 +182,7 @@ Future<Response> cqlHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    FhirantLogging().logInfo('Received \$cql request');
+    FhirantLogging().logInfo(r'Received $cql request');
 
     final body = await request.readAsString();
     if (body.isEmpty) {
@@ -221,7 +221,7 @@ Future<Response> cqlHandler(
       return _errorResponse(
         400,
         'invalid',
-        'Failed to parse CQL/ELM: ${e.toString()}',
+        'Failed to parse CQL/ELM: $e',
       );
     }
 
@@ -239,7 +239,7 @@ Future<Response> cqlHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: ${e.toString()}',
+      'CQL evaluation error: $e',
     );
   }
 }
@@ -250,14 +250,6 @@ Future<Response> cqlHandler(
 
 /// Parsed evaluation parameters shared across all three endpoints.
 class _EvalParams {
-  final String? subject;
-  final Map<String, dynamic>? dataBundle;
-  final Map<String, dynamic>? inputParameters;
-  final String? cqlSource;
-  final String? elmJson;
-  final String? url;
-  final Map<String, dynamic>? libraryResource;
-
   _EvalParams({
     this.subject,
     this.dataBundle,
@@ -267,6 +259,13 @@ class _EvalParams {
     this.url,
     this.libraryResource,
   });
+  final String? subject;
+  final Map<String, dynamic>? dataBundle;
+  final Map<String, dynamic>? inputParameters;
+  final String? cqlSource;
+  final String? elmJson;
+  final String? url;
+  final Map<String, dynamic>? libraryResource;
 }
 
 /// Parse evaluation parameters from a FHIR Parameters resource body.
@@ -286,32 +285,24 @@ _EvalParams _parseParametersResource(Map<String, dynamic> bodyJson) {
     switch (name) {
       case 'subject':
         subject = param['valueString'] as String?;
-        break;
       case 'patientId':
         // Convenience alias — auto-prefix with Patient/
         final id = param['valueString'] as String?;
         if (id != null) {
           subject = id.startsWith('Patient/') ? id : 'Patient/$id';
         }
-        break;
       case 'data':
         dataBundle = param['resource'] as Map<String, dynamic>?;
-        break;
       case 'parameters':
         inputParameters = param['resource'] as Map<String, dynamic>?;
-        break;
       case 'cql':
         cqlSource = param['valueString'] as String?;
-        break;
       case 'elm':
         elmJson = param['valueString'] as String?;
-        break;
       case 'url':
         url = (param['valueUri'] ?? param['valueString']) as String?;
-        break;
       case 'library':
         libraryResource = param['resource'] as Map<String, dynamic>?;
-        break;
     }
   }
 
@@ -328,7 +319,7 @@ _EvalParams _parseParametersResource(Map<String, dynamic> bodyJson) {
 
 /// Parse evaluation parameters from a plain JSON object (convenience).
 _EvalParams _parsePlainJson(Map<String, dynamic> json) {
-  String? subject = json['subject'] as String?;
+  var subject = json['subject'] as String?;
   final patientId = json['patientId'] as String?;
   if (subject == null && patientId != null) {
     subject =
@@ -494,7 +485,7 @@ Future<void> _loadPatientData(
       final results = await dbInterface.search(
         resourceType: type,
         searchParameters: {
-          'patient': ['Patient/$patientId']
+          'patient': ['Patient/$patientId'],
         },
       );
       if (results.isNotEmpty) {

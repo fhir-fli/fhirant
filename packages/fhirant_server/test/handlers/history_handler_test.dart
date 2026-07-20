@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/history_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -137,7 +137,8 @@ void main() {
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient/123/_history?_count=2&_offset=1'),
+          'http://localhost:8080/Patient/123/_history?_count=2&_offset=1',
+        ),
       );
       when(
         () => mockDb.getResourceHistory(

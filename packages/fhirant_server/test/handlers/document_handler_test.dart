@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
+
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/document_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -23,7 +24,8 @@ void main() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
       when(() => mockRequest.requestedUri).thenReturn(
-          Uri.parse('http://localhost:8080/Composition/comp1/\$document'));
+        Uri.parse(r'http://localhost:8080/Composition/comp1/$document'),
+      );
     });
 
     test('returns 404 when Composition not found', () async {
@@ -44,13 +46,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'subject': {'reference': 'Patient/pat1'},
       });
@@ -59,7 +61,7 @@ void main() {
         'resourceType': 'Patient',
         'id': 'pat1',
         'name': [
-          {'family': 'Smith'}
+          {'family': 'Smith'},
         ],
       });
 
@@ -67,7 +69,7 @@ void main() {
         'resourceType': 'Practitioner',
         'id': 'prac1',
         'name': [
-          {'family': 'Jones'}
+          {'family': 'Jones'},
         ],
       });
 
@@ -109,13 +111,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
       });
 
@@ -147,13 +149,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'subject': {'reference': 'Patient/pat1'},
         'section': [
@@ -212,9 +214,9 @@ void main() {
           .thenAnswer((_) async => condition1);
       when(() => mockDb.getResource(fhir.R4ResourceType.Condition, 'cond2'))
           .thenAnswer((_) async => condition2);
-      when(() =>
-              mockDb.getResource(fhir.R4ResourceType.MedicationRequest, 'med1'))
-          .thenAnswer((_) async => medRequest);
+      when(
+        () => mockDb.getResource(fhir.R4ResourceType.MedicationRequest, 'med1'),
+      ).thenAnswer((_) async => medRequest);
 
       final response = await documentHandler(mockRequest, 'comp1', mockDb);
       expect(response.statusCode, 200);
@@ -238,13 +240,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'subject': {'reference': 'Patient/pat1'},
         'section': [
@@ -290,13 +292,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'subject': {'reference': 'Patient/nonexistent'},
       });
@@ -325,13 +327,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'custodian': {'reference': 'Organization/org1'},
         'attester': [
@@ -386,13 +388,13 @@ void main() {
         'status': 'final',
         'type': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '11503-0'}
-          ]
+            {'system': 'http://loinc.org', 'code': '11503-0'},
+          ],
         },
         'date': '2024-01-01',
         'title': 'Test Document',
         'author': [
-          {'reference': 'Practitioner/prac1'}
+          {'reference': 'Practitioner/prac1'},
         ],
         'encounter': {'reference': 'Encounter/enc1'},
       });

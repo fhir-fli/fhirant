@@ -55,10 +55,12 @@ Middleware contentNegotiationMiddleware() {
       // Rewrite Content-Type for JSON responses
       final contentType = response.headers['content-type'] ?? '';
       if (contentType.contains('application/json')) {
-        return response.change(headers: {
-          'content-type':
-              'application/fhir+json; charset=utf-8; fhirVersion=4.3',
-        });
+        return response.change(
+          headers: {
+            'content-type':
+                'application/fhir+json; charset=utf-8; fhirVersion=4.3',
+          },
+        );
       }
 
       return response;

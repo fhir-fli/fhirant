@@ -12,7 +12,7 @@ const _publicPrefixes = [
   'metadata',
   'favicon.ico',
   '.well-known/',
-  'health'
+  'health',
 ];
 
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
@@ -27,8 +27,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
 
       // Public routes: auth not required, but optionally inject auth_user
       // if a valid token is present (needed for e.g. admin registering users).
-      final isPublic = path.isEmpty ||
-          _publicPrefixes.any((prefix) => path.startsWith(prefix));
+      final isPublic = path.isEmpty || _publicPrefixes.any(path.startsWith);
       if (isPublic) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
@@ -51,50 +50,56 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // Check for Authorization header
       final authHeader = request.headers['authorization'];
       if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-        return Response(401,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'login',
-                  'diagnostics': 'Missing or invalid Authorization header',
-                }
-              ]
-            }));
+        return Response(
+          401,
+          body: jsonEncode({
+            'resourceType': 'OperationOutcome',
+            'issue': [
+              {
+                'severity': 'error',
+                'code': 'login',
+                'diagnostics': 'Missing or invalid Authorization header',
+              }
+            ],
+          }),
+        );
       }
 
       // Verify token
       final token = authHeader.substring(7);
       final payload = jwtService.verifyToken(token);
       if (payload == null) {
-        return Response(401,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'login',
-                  'diagnostics': 'Token is invalid or expired',
-                }
-              ]
-            }));
+        return Response(
+          401,
+          body: jsonEncode({
+            'resourceType': 'OperationOutcome',
+            'issue': [
+              {
+                'severity': 'error',
+                'code': 'login',
+                'diagnostics': 'Token is invalid or expired',
+              }
+            ],
+          }),
+        );
       }
 
       // Check if the token has been revoked
       final revoked = await dbInterface.isTokenRevoked(TokenHasher.hash(token));
       if (revoked) {
-        return Response(401,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'login',
-                  'diagnostics': 'Token has been revoked',
-                }
-              ]
-            }));
+        return Response(
+          401,
+          body: jsonEncode({
+            'resourceType': 'OperationOutcome',
+            'issue': [
+              {
+                'severity': 'error',
+                'code': 'login',
+                'diagnostics': 'Token has been revoked',
+              }
+            ],
+          }),
+        );
       }
 
       // Extract scopes from JWT (fall back to role defaults for legacy tokens)
@@ -121,19 +126,20 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (SmartScopeEnforcer.isPrivilegedSystemOperation(path)) {
         final role = payload['role'] as String? ?? 'readonly';
         if (!SmartScopeEnforcer.isSystemAuthorized(scopes, role)) {
-          return Response(403,
-              body: jsonEncode({
-                'resourceType': 'OperationOutcome',
-                'issue': [
-                  {
-                    'severity': 'error',
-                    'code': 'forbidden',
-                    'diagnostics':
-                        'This operation requires system-level (admin) '
-                            'privilege.',
-                  }
-                ]
-              }));
+          return Response(
+            403,
+            body: jsonEncode({
+              'resourceType': 'OperationOutcome',
+              'issue': [
+                {
+                  'severity': 'error',
+                  'code': 'forbidden',
+                  'diagnostics': 'This operation requires system-level (admin) '
+                      'privilege.',
+                }
+              ],
+            }),
+          );
         }
       }
 
@@ -145,37 +151,43 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         // Only enforce scopes for resource-targeted requests
         if (resourceType != null) {
           if (!SmartScopeEnforcer.isAuthorized(
-              scopes, resourceType, permission)) {
-            return Response(403,
-                body: jsonEncode({
-                  'resourceType': 'OperationOutcome',
-                  'issue': [
-                    {
-                      'severity': 'error',
-                      'code': 'forbidden',
-                      'diagnostics':
-                          'Insufficient scope for $permission on $resourceType',
-                    }
-                  ]
-                }));
+            scopes,
+            resourceType,
+            permission,
+          )) {
+            return Response(
+              403,
+              body: jsonEncode({
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'forbidden',
+                    'diagnostics':
+                        'Insufficient scope for $permission on $resourceType',
+                  }
+                ],
+              }),
+            );
           }
 
           // If patient/ scopes are present but no patient context, reject
           if (SmartScopeEnforcer.hasPatientScopes(scopes) &&
               patientId == null) {
-            return Response(403,
-                body: jsonEncode({
-                  'resourceType': 'OperationOutcome',
-                  'issue': [
-                    {
-                      'severity': 'error',
-                      'code': 'forbidden',
-                      'diagnostics':
-                          'patient/ scopes require a patient context '
-                              '(patient claim in JWT)',
-                    }
-                  ]
-                }));
+            return Response(
+              403,
+              body: jsonEncode({
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'forbidden',
+                    'diagnostics': 'patient/ scopes require a patient context '
+                        '(patient claim in JWT)',
+                  }
+                ],
+              }),
+            );
           }
         }
       }

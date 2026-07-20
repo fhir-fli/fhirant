@@ -18,10 +18,10 @@ Future<Response> validateCodeHandler(
   try {
     final params = await _extractOperationParams(request);
 
-    final code = params['code'];
-    final system = params['system'];
-    final display = params['display'];
-    final url = params['url'];
+    final code = params['code'] as String?;
+    final system = params['system'] as String?;
+    final display = params['display'] as String?;
+    final url = params['url'] as String?;
     final coding = params['coding'] as Map<String, dynamic>?;
 
     // Extract code/system from coding if provided
@@ -45,20 +45,33 @@ Future<Response> validateCodeHandler(
 
       if (resourceType == 'CodeSystem' && resource is fhir.CodeSystem) {
         return _validateAgainstCodeSystem(
-            resource, effectiveCode, effectiveSystem, display);
+          resource,
+          effectiveCode,
+          effectiveSystem,
+          display,
+        );
       } else if (resourceType == 'ValueSet' && resource is fhir.ValueSet) {
         return _validateAgainstValueSet(
-            resource, effectiveCode, effectiveSystem, display, dbInterface);
+          resource,
+          effectiveCode,
+          effectiveSystem,
+          display,
+          dbInterface,
+        );
       }
       return _errorResponse(
-          400, '\$validate-code only supported for CodeSystem and ValueSet');
+        400,
+        r'$validate-code only supported for CodeSystem and ValueSet',
+      );
     }
 
     // Type-level or system-level: look up by URL/system
     if (resourceType == 'CodeSystem' || (resourceType == null && url == null)) {
       if (effectiveSystem == null && url == null) {
         return _errorResponse(
-            400, 'Parameter "system" or "url" is required for CodeSystem');
+          400,
+          'Parameter "system" or "url" is required for CodeSystem',
+        );
       }
       final lookupUrl = url ?? effectiveSystem;
       final codeSystem = await _findCodeSystemByUrl(lookupUrl!, dbInterface);
@@ -69,7 +82,11 @@ Future<Response> validateCodeHandler(
         );
       }
       return _validateAgainstCodeSystem(
-          codeSystem, effectiveCode, effectiveSystem, display);
+        codeSystem,
+        effectiveCode,
+        effectiveSystem,
+        display,
+      );
     }
 
     if (resourceType == 'ValueSet') {
@@ -84,13 +101,18 @@ Future<Response> validateCodeHandler(
         );
       }
       return _validateAgainstValueSet(
-          valueSet, effectiveCode, effectiveSystem, display, dbInterface);
+        valueSet,
+        effectiveCode,
+        effectiveSystem,
+        display,
+        dbInterface,
+      );
     }
 
     return _errorResponse(400, 'Unable to determine target for validation');
   } catch (e, stackTrace) {
     FhirantLogging()
-        .logError('Terminology \$validate-code failed', e, stackTrace);
+        .logError(r'Terminology $validate-code failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }
@@ -107,8 +129,8 @@ Future<Response> lookupHandler(
   try {
     final params = await _extractOperationParams(request);
 
-    final code = params['code'];
-    final system = params['system'];
+    final code = params['code'] as String?;
+    final system = params['system'] as String?;
     final coding = params['coding'] as Map<String, dynamic>?;
 
     final effectiveCode = code ?? (coding?['code'] as String?);
@@ -131,7 +153,9 @@ Future<Response> lookupHandler(
       // Type-level: find by system URL
       if (effectiveSystem == null) {
         return _errorResponse(
-            400, 'Parameter "system" or "coding.system" is required');
+          400,
+          'Parameter "system" or "coding.system" is required',
+        );
       }
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {
@@ -153,9 +177,9 @@ Future<Response> lookupHandler(
     final responseParams = <fhir.ParametersParameter>[
       fhir.ParametersParameter(
         name: fhir.FhirString('name'),
-        valueString: fhir.FhirString(codeSystem.name?.valueString ??
-            codeSystem.title?.valueString ??
-            ''),
+        valueString: fhir.FhirString(
+          codeSystem.name?.valueString ?? codeSystem.title?.valueString ?? '',
+        ),
       ),
       fhir.ParametersParameter(
         name: fhir.FhirString('display'),
@@ -164,41 +188,47 @@ Future<Response> lookupHandler(
     ];
 
     if (codeSystem.version?.valueString != null) {
-      responseParams.add(fhir.ParametersParameter(
-        name: fhir.FhirString('version'),
-        valueString: codeSystem.version!,
-      ));
+      responseParams.add(
+        fhir.ParametersParameter(
+          name: fhir.FhirString('version'),
+          valueString: codeSystem.version,
+        ),
+      );
     }
 
     if (concept.definition?.valueString != null) {
-      responseParams.add(fhir.ParametersParameter(
-        name: fhir.FhirString('definition'),
-        valueString: concept.definition!,
-      ));
+      responseParams.add(
+        fhir.ParametersParameter(
+          name: fhir.FhirString('definition'),
+          valueString: concept.definition,
+        ),
+      );
     }
 
     // Add designations
     if (concept.designation != null) {
       for (final d in concept.designation!) {
-        responseParams.add(fhir.ParametersParameter(
-          name: fhir.FhirString('designation'),
-          part_: [
-            if (d.language != null)
+        responseParams.add(
+          fhir.ParametersParameter(
+            name: fhir.FhirString('designation'),
+            part_: [
+              if (d.language != null)
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('language'),
+                  valueCode: d.language,
+                ),
+              if (d.use != null)
+                fhir.ParametersParameter(
+                  name: fhir.FhirString('use'),
+                  valueCoding: d.use,
+                ),
               fhir.ParametersParameter(
-                name: fhir.FhirString('language'),
-                valueCode: d.language!,
+                name: fhir.FhirString('value'),
+                valueString: d.value,
               ),
-            if (d.use != null)
-              fhir.ParametersParameter(
-                name: fhir.FhirString('use'),
-                valueCoding: d.use!,
-              ),
-            fhir.ParametersParameter(
-              name: fhir.FhirString('value'),
-              valueString: d.value,
-            ),
-          ],
-        ));
+            ],
+          ),
+        );
       }
     }
 
@@ -214,30 +244,40 @@ Future<Response> lookupHandler(
         // Add the property value based on its type
         final propJson = p.toJson();
         if (propJson.containsKey('valueCode')) {
-          propParts.add(fhir.ParametersParameter(
-            name: fhir.FhirString('value'),
-            valueCode: fhir.FhirCode(propJson['valueCode'] as String),
-          ));
+          propParts.add(
+            fhir.ParametersParameter(
+              name: fhir.FhirString('value'),
+              valueCode: fhir.FhirCode(propJson['valueCode'] as String),
+            ),
+          );
         } else if (propJson.containsKey('valueString')) {
-          propParts.add(fhir.ParametersParameter(
-            name: fhir.FhirString('value'),
-            valueString: fhir.FhirString(propJson['valueString'] as String),
-          ));
+          propParts.add(
+            fhir.ParametersParameter(
+              name: fhir.FhirString('value'),
+              valueString: fhir.FhirString(propJson['valueString'] as String),
+            ),
+          );
         } else if (propJson.containsKey('valueBoolean')) {
-          propParts.add(fhir.ParametersParameter(
-            name: fhir.FhirString('value'),
-            valueBoolean: fhir.FhirBoolean(propJson['valueBoolean'] as bool),
-          ));
+          propParts.add(
+            fhir.ParametersParameter(
+              name: fhir.FhirString('value'),
+              valueBoolean: fhir.FhirBoolean(propJson['valueBoolean'] as bool),
+            ),
+          );
         } else if (propJson.containsKey('valueInteger')) {
-          propParts.add(fhir.ParametersParameter(
-            name: fhir.FhirString('value'),
-            valueInteger: fhir.FhirInteger(propJson['valueInteger'] as int),
-          ));
+          propParts.add(
+            fhir.ParametersParameter(
+              name: fhir.FhirString('value'),
+              valueInteger: fhir.FhirInteger(propJson['valueInteger'] as int),
+            ),
+          );
         }
-        responseParams.add(fhir.ParametersParameter(
-          name: fhir.FhirString('property'),
-          part_: propParts,
-        ));
+        responseParams.add(
+          fhir.ParametersParameter(
+            name: fhir.FhirString('property'),
+            part_: propParts,
+          ),
+        );
       }
     }
 
@@ -249,7 +289,7 @@ Future<Response> lookupHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirantLogging().logError('Terminology \$lookup failed', e, stackTrace);
+    FhirantLogging().logError(r'Terminology $lookup failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }
@@ -294,7 +334,9 @@ Future<Response> expandHandler(
       }
     } else {
       return _errorResponse(
-          400, 'Parameter "url" is required for type-level \$expand');
+        400,
+        r'Parameter "url" is required for type-level $expand',
+      );
     }
 
     // Check version if specified
@@ -346,12 +388,14 @@ Future<Response> expandHandler(
         if (include.concept != null && include.concept!.isNotEmpty) {
           // Explicit concept list
           for (final c in include.concept!) {
-            allContains.add(fhir.ValueSetContains(
-              system:
-                  includeSystem != null ? fhir.FhirUri(includeSystem) : null,
-              code: c.code,
-              display: c.display,
-            ));
+            allContains.add(
+              fhir.ValueSetContains(
+                system:
+                    includeSystem != null ? fhir.FhirUri(includeSystem) : null,
+                code: c.code,
+                display: c.display,
+              ),
+            );
           }
         } else if (includeSystem != null) {
           // Include all codes from the CodeSystem
@@ -374,10 +418,12 @@ Future<Response> expandHandler(
         final excludeSystem = exclude.system?.valueString;
         if (exclude.concept != null) {
           for (final c in exclude.concept!) {
-            allContains.removeWhere((entry) =>
-                entry.code?.valueString == c.code.valueString &&
-                (excludeSystem == null ||
-                    entry.system?.valueString == excludeSystem));
+            allContains.removeWhere(
+              (entry) =>
+                  entry.code?.valueString == c.code.valueString &&
+                  (excludeSystem == null ||
+                      entry.system?.valueString == excludeSystem),
+            );
           }
         }
       }
@@ -413,7 +459,7 @@ Future<Response> expandHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirantLogging().logError('Terminology \$expand failed', e, stackTrace);
+    FhirantLogging().logError(r'Terminology $expand failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }
@@ -425,11 +471,13 @@ void _flattenConcepts(
   List<fhir.ValueSetContains> out,
 ) {
   for (final c in concepts) {
-    out.add(fhir.ValueSetContains(
-      system: fhir.FhirUri(system),
-      code: c.code,
-      display: c.display,
-    ));
+    out.add(
+      fhir.ValueSetContains(
+        system: fhir.FhirUri(system),
+        code: c.code,
+        display: c.display,
+      ),
+    );
     if (c.concept != null) {
       _flattenConcepts(c.concept!, system, out);
     }
@@ -503,11 +551,13 @@ Map<String, dynamic> _parseParametersResource(Map<String, dynamic> json) {
 
 /// Find a CodeSystem by its canonical URL.
 Future<fhir.CodeSystem?> _findCodeSystemByUrl(
-    String url, FhirAntDb dbInterface) async {
+  String url,
+  FhirAntDb dbInterface,
+) async {
   final results = await dbInterface.search(
     resourceType: fhir.R4ResourceType.CodeSystem,
     searchParameters: {
-      'url': [url]
+      'url': [url],
     },
     count: 1,
   );
@@ -517,11 +567,13 @@ Future<fhir.CodeSystem?> _findCodeSystemByUrl(
 
 /// Find a ValueSet by its canonical URL.
 Future<fhir.ValueSet?> _findValueSetByUrl(
-    String url, FhirAntDb dbInterface) async {
+  String url,
+  FhirAntDb dbInterface,
+) async {
   final results = await dbInterface.search(
     resourceType: fhir.R4ResourceType.ValueSet,
     searchParameters: {
-      'url': [url]
+      'url': [url],
     },
     count: 1,
   );
@@ -531,7 +583,9 @@ Future<fhir.ValueSet?> _findValueSetByUrl(
 
 /// Recursively find a concept by code in a hierarchical concept list.
 fhir.CodeSystemConcept? _findConcept(
-    List<fhir.CodeSystemConcept>? concepts, String code) {
+  List<fhir.CodeSystemConcept>? concepts,
+  String code,
+) {
   if (concepts == null) return null;
   for (final concept in concepts) {
     if (concept.code.valueString == code) return concept;
@@ -700,17 +754,21 @@ Response _validationResult({
   ];
 
   if (message != null) {
-    params.add(fhir.ParametersParameter(
-      name: fhir.FhirString('message'),
-      valueString: fhir.FhirString(message),
-    ));
+    params.add(
+      fhir.ParametersParameter(
+        name: fhir.FhirString('message'),
+        valueString: fhir.FhirString(message),
+      ),
+    );
   }
 
   if (display != null) {
-    params.add(fhir.ParametersParameter(
-      name: fhir.FhirString('display'),
-      valueString: fhir.FhirString(display),
-    ));
+    params.add(
+      fhir.ParametersParameter(
+        name: fhir.FhirString('display'),
+        valueString: fhir.FhirString(display),
+      ),
+    );
   }
 
   final response = fhir.Parameters(parameter: params);
@@ -731,7 +789,7 @@ Response _errorResponse(int statusCode, String message) {
           'code': statusCode == 404 ? 'not-found' : 'invalid',
           'diagnostics': message,
         }
-      ]
+      ],
     }),
     headers: {'Content-Type': 'application/json'},
   );
@@ -771,7 +829,7 @@ Future<Response> preferredIdHandler(
       final results = await dbInterface.search(
         resourceType: fhir.R4ResourceType.NamingSystem,
         searchParameters: {
-          'name': [id]
+          'name': [id],
         },
         count: 1,
       );
@@ -801,15 +859,19 @@ Future<Response> preferredIdHandler(
     final chosen = preferredMatch ?? match;
     if (chosen == null) {
       return _errorResponse(
-          404, 'No uniqueId of type "$type" found in NamingSystem');
+        404,
+        'No uniqueId of type "$type" found in NamingSystem',
+      );
     }
 
-    final result = fhir.Parameters(parameter: [
-      fhir.ParametersParameter(
-        name: fhir.FhirString('result'),
-        valueString: chosen.value,
-      ),
-    ]);
+    final result = fhir.Parameters(
+      parameter: [
+        fhir.ParametersParameter(
+          name: fhir.FhirString('result'),
+          valueString: chosen.value,
+        ),
+      ],
+    );
 
     FhirantLogging()
         .logInfo('NamingSystem \$preferred-id: found $type for "$id"');
@@ -819,7 +881,7 @@ Future<Response> preferredIdHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging()
-        .logError('Terminology \$preferred-id failed', e, stackTrace);
+        .logError(r'Terminology $preferred-id failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }
@@ -914,19 +976,22 @@ Future<Response> translateHandler(
                 ),
               ];
 
-              final result = fhir.Parameters(parameter: [
-                fhir.ParametersParameter(
-                  name: fhir.FhirString('result'),
-                  valueBoolean: fhir.FhirBoolean(true),
-                ),
-                fhir.ParametersParameter(
-                  name: fhir.FhirString('match'),
-                  part_: matchParams,
-                ),
-              ]);
+              final result = fhir.Parameters(
+                parameter: [
+                  fhir.ParametersParameter(
+                    name: fhir.FhirString('result'),
+                    valueBoolean: fhir.FhirBoolean(true),
+                  ),
+                  fhir.ParametersParameter(
+                    name: fhir.FhirString('match'),
+                    part_: matchParams,
+                  ),
+                ],
+              );
 
               FhirantLogging().logInfo(
-                  'ConceptMap \$translate: translated "$effectiveCode"');
+                'ConceptMap \$translate: translated "$effectiveCode"',
+              );
               return Response.ok(
                 result.toJsonString(),
                 headers: {'Content-Type': 'application/json'},
@@ -938,12 +1003,14 @@ Future<Response> translateHandler(
     }
 
     // No match found
-    final result = fhir.Parameters(parameter: [
-      fhir.ParametersParameter(
-        name: fhir.FhirString('result'),
-        valueBoolean: fhir.FhirBoolean(false),
-      ),
-    ]);
+    final result = fhir.Parameters(
+      parameter: [
+        fhir.ParametersParameter(
+          name: fhir.FhirString('result'),
+          valueBoolean: fhir.FhirBoolean(false),
+        ),
+      ],
+    );
 
     FhirantLogging()
         .logInfo('ConceptMap \$translate: no match for "$effectiveCode"');
@@ -952,18 +1019,20 @@ Future<Response> translateHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirantLogging().logError('Terminology \$translate failed', e, stackTrace);
+    FhirantLogging().logError(r'Terminology $translate failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }
 
 /// Find a ConceptMap by its canonical URL.
 Future<fhir.ConceptMap?> _findConceptMapByUrl(
-    String url, FhirAntDb dbInterface) async {
+  String url,
+  FhirAntDb dbInterface,
+) async {
   final results = await dbInterface.search(
     resourceType: fhir.R4ResourceType.ConceptMap,
     searchParameters: {
-      'url': [url]
+      'url': [url],
     },
     count: 1,
   );
@@ -1020,19 +1089,25 @@ Future<Response> subsumesHandler(
       }
     } else {
       return _errorResponse(
-          400, 'Parameter "system" is required when no id is provided');
+        400,
+        'Parameter "system" is required when no id is provided',
+      );
     }
 
     // Verify both codes exist in the CodeSystem
     final conceptA = _findConcept(codeSystem.concept, effectiveCodeA);
     if (conceptA == null) {
       return _errorResponse(
-          400, 'Code "$effectiveCodeA" not found in CodeSystem');
+        400,
+        'Code "$effectiveCodeA" not found in CodeSystem',
+      );
     }
     final conceptB = _findConcept(codeSystem.concept, effectiveCodeB);
     if (conceptB == null) {
       return _errorResponse(
-          400, 'Code "$effectiveCodeB" not found in CodeSystem');
+        400,
+        'Code "$effectiveCodeB" not found in CodeSystem',
+      );
     }
 
     // Determine subsumption relationship
@@ -1040,30 +1115,39 @@ Future<Response> subsumesHandler(
     if (effectiveCodeA == effectiveCodeB) {
       outcome = 'equivalent';
     } else if (_isAncestor(
-        codeSystem.concept, effectiveCodeA, effectiveCodeB)) {
+      codeSystem.concept,
+      effectiveCodeA,
+      effectiveCodeB,
+    )) {
       outcome = 'subsumes';
     } else if (_isAncestor(
-        codeSystem.concept, effectiveCodeB, effectiveCodeA)) {
+      codeSystem.concept,
+      effectiveCodeB,
+      effectiveCodeA,
+    )) {
       outcome = 'subsumed-by';
     } else {
       outcome = 'not-subsumed';
     }
 
-    final result = fhir.Parameters(parameter: [
-      fhir.ParametersParameter(
-        name: fhir.FhirString('outcome'),
-        valueCode: fhir.FhirCode(outcome),
-      ),
-    ]);
+    final result = fhir.Parameters(
+      parameter: [
+        fhir.ParametersParameter(
+          name: fhir.FhirString('outcome'),
+          valueCode: fhir.FhirCode(outcome),
+        ),
+      ],
+    );
 
     FhirantLogging().logInfo(
-        'CodeSystem \$subsumes: $effectiveCodeA vs $effectiveCodeB = $outcome');
+      'CodeSystem \$subsumes: $effectiveCodeA vs $effectiveCodeB = $outcome',
+    );
     return Response.ok(
       result.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
   } catch (e, stackTrace) {
-    FhirantLogging().logError('Terminology \$subsumes failed', e, stackTrace);
+    FhirantLogging().logError(r'Terminology $subsumes failed', e, stackTrace);
     return _errorResponse(500, 'Internal error: $e');
   }
 }

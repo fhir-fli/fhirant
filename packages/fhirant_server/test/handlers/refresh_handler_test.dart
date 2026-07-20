@@ -1,12 +1,13 @@
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/refresh_handler.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -27,7 +28,7 @@ void main() {
       when(() => mockDb.revokeToken(any(), any())).thenAnswer((_) async {});
     });
 
-    Request _makeRequest(Map<String, dynamic> body) {
+    Request makeRequest(Map<String, dynamic> body) {
       return Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/token'),
@@ -36,7 +37,7 @@ void main() {
     }
 
     test('returns 400 for unsupported grant_type', () async {
-      final request = _makeRequest({'grant_type': 'client_credentials'});
+      final request = makeRequest({'grant_type': 'client_credentials'});
 
       final response = await refreshHandler(request, mockDb, jwtService);
       expect(response.statusCode, 400);
@@ -46,7 +47,7 @@ void main() {
     });
 
     test('returns 400 when refresh_token is missing', () async {
-      final request = _makeRequest({'grant_type': 'refresh_token'});
+      final request = makeRequest({'grant_type': 'refresh_token'});
 
       final response = await refreshHandler(request, mockDb, jwtService);
       expect(response.statusCode, 400);
@@ -56,7 +57,7 @@ void main() {
     });
 
     test('returns 401 for invalid refresh token', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': 'invalid-token',
       });
@@ -75,7 +76,7 @@ void main() {
         role: 'admin',
       );
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': accessToken,
       });
@@ -105,7 +106,7 @@ void main() {
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -141,7 +142,7 @@ void main() {
       when(() => mockDb.getUserByUsername('deleted-user'))
           .thenAnswer((_) async => null);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -166,7 +167,7 @@ void main() {
       when(() => mockDb.getUserByUsername('inactive'))
           .thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -194,7 +195,7 @@ void main() {
       when(() => mockDb.getUserByUsername('patientuser'))
           .thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -258,7 +259,7 @@ void main() {
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -282,7 +283,7 @@ void main() {
       when(() => mockDb.isTokenRevoked(refreshHash))
           .thenAnswer((_) async => true);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
       });
@@ -305,7 +306,7 @@ void main() {
       jwtService = JwtService('test-secret');
     });
 
-    Request _makeRequest(Map<String, dynamic> body) {
+    Request makeRequest(Map<String, dynamic> body) {
       return Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/token'),
@@ -314,7 +315,7 @@ void main() {
     }
 
     test('returns 400 when code is missing', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'redirect_uri': 'http://app.example.com/callback',
       });
@@ -327,7 +328,7 @@ void main() {
     });
 
     test('returns 400 when redirect_uri is missing', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'some-code',
       });
@@ -343,7 +344,7 @@ void main() {
       when(() => mockDb.getAuthorizationCode('bad-code'))
           .thenAnswer((_) async => null);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'bad-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -364,7 +365,7 @@ void main() {
       when(() => mockDb.getAuthorizationCode('used-code'))
           .thenAnswer((_) async => mockCode);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'used-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -389,7 +390,7 @@ void main() {
       when(() => mockDb.markAuthorizationCodeUsed('expired-code'))
           .thenAnswer((_) async {});
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'expired-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -413,7 +414,7 @@ void main() {
       when(() => mockDb.getAuthorizationCode('valid-code'))
           .thenAnswer((_) async => mockCode);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'valid-code',
         'redirect_uri': 'http://wrong.example.com/callback',
@@ -441,7 +442,7 @@ void main() {
       when(() => mockDb.getAuthorizationCode('pkce-code'))
           .thenAnswer((_) async => mockCode);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'pkce-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -457,9 +458,9 @@ void main() {
 
     test('returns 400 when PKCE verifier does not match', () async {
       // Generate a proper PKCE pair
-      final codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+      const codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
       // Wrong challenge (doesn't match the verifier)
-      final codeChallenge = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      const codeChallenge = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(false);
@@ -474,7 +475,7 @@ void main() {
       when(() => mockDb.getAuthorizationCode('pkce-code'))
           .thenAnswer((_) async => mockCode);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'pkce-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -517,7 +518,7 @@ void main() {
 
       when(() => mockDb.getUserById(1)).thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'valid-code',
         'redirect_uri': 'http://app.example.com/callback',
@@ -542,7 +543,7 @@ void main() {
 
     test('exchanges valid code with PKCE', () async {
       // Generate a proper PKCE S256 pair
-      final codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+      const codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
       // SHA256 of the verifier, base64url encoded without padding
       // Pre-computed: echo -n "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" | sha256sum
       // Then base64url encode
@@ -579,7 +580,7 @@ void main() {
 
       when(() => mockDb.getUserById(1)).thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'grant_type': 'authorization_code',
         'code': 'pkce-valid',
         'redirect_uri': 'http://app.example.com/callback',

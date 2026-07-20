@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
+
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 // Mock classes
 class MockFhirAntDb extends Mock implements FhirAntDb {}
@@ -408,14 +409,13 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).thenAnswer((_) async => patients);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: {
-            'name': ['Smith']
+            'name': ['Smith'],
           },
         ),
       ).thenAnswer((_) async => 1);
@@ -439,7 +439,6 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).called(1);
       verifyNever(
@@ -582,11 +581,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10'),
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10'),
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -616,9 +617,11 @@ void main() {
 
       // Check search.mode on entries
       final patientEntry = entries.firstWhere(
-          (e) => (e['resource'] as Map)['resourceType'] == 'Patient');
+        (e) => (e['resource'] as Map)['resourceType'] == 'Patient',
+      );
       final orgEntry = entries.firstWhere(
-          (e) => (e['resource'] as Map)['resourceType'] == 'Organization');
+        (e) => (e['resource'] as Map)['resourceType'] == 'Organization',
+      );
       expect(patientEntry['search']['mode'], equals('match'));
       expect(orgEntry['search']['mode'], equals('include'));
 
@@ -640,8 +643,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
+            {'system': 'http://loinc.org', 'code': '12345-6'},
+          ],
         },
         'subject': {'reference': 'Patient/pt-rev-1'},
         'meta': {'lastUpdated': DateTime.now().toIso8601String()},
@@ -649,11 +652,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Observation:subject&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Observation:subject&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Observation:subject&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Observation:subject&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -687,9 +692,11 @@ void main() {
       expect(entries.length, equals(2));
 
       final patientEntry = entries.firstWhere(
-          (e) => (e['resource'] as Map)['resourceType'] == 'Patient');
+        (e) => (e['resource'] as Map)['resourceType'] == 'Patient',
+      );
       final obsEntry = entries.firstWhere(
-          (e) => (e['resource'] as Map)['resourceType'] == 'Observation');
+        (e) => (e['resource'] as Map)['resourceType'] == 'Observation',
+      );
       expect(patientEntry['search']['mode'], equals('match'));
       expect(obsEntry['search']['mode'], equals('include'));
       // fullUrl uses Observation type, not Patient
@@ -783,11 +790,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10'),
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10'),
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -805,7 +814,9 @@ void main() {
       ).thenAnswer((_) async => org);
       when(
         () => mockDb.getResource(
-            fhir.R4ResourceType.Organization, 'org-iter-parent'),
+          fhir.R4ResourceType.Organization,
+          'org-iter-parent',
+        ),
       ).thenAnswer((_) async => parentOrg);
 
       final response = await getResourcesHandler(
@@ -846,8 +857,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
+            {'system': 'http://loinc.org', 'code': '12345-6'},
+          ],
         },
         'encounter': {'reference': 'Encounter/enc-reviter-1'},
         'meta': {'lastUpdated': DateTime.now().toIso8601String()},
@@ -855,11 +866,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -918,7 +931,8 @@ void main() {
     test('_include + _summary=text returns 400', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text'),
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text',
+        ),
       );
 
       final response = await getResourcesHandler(
@@ -942,11 +956,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Observation&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Observation&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_revinclude=Observation&_count=10'),
+          'http://localhost:8080/Patient?_revinclude=Observation&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -991,11 +1007,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?name=Smith&_sort=-name&_count=10'),
+          'http://localhost:8080/Patient?name=Smith&_sort=-name&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?name=Smith&_sort=-name&_count=10'),
+          'http://localhost:8080/Patient?name=Smith&_sort=-name&_count=10',
+        ),
       );
       when(
         () => mockDb.search(
@@ -1012,7 +1030,7 @@ void main() {
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: {
-            'name': ['Smith']
+            'name': ['Smith'],
           },
         ),
       ).thenAnswer((_) async => 1);
@@ -1172,11 +1190,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=name,gender&_count=10'),
+          'http://localhost:8080/Patient?_elements=name,gender&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=name,gender&_count=10'),
+          'http://localhost:8080/Patient?_elements=name,gender&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -1265,14 +1285,13 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).thenAnswer((_) async => []);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: {
-            'name': ['NonExistent']
+            'name': ['NonExistent'],
           },
         ),
       ).thenAnswer((_) async => 0);
@@ -1317,14 +1336,13 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).thenAnswer((_) async => patients);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: {
-            'name': ['Smith']
+            'name': ['Smith'],
           },
         ),
       ).thenAnswer((_) async => 1);
@@ -1366,14 +1384,13 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).thenAnswer((_) async => []);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: {
-            'name': ['Nobody']
+            'name': ['Nobody'],
           },
         ),
       ).thenAnswer((_) async => 0);
@@ -1419,23 +1436,27 @@ void main() {
           'patientId': 'pat-1',
         },
       });
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.Patient,
-            searchParameters: {
-              '_id': ['pat-1']
-            },
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [patient]);
-      when(() => mockDb.searchCount(
-            resourceType: fhir.R4ResourceType.Patient,
-            searchParameters: {
-              '_id': ['pat-1']
-            },
-            hasParameters: any(named: 'hasParameters'),
-          )).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            '_id': ['pat-1'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [patient]);
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            '_id': ['pat-1'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+        ),
+      ).thenAnswer((_) async => 1);
 
       final response = await getResourcesHandler(
         mockRequest,
@@ -1484,8 +1505,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '1234-5'}
-          ]
+            {'system': 'http://loinc.org', 'code': '1234-5'},
+          ],
         },
         'meta': {'lastUpdated': DateTime.now().toIso8601String()},
       });
@@ -1502,32 +1523,40 @@ void main() {
           'patientId': 'pat-1',
         },
       });
-      when(() => mockDb.getCompartmentResourceIds(
-            compartmentType: 'Patient',
-            compartmentId: 'pat-1',
-            compartmentDefinition: any(named: 'compartmentDefinition'),
-            typeFilter: any(named: 'typeFilter'),
-            since: any(named: 'since'),
-          )).thenAnswer((_) async => {
-            'Observation': {'obs-1', 'obs-2'},
-          });
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.Observation,
-            searchParameters: {
-              '_id': ['obs-1', 'obs-2']
-            },
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [obs]);
-      when(() => mockDb.searchCount(
-            resourceType: fhir.R4ResourceType.Observation,
-            searchParameters: {
-              '_id': ['obs-1', 'obs-2']
-            },
-            hasParameters: any(named: 'hasParameters'),
-          )).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.getCompartmentResourceIds(
+          compartmentType: 'Patient',
+          compartmentId: 'pat-1',
+          compartmentDefinition: any(named: 'compartmentDefinition'),
+          typeFilter: any(named: 'typeFilter'),
+          since: any(named: 'since'),
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'Observation': {'obs-1', 'obs-2'},
+        },
+      );
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            '_id': ['obs-1', 'obs-2'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [obs]);
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            '_id': ['obs-1', 'obs-2'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+        ),
+      ).thenAnswer((_) async => 1);
 
       final response = await getResourcesHandler(
         mockRequest,
@@ -1553,11 +1582,13 @@ void main() {
           'scopes': ['system/Patient.r'],
         },
       });
-      when(() => mockDb.getResourcesWithPagination(
-            resourceType: fhir.R4ResourceType.Patient,
-            count: 20,
-            offset: 0,
-          )).thenAnswer((_) async => []);
+      when(
+        () => mockDb.getResourcesWithPagination(
+          resourceType: fhir.R4ResourceType.Patient,
+          count: 20,
+          offset: 0,
+        ),
+      ).thenAnswer((_) async => []);
       when(() => mockDb.getResourceCount(fhir.R4ResourceType.Patient))
           .thenAnswer((_) async => 0);
 
@@ -1569,13 +1600,15 @@ void main() {
 
       expect(response.statusCode, equals(200));
       // Should NOT have called getCompartmentResourceIds
-      verifyNever(() => mockDb.getCompartmentResourceIds(
-            compartmentType: any(named: 'compartmentType'),
-            compartmentId: any(named: 'compartmentId'),
-            compartmentDefinition: any(named: 'compartmentDefinition'),
-            typeFilter: any(named: 'typeFilter'),
-            since: any(named: 'since'),
-          ));
+      verifyNever(
+        () => mockDb.getCompartmentResourceIds(
+          compartmentType: any(named: 'compartmentType'),
+          compartmentId: any(named: 'compartmentId'),
+          compartmentDefinition: any(named: 'compartmentDefinition'),
+          typeFilter: any(named: 'typeFilter'),
+          since: any(named: 'since'),
+        ),
+      );
     });
   });
 
@@ -1685,12 +1718,12 @@ void main() {
       );
 
       expect(response.statusCode, equals(204));
-      verify(() =>
-              mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-1'))
-          .called(1);
-      verify(() =>
-              mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-2'))
-          .called(1);
+      verify(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-1'),
+      ).called(1);
+      verify(
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-2'),
+      ).called(1);
     });
 
     test('returns 200 when no matches found', () async {

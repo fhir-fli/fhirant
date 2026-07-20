@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -23,20 +23,22 @@ void main() {
   group('Dev Mode', () {
     test('allows unauthenticated requests to protected endpoints', () async {
       // Create a Patient without any auth token
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: jsonEncode({
-          'resourceType': 'Patient',
-          'name': [
-            {
-              'family': 'TestDev',
-              'given': ['Mode'],
-            }
-          ],
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: jsonEncode({
+            'resourceType': 'Patient',
+            'name': [
+              {
+                'family': 'TestDev',
+                'given': ['Mode'],
+              }
+            ],
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
@@ -45,11 +47,13 @@ void main() {
     });
 
     test('allows unauthenticated search', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient',
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient',
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -58,26 +62,30 @@ void main() {
 
     test('allows unauthenticated read by ID', () async {
       // First create a resource
-      final createResponse = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: jsonEncode({
-          'resourceType': 'Patient',
-          'name': [
-            {'family': 'ReadTest'}
-          ],
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final createResponse = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: jsonEncode({
+            'resourceType': 'Patient',
+            'name': [
+              {'family': 'ReadTest'},
+            ],
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
       final created = jsonDecode(await createResponse.readAsString());
       final id = created['id'];
 
       // Read it back without auth
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/$id',
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/$id',
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -86,26 +94,30 @@ void main() {
 
     test('allows unauthenticated delete', () async {
       // Create a resource
-      final createResponse = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: jsonEncode({
-          'resourceType': 'Patient',
-          'name': [
-            {'family': 'DeleteTest'}
-          ],
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final createResponse = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: jsonEncode({
+            'resourceType': 'Patient',
+            'name': [
+              {'family': 'DeleteTest'},
+            ],
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
       final created = jsonDecode(await createResponse.readAsString());
       final id = created['id'];
 
       // Delete without auth
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient/$id',
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient/$id',
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(204));
     });
@@ -113,18 +125,20 @@ void main() {
     test('injects dev-mode auth_user for audit trail', () async {
       // Create a resource — this exercises the full pipeline
       // including audit middleware which reads auth_user
-      final response = await handler(testRequest(
-        'POST',
-        '/Observation',
-        body: jsonEncode({
-          'resourceType': 'Observation',
-          'status': 'final',
-          'code': {
-            'text': 'Dev mode test',
-          },
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Observation',
+          body: jsonEncode({
+            'resourceType': 'Observation',
+            'status': 'final',
+            'code': {
+              'text': 'Dev mode test',
+            },
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(201));
     });
@@ -145,15 +159,17 @@ void main() {
     });
 
     test('auth endpoints still work for registration', () async {
-      final response = await handler(testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': 'devuser',
-          'password': 'securepass123',
-        }),
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          body: jsonEncode({
+            'username': 'devuser',
+            'password': 'securepass123',
+          }),
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(201));
     });
@@ -164,7 +180,7 @@ void main() {
     late Handler authHandler;
 
     setUp(() async {
-      final server = await createTestServer(devMode: false);
+      final server = await createTestServer();
       authDb = server.db;
       authHandler = server.handler;
     });
@@ -174,23 +190,27 @@ void main() {
     });
 
     test('rejects unauthenticated requests to protected endpoints', () async {
-      final response = await authHandler(testRequest(
-        'GET',
-        '/Patient',
-        headers: {'content-type': 'application/fhir+json'},
-      ));
+      final response = await authHandler(
+        testRequest(
+          'GET',
+          '/Patient',
+          headers: {'content-type': 'application/fhir+json'},
+        ),
+      );
 
       expect(response.statusCode, equals(401));
     });
 
     test('accepts authenticated requests', () async {
       final token = generateTestToken(role: 'admin');
-      final response = await authHandler(testRequest(
-        'GET',
-        '/Patient',
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: token,
-      ));
+      final response = await authHandler(
+        testRequest(
+          'GET',
+          '/Patient',
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: token,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
     });

@@ -31,8 +31,12 @@ void main() {
       ),
     };
 
-    Future<int> status(String token, String method, String path,
-        {String? body}) async {
+    Future<int> status(
+      String token,
+      String method,
+      String path, {
+      String? body,
+    }) async {
       final res = await handler(
         testRequest(method, path, authToken: token, body: body),
       );
@@ -55,7 +59,7 @@ void main() {
 
     test('clinician (user/*.* scopes) is forbidden — no system scope',
         () async {
-      final token = generateTestToken(role: 'clinician', scopes: ['user/*.*']);
+      final token = generateTestToken(scopes: ['user/*.*']);
       for (final entry in privilegedRequests.entries) {
         final code = await status(
           token,
@@ -90,7 +94,6 @@ void main() {
     test('a non-admin with an explicit system/ scope passes the gate',
         () async {
       final token = generateTestToken(
-        role: 'clinician',
         scopes: ['system/*.rs'],
       );
       final code = await status(token, 'GET', r'/$export');
@@ -106,7 +109,7 @@ void main() {
         'type': 'collection',
         'entry': [
           {
-            'resource': {'resourceType': 'Patient', 'id': 'should-not-exist'}
+            'resource': {'resourceType': 'Patient', 'id': 'should-not-exist'},
           }
         ],
       });

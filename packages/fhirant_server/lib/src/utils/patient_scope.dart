@@ -49,7 +49,10 @@ Future<bool> isInPatientCompartment(
 
 /// Returns a 403 response for patient scope violations.
 Response patientScopeForbiddenResponse(
-    String resourceType, String id, String patientId) {
+  String resourceType,
+  String id,
+  String patientId,
+) {
   return Response(
     403,
     body: jsonEncode({
@@ -61,7 +64,7 @@ Response patientScopeForbiddenResponse(
           'diagnostics': '$resourceType/$id is not in the patient compartment '
               'for Patient/$patientId',
         }
-      ]
+      ],
     }),
     headers: {'Content-Type': 'application/json'},
   );
@@ -86,8 +89,9 @@ Future<bool> isNewResourceInPatientCompartment(
   }
 
   final paths = compartmentDef[resourceType]!;
-  if (paths.isEmpty)
+  if (paths.isEmpty) {
     return false; // Can't create focal resources in compartment
+  }
 
   // Check if any compartment path references the patient
   final patientRef = 'Patient/$patientId';

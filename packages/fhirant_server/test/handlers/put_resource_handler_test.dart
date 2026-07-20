@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -14,7 +14,7 @@ class MockRequest extends Mock implements Request {}
 void main() {
   setUpAll(() {
     registerFallbackValue(fhir.R4ResourceType.Patient);
-    registerFallbackValue(fhir.Patient());
+    registerFallbackValue(const fhir.Patient());
   });
 
   group('putResourceHandler', () {
@@ -45,13 +45,15 @@ void main() {
       ).thenAnswer((_) async => true);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
-      ).thenAnswer((_) async => fhir.Patient.fromJson({
-            'resourceType': 'Patient',
-            'id': 'test-id',
-            'name': [
-              {'family': 'Updated'},
-            ],
-          }));
+      ).thenAnswer(
+        (_) async => fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'test-id',
+          'name': [
+            {'family': 'Updated'},
+          ],
+        }),
+      );
 
       final response = await putResourceHandler(
         mockRequest,

@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -128,10 +128,12 @@ void main() {
       final resource = entry['resource'] as Map<String, dynamic>;
       final security = (resource['meta'] as Map)['security'] as List;
       expect(
-        security.any((t) =>
-            t['code'] == 'SUBSETTED' &&
-            t['system'] ==
-                'http://terminology.hl7.org/CodeSystem/v3-ObservationValue'),
+        security.any(
+          (t) =>
+              t['code'] == 'SUBSETTED' &&
+              t['system'] ==
+                  'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',
+        ),
         isTrue,
       );
     });
@@ -154,11 +156,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=name,gender,telecom&_count=10'),
+          'http://localhost:8080/Patient?_elements=name,gender,telecom&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=name,gender,telecom&_count=10'),
+          'http://localhost:8080/Patient?_elements=name,gender,telecom&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -204,11 +208,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=nonExistentField&_count=10'),
+          'http://localhost:8080/Patient?_elements=nonExistentField&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_elements=nonExistentField&_count=10'),
+          'http://localhost:8080/Patient?_elements=nonExistentField&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -245,11 +251,13 @@ void main() {
     test('_summary and _elements together returns 400', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=true&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=true&_elements=name&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=true&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=true&_elements=name&_count=10',
+        ),
       );
 
       final response = await getResourcesHandler(
@@ -266,11 +274,13 @@ void main() {
     test('_summary=text and _elements together returns 400', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=text&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=text&_elements=name&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=text&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=text&_elements=name&_count=10',
+        ),
       );
 
       final response = await getResourcesHandler(
@@ -287,11 +297,13 @@ void main() {
     test('_summary=data and _elements together returns 400', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=data&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=data&_elements=name&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=data&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=data&_elements=name&_count=10',
+        ),
       );
 
       final response = await getResourcesHandler(
@@ -318,11 +330,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=false&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=false&_elements=name&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?_summary=false&_elements=name&_count=10'),
+          'http://localhost:8080/Patient?_summary=false&_elements=name&_count=10',
+        ),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -365,11 +379,13 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?name=Smith&_elements=gender&_count=10'),
+          'http://localhost:8080/Patient?name=Smith&_elements=gender&_count=10',
+        ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-            'http://localhost:8080/Patient?name=Smith&_elements=gender&_count=10'),
+          'http://localhost:8080/Patient?name=Smith&_elements=gender&_count=10',
+        ),
       );
       when(
         () => mockDb.search(
@@ -379,7 +395,6 @@ void main() {
           },
           count: 10,
           offset: 0,
-          sort: null,
         ),
       ).thenAnswer((_) async => [patient]);
       when(
@@ -493,10 +508,12 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       final security = (json['meta'] as Map)['security'] as List;
       expect(
-        security.any((t) =>
-            t['code'] == 'SUBSETTED' &&
-            t['system'] ==
-                'http://terminology.hl7.org/CodeSystem/v3-ObservationValue'),
+        security.any(
+          (t) =>
+              t['code'] == 'SUBSETTED' &&
+              t['system'] ==
+                  'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',
+        ),
         isTrue,
       );
     });

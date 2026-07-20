@@ -1,7 +1,7 @@
-import 'package:test/test.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:drift/native.dart';
+import 'package:test/test.dart';
 
 void main() {
   late FhirAntDb db;
@@ -30,10 +30,10 @@ void main() {
         'gender': 'male',
         'birthDate': '1990-01-15',
         'identifier': [
-          {'system': 'http://hospital.org/mrn', 'value': 'MRN001'}
+          {'system': 'http://hospital.org/mrn', 'value': 'MRN001'},
         ],
         'address': [
-          {'city': 'Boston', 'state': 'MA'}
+          {'city': 'Boston', 'state': 'MA'},
         ],
         'active': true,
       });
@@ -74,8 +74,8 @@ void main() {
         'status': 'final',
         'code': {
           'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
+            {'system': 'http://loinc.org', 'code': '12345-6'},
+          ],
         },
         'subject': {'reference': 'Patient/pt-1'},
       });
@@ -220,7 +220,7 @@ void main() {
         'status': 'current',
         'mode': 'working',
         'identifier': [
-          {'value': 'test-list-id-456'}
+          {'value': 'test-list-id-456'},
         ],
       });
       await db.saveResource(list);
@@ -492,12 +492,14 @@ void main() {
     test(':above modifier finds stored URIs that are prefixes of search value',
         () async {
       // Seed a ValueSet with a broad parent URI
-      await db.saveResource(fhir.ValueSet.fromJson({
-        'resourceType': 'ValueSet',
-        'id': 'vs-parent',
-        'url': 'http://example.org/fhir',
-        'status': 'active',
-      }));
+      await db.saveResource(
+        fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-parent',
+          'url': 'http://example.org/fhir',
+          'status': 'active',
+        }),
+      );
       await seedValueSets();
 
       // :above = stored URI is a prefix of the search value
@@ -544,8 +546,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-a'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-a'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -562,8 +564,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-b'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-b'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -580,8 +582,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-c'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-c'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -734,8 +736,8 @@ void main() {
           'status': 'final',
           'code': {
             'coding': [
-              {'system': 'http://loinc.org', 'code': '12345-6'}
-            ]
+              {'system': 'http://loinc.org', 'code': '12345-6'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
         });
@@ -746,8 +748,8 @@ void main() {
           'status': 'amended',
           'code': {
             'coding': [
-              {'system': 'http://loinc.org', 'code': '78901-2'}
-            ]
+              {'system': 'http://loinc.org', 'code': '78901-2'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-2'},
         });
@@ -764,7 +766,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': ['12345-6\$final'],
+          'code-status': [r'12345-6$final'],
         },
       );
 
@@ -781,7 +783,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': ['12345-6\$amended'],
+          'code-status': [r'12345-6$amended'],
         },
       );
 
@@ -796,7 +798,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': ['12345-6\$final', '78901-2\$amended'],
+          'code-status': [r'12345-6$final', r'78901-2$amended'],
         },
       );
 
@@ -810,37 +812,43 @@ void main() {
   group('Reference chaining', () {
     Future<void> seedForChaining() async {
       // Save Organization
-      await db.saveResource(fhir.Organization.fromJson({
-        'resourceType': 'Organization',
-        'id': 'org-1',
-        'name': 'Mass General',
-      }));
+      await db.saveResource(
+        fhir.Organization.fromJson({
+          'resourceType': 'Organization',
+          'id': 'org-1',
+          'name': 'Mass General',
+        }),
+      );
 
       // Save Patient referencing Organization
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'pt-chain-1',
-        'name': [
-          {
-            'family': 'ChainSmith',
-            'given': ['Alice']
-          }
-        ],
-        'managingOrganization': {'reference': 'Organization/org-1'},
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-chain-1',
+          'name': [
+            {
+              'family': 'ChainSmith',
+              'given': ['Alice'],
+            }
+          ],
+          'managingOrganization': {'reference': 'Organization/org-1'},
+        }),
+      );
 
       // Save Observation referencing Patient
-      await db.saveResource(fhir.Observation.fromJson({
-        'resourceType': 'Observation',
-        'id': 'obs-chain-1',
-        'status': 'final',
-        'code': {
-          'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
-        },
-        'subject': {'reference': 'Patient/pt-chain-1'},
-      }));
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obs-chain-1',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '12345-6'},
+            ],
+          },
+          'subject': {'reference': 'Patient/pt-chain-1'},
+        }),
+      );
     }
 
     test('chained reference subject.name finds Observation via Patient name',
@@ -993,7 +1001,7 @@ void main() {
               }
             ],
             'profile': [
-              'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient'
+              'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient',
             ],
             'security': [
               {
@@ -1005,7 +1013,7 @@ void main() {
             'source': 'http://hospital.example.org',
           },
           'name': [
-            {'family': 'MetaTest'}
+            {'family': 'MetaTest'},
           ],
         });
 
@@ -1013,7 +1021,7 @@ void main() {
           'resourceType': 'Patient',
           'id': 'pt-meta-2',
           'name': [
-            {'family': 'NoMeta'}
+            {'family': 'NoMeta'},
           ],
         });
 
@@ -1068,7 +1076,7 @@ void main() {
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
           '_profile': [
-            'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient'
+            'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient',
           ],
         },
       );
@@ -1096,7 +1104,7 @@ void main() {
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
           '_security': [
-            'http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R'
+            'http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R',
           ],
         },
       );
@@ -1204,13 +1212,15 @@ void main() {
       // All 3 have gender, so :missing should find none in the default seed
 
       // Save a Patient without gender
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'pt-nogender',
-        'name': [
-          {'family': 'NoGender'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-nogender',
+          'name': [
+            {'family': 'NoGender'},
+          ],
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1292,7 +1302,7 @@ void main() {
           'status': 'final',
           'subject': {'reference': 'Patient/pt-1'},
           'prediction': [
-            {'probabilityDecimal': 0.75}
+            {'probabilityDecimal': 0.75},
           ],
         });
 
@@ -1302,7 +1312,7 @@ void main() {
           'status': 'final',
           'subject': {'reference': 'Patient/pt-2'},
           'prediction': [
-            {'probabilityDecimal': 0.25}
+            {'probabilityDecimal': 0.25},
           ],
         });
 
@@ -1376,8 +1386,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-a'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-a'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -1394,8 +1404,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-b'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-b'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -1412,8 +1422,8 @@ void main() {
           'status': 'billable',
           'code': {
             'coding': [
-              {'system': 'http://example.org', 'code': 'item-c'}
-            ]
+              {'system': 'http://example.org', 'code': 'item-c'},
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
           'quantity': {
@@ -1725,13 +1735,15 @@ void main() {
       await seedAll();
 
       // Save a patient without gender
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'pt-nogender',
-        'name': [
-          {'family': 'NoGender'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-nogender',
+          'name': [
+            {'family': 'NoGender'},
+          ],
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1762,7 +1774,7 @@ void main() {
                 'code': '2345-7',
                 'display': 'Glucose [Mass/volume] in Serum',
               }
-            ]
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
         });
@@ -1778,7 +1790,7 @@ void main() {
                 'code': '2093-3',
                 'display': 'Cholesterol in Serum',
               }
-            ]
+            ],
           },
           'subject': {'reference': 'Patient/pt-1'},
         });
@@ -1851,13 +1863,15 @@ void main() {
       await seedAll();
 
       // Save a patient without birthDate
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'pt-nobirth',
-        'name': [
-          {'family': 'NoBirth'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'pt-nobirth',
+          'name': [
+            {'family': 'NoBirth'},
+          ],
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1871,36 +1885,40 @@ void main() {
 
     test('quantity :missing finds ChargeItem without quantity', () async {
       // Seed ChargeItems with quantity
-      await db.saveResource(fhir.ChargeItem.fromJson({
-        'resourceType': 'ChargeItem',
-        'id': 'ci-1',
-        'status': 'billable',
-        'code': {
-          'coding': [
-            {'system': 'http://example.org', 'code': 'item-a'}
-          ]
-        },
-        'subject': {'reference': 'Patient/pt-1'},
-        'quantity': {
-          'value': 5.0,
-          'unit': 'mg',
-          'system': 'http://unitsofmeasure.org',
-          'code': 'mg',
-        },
-      }));
+      await db.saveResource(
+        fhir.ChargeItem.fromJson({
+          'resourceType': 'ChargeItem',
+          'id': 'ci-1',
+          'status': 'billable',
+          'code': {
+            'coding': [
+              {'system': 'http://example.org', 'code': 'item-a'},
+            ],
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+          'quantity': {
+            'value': 5.0,
+            'unit': 'mg',
+            'system': 'http://unitsofmeasure.org',
+            'code': 'mg',
+          },
+        }),
+      );
 
       // Save a ChargeItem without quantity
-      await db.saveResource(fhir.ChargeItem.fromJson({
-        'resourceType': 'ChargeItem',
-        'id': 'ci-noqty',
-        'status': 'billable',
-        'code': {
-          'coding': [
-            {'system': 'http://example.org', 'code': 'item-x'}
-          ]
-        },
-        'subject': {'reference': 'Patient/pt-1'},
-      }));
+      await db.saveResource(
+        fhir.ChargeItem.fromJson({
+          'resourceType': 'ChargeItem',
+          'id': 'ci-noqty',
+          'status': 'billable',
+          'code': {
+            'coding': [
+              {'system': 'http://example.org', 'code': 'item-x'},
+            ],
+          },
+          'subject': {'reference': 'Patient/pt-1'},
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
@@ -1914,20 +1932,24 @@ void main() {
 
     test('URI :missing finds ValueSet without url', () async {
       // Seed ValueSets with url
-      await db.saveResource(fhir.ValueSet.fromJson({
-        'resourceType': 'ValueSet',
-        'id': 'vs-1',
-        'url': 'http://example.org/fhir/ValueSet/my-codes',
-        'status': 'active',
-      }));
+      await db.saveResource(
+        fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-1',
+          'url': 'http://example.org/fhir/ValueSet/my-codes',
+          'status': 'active',
+        }),
+      );
 
       // Save a ValueSet without url
-      await db.saveResource(fhir.ValueSet.fromJson({
-        'resourceType': 'ValueSet',
-        'id': 'vs-nourl',
-        'status': 'active',
-        'name': 'NoUrl',
-      }));
+      await db.saveResource(
+        fhir.ValueSet.fromJson({
+          'resourceType': 'ValueSet',
+          'id': 'vs-nourl',
+          'status': 'active',
+          'name': 'NoUrl',
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
@@ -1943,16 +1965,18 @@ void main() {
       await seedAll(); // includes obs-1 with subject
 
       // Save an Observation without subject
-      await db.saveResource(fhir.Observation.fromJson({
-        'resourceType': 'Observation',
-        'id': 'obs-nosub',
-        'status': 'final',
-        'code': {
-          'coding': [
-            {'system': 'http://loinc.org', 'code': '99999-9'}
-          ]
-        },
-      }));
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obs-nosub',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '99999-9'},
+            ],
+          },
+        }),
+      );
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -25,14 +25,16 @@ void main() {
 
   group('Middleware Pipeline Integration Tests', () {
     test('OPTIONS /Patient returns 204 with CORS headers', () async {
-      final response = await handler(testRequest(
-        'OPTIONS',
-        '/Patient',
-        headers: {
-          'origin': 'http://example.com',
-          'access-control-request-method': 'GET',
-        },
-      ));
+      final response = await handler(
+        testRequest(
+          'OPTIONS',
+          '/Patient',
+          headers: {
+            'origin': 'http://example.com',
+            'access-control-request-method': 'GET',
+          },
+        ),
+      );
 
       expect(response.statusCode, equals(204));
       expect(response.headers['access-control-allow-origin'], isNotNull);
@@ -44,17 +46,21 @@ void main() {
     });
 
     test('GET response has application/fhir+json Content-Type', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'ct-test-1'.toFhirString,
-        name: [fhir.HumanName(family: 'ContentType'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'ct-test-1'.toFhirString,
+          name: [fhir.HumanName(family: 'ContentType'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/ct-test-1',
-        headers: {'accept': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/ct-test-1',
+          headers: {'accept': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       expect(
@@ -69,13 +75,15 @@ void main() {
         name: [fhir.HumanName(family: 'AuditTest'.toFhirString)],
       );
 
-      await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: patient.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: patient.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       // Audit middleware is fire-and-forget, wait for it to complete
       await Future.delayed(const Duration(milliseconds: 100));
@@ -92,21 +100,25 @@ void main() {
     });
 
     test('Accept: application/xml returns 406', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient',
-        headers: {'accept': 'application/xml'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient',
+          headers: {'accept': 'application/xml'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(406));
     });
 
     test('GET /metadata returns 200 without authentication', () async {
-      final response = await handler(testRequest(
-        'GET',
-        '/metadata',
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/metadata',
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());

@@ -10,33 +10,27 @@ Map<String, dynamic> applyJsonPatch(
 
   for (final op in operations) {
     if (op is! Map<String, dynamic>) {
-      throw FormatException('Invalid patch operation: must be an object');
+      throw const FormatException('Invalid patch operation: must be an object');
     }
 
     final opType = op['op'] as String?;
     if (opType == null) {
-      throw FormatException('Patch operation missing "op" field');
+      throw const FormatException('Patch operation missing "op" field');
     }
 
     switch (opType) {
       case 'add':
         _applyAdd(result, op);
-        break;
       case 'remove':
         _applyRemove(result, op);
-        break;
       case 'replace':
         _applyReplace(result, op);
-        break;
       case 'move':
         _applyMove(result, op);
-        break;
       case 'copy':
         _applyCopy(result, op);
-        break;
       case 'test':
         _applyTest(result, op);
-        break;
       default:
         throw FormatException('Unknown patch operation: $opType');
     }
@@ -125,7 +119,7 @@ String _convertFhirOpToJsonOp(String fhirOp) {
 
 /// Convert FHIR path to JSON Pointer.
 String _convertFhirPathToJsonPointer(String fhirPath) {
-  String path = fhirPath;
+  var path = fhirPath;
   if (path.contains('.')) {
     final parts = path.split('.');
     if (parts.length > 1) {
@@ -147,7 +141,7 @@ void _applyAdd(Map<String, dynamic> document, Map<String, dynamic> op) {
   final value = op['value'];
 
   if (path == null) {
-    throw FormatException('Add operation missing "path"');
+    throw const FormatException('Add operation missing "path"');
   }
 
   final pointer = _parseJsonPointer(path);
@@ -158,7 +152,7 @@ void _applyRemove(Map<String, dynamic> document, Map<String, dynamic> op) {
   final path = op['path'] as String?;
 
   if (path == null) {
-    throw FormatException('Remove operation missing "path"');
+    throw const FormatException('Remove operation missing "path"');
   }
 
   final pointer = _parseJsonPointer(path);
@@ -170,7 +164,7 @@ void _applyReplace(Map<String, dynamic> document, Map<String, dynamic> op) {
   final value = op['value'];
 
   if (path == null) {
-    throw FormatException('Replace operation missing "path"');
+    throw const FormatException('Replace operation missing "path"');
   }
 
   final pointer = _parseJsonPointer(path);
@@ -182,13 +176,13 @@ void _applyMove(Map<String, dynamic> document, Map<String, dynamic> op) {
   final path = op['path'] as String?;
 
   if (from == null || path == null) {
-    throw FormatException('Move operation missing "from" or "path"');
+    throw const FormatException('Move operation missing "from" or "path"');
   }
 
   final fromPointer = _parseJsonPointer(from);
   final value = _getValueAtPath(document, fromPointer);
   if (value == null) {
-    throw FormatException('Move operation: source path not found');
+    throw const FormatException('Move operation: source path not found');
   }
 
   _removeValueAtPath(document, fromPointer);
@@ -200,13 +194,13 @@ void _applyCopy(Map<String, dynamic> document, Map<String, dynamic> op) {
   final path = op['path'] as String?;
 
   if (from == null || path == null) {
-    throw FormatException('Copy operation missing "from" or "path"');
+    throw const FormatException('Copy operation missing "from" or "path"');
   }
 
   final fromPointer = _parseJsonPointer(from);
   final value = _getValueAtPath(document, fromPointer);
   if (value == null) {
-    throw FormatException('Copy operation: source path not found');
+    throw const FormatException('Copy operation: source path not found');
   }
 
   final copiedValue = jsonDecode(jsonEncode(value));
@@ -218,20 +212,20 @@ void _applyTest(Map<String, dynamic> document, Map<String, dynamic> op) {
   final value = op['value'];
 
   if (path == null) {
-    throw FormatException('Test operation missing "path"');
+    throw const FormatException('Test operation missing "path"');
   }
 
   final pointer = _parseJsonPointer(path);
   final currentValue = _getValueAtPath(document, pointer);
 
   if (jsonEncode(currentValue) != jsonEncode(value)) {
-    throw FormatException('Test operation failed: values do not match');
+    throw const FormatException('Test operation failed: values do not match');
   }
 }
 
 List<String> _parseJsonPointer(String pointer) {
   if (!pointer.startsWith('/')) {
-    throw FormatException('JSON Pointer must start with /');
+    throw const FormatException('JSON Pointer must start with /');
   }
 
   if (pointer == '/') {
@@ -281,7 +275,7 @@ void _setValueAtPath(
   required bool add,
 }) {
   if (path.isEmpty) {
-    throw FormatException('Cannot set root document');
+    throw const FormatException('Cannot set root document');
   }
 
   dynamic current = document;
@@ -294,10 +288,12 @@ void _setValueAtPath(
         if (add) {
           final nextSegment = path[i + 1];
           final nextIndex = int.tryParse(nextSegment);
-          current[segment] = nextIndex != null ? [] : <String, dynamic>{};
+          current[segment] =
+              nextIndex != null ? <dynamic>[] : <String, dynamic>{};
         } else {
           throw FormatException(
-              'Path not found: ${path.sublist(0, i + 1).join('/')}');
+            'Path not found: ${path.sublist(0, i + 1).join('/')}',
+          );
         }
       }
       current = current[segment];
@@ -309,7 +305,8 @@ void _setValueAtPath(
       current = current[index];
     } else {
       throw FormatException(
-          'Path not found: ${path.sublist(0, i + 1).join('/')}');
+        'Path not found: ${path.sublist(0, i + 1).join('/')}',
+      );
     }
   }
 
@@ -318,12 +315,12 @@ void _setValueAtPath(
 
   if (current is Map<String, dynamic>) {
     if (lastIndex != null) {
-      throw FormatException('Cannot use array index on object');
+      throw const FormatException('Cannot use array index on object');
     }
     current[lastSegment] = value;
   } else if (current is List) {
     if (lastIndex == null) {
-      throw FormatException('Array index required for list');
+      throw const FormatException('Array index required for list');
     }
     if (add && lastIndex == current.length) {
       current.add(value);
@@ -339,7 +336,7 @@ void _setValueAtPath(
 
 void _removeValueAtPath(Map<String, dynamic> document, List<String> path) {
   if (path.isEmpty) {
-    throw FormatException('Cannot remove root document');
+    throw const FormatException('Cannot remove root document');
   }
 
   dynamic current = document;
@@ -350,7 +347,8 @@ void _removeValueAtPath(Map<String, dynamic> document, List<String> path) {
     if (current is Map<String, dynamic>) {
       if (!current.containsKey(segment)) {
         throw FormatException(
-            'Path not found: ${path.sublist(0, i + 1).join('/')}');
+          'Path not found: ${path.sublist(0, i + 1).join('/')}',
+        );
       }
       current = current[segment];
     } else if (current is List) {
@@ -361,7 +359,8 @@ void _removeValueAtPath(Map<String, dynamic> document, List<String> path) {
       current = current[index];
     } else {
       throw FormatException(
-          'Path not found: ${path.sublist(0, i + 1).join('/')}');
+        'Path not found: ${path.sublist(0, i + 1).join('/')}',
+      );
     }
   }
 
@@ -370,7 +369,7 @@ void _removeValueAtPath(Map<String, dynamic> document, List<String> path) {
 
   if (current is Map<String, dynamic>) {
     if (lastIndex != null) {
-      throw FormatException('Cannot use array index on object');
+      throw const FormatException('Cannot use array index on object');
     }
     if (!current.containsKey(lastSegment)) {
       throw FormatException('Path not found: ${path.join('/')}');
@@ -378,7 +377,7 @@ void _removeValueAtPath(Map<String, dynamic> document, List<String> path) {
     current.remove(lastSegment);
   } else if (current is List) {
     if (lastIndex == null) {
-      throw FormatException('Array index required for list');
+      throw const FormatException('Array index required for list');
     }
     if (lastIndex < 0 || lastIndex >= current.length) {
       throw FormatException('Array index out of bounds: $lastIndex');

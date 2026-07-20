@@ -8,7 +8,9 @@ import 'package:shelf/shelf.dart';
 /// No authentication required — this endpoint only reveals whether any
 /// users exist, not how many or who they are.
 Future<Response> authStatusHandler(
-    Request request, FhirAntDb dbInterface) async {
+  Request request,
+  FhirAntDb dbInterface,
+) async {
   try {
     final userCount = await dbInterface.getUserCount();
     return Response.ok(
@@ -16,6 +18,7 @@ Future<Response> authStatusHandler(
     );
   } catch (e) {
     return Response.internalServerError(
-        body: jsonEncode({'error': 'Failed to check auth status: $e'}));
+      body: jsonEncode({'error': 'Failed to check auth status: $e'}),
+    );
   }
 }

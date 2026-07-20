@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
+        onCreate: (m) async {
           await m.createAll(); // Creates FhirDb's 14 tables
           await _createUsersTable();
           await _createExportJobsTable();
@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
           await _createRevokedTokensTable();
           await _createIndexes();
         },
-        onUpgrade: (Migrator m, int from, int to) async {
+        onUpgrade: (m, from, to) async {
           if (from < 2) {
             await _createUsersTable();
           }
@@ -38,11 +38,13 @@ class FhirAntDb extends FhirDb {
           }
           if (from < 4) {
             await customStatement(
-                'ALTER TABLE export_jobs ADD COLUMN group_id TEXT');
+              'ALTER TABLE export_jobs ADD COLUMN group_id TEXT',
+            );
           }
           if (from < 5) {
             await customStatement(
-                'ALTER TABLE export_jobs ADD COLUMN type_filters TEXT');
+              'ALTER TABLE export_jobs ADD COLUMN type_filters TEXT',
+            );
           }
           if (from < 6) {
             await customStatement('ALTER TABLE users ADD COLUMN scopes TEXT');
@@ -62,9 +64,11 @@ class FhirAntDb extends FhirDb {
           }
           if (from < 10) {
             await customStatement(
-                'ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0');
+              'ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0',
+            );
             await customStatement(
-                'ALTER TABLE users ADD COLUMN locked_until INTEGER');
+              'ALTER TABLE users ADD COLUMN locked_until INTEGER',
+            );
           }
           if (from < 11) {
             // Make referenceValue nullable for identifier-only references
@@ -74,7 +78,7 @@ class FhirAntDb extends FhirDb {
               'id TEXT NOT NULL, '
               'last_updated INTEGER NOT NULL, '
               'search_path TEXT NOT NULL, '
-              'search_name TEXT NOT NULL DEFAULT \'\', '
+              "search_name TEXT NOT NULL DEFAULT '', "
               'param_index INTEGER NOT NULL, '
               'reference_value TEXT, '
               'reference_resource_type TEXT, '
@@ -111,15 +115,15 @@ class FhirAntDb extends FhirDb {
               ')',
             );
             await customStatement(
-              "INSERT OR IGNORE INTO resources_history_new "
-              "(resource_type, id, version_id, resource, last_updated) "
-              "SELECT resource_type, id, "
-              "COALESCE("
-              "json_extract(resource, '\$.meta.versionId'), "
-              "CAST(last_updated AS TEXT)"
-              "), "
-              "resource, last_updated "
-              "FROM resources_history",
+              'INSERT OR IGNORE INTO resources_history_new '
+              '(resource_type, id, version_id, resource, last_updated) '
+              'SELECT resource_type, id, '
+              'COALESCE('
+              r"json_extract(resource, '$.meta.versionId'), "
+              'CAST(last_updated AS TEXT)'
+              '), '
+              'resource, last_updated '
+              'FROM resources_history',
             );
             await customStatement('DROP TABLE resources_history');
             await customStatement(
@@ -244,27 +248,38 @@ class FhirAntDb extends FhirDb {
   Future<void> _createIndexes() async {
     // Search parameter indexes for performance
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_string_value ON string_search_parameters(string_value)');
+      'CREATE INDEX IF NOT EXISTS idx_string_value ON string_search_parameters(string_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_token_value ON token_search_parameters(token_value)');
+      'CREATE INDEX IF NOT EXISTS idx_token_value ON token_search_parameters(token_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_token_system ON token_search_parameters(token_system)');
+      'CREATE INDEX IF NOT EXISTS idx_token_system ON token_search_parameters(token_system)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_ref_type ON reference_search_parameters(reference_resource_type)');
+      'CREATE INDEX IF NOT EXISTS idx_ref_type ON reference_search_parameters(reference_resource_type)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_ref_id ON reference_search_parameters(reference_id_part)');
+      'CREATE INDEX IF NOT EXISTS idx_ref_id ON reference_search_parameters(reference_id_part)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_ref_identifier_sys ON reference_search_parameters(identifier_system)');
+      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_sys ON reference_search_parameters(identifier_system)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_ref_identifier_val ON reference_search_parameters(identifier_value)');
+      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_val ON reference_search_parameters(identifier_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_uri_value ON uri_search_parameters(uri_value)');
+      'CREATE INDEX IF NOT EXISTS idx_uri_value ON uri_search_parameters(uri_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_date_value ON date_search_parameters(date_value)');
+      'CREATE INDEX IF NOT EXISTS idx_date_value ON date_search_parameters(date_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_number_value ON number_search_parameters(number_value)');
+      'CREATE INDEX IF NOT EXISTS idx_number_value ON number_search_parameters(number_value)',
+    );
     await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_special_value ON special_search_parameters(special_value)');
+      'CREATE INDEX IF NOT EXISTS idx_special_value ON special_search_parameters(special_value)',
+    );
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -380,8 +395,9 @@ class FhirAntDb extends FhirDb {
         ],
       ).get();
       return rows
-          .map((row) =>
-              fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .map(
+            (row) => fhir.Resource.fromJsonString(row.read<String>('resource')),
+          )
           .toList();
     }
 
@@ -428,8 +444,9 @@ class FhirAntDb extends FhirDb {
         variables: [Variable.withInt(atMillis)],
       ).get();
       return rows
-          .map((row) =>
-              fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .map(
+            (row) => fhir.Resource.fromJsonString(row.read<String>('resource')),
+          )
           .toList();
     }
 
@@ -529,11 +546,10 @@ class FhirAntDb extends FhirDb {
       if (typeFilter != null && !typeFilter.contains(resType)) continue;
 
       // Build the OR condition across all search paths for this type.
-      Expression<bool> condition =
-          referenceSearchParameters.resourceType.equals(resType) &
-              referenceSearchParameters.referenceResourceType
-                  .equals(compartmentType) &
-              referenceSearchParameters.referenceIdPart.equals(compartmentId);
+      var condition = referenceSearchParameters.resourceType.equals(resType) &
+          referenceSearchParameters.referenceResourceType
+              .equals(compartmentType) &
+          referenceSearchParameters.referenceIdPart.equals(compartmentId);
 
       // Add search path matching — use LIKE with % suffix to handle
       // paths like `Observation.subject.where(resolve() is Patient)`.
@@ -858,14 +874,20 @@ class FhirAntDb extends FhirDb {
       batch.deleteWhere(stringSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(tokenSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(
-          referenceSearchParameters, (tbl) => const Constant(true));
+        referenceSearchParameters,
+        (tbl) => const Constant(true),
+      );
       batch.deleteWhere(dateSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(numberSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(
-          quantitySearchParameters, (tbl) => const Constant(true));
+        quantitySearchParameters,
+        (tbl) => const Constant(true),
+      );
       batch.deleteWhere(uriSearchParameters, (tbl) => const Constant(true));
       batch.deleteWhere(
-          compositeSearchParameters, (tbl) => const Constant(true));
+        compositeSearchParameters,
+        (tbl) => const Constant(true),
+      );
       batch.deleteWhere(specialSearchParameters, (tbl) => const Constant(true));
       // Note: Logs are intentionally NOT cleared to maintain audit trail
     });

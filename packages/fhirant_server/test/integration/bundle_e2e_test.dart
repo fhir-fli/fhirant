@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -51,13 +51,15 @@ void main() {
         ],
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/',
-        body: bundle.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/',
+          body: bundle.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -106,13 +108,15 @@ void main() {
         ],
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/',
-        body: bundle.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/',
+          body: bundle.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
 
@@ -127,10 +131,12 @@ void main() {
 
     test('Batch with mixed success/failure returns partial results', () async {
       // Create a patient first so the GET succeeds
-      await testDb.saveResource(fhir.Patient(
-        id: 'batch-existing'.toFhirString,
-        name: [fhir.HumanName(family: 'Existing'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'batch-existing'.toFhirString,
+          name: [fhir.HumanName(family: 'Existing'.toFhirString)],
+        ),
+      );
 
       final bundle = fhir.Bundle(
         type: fhir.BundleType.batch,
@@ -163,13 +169,15 @@ void main() {
         ],
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/',
-        body: bundle.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/',
+          body: bundle.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -217,13 +225,15 @@ void main() {
         ],
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/',
-        body: bundle.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/',
+          body: bundle.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       // Transaction should fail
       final statusCode = response.statusCode;

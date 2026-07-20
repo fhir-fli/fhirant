@@ -2,12 +2,6 @@ import 'package:shelf/shelf.dart';
 
 /// Configuration for CORS headers.
 class CorsConfig {
-  final String allowOrigin;
-  final List<String> allowMethods;
-  final List<String> allowHeaders;
-  final List<String> exposeHeaders;
-  final int maxAge;
-
   const CorsConfig({
     this.allowOrigin = '*',
     this.allowMethods = const [
@@ -36,6 +30,11 @@ class CorsConfig {
     ],
     this.maxAge = 86400,
   });
+  final String allowOrigin;
+  final List<String> allowMethods;
+  final List<String> allowHeaders;
+  final List<String> exposeHeaders;
+  final int maxAge;
 }
 
 /// Middleware that adds CORS headers to all responses and handles OPTIONS

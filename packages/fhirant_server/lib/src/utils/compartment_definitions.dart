@@ -25,7 +25,7 @@ class CompartmentDefinitions {
     'AllergyIntolerance': [
       'AllergyIntolerance.patient',
       'AllergyIntolerance.recorder',
-      'AllergyIntolerance.asserter'
+      'AllergyIntolerance.asserter',
     ],
     'Appointment': ['Appointment.participant.actor'],
     'AppointmentResponse': ['AppointmentResponse.actor'],
@@ -41,13 +41,13 @@ class CompartmentDefinitions {
     'Communication': [
       'Communication.subject',
       'Communication.sender',
-      'Communication.recipient'
+      'Communication.recipient',
     ],
     'CommunicationRequest': [
       'CommunicationRequest.subject',
       'CommunicationRequest.sender',
       'CommunicationRequest.recipient',
-      'CommunicationRequest.requester'
+      'CommunicationRequest.requester',
     ],
     'Composition': ['Composition.subject', 'Composition.author'],
     'Condition': ['Condition.subject', 'Condition.asserter'],
@@ -56,7 +56,7 @@ class CompartmentDefinitions {
       'Coverage.policyHolder',
       'Coverage.subscriber',
       'Coverage.beneficiary',
-      'Coverage.payor'
+      'Coverage.payor',
     ],
     'CoverageEligibilityRequest': ['CoverageEligibilityRequest.patient'],
     'CoverageEligibilityResponse': ['CoverageEligibilityResponse.patient'],
@@ -67,18 +67,18 @@ class CompartmentDefinitions {
     'DocumentManifest': [
       'DocumentManifest.subject',
       'DocumentManifest.author',
-      'DocumentManifest.recipient'
+      'DocumentManifest.recipient',
     ],
     'DocumentReference': [
       'DocumentReference.subject',
-      'DocumentReference.author'
+      'DocumentReference.author',
     ],
     'Encounter': ['Encounter.subject'],
     'EnrollmentRequest': ['EnrollmentRequest.subject'],
     'EpisodeOfCare': ['EpisodeOfCare.patient'],
     'ExplanationOfBenefit': [
       'ExplanationOfBenefit.patient',
-      'ExplanationOfBenefit.payee.party'
+      'ExplanationOfBenefit.payee.party',
     ],
     'FamilyMemberHistory': ['FamilyMemberHistory.patient'],
     'Flag': ['Flag.subject'],
@@ -96,7 +96,7 @@ class CompartmentDefinitions {
     'MedicationDispense': [
       'MedicationDispense.subject',
       'MedicationDispense.patient',
-      'MedicationDispense.receiver'
+      'MedicationDispense.receiver',
     ],
     'MedicationRequest': ['MedicationRequest.subject'],
     'MedicationStatement': ['MedicationStatement.subject'],
@@ -108,7 +108,7 @@ class CompartmentDefinitions {
     'Provenance': ['Provenance.patient'],
     'QuestionnaireResponse': [
       'QuestionnaireResponse.subject',
-      'QuestionnaireResponse.author'
+      'QuestionnaireResponse.author',
     ],
     'RelatedPerson': ['RelatedPerson.patient'],
     'RequestGroup': ['RequestGroup.subject'],
@@ -168,7 +168,7 @@ class CompartmentDefinitions {
     'AdverseEvent': ['AdverseEvent.recorder'],
     'AllergyIntolerance': [
       'AllergyIntolerance.recorder',
-      'AllergyIntolerance.asserter'
+      'AllergyIntolerance.asserter',
     ],
     'Appointment': ['Appointment.participant.actor'],
     'AppointmentResponse': ['AppointmentResponse.actor'],
@@ -181,7 +181,7 @@ class CompartmentDefinitions {
       'Claim.enterer',
       'Claim.provider',
       'Claim.payee.party',
-      'Claim.careTeam.provider'
+      'Claim.careTeam.provider',
     ],
     'ClaimResponse': ['ClaimResponse.requestor'],
     'ClinicalImpression': ['ClinicalImpression.assessor'],
@@ -189,17 +189,17 @@ class CompartmentDefinitions {
     'CommunicationRequest': [
       'CommunicationRequest.sender',
       'CommunicationRequest.recipient',
-      'CommunicationRequest.requester'
+      'CommunicationRequest.requester',
     ],
     'Composition': [
       'Composition.subject',
       'Composition.author',
-      'Composition.attester.party'
+      'Composition.attester.party',
     ],
     'Condition': ['Condition.asserter'],
     'CoverageEligibilityRequest': [
       'CoverageEligibilityRequest.enterer',
-      'CoverageEligibilityRequest.provider'
+      'CoverageEligibilityRequest.provider',
     ],
     'CoverageEligibilityResponse': ['CoverageEligibilityResponse.requestor'],
     'DetectedIssue': ['DetectedIssue.author'],
@@ -208,12 +208,12 @@ class CompartmentDefinitions {
     'DocumentManifest': [
       'DocumentManifest.subject',
       'DocumentManifest.author',
-      'DocumentManifest.recipient'
+      'DocumentManifest.recipient',
     ],
     'DocumentReference': [
       'DocumentReference.subject',
       'DocumentReference.author',
-      'DocumentReference.authenticator'
+      'DocumentReference.authenticator',
     ],
     'Encounter': ['Encounter.participant.individual'],
     'EpisodeOfCare': ['EpisodeOfCare.careManager'],
@@ -221,7 +221,7 @@ class CompartmentDefinitions {
       'ExplanationOfBenefit.enterer',
       'ExplanationOfBenefit.provider',
       'ExplanationOfBenefit.payee.party',
-      'ExplanationOfBenefit.careTeam.provider'
+      'ExplanationOfBenefit.careTeam.provider',
     ],
     'Flag': ['Flag.author'],
     'Group': ['Group.member.entity'],
@@ -233,7 +233,7 @@ class CompartmentDefinitions {
     'MedicationAdministration': ['MedicationAdministration.performer.actor'],
     'MedicationDispense': [
       'MedicationDispense.performer.actor',
-      'MedicationDispense.receiver'
+      'MedicationDispense.receiver',
     ],
     'MedicationRequest': ['MedicationRequest.requester'],
     'MedicationStatement': ['MedicationStatement.source'],
@@ -241,7 +241,7 @@ class CompartmentDefinitions {
       'MessageHeader.destination.receiver',
       'MessageHeader.author',
       'MessageHeader.responsible',
-      'MessageHeader.enterer'
+      'MessageHeader.enterer',
     ],
     'NutritionOrder': ['NutritionOrder.orderer'],
     'Observation': ['Observation.performer'],
@@ -254,7 +254,7 @@ class CompartmentDefinitions {
     'Provenance': ['Provenance.agent.who'],
     'QuestionnaireResponse': [
       'QuestionnaireResponse.author',
-      'QuestionnaireResponse.source'
+      'QuestionnaireResponse.source',
     ],
     'RequestGroup': ['RequestGroup.participant', 'RequestGroup.author'],
     'ResearchStudy': ['ResearchStudy.principalInvestigator'],
@@ -286,18 +286,18 @@ class CompartmentDefinitions {
     'CommunicationRequest': [
       'CommunicationRequest.sender',
       'CommunicationRequest.recipient',
-      'CommunicationRequest.requester'
+      'CommunicationRequest.requester',
     ],
     'Composition': ['Composition.author'],
     'Condition': ['Condition.asserter'],
     'Coverage': [
       'Coverage.policyHolder',
       'Coverage.subscriber',
-      'Coverage.payor'
+      'Coverage.payor',
     ],
     'DocumentManifest': [
       'DocumentManifest.author',
-      'DocumentManifest.recipient'
+      'DocumentManifest.recipient',
     ],
     'DocumentReference': ['DocumentReference.author'],
     'Encounter': ['Encounter.participant.individual'],
@@ -312,7 +312,7 @@ class CompartmentDefinitions {
     'Provenance': ['Provenance.agent.who'],
     'QuestionnaireResponse': [
       'QuestionnaireResponse.author',
-      'QuestionnaireResponse.source'
+      'QuestionnaireResponse.source',
     ],
     'RequestGroup': ['RequestGroup.participant'],
     'Schedule': ['Schedule.actor'],
@@ -335,32 +335,32 @@ class CompartmentDefinitions {
       'Claim.procedure.udi',
       'Claim.item.udi',
       'Claim.item.detail.udi',
-      'Claim.item.detail.subDetail.udi'
+      'Claim.item.detail.subDetail.udi',
     ],
     'Communication': ['Communication.sender', 'Communication.recipient'],
     'CommunicationRequest': [
       'CommunicationRequest.sender',
-      'CommunicationRequest.recipient'
+      'CommunicationRequest.recipient',
     ],
     'Composition': ['Composition.author'],
     'DetectedIssue': ['DetectedIssue.author'],
     'DeviceRequest': [
       'DeviceRequest.subject',
       'DeviceRequest.requester',
-      'DeviceRequest.performer'
+      'DeviceRequest.performer',
     ],
     'DeviceUseStatement': ['DeviceUseStatement.device'],
     'DiagnosticReport': ['DiagnosticReport.subject'],
     'DocumentManifest': ['DocumentManifest.subject', 'DocumentManifest.author'],
     'DocumentReference': [
       'DocumentReference.subject',
-      'DocumentReference.author'
+      'DocumentReference.author',
     ],
     'ExplanationOfBenefit': [
       'ExplanationOfBenefit.procedure.udi',
       'ExplanationOfBenefit.item.udi',
       'ExplanationOfBenefit.item.detail.udi',
-      'ExplanationOfBenefit.item.detail.subDetail.udi'
+      'ExplanationOfBenefit.item.detail.subDetail.udi',
     ],
     'Flag': ['Flag.author'],
     'Group': ['Group.member.entity'],

@@ -1,13 +1,11 @@
-// ignore_for_file: lines_longer_than_80_chars
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
+import 'package:fhirant_server/src/handlers/meta_handler.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
-
-import 'package:fhirant_server/src/handlers/meta_handler.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -240,7 +238,7 @@ void main() {
                 {
                   'system':
                       'http://terminology.hl7.org/CodeSystem/v3-Confidentiality',
-                  'code': 'R'
+                  'code': 'R',
                 },
               ],
             },

@@ -1,16 +1,15 @@
 import 'dart:io';
 
+import 'package:fhirant/src/screens/dashboard_screen.dart';
+import 'package:fhirant/src/screens/onboarding_screen.dart';
+import 'package:fhirant/src/services/database_service.dart';
+import 'package:fhirant/src/services/server_service.dart';
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-
-import 'src/screens/dashboard_screen.dart';
-import 'src/screens/onboarding_screen.dart';
-import 'src/services/database_service.dart';
-import 'src/services/server_service.dart';
-import 'src/state/server_state.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,13 +51,10 @@ class _FhirantStartupState extends State<FhirantStartup> {
           channelId: 'fhirant_server',
           channelName: 'FHIR ANT Server',
           channelDescription: 'Keeps the FHIR server running in the background',
-          channelImportance: NotificationChannelImportance.LOW,
-          priority: NotificationPriority.LOW,
         ),
         iosNotificationOptions: const IOSNotificationOptions(),
         foregroundTaskOptions: ForegroundTaskOptions(
           eventAction: ForegroundTaskEventAction.nothing(),
-          allowWakeLock: true,
           allowWifiLock: true,
         ),
       );
@@ -124,21 +120,19 @@ class _FhirantStartupState extends State<FhirantStartup> {
 }
 
 class _InitResult {
-  final DatabaseService dbService;
-  final ServerService serverService;
-  final bool showOnboarding;
-
   _InitResult({
     required this.dbService,
     required this.serverService,
     required this.showOnboarding,
   });
+  final DatabaseService dbService;
+  final ServerService serverService;
+  final bool showOnboarding;
 }
 
 class _AppShell extends StatefulWidget {
-  final bool showOnboarding;
-
   const _AppShell({required this.showOnboarding});
+  final bool showOnboarding;
 
   @override
   State<_AppShell> createState() => _AppShellState();
@@ -166,7 +160,7 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    Widget home = widget.showOnboarding
+    var home = widget.showOnboarding
         ? const OnboardingScreen()
         : const DashboardScreen();
     if (Platform.isAndroid) {
@@ -217,10 +211,9 @@ class _LoadingScreen extends StatelessWidget {
 }
 
 class _ErrorScreen extends StatelessWidget {
+  const _ErrorScreen({required this.error, required this.onRetry});
   final Object error;
   final VoidCallback onRetry;
-
-  const _ErrorScreen({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {

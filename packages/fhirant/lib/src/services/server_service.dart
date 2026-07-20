@@ -1,15 +1,13 @@
+import 'package:fhirant/src/services/database_service.dart';
 import 'package:fhirant_server/fhirant_server.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import 'database_service.dart';
 
 const _jwtSecretKey = 'fhirant_jwt_secret';
 
 class ServerService {
+  ServerService(this._dbService);
   final DatabaseService _dbService;
   FhirAntServer? _server;
-
-  ServerService(this._dbService);
 
   bool get isRunning => _server?.isRunning ?? false;
   bool get devMode => _server?.devMode ?? false;
@@ -37,7 +35,6 @@ class ServerService {
       jwtSecret: jwtSecret,
       exportDir: exportDir,
       maxRequests: 100,
-      rateLimitDuration: const Duration(seconds: 60),
       devMode: devMode,
     );
 

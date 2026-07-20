@@ -1,8 +1,7 @@
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/search_param_definitions.dart';
 import 'package:shelf/shelf.dart';
-
-import '../utils/search_param_definitions.dart';
 
 /// Handler for the metadata route — returns a CapabilityStatement.
 Response metadataHandler(Request request) {

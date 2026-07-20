@@ -1,9 +1,8 @@
+import 'package:fhirant/src/widgets/network_info_card.dart';
+import 'package:fhirant/src/widgets/request_log_card.dart';
+import 'package:fhirant/src/widgets/resource_counts_card.dart';
+import 'package:fhirant/src/widgets/server_control_card.dart';
 import 'package:flutter/material.dart';
-
-import '../widgets/network_info_card.dart';
-import '../widgets/request_log_card.dart';
-import '../widgets/resource_counts_card.dart';
-import '../widgets/server_control_card.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});

@@ -1,7 +1,7 @@
-import 'package:test/test.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:drift/native.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('FhirAntDb - Resource History', () {
@@ -60,7 +60,7 @@ void main() {
 
       // Verify descending order: first entry should have the latest lastUpdated
       final timestamps = history.map((r) => r.meta!.lastUpdated!).toList();
-      for (int i = 0; i < timestamps.length - 1; i++) {
+      for (var i = 0; i < timestamps.length - 1; i++) {
         expect(
           timestamps[i]
               .valueDateTime!
@@ -122,8 +122,11 @@ void main() {
 
       final versionIds =
           history.map((r) => r.meta!.versionId!.valueString!).toSet();
-      expect(versionIds.length, equals(3),
-          reason: 'All 3 version IDs should be distinct');
+      expect(
+        versionIds.length,
+        equals(3),
+        reason: 'All 3 version IDs should be distinct',
+      );
     });
 
     test('getResourceHistory contains both original and updated data',

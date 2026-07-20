@@ -1,22 +1,22 @@
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhirant/src/screens/dashboard_screen.dart';
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../state/server_state.dart';
-import 'dashboard_screen.dart';
-
 /// Parse JSON bundle and deserialize resources off the main isolate.
 List<Map<String, dynamic>> _parseBundle(String jsonStr) {
   final bundle = jsonDecode(jsonStr) as Map<String, dynamic>;
   final entries = bundle['entry'] as List? ?? [];
   return entries
-      .map((e) =>
-          (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
+      .map(
+        (e) => (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?,
+      )
       .whereType<Map<String, dynamic>>()
       .toList();
 }

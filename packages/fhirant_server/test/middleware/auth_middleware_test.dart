@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -25,8 +25,8 @@ void main() {
 
   /// Wraps [middleware] around a simple handler that echoes the auth_user
   /// context as JSON body (or returns 200 with 'ok').
-  Handler _createHandler() {
-    return middleware((Request request) {
+  Handler createHandler() {
+    return middleware((request) {
       final authUser = request.context['auth_user'];
       if (authUser != null) {
         return Response.ok(jsonEncode(authUser));
@@ -37,7 +37,7 @@ void main() {
 
   group('authMiddleware', () {
     test('public routes pass without token', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       // Root
       var response =
@@ -46,30 +46,35 @@ void main() {
 
       // Metadata
       response = await handler(
-          Request('GET', Uri.parse('http://localhost:8080/metadata')));
+        Request('GET', Uri.parse('http://localhost:8080/metadata')),
+      );
       expect(response.statusCode, equals(200));
 
       // Auth login
       response = await handler(
-          Request('POST', Uri.parse('http://localhost:8080/auth/login')));
+        Request('POST', Uri.parse('http://localhost:8080/auth/login')),
+      );
       expect(response.statusCode, equals(200));
 
       // Auth register
       response = await handler(
-          Request('POST', Uri.parse('http://localhost:8080/auth/register')));
+        Request('POST', Uri.parse('http://localhost:8080/auth/register')),
+      );
       expect(response.statusCode, equals(200));
 
       // Favicon
       response = await handler(
-          Request('GET', Uri.parse('http://localhost:8080/favicon.ico')));
+        Request('GET', Uri.parse('http://localhost:8080/favicon.ico')),
+      );
       expect(response.statusCode, equals(200));
     });
 
     test('missing auth header returns 401', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final response = await handler(
-          Request('GET', Uri.parse('http://localhost:8080/Patient')));
+        Request('GET', Uri.parse('http://localhost:8080/Patient')),
+      );
 
       expect(response.statusCode, equals(401));
       final body = jsonDecode(await response.readAsString());
@@ -77,13 +82,15 @@ void main() {
     });
 
     test('invalid token returns 401', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
-      final response = await handler(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/Patient'),
-        headers: {'authorization': 'Bearer invalid.token.here'},
-      ));
+      final response = await handler(
+        Request(
+          'GET',
+          Uri.parse('http://localhost:8080/Patient'),
+          headers: {'authorization': 'Bearer invalid.token.here'},
+        ),
+      );
 
       expect(response.statusCode, equals(401));
       final body = jsonDecode(await response.readAsString());
@@ -91,7 +98,7 @@ void main() {
     });
 
     test('valid token injects auth_user into context', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final token = jwtService.generateToken(
         userId: 1,
@@ -99,11 +106,13 @@ void main() {
         role: 'clinician',
       );
 
-      final response = await handler(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/Patient'),
-        headers: {'authorization': 'Bearer $token'},
-      ));
+      final response = await handler(
+        Request(
+          'GET',
+          Uri.parse('http://localhost:8080/Patient'),
+          headers: {'authorization': 'Bearer $token'},
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -112,7 +121,7 @@ void main() {
     });
 
     test('readonly blocked on POST', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final token = jwtService.generateToken(
         userId: 2,
@@ -120,11 +129,13 @@ void main() {
         role: 'readonly',
       );
 
-      final response = await handler(Request(
-        'POST',
-        Uri.parse('http://localhost:8080/Patient'),
-        headers: {'authorization': 'Bearer $token'},
-      ));
+      final response = await handler(
+        Request(
+          'POST',
+          Uri.parse('http://localhost:8080/Patient'),
+          headers: {'authorization': 'Bearer $token'},
+        ),
+      );
 
       expect(response.statusCode, equals(403));
       final body = jsonDecode(await response.readAsString());
@@ -133,7 +144,7 @@ void main() {
     });
 
     test('readonly allowed on GET', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final token = jwtService.generateToken(
         userId: 2,
@@ -141,11 +152,13 @@ void main() {
         role: 'readonly',
       );
 
-      final response = await handler(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/Patient'),
-        headers: {'authorization': 'Bearer $token'},
-      ));
+      final response = await handler(
+        Request(
+          'GET',
+          Uri.parse('http://localhost:8080/Patient'),
+          headers: {'authorization': 'Bearer $token'},
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -153,7 +166,7 @@ void main() {
     });
 
     test('revoked token on protected route returns 401', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final token = jwtService.generateToken(
         userId: 1,
@@ -165,11 +178,13 @@ void main() {
       when(() => mockDb.isTokenRevoked(TokenHasher.hash(token)))
           .thenAnswer((_) async => true);
 
-      final response = await handler(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/Patient'),
-        headers: {'authorization': 'Bearer $token'},
-      ));
+      final response = await handler(
+        Request(
+          'GET',
+          Uri.parse('http://localhost:8080/Patient'),
+          headers: {'authorization': 'Bearer $token'},
+        ),
+      );
 
       expect(response.statusCode, equals(401));
       final body = jsonDecode(await response.readAsString());
@@ -177,7 +192,7 @@ void main() {
     });
 
     test('revoked token on public route does not inject auth_user', () async {
-      final handler = _createHandler();
+      final handler = createHandler();
 
       final token = jwtService.generateToken(
         userId: 1,
@@ -189,11 +204,13 @@ void main() {
       when(() => mockDb.isTokenRevoked(TokenHasher.hash(token)))
           .thenAnswer((_) async => true);
 
-      final response = await handler(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/metadata'),
-        headers: {'authorization': 'Bearer $token'},
-      ));
+      final response = await handler(
+        Request(
+          'GET',
+          Uri.parse('http://localhost:8080/metadata'),
+          headers: {'authorization': 'Bearer $token'},
+        ),
+      );
 
       // Should still return 200 (public route) but with no auth_user
       expect(response.statusCode, equals(200));

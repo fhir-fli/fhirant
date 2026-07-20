@@ -20,7 +20,7 @@ void main() {
     mockDb = MockFhirAntDb();
   });
 
-  Request _postJson(String path, dynamic body) {
+  Request postJson(String path, dynamic body) {
     return Request(
       'POST',
       Uri.parse('http://localhost$path'),
@@ -32,11 +32,11 @@ void main() {
   // ---------------------------------------------------------------------------
   // $cql convenience endpoint
   // ---------------------------------------------------------------------------
-  group('\$cql handler', () {
+  group(r'$cql handler', () {
     test('returns 400 when body is empty', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/\$cql'),
+        Uri.parse(r'http://localhost/$cql'),
         body: '',
       );
       final response = await cqlHandler(request, mockDb);
@@ -47,7 +47,7 @@ void main() {
 
     test('returns 400 when neither cql nor elm is provided', () async {
       final response = await cqlHandler(
-        _postJson('/\$cql', {'patientId': '123'}),
+        postJson(r'/$cql', {'patientId': '123'}),
         mockDb,
       );
       expect(response.statusCode, 400);
@@ -58,7 +58,7 @@ void main() {
     test('returns 400 for invalid JSON body', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/\$cql'),
+        Uri.parse(r'http://localhost/$cql'),
         body: 'not json',
         headers: {'Content-Type': 'application/json'},
       );
@@ -69,10 +69,10 @@ void main() {
     });
 
     test('evaluates simple CQL literal', () async {
-      final cql =
+      const cql =
           "library TestLib version '1.0.0'\ndefine Greeting: 'Hello, CQL!'";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -84,9 +84,9 @@ void main() {
     });
 
     test('evaluates CQL arithmetic', () async {
-      final cql = "library ArithTest version '1.0.0'\ndefine Sum: 2 + 3";
+      const cql = "library ArithTest version '1.0.0'\ndefine Sum: 2 + 3";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -97,10 +97,10 @@ void main() {
     });
 
     test('evaluates CQL boolean logic', () async {
-      final cql =
+      const cql =
           "library BoolTest version '1.0.0'\ndefine IsTrue: true and true\ndefine IsFalse: true and false";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -113,10 +113,10 @@ void main() {
     });
 
     test('evaluates CQL list count', () async {
-      final cql =
+      const cql =
           "library ListTest version '1.0.0'\ndefine Numbers: {1, 2, 3, 4, 5}\ndefine Total: Count(Numbers)";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -127,10 +127,10 @@ void main() {
     });
 
     test('evaluates CQL string operations', () async {
-      final cql =
+      const cql =
           "library StringTest version '1.0.0'\ndefine Concat: 'Hello' + ' ' + 'World'";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -141,9 +141,9 @@ void main() {
     });
 
     test('accepts FHIR Parameters resource format', () async {
-      final cql = "library ParamsTest version '1.0.0'\ndefine Answer: 42";
+      const cql = "library ParamsTest version '1.0.0'\ndefine Answer: 42";
       final response = await cqlHandler(
-        _postJson('/\$cql', {
+        postJson(r'/$cql', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'cql', 'valueString': cql},
@@ -159,7 +159,7 @@ void main() {
     });
 
     test('evaluates with inline data bundle', () async {
-      final cql =
+      const cql =
           "library PatientTest version '1.0.0'\nusing FHIR version '4.0.1'\ncontext Patient\ndefine PatientId: Patient.id";
       final bundle = {
         'resourceType': 'Bundle',
@@ -172,15 +172,15 @@ void main() {
               'name': [
                 {
                   'family': 'Smith',
-                  'given': ['John']
+                  'given': ['John'],
                 }
               ],
-            }
+            },
           }
         ],
       };
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql, 'data': bundle}),
+        postJson(r'/$cql', {'cql': cql, 'data': bundle}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -195,18 +195,20 @@ void main() {
       );
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.search(
-            resourceType: any(named: 'resourceType'),
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => <fhir.Resource>[]);
+      when(
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => <fhir.Resource>[]);
 
-      final cql = "library P version '1.0.0'\ndefine X: 1";
+      const cql = "library P version '1.0.0'\ndefine X: 1";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql, 'subject': 'Patient/pat-1'}),
+        postJson(r'/$cql', {'cql': cql, 'subject': 'Patient/pat-1'}),
         mockDb,
       );
       expect(response.statusCode, 200);
@@ -218,9 +220,9 @@ void main() {
       when(() => mockDb.getResource(any(), any()))
           .thenAnswer((_) async => null);
 
-      final cql = "library P version '1.0.0'\ndefine X: 1";
+      const cql = "library P version '1.0.0'\ndefine X: 1";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql, 'patientId': 'missing'}),
+        postJson(r'/$cql', {'cql': cql, 'patientId': 'missing'}),
         mockDb,
       );
       // Patient not found — still returns 200 (subject is optional in $cql)
@@ -229,9 +231,9 @@ void main() {
     });
 
     test('response has correct content type', () async {
-      final cql = "library T version '1.0.0'\ndefine X: 1";
+      const cql = "library T version '1.0.0'\ndefine X: 1";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.headers['content-type'], 'application/fhir+json');
@@ -239,33 +241,36 @@ void main() {
 
     test('handles invalid CQL syntax gracefully', () async {
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': 'this is not valid CQL @@@ !!!'}),
+        postJson(r'/$cql', {'cql': 'this is not valid CQL @@@ !!!'}),
         mockDb,
       );
       expect(response.statusCode, isIn([200, 400, 500]));
     });
 
     test('evaluates CQL date/time operations', () async {
-      final cql =
+      const cql =
           "library DateTest version '1.0.0'\ndefine Today: Today()\ndefine Now: Now()";
       final response = await cqlHandler(
-        _postJson('/\$cql', {'cql': cql}),
+        postJson(r'/$cql', {'cql': cql}),
         mockDb,
       );
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());
-      expect((body['parameter'] as List), isNotEmpty);
+      expect(body['parameter'] as List, isNotEmpty);
     });
   });
 
   // ---------------------------------------------------------------------------
   // Library/<id>/$evaluate
   // ---------------------------------------------------------------------------
-  group('Library/<id>/\$evaluate', () {
-    String _encodeCql(String cql) => base64Encode(utf8.encode(cql));
+  group(r'Library/<id>/$evaluate', () {
+    String encodeCql(String cql) => base64Encode(utf8.encode(cql));
 
-    fhir.Library _makeLibrary(String id, String cql,
-        {String contentType = 'text/cql'}) {
+    fhir.Library makeLibrary(
+      String id,
+      String cql, {
+      String contentType = 'text/cql',
+    }) {
       return fhir.Library(
         id: id.toFhirString,
         status: fhir.PublicationStatus.active,
@@ -275,29 +280,29 @@ void main() {
               system: 'http://terminology.hl7.org/CodeSystem/library-type'
                   .toFhirUri,
               code: 'logic-library'.toFhirCode,
-            )
+            ),
           ],
         ),
         content: [
           fhir.Attachment(
             contentType: contentType.toFhirCode,
-            data: _encodeCql(cql).toFhirBase64Binary,
+            data: encodeCql(cql).toFhirBase64Binary,
           ),
         ],
       );
     }
 
     test('evaluates a stored Library with CQL content', () async {
-      final cql =
+      const cql =
           "library MyLib version '1.0.0'\ndefine Greeting: 'Hello from Library!'";
-      final library = _makeLibrary('lib-1', cql);
+      final library = makeLibrary('lib-1', cql);
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Library, 'lib-1'))
           .thenAnswer((_) async => library);
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/Library/lib-1/\$evaluate'),
+        Uri.parse(r'http://localhost/Library/lib-1/$evaluate'),
         body: '',
       );
 
@@ -313,17 +318,17 @@ void main() {
 
     test('evaluates a stored Library with ELM JSON content', () async {
       // First parse CQL to get valid ELM, then store as ELM
-      final cql = "library ElmLib version '1.0.0'\ndefine Answer: 42";
+      const cql = "library ElmLib version '1.0.0'\ndefine Answer: 42";
       // We'll just use CQL content type for this test since generating
       // real ELM JSON is complex
-      final library = _makeLibrary('lib-elm', cql);
+      final library = makeLibrary('lib-elm', cql);
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Library, 'lib-elm'))
           .thenAnswer((_) async => library);
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/Library/lib-elm/\$evaluate'),
+        Uri.parse(r'http://localhost/Library/lib-elm/$evaluate'),
         body: '',
       );
 
@@ -342,7 +347,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/Library/missing/\$evaluate'),
+        Uri.parse(r'http://localhost/Library/missing/$evaluate'),
         body: '',
       );
 
@@ -368,7 +373,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/Library/empty/\$evaluate'),
+        Uri.parse(r'http://localhost/Library/empty/$evaluate'),
         body: '',
       );
 
@@ -379,8 +384,8 @@ void main() {
     });
 
     test('evaluates with subject parameter', () async {
-      final cql = "library SubjectTest version '1.0.0'\ndefine X: 1";
-      final library = _makeLibrary('lib-subj', cql);
+      const cql = "library SubjectTest version '1.0.0'\ndefine X: 1";
+      final library = makeLibrary('lib-subj', cql);
 
       final patient = fhir.Patient(
         id: 'pat-2'.toFhirString,
@@ -391,17 +396,19 @@ void main() {
           .thenAnswer((_) async => library);
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-2'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.search(
-            resourceType: any(named: 'resourceType'),
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => <fhir.Resource>[]);
+      when(
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => <fhir.Resource>[]);
 
       final response = await libraryEvaluateHandler(
-        _postJson('/Library/lib-subj/\$evaluate', {
+        postJson(r'/Library/lib-subj/$evaluate', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'subject', 'valueString': 'Patient/pat-2'},
@@ -419,9 +426,9 @@ void main() {
   // ---------------------------------------------------------------------------
   // Library/$evaluate (by URL / inline)
   // ---------------------------------------------------------------------------
-  group('Library/\$evaluate (by URL)', () {
+  group(r'Library/$evaluate (by URL)', () {
     test('evaluates Library found by canonical URL', () async {
-      final cql = "library ByUrl version '1.0.0'\ndefine Found: true";
+      const cql = "library ByUrl version '1.0.0'\ndefine Found: true";
       final library = fhir.Library(
         id: 'lib-url'.toFhirString,
         url: 'http://example.org/Library/ByUrl'.toFhirUri,
@@ -437,19 +444,21 @@ void main() {
         ],
       );
 
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.Library,
-            searchParameters: {
-              'url': ['http://example.org/Library/ByUrl']
-            },
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => [library]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Library,
+          searchParameters: {
+            'url': ['http://example.org/Library/ByUrl'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => [library]);
 
       final response = await libraryEvaluateByUrlHandler(
-        _postJson('/Library/\$evaluate', {
+        postJson(r'/Library/$evaluate', {
           'resourceType': 'Parameters',
           'parameter': [
             {
@@ -468,17 +477,19 @@ void main() {
     });
 
     test('returns 404 when canonical URL not found', () async {
-      when(() => mockDb.search(
-            resourceType: fhir.R4ResourceType.Library,
-            searchParameters: any(named: 'searchParameters'),
-            hasParameters: any(named: 'hasParameters'),
-            count: any(named: 'count'),
-            offset: any(named: 'offset'),
-            sort: any(named: 'sort'),
-          )).thenAnswer((_) async => <fhir.Resource>[]);
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Library,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((_) async => <fhir.Resource>[]);
 
       final response = await libraryEvaluateByUrlHandler(
-        _postJson('/Library/\$evaluate', {
+        postJson(r'/Library/$evaluate', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'url', 'valueUri': 'http://example.org/missing'},
@@ -489,10 +500,10 @@ void main() {
       expect(response.statusCode, 404);
     });
 
-    test('evaluates inline CQL via Library/\$evaluate', () async {
-      final cql = "library Inline version '1.0.0'\ndefine X: 99";
+    test(r'evaluates inline CQL via Library/$evaluate', () async {
+      const cql = "library Inline version '1.0.0'\ndefine X: 99";
       final response = await libraryEvaluateByUrlHandler(
-        _postJson('/Library/\$evaluate', {
+        postJson(r'/Library/$evaluate', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'cql', 'valueString': cql},
@@ -509,7 +520,7 @@ void main() {
 
     test('returns 400 when no library source provided', () async {
       final response = await libraryEvaluateByUrlHandler(
-        _postJson('/Library/\$evaluate', {
+        postJson(r'/Library/$evaluate', {
           'resourceType': 'Parameters',
           'parameter': [
             {'name': 'subject', 'valueString': 'Patient/123'},
@@ -525,7 +536,7 @@ void main() {
     test('returns 400 when body is empty', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost/Library/\$evaluate'),
+        Uri.parse(r'http://localhost/Library/$evaluate'),
         body: '',
       );
       final response = await libraryEvaluateByUrlHandler(request, mockDb);

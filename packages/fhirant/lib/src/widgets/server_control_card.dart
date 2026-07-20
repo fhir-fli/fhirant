@@ -1,7 +1,6 @@
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../state/server_state.dart';
 
 class ServerControlCard extends StatefulWidget {
   const ServerControlCard({super.key});
@@ -161,8 +160,11 @@ class _ServerControlCardState extends State<ServerControlCard> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.warning_amber,
-                            size: 16, color: Colors.orange.shade700),
+                        Icon(
+                          Icons.warning_amber,
+                          size: 16,
+                          color: Colors.orange.shade700,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

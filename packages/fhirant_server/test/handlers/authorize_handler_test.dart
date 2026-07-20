@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
+
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/authorize_handler.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -16,7 +17,8 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-            'http://localhost:8080/auth/authorize?response_type=code&redirect_uri=http://app/cb'),
+          'http://localhost:8080/auth/authorize?response_type=code&redirect_uri=http://app/cb',
+        ),
       );
 
       final response = await authorizeGetHandler(request);
@@ -28,7 +30,8 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-            'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app'),
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app',
+        ),
       );
 
       final response = await authorizeGetHandler(request);
@@ -39,7 +42,8 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-            'http://localhost:8080/auth/authorize?response_type=token&client_id=my-app&redirect_uri=http://app/cb'),
+          'http://localhost:8080/auth/authorize?response_type=token&client_id=my-app&redirect_uri=http://app/cb',
+        ),
       );
 
       final response = await authorizeGetHandler(request);
@@ -52,7 +56,8 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-            'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz'),
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz',
+        ),
       );
 
       final response = await authorizeGetHandler(request);
@@ -73,7 +78,7 @@ void main() {
       mockDb = MockFhirAntDb();
     });
 
-    Request _makeRequest(Map<String, dynamic> body) {
+    Request makeRequest(Map<String, dynamic> body) {
       return Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/authorize'),
@@ -83,7 +88,7 @@ void main() {
     }
 
     test('returns 400 for unsupported response_type', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'token',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -99,7 +104,7 @@ void main() {
     });
 
     test('returns 400 when client_id missing', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'redirect_uri': 'http://app/cb',
         'username': 'test',
@@ -114,7 +119,7 @@ void main() {
     });
 
     test('returns 400 when redirect_uri missing', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'username': 'test',
@@ -129,7 +134,7 @@ void main() {
     });
 
     test('returns 400 when credentials missing', () async {
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -146,7 +151,7 @@ void main() {
       when(() => mockDb.getUserByUsername('baduser'))
           .thenAnswer((_) async => null);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -175,7 +180,7 @@ void main() {
       when(() => mockDb.getUserByUsername('inactive'))
           .thenAnswer((_) async => mockUser);
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -200,18 +205,20 @@ void main() {
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(() => mockDb.createAuthorizationCode(
-            code: any(named: 'code'),
-            clientId: any(named: 'clientId'),
-            userId: any(named: 'userId'),
-            redirectUri: any(named: 'redirectUri'),
-            scope: any(named: 'scope'),
-            codeChallenge: any(named: 'codeChallenge'),
-            codeChallengeMethod: any(named: 'codeChallengeMethod'),
-            expiresAt: any(named: 'expiresAt'),
-          )).thenAnswer((_) async {});
+      when(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: any(named: 'clientId'),
+          userId: any(named: 'userId'),
+          redirectUri: any(named: 'redirectUri'),
+          scope: any(named: 'scope'),
+          codeChallenge: any(named: 'codeChallenge'),
+          codeChallengeMethod: any(named: 'codeChallengeMethod'),
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).thenAnswer((_) async {});
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -232,16 +239,16 @@ void main() {
       expect(body['redirect_uri'], contains('state=csrf-token'));
 
       // Verify the auth code was stored
-      verify(() => mockDb.createAuthorizationCode(
-            code: any(named: 'code'),
-            clientId: 'my-app',
-            userId: 1,
-            redirectUri: 'http://app/cb',
-            scope: 'user/*.*',
-            codeChallenge: null,
-            codeChallengeMethod: null,
-            expiresAt: any(named: 'expiresAt'),
-          )).called(1);
+      verify(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: 'my-app',
+          userId: 1,
+          redirectUri: 'http://app/cb',
+          scope: 'user/*.*',
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).called(1);
     });
 
     test('stores PKCE challenge when provided', () async {
@@ -257,18 +264,20 @@ void main() {
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(() => mockDb.createAuthorizationCode(
-            code: any(named: 'code'),
-            clientId: any(named: 'clientId'),
-            userId: any(named: 'userId'),
-            redirectUri: any(named: 'redirectUri'),
-            scope: any(named: 'scope'),
-            codeChallenge: any(named: 'codeChallenge'),
-            codeChallengeMethod: any(named: 'codeChallengeMethod'),
-            expiresAt: any(named: 'expiresAt'),
-          )).thenAnswer((_) async {});
+      when(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: any(named: 'clientId'),
+          userId: any(named: 'userId'),
+          redirectUri: any(named: 'redirectUri'),
+          scope: any(named: 'scope'),
+          codeChallenge: any(named: 'codeChallenge'),
+          codeChallengeMethod: any(named: 'codeChallengeMethod'),
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).thenAnswer((_) async {});
 
-      final request = _makeRequest({
+      final request = makeRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -283,16 +292,18 @@ void main() {
       expect(response.statusCode, 200);
 
       // Verify PKCE challenge was stored
-      verify(() => mockDb.createAuthorizationCode(
-            code: any(named: 'code'),
-            clientId: 'my-app',
-            userId: 1,
-            redirectUri: 'http://app/cb',
-            scope: 'user/*.*',
-            codeChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-            codeChallengeMethod: 'S256',
-            expiresAt: any(named: 'expiresAt'),
-          )).called(1);
+      verify(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: 'my-app',
+          userId: 1,
+          redirectUri: 'http://app/cb',
+          scope: 'user/*.*',
+          codeChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+          codeChallengeMethod: 'S256',
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).called(1);
     });
   });
 
@@ -303,10 +314,12 @@ void main() {
       mockDb = MockFhirAntDb();
     });
 
-    Request _makeFormRequest(Map<String, String> fields) {
+    Request makeFormRequest(Map<String, String> fields) {
       final body = fields.entries
-          .map((e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+          )
           .join('&');
       return Request(
         'POST',
@@ -329,18 +342,20 @@ void main() {
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(() => mockDb.createAuthorizationCode(
-            code: any(named: 'code'),
-            clientId: any(named: 'clientId'),
-            userId: any(named: 'userId'),
-            redirectUri: any(named: 'redirectUri'),
-            scope: any(named: 'scope'),
-            codeChallenge: any(named: 'codeChallenge'),
-            codeChallengeMethod: any(named: 'codeChallengeMethod'),
-            expiresAt: any(named: 'expiresAt'),
-          )).thenAnswer((_) async {});
+      when(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: any(named: 'clientId'),
+          userId: any(named: 'userId'),
+          redirectUri: any(named: 'redirectUri'),
+          scope: any(named: 'scope'),
+          codeChallenge: any(named: 'codeChallenge'),
+          codeChallengeMethod: any(named: 'codeChallengeMethod'),
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).thenAnswer((_) async {});
 
-      final request = _makeFormRequest({
+      final request = makeFormRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -363,7 +378,7 @@ void main() {
       when(() => mockDb.getUserByUsername('baduser'))
           .thenAnswer((_) async => null);
 
-      final request = _makeFormRequest({
+      final request = makeFormRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
@@ -380,7 +395,7 @@ void main() {
     });
 
     test('returns login form when credentials missing', () async {
-      final request = _makeFormRequest({
+      final request = makeFormRequest({
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',

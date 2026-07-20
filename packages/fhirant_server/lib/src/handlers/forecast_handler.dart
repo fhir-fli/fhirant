@@ -115,7 +115,7 @@ Future<Response> _handleForecast(
     return _errorResponse(
       500,
       'exception',
-      'Immunization forecast error: ${e.toString()}',
+      'Immunization forecast error: $e',
     );
   }
 }
@@ -234,7 +234,7 @@ Future<List<fhir.Resource>> _searchForPatient(
     return await dbInterface.search(
       resourceType: type,
       searchParameters: {
-        'patient': ['Patient/$patientId']
+        'patient': ['Patient/$patientId'],
       },
     );
   } catch (_) {

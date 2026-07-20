@@ -1,9 +1,8 @@
+import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-
-import '../state/server_state.dart';
 
 class NetworkInfoCard extends StatelessWidget {
   const NetworkInfoCard({super.key});
@@ -81,7 +80,6 @@ class NetworkInfoCard extends StatelessWidget {
                   Center(
                     child: QrImageView(
                       data: url,
-                      version: QrVersions.auto,
                       size: 180,
                       backgroundColor: Colors.white,
                     ),

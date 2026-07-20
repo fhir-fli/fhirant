@@ -17,7 +17,7 @@ class FhirHttpHeaders {
   /// Returns `null` if the header is null or cannot be parsed.
   static String? parseETag(String? header) {
     if (header == null || header.isEmpty) return null;
-    final match = RegExp(r'(?:W/)?"([^"]+)"').firstMatch(header);
+    final match = RegExp('(?:W/)?"([^"]+)"').firstMatch(header);
     return match?.group(1);
   }
 
@@ -80,8 +80,11 @@ class FhirHttpHeaders {
         );
         return Response(statusCode, body: oo.toJsonString(), headers: headers);
       default: // 'representation'
-        return Response(statusCode,
-            body: resource.toJsonString(), headers: headers);
+        return Response(
+          statusCode,
+          body: resource.toJsonString(),
+          headers: headers,
+        );
     }
   }
 }

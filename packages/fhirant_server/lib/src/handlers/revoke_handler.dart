@@ -16,12 +16,14 @@ Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
 
     final token = body['token'] as String?;
     if (token == null || token.isEmpty) {
-      return Response(400,
-          body: jsonEncode({
-            'error': 'invalid_request',
-            'error_description': 'token parameter is required',
-          }),
-          headers: {'Content-Type': 'application/json'});
+      return Response(
+        400,
+        body: jsonEncode({
+          'error': 'invalid_request',
+          'error_description': 'token parameter is required',
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
     }
 
     final tokenHash = TokenHasher.hash(token);
@@ -35,10 +37,11 @@ Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
     );
   } catch (e) {
     return Response.internalServerError(
-        body: jsonEncode({
-      'error': 'server_error',
-      'error_description': 'Revocation failed: $e',
-    }));
+      body: jsonEncode({
+        'error': 'server_error',
+        'error_description': 'Revocation failed: $e',
+      }),
+    );
   }
 }
 
@@ -75,23 +78,27 @@ Future<Response> logoutHandler(Request request, FhirAntDb dbInterface) async {
     );
   } catch (e) {
     return Response.internalServerError(
-        body: jsonEncode({
-      'error': 'server_error',
-      'error_description': 'Logout failed: $e',
-    }));
+      body: jsonEncode({
+        'error': 'server_error',
+        'error_description': 'Logout failed: $e',
+      }),
+    );
   }
 }
 
 /// Extract expiration from a JWT without signature verification.
 /// Falls back to now + 24 hours if the token can't be decoded.
-DateTime _extractExpiresAt(String token,
-    [Duration fallback = const Duration(hours: 24)]) {
+DateTime _extractExpiresAt(
+  String token, [
+  Duration fallback = const Duration(hours: 24),
+]) {
   try {
     final jwt = JWT.decode(token);
     final payload = jwt.payload as Map<String, dynamic>?;
     if (payload != null && payload.containsKey('exp')) {
       return DateTime.fromMillisecondsSinceEpoch(
-          (payload['exp'] as num).toInt() * 1000);
+        (payload['exp'] as num).toInt() * 1000,
+      );
     }
   } catch (_) {
     // Not a valid JWT — use fallback

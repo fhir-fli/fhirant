@@ -1,7 +1,7 @@
-import 'package:test/test.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/metadata_handler.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('metadataHandler', () {
@@ -58,30 +58,35 @@ void main() {
     test('all 5 compartments declared', () {
       final compartments = rest.compartment!.map((c) => c.valueString).toList();
       expect(
-          compartments,
-          contains(
-            'http://hl7.org/fhir/CompartmentDefinition/patient',
-          ));
+        compartments,
+        contains(
+          'http://hl7.org/fhir/CompartmentDefinition/patient',
+        ),
+      );
       expect(
-          compartments,
-          contains(
-            'http://hl7.org/fhir/CompartmentDefinition/encounter',
-          ));
+        compartments,
+        contains(
+          'http://hl7.org/fhir/CompartmentDefinition/encounter',
+        ),
+      );
       expect(
-          compartments,
-          contains(
-            'http://hl7.org/fhir/CompartmentDefinition/practitioner',
-          ));
+        compartments,
+        contains(
+          'http://hl7.org/fhir/CompartmentDefinition/practitioner',
+        ),
+      );
       expect(
-          compartments,
-          contains(
-            'http://hl7.org/fhir/CompartmentDefinition/relatedPerson',
-          ));
+        compartments,
+        contains(
+          'http://hl7.org/fhir/CompartmentDefinition/relatedPerson',
+        ),
+      );
       expect(
-          compartments,
-          contains(
-            'http://hl7.org/fhir/CompartmentDefinition/device',
-          ));
+        compartments,
+        contains(
+          'http://hl7.org/fhir/CompartmentDefinition/device',
+        ),
+      );
       expect(compartments, hasLength(5));
     });
 
@@ -126,11 +131,15 @@ void main() {
       expect(patient.readHistory!.valueBoolean, isTrue);
       expect(patient.updateCreate!.valueBoolean, isTrue);
       expect(patient.conditionalCreate!.valueBoolean, isTrue);
-      expect(patient.conditionalRead,
-          equals(fhir.ConditionalReadStatus.fullSupport));
+      expect(
+        patient.conditionalRead,
+        equals(fhir.ConditionalReadStatus.fullSupport),
+      );
       expect(patient.conditionalUpdate!.valueBoolean, isTrue);
-      expect(patient.conditionalDelete,
-          equals(fhir.ConditionalDeleteStatus.multiple));
+      expect(
+        patient.conditionalDelete,
+        equals(fhir.ConditionalDeleteStatus.multiple),
+      );
     });
 
     test('Patient has >10 search params', () {
@@ -147,7 +156,7 @@ void main() {
       expect(obs.searchParam!.length, greaterThan(4));
     });
 
-    test('\$everything on Patient but not on Observation', () {
+    test(r'$everything on Patient but not on Observation', () {
       final patient =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Patient');
       final patientOps =
@@ -160,7 +169,7 @@ void main() {
       expect(obsOps, isNot(contains('everything')));
     });
 
-    test('\$meta operations on all resources', () {
+    test(r'$meta operations on all resources', () {
       final patient =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Patient');
       final patientOps =
@@ -176,7 +185,7 @@ void main() {
       expect(obsOps, contains('meta'));
     });
 
-    test('\$export on Patient and Group, not on Observation', () {
+    test(r'$export on Patient and Group, not on Observation', () {
       final patient =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Patient');
       final patientOps =
@@ -215,7 +224,7 @@ void main() {
       expect(obsOps, contains('validate'));
     });
 
-    test('\$document on Composition but not on Patient', () {
+    test(r'$document on Composition but not on Patient', () {
       final composition =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Composition');
       final compOps =

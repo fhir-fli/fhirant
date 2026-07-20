@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/revoke_handler.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -89,9 +89,9 @@ void main() {
       expect(response.statusCode, 200);
 
       // Still revoked — the hash is stored regardless
-      verify(() =>
-              mockDb.revokeToken(TokenHasher.hash('garbage-not-a-jwt'), any()))
-          .called(1);
+      verify(
+        () => mockDb.revokeToken(TokenHasher.hash('garbage-not-a-jwt'), any()),
+      ).called(1);
     });
 
     test('supports form-encoded body', () async {

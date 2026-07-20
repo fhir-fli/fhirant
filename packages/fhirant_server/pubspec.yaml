@@ -29,9 +29,11 @@ dependencies:
   sqlite3: ^3.1.5
   uuid: ^4.5.1
 
+  http: any
 dev_dependencies:
   test: ^1.25.8
   mocktail: ^1.0.0
+  very_good_analysis: ^10.0.0
 
 # Build SQLite from the sqlite3mc source (SQLite3 Multiple Ciphers) so the
 # database supports SQLCipher-compatible encryption without a separately

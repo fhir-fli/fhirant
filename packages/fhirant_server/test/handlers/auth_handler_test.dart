@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/handlers/auth_status_handler.dart';
-import 'package:fhirant_server/src/handlers/register_handler.dart';
 import 'package:fhirant_server/src/handlers/login_handler.dart';
+import 'package:fhirant_server/src/handlers/register_handler.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -77,13 +77,15 @@ void main() {
       when(() => mockDb.getUserCount()).thenAnswer((_) async => 0);
       when(() => mockDb.getUserByUsername('admin_user'))
           .thenAnswer((_) async => null);
-      when(() => mockDb.createUser(
-            username: any(named: 'username'),
-            passwordHash: any(named: 'passwordHash'),
-            salt: any(named: 'salt'),
-            role: any(named: 'role'),
-            scopes: any(named: 'scopes'),
-          )).thenAnswer((_) async => 1);
+      when(
+        () => mockDb.createUser(
+          username: any(named: 'username'),
+          passwordHash: any(named: 'passwordHash'),
+          salt: any(named: 'salt'),
+          role: any(named: 'role'),
+          scopes: any(named: 'scopes'),
+        ),
+      ).thenAnswer((_) async => 1);
 
       final response = await registerHandler(request, mockDb, jwtService);
 
@@ -96,19 +98,21 @@ void main() {
       expect(body['token_type'], equals('Bearer'));
 
       // Verify the token is valid and contains correct claims
-      final payload = jwtService.verifyToken(body['token']);
+      final payload = jwtService.verifyToken(body['token'] as String);
       expect(payload, isNotNull);
       expect(payload!['username'], equals('admin_user'));
       expect(payload['role'], equals('admin'));
 
       // Verify createUser was called with role=admin
-      final captured = verify(() => mockDb.createUser(
-            username: captureAny(named: 'username'),
-            passwordHash: captureAny(named: 'passwordHash'),
-            salt: captureAny(named: 'salt'),
-            role: captureAny(named: 'role'),
-            scopes: captureAny(named: 'scopes'),
-          )).captured;
+      final captured = verify(
+        () => mockDb.createUser(
+          username: captureAny(named: 'username'),
+          passwordHash: captureAny(named: 'passwordHash'),
+          salt: captureAny(named: 'salt'),
+          role: captureAny(named: 'role'),
+          scopes: captureAny(named: 'scopes'),
+        ),
+      ).captured;
       expect(captured[3], equals('admin'));
     });
 
@@ -140,20 +144,22 @@ void main() {
           'role': 'clinician',
         }),
         context: {
-          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'}
+          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'},
         },
       );
 
       when(() => mockDb.getUserCount()).thenAnswer((_) async => 1);
       when(() => mockDb.getUserByUsername('new_clinician'))
           .thenAnswer((_) async => null);
-      when(() => mockDb.createUser(
-            username: any(named: 'username'),
-            passwordHash: any(named: 'passwordHash'),
-            salt: any(named: 'salt'),
-            role: any(named: 'role'),
-            scopes: any(named: 'scopes'),
-          )).thenAnswer((_) async => 2);
+      when(
+        () => mockDb.createUser(
+          username: any(named: 'username'),
+          passwordHash: any(named: 'passwordHash'),
+          salt: any(named: 'salt'),
+          role: any(named: 'role'),
+          scopes: any(named: 'scopes'),
+        ),
+      ).thenAnswer((_) async => 2);
 
       final response = await registerHandler(request, mockDb, jwtService);
 
@@ -242,7 +248,7 @@ void main() {
 
   group('loginHandler', () {
     /// Creates a standard MockUser with valid credentials and no lockout.
-    MockUser _createMockUser({
+    MockUser createMockUser({
       int id = 1,
       String username = 'testuser',
       String role = 'clinician',
@@ -268,7 +274,7 @@ void main() {
     }
 
     test('valid login returns JWT', () async {
-      final mockUser = _createMockUser();
+      final mockUser = createMockUser();
 
       final request = Request(
         'POST',
@@ -292,7 +298,7 @@ void main() {
       expect(body['role'], equals('clinician'));
 
       // Verify the token is valid
-      final payload = jwtService.verifyToken(body['token']);
+      final payload = jwtService.verifyToken(body['token'] as String);
       expect(payload, isNotNull);
       expect(payload!['username'], equals('testuser'));
     });
@@ -316,7 +322,7 @@ void main() {
     });
 
     test('wrong password returns 401', () async {
-      final mockUser = _createMockUser(password: 'correctPassword');
+      final mockUser = createMockUser(password: 'correctPassword');
 
       final request = Request(
         'POST',
@@ -336,7 +342,7 @@ void main() {
     });
 
     test('deactivated user returns 403', () async {
-      final mockUser = _createMockUser(active: false);
+      final mockUser = createMockUser(active: false);
 
       final request = Request(
         'POST',
@@ -368,7 +374,7 @@ void main() {
     });
 
     test('locked account returns 423', () async {
-      final mockUser = _createMockUser(
+      final mockUser = createMockUser(
         lockedUntil: DateTime.now().add(const Duration(minutes: 10)),
       );
 
@@ -392,7 +398,7 @@ void main() {
     });
 
     test('expired lockout auto-unlocks and allows login', () async {
-      final mockUser = _createMockUser(
+      final mockUser = createMockUser(
         lockedUntil: DateTime.now().subtract(const Duration(minutes: 1)),
         failedLoginCount: 5,
       );
@@ -418,7 +424,7 @@ void main() {
     });
 
     test('failed login increments counter', () async {
-      final mockUser = _createMockUser(password: 'correctPassword');
+      final mockUser = createMockUser(password: 'correctPassword');
 
       final request = Request(
         'POST',
@@ -439,7 +445,7 @@ void main() {
     });
 
     test('account locked after max failed attempts', () async {
-      final mockUser = _createMockUser(
+      final mockUser = createMockUser(
         password: 'correctPassword',
         failedLoginCount: 4,
       );
@@ -466,7 +472,7 @@ void main() {
     });
 
     test('successful login resets failed count', () async {
-      final mockUser = _createMockUser(failedLoginCount: 3);
+      final mockUser = createMockUser(failedLoginCount: 3);
 
       final request = Request(
         'POST',
@@ -494,7 +500,7 @@ void main() {
         'POST',
         Uri.parse('http://localhost:8080/admin/unlock/1'),
         context: {
-          'auth_user': {'userId': 2, 'username': 'nurse', 'role': 'clinician'}
+          'auth_user': {'userId': 2, 'username': 'nurse', 'role': 'clinician'},
         },
       );
 
@@ -508,7 +514,7 @@ void main() {
         'POST',
         Uri.parse('http://localhost:8080/admin/unlock/999'),
         context: {
-          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'}
+          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'},
         },
       );
 
@@ -528,7 +534,7 @@ void main() {
         'POST',
         Uri.parse('http://localhost:8080/admin/unlock/2'),
         context: {
-          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'}
+          'auth_user': {'userId': 1, 'username': 'admin', 'role': 'admin'},
         },
       );
 

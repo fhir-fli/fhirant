@@ -293,8 +293,11 @@ fhir.Resource _setMeta(fhir.Resource resource, fhir.FhirMeta meta) {
   return fhir.Resource.fromJson(json);
 }
 
-Response _errorResponse(String message, String details,
-    {int statusCode = 500}) {
+Response _errorResponse(
+  String message,
+  String details, {
+  int statusCode = 500,
+}) {
   final operationOutcome = fhir.OperationOutcome(
     issue: [
       fhir.OperationOutcomeIssue(

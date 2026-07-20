@@ -1,14 +1,15 @@
 import 'dart:convert';
-import 'package:test/test.dart';
-import 'package:shelf/shelf.dart';
+
 import 'package:fhirant_server/src/handlers/validate_handler.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('validateHandler', () {
     test('returns 400 with OperationOutcome for empty body', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/Patient/\$validate'),
+        Uri.parse(r'http://localhost:8080/Patient/$validate'),
         body: '',
       );
 
@@ -24,7 +25,7 @@ void main() {
     test('returns 400 with OperationOutcome for invalid JSON', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/Patient/\$validate'),
+        Uri.parse(r'http://localhost:8080/Patient/$validate'),
         body: 'not valid json{{{',
       );
 
@@ -34,8 +35,10 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['resourceType'], equals('OperationOutcome'));
-      expect((json['issue'] as List).first['diagnostics'],
-          contains('Invalid JSON'));
+      expect(
+        (json['issue'] as List).first['diagnostics'],
+        contains('Invalid JSON'),
+      );
     });
 
     test('returns 400 when resource type in body mismatches URL', () async {
@@ -46,7 +49,7 @@ void main() {
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/Observation/\$validate'),
+        Uri.parse(r'http://localhost:8080/Observation/$validate'),
         body: patientJson,
       );
 
@@ -71,14 +74,14 @@ void main() {
         'name': [
           {
             'family': 'Smith',
-            'given': ['John']
+            'given': ['John'],
           },
         ],
       });
 
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/\$validate'),
+        Uri.parse(r'http://localhost:8080/$validate'),
         body: patientJson,
       );
 

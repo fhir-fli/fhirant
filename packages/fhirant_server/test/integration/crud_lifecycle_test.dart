@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
 
 import 'test_helpers.dart';
 
@@ -36,13 +36,15 @@ void main() {
         birthDate: fhir.FhirDate.fromString('1990-01-15'),
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: patient.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: patient.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
@@ -66,13 +68,15 @@ void main() {
         ],
       );
 
-      final response = await handler(testRequest(
-        'POST',
-        '/Patient',
-        body: patient.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'POST',
+          '/Patient',
+          body: patient.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
@@ -94,11 +98,13 @@ void main() {
       );
       await testDb.saveResource(patient);
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/test-read-123',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/test-read-123',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -119,13 +125,15 @@ void main() {
         name: [fhir.HumanName(family: 'Updated'.toFhirString)],
       );
 
-      final response = await handler(testRequest(
-        'PUT',
-        '/Patient/test-put-456',
-        body: updated.toJsonString(),
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'PUT',
+          '/Patient/test-put-456',
+          body: updated.toJsonString(),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -145,13 +153,15 @@ void main() {
         {'op': 'replace', 'path': '/name/0/family', 'value': 'AfterPatch'},
       ]);
 
-      final response = await handler(testRequest(
-        'PATCH',
-        '/Patient/test-patch-789',
-        body: patchDoc,
-        headers: {'content-type': 'application/fhir+json'},
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'PATCH',
+          '/Patient/test-patch-789',
+          body: patchDoc,
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -165,11 +175,13 @@ void main() {
       );
       await testDb.saveResource(patient);
 
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient/test-delete-abc',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient/test-delete-abc',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(204));
     });
@@ -182,11 +194,13 @@ void main() {
       await testDb.saveResource(patient);
       await testDb.deleteResource(fhir.R4ResourceType.Patient, 'test-gone-def');
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/test-gone-def',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/test-gone-def',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(410));
     });
@@ -199,7 +213,9 @@ void main() {
       await testDb.saveResource(patient);
 
       final saved = await testDb.getResource(
-          fhir.R4ResourceType.Patient, 'test-vread-ghi');
+        fhir.R4ResourceType.Patient,
+        'test-vread-ghi',
+      );
       final v1Id = saved!.meta!.versionId!.toString();
 
       // Drift stores DateTime as integer seconds by default, so we need
@@ -212,11 +228,13 @@ void main() {
       );
       await testDb.saveResource(updated);
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/test-vread-ghi/_history/$v1Id',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/test-vread-ghi/_history/$v1Id',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -226,71 +244,89 @@ void main() {
 
     test('DELETE /Patient?name=X conditional delete removes single match',
         () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'cond-del-e2e-1'.toFhirString,
-        name: [
-          fhir.HumanName(
-            family: 'CondDelUnique'.toFhirString,
-          ),
-        ],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'cond-del-e2e-1'.toFhirString,
+          name: [
+            fhir.HumanName(
+              family: 'CondDelUnique'.toFhirString,
+            ),
+          ],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient?name=CondDelUnique',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient?name=CondDelUnique',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(204));
 
       // Verify resource is gone (410 because it existed in history)
-      final getResponse = await handler(testRequest(
-        'GET',
-        '/Patient/cond-del-e2e-1',
-        authToken: authToken,
-      ));
+      final getResponse = await handler(
+        testRequest(
+          'GET',
+          '/Patient/cond-del-e2e-1',
+          authToken: authToken,
+        ),
+      );
       expect(getResponse.statusCode, equals(410));
     });
 
     test('DELETE /Patient?name=X deletes all multiple matches', () async {
-      await testDb.saveResource(fhir.Patient(
-        id: 'cond-del-multi-1'.toFhirString,
-        name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
-      ));
-      await testDb.saveResource(fhir.Patient(
-        id: 'cond-del-multi-2'.toFhirString,
-        name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
-      ));
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'cond-del-multi-1'.toFhirString,
+          name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
+        ),
+      );
+      await testDb.saveResource(
+        fhir.Patient(
+          id: 'cond-del-multi-2'.toFhirString,
+          name: [fhir.HumanName(family: 'CondDelMulti'.toFhirString)],
+        ),
+      );
 
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient?name=CondDelMulti',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient?name=CondDelMulti',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(204));
 
       // Both resources should be deleted
-      final get1 = await handler(testRequest(
-        'GET',
-        '/Patient/cond-del-multi-1',
-        authToken: authToken,
-      ));
+      final get1 = await handler(
+        testRequest(
+          'GET',
+          '/Patient/cond-del-multi-1',
+          authToken: authToken,
+        ),
+      );
       expect(get1.statusCode, equals(410));
-      final get2 = await handler(testRequest(
-        'GET',
-        '/Patient/cond-del-multi-2',
-        authToken: authToken,
-      ));
+      final get2 = await handler(
+        testRequest(
+          'GET',
+          '/Patient/cond-del-multi-2',
+          authToken: authToken,
+        ),
+      );
       expect(get2.statusCode, equals(410));
     });
 
     test('DELETE /Patient with no search params returns 400', () async {
-      final response = await handler(testRequest(
-        'DELETE',
-        '/Patient',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'DELETE',
+          '/Patient',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(400));
     });
@@ -312,11 +348,13 @@ void main() {
       );
       await testDb.saveResource(updated);
 
-      final response = await handler(testRequest(
-        'GET',
-        '/Patient/test-history-jkl/_history',
-        authToken: authToken,
-      ));
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Patient/test-history-jkl/_history',
+          authToken: authToken,
+        ),
+      );
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());

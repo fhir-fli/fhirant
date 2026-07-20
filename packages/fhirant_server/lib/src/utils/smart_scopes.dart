@@ -3,15 +3,14 @@
 /// Supports SMART v2 scope syntax: `context/resourceType.cruds`
 /// where context is `user`, `patient`, or `system`.
 class SmartScope {
-  final String context;
-  final String resourceType;
-  final Set<String> permissions;
-
   SmartScope({
     required this.context,
     required this.resourceType,
     required this.permissions,
   });
+  final String context;
+  final String resourceType;
+  final Set<String> permissions;
 
   /// Parses a SMART scope string like `user/Patient.cruds`.
   ///
@@ -180,18 +179,18 @@ class SmartScopeEnforcer {
       case 'GET':
         // Search (type-level GET) vs read (instance-level GET)
         final segments = path.split('/').where((s) => s.isNotEmpty).toList();
-        if (segments.length == 1 && !segments[0].startsWith('\$')) {
+        if (segments.length == 1 && !segments[0].startsWith(r'$')) {
           return 's'; // GET /Patient → search
         }
         return 'r'; // GET /Patient/123 → read
       case 'POST':
         // POST to root = bundle/transaction, POST to type = create
         final segments = path.split('/').where((s) => s.isNotEmpty).toList();
-        if (segments.length == 1 && !segments[0].startsWith('\$')) {
+        if (segments.length == 1 && !segments[0].startsWith(r'$')) {
           return 'c'; // POST /Patient → create
         }
         // POST to $operations → read-level access
-        if (path.contains('\$')) return 'r';
+        if (path.contains(r'$')) return 'r';
         // POST / (bundle) → requires create
         if (path == '' || segments.isEmpty) return 'c';
         return 'c';
@@ -217,7 +216,7 @@ class SmartScopeEnforcer {
     if (segments.isEmpty) return null;
 
     // Skip $-prefixed operations at root level
-    if (segments[0].startsWith('\$')) return null;
+    if (segments[0].startsWith(r'$')) return null;
 
     // Skip non-resource paths
     if (const {'auth', 'metadata', 'favicon.ico', '.well-known'}

@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:shelf/shelf.dart';
 import 'package:fhirant_server/src/utils/compartment_definitions.dart';
-import 'package:fhirant_server/src/utils/patient_scope.dart';
-import 'package:fhirant_server/src/utils/search_parser.dart';
-import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/response_shaper.dart';
+import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:shelf/shelf.dart';
 
 /// Handler to fetch all resources of a given type
 Future<Response> getResourcesHandler(
@@ -77,7 +77,7 @@ Future<Response> postSystemSearchHandler(
         : '${request.requestedUri.scheme}://${request.requestedUri.host}';
 
     final allEntries = <fhir.BundleEntry>[];
-    int totalCount = 0;
+    var totalCount = 0;
 
     for (final typeName in typeNames) {
       final type = fhir.R4ResourceType.fromString(typeName);
@@ -121,13 +121,15 @@ Future<Response> postSystemSearchHandler(
       for (final resource in resources) {
         final resourceId = resource.id?.toString() ?? '';
         final resType = resource.resourceTypeString;
-        allEntries.add(fhir.BundleEntry(
-          resource: resource,
-          fullUrl: resourceId.isNotEmpty
-              ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
-              : null,
-          search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-        ));
+        allEntries.add(
+          fhir.BundleEntry(
+            resource: resource,
+            fullUrl: resourceId.isNotEmpty
+                ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+                : null,
+            search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
+          ),
+        );
       }
       totalCount += resources.length;
     }
@@ -255,7 +257,7 @@ Future<Response> _searchResources(
 
     // Patient-level scope enforcement: restrict results to patient compartment
     final patientId = extractPatientContext(request);
-    Map<String, List<String>>? effectiveSearchParams = searchParams;
+    var effectiveSearchParams = searchParams;
 
     if (patientId != null) {
       effectiveSearchParams = Map<String, List<String>>.from(
@@ -339,20 +341,24 @@ Future<Response> _searchResources(
         final currentUrl = request.requestedUri;
 
         // Self link (current request URL)
-        links.add(fhir.BundleLink(
-          relation: fhir.FhirString('self'),
-          url: fhir.FhirUri(currentUrl.toString()),
-        ));
+        links.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('self'),
+            url: fhir.FhirUri(currentUrl.toString()),
+          ),
+        );
 
         // First link
         final firstParams =
             Map<String, String>.from(currentUrl.queryParameters);
         firstParams['_offset'] = '0';
         final firstUrl = currentUrl.replace(queryParameters: firstParams);
-        links.add(fhir.BundleLink(
-          relation: fhir.FhirString('first'),
-          url: fhir.FhirUri(firstUrl.toString()),
-        ));
+        links.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('first'),
+            url: fhir.FhirUri(firstUrl.toString()),
+          ),
+        );
 
         // Previous link (if not on first page)
         if (offset > 0) {
@@ -361,10 +367,12 @@ Future<Response> _searchResources(
           final prevOffset = (offset - count).clamp(0, double.infinity).toInt();
           prevParams['_offset'] = prevOffset.toString();
           final prevUrl = currentUrl.replace(queryParameters: prevParams);
-          links.add(fhir.BundleLink(
-            relation: fhir.FhirString('previous'),
-            url: fhir.FhirUri(prevUrl.toString()),
-          ));
+          links.add(
+            fhir.BundleLink(
+              relation: fhir.FhirString('previous'),
+              url: fhir.FhirUri(prevUrl.toString()),
+            ),
+          );
         }
 
         // Next link (if there are more results)
@@ -374,10 +382,12 @@ Future<Response> _searchResources(
           final nextOffset = offset + count;
           nextParams['_offset'] = nextOffset.toString();
           final nextUrl = currentUrl.replace(queryParameters: nextParams);
-          links.add(fhir.BundleLink(
-            relation: fhir.FhirString('next'),
-            url: fhir.FhirUri(nextUrl.toString()),
-          ));
+          links.add(
+            fhir.BundleLink(
+              relation: fhir.FhirString('next'),
+              url: fhir.FhirUri(nextUrl.toString()),
+            ),
+          );
         }
 
         // Last link
@@ -387,10 +397,12 @@ Future<Response> _searchResources(
           final lastOffset = ((totalCount - 1) ~/ count) * count;
           lastParams['_offset'] = lastOffset.toString();
           final lastUrl = currentUrl.replace(queryParameters: lastParams);
-          links.add(fhir.BundleLink(
-            relation: fhir.FhirString('last'),
-            url: fhir.FhirUri(lastUrl.toString()),
-          ));
+          links.add(
+            fhir.BundleLink(
+              relation: fhir.FhirString('last'),
+              url: fhir.FhirUri(lastUrl.toString()),
+            ),
+          );
         }
       } catch (e) {
         // If link creation fails, just continue without links
@@ -486,7 +498,7 @@ Future<Response> _searchResources(
     }
 
     // Apply response shaping (_summary / _elements) to each resource
-    fhir.Resource _shapeResource(fhir.Resource resource) {
+    fhir.Resource shapeResource(fhir.Resource resource) {
       if (summary != null && summary != 'false') {
         final json =
             jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
@@ -503,7 +515,7 @@ Future<Response> _searchResources(
 
     // Build match entries (from search results)
     final matchEntries = resources.map((resource) {
-      final shaped = _shapeResource(resource);
+      final shaped = shapeResource(resource);
       final resourceId = shaped.id?.toString() ?? '';
       final resType = shaped.resourceTypeString;
       final fullUrl = resourceId.isNotEmpty
@@ -518,7 +530,7 @@ Future<Response> _searchResources(
 
     // Build include entries (from _include/_revinclude results)
     final includeEntries = includedResources.map((resource) {
-      final shaped = _shapeResource(resource);
+      final shaped = shapeResource(resource);
       final resourceId = shaped.id?.toString() ?? '';
       final resType = shaped.resourceTypeString;
       final fullUrl = resourceId.isNotEmpty
@@ -734,9 +746,15 @@ Future<Response> postResourceHandler(
     if (createPatientId != null) {
       final resourceJson = resource.toJson();
       if (!await isNewResourceInPatientCompartment(
-          resourceType, resourceJson, createPatientId)) {
+        resourceType,
+        resourceJson,
+        createPatientId,
+      )) {
         return patientScopeForbiddenResponse(
-            resourceType, resource.id?.toString() ?? 'new', createPatientId);
+          resourceType,
+          resource.id?.toString() ?? 'new',
+          createPatientId,
+        );
       }
     }
 
@@ -826,7 +844,11 @@ Future<Response> putResourceHandler(
     final updatePatientId = extractPatientContext(request);
     if (updatePatientId != null) {
       if (!await isInPatientCompartment(
-          resourceType, id, updatePatientId, dbInterface)) {
+        resourceType,
+        id,
+        updatePatientId,
+        dbInterface,
+      )) {
         return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
     }
@@ -941,7 +963,11 @@ Future<Response> getResourceByIdHandler(
       final readPatientId = extractPatientContext(request);
       if (readPatientId != null) {
         if (!await isInPatientCompartment(
-            resourceType, id, readPatientId, dbInterface)) {
+          resourceType,
+          id,
+          readPatientId,
+          dbInterface,
+        )) {
           return patientScopeForbiddenResponse(resourceType, id, readPatientId);
         }
       }
@@ -953,8 +979,10 @@ Future<Response> getResourceByIdHandler(
       if (ifNoneMatch != null &&
           currentVersion != null &&
           ifNoneMatch == currentVersion) {
-        return Response(304,
-            headers: FhirHttpHeaders.resourceHeaders(resource));
+        return Response(
+          304,
+          headers: FhirHttpHeaders.resourceHeaders(resource),
+        );
       }
 
       // Check If-Modified-Since for conditional read (date-based)
@@ -964,8 +992,10 @@ Future<Response> getResourceByIdHandler(
           final sinceDate = HttpDate.parse(ifModifiedSince);
           final lastUpdated = resource.meta?.lastUpdated?.valueDateTime;
           if (lastUpdated != null && !lastUpdated.isAfter(sinceDate)) {
-            return Response(304,
-                headers: FhirHttpHeaders.resourceHeaders(resource));
+            return Response(
+              304,
+              headers: FhirHttpHeaders.resourceHeaders(resource),
+            );
           }
         } catch (_) {
           // Ignore malformed If-Modified-Since headers
@@ -1134,7 +1164,11 @@ Future<Response> deleteResourceHandler(
     final deletePatientId = extractPatientContext(request);
     if (deletePatientId != null) {
       if (!await isInPatientCompartment(
-          resourceType, id, deletePatientId, dbInterface)) {
+        resourceType,
+        id,
+        deletePatientId,
+        dbInterface,
+      )) {
         return patientScopeForbiddenResponse(resourceType, id, deletePatientId);
       }
     }
@@ -1310,7 +1344,9 @@ Map<String, String?>? _parseReference(String referenceStr) {
 }
 
 void _extractAllReferences(
-    Map<String, dynamic> json, List<Map<String, String?>> references) {
+  Map<String, dynamic> json,
+  List<Map<String, String?>> references,
+) {
   for (final value in json.values) {
     if (value is Map) {
       if (value['reference'] != null) {

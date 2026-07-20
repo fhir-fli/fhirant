@@ -1,7 +1,7 @@
-import 'package:test/test.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:drift/native.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('FhirAntDb - CRUD Operations', () {
@@ -61,8 +61,10 @@ void main() {
 
       expect(retrieved, isNotNull);
       expect(retrieved!.resourceTypeString, equals('Patient'));
-      expect((retrieved as fhir.Patient).name?.first.family?.valueString,
-          equals('Smith'));
+      expect(
+        (retrieved as fhir.Patient).name?.first.family?.valueString,
+        equals('Smith'),
+      );
     });
 
     test('getResource returns null for non-existent resource', () async {
@@ -79,7 +81,7 @@ void main() {
         'resourceType': 'Patient',
         'id': 'test-3',
         'name': [
-          {'family': 'Original'}
+          {'family': 'Original'},
         ],
       });
 
@@ -96,7 +98,7 @@ void main() {
         'resourceType': 'Patient',
         'id': 'test-3',
         'name': [
-          {'family': 'Updated'}
+          {'family': 'Updated'},
         ],
       });
       await db.saveResource(updatedPatient);
@@ -104,13 +106,17 @@ void main() {
       final retrieved =
           await db.getResource(fhir.R4ResourceType.Patient, 'test-3');
       expect(retrieved, isNotNull);
-      final retrievedPatient = retrieved as fhir.Patient;
+      final retrievedPatient = retrieved! as fhir.Patient;
       expect(
-          retrievedPatient.name?.first.family?.valueString, equals('Updated'));
+        retrievedPatient.name?.first.family?.valueString,
+        equals('Updated'),
+      );
 
       // Version should be updated
-      expect(retrievedPatient.meta!.versionId?.valueString,
-          isNot(equals(originalVersion)));
+      expect(
+        retrievedPatient.meta!.versionId?.valueString,
+        isNot(equals(originalVersion)),
+      );
     });
 
     test('deleteResource removes a resource', () async {
@@ -118,7 +124,7 @@ void main() {
         'resourceType': 'Patient',
         'id': 'test-4',
         'name': [
-          {'family': 'ToDelete'}
+          {'family': 'ToDelete'},
         ],
       });
 
@@ -154,21 +160,21 @@ void main() {
           'resourceType': 'Patient',
           'id': 'batch-1',
           'name': [
-            {'family': 'Patient1'}
+            {'family': 'Patient1'},
           ],
         }),
         fhir.Patient.fromJson({
           'resourceType': 'Patient',
           'id': 'batch-2',
           'name': [
-            {'family': 'Patient2'}
+            {'family': 'Patient2'},
           ],
         }),
         fhir.Patient.fromJson({
           'resourceType': 'Patient',
           'id': 'batch-3',
           'name': [
-            {'family': 'Patient3'}
+            {'family': 'Patient3'},
           ],
         }),
       ];
@@ -198,14 +204,16 @@ void main() {
 
     test('getResourcesWithPagination returns paginated results', () async {
       // Create multiple patients with known IDs
-      for (int i = 0; i < 10; i++) {
-        await db.saveResource(fhir.Patient.fromJson({
-          'resourceType': 'Patient',
-          'id': 'page-$i',
-          'name': [
-            {'family': 'Patient$i'}
-          ],
-        }));
+      for (var i = 0; i < 10; i++) {
+        await db.saveResource(
+          fhir.Patient.fromJson({
+            'resourceType': 'Patient',
+            'id': 'page-$i',
+            'name': [
+              {'family': 'Patient$i'},
+            ],
+          }),
+        );
       }
 
       final firstPage = await db.getResourcesWithPagination(
@@ -235,14 +243,16 @@ void main() {
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(0));
 
       // Add some resources
-      for (int i = 0; i < 5; i++) {
-        await db.saveResource(fhir.Patient.fromJson({
-          'resourceType': 'Patient',
-          'id': 'count-$i',
-          'name': [
-            {'family': 'Patient$i'}
-          ],
-        }));
+      for (var i = 0; i < 5; i++) {
+        await db.saveResource(
+          fhir.Patient.fromJson({
+            'resourceType': 'Patient',
+            'id': 'count-$i',
+            'name': [
+              {'family': 'Patient$i'},
+            ],
+          }),
+        );
       }
 
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(5));
@@ -250,30 +260,36 @@ void main() {
 
     test('getResourcesByType returns all resources of a type', () async {
       // Create mixed resources
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'type-patient-1',
-        'name': [
-          {'family': 'Patient1'}
-        ],
-      }));
-      await db.saveResource(fhir.Observation.fromJson({
-        'resourceType': 'Observation',
-        'id': 'type-obs-1',
-        'status': 'final',
-        'code': {
-          'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
-        },
-      }));
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'type-patient-2',
-        'name': [
-          {'family': 'Patient2'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'type-patient-1',
+          'name': [
+            {'family': 'Patient1'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'type-obs-1',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '12345-6'},
+            ],
+          },
+        }),
+      );
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'type-patient-2',
+          'name': [
+            {'family': 'Patient2'},
+          ],
+        }),
+      );
 
       final patients = await db.getResourcesByType(fhir.R4ResourceType.Patient);
       expect(patients.length, equals(2));
@@ -295,23 +311,27 @@ void main() {
 
     test('getResourceTypes returns distinct types', () async {
       // Save a Patient and an Observation
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'types-patient-1',
-        'name': [
-          {'family': 'Doe'}
-        ],
-      }));
-      await db.saveResource(fhir.Observation.fromJson({
-        'resourceType': 'Observation',
-        'id': 'types-obs-1',
-        'status': 'final',
-        'code': {
-          'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
-        },
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'types-patient-1',
+          'name': [
+            {'family': 'Doe'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'types-obs-1',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '12345-6'},
+            ],
+          },
+        }),
+      );
 
       final types = await db.getResourceTypes();
 
@@ -328,54 +348,66 @@ void main() {
 
     test('clear removes all resources', () async {
       // Save some resources
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'clear-patient-1',
-        'name': [
-          {'family': 'Doe'}
-        ],
-      }));
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'clear-patient-2',
-        'name': [
-          {'family': 'Smith'}
-        ],
-      }));
-      await db.saveResource(fhir.Observation.fromJson({
-        'resourceType': 'Observation',
-        'id': 'clear-obs-1',
-        'status': 'final',
-        'code': {
-          'coding': [
-            {'system': 'http://loinc.org', 'code': '12345-6'}
-          ]
-        },
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'clear-patient-1',
+          'name': [
+            {'family': 'Doe'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'clear-patient-2',
+          'name': [
+            {'family': 'Smith'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'clear-obs-1',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '12345-6'},
+            ],
+          },
+        }),
+      );
 
       // Verify resources exist
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(2));
-      expect(await db.getResourceCount(fhir.R4ResourceType.Observation),
-          equals(1));
+      expect(
+        await db.getResourceCount(fhir.R4ResourceType.Observation),
+        equals(1),
+      );
 
       // Clear the database
       await db.clear();
 
       // Verify all resources are gone
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(0));
-      expect(await db.getResourceCount(fhir.R4ResourceType.Observation),
-          equals(0));
+      expect(
+        await db.getResourceCount(fhir.R4ResourceType.Observation),
+        equals(0),
+      );
     });
 
     test('clear does not throw and resources are gone', () async {
       // Save a resource
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'clear-nothrow-1',
-        'name': [
-          {'family': 'TestClear'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'clear-nothrow-1',
+          'name': [
+            {'family': 'TestClear'},
+          ],
+        }),
+      );
 
       // Verify resource exists
       final before =
@@ -397,27 +429,33 @@ void main() {
 
     test('searchCount with no params returns total count', () async {
       // Save 3 patients
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'search-count-1',
-        'name': [
-          {'family': 'Alpha'}
-        ],
-      }));
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'search-count-2',
-        'name': [
-          {'family': 'Beta'}
-        ],
-      }));
-      await db.saveResource(fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'search-count-3',
-        'name': [
-          {'family': 'Gamma'}
-        ],
-      }));
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'search-count-1',
+          'name': [
+            {'family': 'Alpha'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'search-count-2',
+          'name': [
+            {'family': 'Beta'},
+          ],
+        }),
+      );
+      await db.saveResource(
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'search-count-3',
+          'name': [
+            {'family': 'Gamma'},
+          ],
+        }),
+      );
 
       final count = await db.searchCount(
         resourceType: fhir.R4ResourceType.Patient,
