@@ -3,7 +3,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_mapping/fhir_r4_mapping.dart';
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:http/src/client.dart';
+import 'package:http/http.dart' show Client;
 import 'package:shelf/shelf.dart';
 
 /// Simple ResourceCache implementation for mapping
@@ -38,36 +38,36 @@ class SimpleResourceCache implements ResourceCache {
   }
 
   @override
-  // TODO: implement client
+  // TODO(fhirant): implement client
   Client? get client => throw UnimplementedError();
 
   @override
   Future<fhir.CodeSystem?> getCodeSystem(String url, [String? version]) {
-    // TODO: implement getCodeSystem
+    // TODO(fhirant): implement getCodeSystem
     throw UnimplementedError();
   }
 
   @override
   Future<Map<String, dynamic>?> getResourceMap(String url) {
-    // TODO: implement getResourceMap
+    // TODO(fhirant): implement getResourceMap
     throw UnimplementedError();
   }
 
   @override
   Future<List<String>> getResourceNames() {
-    // TODO: implement getResourceNames
+    // TODO(fhirant): implement getResourceNames
     throw UnimplementedError();
   }
 
   @override
   Future<fhir.StructureDefinition?> getStructureDefinition(String url) {
-    // TODO: implement getStructureDefinition
+    // TODO(fhirant): implement getStructureDefinition
     throw UnimplementedError();
   }
 
   @override
   Future<List<fhir.StructureDefinition>> getStructureDefinitions() {
-    // TODO: implement getStructureDefinitions
+    // TODO(fhirant): implement getStructureDefinitions
     throw UnimplementedError();
   }
 }
@@ -95,9 +95,9 @@ Future<Response> mappingHandler(Request request) async {
       );
     }
 
-    dynamic requestJson;
+    Map<String, dynamic> requestJson;
     try {
-      requestJson = jsonDecode(body);
+      requestJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
       return Response(
         400,

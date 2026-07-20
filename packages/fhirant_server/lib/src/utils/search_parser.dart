@@ -54,7 +54,8 @@ class SearchParameterParser {
       '_filter',
     };
 
-    // Common _-prefixed search parameters that are valid across all resource types
+    // Common _-prefixed search parameters that are valid across all
+    // resource types
     const knownUnderscoreSearchParams = {
       '_id',
       '_lastUpdated',

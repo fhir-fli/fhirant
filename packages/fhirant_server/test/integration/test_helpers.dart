@@ -6,7 +6,8 @@ import 'package:shelf/shelf.dart';
 
 const testJwtSecret = 'test-secret';
 
-/// Creates an authenticated request with required headers for the test pipeline.
+/// Creates an authenticated request with required headers for the test
+/// pipeline.
 ///
 /// The X-Forwarded-For header is required because shelf_rate_limiter's
 /// key generator crashes when shelf.io.connection_info is absent (as in tests).
@@ -48,7 +49,8 @@ String generateTestToken({
   );
 }
 
-/// Creates a fresh in-memory DB and full-pipeline handler for integration tests.
+/// Creates a fresh in-memory DB and full-pipeline handler for integration
+/// tests.
 Future<({FhirAntDb db, Handler handler})> createTestServer({
   String? exportDir,
   bool devMode = false,

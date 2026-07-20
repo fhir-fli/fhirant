@@ -11,7 +11,8 @@
 
 // /// Provider when testing an instance of DbService
 // final testDbServiceProvider = Provider<DbService>((ref) {
-//   final dbService = DbService(AppDatabase.forTesting(NativeDatabase.memory()));
+//   final dbService =
+//       DbService(AppDatabase.forTesting(NativeDatabase.memory()));
 //   ref.onDispose(dbService.close);
 //   return dbService;
 // });

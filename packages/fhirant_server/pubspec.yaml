@@ -10,29 +10,28 @@ dependencies:
   args: ^2.7.0
   cicada:
     path: ../../../cicada/cicada
+  cql: ^0.6.3
+  crypto: ^3.0.3
+  dart_jsonwebtoken: ^3.3.1
   drift: ^2.29.0
   fhir_r4: ^0.7.0
   fhir_r4_cql: ^0.7.0
-  cql: ^0.6.3
-  fhir_r4_path: ^0.7.0
   fhir_r4_mapping: ^0.7.0
+  fhir_r4_path: ^0.7.0
   fhir_r4_validation: ^0.7.0
   fhirant_db:
     path: ../fhirant_db
   fhirant_logging:
     path: ../fhirant_logging
-  crypto: ^3.0.3
-  dart_jsonwebtoken: ^3.3.1
+  http: any
   shelf: ^1.4.2
-  shelf_router: ^1.1.4
   shelf_rate_limiter: ^1.0.1
+  shelf_router: ^1.1.4
   sqlite3: ^3.1.5
   uuid: ^4.5.1
-
-  http: any
 dev_dependencies:
-  test: ^1.25.8
   mocktail: ^1.0.0
+  test: ^1.25.8
   very_good_analysis: ^10.0.0
 
 # Build SQLite from the sqlite3mc source (SQLite3 Multiple Ciphers) so the

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -65,7 +67,9 @@ class NetworkInfoCard extends StatelessWidget {
                         icon: const Icon(Icons.copy, size: 20),
                         tooltip: 'Copy URL',
                         onPressed: () {
-                          Clipboard.setData(ClipboardData(text: url));
+                          unawaited(
+                            Clipboard.setData(ClipboardData(text: url)),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('URL copied to clipboard'),

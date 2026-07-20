@@ -166,10 +166,11 @@ Future<Response> lookupHandler(
     // Find the concept in the code system
     final concept = _findConcept(codeSystem.concept, effectiveCode);
     if (concept == null) {
+      final systemName =
+          codeSystem.url?.valueString ?? codeSystem.id?.toString() ?? 'unknown';
       return _errorResponse(
         404,
-        'Code "$effectiveCode" not found in CodeSystem '
-        '${codeSystem.url?.valueString ?? codeSystem.id?.toString() ?? 'unknown'}',
+        'Code "$effectiveCode" not found in CodeSystem $systemName',
       );
     }
 
@@ -297,7 +298,7 @@ Future<Response> lookupHandler(
 /// Handler for ValueSet/$expand.
 ///
 /// Expands a ValueSet by resolving compose.include rules against stored
-/// CodeSystems. Supports both instance-level (ValueSet/<id>/$expand) and
+/// CodeSystems. Supports both instance-level (ValueSet/`<id>`/$expand) and
 /// type-level (ValueSet/$expand?url=...) invocation.
 ///
 /// Parameters: url, filter, offset, count.
@@ -464,7 +465,8 @@ Future<Response> expandHandler(
   }
 }
 
-/// Flatten a hierarchical CodeSystem concept list into ValueSetContains entries.
+/// Flatten a hierarchical CodeSystem concept list into ValueSetContains
+/// entries.
 void _flattenConcepts(
   List<fhir.CodeSystemConcept> concepts,
   String system,

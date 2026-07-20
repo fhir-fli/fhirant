@@ -67,7 +67,8 @@ Future<Response> patchResourceHandler(
         patchOperations = convertFhirPatchToJsonPatch(patchDoc);
       } else {
         return _validationErrorResponse(
-          'Invalid patch format. Expected JSON Patch array or FHIR Parameters resource.',
+          'Invalid patch format. Expected JSON Patch array or FHIR '
+          'Parameters resource.',
         );
       }
     } catch (e) {

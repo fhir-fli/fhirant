@@ -147,7 +147,8 @@ Future<Response> postSystemSearchHandler(
     );
 
     FhirantLogging().logInfo(
-      'System search returned $totalCount resources across ${typeNames.length} types',
+      'System search returned $totalCount resources across '
+      '${typeNames.length} types',
     );
     return Response.ok(
       bundle.toJsonString(),
@@ -445,7 +446,8 @@ Future<Response> _searchResources(
       );
     }
 
-    // _include:iterate — iteratively resolve references from newly included resources
+    // _include:iterate — iteratively resolve references from newly
+    // included resources
     if (includeIterate != null && includeIterate.isNotEmpty) {
       var newlyIncluded = List<fhir.Resource>.from(includedResources);
       for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
@@ -476,7 +478,8 @@ Future<Response> _searchResources(
       );
     }
 
-    // _revinclude:iterate — iteratively find resources referencing newly included
+    // _revinclude:iterate — iteratively find resources referencing newly
+    // included
     if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
       var newlyIncluded = List<fhir.Resource>.from(includedResources);
       for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
@@ -568,7 +571,8 @@ Future<Response> _searchResources(
   }
 }
 
-/// Process _include specs: extract references from [sourceResources] and fetch them.
+/// Process _include specs: extract references from [sourceResources] and
+/// fetch them.
 Future<void> _processIncludes(
   List<String> includeSpecs,
   List<fhir.Resource> sourceResources,
@@ -959,7 +963,8 @@ Future<Response> getResourceByIdHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource != null) {
-      // Patient-level scope enforcement: verify resource is in patient compartment
+      // Patient-level scope enforcement: verify resource is in patient
+      // compartment
       final readPatientId = extractPatientContext(request);
       if (readPatientId != null) {
         if (!await isInPatientCompartment(
@@ -1222,7 +1227,7 @@ Future<Response> deleteResourceHandler(
   }
 }
 
-/// Handler for conditional delete by search (DELETE /<resourceType>?params)
+/// Handler for conditional delete by search (DELETE /`<resourceType>`?params)
 ///
 /// Supports both single and multiple deletion:
 /// - 0 matches: return 200 with OperationOutcome (nothing to delete)

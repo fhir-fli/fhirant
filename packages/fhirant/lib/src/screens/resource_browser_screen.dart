@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
@@ -32,7 +33,7 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
     super.initState();
     if (widget.initialType != null) {
       _selectedType = widget.initialType;
-      _loadResources();
+      unawaited(_loadResources());
     }
   }
 
@@ -75,7 +76,7 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
       _resources = null;
       _refStack.clear();
     });
-    _loadResources();
+    unawaited(_loadResources());
   }
 
   @override

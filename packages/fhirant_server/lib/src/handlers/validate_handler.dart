@@ -31,9 +31,9 @@ Future<Response> validateHandler(
     }
 
     // Parse the resource to verify it's valid JSON
-    dynamic resourceJson;
+    Map<String, dynamic> resourceJson;
     try {
-      resourceJson = jsonDecode(body);
+      resourceJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
       return Response(
         400,
@@ -64,7 +64,8 @@ Future<Response> validateHandler(
                 'severity': 'error',
                 'code': 'invalid',
                 'diagnostics':
-                    'Resource type in body ($bodyResourceType) does not match URL path ($resourceType)',
+                    'Resource type in body ($bodyResourceType) does not '
+                        'match URL path ($resourceType)',
               }
             ],
           }),

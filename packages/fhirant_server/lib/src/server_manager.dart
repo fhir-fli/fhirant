@@ -108,7 +108,8 @@
 //   }
 
 //   /// Check if the registration code is active
-//   Future<void> _resetGeneralRegistrationInSeconds([int seconds = 300]) async {
+//   Future<void> _resetGeneralRegistrationInSeconds(
+//       [int seconds = 300]) async {
 //     await Future<void>.delayed(Duration(seconds: seconds));
 //     isRegistrationOpen = false;
 //   }
@@ -204,7 +205,8 @@
 //         final duration = DateTime.now().difference(startTime);
 
 //         final clientIp = request.headers['x-forwarded-for'] ??
-//             (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
+//             (request.context['shelf.io.connection_info']
+//                 as HttpConnectionInfo?)
 //                 ?.remoteAddress
 //                 .address ??
 //             'Unknown';
@@ -217,7 +219,8 @@
 //           statusCode: response.statusCode,
 //           responseTime: duration.inMilliseconds,
 //           clientIp: clientIp,
-//           user: request.context['authenticatedUser'] as String? ?? 'Anonymous',
+//           user: request.context['authenticatedUser'] as String? ??
+//               'Anonymous',
 //         );
 
 //         return response;

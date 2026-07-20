@@ -115,8 +115,8 @@ Future<Response> fhirPathHandler(
             {
               'severity': 'error',
               'code': 'invalid',
-              'diagnostics':
-                  'No resource provided. Use query params (resourceType & resourceId) or request body',
+              'diagnostics': 'No resource provided. Use query params '
+                  '(resourceType & resourceId) or request body',
             }
           ],
         }),
@@ -136,7 +136,7 @@ Future<Response> fhirPathHandler(
       'FHIRPath expression evaluated successfully: $expression',
     );
 
-    // TODO: Add audit log entry for PHI access
+    // TODO(fhirant): Add audit log entry for PHI access
     // await dbInterface.logAuditEvent(...);
 
     return Response.ok(

@@ -14,7 +14,8 @@ import 'package:shelf/shelf.dart';
 ///
 /// Supports two grant types:
 /// - `grant_type=refresh_token` — exchange a refresh token for new tokens
-/// - `grant_type=authorization_code` — exchange an authorization code for tokens
+/// - `grant_type=authorization_code` — exchange an authorization code
+///   for tokens
 Future<Response> refreshHandler(
   Request request,
   FhirAntDb dbInterface,

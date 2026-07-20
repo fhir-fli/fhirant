@@ -564,8 +564,8 @@ void main() {
     });
 
     test(
-        '_include adds referenced resources to bundle with correct search.mode and fullUrl',
-        () async {
+        '_include adds referenced resources to bundle with correct '
+        'search.mode and fullUrl', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-inc-1',
@@ -829,7 +829,8 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
-      // Patient + org-iter-1 (from _include) + org-iter-parent (from _include:iterate)
+      // Patient + org-iter-1 (from _include) +
+      // org-iter-parent (from _include:iterate)
       expect(entries.length, equals(3));
       final ids =
           entries.map((e) => (e['resource'] as Map)['id'] as String).toSet();

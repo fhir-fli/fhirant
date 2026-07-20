@@ -22,7 +22,7 @@ void main() {
 
   tearDown(() async {
     final dir = Directory(exportDir);
-    if (await dir.exists()) {
+    if (dir.existsSync()) {
       await dir.delete(recursive: true);
     }
   });
@@ -634,7 +634,7 @@ void main() {
           await exportDeleteHandler(request, mockDb, exportDir, 'job-1');
 
       expect(response.statusCode, equals(202));
-      expect(await jobDir.exists(), isFalse);
+      expect(jobDir.existsSync(), isFalse);
     });
   });
 }

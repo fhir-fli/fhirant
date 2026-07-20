@@ -1,5 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 /// Static compartment definitions per the FHIR R4 specification.
 ///
 /// Each entry maps a resource type to the search paths **as stored in the
@@ -380,7 +378,8 @@ class CompartmentDefinitions {
     'SupplyRequest': ['SupplyRequest.requester'],
   };
 
-  /// Returns the compartment definition for the given type, or null if unsupported.
+  /// Returns the compartment definition for the given type, or null if
+  /// unsupported.
   static Map<String, List<String>>? getDefinition(String compartmentType) {
     switch (compartmentType) {
       case 'Patient':

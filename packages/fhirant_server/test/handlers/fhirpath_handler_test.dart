@@ -36,7 +36,8 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-          'fhirpath?expression=Patient.name.family&resourceType=Patient&resourceId=123',
+          'fhirpath?expression=Patient.name.family&resourceType=Patient'
+          '&resourceId=123',
         ),
       );
       when(
@@ -91,7 +92,8 @@ void main() {
     test('returns 400 for invalid resource type', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-          'fhirpath?expression=Patient.name.family&resourceType=InvalidType&resourceId=123',
+          'fhirpath?expression=Patient.name.family&resourceType=InvalidType'
+          '&resourceId=123',
         ),
       );
 
@@ -106,7 +108,8 @@ void main() {
     test('returns 404 when resource not found', () async {
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-          'fhirpath?expression=Patient.name.family&resourceType=Patient&resourceId=999',
+          'fhirpath?expression=Patient.name.family&resourceType=Patient'
+          '&resourceId=999',
         ),
       );
       when(

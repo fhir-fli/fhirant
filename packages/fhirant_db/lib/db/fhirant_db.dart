@@ -1,4 +1,5 @@
-// ignore_for_file: lines_longer_than_80_chars, avoid_print
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
@@ -10,7 +11,7 @@ import 'package:fhirant_db/db/server_types.dart';
 /// and search parameter indexing logic. Adds server-specific functionality:
 /// Users, ExportJobs, and Logs tables (managed via raw SQL).
 class FhirAntDb extends FhirDb {
-  FhirAntDb(super.executor) {
+  FhirAntDb(super.e) {
     // Server uses integer version IDs (1, 2, 3, ...).
     fhirDao.versionIdAsTime = false;
   }
@@ -64,7 +65,8 @@ class FhirAntDb extends FhirDb {
           }
           if (from < 10) {
             await customStatement(
-              'ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0',
+              'ALTER TABLE users ADD COLUMN failed_login_count '
+              'INTEGER NOT NULL DEFAULT 0',
             );
             await customStatement(
               'ALTER TABLE users ADD COLUMN locked_until INTEGER',
@@ -73,7 +75,7 @@ class FhirAntDb extends FhirDb {
           if (from < 11) {
             // Make referenceValue nullable for identifier-only references
             await customStatement(
-              'CREATE TABLE reference_search_parameters_new ('
+              'CREATE TABLE reference_search_parameters_new ( '
               'resource_type TEXT NOT NULL, '
               'id TEXT NOT NULL, '
               'last_updated INTEGER NOT NULL, '
@@ -87,7 +89,7 @@ class FhirAntDb extends FhirDb {
               'reference_base_url TEXT, '
               'identifier_system TEXT, '
               'identifier_value TEXT, '
-              'PRIMARY KEY (resource_type, id, search_path, param_index)'
+              'PRIMARY KEY (resource_type, id, search_path, param_index) '
               ')',
             );
             await customStatement(
@@ -105,13 +107,13 @@ class FhirAntDb extends FhirDb {
           if (from < 12) {
             // Add versionId column to resources_history with new primary key.
             await customStatement(
-              'CREATE TABLE resources_history_new ('
+              'CREATE TABLE resources_history_new ( '
               'resource_type TEXT NOT NULL, '
               'id TEXT NOT NULL, '
               'version_id TEXT NOT NULL, '
               'resource TEXT NOT NULL, '
               'last_updated INTEGER NOT NULL, '
-              'PRIMARY KEY (resource_type, id, version_id)'
+              'PRIMARY KEY (resource_type, id, version_id) '
               ')',
             );
             await customStatement(
@@ -120,7 +122,7 @@ class FhirAntDb extends FhirDb {
               'SELECT resource_type, id, '
               'COALESCE('
               r"json_extract(resource, '$.meta.versionId'), "
-              'CAST(last_updated AS TEXT)'
+              'CAST(last_updated AS TEXT) '
               '), '
               'resource, last_updated '
               'FROM resources_history',
@@ -248,37 +250,48 @@ class FhirAntDb extends FhirDb {
   Future<void> _createIndexes() async {
     // Search parameter indexes for performance
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_string_value ON string_search_parameters(string_value)',
+      'CREATE INDEX IF NOT EXISTS idx_string_value '
+      'ON string_search_parameters(string_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_token_value ON token_search_parameters(token_value)',
+      'CREATE INDEX IF NOT EXISTS idx_token_value '
+      'ON token_search_parameters(token_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_token_system ON token_search_parameters(token_system)',
+      'CREATE INDEX IF NOT EXISTS idx_token_system '
+      'ON token_search_parameters(token_system)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_type ON reference_search_parameters(reference_resource_type)',
+      'CREATE INDEX IF NOT EXISTS idx_ref_type '
+      'ON reference_search_parameters(reference_resource_type)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_id ON reference_search_parameters(reference_id_part)',
+      'CREATE INDEX IF NOT EXISTS idx_ref_id '
+      'ON reference_search_parameters(reference_id_part)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_sys ON reference_search_parameters(identifier_system)',
+      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_sys '
+      'ON reference_search_parameters(identifier_system)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_val ON reference_search_parameters(identifier_value)',
+      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_val '
+      'ON reference_search_parameters(identifier_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_uri_value ON uri_search_parameters(uri_value)',
+      'CREATE INDEX IF NOT EXISTS idx_uri_value '
+      'ON uri_search_parameters(uri_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_date_value ON date_search_parameters(date_value)',
+      'CREATE INDEX IF NOT EXISTS idx_date_value '
+      'ON date_search_parameters(date_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_number_value ON number_search_parameters(number_value)',
+      'CREATE INDEX IF NOT EXISTS idx_number_value '
+      'ON number_search_parameters(number_value)',
     );
     await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_special_value ON special_search_parameters(special_value)',
+      'CREATE INDEX IF NOT EXISTS idx_special_value '
+      'ON special_search_parameters(special_value)',
     );
   }
 
@@ -297,7 +310,7 @@ class FhirAntDb extends FhirDb {
       await fhirDao.saveResource(resource);
       return true;
     } catch (e) {
-      print('Error in saveResource: $e');
+      stderr.writeln('Error in saveResource: $e');
       return false;
     }
   }
@@ -385,7 +398,7 @@ class FhirAntDb extends FhirDb {
         '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
         '  FROM resources_history '
         '  WHERE resource_type = ? AND last_updated <= ? '
-        '  GROUP BY resource_type, id'
+        '  GROUP BY resource_type, id '
         ') sub ON rh.resource_type = sub.resource_type '
         '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
         'ORDER BY rh.last_updated DESC, rh.version_id DESC',
@@ -437,7 +450,7 @@ class FhirAntDb extends FhirDb {
         '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
         '  FROM resources_history '
         '  WHERE last_updated <= ? '
-        '  GROUP BY resource_type, id'
+        '  GROUP BY resource_type, id '
         ') sub ON rh.resource_type = sub.resource_type '
         '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
         'ORDER BY rh.last_updated DESC, rh.version_id DESC',
@@ -620,7 +633,8 @@ class FhirAntDb extends FhirDb {
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await customStatement(
-      'INSERT INTO users (username, password_hash, salt, role, active, created_at, scopes) '
+      'INSERT INTO users '
+      '(username, password_hash, salt, role, active, created_at, scopes) '
       'VALUES (?, ?, ?, ?, 1, ?, ?)',
       [username, passwordHash, salt, role, now, scopes],
     );
@@ -651,7 +665,8 @@ class FhirAntDb extends FhirDb {
   /// Increment the failed login counter for a user and return the new count.
   Future<int> incrementFailedLogins(int id) async {
     await customStatement(
-      'UPDATE users SET failed_login_count = failed_login_count + 1 WHERE id = ?',
+      'UPDATE users SET failed_login_count = failed_login_count + 1 '
+      'WHERE id = ?',
       [id],
     );
     final rows = await customSelect(
@@ -664,7 +679,8 @@ class FhirAntDb extends FhirDb {
   /// Reset the failed login counter and clear any lockout for a user.
   Future<void> resetFailedLogins(int id) async {
     await customStatement(
-      'UPDATE users SET failed_login_count = 0, locked_until = NULL WHERE id = ?',
+      'UPDATE users SET failed_login_count = 0, locked_until = NULL '
+      'WHERE id = ?',
       [id],
     );
   }
@@ -697,7 +713,10 @@ class FhirAntDb extends FhirDb {
   }) async {
     final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
     await customStatement(
-      'INSERT INTO authorization_codes (code, client_id, user_id, redirect_uri, scope, code_challenge, code_challenge_method, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO authorization_codes '
+      '(code, client_id, user_id, redirect_uri, scope, code_challenge, '
+      'code_challenge_method, expires_at) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         code,
         clientId,
@@ -745,7 +764,8 @@ class FhirAntDb extends FhirDb {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
     await customStatement(
-      'INSERT OR IGNORE INTO revoked_tokens (token_hash, revoked_at, expires_at) VALUES (?, ?, ?)',
+      'INSERT OR IGNORE INTO revoked_tokens '
+      '(token_hash, revoked_at, expires_at) VALUES (?, ?, ?)',
       [tokenHash, now, expiresAtEpoch],
     );
   }
@@ -869,26 +889,18 @@ class FhirAntDb extends FhirDb {
 
   Future<void> clear() async {
     await batch((batch) {
-      batch.deleteWhere(resources, (tbl) => const Constant(true));
-      batch.deleteWhere(resourcesHistory, (tbl) => const Constant(true));
-      batch.deleteWhere(stringSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(tokenSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(
-        referenceSearchParameters,
-        (tbl) => const Constant(true),
-      );
-      batch.deleteWhere(dateSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(numberSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(
-        quantitySearchParameters,
-        (tbl) => const Constant(true),
-      );
-      batch.deleteWhere(uriSearchParameters, (tbl) => const Constant(true));
-      batch.deleteWhere(
-        compositeSearchParameters,
-        (tbl) => const Constant(true),
-      );
-      batch.deleteWhere(specialSearchParameters, (tbl) => const Constant(true));
+      batch
+        ..deleteWhere(resources, (tbl) => const Constant(true))
+        ..deleteWhere(resourcesHistory, (tbl) => const Constant(true))
+        ..deleteWhere(stringSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(tokenSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(referenceSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(dateSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(numberSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(quantitySearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(uriSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(compositeSearchParameters, (tbl) => const Constant(true))
+        ..deleteWhere(specialSearchParameters, (tbl) => const Constant(true));
       // Note: Logs are intentionally NOT cleared to maintain audit trail
     });
   }

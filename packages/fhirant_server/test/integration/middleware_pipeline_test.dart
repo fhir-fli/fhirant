@@ -86,7 +86,7 @@ void main() {
       );
 
       // Audit middleware is fire-and-forget, wait for it to complete
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
       // Search for AuditEvents in the DB
       final auditEvents = await testDb.getResourcesByType(

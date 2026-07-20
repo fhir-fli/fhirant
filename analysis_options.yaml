@@ -6,3 +6,8 @@ analyzer:
     document_ignores: ignore
     comment_references: ignore
     avoid_catches_without_on_clauses: ignore
+linter:
+  rules:
+    # fhirant is an application, not a published library — its packages have no
+    # public API surface for consumers, so member-level API docs aren't apt.
+    public_member_api_docs: false

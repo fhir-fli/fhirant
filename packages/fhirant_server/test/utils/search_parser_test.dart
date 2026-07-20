@@ -146,7 +146,8 @@ void main() {
     });
 
     test('parses multiple _has parameters', () {
-      // Note: Dart Map doesn't support duplicate keys, but different _has params
+      // Note: Dart Map doesn't support duplicate keys, but different _has
+      // params
       // have different keys
       final queryParams = {
         '_has:Observation:patient:code': '1234',

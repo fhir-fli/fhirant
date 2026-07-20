@@ -192,8 +192,11 @@ void main() {
 
       // Update
       read['name'][0]['family'] = 'CrudUpdated';
-      final (updateStatus, updated) = await request('PUT', '/Patient/$id',
-          body: read as Map<String, dynamic>);
+      final (updateStatus, updated) = await request(
+        'PUT',
+        '/Patient/$id',
+        body: read as Map<String, dynamic>,
+      );
       expect(updateStatus, 200);
       expect(updated['name'][0]['family'], 'CrudUpdated');
 
@@ -284,12 +287,15 @@ void main() {
       final id = created['id'];
 
       // Wait briefly so version timestamps differ
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
 
       // Update
       created['name'][0]['family'] = 'HistoryV2';
-      await request('PUT', '/Patient/$id',
-          body: created as Map<String, dynamic>);
+      await request(
+        'PUT',
+        '/Patient/$id',
+        body: created as Map<String, dynamic>,
+      );
 
       // Get history
       final (status, body) = await request('GET', '/Patient/$id/_history');

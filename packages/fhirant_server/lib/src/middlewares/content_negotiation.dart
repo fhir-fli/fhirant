@@ -41,8 +41,9 @@ Middleware contentNegotiationMiddleware() {
         }
         return Response(
           406,
-          body:
-              '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: $requestedType"}]}',
+          body: '{"resourceType":"OperationOutcome","issue":[{"severity":'
+              '"error","code":"not-supported","diagnostics":'
+              '"Unsupported format: $requestedType"}]}',
           headers: {
             'Content-Type':
                 'application/fhir+json; charset=utf-8; fhirVersion=4.3',

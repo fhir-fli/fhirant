@@ -48,7 +48,8 @@ class FhirHttpHeaders {
 
   /// Parse the Prefer header's handling preference.
   /// Returns 'lenient' (default) or 'strict'.
-  /// When 'strict', the server should return 400 for unrecognized search params.
+  /// When 'strict', the server should return 400 for unrecognized search
+  /// params.
   /// When 'lenient', unrecognized params are silently ignored.
   static String parsePreferHandling(Map<String, String> headers) {
     final prefer = headers['prefer'] ?? '';
@@ -73,7 +74,8 @@ class FhirHttpHeaders {
               severity: fhir.IssueSeverity.information,
               code: fhir.IssueType.informational,
               diagnostics:
-                  'Resource ${statusCode == 201 ? "created" : "updated"} successfully'
+                  'Resource ${statusCode == 201 ? "created" : "updated"} '
+                          'successfully'
                       .toFhirString,
             ),
           ],

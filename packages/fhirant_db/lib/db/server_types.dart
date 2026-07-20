@@ -1,5 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 /// Manual data classes for server-specific tables (Users, ExportJobs).
 ///
 /// These replace Drift-generated classes so that FhirAntDb can extend FhirDb
@@ -155,6 +153,6 @@ class AuthorizationCode {
   final bool used;
 
   @override
-  String toString() =>
-      'AuthorizationCode(code: $code, clientId: $clientId, userId: $userId, used: $used)';
+  String toString() => 'AuthorizationCode(code: $code, clientId: $clientId, '
+      'userId: $userId, used: $used)';
 }

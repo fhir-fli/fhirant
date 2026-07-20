@@ -1,4 +1,4 @@
-// ignore_for_file: lines_longer_than_80_chars
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -73,7 +73,8 @@ Future<Response> exportKickoffHandler(
       if (!filter.contains('?')) {
         return _operationOutcome(
           400,
-          'Invalid _typeFilter: $filter. Expected format: ResourceType?searchParams',
+          'Invalid _typeFilter: $filter. '
+          'Expected format: ResourceType?searchParams',
         );
       }
       final typeName = filter.split('?')[0];
@@ -116,10 +117,12 @@ Future<Response> exportKickoffHandler(
     );
 
     // 7. Spawn background processing (fire-and-forget)
-    _processExport(dbInterface, jobId, exportDir, request)
-        .catchError((Object e, StackTrace st) {
-      FhirantLogging().logError('Export job $jobId failed', e, st);
-    });
+    unawaited(
+      _processExport(dbInterface, jobId, exportDir, request)
+          .catchError((Object e, StackTrace st) {
+        FhirantLogging().logError('Export job $jobId failed', e, st);
+      }),
+    );
 
     // 8. Return 202 Accepted with Content-Location
     final baseUrl = _baseUrl(request);
@@ -238,7 +241,7 @@ Future<Response> exportFileHandler(
 
     final filePath = '$exportDir/$jobId/$fileName';
     final file = File(filePath);
-    if (!await file.exists()) {
+    if (!file.existsSync()) {
       return _operationOutcome(404, 'Export file not found: $fileName');
     }
 
@@ -273,7 +276,7 @@ Future<Response> exportDeleteHandler(
 
     // Delete output files if they exist
     final jobDir = Directory('$exportDir/$jobId');
-    if (await jobDir.exists()) {
+    if (jobDir.existsSync()) {
       await jobDir.delete(recursive: true);
     }
 
@@ -357,7 +360,8 @@ Future<void> _processExport(
     }
 
     if (job.exportLevel == 'group') {
-      // Group-level export: export Patient compartment resources for group members
+      // Group-level export: export Patient compartment resources for
+      // group members
       final definition = CompartmentDefinitions.getDefinition('Patient');
       if (definition == null) {
         await _failJob(dbInterface, jobId, 'Patient compartment not defined');
@@ -395,7 +399,8 @@ Future<void> _processExport(
           completedAt: DateTime.now().toUtc(),
         );
         FhirantLogging().logInfo(
-          'Export job $jobId completed: 0 file(s) (group has no patient members)',
+          'Export job $jobId completed: 0 file(s) '
+          '(group has no patient members)',
         );
         return;
       }
@@ -404,9 +409,10 @@ Future<void> _processExport(
       final compartmentTypes = definition.keys.toSet();
       final typeFilter = <String>[];
       if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
-        typeFilter.addAll(job.resourceTypes!.split(',').map((s) => s.trim()));
-        // Only keep types that are in the Patient compartment
-        typeFilter.retainWhere(compartmentTypes.contains);
+        typeFilter
+          ..addAll(job.resourceTypes!.split(',').map((s) => s.trim()))
+          // Only keep types that are in the Patient compartment
+          ..retainWhere(compartmentTypes.contains);
       }
 
       // Aggregate resource IDs across all patient members
@@ -455,7 +461,8 @@ Future<void> _processExport(
             typeFilters?.where((f) => f.startsWith('$typeName?')).toList() ??
                 [];
 
-        // If typeFilters exist for this type, intersect compartment IDs with search results
+        // If typeFilters exist for this type, intersect compartment IDs
+        // with search results
         Set<String>? filterIds;
         if (matchingFilters.isNotEmpty) {
           filterIds = {};

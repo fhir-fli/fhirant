@@ -223,7 +223,8 @@ void main() {
 
       final body = jsonDecode(await response.readAsString()) as Map;
       final entries = body['entry'] as List;
-      // Composition + Patient + Practitioner + 2 Conditions + MedicationRequest = 6
+      // Composition + Patient + Practitioner + 2 Conditions +
+      // MedicationRequest = 6
       expect(entries.length, 6);
 
       // First is Composition

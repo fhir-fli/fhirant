@@ -93,8 +93,8 @@ void main() {
     final list = results
         .map((r) => r.id?.valueString ?? '')
         .where((id) => id.isNotEmpty)
-        .toList();
-    list.sort();
+        .toList()
+      ..sort();
     return list;
   }
 
@@ -378,9 +378,9 @@ void main() {
   group('Sorting and pagination', () {
     test('search with sort by _lastUpdated ascending', () async {
       await db.saveResource(buildPatient1());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient2());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient3());
 
       final results = await db.search(
@@ -395,9 +395,9 @@ void main() {
 
     test('search with sort descending', () async {
       await db.saveResource(buildPatient1());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient2());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient3());
 
       final results = await db.search(
@@ -412,9 +412,9 @@ void main() {
 
     test('search with count and offset pagination', () async {
       await db.saveResource(buildPatient1());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient2());
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await db.saveResource(buildPatient3());
 
       final firstPage = await db.search(
@@ -879,8 +879,8 @@ void main() {
     });
 
     test(
-        'chained reference managingOrganization.name finds Patient via Org name',
-        () async {
+        'chained reference managingOrganization.name finds Patient '
+        'via Org name', () async {
       await seedForChaining();
 
       // The stored search path uses the JSON field name 'managingOrganization',
@@ -904,7 +904,8 @@ void main() {
 
       final today = DateTime.now();
       final todayStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-'
+          '${today.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -922,7 +923,8 @@ void main() {
       // All resources were saved just now, so yesterday should match all
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
       final yesterdayStr =
-          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-'
+          '${yesterday.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -940,7 +942,8 @@ void main() {
       // Tomorrow should match all resources saved today
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final tomorrowStr =
-          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
+          '${tomorrow.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -957,7 +960,8 @@ void main() {
 
       final today = DateTime.now();
       final todayStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-'
+          '${today.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -974,7 +978,8 @@ void main() {
 
       final future = DateTime.now().add(const Duration(days: 365));
       final futureStr =
-          '${future.year}-${future.month.toString().padLeft(2, '0')}-${future.day.toString().padLeft(2, '0')}';
+          '${future.year}-${future.month.toString().padLeft(2, '0')}-'
+          '${future.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1208,7 +1213,8 @@ void main() {
   group('Token :missing search', () {
     test(':missing finds resources without gender token', () async {
       await seedAll();
-      // pt-3 has gender='male', pt-1 has gender='male', pt-2 has gender='female'
+      // pt-3 has gender='male', pt-1 has gender='male',
+      // pt-2 has gender='female'
       // All 3 have gender, so :missing should find none in the default seed
 
       // Save a Patient without gender
@@ -1579,7 +1585,8 @@ void main() {
 
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final tomorrowStr =
-          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
+          '${tomorrow.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1596,7 +1603,8 @@ void main() {
 
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
       final yesterdayStr =
-          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-'
+          '${yesterday.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
@@ -1613,7 +1621,8 @@ void main() {
 
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final tomorrowStr =
-          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
+          '${tomorrow.day.toString().padLeft(2, '0')}';
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,

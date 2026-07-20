@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
@@ -93,7 +94,7 @@ class _ResourceCountsCardState extends State<ResourceCountsCard> {
                         icon: const Icon(Icons.open_in_new, size: 18),
                         tooltip: 'Browse Resources',
                         onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (_) => ChangeNotifierProvider.value(
                               value: state,
                               child: const ResourceBrowserScreen(),
@@ -147,12 +148,14 @@ class _ResourceCountsCardState extends State<ResourceCountsCard> {
       return InkWell(
         onTap: () {
           if (entry.key is R4ResourceType) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ChangeNotifierProvider.value(
-                  value: state,
-                  child: ResourceBrowserScreen(
-                    initialType: entry.key as R4ResourceType,
+            unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: state,
+                    child: ResourceBrowserScreen(
+                      initialType: entry.key as R4ResourceType,
+                    ),
                   ),
                 ),
               ),

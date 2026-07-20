@@ -27,7 +27,7 @@ void main() {
       });
       await db.saveResource(patient1);
 
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       // Update with same ID, different name
       final patient2 = fhir.Patient.fromJson({
@@ -39,7 +39,7 @@ void main() {
       });
       await db.saveResource(patient2);
 
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       // Update again with same ID, different name
       final patient3 = fhir.Patient.fromJson({
@@ -91,7 +91,7 @@ void main() {
       });
       await db.saveResource(patient1);
 
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       final patient2 = fhir.Patient.fromJson({
         'resourceType': 'Patient',
@@ -102,7 +102,7 @@ void main() {
       });
       await db.saveResource(patient2);
 
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       final patient3 = fhir.Patient.fromJson({
         'resourceType': 'Patient',
@@ -140,7 +140,7 @@ void main() {
       });
       await db.saveResource(original);
 
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       final updated = fhir.Patient.fromJson({
         'resourceType': 'Patient',
@@ -189,7 +189,8 @@ void main() {
       final after = await db.getResource(fhir.R4ResourceType.Patient, 'hist-4');
       expect(after, isNull);
 
-      // Verify history entries are still present (original + deletion tombstone)
+      // Verify history entries are still present
+      // (original + deletion tombstone)
       final history = await db.getResourceHistory(
         fhir.R4ResourceType.Patient,
         'hist-4',

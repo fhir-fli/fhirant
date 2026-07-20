@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -111,9 +113,9 @@ class _ServerControlCardState extends State<ServerControlCard> {
                           ? null
                           : () {
                               if (state.isRunning) {
-                                state.stopServer();
+                                unawaited(state.stopServer());
                               } else {
-                                state.startServer();
+                                unawaited(state.startServer());
                               }
                             },
                       icon:

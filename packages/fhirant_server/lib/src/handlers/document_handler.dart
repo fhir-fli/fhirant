@@ -57,10 +57,10 @@ Future<Response> documentHandler(
     // 4. Build document Bundle
     // Order: Composition first, then subject, then all others
     final baseUrl = _baseUrl(request);
-    final entries = <fhir.BundleEntry>[];
-
-    // First entry: Composition
-    entries.add(_bundleEntry(composition, baseUrl));
+    final entries = <fhir.BundleEntry>[
+      // First entry: Composition
+      _bundleEntry(composition, baseUrl),
+    ];
 
     // Second entry: subject (if present)
     if (subjectResource != null) {
@@ -110,9 +110,7 @@ void _collectCompositionReferences(
 
   void addRefs(List<fhir.Reference>? refs) {
     if (refs != null) {
-      for (final ref in refs) {
-        addRef(ref);
-      }
+      refs.forEach(addRef);
     }
   }
 
@@ -166,9 +164,7 @@ void _collectSectionReferences(
 
   void addRefs(List<fhir.Reference>? refs) {
     if (refs != null) {
-      for (final ref in refs) {
-        addRef(ref);
-      }
+      refs.forEach(addRef);
     }
   }
 

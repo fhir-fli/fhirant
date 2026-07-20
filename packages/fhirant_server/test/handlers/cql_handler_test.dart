@@ -97,8 +97,9 @@ void main() {
     });
 
     test('evaluates CQL boolean logic', () async {
-      const cql =
-          "library BoolTest version '1.0.0'\ndefine IsTrue: true and true\ndefine IsFalse: true and false";
+      const cql = "library BoolTest version '1.0.0'\n"
+          'define IsTrue: true and true\n'
+          'define IsFalse: true and false';
       final response = await cqlHandler(
         postJson(r'/$cql', {'cql': cql}),
         mockDb,
@@ -113,8 +114,9 @@ void main() {
     });
 
     test('evaluates CQL list count', () async {
-      const cql =
-          "library ListTest version '1.0.0'\ndefine Numbers: {1, 2, 3, 4, 5}\ndefine Total: Count(Numbers)";
+      const cql = "library ListTest version '1.0.0'\n"
+          'define Numbers: {1, 2, 3, 4, 5}\n'
+          'define Total: Count(Numbers)';
       final response = await cqlHandler(
         postJson(r'/$cql', {'cql': cql}),
         mockDb,
@@ -127,8 +129,8 @@ void main() {
     });
 
     test('evaluates CQL string operations', () async {
-      const cql =
-          "library StringTest version '1.0.0'\ndefine Concat: 'Hello' + ' ' + 'World'";
+      const cql = "library StringTest version '1.0.0'\n"
+          "define Concat: 'Hello' + ' ' + 'World'";
       final response = await cqlHandler(
         postJson(r'/$cql', {'cql': cql}),
         mockDb,
@@ -159,8 +161,10 @@ void main() {
     });
 
     test('evaluates with inline data bundle', () async {
-      const cql =
-          "library PatientTest version '1.0.0'\nusing FHIR version '4.0.1'\ncontext Patient\ndefine PatientId: Patient.id";
+      const cql = "library PatientTest version '1.0.0'\n"
+          "using FHIR version '4.0.1'\n"
+          'context Patient\n'
+          'define PatientId: Patient.id';
       final bundle = {
         'resourceType': 'Bundle',
         'type': 'collection',
@@ -248,8 +252,9 @@ void main() {
     });
 
     test('evaluates CQL date/time operations', () async {
-      const cql =
-          "library DateTest version '1.0.0'\ndefine Today: Today()\ndefine Now: Now()";
+      const cql = "library DateTest version '1.0.0'\n"
+          'define Today: Today()\n'
+          'define Now: Now()';
       final response = await cqlHandler(
         postJson(r'/$cql', {'cql': cql}),
         mockDb,
@@ -293,8 +298,8 @@ void main() {
     }
 
     test('evaluates a stored Library with CQL content', () async {
-      const cql =
-          "library MyLib version '1.0.0'\ndefine Greeting: 'Hello from Library!'";
+      const cql = "library MyLib version '1.0.0'\n"
+          "define Greeting: 'Hello from Library!'";
       final library = makeLibrary('lib-1', cql);
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Library, 'lib-1'))

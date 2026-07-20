@@ -295,7 +295,8 @@ Future<Response> systemHistoryHandler(
     );
 
     FhirantLogging().logInfo(
-      'Successfully fetched ${paginatedHistory.length} system-level history entries',
+      'Successfully fetched ${paginatedHistory.length} '
+      'system-level history entries',
     );
 
     return Response.ok(

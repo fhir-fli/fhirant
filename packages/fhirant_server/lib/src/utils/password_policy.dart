@@ -45,7 +45,8 @@ class PasswordPolicy {
       return 'Password must be at most $maxLength characters.';
     }
     if (_commonPasswords.contains(password.toLowerCase())) {
-      return 'This password is too common. Please choose a less predictable password.';
+      return 'This password is too common. Please choose a less '
+          'predictable password.';
     }
     return null;
   }

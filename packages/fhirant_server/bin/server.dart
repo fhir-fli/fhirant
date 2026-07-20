@@ -34,7 +34,8 @@ void main(List<String> arguments) async {
   try {
     args = parser.parse(arguments);
     if (args['help'] as bool) {
-      print('FHIR ANT Server\n\nUsage:\n${parser.usage}');
+      // Usage goes to stdout as plain text, not through the JSON logger.
+      stdout.writeln('FHIR ANT Server\n\nUsage:\n${parser.usage}');
       exit(0);
     }
   } catch (e) {
@@ -66,7 +67,8 @@ void main(List<String> arguments) async {
 
   if (encryptionKey == 'default-development-key') {
     logger.logWarning(
-      'Using default encryption key. Set FHIRANT_ENCRYPTION_KEY for production.',
+      'Using default encryption key. '
+      'Set FHIRANT_ENCRYPTION_KEY for production.',
     );
   }
 
@@ -106,8 +108,9 @@ void main(List<String> arguments) async {
   try {
     await loadSpecResources(db, args['spec-path'] as String);
   } catch (e, stackTrace) {
-    logger.logWarning('Failed to load spec resources: $e');
-    logger.logError('Spec loading error', e, stackTrace);
+    logger
+      ..logWarning('Failed to load spec resources: $e')
+      ..logError('Spec loading error', e, stackTrace);
     // Non-fatal — server can still operate without spec resources
   }
 

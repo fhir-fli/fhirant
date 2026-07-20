@@ -229,8 +229,8 @@ void main() {
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
 
-      final formBody =
-          'grant_type=refresh_token&refresh_token=${Uri.encodeComponent(refreshToken)}';
+      final formBody = 'grant_type=refresh_token&refresh_token='
+          '${Uri.encodeComponent(refreshToken)}';
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/token'),
@@ -545,7 +545,8 @@ void main() {
       // Generate a proper PKCE S256 pair
       const codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
       // SHA256 of the verifier, base64url encoded without padding
-      // Pre-computed: echo -n "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" | sha256sum
+      // Pre-computed:
+      // echo -n "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" | sha256sum
       // Then base64url encode
 
       // Compute the expected S256 challenge

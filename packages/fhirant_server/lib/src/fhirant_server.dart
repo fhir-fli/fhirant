@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
@@ -344,7 +345,8 @@ class FhirAntServer {
         (Request req, String resourceType, String id) =>
             metaDeleteHandler(req, resourceType, id, dbInterface),
       )
-      // History endpoints (must come before resource endpoints to match correctly)
+      // History endpoints (must come before resource endpoints to match
+      // correctly)
       ..get(
         '/<resourceType>/<id>/_history/<vid>',
         (Request req, String resourceType, String id, String vid) =>
@@ -481,11 +483,12 @@ class FhirAntServer {
 
     _isRunning = true;
     _startCleanupTimer();
-    print(
+    FhirantLogging().logInfo(
       'Server started at http://${_server!.address.address}:${_server!.port}',
     );
     if (devMode) {
-      print('WARNING: Dev mode enabled — authentication is disabled');
+      FhirantLogging()
+          .logWarning('WARNING: Dev mode enabled — authentication is disabled');
     }
   }
 
@@ -513,11 +516,12 @@ class FhirAntServer {
 
     _isRunning = true;
     _startCleanupTimer();
-    print(
+    FhirantLogging().logInfo(
       'Server started at https://${_server!.address.address}:${_server!.port}',
     );
     if (devMode) {
-      print('WARNING: Dev mode enabled — authentication is disabled');
+      FhirantLogging()
+          .logWarning('WARNING: Dev mode enabled — authentication is disabled');
     }
   }
 
@@ -531,7 +535,7 @@ class FhirAntServer {
     _server = null;
     _isRunning = false;
     await _requestLogController.close();
-    print('Server stopped');
+    FhirantLogging().logInfo('Server stopped');
   }
 
   /// Start periodic cleanup of expired revoked tokens (every hour).
@@ -576,8 +580,10 @@ class FhirAntServer {
             'Unknown';
 
         // Log the request using platform-agnostic logging
-        print(
-          '${request.method} ${request.requestedUri} - ${response.statusCode} (${duration.inMilliseconds}ms) from $clientIp',
+        FhirantLogging().logInfo(
+          '${request.method} ${request.requestedUri} - '
+          '${response.statusCode} (${duration.inMilliseconds}ms) '
+          'from $clientIp',
         );
 
         // Emit to the request log stream for live monitoring

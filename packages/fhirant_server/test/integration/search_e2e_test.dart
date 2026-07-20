@@ -186,7 +186,7 @@ void main() {
       final families = entries
           .map((e) => e['resource']['name'][0]['family'] as String)
           .toList();
-      expect(families, equals(List.from(families)..sort()));
+      expect(families, equals(List<String>.from(families)..sort()));
     });
 
     test('Search with no matches returns empty Bundle', () async {

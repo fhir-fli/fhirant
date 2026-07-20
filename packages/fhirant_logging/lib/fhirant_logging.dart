@@ -33,8 +33,9 @@ class FhirantLogging {
         'stackTrace': record.stackTrace?.toString(),
       });
 
-      // Print to console
-      print(logMessage);
+      // Write to console (stdout is the logger's own sink here; using the
+      // FhirantLogging API would recurse into this same listener).
+      stdout.writeln(logMessage);
 
       // Write to a log file (flush after each log for real-time logging)
       _writeToFile(logMessage);

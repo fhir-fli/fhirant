@@ -28,7 +28,7 @@ void main() {
   tearDown(() async {
     await db.close();
     final dir = Directory(exportDir);
-    if (await dir.exists()) {
+    if (dir.existsSync()) {
       await dir.delete(recursive: true);
     }
   });
@@ -671,7 +671,7 @@ void main() {
 
       // Files should be cleaned up
       final jobDir = Directory('$exportDir/$jobId');
-      expect(await jobDir.exists(), isFalse);
+      expect(jobDir.existsSync(), isFalse);
     });
   });
 

@@ -220,7 +220,7 @@ void main() {
 
       // Drift stores DateTime as integer seconds by default, so we need
       // >1s delay to get a distinct lastUpdated (history PK includes it)
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       final updated = fhir.Patient(
         id: 'test-vread-ghi'.toFhirString,
@@ -340,7 +340,7 @@ void main() {
 
       // Drift stores DateTime as integer seconds by default, so we need
       // >1s delay to get a distinct lastUpdated (history PK includes it)
-      await Future.delayed(const Duration(milliseconds: 1100));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       final updated = fhir.Patient(
         id: 'test-history-jkl'.toFhirString,

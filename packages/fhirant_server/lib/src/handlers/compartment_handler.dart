@@ -1,4 +1,3 @@
-// ignore_for_file: lines_longer_than_80_chars
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -23,7 +22,8 @@ Future<Response> everythingHandler(
       return _operationOutcome(
         400,
         'Unsupported compartment type: $compartmentType. '
-        'Supported types: Patient, Encounter, Practitioner, RelatedPerson, Device',
+        'Supported types: Patient, Encounter, Practitioner, '
+        'RelatedPerson, Device',
       );
     }
 

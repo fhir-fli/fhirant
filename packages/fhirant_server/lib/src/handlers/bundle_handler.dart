@@ -496,7 +496,8 @@ Future<_BundleOperation> _processBundleEntry(
       } else {
         throw BundleEntryException(
           400,
-          'Bundle entry $entryIndex: PATCH document must be Binary or Parameters',
+          'Bundle entry $entryIndex: PATCH document must be Binary '
+          'or Parameters',
         );
       }
 

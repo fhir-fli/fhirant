@@ -158,7 +158,7 @@ void main() {
 
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());
-      expect(body['scopes'], isA<List>());
+      expect(body['scopes'], isA<List<dynamic>>());
       expect(body['scopes'], isNotEmpty);
     });
   });
@@ -321,7 +321,7 @@ void main() {
       expect(response.statusCode, 200);
       final body = jsonDecode(await response.readAsString());
       expect(body['token_endpoint'], contains('/auth/token'));
-      expect(body['scopes_supported'], isA<List>());
+      expect(body['scopes_supported'], isA<List<dynamic>>());
       expect(body['capabilities'], contains('permission-v2'));
     });
   });

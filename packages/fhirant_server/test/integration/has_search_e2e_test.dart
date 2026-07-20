@@ -229,7 +229,8 @@ void main() {
       final cs =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       final rest = (cs['rest'] as List)[0] as Map<String, dynamic>;
-      // The search-system interaction indicates system-level search is supported
+      // The search-system interaction indicates system-level search is
+      // supported
       // (which includes _has). Per the CapabilityStatement overhaul, _has is
       // not listed per-resource but is an implicit server capability.
       final interactions = rest['interaction'] as List;

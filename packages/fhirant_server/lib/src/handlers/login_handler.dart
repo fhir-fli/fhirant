@@ -81,8 +81,8 @@ Future<Response> loginHandler(
         return Response(
           423,
           body: jsonEncode({
-            'error':
-                'Account locked due to too many failed attempts. Try again in ${lockoutDuration.inMinutes} minutes.',
+            'error': 'Account locked due to too many failed attempts. '
+                'Try again in ${lockoutDuration.inMinutes} minutes.',
           }),
         );
       }

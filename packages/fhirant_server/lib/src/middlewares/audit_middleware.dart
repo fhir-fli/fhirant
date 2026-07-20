@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:shelf/shelf.dart';
@@ -13,7 +15,7 @@ Middleware auditMiddleware(FhirAntDb dbInterface) {
 
       if (_shouldAudit(request)) {
         // Fire-and-forget — don't await
-        _createAuditEvent(request, response, dbInterface);
+        unawaited(_createAuditEvent(request, response, dbInterface));
       }
 
       return response;

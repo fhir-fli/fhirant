@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fhirant/src/screens/dashboard_screen.dart';
@@ -154,7 +155,7 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (Platform.isIOS && state == AppLifecycleState.paused) {
-      context.read<ServerState>().stopServer();
+      unawaited(context.read<ServerState>().stopServer());
     }
   }
 

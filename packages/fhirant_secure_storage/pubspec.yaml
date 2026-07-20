@@ -7,11 +7,11 @@ environment:
 
 dependencies:
   basic_utils: ^5.8.2
+  fhirant_logging:
+    path: ../fhirant_logging
   flutter:
     sdk: flutter
   flutter_secure_storage: ^9.2.4
-  fhirant_logging:
-    path: ../fhirant_logging
 
 dev_dependencies:
   flutter_test:

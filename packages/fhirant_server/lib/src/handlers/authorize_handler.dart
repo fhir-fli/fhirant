@@ -375,7 +375,8 @@ String _loginForm({
       ? '<div style="color:#d32f2f;background:#fdecea;padding:10px;border-radius:4px;margin-bottom:16px;">$errorMessage</div>'
       : '';
 
-  return '''<!DOCTYPE html>
+  return '''
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -420,7 +421,8 @@ String _loginForm({
 }
 
 String _errorPage(String message) {
-  return '''<!DOCTYPE html>
+  return '''
+<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Authorization Error</title></head>
 <body>

@@ -1,0 +1,6 @@
+include: ../analysis_options.yaml
+linter:
+  rules:
+    # Test assertions navigate decoded-JSON responses (body["entry"][0]...);
+    # dynamic navigation is idiomatic here and tests fail loudly regardless.
+    avoid_dynamic_calls: false

@@ -70,7 +70,8 @@ Response patientScopeForbiddenResponse(
   );
 }
 
-/// Checks if a new resource (being created) would be in the patient compartment.
+/// Checks if a new resource (being created) would be in the patient
+/// compartment.
 /// For POST (create), we check references within the resource JSON.
 Future<bool> isNewResourceInPatientCompartment(
   String resourceType,

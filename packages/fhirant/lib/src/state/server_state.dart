@@ -19,7 +19,7 @@ class ServerState extends ChangeNotifier {
     required ServerService serverService,
   })  : _dbService = dbService,
         _serverService = serverService {
-    _detectWifiIp();
+    unawaited(_detectWifiIp());
   }
   final DatabaseService _dbService;
   final ServerService _serverService;
@@ -183,7 +183,7 @@ class ServerState extends ChangeNotifier {
   @override
   void dispose() {
     _countsTimer?.cancel();
-    _logSubscription?.cancel();
+    unawaited(_logSubscription?.cancel());
     super.dispose();
   }
 }

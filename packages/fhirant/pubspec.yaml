@@ -7,42 +7,26 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
   cupertino_icons: ^1.0.8
-
-  # FHIR core
+  drift: ^2.29.0
   fhir_r4: ^0.7.0
-
-  # FHIRant packages
-  fhirant_server:
-    path: ../fhirant_server
   fhirant_db:
     path: ../fhirant_db
   fhirant_logging:
     path: ../fhirant_logging
-
-  # Database
-  drift: ^2.29.0
-  sqlite3: ^3.1.5
-
-  # Platform services
-  path_provider: ^2.1.5
+  fhirant_server:
+    path: ../fhirant_server
+  flutter:
+    sdk: flutter
+  flutter_foreground_task: ^8.13.4
   flutter_secure_storage: ^9.2.4
   network_info_plus: ^6.1.1
-
-  # State management
+  path_provider: ^2.1.5
   provider: ^6.1.2
-
-  # UI
   qr_flutter: ^4.1.0
-  url_launcher: ^6.3.1
-
-  # Storage
   shared_preferences: ^2.3.0
-
-  # Android foreground service
-  flutter_foreground_task: ^8.13.4
+  sqlite3: ^3.1.5
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:fhirant_server/src/utils/summary_fields.dart';
 
-/// Utility for shaping FHIR resource responses based on _summary and _elements parameters.
+/// Utility for shaping FHIR resource responses based on _summary and
+/// _elements parameters.
 class FhirResponseShaper {
   static const _subsettedTag = {
     'system': 'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',

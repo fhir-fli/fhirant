@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
@@ -54,8 +55,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_onboardingCompleteKey, true);
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      unawaited(
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
+        ),
       );
     }
   }
@@ -72,11 +75,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Start server in dev mode if not running
       final wasRunning = state.isRunning;
       if (!wasRunning) {
-        state.port = 8080;
-        state.devMode = true;
+        state
+          ..port = 8080
+          ..devMode = true;
         await state.startServer();
         // Give server a moment to bind
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
       }
 
       // Parse JSON off the main isolate to avoid ANR
