@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives within the larger `fhir/` monorepo and depends on sibling packages (`fhir_r4`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`) via path dependencies.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on the published packages (`fhir_r4`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql`, `cql`) from pub.dev at ^0.7.0 (cql ^0.6.3); the only path dependencies are the internal `fhirant_*` packages and sibling repo `cicada`.
 
 ## Package Structure
 
@@ -55,8 +55,8 @@ fhirant/
 ## Common Commands
 
 ```bash
-# Bootstrap all packages (from repo root)
-melos bootstrap
+# Install dependencies (no melos — each package resolves on its own)
+for p in packages/*/; do (cd "$p" && flutter pub get); done
 
 # Run the server (dev mode — no auth required)
 dart run packages/fhirant_server/bin/server.dart --port 8080 --db-path data/db
