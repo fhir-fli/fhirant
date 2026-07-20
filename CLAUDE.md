@@ -83,10 +83,13 @@ cd packages/fhirant_db && dart run build_runner build --delete-conflicting-outpu
 ## Critical File Access Rules
 
 **NEVER recursively read:**
-- `packages/fhirant_db/lib/db/search/search_parameters.dart` — 25,700 lines of generated search parameter extraction code
-- `packages/fhirant_db/lib/db/fhirant_db.g.dart` — Generated Drift ORM code
 - `packages/fhirant_server/assets/fhir_spec/` — FHIR specification files
 - `packages/fhirant_server/assets/mimic/` — MIMIC-IV test data
+
+**Where the search machinery actually lives (consolidated out of fhirant):**
+- `FhirAntDb` (`packages/fhirant_db/lib/db/fhirant_db.dart`) **extends `FhirDb` from the published `fhir_r4_db` package** and inherits all search/index/CRUD/history from it. fhirant_db no longer contains the big generated search file or its own Drift `.g.dart`.
+- The generated search-parameter extraction (~27k lines) + the 9 Drift search tables live in **`fhir_r4/packages/fhir_r4_db/lib/src/search/search_parameters.dart`** and `.../src/tables/*_search_table.dart`, produced by **`fhir_generator/lib/src/generate_db_search_parameters.dart`** (+ `parse_search_parameters.dart`). Do not hand-edit; regenerate via the generator.
+- What remains in fhirant is hand-written: `fhirant_server/lib/src/utils/search_param_definitions.dart` (CapabilityStatement search-param declarations) and `search_parser.dart` (parses incoming query strings).
 
 **Safe to read:**
 - `lib/src/**/*.dart` source files in any package
