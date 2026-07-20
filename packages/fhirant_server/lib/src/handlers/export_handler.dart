@@ -16,6 +16,15 @@ const _validFormats = [
   'ndjson',
 ];
 
+/// Export job ids are UUIDs (see [exportKickoffHandler]). Anything else in a
+/// `jobId` path segment is rejected so it can never traverse the export dir.
+final _jobIdPattern = RegExp(
+  '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-'
+  r'[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
+bool _isValidJobId(String jobId) => _jobIdPattern.hasMatch(jobId);
+
 /// Handler for `GET /$export` (system-level), `GET /Patient/$export` (patient-level),
 /// and `GET /Group/<id>/$export` (group-level).
 ///
@@ -234,7 +243,10 @@ Future<Response> exportFileHandler(
   String fileName,
 ) async {
   try {
-    // Validate fileName to prevent path traversal
+    // Validate both path segments to prevent traversal out of the export dir.
+    if (!_isValidJobId(jobId)) {
+      return _operationOutcome(400, 'Invalid job id');
+    }
     if (fileName.contains('..') || fileName.contains('/')) {
       return _operationOutcome(400, 'Invalid file name');
     }
@@ -266,6 +278,12 @@ Future<Response> exportDeleteHandler(
   String jobId,
 ) async {
   try {
+    // Defence in depth: this handler deletes a directory built from jobId.
+    // The DB lookup below already gates on a real job, but reject a malformed
+    // id outright so the path can never traverse the export dir.
+    if (!_isValidJobId(jobId)) {
+      return _operationOutcome(400, 'Invalid job id');
+    }
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
       return _operationOutcome(404, 'Export job not found: $jobId');

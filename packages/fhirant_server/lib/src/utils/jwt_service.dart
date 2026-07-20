@@ -1,4 +1,12 @@
+import 'dart:convert';
+
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+
+/// The one signing/verification algorithm this server accepts. Pinning it
+/// (rather than trusting the `alg` header of an incoming token) closes
+/// algorithm-substitution attacks — most importantly a forged token with
+/// `alg: none`, and HMAC/RSA confusion.
+const JWTAlgorithm _pinnedAlgorithm = JWTAlgorithm.HS256;
 
 /// Service for generating and verifying JWT tokens.
 class JwtService {
@@ -60,10 +68,33 @@ class JwtService {
   }
 
   /// Verifies a JWT token and returns its payload, or null if invalid/expired.
+  ///
+  /// The token's declared algorithm must match [_pinnedAlgorithm]; this is
+  /// checked from the header before signature verification so a token claiming
+  /// `alg: none` (or any other algorithm) is rejected outright rather than
+  /// handed to the library's alg-dispatch.
   Map<String, dynamic>? verifyToken(String token) {
     try {
+      if (_headerAlgorithm(token) != _pinnedAlgorithm.name) return null;
       final jwt = JWT.verify(token, SecretKey(_secret));
       return jwt.payload as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Reads the `alg` value from a JWT's header segment, or null if the token
+  /// is malformed.
+  static String? _headerAlgorithm(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    try {
+      final headerJson =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[0])));
+      final header = jsonDecode(headerJson);
+      if (header is! Map<String, dynamic>) return null;
+      final alg = header['alg'];
+      return alg is String ? alg : null;
     } catch (_) {
       return null;
     }

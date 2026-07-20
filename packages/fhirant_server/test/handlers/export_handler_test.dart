@@ -11,6 +11,10 @@ import 'package:test/test.dart';
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 void main() {
+  // Export job ids are UUIDs; the handlers reject anything else.
+  const jobId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const unknownJobId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
   late MockFhirAntDb mockDb;
   late String exportDir;
 
@@ -411,58 +415,58 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   group('exportStatusHandler', () {
     test('returns 404 for unknown job', () async {
-      final request = makeRequest(r'/$export-poll-status/unknown-id');
-      when(() => mockDb.getExportJob('unknown-id'))
+      final request = makeRequest(r'/$export-poll-status/status');
+      when(() => mockDb.getExportJob(unknownJobId))
           .thenAnswer((_) async => null);
 
-      final response = await exportStatusHandler(request, mockDb, 'unknown-id');
+      final response = await exportStatusHandler(request, mockDb, unknownJobId);
 
       expect(response.statusCode, equals(404));
     });
 
     test('returns 202 when job is pending', () async {
-      final request = makeRequest(r'/$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
-        (_) async => _fakeExportJob(jobId: 'job-1', status: 'pending'),
+      final request = makeRequest(r'/$export-poll-status/status');
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
+        (_) async => _fakeExportJob(jobId: jobId, status: 'pending'),
       );
 
-      final response = await exportStatusHandler(request, mockDb, 'job-1');
+      final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(202));
       expect(response.headers['x-progress'], equals('Queued'));
     });
 
     test('returns 202 when job is in_progress', () async {
-      final request = makeRequest(r'/$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
-        (_) async => _fakeExportJob(jobId: 'job-1', status: 'in_progress'),
+      final request = makeRequest(r'/$export-poll-status/status');
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
+        (_) async => _fakeExportJob(jobId: jobId, status: 'in_progress'),
       );
 
-      final response = await exportStatusHandler(request, mockDb, 'job-1');
+      final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(202));
       expect(response.headers['x-progress'], equals('Exporting...'));
     });
 
     test('returns 200 with manifest when job is completed', () async {
-      final request = makeRequest(r'/$export-poll-status/job-1');
+      final request = makeRequest(r'/$export-poll-status/status');
       final outputJson = jsonEncode([
         {
           'type': 'Patient',
-          'url': r'http://localhost:8080/$export-file/job-1/Patient.ndjson',
+          'url': r'http://localhost:8080/$export-file/x/Patient.ndjson',
           'count': 5,
         },
       ]);
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
         (_) async => _fakeExportJob(
-          jobId: 'job-1',
+          jobId: jobId,
           status: 'completed',
           outputJson: outputJson,
           completedAt: DateTime.now(),
         ),
       );
 
-      final response = await exportStatusHandler(request, mockDb, 'job-1');
+      final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
@@ -475,10 +479,10 @@ void main() {
     });
 
     test('returns 500 when job has error', () async {
-      final request = makeRequest(r'/$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+      final request = makeRequest(r'/$export-poll-status/status');
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
         (_) async => _fakeExportJob(
-          jobId: 'job-1',
+          jobId: jobId,
           status: 'error',
           errorJson: jsonEncode([
             {
@@ -495,7 +499,7 @@ void main() {
         ),
       );
 
-      final response = await exportStatusHandler(request, mockDb, 'job-1');
+      final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(500));
       final body = jsonDecode(await response.readAsString());
@@ -504,12 +508,12 @@ void main() {
     });
 
     test('returns 404 for cancelled job', () async {
-      final request = makeRequest(r'/$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
-        (_) async => _fakeExportJob(jobId: 'job-1', status: 'cancelled'),
+      final request = makeRequest(r'/$export-poll-status/status');
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
+        (_) async => _fakeExportJob(jobId: jobId, status: 'cancelled'),
       );
 
-      final response = await exportStatusHandler(request, mockDb, 'job-1');
+      final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(404));
     });
@@ -520,26 +524,39 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
   group('exportFileHandler', () {
     test('returns 404 when file does not exist', () async {
-      final request = makeRequest(r'/$export-file/job-1/Patient.ndjson');
+      final request = makeRequest(r'/$export-file/x/Patient.ndjson');
 
       final response = await exportFileHandler(
         request,
         exportDir,
-        'job-1',
+        jobId,
         'Patient.ndjson',
       );
 
       expect(response.statusCode, equals(404));
     });
 
-    test('returns 400 for path traversal attempt', () async {
-      final request = makeRequest(r'/$export-file/job-1/../../../etc/passwd');
+    test('returns 400 for path traversal attempt in the file name', () async {
+      final request = makeRequest(r'/$export-file/x/../../../etc/passwd');
 
       final response = await exportFileHandler(
         request,
         exportDir,
-        'job-1',
+        jobId,
         '../../../etc/passwd',
+      );
+
+      expect(response.statusCode, equals(400));
+    });
+
+    test('returns 400 for a non-UUID job id (traversal via jobId)', () async {
+      final request = makeRequest(r'/$export-file/../secrets/Patient.ndjson');
+
+      final response = await exportFileHandler(
+        request,
+        exportDir,
+        '..',
+        'Patient.ndjson',
       );
 
       expect(response.statusCode, equals(400));
@@ -547,7 +564,7 @@ void main() {
 
     test('serves NDJSON file when it exists', () async {
       // Create a test NDJSON file
-      final jobDir = Directory('$exportDir/job-1');
+      final jobDir = Directory('$exportDir/$jobId');
       await jobDir.create(recursive: true);
       final file = File('${jobDir.path}/Patient.ndjson');
       final patient = fhir.Patient(
@@ -556,11 +573,11 @@ void main() {
       );
       await file.writeAsString('${jsonEncode(patient.toJson())}\n');
 
-      final request = makeRequest(r'/$export-file/job-1/Patient.ndjson');
+      final request = makeRequest(r'/$export-file/x/Patient.ndjson');
       final response = await exportFileHandler(
         request,
         exportDir,
-        'job-1',
+        jobId,
         'Patient.ndjson',
       );
 
@@ -580,58 +597,58 @@ void main() {
   group('exportDeleteHandler', () {
     test('returns 404 for unknown job', () async {
       final request = makeRequest(
-        r'/$export-poll-status/unknown-id',
+        r'/$export-poll-status/status',
         method: 'DELETE',
       );
-      when(() => mockDb.getExportJob('unknown-id'))
+      when(() => mockDb.getExportJob(unknownJobId))
           .thenAnswer((_) async => null);
 
       final response =
-          await exportDeleteHandler(request, mockDb, exportDir, 'unknown-id');
+          await exportDeleteHandler(request, mockDb, exportDir, unknownJobId);
 
       expect(response.statusCode, equals(404));
     });
 
     test('cancels job and returns 202', () async {
       final request = makeRequest(
-        r'/$export-poll-status/job-1',
+        r'/$export-poll-status/status',
         method: 'DELETE',
       );
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
-        (_) async => _fakeExportJob(jobId: 'job-1', status: 'in_progress'),
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
+        (_) async => _fakeExportJob(jobId: jobId, status: 'in_progress'),
       );
-      when(() => mockDb.updateExportJob('job-1', status: 'cancelled'))
+      when(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
           .thenAnswer((_) async {});
-      when(() => mockDb.deleteExportJob('job-1')).thenAnswer((_) async {});
+      when(() => mockDb.deleteExportJob(jobId)).thenAnswer((_) async {});
 
       final response =
-          await exportDeleteHandler(request, mockDb, exportDir, 'job-1');
+          await exportDeleteHandler(request, mockDb, exportDir, jobId);
 
       expect(response.statusCode, equals(202));
-      verify(() => mockDb.updateExportJob('job-1', status: 'cancelled'))
+      verify(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
           .called(1);
-      verify(() => mockDb.deleteExportJob('job-1')).called(1);
+      verify(() => mockDb.deleteExportJob(jobId)).called(1);
     });
 
     test('cleans up export files on delete', () async {
       // Create job directory with a file
-      final jobDir = Directory('$exportDir/job-1');
+      final jobDir = Directory('$exportDir/$jobId');
       await jobDir.create(recursive: true);
       await File('${jobDir.path}/Patient.ndjson').writeAsString('test');
 
       final request = makeRequest(
-        r'/$export-poll-status/job-1',
+        r'/$export-poll-status/status',
         method: 'DELETE',
       );
-      when(() => mockDb.getExportJob('job-1')).thenAnswer(
-        (_) async => _fakeExportJob(jobId: 'job-1', status: 'completed'),
+      when(() => mockDb.getExportJob(jobId)).thenAnswer(
+        (_) async => _fakeExportJob(jobId: jobId, status: 'completed'),
       );
-      when(() => mockDb.updateExportJob('job-1', status: 'cancelled'))
+      when(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
           .thenAnswer((_) async {});
-      when(() => mockDb.deleteExportJob('job-1')).thenAnswer((_) async {});
+      when(() => mockDb.deleteExportJob(jobId)).thenAnswer((_) async {});
 
       final response =
-          await exportDeleteHandler(request, mockDb, exportDir, 'job-1');
+          await exportDeleteHandler(request, mockDb, exportDir, jobId);
 
       expect(response.statusCode, equals(202));
       expect(jobDir.existsSync(), isFalse);
