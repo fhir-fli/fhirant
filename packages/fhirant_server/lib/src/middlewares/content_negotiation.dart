@@ -23,21 +23,19 @@ Middleware contentNegotiationMiddleware() {
 
       // Check if any of the Accept types are supported
       // Accept can be comma-separated: "application/fhir+json, application/json"
-      final types = requestedType
-          .split(',')
-          .map((t) => t.trim().split(';').first.trim());
+      final types =
+          requestedType.split(',').map((t) => t.trim().split(';').first.trim());
       final isSupported = types.any((t) => supportedTypes.contains(t));
 
-      if (!isSupported &&
-          !types.contains('*/*') &&
-          requestedType.isNotEmpty) {
+      if (!isSupported && !types.contains('*/*') && requestedType.isNotEmpty) {
         if (requestedType.contains('xml')) {
           return Response(
             406,
             body:
                 '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"XML format is not supported. Use application/fhir+json."}]}',
             headers: {
-              'Content-Type': 'application/fhir+json; charset=utf-8; fhirVersion=4.3',
+              'Content-Type':
+                  'application/fhir+json; charset=utf-8; fhirVersion=4.3',
             },
           );
         }
@@ -46,7 +44,8 @@ Middleware contentNegotiationMiddleware() {
           body:
               '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: $requestedType"}]}',
           headers: {
-            'Content-Type': 'application/fhir+json; charset=utf-8; fhirVersion=4.3',
+            'Content-Type':
+                'application/fhir+json; charset=utf-8; fhirVersion=4.3',
           },
         );
       }
@@ -57,7 +56,8 @@ Middleware contentNegotiationMiddleware() {
       final contentType = response.headers['content-type'] ?? '';
       if (contentType.contains('application/json')) {
         return response.change(headers: {
-          'content-type': 'application/fhir+json; charset=utf-8; fhirVersion=4.3',
+          'content-type':
+              'application/fhir+json; charset=utf-8; fhirVersion=4.3',
         });
       }
 

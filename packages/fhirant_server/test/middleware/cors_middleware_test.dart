@@ -67,8 +67,7 @@ void main() {
         config: CorsConfig(allowOrigin: 'https://example.com'),
       );
       final handler = customMiddleware((Request request) async {
-        return Response.ok('ok',
-            headers: {'content-type': 'application/json'});
+        return Response.ok('ok', headers: {'content-type': 'application/json'});
       });
 
       final request = Request(

@@ -262,23 +262,88 @@ class SearchParamDefinitions {
 
   /// _include declarations per resource type.
   static const Map<String, List<String>> searchInclude = {
-    'Patient': ['Patient:organization', 'Patient:general-practitioner', 'Patient:link'],
-    'Observation': ['Observation:patient', 'Observation:subject', 'Observation:encounter', 'Observation:performer'],
-    'Condition': ['Condition:patient', 'Condition:subject', 'Condition:encounter', 'Condition:asserter'],
-    'Encounter': ['Encounter:patient', 'Encounter:subject', 'Encounter:participant', 'Encounter:location', 'Encounter:service-provider'],
-    'MedicationRequest': ['MedicationRequest:patient', 'MedicationRequest:subject', 'MedicationRequest:medication', 'MedicationRequest:requester', 'MedicationRequest:encounter'],
-    'Procedure': ['Procedure:patient', 'Procedure:subject', 'Procedure:encounter', 'Procedure:performer'],
+    'Patient': [
+      'Patient:organization',
+      'Patient:general-practitioner',
+      'Patient:link'
+    ],
+    'Observation': [
+      'Observation:patient',
+      'Observation:subject',
+      'Observation:encounter',
+      'Observation:performer'
+    ],
+    'Condition': [
+      'Condition:patient',
+      'Condition:subject',
+      'Condition:encounter',
+      'Condition:asserter'
+    ],
+    'Encounter': [
+      'Encounter:patient',
+      'Encounter:subject',
+      'Encounter:participant',
+      'Encounter:location',
+      'Encounter:service-provider'
+    ],
+    'MedicationRequest': [
+      'MedicationRequest:patient',
+      'MedicationRequest:subject',
+      'MedicationRequest:medication',
+      'MedicationRequest:requester',
+      'MedicationRequest:encounter'
+    ],
+    'Procedure': [
+      'Procedure:patient',
+      'Procedure:subject',
+      'Procedure:encounter',
+      'Procedure:performer'
+    ],
     'AllergyIntolerance': ['AllergyIntolerance:patient'],
-    'DiagnosticReport': ['DiagnosticReport:patient', 'DiagnosticReport:subject', 'DiagnosticReport:encounter', 'DiagnosticReport:result', 'DiagnosticReport:performer'],
-    'Immunization': ['Immunization:patient', 'Immunization:location', 'Immunization:performer'],
+    'DiagnosticReport': [
+      'DiagnosticReport:patient',
+      'DiagnosticReport:subject',
+      'DiagnosticReport:encounter',
+      'DiagnosticReport:result',
+      'DiagnosticReport:performer'
+    ],
+    'Immunization': [
+      'Immunization:patient',
+      'Immunization:location',
+      'Immunization:performer'
+    ],
     'CarePlan': ['CarePlan:patient', 'CarePlan:subject', 'CarePlan:encounter'],
-    'CareTeam': ['CareTeam:patient', 'CareTeam:subject', 'CareTeam:participant', 'CareTeam:encounter'],
+    'CareTeam': [
+      'CareTeam:patient',
+      'CareTeam:subject',
+      'CareTeam:participant',
+      'CareTeam:encounter'
+    ],
     'Goal': ['Goal:patient', 'Goal:subject'],
-    'MedicationStatement': ['MedicationStatement:patient', 'MedicationStatement:subject', 'MedicationStatement:medication'],
-    'ServiceRequest': ['ServiceRequest:patient', 'ServiceRequest:subject', 'ServiceRequest:encounter', 'ServiceRequest:requester', 'ServiceRequest:performer'],
-    'DocumentReference': ['DocumentReference:patient', 'DocumentReference:subject', 'DocumentReference:author', 'DocumentReference:encounter'],
+    'MedicationStatement': [
+      'MedicationStatement:patient',
+      'MedicationStatement:subject',
+      'MedicationStatement:medication'
+    ],
+    'ServiceRequest': [
+      'ServiceRequest:patient',
+      'ServiceRequest:subject',
+      'ServiceRequest:encounter',
+      'ServiceRequest:requester',
+      'ServiceRequest:performer'
+    ],
+    'DocumentReference': [
+      'DocumentReference:patient',
+      'DocumentReference:subject',
+      'DocumentReference:author',
+      'DocumentReference:encounter'
+    ],
     'Organization': ['Organization:partof'],
-    'PractitionerRole': ['PractitionerRole:practitioner', 'PractitionerRole:organization', 'PractitionerRole:location'],
+    'PractitionerRole': [
+      'PractitionerRole:practitioner',
+      'PractitionerRole:organization',
+      'PractitionerRole:location'
+    ],
     'Location': ['Location:organization'],
     'Device': ['Device:patient', 'Device:organization', 'Device:location'],
     'Group': ['Group:member', 'Group:managing-entity'],
@@ -286,11 +351,37 @@ class SearchParamDefinitions {
 
   /// _revinclude declarations per resource type.
   static const Map<String, List<String>> searchRevInclude = {
-    'Patient': ['Observation:patient', 'Condition:patient', 'Encounter:patient', 'MedicationRequest:patient', 'Procedure:patient', 'AllergyIntolerance:patient', 'DiagnosticReport:patient', 'Immunization:patient', 'CarePlan:patient', 'DocumentReference:patient'],
-    'Encounter': ['Observation:encounter', 'Condition:encounter', 'MedicationRequest:encounter', 'Procedure:encounter', 'DiagnosticReport:encounter'],
+    'Patient': [
+      'Observation:patient',
+      'Condition:patient',
+      'Encounter:patient',
+      'MedicationRequest:patient',
+      'Procedure:patient',
+      'AllergyIntolerance:patient',
+      'DiagnosticReport:patient',
+      'Immunization:patient',
+      'CarePlan:patient',
+      'DocumentReference:patient'
+    ],
+    'Encounter': [
+      'Observation:encounter',
+      'Condition:encounter',
+      'MedicationRequest:encounter',
+      'Procedure:encounter',
+      'DiagnosticReport:encounter'
+    ],
     'Practitioner': ['PractitionerRole:practitioner', 'Encounter:participant'],
-    'Organization': ['Patient:organization', 'PractitionerRole:organization', 'Location:organization', 'Device:organization'],
-    'Location': ['Encounter:location', 'PractitionerRole:location', 'Device:location'],
+    'Organization': [
+      'Patient:organization',
+      'PractitionerRole:organization',
+      'Location:organization',
+      'Device:organization'
+    ],
+    'Location': [
+      'Encounter:location',
+      'PractitionerRole:location',
+      'Device:location'
+    ],
     'Observation': ['DiagnosticReport:result'],
   };
 

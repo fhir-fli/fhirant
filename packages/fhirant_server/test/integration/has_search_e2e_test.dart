@@ -194,8 +194,8 @@ void main() {
       final entries = bundle['entry'] as List?;
       expect(entries, isNotNull);
       // patientId has both observations
-      expect(entries!.any((e) =>
-          (e['resource'] as Map)['id'] == patientId), isTrue);
+      expect(entries!.any((e) => (e['resource'] as Map)['id'] == patientId),
+          isTrue);
     });
   });
 
@@ -214,9 +214,8 @@ void main() {
       // (which includes _has). Per the CapabilityStatement overhaul, _has is
       // not listed per-resource but is an implicit server capability.
       final interactions = rest['interaction'] as List;
-      final codes = interactions
-          .map((i) => (i as Map)['code'] as String)
-          .toList();
+      final codes =
+          interactions.map((i) => (i as Map)['code'] as String).toList();
       expect(codes, contains('search-system'));
     });
   });

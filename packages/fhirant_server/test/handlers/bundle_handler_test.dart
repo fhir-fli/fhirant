@@ -374,8 +374,7 @@ void main() {
       expect(json['resourceType'], equals('Bundle'));
       final entries = json['entry'] as List;
       expect(entries.length, equals(1));
-      final entryResponse =
-          entries[0]['response'] as Map<String, dynamic>;
+      final entryResponse = entries[0]['response'] as Map<String, dynamic>;
       expect(entryResponse['status'], equals('400'));
     });
   });
@@ -734,8 +733,7 @@ void main() {
                 ],
               },
               'subject': {
-                'reference':
-                    'urn:uuid:11111111-1111-1111-1111-111111111111',
+                'reference': 'urn:uuid:11111111-1111-1111-1111-111111111111',
               },
             },
             'request': {'method': 'POST', 'url': 'Observation'},
@@ -843,8 +841,7 @@ void main() {
               'id': 'enc-1',
               'status': 'finished',
               'class': {
-                'system':
-                    'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+                'system': 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
                 'code': 'AMB',
               },
             },
@@ -939,10 +936,8 @@ void main() {
         () => mockDb.saveResource(any()),
       ).thenAnswer((_) async => true);
       when(
-        () =>
-            mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-bad'),
-      ).thenAnswer((_) async =>
-          fhir.Observation.fromJson({
+        () => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-bad'),
+      ).thenAnswer((_) async => fhir.Observation.fromJson({
             'resourceType': 'Observation',
             'id': 'obs-bad',
             'meta': {
@@ -1095,8 +1090,7 @@ void main() {
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'not-found'),
       ).thenAnswer((_) async => null);
       when(
-        () => mockDb.deleteResource(
-            fhir.R4ResourceType.Patient, 'rb-post'),
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-post'),
       ).thenAnswer((_) async => true);
 
       final response = await bundleHandler(mockRequest, mockDb);
@@ -1222,8 +1216,7 @@ void main() {
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-del'),
       ).thenAnswer((_) async => deletedPatient);
       when(
-        () => mockDb.deleteResource(
-            fhir.R4ResourceType.Patient, 'rb-del'),
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-del'),
       ).thenAnswer((_) async => true);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'not-found'),
@@ -1303,8 +1296,7 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
-      final entryResponse =
-          entries[0]['response'] as Map<String, dynamic>;
+      final entryResponse = entries[0]['response'] as Map<String, dynamic>;
       expect(entryResponse['status'], equals('201'));
       expect(entryResponse['etag'], equals('W/"1"'));
       expect(entryResponse['lastModified'], isNotNull);
@@ -1374,8 +1366,7 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
-      final entryResponse =
-          entries[0]['response'] as Map<String, dynamic>;
+      final entryResponse = entries[0]['response'] as Map<String, dynamic>;
       expect(entryResponse['status'], equals('200'));
       expect(entryResponse['etag'], equals('W/"2"'));
     });
@@ -1437,9 +1428,9 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.search(
-              resourceType: fhir.R4ResourceType.Patient,
-              searchParameters: any(named: 'searchParameters'),
-            ),
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: any(named: 'searchParameters'),
+        ),
       ).thenAnswer((_) async => [existingPatient]);
 
       final response = await bundleHandler(mockRequest, mockDb);

@@ -136,7 +136,8 @@ void main() {
         Uri.parse('Patient/123/_history?_count=2&_offset=1'),
       );
       when(() => mockRequest.requestedUri).thenReturn(
-        Uri.parse('http://localhost:8080/Patient/123/_history?_count=2&_offset=1'),
+        Uri.parse(
+            'http://localhost:8080/Patient/123/_history?_count=2&_offset=1'),
       );
       when(
         () => mockDb.getResourceHistory(

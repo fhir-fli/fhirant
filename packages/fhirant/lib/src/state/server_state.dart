@@ -47,7 +47,8 @@ class ServerState extends ChangeNotifier {
   bool get isRunning => _status == ServerStatus.running;
   bool get devMode => _devMode;
 
-  List<RequestLogEntry> get requestLog => _requestLog.toList().reversed.toList();
+  List<RequestLogEntry> get requestLog =>
+      _requestLog.toList().reversed.toList();
   Map<R4ResourceType, int> get resourceCounts =>
       Map.unmodifiable(_resourceCounts);
 
@@ -69,7 +70,8 @@ class ServerState extends ChangeNotifier {
   }
 
   Future<void> startServer() async {
-    if (_status != ServerStatus.stopped && _status != ServerStatus.error) return;
+    if (_status != ServerStatus.stopped && _status != ServerStatus.error)
+      return;
 
     _status = ServerStatus.starting;
     _errorMessage = null;

@@ -67,7 +67,8 @@ Future<Response> restoreHandler(
   try {
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return Response(400,
+      return Response(
+        400,
         body: jsonEncode(fhir.OperationOutcome(
           issue: [
             fhir.OperationOutcomeIssue(
@@ -85,7 +86,8 @@ Future<Response> restoreHandler(
     try {
       json = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return Response(400,
+      return Response(
+        400,
         body: jsonEncode(fhir.OperationOutcome(
           issue: [
             fhir.OperationOutcomeIssue(
@@ -101,14 +103,14 @@ Future<Response> restoreHandler(
 
     final resourceType = json['resourceType'];
     if (resourceType != 'Bundle') {
-      return Response(400,
+      return Response(
+        400,
         body: jsonEncode(fhir.OperationOutcome(
           issue: [
             fhir.OperationOutcomeIssue(
               severity: fhir.IssueSeverity.error,
               code: fhir.IssueType.invalid,
-              diagnostics:
-                  'Expected a Bundle, got: $resourceType'.toFhirString,
+              diagnostics: 'Expected a Bundle, got: $resourceType'.toFhirString,
             ),
           ],
         ).toJson()),
@@ -169,10 +171,9 @@ Future<Response> restoreHandler(
             ? fhir.IssueSeverity.warning
             : fhir.IssueSeverity.information,
         code: fhir.IssueType.informational,
-        diagnostics:
-            'Restore complete: $savedCount saved, $errorCount errors, '
+        diagnostics: 'Restore complete: $savedCount saved, $errorCount errors, '
                 '${bundleEntries.length} total entries'
-                .toFhirString,
+            .toFhirString,
       ),
     );
 

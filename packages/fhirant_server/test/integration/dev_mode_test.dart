@@ -135,13 +135,12 @@ void main() {
       expect(healthResponse.statusCode, equals(200));
 
       // Metadata
-      final metadataResponse =
-          await handler(testRequest('GET', '/metadata'));
+      final metadataResponse = await handler(testRequest('GET', '/metadata'));
       expect(metadataResponse.statusCode, equals(200));
 
       // SMART config
-      final smartResponse = await handler(
-          testRequest('GET', '/.well-known/smart-configuration'));
+      final smartResponse =
+          await handler(testRequest('GET', '/.well-known/smart-configuration'));
       expect(smartResponse.statusCode, equals(200));
     });
 

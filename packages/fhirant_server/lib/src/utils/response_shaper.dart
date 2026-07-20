@@ -3,8 +3,7 @@ import 'summary_fields.dart';
 /// Utility for shaping FHIR resource responses based on _summary and _elements parameters.
 class FhirResponseShaper {
   static const _subsettedTag = {
-    'system':
-        'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',
+    'system': 'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',
     'code': 'SUBSETTED',
     'display': 'subsetted',
   };
@@ -36,9 +35,8 @@ class FhirResponseShaper {
       case 'true':
         // Use isSummary field definitions when available
         final resourceType = json['resourceType'] as String?;
-        final summaryKeys = resourceType != null
-            ? SummaryFields.forType(resourceType)
-            : null;
+        final summaryKeys =
+            resourceType != null ? SummaryFields.forType(resourceType) : null;
 
         if (summaryKeys != null) {
           // Keep mandatory fields + isSummary fields

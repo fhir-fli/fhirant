@@ -180,8 +180,7 @@ void main() {
         name: [fhir.HumanName(family: 'WillBeGone'.toFhirString)],
       );
       await testDb.saveResource(patient);
-      await testDb.deleteResource(
-          fhir.R4ResourceType.Patient, 'test-gone-def');
+      await testDb.deleteResource(fhir.R4ResourceType.Patient, 'test-gone-def');
 
       final response = await handler(testRequest(
         'GET',
@@ -192,8 +191,7 @@ void main() {
       expect(response.statusCode, equals(410));
     });
 
-    test('GET /Patient/{id}/_history/{vid} returns specific version',
-        () async {
+    test('GET /Patient/{id}/_history/{vid} returns specific version', () async {
       final patient = fhir.Patient(
         id: 'test-vread-ghi'.toFhirString,
         name: [fhir.HumanName(family: 'Version1'.toFhirString)],

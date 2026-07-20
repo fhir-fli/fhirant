@@ -117,7 +117,8 @@ void main() {
       expect(SearchParameterParser.hasSearchParameters(queryParams), isTrue);
     });
 
-    test('hasSearchParameters returns false when only special params exist', () {
+    test('hasSearchParameters returns false when only special params exist',
+        () {
       final queryParams = {
         '_count': '10',
         '_offset': '20',

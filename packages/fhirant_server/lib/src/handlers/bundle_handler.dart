@@ -34,8 +34,7 @@ Future<Response> bundleHandler(
       return await _processBatch(bundle, dbInterface, request);
     }
   } catch (e, stackTrace) {
-    FhirantLogging()
-        .logError('Error processing Bundle request', e, stackTrace);
+    FhirantLogging().logError('Error processing Bundle request', e, stackTrace);
     return _errorResponse('Failed to process Bundle', e.toString(),
         statusCode: 400);
   }
@@ -63,8 +62,8 @@ Future<Response> _processTransaction(
     }
 
     try {
-      final operation = await _processBundleEntry(
-          entry, dbInterface, baseUrl, i, urnMap);
+      final operation =
+          await _processBundleEntry(entry, dbInterface, baseUrl, i, urnMap);
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
     } catch (e, stackTrace) {
@@ -79,8 +78,7 @@ Future<Response> _processTransaction(
         }
       }
       final txnStatus = e is BundleEntryException ? e.statusCode : 400;
-      return _errorResponse(
-          'Transaction failed at entry $i', e.toString(),
+      return _errorResponse('Transaction failed at entry $i', e.toString(),
           statusCode: txnStatus);
     }
   }
@@ -98,8 +96,8 @@ Future<Response> _processBatch(
   FhirAntDb dbInterface,
   Request request,
 ) async {
-  FhirantLogging().logInfo(
-      'Processing Batch Bundle with ${bundle.entry!.length} entries');
+  FhirantLogging()
+      .logInfo('Processing Batch Bundle with ${bundle.entry!.length} entries');
   final baseUrl =
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
@@ -126,8 +124,8 @@ Future<Response> _processBatch(
     }
 
     try {
-      final operation = await _processBundleEntry(
-          entry, dbInterface, baseUrl, i, urnMap);
+      final operation =
+          await _processBundleEntry(entry, dbInterface, baseUrl, i, urnMap);
       resultEntries.add(operation.resultEntry);
 
       // For batch, update urn map after successful POST
@@ -135,8 +133,7 @@ Future<Response> _processBatch(
           operation.createdResource != null) {
         final fullUrl = entry.fullUrl?.toString() ?? '';
         if (fullUrl.startsWith('urn:uuid:')) {
-          final resourceType =
-              operation.createdResource!.resourceTypeString;
+          final resourceType = operation.createdResource!.resourceTypeString;
           final id = operation.createdResource!.id?.toString() ?? '';
           urnMap[fullUrl] = '$resourceType/$id';
         }
@@ -159,8 +156,8 @@ Future<Response> _processBatch(
     }
   }
 
-  final resultBundle = fhir.Bundle(
-      type: fhir.BundleType.batchResponse, entry: resultEntries);
+  final resultBundle =
+      fhir.Bundle(type: fhir.BundleType.batchResponse, entry: resultEntries);
   FhirantLogging()
       .logInfo('Batch completed with ${resultEntries.length} entries');
   return Response.ok(resultBundle.toJsonString(),
@@ -313,8 +310,8 @@ Future<_BundleOperation> _processBundleEntry(
           status = '200';
           break;
         } else if (existing.length > 1) {
-          throw BundleEntryException(
-              412, 'Bundle entry $entryIndex: ifNoneExist matched multiple resources');
+          throw BundleEntryException(412,
+              'Bundle entry $entryIndex: ifNoneExist matched multiple resources');
         }
         // 0 matches → proceed with create
       }
@@ -334,8 +331,7 @@ Future<_BundleOperation> _processBundleEntry(
 
       // Re-fetch to get server-assigned meta
       final savedId = resourceToSave.id!.toString();
-      final saved =
-          await dbInterface.getResource(resourceTypeEnum, savedId);
+      final saved = await dbInterface.getResource(resourceTypeEnum, savedId);
       resultResource = saved ?? resourceToSave;
       createdResource = resultResource;
       status = '201';
@@ -343,10 +339,8 @@ Future<_BundleOperation> _processBundleEntry(
 
       // Update urn map for subsequent entries
       final fullUrl = entry.fullUrl?.toString() ?? '';
-      if (fullUrl.startsWith('urn:uuid:') &&
-          !urnMap.containsKey(fullUrl)) {
-        urnMap[fullUrl] =
-            '$resourceType/${resultResource.id}';
+      if (fullUrl.startsWith('urn:uuid:') && !urnMap.containsKey(fullUrl)) {
+        urnMap[fullUrl] = '$resourceType/${resultResource.id}';
       }
       break;
 
@@ -440,11 +434,10 @@ Future<_BundleOperation> _processBundleEntry(
         final decoded = utf8.decode(base64Decode(data));
         patchOperations = jsonDecode(decoded) as List<dynamic>;
       } else if (patchResource.resourceTypeString == 'Parameters') {
-        patchOperations =
-            convertFhirPatchToJsonPatch(patchResource.toJson());
+        patchOperations = convertFhirPatchToJsonPatch(patchResource.toJson());
       } else {
-        throw BundleEntryException(
-            400, 'Bundle entry $entryIndex: PATCH document must be Binary or Parameters');
+        throw BundleEntryException(400,
+            'Bundle entry $entryIndex: PATCH document must be Binary or Parameters');
       }
 
       final patchedJson =
@@ -507,8 +500,7 @@ Future<_BundleOperation> _processBundleEntry(
   // Build response with etag/lastModified for mutating operations
   fhir.FhirString? etag;
   fhir.FhirInstant? lastModified;
-  if (resultResource != null &&
-      method != fhir.HTTPVerb.gET) {
+  if (resultResource != null && method != fhir.HTTPVerb.gET) {
     etag = FhirHttpHeaders.etag(resultResource).toFhirString;
     lastModified = resultResource.meta?.lastUpdated;
   }
@@ -522,8 +514,7 @@ Future<_BundleOperation> _processBundleEntry(
     ),
     resource: resultResource,
     fullUrl: resultResource != null
-        ? fhir.FhirUri(
-            '$baseUrl/$resourceType/${resultResource.id}')
+        ? fhir.FhirUri('$baseUrl/$resourceType/${resultResource.id}')
         : null,
   );
 

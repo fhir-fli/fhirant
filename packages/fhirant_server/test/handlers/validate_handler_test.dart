@@ -18,8 +18,7 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['resourceType'], equals('OperationOutcome'));
-      expect((json['issue'] as List).first['diagnostics'],
-          contains('empty'));
+      expect((json['issue'] as List).first['diagnostics'], contains('empty'));
     });
 
     test('returns 400 with OperationOutcome for invalid JSON', () async {
@@ -70,7 +69,10 @@ void main() {
         'resourceType': 'Patient',
         'id': 'test-1',
         'name': [
-          {'family': 'Smith', 'given': ['John']},
+          {
+            'family': 'Smith',
+            'given': ['John']
+          },
         ],
       });
 

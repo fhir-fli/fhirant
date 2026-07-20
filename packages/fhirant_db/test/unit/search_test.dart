@@ -821,7 +821,10 @@ void main() {
         'resourceType': 'Patient',
         'id': 'pt-chain-1',
         'name': [
-          {'family': 'ChainSmith', 'given': ['Alice']}
+          {
+            'family': 'ChainSmith',
+            'given': ['Alice']
+          }
         ],
         'managingOrganization': {'reference': 'Organization/org-1'},
       }));

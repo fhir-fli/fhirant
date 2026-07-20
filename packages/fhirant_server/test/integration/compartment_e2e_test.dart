@@ -46,10 +46,12 @@ void main() {
         id: 'obs-1'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '85354-9'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '85354-9'.toFhirCode,
+            )
+          ],
         ),
         subject: fhir.Reference(reference: 'Patient/pat-1'.toFhirString),
       ));
@@ -57,10 +59,12 @@ void main() {
         id: 'obs-2'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '8480-6'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '8480-6'.toFhirCode,
+            )
+          ],
         ),
         subject: fhir.Reference(reference: 'Patient/pat-1'.toFhirString),
       ));
@@ -116,7 +120,8 @@ void main() {
       expect(entries.length, equals(5));
 
       final types = entries.map((e) => e['resource']['resourceType']).toSet();
-      expect(types, containsAll(['Patient', 'Observation', 'Condition', 'Encounter']));
+      expect(types,
+          containsAll(['Patient', 'Observation', 'Condition', 'Encounter']));
 
       // Should NOT include obs-other or pat-2
       final ids = entries.map((e) => e['resource']['id']).toSet();
@@ -198,10 +203,12 @@ void main() {
         id: 'obs-1'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '85354-9'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '85354-9'.toFhirCode,
+            )
+          ],
         ),
         subject: fhir.Reference(reference: 'Patient/pat-1'.toFhirString),
       ));
@@ -209,10 +216,12 @@ void main() {
         id: 'obs-2'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '8480-6'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '8480-6'.toFhirCode,
+            )
+          ],
         ),
         subject: fhir.Reference(reference: 'Patient/pat-1'.toFhirString),
       ));

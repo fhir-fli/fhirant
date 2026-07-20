@@ -15,7 +15,8 @@ List<Map<String, dynamic>> _parseBundle(String jsonStr) {
   final bundle = jsonDecode(jsonStr) as Map<String, dynamic>;
   final entries = bundle['entry'] as List? ?? [];
   return entries
-      .map((e) => (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
+      .map((e) =>
+          (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
       .whereType<Map<String, dynamic>>()
       .toList();
 }
@@ -161,7 +162,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           shape: BoxShape.circle,
                           color: i == _currentPage
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.outline.withValues(alpha: 0.3),
+                              : theme.colorScheme.outline
+                                  .withValues(alpha: 0.3),
                         ),
                       );
                     }),

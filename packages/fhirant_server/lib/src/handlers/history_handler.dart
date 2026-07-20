@@ -42,7 +42,10 @@ Future<Response> resourceHistoryHandler(
 
     // Get history from database (with optional _since or _at filter)
     final history = await dbInterface.getResourceHistory(
-      type, id, since: since, at: at,
+      type,
+      id,
+      since: since,
+      at: at,
     );
 
     if (history.isEmpty) {
@@ -67,39 +70,33 @@ Future<Response> resourceHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory
-          .map(
-            (resource) {
-              final versionId = resource.meta?.versionId?.toString() ?? '1';
-              final lastUpdated = resource.meta?.lastUpdated?.valueString;
-              final tags = resource.meta?.tag;
-              final isDeleted = tags != null &&
-                  tags.any((t) => t.code?.valueString == 'DELETED');
+      entry: paginatedHistory.map(
+        (resource) {
+          final versionId = resource.meta?.versionId?.toString() ?? '1';
+          final lastUpdated = resource.meta?.lastUpdated?.valueString;
+          final tags = resource.meta?.tag;
+          final isDeleted =
+              tags != null && tags.any((t) => t.code?.valueString == 'DELETED');
 
-              return fhir.BundleEntry(
-                resource: isDeleted ? null : resource,
-                fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceType/$id',
-                ),
-                request: fhir.BundleRequest(
-                  method: isDeleted
-                      ? fhir.HTTPVerb.dELETE
-                      : fhir.HTTPVerb.gET,
-                  url: fhir.FhirUri('$resourceType/$id'),
-                ),
-                response: fhir.BundleResponse(
-                  status: isDeleted
-                      ? '204'.toFhirString
-                      : '200'.toFhirString,
-                  etag: 'W/"$versionId"'.toFhirString,
-                  lastModified: lastUpdated != null
-                      ? fhir.FhirInstant.fromString(lastUpdated)
-                      : null,
-                ),
-              );
-            },
-          )
-          .toList(),
+          return fhir.BundleEntry(
+            resource: isDeleted ? null : resource,
+            fullUrl: fhir.FhirUri(
+              '$baseUrl/$resourceType/$id',
+            ),
+            request: fhir.BundleRequest(
+              method: isDeleted ? fhir.HTTPVerb.dELETE : fhir.HTTPVerb.gET,
+              url: fhir.FhirUri('$resourceType/$id'),
+            ),
+            response: fhir.BundleResponse(
+              status: isDeleted ? '204'.toFhirString : '200'.toFhirString,
+              etag: 'W/"$versionId"'.toFhirString,
+              lastModified: lastUpdated != null
+                  ? fhir.FhirInstant.fromString(lastUpdated)
+                  : null,
+            ),
+          );
+        },
+      ).toList(),
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -160,7 +157,9 @@ Future<Response> typeHistoryHandler(
 
     // Query history table directly (no more N+1 queries)
     final allHistory = await dbInterface.getTypeHistory(
-      type, since: since, at: at,
+      type,
+      since: since,
+      at: at,
     );
 
     // Apply pagination
@@ -174,35 +173,33 @@ Future<Response> typeHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory
-          .map(
-            (resource) {
-              final resourceTypeString = resource.resourceTypeString;
-              final resourceId = resource.id?.toString() ?? '';
-              final versionId = resource.meta?.versionId?.toString() ?? '1';
-              final lastUpdated = resource.meta?.lastUpdated?.valueString;
-              return fhir.BundleEntry(
-                resource: resource,
-                fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceTypeString/$resourceId',
-                ),
-                request: fhir.BundleRequest(
-                  method: fhir.HTTPVerb.gET,
-                  url: fhir.FhirUri(
-                    '$resourceTypeString/$resourceId',
-                  ),
-                ),
-                response: fhir.BundleResponse(
-                  status: '200'.toFhirString,
-                  etag: 'W/"$versionId"'.toFhirString,
-                  lastModified: lastUpdated != null
-                      ? fhir.FhirInstant.fromString(lastUpdated)
-                      : null,
-                ),
-              );
-            },
-          )
-          .toList(),
+      entry: paginatedHistory.map(
+        (resource) {
+          final resourceTypeString = resource.resourceTypeString;
+          final resourceId = resource.id?.toString() ?? '';
+          final versionId = resource.meta?.versionId?.toString() ?? '1';
+          final lastUpdated = resource.meta?.lastUpdated?.valueString;
+          return fhir.BundleEntry(
+            resource: resource,
+            fullUrl: fhir.FhirUri(
+              '$baseUrl/$resourceTypeString/$resourceId',
+            ),
+            request: fhir.BundleRequest(
+              method: fhir.HTTPVerb.gET,
+              url: fhir.FhirUri(
+                '$resourceTypeString/$resourceId',
+              ),
+            ),
+            response: fhir.BundleResponse(
+              status: '200'.toFhirString,
+              etag: 'W/"$versionId"'.toFhirString,
+              lastModified: lastUpdated != null
+                  ? fhir.FhirInstant.fromString(lastUpdated)
+                  : null,
+            ),
+          );
+        },
+      ).toList(),
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -252,7 +249,8 @@ Future<Response> systemHistoryHandler(
 
     // Query history table directly (no more N+1+1 queries)
     final allHistory = await dbInterface.getSystemHistory(
-      since: since, at: at,
+      since: since,
+      at: at,
     );
 
     // Apply pagination
@@ -266,35 +264,33 @@ Future<Response> systemHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory
-          .map(
-            (resource) {
-              final resourceTypeString = resource.resourceTypeString;
-              final resourceId = resource.id?.toString() ?? '';
-              final versionId = resource.meta?.versionId?.toString() ?? '1';
-              final lastUpdated = resource.meta?.lastUpdated?.valueString;
-              return fhir.BundleEntry(
-                resource: resource,
-                fullUrl: fhir.FhirUri(
-                  '$baseUrl/$resourceTypeString/$resourceId',
-                ),
-                request: fhir.BundleRequest(
-                  method: fhir.HTTPVerb.gET,
-                  url: fhir.FhirUri(
-                    '$resourceTypeString/$resourceId',
-                  ),
-                ),
-                response: fhir.BundleResponse(
-                  status: '200'.toFhirString,
-                  etag: 'W/"$versionId"'.toFhirString,
-                  lastModified: lastUpdated != null
-                      ? fhir.FhirInstant.fromString(lastUpdated)
-                      : null,
-                ),
-              );
-            },
-          )
-          .toList(),
+      entry: paginatedHistory.map(
+        (resource) {
+          final resourceTypeString = resource.resourceTypeString;
+          final resourceId = resource.id?.toString() ?? '';
+          final versionId = resource.meta?.versionId?.toString() ?? '1';
+          final lastUpdated = resource.meta?.lastUpdated?.valueString;
+          return fhir.BundleEntry(
+            resource: resource,
+            fullUrl: fhir.FhirUri(
+              '$baseUrl/$resourceTypeString/$resourceId',
+            ),
+            request: fhir.BundleRequest(
+              method: fhir.HTTPVerb.gET,
+              url: fhir.FhirUri(
+                '$resourceTypeString/$resourceId',
+              ),
+            ),
+            response: fhir.BundleResponse(
+              status: '200'.toFhirString,
+              etag: 'W/"$versionId"'.toFhirString,
+              lastModified: lastUpdated != null
+                  ? fhir.FhirInstant.fromString(lastUpdated)
+                  : null,
+            ),
+          );
+        },
+      ).toList(),
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -377,8 +373,8 @@ Future<Response> vreadResourceHandler(
 
     // Check if this version is a deletion tombstone
     final tags = versionedResource.meta?.tag;
-    final isDeleted = tags != null &&
-        tags.any((t) => t.code?.valueString == 'DELETED');
+    final isDeleted =
+        tags != null && tags.any((t) => t.code?.valueString == 'DELETED');
     if (isDeleted) {
       FhirantLogging().logInfo(
         'Version $vid of $resourceType/$id is a deletion tombstone (410)',

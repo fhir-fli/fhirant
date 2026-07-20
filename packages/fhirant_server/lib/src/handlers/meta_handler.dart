@@ -222,28 +222,23 @@ fhir.FhirMeta _mergeMeta(fhir.FhirMeta existing, fhir.FhirMeta toAdd) {
   ];
 
   // Merge tags (deduplicate by system+code)
-  final existingTagKeys = existing.tag
-          ?.map((t) => '${t.system}|${t.code}')
-          .toSet() ??
-      <String>{};
+  final existingTagKeys =
+      existing.tag?.map((t) => '${t.system}|${t.code}').toSet() ?? <String>{};
   final newTags = <fhir.Coding>[
     ...?existing.tag,
     ...?(toAdd.tag
-        ?.where(
-            (t) => !existingTagKeys.contains('${t.system}|${t.code}'))
+        ?.where((t) => !existingTagKeys.contains('${t.system}|${t.code}'))
         .toList()),
   ];
 
   // Merge security labels (deduplicate by system+code)
-  final existingSecKeys = existing.security
-          ?.map((s) => '${s.system}|${s.code}')
-          .toSet() ??
-      <String>{};
+  final existingSecKeys =
+      existing.security?.map((s) => '${s.system}|${s.code}').toSet() ??
+          <String>{};
   final newSecurity = <fhir.Coding>[
     ...?existing.security,
     ...?(toAdd.security
-        ?.where(
-            (s) => !existingSecKeys.contains('${s.system}|${s.code}'))
+        ?.where((s) => !existingSecKeys.contains('${s.system}|${s.code}'))
         .toList()),
   ];
 
@@ -255,8 +250,7 @@ fhir.FhirMeta _mergeMeta(fhir.FhirMeta existing, fhir.FhirMeta toAdd) {
 }
 
 /// Remove meta elements from existing meta (delete operation).
-fhir.FhirMeta _subtractMeta(
-    fhir.FhirMeta existing, fhir.FhirMeta toRemove) {
+fhir.FhirMeta _subtractMeta(fhir.FhirMeta existing, fhir.FhirMeta toRemove) {
   // Remove profiles by URI
   final removeProfiles =
       toRemove.profile?.map((p) => p.toString()).toSet() ?? <String>{};
@@ -265,19 +259,16 @@ fhir.FhirMeta _subtractMeta(
       .toList();
 
   // Remove tags by system+code
-  final removeTagKeys = toRemove.tag
-          ?.map((t) => '${t.system}|${t.code}')
-          .toSet() ??
-      <String>{};
+  final removeTagKeys =
+      toRemove.tag?.map((t) => '${t.system}|${t.code}').toSet() ?? <String>{};
   final remainingTags = existing.tag
       ?.where((t) => !removeTagKeys.contains('${t.system}|${t.code}'))
       .toList();
 
   // Remove security labels by system+code
-  final removeSecKeys = toRemove.security
-          ?.map((s) => '${s.system}|${s.code}')
-          .toSet() ??
-      <String>{};
+  final removeSecKeys =
+      toRemove.security?.map((s) => '${s.system}|${s.code}').toSet() ??
+          <String>{};
   final remainingSecurity = existing.security
       ?.where((s) => !removeSecKeys.contains('${s.system}|${s.code}'))
       .toList();
@@ -286,9 +277,7 @@ fhir.FhirMeta _subtractMeta(
     profile: remainingProfiles == null || remainingProfiles.isEmpty
         ? null
         : remainingProfiles,
-    tag: remainingTags == null || remainingTags.isEmpty
-        ? null
-        : remainingTags,
+    tag: remainingTags == null || remainingTags.isEmpty ? null : remainingTags,
     security: remainingSecurity == null || remainingSecurity.isEmpty
         ? null
         : remainingSecurity,

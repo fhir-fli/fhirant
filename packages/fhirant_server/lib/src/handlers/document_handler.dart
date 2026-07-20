@@ -205,8 +205,7 @@ fhir.BundleEntry _bundleEntry(fhir.Resource resource, String baseUrl) {
   final resId = resource.id?.toString() ?? '';
   return fhir.BundleEntry(
     resource: resource,
-    fullUrl:
-        resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
+    fullUrl: resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
   );
 }
 

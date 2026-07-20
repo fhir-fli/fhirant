@@ -69,8 +69,8 @@ Future<Response> postSystemSearchHandler(
 
     final typeNames =
         typeParam.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
-    final searchParams =
-        Map<String, String>.from(mergedParams)..remove('_type');
+    final searchParams = Map<String, String>.from(mergedParams)
+      ..remove('_type');
 
     final baseUrl = request.requestedUri.hasPort
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
@@ -87,8 +87,7 @@ Future<Response> postSystemSearchHandler(
         );
       }
 
-      final parsed =
-          SearchParameterParser.parseQueryParameters(searchParams);
+      final parsed = SearchParameterParser.parseQueryParameters(searchParams);
       final searchParameters =
           parsed['searchParams'] as Map<String, List<String>>?;
       final hasParams = parsed['has'] as List<HasParameter>?;
@@ -200,8 +199,7 @@ Future<Response> _searchResources(
     }
 
     // Prefer: handling=strict rejects unrecognized _-prefixed parameters
-    final handling =
-        FhirHttpHeaders.parsePreferHandling(request.headers);
+    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
     if (handling == 'strict' &&
         unknownParams != null &&
         unknownParams.isNotEmpty) {
@@ -265,16 +263,14 @@ Future<Response> _searchResources(
       );
       // Get the patient compartment definition
       final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
-      if (compartmentDef != null &&
-          compartmentDef.containsKey(resourceType)) {
+      if (compartmentDef != null && compartmentDef.containsKey(resourceType)) {
         final paths = compartmentDef[resourceType]!;
         if (paths.isEmpty) {
           // Focal resource (Patient) — restrict to the patient's own ID
           effectiveSearchParams['_id'] = [patientId];
         } else {
           // Non-focal resource — get IDs in the patient compartment
-          final compartmentIds =
-              await dbInterface.getCompartmentResourceIds(
+          final compartmentIds = await dbInterface.getCompartmentResourceIds(
             compartmentType: 'Patient',
             compartmentId: patientId,
             compartmentDefinition: {resourceType: paths},
@@ -362,8 +358,7 @@ Future<Response> _searchResources(
         if (offset > 0) {
           final prevParams =
               Map<String, String>.from(currentUrl.queryParameters);
-          final prevOffset =
-              (offset - count).clamp(0, double.infinity).toInt();
+          final prevOffset = (offset - count).clamp(0, double.infinity).toInt();
           prevParams['_offset'] = prevOffset.toString();
           final prevUrl = currentUrl.replace(queryParameters: prevParams);
           links.add(fhir.BundleLink(
@@ -764,8 +759,7 @@ Future<Response> postResourceHandler(
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
       headers['Location'] = '/$resourceType/${resourceWithId.id}';
 
-      final preference =
-          FhirHttpHeaders.parsePreferReturn(request.headers);
+      final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
       return FhirHttpHeaders.preferredResponse(
         statusCode: 201,
         resource: responseResource,
@@ -833,14 +827,12 @@ Future<Response> putResourceHandler(
     if (updatePatientId != null) {
       if (!await isInPatientCompartment(
           resourceType, id, updatePatientId, dbInterface)) {
-        return patientScopeForbiddenResponse(
-            resourceType, id, updatePatientId);
+        return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
     }
 
     // Conditional update: If-Match header
-    final ifMatch =
-        FhirHttpHeaders.parseETag(request.headers['if-match']);
+    final ifMatch = FhirHttpHeaders.parseETag(request.headers['if-match']);
     if (ifMatch != null) {
       final type = fhir.R4ResourceType.fromString(resourceType);
       if (type == null) {
@@ -873,9 +865,8 @@ Future<Response> putResourceHandler(
               fhir.OperationOutcomeIssue(
                 severity: fhir.IssueSeverity.error,
                 code: fhir.IssueType.conflict,
-                diagnostics:
-                    'Version mismatch (If-Match precondition failed)'
-                        .toFhirString,
+                diagnostics: 'Version mismatch (If-Match precondition failed)'
+                    .toFhirString,
               ),
             ],
           ).toJsonString(),
@@ -893,9 +884,8 @@ Future<Response> putResourceHandler(
     final success = await dbInterface.saveResource(updatedResource);
     if (success) {
       // Re-fetch to get server-assigned version/lastUpdated
-      final savedResource = type != null
-          ? await dbInterface.getResource(type, id)
-          : null;
+      final savedResource =
+          type != null ? await dbInterface.getResource(type, id) : null;
       final responseResource = savedResource ?? updatedResource;
 
       FhirantLogging().logInfo(
@@ -903,8 +893,7 @@ Future<Response> putResourceHandler(
         '${isCreate ? "created" : "updated"} successfully with ID: $id',
       );
 
-      final preference =
-          FhirHttpHeaders.parsePreferReturn(request.headers);
+      final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
       return FhirHttpHeaders.preferredResponse(
         statusCode: isCreate ? 201 : 200,
         resource: responseResource,
@@ -953,8 +942,7 @@ Future<Response> getResourceByIdHandler(
       if (readPatientId != null) {
         if (!await isInPatientCompartment(
             resourceType, id, readPatientId, dbInterface)) {
-          return patientScopeForbiddenResponse(
-              resourceType, id, readPatientId);
+          return patientScopeForbiddenResponse(resourceType, id, readPatientId);
         }
       }
 
@@ -1042,8 +1030,7 @@ Future<Response> getResourceByIdHandler(
                 severity: fhir.IssueSeverity.error,
                 code: fhir.IssueType.deleted,
                 diagnostics:
-                    'Resource $resourceType/$id has been deleted'
-                        .toFhirString,
+                    'Resource $resourceType/$id has been deleted'.toFhirString,
               ),
             ],
           ).toJsonString(),
@@ -1148,14 +1135,12 @@ Future<Response> deleteResourceHandler(
     if (deletePatientId != null) {
       if (!await isInPatientCompartment(
           resourceType, id, deletePatientId, dbInterface)) {
-        return patientScopeForbiddenResponse(
-            resourceType, id, deletePatientId);
+        return patientScopeForbiddenResponse(resourceType, id, deletePatientId);
       }
     }
 
     // Conditional delete: If-Match header
-    final ifMatch =
-        FhirHttpHeaders.parseETag(request.headers['if-match']);
+    final ifMatch = FhirHttpHeaders.parseETag(request.headers['if-match']);
     if (ifMatch != null) {
       final currentVersion = resource.meta?.versionId?.valueString;
       if (currentVersion != ifMatch) {
@@ -1166,9 +1151,8 @@ Future<Response> deleteResourceHandler(
               fhir.OperationOutcomeIssue(
                 severity: fhir.IssueSeverity.error,
                 code: fhir.IssueType.conflict,
-                diagnostics:
-                    'Version mismatch (If-Match precondition failed)'
-                        .toFhirString,
+                diagnostics: 'Version mismatch (If-Match precondition failed)'
+                    .toFhirString,
               ),
             ],
           ).toJsonString(),
@@ -1284,7 +1268,7 @@ List<Map<String, String?>> _extractReferences(
   String? searchParam,
 ) {
   final references = <Map<String, String?>>[];
-  
+
   // If searchParam is specified, look for that specific field
   if (searchParam != null) {
     final value = _getNestedValueFromJson(resourceJson, searchParam);
@@ -1307,7 +1291,7 @@ List<Map<String, String?>> _extractReferences(
     // Extract all references from the resource
     _extractAllReferences(resourceJson, references);
   }
-  
+
   return references;
 }
 
@@ -1325,7 +1309,8 @@ Map<String, String?>? _parseReference(String referenceStr) {
   return null;
 }
 
-void _extractAllReferences(Map<String, dynamic> json, List<Map<String, String?>> references) {
+void _extractAllReferences(
+    Map<String, dynamic> json, List<Map<String, String?>> references) {
   for (final value in json.values) {
     if (value is Map) {
       if (value['reference'] != null) {
@@ -1370,7 +1355,7 @@ Response _emptySearchBundle(Request request, String? total) {
 dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {
   final parts = path.split('.');
   dynamic current = json;
-  
+
   for (final part in parts) {
     if (current is Map<String, dynamic>) {
       current = current[part];
@@ -1385,7 +1370,6 @@ dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {
       return null;
     }
   }
-  
+
   return current;
 }
-

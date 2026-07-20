@@ -82,8 +82,7 @@ class RequestLogCard extends StatelessWidget {
   }
 
   Widget _buildLogEntry(BuildContext context, RequestLogEntry entry) {
-    final time =
-        '${entry.timestamp.hour.toString().padLeft(2, '0')}:'
+    final time = '${entry.timestamp.hour.toString().padLeft(2, '0')}:'
         '${entry.timestamp.minute.toString().padLeft(2, '0')}:'
         '${entry.timestamp.second.toString().padLeft(2, '0')}';
 

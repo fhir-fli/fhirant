@@ -51,8 +51,7 @@ class _FhirantStartupState extends State<FhirantStartup> {
         androidNotificationOptions: AndroidNotificationOptions(
           channelId: 'fhirant_server',
           channelName: 'FHIR ANT Server',
-          channelDescription:
-              'Keeps the FHIR server running in the background',
+          channelDescription: 'Keeps the FHIR server running in the background',
           channelImportance: NotificationChannelImportance.LOW,
           priority: NotificationPriority.LOW,
         ),

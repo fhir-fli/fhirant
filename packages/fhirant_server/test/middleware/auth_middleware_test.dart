@@ -40,8 +40,8 @@ void main() {
       final handler = _createHandler();
 
       // Root
-      var response = await handler(
-          Request('GET', Uri.parse('http://localhost:8080/')));
+      var response =
+          await handler(Request('GET', Uri.parse('http://localhost:8080/')));
       expect(response.statusCode, equals(200));
 
       // Metadata

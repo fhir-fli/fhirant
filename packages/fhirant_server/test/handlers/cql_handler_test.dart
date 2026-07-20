@@ -69,7 +69,8 @@ void main() {
     });
 
     test('evaluates simple CQL literal', () async {
-      final cql = "library TestLib version '1.0.0'\ndefine Greeting: 'Hello, CQL!'";
+      final cql =
+          "library TestLib version '1.0.0'\ndefine Greeting: 'Hello, CQL!'";
       final response = await cqlHandler(
         _postJson('/\$cql', {'cql': cql}),
         mockDb,
@@ -169,7 +170,10 @@ void main() {
               'resourceType': 'Patient',
               'id': 'test-123',
               'name': [
-                {'family': 'Smith', 'given': ['John']}
+                {
+                  'family': 'Smith',
+                  'given': ['John']
+                }
               ],
             }
           }
@@ -284,7 +288,8 @@ void main() {
     }
 
     test('evaluates a stored Library with CQL content', () async {
-      final cql = "library MyLib version '1.0.0'\ndefine Greeting: 'Hello from Library!'";
+      final cql =
+          "library MyLib version '1.0.0'\ndefine Greeting: 'Hello from Library!'";
       final library = _makeLibrary('lib-1', cql);
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Library, 'lib-1'))
@@ -322,8 +327,7 @@ void main() {
         body: '',
       );
 
-      final response =
-          await libraryEvaluateHandler(request, 'lib-elm', mockDb);
+      final response = await libraryEvaluateHandler(request, 'lib-elm', mockDb);
       expect(response.statusCode, 200);
 
       final body = jsonDecode(await response.readAsString());
@@ -342,8 +346,7 @@ void main() {
         body: '',
       );
 
-      final response =
-          await libraryEvaluateHandler(request, 'missing', mockDb);
+      final response = await libraryEvaluateHandler(request, 'missing', mockDb);
       expect(response.statusCode, 404);
       final body = jsonDecode(await response.readAsString());
       expect(body['issue'][0]['diagnostics'], contains('Library/missing'));
@@ -369,8 +372,7 @@ void main() {
         body: '',
       );
 
-      final response =
-          await libraryEvaluateHandler(request, 'empty', mockDb);
+      final response = await libraryEvaluateHandler(request, 'empty', mockDb);
       expect(response.statusCode, 422);
       final body = jsonDecode(await response.readAsString());
       expect(body['issue'][0]['diagnostics'], contains('no evaluable content'));
@@ -437,7 +439,9 @@ void main() {
 
       when(() => mockDb.search(
             resourceType: fhir.R4ResourceType.Library,
-            searchParameters: {'url': ['http://example.org/Library/ByUrl']},
+            searchParameters: {
+              'url': ['http://example.org/Library/ByUrl']
+            },
             hasParameters: any(named: 'hasParameters'),
             count: any(named: 'count'),
             offset: any(named: 'offset'),

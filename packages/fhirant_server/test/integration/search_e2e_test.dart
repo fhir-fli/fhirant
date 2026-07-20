@@ -344,15 +344,14 @@ void main() {
       final entries = body['entry'] as List;
       expect(entries, hasLength(2));
 
-      final patientEntry = entries.firstWhere(
-          (e) => e['resource']['resourceType'] == 'Patient');
-      final orgEntry = entries.firstWhere(
-          (e) => e['resource']['resourceType'] == 'Organization');
+      final patientEntry =
+          entries.firstWhere((e) => e['resource']['resourceType'] == 'Patient');
+      final orgEntry = entries
+          .firstWhere((e) => e['resource']['resourceType'] == 'Organization');
       expect(patientEntry['search']['mode'], equals('match'));
       expect(orgEntry['search']['mode'], equals('include'));
       // fullUrl uses correct resource type
-      expect(
-          patientEntry['fullUrl'] as String, contains('Patient/mode-pat-1'));
+      expect(patientEntry['fullUrl'] as String, contains('Patient/mode-pat-1'));
       expect(
           orgEntry['fullUrl'] as String, contains('Organization/mode-org-1'));
     });
@@ -389,10 +388,10 @@ void main() {
       final entries = body['entry'] as List;
       expect(entries, hasLength(2));
 
-      final patientEntry = entries.firstWhere(
-          (e) => e['resource']['resourceType'] == 'Patient');
-      final obsEntry = entries.firstWhere(
-          (e) => e['resource']['resourceType'] == 'Observation');
+      final patientEntry =
+          entries.firstWhere((e) => e['resource']['resourceType'] == 'Patient');
+      final obsEntry = entries
+          .firstWhere((e) => e['resource']['resourceType'] == 'Observation');
       expect(patientEntry['search']['mode'], equals('match'));
       expect(obsEntry['search']['mode'], equals('include'));
     });
@@ -432,8 +431,7 @@ void main() {
       // Patient + child org (_include) + parent org (_include:iterate)
       expect(entries, hasLength(3));
 
-      final ids =
-          entries.map((e) => e['resource']['id'] as String).toSet();
+      final ids = entries.map((e) => e['resource']['id'] as String).toSet();
       expect(ids,
           containsAll(['iter-pat-1', 'iter-child-org', 'iter-parent-org']));
     });
@@ -521,9 +519,8 @@ void main() {
       final entries = body['entry'] as List;
       // Patient + Organization + Practitioner
       expect(entries, hasLength(3));
-      final types = entries
-          .map((e) => e['resource']['resourceType'] as String)
-          .toSet();
+      final types =
+          entries.map((e) => e['resource']['resourceType'] as String).toSet();
       expect(types, containsAll(['Patient', 'Organization', 'Practitioner']));
     });
   });

@@ -36,8 +36,7 @@ void main() {
     }
 
     test('returns 400 for unsupported grant_type', () async {
-      final request =
-          _makeRequest({'grant_type': 'client_credentials'});
+      final request = _makeRequest({'grant_type': 'client_credentials'});
 
       final response = await refreshHandler(request, mockDb, jwtService);
       expect(response.statusCode, 400);
@@ -122,8 +121,7 @@ void main() {
       expect(body['role'], 'admin');
 
       // Verify the new access token is valid
-      final newPayload =
-          jwtService.verifyToken(body['access_token'] as String);
+      final newPayload = jwtService.verifyToken(body['access_token'] as String);
       expect(newPayload, isNotNull);
       expect(newPayload!['username'], 'testuser');
 
@@ -208,8 +206,7 @@ void main() {
       expect(body['patient'], 'pat-123');
 
       // Verify the new access token has patient claim
-      final newPayload =
-          jwtService.verifyToken(body['access_token'] as String);
+      final newPayload = jwtService.verifyToken(body['access_token'] as String);
       expect(newPayload!['patient'], 'pat-123');
     });
 
@@ -538,8 +535,7 @@ void main() {
       expect(body['username'], 'testuser');
 
       // Verify the access token is valid
-      final payload =
-          jwtService.verifyToken(body['access_token'] as String);
+      final payload = jwtService.verifyToken(body['access_token'] as String);
       expect(payload, isNotNull);
       expect(payload!['username'], 'testuser');
     });

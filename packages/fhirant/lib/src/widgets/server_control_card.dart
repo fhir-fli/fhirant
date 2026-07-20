@@ -117,7 +117,8 @@ class _ServerControlCardState extends State<ServerControlCard> {
                                 state.startServer();
                               }
                             },
-                      icon: Icon(state.isRunning ? Icons.stop : Icons.play_arrow),
+                      icon:
+                          Icon(state.isRunning ? Icons.stop : Icons.play_arrow),
                       label: Text(state.isRunning ? 'Stop' : 'Start'),
                     ),
                   ],

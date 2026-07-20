@@ -22,8 +22,8 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
-      when(() => mockRequest.requestedUri)
-          .thenReturn(Uri.parse('http://localhost:8080/Composition/comp1/\$document'));
+      when(() => mockRequest.requestedUri).thenReturn(
+          Uri.parse('http://localhost:8080/Composition/comp1/\$document'));
     });
 
     test('returns 404 when Composition not found', () async {

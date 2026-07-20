@@ -32,9 +32,8 @@ Response metadataHandler(Request request) {
       rest: [
         CapabilityStatementRest(
           mode: RestfulCapabilityMode.server,
-          documentation:
-              'FHIR RESTful API with SMART on FHIR authentication.'
-                  .toFhirMarkdown,
+          documentation: 'FHIR RESTful API with SMART on FHIR authentication.'
+              .toFhirMarkdown,
           security: CapabilityStatementSecurity(
             cors: FhirBoolean(true),
             service: [
@@ -244,8 +243,7 @@ Response metadataHandler(Request request) {
                 ),
             ];
 
-            final includeList =
-                SearchParamDefinitions.searchInclude[type];
+            final includeList = SearchParamDefinitions.searchInclude[type];
             final revIncludeList =
                 SearchParamDefinitions.searchRevInclude[type];
 
@@ -289,12 +287,9 @@ Response metadataHandler(Request request) {
               conditionalDelete: ConditionalDeleteStatus.multiple,
               searchParam: allParams,
               operation: operations,
-              searchInclude: includeList
-                  ?.map((s) => s.toFhirString)
-                  .toList(),
-              searchRevInclude: revIncludeList
-                  ?.map((s) => s.toFhirString)
-                  .toList(),
+              searchInclude: includeList?.map((s) => s.toFhirString).toList(),
+              searchRevInclude:
+                  revIncludeList?.map((s) => s.toFhirString).toList(),
             );
           }).toList(),
         ),

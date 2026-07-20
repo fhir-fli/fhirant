@@ -130,18 +130,17 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
             ],
           ),
           // On narrow screens, show back-to-types button
-          floatingActionButton:
-              MediaQuery.of(context).size.width < 600 &&
-                      _selectedType != null &&
-                      !showingRef
-                  ? FloatingActionButton.small(
-                      onPressed: () => setState(() {
-                        _selectedType = null;
-                        _resources = null;
-                      }),
-                      child: const Icon(Icons.list),
-                    )
-                  : null,
+          floatingActionButton: MediaQuery.of(context).size.width < 600 &&
+                  _selectedType != null &&
+                  !showingRef
+              ? FloatingActionButton.small(
+                  onPressed: () => setState(() {
+                    _selectedType = null;
+                    _resources = null;
+                  }),
+                  child: const Icon(Icons.list),
+                )
+              : null,
         );
       },
     );
@@ -176,8 +175,10 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
             ),
           ),
           selected: selected,
-          selectedTileColor:
-              Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+          selectedTileColor: Theme.of(context)
+              .colorScheme
+              .primaryContainer
+              .withValues(alpha: 0.3),
           onTap: () => _onTypeSelected(type),
         );
       },
@@ -389,8 +390,7 @@ class _ResourceTileState extends State<_ResourceTile> {
       final yaml = _jsonToYaml(json, 0);
       return _buildRichText(yaml, theme);
     } else {
-      final jsonStr =
-          const JsonEncoder.withIndent('  ').convert(json);
+      final jsonStr = const JsonEncoder.withIndent('  ').convert(json);
       return _buildRichText(jsonStr, theme);
     }
   }
@@ -417,8 +417,7 @@ class _ResourceTileState extends State<_ResourceTile> {
     );
   }
 
-  void _addLineSpans(
-      String line, List<InlineSpan> spans, ThemeData theme) {
+  void _addLineSpans(String line, List<InlineSpan> spans, ThemeData theme) {
     // Match URLs and FHIR references (ResourceType/id patterns)
     final urlRegex = RegExp(r'https?://[^\s",}\]]+');
     // Match "SomeType/some-id" patterns — validated against R4ResourceType
@@ -434,10 +433,10 @@ class _ResourceTileState extends State<_ResourceTile> {
       final ref = match.group(1)!;
       final typeName = ref.split('/').first;
       // Only treat as a reference if the type is a valid FHIR resource type
-      final isValidType = R4ResourceType.values.any((t) => t.toString() == typeName);
+      final isValidType =
+          R4ResourceType.values.any((t) => t.toString() == typeName);
       if (isValidType) {
-        allMatches
-            .add(_LinkMatch(match.start + 1, match.end - 1, ref));
+        allMatches.add(_LinkMatch(match.start + 1, match.end - 1, ref));
       }
     }
 

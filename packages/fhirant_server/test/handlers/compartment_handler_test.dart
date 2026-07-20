@@ -95,8 +95,8 @@ void main() {
 
     test('returns Bundle with just focal resource when no linked resources',
         () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/\$everything'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/\$everything'));
       when(() => mockRequest.requestedUri).thenReturn(
           Uri.parse('http://localhost:8080/Patient/pat-1/\$everything'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
@@ -126,8 +126,8 @@ void main() {
     });
 
     test('returns Bundle with focal + linked resources', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/\$everything'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/\$everything'));
       when(() => mockRequest.requestedUri).thenReturn(
           Uri.parse('http://localhost:8080/Patient/pat-1/\$everything'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
@@ -157,8 +157,9 @@ void main() {
       final body = jsonDecode(await response.readAsString());
       expect(body['total'], equals(3));
       expect(body['entry'], hasLength(3));
-      final types =
-          (body['entry'] as List).map((e) => e['resource']['resourceType']).toList();
+      final types = (body['entry'] as List)
+          .map((e) => e['resource']['resourceType'])
+          .toList();
       expect(types, contains('Patient'));
       expect(types.where((t) => t == 'Observation').length, equals(2));
     });
@@ -166,8 +167,8 @@ void main() {
     test('_type filter limits resource types returned', () async {
       when(() => mockRequest.url).thenReturn(
           Uri.parse('Patient/pat-1/\$everything?_type=Observation'));
-      when(() => mockRequest.requestedUri).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-1/\$everything?_type=Observation'));
+      when(() => mockRequest.requestedUri).thenReturn(Uri.parse(
+          'http://localhost:8080/Patient/pat-1/\$everything?_type=Observation'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
           .thenAnswer((_) async => testPatient);
       when(() => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-1'))
@@ -198,8 +199,8 @@ void main() {
     test('_since filter passes through to DB query', () async {
       when(() => mockRequest.url).thenReturn(
           Uri.parse('Patient/pat-1/\$everything?_since=2024-01-02'));
-      when(() => mockRequest.requestedUri).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-1/\$everything?_since=2024-01-02'));
+      when(() => mockRequest.requestedUri).thenReturn(Uri.parse(
+          'http://localhost:8080/Patient/pat-1/\$everything?_since=2024-01-02'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
           .thenAnswer((_) async => testPatient);
       when(() => mockDb.getCompartmentResourceIds(
@@ -228,10 +229,10 @@ void main() {
     });
 
     test('_count pagination limits results', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/\$everything?_count=1'));
-      when(() => mockRequest.requestedUri).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-1/\$everything?_count=1'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/\$everything?_count=1'));
+      when(() => mockRequest.requestedUri).thenReturn(Uri.parse(
+          'http://localhost:8080/Patient/pat-1/\$everything?_count=1'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
           .thenAnswer((_) async => testPatient);
       when(() => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-1'))
@@ -263,8 +264,8 @@ void main() {
     });
 
     test('Encounter \$everything works', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Encounter/enc-1/\$everything'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Encounter/enc-1/\$everything'));
       when(() => mockRequest.requestedUri).thenReturn(
           Uri.parse('http://localhost:8080/Encounter/enc-1/\$everything'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Encounter, 'enc-1'))
@@ -287,8 +288,7 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString());
       expect(body['total'], equals(1));
-      expect(
-          body['entry'][0]['resource']['resourceType'], equals('Encounter'));
+      expect(body['entry'][0]['resource']['resourceType'], equals('Encounter'));
     });
   });
 
@@ -359,8 +359,8 @@ void main() {
     });
 
     test('returns filtered resources for compartment type', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/Observation'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/Observation'));
       when(() => mockRequest.requestedUri).thenReturn(
           Uri.parse('http://localhost:8080/Patient/pat-1/Observation'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
@@ -395,10 +395,10 @@ void main() {
     });
 
     test('combines compartment with additional search params', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/Observation?code=85354-9'));
-      when(() => mockRequest.requestedUri).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-1/Observation?code=85354-9'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/Observation?code=85354-9'));
+      when(() => mockRequest.requestedUri).thenReturn(Uri.parse(
+          'http://localhost:8080/Patient/pat-1/Observation?code=85354-9'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
           .thenAnswer((_) async => testPatient);
       when(() => mockDb.getCompartmentResourceIds(
@@ -447,8 +447,8 @@ void main() {
     });
 
     test('returns empty Bundle when no compartment resources found', () async {
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('Patient/pat-1/Condition'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('Patient/pat-1/Condition'));
       when(() => mockRequest.requestedUri).thenReturn(
           Uri.parse('http://localhost:8080/Patient/pat-1/Condition'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))

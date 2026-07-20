@@ -135,8 +135,7 @@ void main() {
       expect(deleted, isTrue);
 
       // Verify it's gone
-      final after =
-          await db.getResource(fhir.R4ResourceType.Patient, 'test-4');
+      final after = await db.getResource(fhir.R4ResourceType.Patient, 'test-4');
       expect(after, isNull);
     });
 
@@ -179,8 +178,7 @@ void main() {
 
       // Verify all were saved using the known IDs
       for (final id in ['batch-1', 'batch-2', 'batch-3']) {
-        final retrieved =
-            await db.getResource(fhir.R4ResourceType.Patient, id);
+        final retrieved = await db.getResource(fhir.R4ResourceType.Patient, id);
         expect(retrieved, isNotNull);
       }
     });
@@ -234,8 +232,7 @@ void main() {
 
     test('getResourceCount returns correct count', () async {
       // Initially should be 0
-      expect(
-          await db.getResourceCount(fhir.R4ResourceType.Patient), equals(0));
+      expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(0));
 
       // Add some resources
       for (int i = 0; i < 5; i++) {
@@ -248,8 +245,7 @@ void main() {
         }));
       }
 
-      expect(
-          await db.getResourceCount(fhir.R4ResourceType.Patient), equals(5));
+      expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(5));
     });
 
     test('getResourcesByType returns all resources of a type', () async {
@@ -279,11 +275,9 @@ void main() {
         ],
       }));
 
-      final patients =
-          await db.getResourcesByType(fhir.R4ResourceType.Patient);
+      final patients = await db.getResourcesByType(fhir.R4ResourceType.Patient);
       expect(patients.length, equals(2));
-      expect(
-          patients.every((r) => r.resourceTypeString == 'Patient'), isTrue);
+      expect(patients.every((r) => r.resourceTypeString == 'Patient'), isTrue);
     });
   });
 
@@ -361,16 +355,16 @@ void main() {
 
       // Verify resources exist
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(2));
-      expect(
-          await db.getResourceCount(fhir.R4ResourceType.Observation), equals(1));
+      expect(await db.getResourceCount(fhir.R4ResourceType.Observation),
+          equals(1));
 
       // Clear the database
       await db.clear();
 
       // Verify all resources are gone
       expect(await db.getResourceCount(fhir.R4ResourceType.Patient), equals(0));
-      expect(
-          await db.getResourceCount(fhir.R4ResourceType.Observation), equals(0));
+      expect(await db.getResourceCount(fhir.R4ResourceType.Observation),
+          equals(0));
     });
 
     test('clear does not throw and resources are gone', () async {

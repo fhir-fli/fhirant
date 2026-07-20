@@ -63,8 +63,9 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
       // Batch save in chunks to avoid memory pressure
       const chunkSize = 100;
       for (var i = 0; i < resources.length; i += chunkSize) {
-        final end =
-            (i + chunkSize > resources.length) ? resources.length : i + chunkSize;
+        final end = (i + chunkSize > resources.length)
+            ? resources.length
+            : i + chunkSize;
         final chunk = resources.sublist(i, end);
         await db.saveResources(chunk);
       }

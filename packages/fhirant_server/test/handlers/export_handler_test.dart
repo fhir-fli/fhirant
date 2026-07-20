@@ -18,7 +18,8 @@ void main() {
 
   setUp(() async {
     mockDb = MockFhirAntDb();
-    exportDir = '${Directory.systemTemp.path}/fhirant_export_test_${DateTime.now().millisecondsSinceEpoch}';
+    exportDir =
+        '${Directory.systemTemp.path}/fhirant_export_test_${DateTime.now().millisecondsSinceEpoch}';
   });
 
   tearDown(() async {
@@ -30,18 +31,18 @@ void main() {
 
   void _stubCreateExportJob() {
     when(() => mockDb.createExportJob(
-      jobId: any(named: 'jobId'),
-      status: any(named: 'status'),
-      requestUrl: any(named: 'requestUrl'),
-      transactionTime: any(named: 'transactionTime'),
-      resourceTypes: any(named: 'resourceTypes'),
-      since: any(named: 'since'),
-      exportLevel: any(named: 'exportLevel'),
-      patientId: any(named: 'patientId'),
-      groupId: any(named: 'groupId'),
-      typeFilters: any(named: 'typeFilters'),
-      requestedBy: any(named: 'requestedBy'),
-    )).thenAnswer((_) async {});
+          jobId: any(named: 'jobId'),
+          status: any(named: 'status'),
+          requestUrl: any(named: 'requestUrl'),
+          transactionTime: any(named: 'transactionTime'),
+          resourceTypes: any(named: 'resourceTypes'),
+          since: any(named: 'since'),
+          exportLevel: any(named: 'exportLevel'),
+          patientId: any(named: 'patientId'),
+          groupId: any(named: 'groupId'),
+          typeFilters: any(named: 'typeFilters'),
+          requestedBy: any(named: 'requestedBy'),
+        )).thenAnswer((_) async {});
   }
 
   Request _makeRequest(
@@ -195,18 +196,18 @@ void main() {
 
       String? capturedTypeFilters;
       when(() => mockDb.createExportJob(
-        jobId: any(named: 'jobId'),
-        status: any(named: 'status'),
-        requestUrl: any(named: 'requestUrl'),
-        transactionTime: any(named: 'transactionTime'),
-        resourceTypes: any(named: 'resourceTypes'),
-        since: any(named: 'since'),
-        exportLevel: any(named: 'exportLevel'),
-        patientId: any(named: 'patientId'),
-        groupId: any(named: 'groupId'),
-        typeFilters: any(named: 'typeFilters'),
-        requestedBy: any(named: 'requestedBy'),
-      )).thenAnswer((inv) async {
+            jobId: any(named: 'jobId'),
+            status: any(named: 'status'),
+            requestUrl: any(named: 'requestUrl'),
+            transactionTime: any(named: 'transactionTime'),
+            resourceTypes: any(named: 'resourceTypes'),
+            since: any(named: 'since'),
+            exportLevel: any(named: 'exportLevel'),
+            patientId: any(named: 'patientId'),
+            groupId: any(named: 'groupId'),
+            typeFilters: any(named: 'typeFilters'),
+            requestedBy: any(named: 'requestedBy'),
+          )).thenAnswer((inv) async {
         capturedTypeFilters = inv.namedArguments[#typeFilters] as String?;
       });
       when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
@@ -253,18 +254,18 @@ void main() {
 
       String? capturedResourceTypes;
       when(() => mockDb.createExportJob(
-        jobId: any(named: 'jobId'),
-        status: any(named: 'status'),
-        requestUrl: any(named: 'requestUrl'),
-        transactionTime: any(named: 'transactionTime'),
-        resourceTypes: any(named: 'resourceTypes'),
-        since: any(named: 'since'),
-        exportLevel: any(named: 'exportLevel'),
-        patientId: any(named: 'patientId'),
-        groupId: any(named: 'groupId'),
-        typeFilters: any(named: 'typeFilters'),
-        requestedBy: any(named: 'requestedBy'),
-      )).thenAnswer((inv) async {
+            jobId: any(named: 'jobId'),
+            status: any(named: 'status'),
+            requestUrl: any(named: 'requestUrl'),
+            transactionTime: any(named: 'transactionTime'),
+            resourceTypes: any(named: 'resourceTypes'),
+            since: any(named: 'since'),
+            exportLevel: any(named: 'exportLevel'),
+            patientId: any(named: 'patientId'),
+            groupId: any(named: 'groupId'),
+            typeFilters: any(named: 'typeFilters'),
+            requestedBy: any(named: 'requestedBy'),
+          )).thenAnswer((inv) async {
         capturedResourceTypes = inv.namedArguments[#resourceTypes] as String?;
       });
       when(() => mockDb.updateExportJob(any(), status: any(named: 'status')))
@@ -366,18 +367,18 @@ void main() {
       when(() => mockDb.getResource(fhir.R4ResourceType.FhirGroup, 'g1'))
           .thenAnswer((_) async => group);
       when(() => mockDb.createExportJob(
-        jobId: any(named: 'jobId'),
-        status: any(named: 'status'),
-        requestUrl: any(named: 'requestUrl'),
-        transactionTime: any(named: 'transactionTime'),
-        resourceTypes: any(named: 'resourceTypes'),
-        since: any(named: 'since'),
-        exportLevel: any(named: 'exportLevel'),
-        patientId: any(named: 'patientId'),
-        groupId: any(named: 'groupId'),
-        typeFilters: any(named: 'typeFilters'),
-        requestedBy: any(named: 'requestedBy'),
-      )).thenAnswer((inv) async {
+            jobId: any(named: 'jobId'),
+            status: any(named: 'status'),
+            requestUrl: any(named: 'requestUrl'),
+            transactionTime: any(named: 'transactionTime'),
+            resourceTypes: any(named: 'resourceTypes'),
+            since: any(named: 'since'),
+            exportLevel: any(named: 'exportLevel'),
+            patientId: any(named: 'patientId'),
+            groupId: any(named: 'groupId'),
+            typeFilters: any(named: 'typeFilters'),
+            requestedBy: any(named: 'requestedBy'),
+          )).thenAnswer((inv) async {
         capturedGroupId = inv.namedArguments[#groupId] as String?;
         capturedExportLevel = inv.namedArguments[#exportLevel] as String?;
       });
@@ -415,8 +416,8 @@ void main() {
 
     test('returns 202 when job is pending', () async {
       final request = _makeRequest('/\$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(jobId: 'job-1', status: 'pending'));
+      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+          (_) async => _fakeExportJob(jobId: 'job-1', status: 'pending'));
 
       final response = await exportStatusHandler(request, mockDb, 'job-1');
 
@@ -426,8 +427,8 @@ void main() {
 
     test('returns 202 when job is in_progress', () async {
       final request = _makeRequest('/\$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(jobId: 'job-1', status: 'in_progress'));
+      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+          (_) async => _fakeExportJob(jobId: 'job-1', status: 'in_progress'));
 
       final response = await exportStatusHandler(request, mockDb, 'job-1');
 
@@ -444,13 +445,13 @@ void main() {
           'count': 5,
         },
       ]);
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(
-            jobId: 'job-1',
-            status: 'completed',
-            outputJson: outputJson,
-            completedAt: DateTime.now(),
-          ));
+      when(() => mockDb.getExportJob('job-1'))
+          .thenAnswer((_) async => _fakeExportJob(
+                jobId: 'job-1',
+                status: 'completed',
+                outputJson: outputJson,
+                completedAt: DateTime.now(),
+              ));
 
       final response = await exportStatusHandler(request, mockDb, 'job-1');
 
@@ -466,19 +467,23 @@ void main() {
 
     test('returns 500 when job has error', () async {
       final request = _makeRequest('/\$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(
-            jobId: 'job-1',
-            status: 'error',
-            errorJson: jsonEncode([
-              {
-                'resourceType': 'OperationOutcome',
-                'issue': [
-                  {'severity': 'error', 'code': 'exception', 'diagnostics': 'Something went wrong'},
-                ],
-              },
-            ]),
-          ));
+      when(() => mockDb.getExportJob('job-1'))
+          .thenAnswer((_) async => _fakeExportJob(
+                jobId: 'job-1',
+                status: 'error',
+                errorJson: jsonEncode([
+                  {
+                    'resourceType': 'OperationOutcome',
+                    'issue': [
+                      {
+                        'severity': 'error',
+                        'code': 'exception',
+                        'diagnostics': 'Something went wrong'
+                      },
+                    ],
+                  },
+                ]),
+              ));
 
       final response = await exportStatusHandler(request, mockDb, 'job-1');
 
@@ -490,8 +495,8 @@ void main() {
 
     test('returns 404 for cancelled job', () async {
       final request = _makeRequest('/\$export-poll-status/job-1');
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(jobId: 'job-1', status: 'cancelled'));
+      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+          (_) async => _fakeExportJob(jobId: 'job-1', status: 'cancelled'));
 
       final response = await exportStatusHandler(request, mockDb, 'job-1');
 
@@ -581,8 +586,8 @@ void main() {
         '/\$export-poll-status/job-1',
         method: 'DELETE',
       );
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(jobId: 'job-1', status: 'in_progress'));
+      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+          (_) async => _fakeExportJob(jobId: 'job-1', status: 'in_progress'));
       when(() => mockDb.updateExportJob('job-1', status: 'cancelled'))
           .thenAnswer((_) async {});
       when(() => mockDb.deleteExportJob('job-1')).thenAnswer((_) async {});
@@ -606,8 +611,8 @@ void main() {
         '/\$export-poll-status/job-1',
         method: 'DELETE',
       );
-      when(() => mockDb.getExportJob('job-1')).thenAnswer((_) async =>
-          _fakeExportJob(jobId: 'job-1', status: 'completed'));
+      when(() => mockDb.getExportJob('job-1')).thenAnswer(
+          (_) async => _fakeExportJob(jobId: 'job-1', status: 'completed'));
       when(() => mockDb.updateExportJob('job-1', status: 'cancelled'))
           .thenAnswer((_) async {});
       when(() => mockDb.deleteExportJob('job-1')).thenAnswer((_) async {});

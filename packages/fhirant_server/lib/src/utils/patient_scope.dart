@@ -58,8 +58,7 @@ Response patientScopeForbiddenResponse(
         {
           'severity': 'error',
           'code': 'forbidden',
-          'diagnostics':
-              '$resourceType/$id is not in the patient compartment '
+          'diagnostics': '$resourceType/$id is not in the patient compartment '
               'for Patient/$patientId',
         }
       ]
@@ -87,7 +86,8 @@ Future<bool> isNewResourceInPatientCompartment(
   }
 
   final paths = compartmentDef[resourceType]!;
-  if (paths.isEmpty) return false; // Can't create focal resources in compartment
+  if (paths.isEmpty)
+    return false; // Can't create focal resources in compartment
 
   // Check if any compartment path references the patient
   final patientRef = 'Patient/$patientId';

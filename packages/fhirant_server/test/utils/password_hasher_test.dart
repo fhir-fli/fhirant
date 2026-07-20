@@ -7,7 +7,8 @@ void main() {
       final salt = PasswordHasher.generateSalt();
       final hash = PasswordHasher.hashPassword('MySecureP@ss1', salt);
 
-      expect(PasswordHasher.verifyPassword('MySecureP@ss1', salt, hash), isTrue);
+      expect(
+          PasswordHasher.verifyPassword('MySecureP@ss1', salt, hash), isTrue);
     });
 
     test('wrong password fails verification', () {

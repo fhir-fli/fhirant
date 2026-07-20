@@ -128,8 +128,7 @@ Future<Response> _handleAuthorizationCodeGrant(
   }
 
   // Verify PKCE if code_challenge was stored
-  if (authCode.codeChallenge != null &&
-      authCode.codeChallengeMethod != null) {
+  if (authCode.codeChallenge != null && authCode.codeChallengeMethod != null) {
     if (codeVerifier == null || codeVerifier.isEmpty) {
       return Response(400,
           body: jsonEncode({
@@ -177,8 +176,7 @@ Future<Response> _handleAuthorizationCodeGrant(
   if (authCode.scope.isNotEmpty) {
     scopes = authCode.scope.split(' ');
   } else if (user.scopes != null && user.scopes!.isNotEmpty) {
-    scopes =
-        (jsonDecode(user.scopes!) as List<dynamic>).cast<String>();
+    scopes = (jsonDecode(user.scopes!) as List<dynamic>).cast<String>();
   } else {
     scopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
   }

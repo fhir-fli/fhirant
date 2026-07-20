@@ -13,7 +13,8 @@ List<Map<String, dynamic>> _parseBundle(String jsonStr) {
   final bundle = jsonDecode(jsonStr) as Map<String, dynamic>;
   final entries = bundle['entry'] as List? ?? [];
   return entries
-      .map((e) => (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
+      .map((e) =>
+          (e as Map<String, dynamic>)['resource'] as Map<String, dynamic>?)
       .whereType<Map<String, dynamic>>()
       .toList();
 }
@@ -42,7 +43,8 @@ class _ResourceCountsCardState extends State<ResourceCountsCard> {
       await state.db.saveResources(resources);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Loaded ${resources.length} sample resources')),
+          SnackBar(
+              content: Text('Loaded ${resources.length} sample resources')),
         );
       }
     } catch (e) {

@@ -22,8 +22,7 @@ class PasswordHasher {
   }
 
   /// Verifies a password against a stored hash using constant-time comparison.
-  static bool verifyPassword(
-      String password, String salt, String storedHash) {
+  static bool verifyPassword(String password, String salt, String storedHash) {
     final computedHash = hashPassword(password, salt);
     if (computedHash.length != storedHash.length) return false;
     var result = 0;

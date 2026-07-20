@@ -24,8 +24,7 @@ Future<Response> loginHandler(
     final password = body['password'];
     if (username is! String || password is! String) {
       return Response(400,
-          body:
-              jsonEncode({'error': 'Username and password are required'}));
+          body: jsonEncode({'error': 'Username and password are required'}));
     }
 
     // Look up user
@@ -133,18 +132,17 @@ Future<Response> unlockAccountHandler(
     Request request, int userId, FhirAntDb dbInterface) async {
   try {
     // Require admin role
-    final authUser =
-        request.context['auth_user'] as Map<String, dynamic>?;
+    final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     if (authUser == null || authUser['role'] != 'admin') {
       return Response(403,
-          body: jsonEncode({'error': 'Only administrators can unlock accounts'}));
+          body:
+              jsonEncode({'error': 'Only administrators can unlock accounts'}));
     }
 
     // Verify user exists
     final user = await dbInterface.getUserById(userId);
     if (user == null) {
-      return Response(404,
-          body: jsonEncode({'error': 'User not found'}));
+      return Response(404, body: jsonEncode({'error': 'User not found'}));
     }
 
     await dbInterface.unlockAccount(userId);

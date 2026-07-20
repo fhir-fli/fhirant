@@ -179,10 +179,9 @@ Future<Response> authorizePostHandler(
       userId: user.id,
       redirectUri: redirectUri,
       scope: scope,
-      codeChallenge:
-          (codeChallenge != null && codeChallenge.isNotEmpty)
-              ? codeChallenge
-              : null,
+      codeChallenge: (codeChallenge != null && codeChallenge.isNotEmpty)
+          ? codeChallenge
+          : null,
       codeChallengeMethod:
           (codeChallengeMethod != null && codeChallengeMethod.isNotEmpty)
               ? codeChallengeMethod
@@ -290,10 +289,9 @@ Future<Response> authorizeJsonHandler(
       userId: user.id,
       redirectUri: redirectUri,
       scope: scope,
-      codeChallenge:
-          (codeChallenge != null && codeChallenge.isNotEmpty)
-              ? codeChallenge
-              : null,
+      codeChallenge: (codeChallenge != null && codeChallenge.isNotEmpty)
+          ? codeChallenge
+          : null,
       codeChallengeMethod:
           (codeChallengeMethod != null && codeChallengeMethod.isNotEmpty)
               ? codeChallengeMethod
@@ -402,8 +400,7 @@ Response _errorRedirect(
     String? redirectUri, String state, String error, String description) {
   if (redirectUri == null || redirectUri.isEmpty) {
     return Response(400,
-        body: _errorPage(description),
-        headers: {'Content-Type': 'text/html'});
+        body: _errorPage(description), headers: {'Content-Type': 'text/html'});
   }
   final params = {
     'error': error,

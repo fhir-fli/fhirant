@@ -172,8 +172,7 @@ void main() {
       final body =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('OperationOutcome'));
-      expect((body['issue'] as List)[0]['diagnostics'],
-          contains('empty'));
+      expect((body['issue'] as List)[0]['diagnostics'], contains('empty'));
     });
 
     test('returns 400 for invalid JSON', () async {
@@ -190,8 +189,8 @@ void main() {
       final body =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('OperationOutcome'));
-      expect((body['issue'] as List)[0]['diagnostics'],
-          contains('Invalid JSON'));
+      expect(
+          (body['issue'] as List)[0]['diagnostics'], contains('Invalid JSON'));
     });
 
     test('returns 400 for non-Bundle resource', () async {

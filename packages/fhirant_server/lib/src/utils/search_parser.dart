@@ -92,28 +92,47 @@ class SearchParameterParser {
             break;
           case '_sort':
             // Sort can be comma-separated: _sort=name,-date
-            sort.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            sort.addAll(value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty));
             break;
           case '_include':
             // Include can be repeated or comma-separated
-            include.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            include.addAll(value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty));
             break;
           case '_revinclude':
             // Revinclude can be repeated or comma-separated
-            revinclude.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            revinclude.addAll(value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty));
             break;
           case '_include:iterate':
-            includeIterate.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            includeIterate.addAll(value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty));
             break;
           case '_revinclude:iterate':
-            revincludeIterate.addAll(value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            revincludeIterate.addAll(value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty));
             break;
           case '_summary':
             summary = value;
             break;
           case '_elements':
             // Elements is comma-separated
-            elements = value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+            elements = value
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList();
             break;
           case '_total':
             // _total: none, accurate, estimate
@@ -128,7 +147,11 @@ class SearchParameterParser {
 
         // Regular search parameter
         // Handle comma-separated values (OR logic)
-        final values = value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        final values = value
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
 
         if (searchParams.containsKey(key)) {
           // Parameter already exists (can happen with repeated params)
@@ -151,7 +174,8 @@ class SearchParameterParser {
       'summary': summary,
       'elements': elements,
       'total': total,
-      'unknownParams': unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
+      'unknownParams':
+          unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
       'has': has.isEmpty ? null : has,
     };
   }

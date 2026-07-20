@@ -331,9 +331,11 @@ class FhirAntDb extends FhirDb {
             tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id);
         if (at != null) {
           // _at: return the single version current at that point in time
-          cond = cond & tbl.lastUpdated.isSmallerOrEqualValue(at.millisecondsSinceEpoch);
+          cond = cond &
+              tbl.lastUpdated.isSmallerOrEqualValue(at.millisecondsSinceEpoch);
         } else if (since != null) {
-          cond = cond & tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
+          cond = cond &
+              tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return cond;
       })
@@ -378,7 +380,8 @@ class FhirAntDb extends FhirDb {
         ],
       ).get();
       return rows
-          .map((row) => fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .map((row) =>
+              fhir.Resource.fromJsonString(row.read<String>('resource')))
           .toList();
     }
 
@@ -387,7 +390,8 @@ class FhirAntDb extends FhirDb {
       ..where((tbl) {
         var cond = tbl.resourceType.equals(resourceTypeString);
         if (since != null) {
-          cond = cond & tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
+          cond = cond &
+              tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return cond;
       })
@@ -424,14 +428,16 @@ class FhirAntDb extends FhirDb {
         variables: [Variable.withInt(atMillis)],
       ).get();
       return rows
-          .map((row) => fhir.Resource.fromJsonString(row.read<String>('resource')))
+          .map((row) =>
+              fhir.Resource.fromJsonString(row.read<String>('resource')))
           .toList();
     }
 
     final query = select(resourcesHistory)
       ..where((tbl) {
         if (since != null) {
-          return tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
+          return tbl.lastUpdated
+              .isBiggerThanValue(since.millisecondsSinceEpoch);
         }
         return const Constant(true);
       })
@@ -486,7 +492,9 @@ class FhirAntDb extends FhirDb {
       ..where((tbl) {
         final typeCond = tbl.resourceType.equals(resourceTypeString);
         if (since != null) {
-          return typeCond & tbl.lastUpdated.isBiggerOrEqualValue(since.millisecondsSinceEpoch);
+          return typeCond &
+              tbl.lastUpdated
+                  .isBiggerOrEqualValue(since.millisecondsSinceEpoch);
         }
         return typeCond;
       })
@@ -525,8 +533,7 @@ class FhirAntDb extends FhirDb {
           referenceSearchParameters.resourceType.equals(resType) &
               referenceSearchParameters.referenceResourceType
                   .equals(compartmentType) &
-              referenceSearchParameters.referenceIdPart
-                  .equals(compartmentId);
+              referenceSearchParameters.referenceIdPart.equals(compartmentId);
 
       // Add search path matching — use LIKE with % suffix to handle
       // paths like `Observation.subject.where(resolve() is Patient)`.
@@ -601,8 +608,7 @@ class FhirAntDb extends FhirDb {
       'VALUES (?, ?, ?, ?, 1, ?, ?)',
       [username, passwordHash, salt, role, now, scopes],
     );
-    final rows =
-        await customSelect('SELECT last_insert_rowid() AS id').get();
+    final rows = await customSelect('SELECT last_insert_rowid() AS id').get();
     return rows.first.read<int>('id');
   }
 

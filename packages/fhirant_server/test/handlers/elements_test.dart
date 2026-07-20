@@ -126,12 +126,12 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entry = (json['entry'] as List).first;
       final resource = entry['resource'] as Map<String, dynamic>;
-      final security =
-          (resource['meta'] as Map)['security'] as List;
-      expect(security.any((t) =>
-          t['code'] == 'SUBSETTED' &&
-          t['system'] ==
-              'http://terminology.hl7.org/CodeSystem/v3-ObservationValue'),
+      final security = (resource['meta'] as Map)['security'] as List;
+      expect(
+        security.any((t) =>
+            t['code'] == 'SUBSETTED' &&
+            t['system'] ==
+                'http://terminology.hl7.org/CodeSystem/v3-ObservationValue'),
         isTrue,
       );
     });
@@ -305,8 +305,7 @@ void main() {
       expect(body, contains('mutually exclusive'));
     });
 
-    test('_summary=false with _elements is allowed (false is no-op)',
-        () async {
+    test('_summary=false with _elements is allowed (false is no-op)', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': '1',
@@ -492,8 +491,7 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      final security =
-          (json['meta'] as Map)['security'] as List;
+      final security = (json['meta'] as Map)['security'] as List;
       expect(
         security.any((t) =>
             t['code'] == 'SUBSETTED' &&
@@ -723,8 +721,7 @@ void main() {
 
       final shaped = FhirResponseShaper.shapeElements(json, ['status']);
 
-      final security =
-          (shaped['meta'] as Map)['security'] as List;
+      final security = (shaped['meta'] as Map)['security'] as List;
       expect(security.length, equals(1));
       expect(security.first['code'], equals('SUBSETTED'));
       expect(shaped.containsKey('code'), isFalse);
@@ -752,8 +749,7 @@ void main() {
 
       final shaped = FhirResponseShaper.shapeElements(json, ['name']);
 
-      final security =
-          (shaped['meta'] as Map)['security'] as List;
+      final security = (shaped['meta'] as Map)['security'] as List;
       // Should still be just one SUBSETTED tag
       final subsettedCount =
           security.where((t) => t['code'] == 'SUBSETTED').length;
@@ -803,8 +799,7 @@ void main() {
         },
       };
 
-      final shaped =
-          FhirResponseShaper.shapeElements(json, ['status', 'code']);
+      final shaped = FhirResponseShaper.shapeElements(json, ['status', 'code']);
 
       expect(shaped.containsKey('status'), isTrue);
       expect(shaped.containsKey('code'), isTrue);
@@ -847,8 +842,7 @@ void main() {
         'name': 'Smith',
       });
 
-      final searchParams =
-          result['searchParams'] as Map<String, List<String>>?;
+      final searchParams = result['searchParams'] as Map<String, List<String>>?;
       expect(searchParams, isNotNull);
       expect(searchParams!.containsKey('_elements'), isFalse);
       expect(searchParams.containsKey('name'), isTrue);

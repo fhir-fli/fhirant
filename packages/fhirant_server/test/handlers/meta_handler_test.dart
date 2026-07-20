@@ -50,11 +50,15 @@ void main() {
           .thenAnswer((_) async => patient);
 
       final response = await metaHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('Parameters'));
       final params = body['parameter'] as List;
       expect(params, hasLength(1));
@@ -75,11 +79,15 @@ void main() {
           .thenAnswer((_) async => patient);
 
       final response = await metaHandler(
-        mockRequest, 'Patient', '456', mockDb,
+        mockRequest,
+        'Patient',
+        '456',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('Parameters'));
     });
 
@@ -88,7 +96,10 @@ void main() {
           .thenAnswer((_) async => null);
 
       final response = await metaHandler(
-        mockRequest, 'Patient', 'missing', mockDb,
+        mockRequest,
+        'Patient',
+        'missing',
+        mockDb,
       );
 
       expect(response.statusCode, equals(404));
@@ -96,7 +107,10 @@ void main() {
 
     test('returns 400 for invalid resource type', () async {
       final response = await metaHandler(
-        mockRequest, 'InvalidType', '123', mockDb,
+        mockRequest,
+        'InvalidType',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(400));
@@ -136,17 +150,21 @@ void main() {
         ],
       });
 
-      when(() => mockRequest.readAsString())
-          .thenAnswer((_) async => inputBody);
+      when(() => mockRequest.readAsString()).thenAnswer((_) async => inputBody);
 
       final response = await metaAddHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('Parameters'));
-      final meta = (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
+      final meta =
+          (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
       final tags = meta['tag'] as List;
       expect(tags, hasLength(2));
       // Verify saveResource was called
@@ -182,16 +200,20 @@ void main() {
         ],
       });
 
-      when(() => mockRequest.readAsString())
-          .thenAnswer((_) async => inputBody);
+      when(() => mockRequest.readAsString()).thenAnswer((_) async => inputBody);
 
       final response = await metaAddHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-      final meta = (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final meta =
+          (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
       final tags = meta['tag'] as List;
       // Should still be 1 tag (not duplicated)
       expect(tags, hasLength(1));
@@ -215,23 +237,31 @@ void main() {
             'valueMeta': {
               'profile': ['http://example.com/StructureDefinition/myprofile'],
               'security': [
-                {'system': 'http://terminology.hl7.org/CodeSystem/v3-Confidentiality', 'code': 'R'},
+                {
+                  'system':
+                      'http://terminology.hl7.org/CodeSystem/v3-Confidentiality',
+                  'code': 'R'
+                },
               ],
             },
           },
         ],
       });
 
-      when(() => mockRequest.readAsString())
-          .thenAnswer((_) async => inputBody);
+      when(() => mockRequest.readAsString()).thenAnswer((_) async => inputBody);
 
       final response = await metaAddHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-      final meta = (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final meta =
+          (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
       expect(meta['profile'], isNotNull);
       expect(meta['security'], isNotNull);
     });
@@ -241,7 +271,10 @@ void main() {
           .thenAnswer((_) async => null);
 
       final response = await metaAddHandler(
-        mockRequest, 'Patient', 'missing', mockDb,
+        mockRequest,
+        'Patient',
+        'missing',
+        mockDb,
       );
 
       expect(response.statusCode, equals(404));
@@ -260,7 +293,10 @@ void main() {
           .thenAnswer((_) async => '{"not": "a parameters resource"}');
 
       final response = await metaAddHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(400));
@@ -301,16 +337,20 @@ void main() {
         ],
       });
 
-      when(() => mockRequest.readAsString())
-          .thenAnswer((_) async => inputBody);
+      when(() => mockRequest.readAsString()).thenAnswer((_) async => inputBody);
 
       final response = await metaDeleteHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-      final meta = (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final meta =
+          (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
       final tags = meta['tag'] as List;
       expect(tags, hasLength(1));
       expect(tags[0]['code'], equals('keep'));
@@ -345,16 +385,20 @@ void main() {
         ],
       });
 
-      when(() => mockRequest.readAsString())
-          .thenAnswer((_) async => inputBody);
+      when(() => mockRequest.readAsString()).thenAnswer((_) async => inputBody);
 
       final response = await metaDeleteHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(200));
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-      final meta = (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final meta =
+          (body['parameter'] as List)[0]['valueMeta'] as Map<String, dynamic>;
       final profiles = meta['profile'] as List;
       expect(profiles, hasLength(1));
       expect(profiles[0], equals('http://example.com/profile/b'));
@@ -365,7 +409,10 @@ void main() {
           .thenAnswer((_) async => null);
 
       final response = await metaDeleteHandler(
-        mockRequest, 'Patient', 'missing', mockDb,
+        mockRequest,
+        'Patient',
+        'missing',
+        mockDb,
       );
 
       expect(response.statusCode, equals(404));
@@ -384,7 +431,10 @@ void main() {
           .thenAnswer((_) async => 'not json at all');
 
       final response = await metaDeleteHandler(
-        mockRequest, 'Patient', '123', mockDb,
+        mockRequest,
+        'Patient',
+        '123',
+        mockDb,
       );
 
       expect(response.statusCode, equals(400));

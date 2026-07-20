@@ -106,8 +106,7 @@ Future<void> _createAuditEvent(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final authUser =
-        request.context['auth_user'] as Map<String, dynamic>?;
+    final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     final username = authUser?['username'] as String? ?? 'anonymous';
 
     final action = _mapAction(request.method);

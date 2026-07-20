@@ -49,8 +49,8 @@ void main() {
           'gender': 'male',
         },
       },
-      ...immunizations.map((imm) =>
-            <String, dynamic>{'name': 'immunization', 'resource': imm}),
+      ...immunizations.map(
+          (imm) => <String, dynamic>{'name': 'immunization', 'resource': imm}),
     ];
     return {
       'resourceType': 'Parameters',
@@ -204,8 +204,7 @@ void main() {
         gender: fhir.AdministrativeGender.female,
       );
 
-      when(() =>
-              mockDb.getResource(fhir.R4ResourceType.Patient, 'params-pat'))
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'params-pat'))
           .thenAnswer((_) async => patient);
       when(() => mockDb.search(
             resourceType: any(named: 'resourceType'),

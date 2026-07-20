@@ -22,7 +22,11 @@ class CompartmentDefinitions {
     'Patient': [], // focal
     'Account': ['Account.subject'],
     'AdverseEvent': ['AdverseEvent.subject'],
-    'AllergyIntolerance': ['AllergyIntolerance.patient', 'AllergyIntolerance.recorder', 'AllergyIntolerance.asserter'],
+    'AllergyIntolerance': [
+      'AllergyIntolerance.patient',
+      'AllergyIntolerance.recorder',
+      'AllergyIntolerance.asserter'
+    ],
     'Appointment': ['Appointment.participant.actor'],
     'AppointmentResponse': ['AppointmentResponse.actor'],
     'AuditEvent': ['AuditEvent.patient'],
@@ -34,24 +38,48 @@ class CompartmentDefinitions {
     'Claim': ['Claim.patient', 'Claim.payee.party'],
     'ClaimResponse': ['ClaimResponse.patient'],
     'ClinicalImpression': ['ClinicalImpression.subject'],
-    'Communication': ['Communication.subject', 'Communication.sender', 'Communication.recipient'],
-    'CommunicationRequest': ['CommunicationRequest.subject', 'CommunicationRequest.sender', 'CommunicationRequest.recipient', 'CommunicationRequest.requester'],
+    'Communication': [
+      'Communication.subject',
+      'Communication.sender',
+      'Communication.recipient'
+    ],
+    'CommunicationRequest': [
+      'CommunicationRequest.subject',
+      'CommunicationRequest.sender',
+      'CommunicationRequest.recipient',
+      'CommunicationRequest.requester'
+    ],
     'Composition': ['Composition.subject', 'Composition.author'],
     'Condition': ['Condition.subject', 'Condition.asserter'],
     'Consent': ['Consent.patient'],
-    'Coverage': ['Coverage.policyHolder', 'Coverage.subscriber', 'Coverage.beneficiary', 'Coverage.payor'],
+    'Coverage': [
+      'Coverage.policyHolder',
+      'Coverage.subscriber',
+      'Coverage.beneficiary',
+      'Coverage.payor'
+    ],
     'CoverageEligibilityRequest': ['CoverageEligibilityRequest.patient'],
     'CoverageEligibilityResponse': ['CoverageEligibilityResponse.patient'],
     'DetectedIssue': ['DetectedIssue.patient'],
     'DeviceRequest': ['DeviceRequest.subject'],
     'DeviceUseStatement': ['DeviceUseStatement.subject'],
     'DiagnosticReport': ['DiagnosticReport.subject'],
-    'DocumentManifest': ['DocumentManifest.subject', 'DocumentManifest.author', 'DocumentManifest.recipient'],
-    'DocumentReference': ['DocumentReference.subject', 'DocumentReference.author'],
+    'DocumentManifest': [
+      'DocumentManifest.subject',
+      'DocumentManifest.author',
+      'DocumentManifest.recipient'
+    ],
+    'DocumentReference': [
+      'DocumentReference.subject',
+      'DocumentReference.author'
+    ],
     'Encounter': ['Encounter.subject'],
     'EnrollmentRequest': ['EnrollmentRequest.subject'],
     'EpisodeOfCare': ['EpisodeOfCare.patient'],
-    'ExplanationOfBenefit': ['ExplanationOfBenefit.patient', 'ExplanationOfBenefit.payee.party'],
+    'ExplanationOfBenefit': [
+      'ExplanationOfBenefit.patient',
+      'ExplanationOfBenefit.payee.party'
+    ],
     'FamilyMemberHistory': ['FamilyMemberHistory.patient'],
     'Flag': ['Flag.subject'],
     'Goal': ['Goal.subject'],
@@ -65,7 +93,11 @@ class CompartmentDefinitions {
     'MeasureReport': ['MeasureReport.patient'],
     'Media': ['Media.subject'],
     'MedicationAdministration': ['MedicationAdministration.subject'],
-    'MedicationDispense': ['MedicationDispense.subject', 'MedicationDispense.patient', 'MedicationDispense.receiver'],
+    'MedicationDispense': [
+      'MedicationDispense.subject',
+      'MedicationDispense.patient',
+      'MedicationDispense.receiver'
+    ],
     'MedicationRequest': ['MedicationRequest.subject'],
     'MedicationStatement': ['MedicationStatement.subject'],
     'MolecularSequence': ['MolecularSequence.patient'],
@@ -74,7 +106,10 @@ class CompartmentDefinitions {
     'Person': ['Person.patient'],
     'Procedure': ['Procedure.subject'],
     'Provenance': ['Provenance.patient'],
-    'QuestionnaireResponse': ['QuestionnaireResponse.subject', 'QuestionnaireResponse.author'],
+    'QuestionnaireResponse': [
+      'QuestionnaireResponse.subject',
+      'QuestionnaireResponse.author'
+    ],
     'RelatedPerson': ['RelatedPerson.patient'],
     'RequestGroup': ['RequestGroup.subject'],
     'ResearchSubject': ['ResearchSubject.individual'],
@@ -131,7 +166,10 @@ class CompartmentDefinitions {
     'Practitioner': [], // focal
     'Account': ['Account.subject'],
     'AdverseEvent': ['AdverseEvent.recorder'],
-    'AllergyIntolerance': ['AllergyIntolerance.recorder', 'AllergyIntolerance.asserter'],
+    'AllergyIntolerance': [
+      'AllergyIntolerance.recorder',
+      'AllergyIntolerance.asserter'
+    ],
     'Appointment': ['Appointment.participant.actor'],
     'AppointmentResponse': ['AppointmentResponse.actor'],
     'AuditEvent': ['AuditEvent.agent.who'],
@@ -139,23 +177,52 @@ class CompartmentDefinitions {
     'CarePlan': ['CarePlan.performer'],
     'CareTeam': ['CareTeam.participant.member'],
     'ChargeItem': ['ChargeItem.enterer', 'ChargeItem.performer.actor'],
-    'Claim': ['Claim.enterer', 'Claim.provider', 'Claim.payee.party', 'Claim.careTeam.provider'],
+    'Claim': [
+      'Claim.enterer',
+      'Claim.provider',
+      'Claim.payee.party',
+      'Claim.careTeam.provider'
+    ],
     'ClaimResponse': ['ClaimResponse.requestor'],
     'ClinicalImpression': ['ClinicalImpression.assessor'],
     'Communication': ['Communication.sender', 'Communication.recipient'],
-    'CommunicationRequest': ['CommunicationRequest.sender', 'CommunicationRequest.recipient', 'CommunicationRequest.requester'],
-    'Composition': ['Composition.subject', 'Composition.author', 'Composition.attester.party'],
+    'CommunicationRequest': [
+      'CommunicationRequest.sender',
+      'CommunicationRequest.recipient',
+      'CommunicationRequest.requester'
+    ],
+    'Composition': [
+      'Composition.subject',
+      'Composition.author',
+      'Composition.attester.party'
+    ],
     'Condition': ['Condition.asserter'],
-    'CoverageEligibilityRequest': ['CoverageEligibilityRequest.enterer', 'CoverageEligibilityRequest.provider'],
+    'CoverageEligibilityRequest': [
+      'CoverageEligibilityRequest.enterer',
+      'CoverageEligibilityRequest.provider'
+    ],
     'CoverageEligibilityResponse': ['CoverageEligibilityResponse.requestor'],
     'DetectedIssue': ['DetectedIssue.author'],
     'DeviceRequest': ['DeviceRequest.requester', 'DeviceRequest.performer'],
     'DiagnosticReport': ['DiagnosticReport.performer'],
-    'DocumentManifest': ['DocumentManifest.subject', 'DocumentManifest.author', 'DocumentManifest.recipient'],
-    'DocumentReference': ['DocumentReference.subject', 'DocumentReference.author', 'DocumentReference.authenticator'],
+    'DocumentManifest': [
+      'DocumentManifest.subject',
+      'DocumentManifest.author',
+      'DocumentManifest.recipient'
+    ],
+    'DocumentReference': [
+      'DocumentReference.subject',
+      'DocumentReference.author',
+      'DocumentReference.authenticator'
+    ],
     'Encounter': ['Encounter.participant.individual'],
     'EpisodeOfCare': ['EpisodeOfCare.careManager'],
-    'ExplanationOfBenefit': ['ExplanationOfBenefit.enterer', 'ExplanationOfBenefit.provider', 'ExplanationOfBenefit.payee.party', 'ExplanationOfBenefit.careTeam.provider'],
+    'ExplanationOfBenefit': [
+      'ExplanationOfBenefit.enterer',
+      'ExplanationOfBenefit.provider',
+      'ExplanationOfBenefit.payee.party',
+      'ExplanationOfBenefit.careTeam.provider'
+    ],
     'Flag': ['Flag.author'],
     'Group': ['Group.member.entity'],
     'Immunization': ['Immunization.performer.actor'],
@@ -164,10 +231,18 @@ class CompartmentDefinitions {
     'List': ['List.source'],
     'Media': ['Media.subject', 'Media.operator'],
     'MedicationAdministration': ['MedicationAdministration.performer.actor'],
-    'MedicationDispense': ['MedicationDispense.performer.actor', 'MedicationDispense.receiver'],
+    'MedicationDispense': [
+      'MedicationDispense.performer.actor',
+      'MedicationDispense.receiver'
+    ],
     'MedicationRequest': ['MedicationRequest.requester'],
     'MedicationStatement': ['MedicationStatement.source'],
-    'MessageHeader': ['MessageHeader.destination.receiver', 'MessageHeader.author', 'MessageHeader.responsible', 'MessageHeader.enterer'],
+    'MessageHeader': [
+      'MessageHeader.destination.receiver',
+      'MessageHeader.author',
+      'MessageHeader.responsible',
+      'MessageHeader.enterer'
+    ],
     'NutritionOrder': ['NutritionOrder.orderer'],
     'Observation': ['Observation.performer'],
     'Patient': ['Patient.generalPractitioner'],
@@ -177,7 +252,10 @@ class CompartmentDefinitions {
     'PractitionerRole': ['PractitionerRole.practitioner'],
     'Procedure': ['Procedure.performer.actor'],
     'Provenance': ['Provenance.agent.who'],
-    'QuestionnaireResponse': ['QuestionnaireResponse.author', 'QuestionnaireResponse.source'],
+    'QuestionnaireResponse': [
+      'QuestionnaireResponse.author',
+      'QuestionnaireResponse.source'
+    ],
     'RequestGroup': ['RequestGroup.participant', 'RequestGroup.author'],
     'ResearchStudy': ['ResearchStudy.principalInvestigator'],
     'RiskAssessment': ['RiskAssessment.performer'],
@@ -205,11 +283,22 @@ class CompartmentDefinitions {
     'ChargeItem': ['ChargeItem.enterer', 'ChargeItem.performer.actor'],
     'Claim': ['Claim.payee.party'],
     'Communication': ['Communication.sender', 'Communication.recipient'],
-    'CommunicationRequest': ['CommunicationRequest.sender', 'CommunicationRequest.recipient', 'CommunicationRequest.requester'],
+    'CommunicationRequest': [
+      'CommunicationRequest.sender',
+      'CommunicationRequest.recipient',
+      'CommunicationRequest.requester'
+    ],
     'Composition': ['Composition.author'],
     'Condition': ['Condition.asserter'],
-    'Coverage': ['Coverage.policyHolder', 'Coverage.subscriber', 'Coverage.payor'],
-    'DocumentManifest': ['DocumentManifest.author', 'DocumentManifest.recipient'],
+    'Coverage': [
+      'Coverage.policyHolder',
+      'Coverage.subscriber',
+      'Coverage.payor'
+    ],
+    'DocumentManifest': [
+      'DocumentManifest.author',
+      'DocumentManifest.recipient'
+    ],
     'DocumentReference': ['DocumentReference.author'],
     'Encounter': ['Encounter.participant.individual'],
     'ExplanationOfBenefit': ['ExplanationOfBenefit.payee.party'],
@@ -221,7 +310,10 @@ class CompartmentDefinitions {
     'Person': ['Person.link.target'],
     'Procedure': ['Procedure.performer.actor'],
     'Provenance': ['Provenance.agent.who'],
-    'QuestionnaireResponse': ['QuestionnaireResponse.author', 'QuestionnaireResponse.source'],
+    'QuestionnaireResponse': [
+      'QuestionnaireResponse.author',
+      'QuestionnaireResponse.source'
+    ],
     'RequestGroup': ['RequestGroup.participant'],
     'Schedule': ['Schedule.actor'],
     'ServiceRequest': ['ServiceRequest.performer'],
@@ -239,17 +331,37 @@ class CompartmentDefinitions {
     'AppointmentResponse': ['AppointmentResponse.actor'],
     'AuditEvent': ['AuditEvent.agent.who'],
     'ChargeItem': ['ChargeItem.enterer', 'ChargeItem.performer.actor'],
-    'Claim': ['Claim.procedure.udi', 'Claim.item.udi', 'Claim.item.detail.udi', 'Claim.item.detail.subDetail.udi'],
+    'Claim': [
+      'Claim.procedure.udi',
+      'Claim.item.udi',
+      'Claim.item.detail.udi',
+      'Claim.item.detail.subDetail.udi'
+    ],
     'Communication': ['Communication.sender', 'Communication.recipient'],
-    'CommunicationRequest': ['CommunicationRequest.sender', 'CommunicationRequest.recipient'],
+    'CommunicationRequest': [
+      'CommunicationRequest.sender',
+      'CommunicationRequest.recipient'
+    ],
     'Composition': ['Composition.author'],
     'DetectedIssue': ['DetectedIssue.author'],
-    'DeviceRequest': ['DeviceRequest.subject', 'DeviceRequest.requester', 'DeviceRequest.performer'],
+    'DeviceRequest': [
+      'DeviceRequest.subject',
+      'DeviceRequest.requester',
+      'DeviceRequest.performer'
+    ],
     'DeviceUseStatement': ['DeviceUseStatement.device'],
     'DiagnosticReport': ['DiagnosticReport.subject'],
     'DocumentManifest': ['DocumentManifest.subject', 'DocumentManifest.author'],
-    'DocumentReference': ['DocumentReference.subject', 'DocumentReference.author'],
-    'ExplanationOfBenefit': ['ExplanationOfBenefit.procedure.udi', 'ExplanationOfBenefit.item.udi', 'ExplanationOfBenefit.item.detail.udi', 'ExplanationOfBenefit.item.detail.subDetail.udi'],
+    'DocumentReference': [
+      'DocumentReference.subject',
+      'DocumentReference.author'
+    ],
+    'ExplanationOfBenefit': [
+      'ExplanationOfBenefit.procedure.udi',
+      'ExplanationOfBenefit.item.udi',
+      'ExplanationOfBenefit.item.detail.udi',
+      'ExplanationOfBenefit.item.detail.subDetail.udi'
+    ],
     'Flag': ['Flag.author'],
     'Group': ['Group.member.entity'],
     'Invoice': ['Invoice.participant.actor'],

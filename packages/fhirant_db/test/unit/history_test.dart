@@ -62,10 +62,11 @@ void main() {
       final timestamps = history.map((r) => r.meta!.lastUpdated!).toList();
       for (int i = 0; i < timestamps.length - 1; i++) {
         expect(
-          timestamps[i].valueDateTime!.isAfter(timestamps[i + 1].valueDateTime!),
+          timestamps[i]
+              .valueDateTime!
+              .isAfter(timestamps[i + 1].valueDateTime!),
           isTrue,
-          reason:
-              'Entry $i should have a later timestamp than entry ${i + 1}',
+          reason: 'Entry $i should have a later timestamp than entry ${i + 1}',
         );
       }
     });
@@ -119,9 +120,8 @@ void main() {
 
       expect(history.length, equals(3));
 
-      final versionIds = history
-          .map((r) => r.meta!.versionId!.valueString!)
-          .toSet();
+      final versionIds =
+          history.map((r) => r.meta!.versionId!.valueString!).toSet();
       expect(versionIds.length, equals(3),
           reason: 'All 3 version IDs should be distinct');
     });
@@ -183,8 +183,7 @@ void main() {
       expect(deleted, isTrue);
 
       // Verify it is gone from the main table
-      final after =
-          await db.getResource(fhir.R4ResourceType.Patient, 'hist-4');
+      final after = await db.getResource(fhir.R4ResourceType.Patient, 'hist-4');
       expect(after, isNull);
 
       // Verify history entries are still present (original + deletion tombstone)

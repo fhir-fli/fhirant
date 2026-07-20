@@ -50,8 +50,7 @@ void main() {
       // Allow fire-and-forget to complete
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       expect(captured, isNotEmpty);
 
       final auditEvent = captured.last as fhir.Resource;
@@ -61,8 +60,7 @@ void main() {
       expect(json['subtype'][0]['code'], equals('create'));
     });
 
-    test('audit event created on GET by ID (action=R, subtype=read)',
-        () async {
+    test('audit event created on GET by ID (action=R, subtype=read)', () async {
       final handler = _wrapHandler();
       final request = Request(
         'GET',
@@ -75,8 +73,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       expect(captured, isNotEmpty);
 
       final json = (captured.last as fhir.Resource).toJson();
@@ -98,8 +95,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['action'], equals('U'));
       expect(json['subtype'][0]['code'], equals('update'));
@@ -118,8 +114,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['action'], equals('D'));
       expect(json['subtype'][0]['code'], equals('delete'));
@@ -138,8 +133,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['outcome'], equals('4'));
     });
@@ -157,8 +151,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['outcome'], equals('8'));
     });
@@ -176,8 +169,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['agent'][0]['who']['display'], equals('dr_smith'));
       // No fragment reference — display-only is spec-compliant
@@ -195,8 +187,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['agent'][0]['who']['display'], equals('anonymous'));
     });
@@ -215,8 +206,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['entity'], isNull);
     });
@@ -234,8 +224,7 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured =
-          verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
       final json = (captured.last as fhir.Resource).toJson();
       expect(json['entity'], isNull);
     });

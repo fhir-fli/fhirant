@@ -84,7 +84,8 @@ Future<Response> logoutHandler(Request request, FhirAntDb dbInterface) async {
 
 /// Extract expiration from a JWT without signature verification.
 /// Falls back to now + 24 hours if the token can't be decoded.
-DateTime _extractExpiresAt(String token, [Duration fallback = const Duration(hours: 24)]) {
+DateTime _extractExpiresAt(String token,
+    [Duration fallback = const Duration(hours: 24)]) {
   try {
     final jwt = JWT.decode(token);
     final payload = jwt.payload as Map<String, dynamic>?;

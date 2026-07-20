@@ -230,8 +230,8 @@ void main() {
       expect(statusCode, isNot(equals(200)));
 
       // The first patient should NOT be in the DB (rolled back)
-      final pat = await testDb.getResource(
-          fhir.R4ResourceType.Patient, 'rollback-pat');
+      final pat =
+          await testDb.getResource(fhir.R4ResourceType.Patient, 'rollback-pat');
       expect(pat, isNull);
     });
   });

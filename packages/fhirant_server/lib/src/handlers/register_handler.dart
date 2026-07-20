@@ -24,9 +24,8 @@ Future<Response> registerHandler(
     final username = body['username'];
     if (username is! String || username.length < 3) {
       return Response(400,
-          body: jsonEncode({
-            'error': 'Username must be a string of at least 3 characters'
-          }));
+          body: jsonEncode(
+              {'error': 'Username must be a string of at least 3 characters'}));
     }
 
     // Validate password
@@ -44,8 +43,9 @@ Future<Response> registerHandler(
     final requestedRole = body['role'] as String? ?? 'clinician';
     if (!_validRoles.contains(requestedRole)) {
       return Response(400,
-          body: jsonEncode(
-              {'error': 'Invalid role. Must be one of: ${_validRoles.join(', ')}'}));
+          body: jsonEncode({
+            'error': 'Invalid role. Must be one of: ${_validRoles.join(', ')}'
+          }));
     }
 
     final userCount = await dbInterface.getUserCount();
@@ -57,8 +57,7 @@ Future<Response> registerHandler(
       effectiveRole = 'admin';
     } else {
       // Require admin auth
-      final authUser =
-          request.context['auth_user'] as Map<String, dynamic>?;
+      final authUser = request.context['auth_user'] as Map<String, dynamic>?;
       if (authUser == null || authUser['role'] != 'admin') {
         return Response(403,
             body: jsonEncode(

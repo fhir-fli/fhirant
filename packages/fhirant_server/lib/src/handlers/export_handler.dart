@@ -46,7 +46,7 @@ Future<Response> exportKickoffHandler(
       return _operationOutcome(
         400,
         'Unsupported _outputFormat: $outputFormat. '
-            'Supported formats: ${_validFormats.join(', ')}',
+        'Supported formats: ${_validFormats.join(', ')}',
       );
     }
 
@@ -428,9 +428,12 @@ Future<void> _processExport(
       }
 
       // Always include Patient resources for the group members
-      final shouldIncludePatient = typeFilter.isEmpty || typeFilter.contains('Patient');
+      final shouldIncludePatient =
+          typeFilter.isEmpty || typeFilter.contains('Patient');
       if (shouldIncludePatient) {
-        allResourceIds.putIfAbsent('Patient', () => {}).addAll(patientIds.toSet());
+        allResourceIds
+            .putIfAbsent('Patient', () => {})
+            .addAll(patientIds.toSet());
       }
 
       // Fetch and write NDJSON files per resource type
@@ -446,10 +449,9 @@ Future<void> _processExport(
         if (resourceType == null) continue;
 
         // Check for matching _typeFilter entries
-        final matchingFilters = typeFilters
-                ?.where((f) => f.startsWith('$typeName?'))
-                .toList() ??
-            [];
+        final matchingFilters =
+            typeFilters?.where((f) => f.startsWith('$typeName?')).toList() ??
+                [];
 
         // If typeFilters exist for this type, intersect compartment IDs with search results
         Set<String>? filterIds;
@@ -527,10 +529,8 @@ Future<void> _processExport(
       final typeName = resourceType.toString();
 
       // Check for matching _typeFilter entries
-      final matchingFilters = typeFilters
-              ?.where((f) => f.startsWith('$typeName?'))
-              .toList() ??
-          [];
+      final matchingFilters =
+          typeFilters?.where((f) => f.startsWith('$typeName?')).toList() ?? [];
 
       List<fhir.Resource> resources;
       if (matchingFilters.isNotEmpty) {

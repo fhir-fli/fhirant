@@ -233,7 +233,9 @@ Future<List<fhir.Resource>> _searchForPatient(
   try {
     return await dbInterface.search(
       resourceType: type,
-      searchParameters: {'patient': ['Patient/$patientId']},
+      searchParameters: {
+        'patient': ['Patient/$patientId']
+      },
     );
   } catch (_) {
     return [];

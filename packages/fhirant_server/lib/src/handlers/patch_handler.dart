@@ -47,8 +47,7 @@ Future<Response> patchResourceHandler(
     if (patchPatientId != null) {
       if (!await isInPatientCompartment(
           resourceType, id, patchPatientId, dbInterface)) {
-        return patientScopeForbiddenResponse(
-            resourceType, id, patchPatientId);
+        return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
       }
     }
 
@@ -109,16 +108,14 @@ Future<Response> patchResourceHandler(
       }
 
       // Re-fetch to get server-assigned version/lastUpdated
-      final savedResource =
-          await dbInterface.getResource(type, id);
+      final savedResource = await dbInterface.getResource(type, id);
       final responseResource = savedResource ?? patchedResource;
 
       FhirantLogging().logInfo(
         'Successfully patched resource: $resourceType/$id',
       );
 
-      final preference =
-          FhirHttpHeaders.parsePreferReturn(request.headers);
+      final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
       return FhirHttpHeaders.preferredResponse(
         statusCode: 200,
         resource: responseResource,

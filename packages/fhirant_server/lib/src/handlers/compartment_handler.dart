@@ -23,7 +23,7 @@ Future<Response> everythingHandler(
       return _operationOutcome(
         400,
         'Unsupported compartment type: $compartmentType. '
-            'Supported types: Patient, Encounter, Practitioner, RelatedPerson, Device',
+        'Supported types: Patient, Encounter, Practitioner, RelatedPerson, Device',
       );
     }
 
@@ -102,9 +102,8 @@ Future<Response> everythingHandler(
       final resId = resource.id?.toString() ?? '';
       return fhir.BundleEntry(
         resource: resource,
-        fullUrl: resId.isNotEmpty
-            ? fhir.FhirUri('$baseUrl/$resType/$resId')
-            : null,
+        fullUrl:
+            resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
       );
     }).toList();
 
@@ -171,7 +170,8 @@ Future<Response> compartmentSearchHandler(
     // 4. Verify focal resource exists
     final focalType = fhir.R4ResourceType.fromString(compartmentType);
     if (focalType == null) {
-      return _operationOutcome(400, 'Invalid compartment type: $compartmentType');
+      return _operationOutcome(
+          400, 'Invalid compartment type: $compartmentType');
     }
     final focalResource =
         await dbInterface.getResource(focalType, compartmentId);

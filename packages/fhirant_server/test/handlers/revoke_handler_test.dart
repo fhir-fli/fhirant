@@ -89,8 +89,8 @@ void main() {
       expect(response.statusCode, 200);
 
       // Still revoked — the hash is stored regardless
-      verify(() => mockDb.revokeToken(
-              TokenHasher.hash('garbage-not-a-jwt'), any()))
+      verify(() =>
+              mockDb.revokeToken(TokenHasher.hash('garbage-not-a-jwt'), any()))
           .called(1);
     });
 
@@ -180,8 +180,7 @@ void main() {
       verifyNever(() => mockDb.revokeToken(any(), any()));
     });
 
-    test('revokes only refresh_token from body when no auth header',
-        () async {
+    test('revokes only refresh_token from body when no auth header', () async {
       final refreshToken = jwtService.generateRefreshToken(
         userId: 1,
         username: 'testuser',

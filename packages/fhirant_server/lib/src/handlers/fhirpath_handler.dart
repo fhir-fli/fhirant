@@ -96,7 +96,8 @@ Future<Response> fhirPathHandler(
                 {
                   'severity': 'error',
                   'code': 'invalid',
-                  'diagnostics': 'Invalid resource in request body: ${e.toString()}'
+                  'diagnostics':
+                      'Invalid resource in request body: ${e.toString()}'
                 }
               ]
             }),

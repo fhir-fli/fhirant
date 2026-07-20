@@ -256,8 +256,8 @@ void main() {
         'meta': {'lastUpdated': DateTime.now().toIso8601String()},
       });
 
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-2'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('http://localhost:8080/Patient/pat-2'));
       when(() => mockRequest.headers).thenReturn({});
       when(() => mockRequest.context).thenReturn({
         'auth_user': {
@@ -285,8 +285,8 @@ void main() {
         'meta': {'lastUpdated': DateTime.now().toIso8601String()},
       });
 
-      when(() => mockRequest.url).thenReturn(
-          Uri.parse('http://localhost:8080/Patient/pat-1'));
+      when(() => mockRequest.url)
+          .thenReturn(Uri.parse('http://localhost:8080/Patient/pat-1'));
       when(() => mockRequest.headers).thenReturn({});
       when(() => mockRequest.context).thenReturn({
         'auth_user': {
@@ -414,7 +414,9 @@ void main() {
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {'name': ['Smith']},
+          searchParameters: {
+            'name': ['Smith']
+          },
         ),
       ).thenAnswer((_) async => 1);
       final response = await getResourcesHandler(
@@ -557,13 +559,14 @@ void main() {
       final links = json['link'] as List?;
       expect(links, isNotNull);
       // Should have at least a 'next' link since total > offset + count
-      final linkRelations =
-          links!.map((l) => l['relation'] as String).toList();
+      final linkRelations = links!.map((l) => l['relation'] as String).toList();
       expect(linkRelations, contains('next'));
       expect(linkRelations, contains('first'));
     });
 
-    test('_include adds referenced resources to bundle with correct search.mode and fullUrl', () async {
+    test(
+        '_include adds referenced resources to bundle with correct search.mode and fullUrl',
+        () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-inc-1',
@@ -596,8 +599,7 @@ void main() {
         () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
       ).thenAnswer((_) async => 1);
       when(
-        () => mockDb.getResource(
-            fhir.R4ResourceType.Organization, 'org-inc-1'),
+        () => mockDb.getResource(fhir.R4ResourceType.Organization, 'org-inc-1'),
       ).thenAnswer((_) async => org);
 
       final response = await getResourcesHandler(
@@ -625,7 +627,8 @@ void main() {
       expect(orgEntry['fullUrl'], contains('Organization/org-inc-1'));
     });
 
-    test('_revinclude adds referencing resources to bundle with search.mode', () async {
+    test('_revinclude adds referencing resources to bundle with search.mode',
+        () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-rev-1',
@@ -716,12 +719,10 @@ void main() {
       });
 
       when(() => mockRequest.url).thenReturn(
-        Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:*&_count=10'),
+        Uri.parse('http://localhost:8080/Patient?_include=Patient:*&_count=10'),
       );
       when(() => mockRequest.requestedUri).thenReturn(
-        Uri.parse(
-            'http://localhost:8080/Patient?_include=Patient:*&_count=10'),
+        Uri.parse('http://localhost:8080/Patient?_include=Patient:*&_count=10'),
       );
       when(
         () => mockDb.getResourcesWithPagination(
@@ -734,12 +735,12 @@ void main() {
         () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
       ).thenAnswer((_) async => 1);
       when(
-        () => mockDb.getResource(
-            fhir.R4ResourceType.Organization, 'org-wild-1'),
+        () =>
+            mockDb.getResource(fhir.R4ResourceType.Organization, 'org-wild-1'),
       ).thenAnswer((_) async => org);
       when(
-        () => mockDb.getResource(
-            fhir.R4ResourceType.Practitioner, 'prac-wild-1'),
+        () =>
+            mockDb.getResource(fhir.R4ResourceType.Practitioner, 'prac-wild-1'),
       ).thenAnswer((_) async => prac);
 
       final response = await getResourcesHandler(
@@ -799,8 +800,8 @@ void main() {
         () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
       ).thenAnswer((_) async => 1);
       when(
-        () => mockDb.getResource(
-            fhir.R4ResourceType.Organization, 'org-iter-1'),
+        () =>
+            mockDb.getResource(fhir.R4ResourceType.Organization, 'org-iter-1'),
       ).thenAnswer((_) async => org);
       when(
         () => mockDb.getResource(
@@ -819,13 +820,13 @@ void main() {
       final entries = json['entry'] as List;
       // Patient + org-iter-1 (from _include) + org-iter-parent (from _include:iterate)
       expect(entries.length, equals(3));
-      final ids = entries
-          .map((e) => (e['resource'] as Map)['id'] as String)
-          .toSet();
+      final ids =
+          entries.map((e) => (e['resource'] as Map)['id'] as String).toSet();
       expect(ids, containsAll(['pt-iter-1', 'org-iter-1', 'org-iter-parent']));
     });
 
-    test('_revinclude:iterate resolves transitive reverse references', () async {
+    test('_revinclude:iterate resolves transitive reverse references',
+        () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': 'pt-reviter-1',
@@ -1010,7 +1011,9 @@ void main() {
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {'name': ['Smith']},
+          searchParameters: {
+            'name': ['Smith']
+          },
         ),
       ).thenAnswer((_) async => 1);
 
@@ -1105,8 +1108,7 @@ void main() {
       expect(resource.containsKey('name'), isFalse);
       expect(resource.containsKey('gender'), isFalse);
       // Has SUBSETTED tag
-      final security =
-          (resource['meta'] as Map)['security'] as List;
+      final security = (resource['meta'] as Map)['security'] as List;
       expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
 
@@ -1201,8 +1203,7 @@ void main() {
       expect(resource.containsKey('name'), isTrue);
       expect(resource.containsKey('gender'), isTrue);
       expect(resource.containsKey('birthDate'), isFalse);
-      final security =
-          (resource['meta'] as Map)['security'] as List;
+      final security = (resource['meta'] as Map)['security'] as List;
       expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
 
@@ -1251,12 +1252,10 @@ void main() {
 
     test('empty search results return bundle with total 0', () async {
       when(() => mockRequest.url).thenReturn(
-        Uri.parse(
-            'http://localhost:8080/Patient?name=NonExistent&_count=10'),
+        Uri.parse('http://localhost:8080/Patient?name=NonExistent&_count=10'),
       );
       when(() => mockRequest.requestedUri).thenReturn(
-        Uri.parse(
-            'http://localhost:8080/Patient?name=NonExistent&_count=10'),
+        Uri.parse('http://localhost:8080/Patient?name=NonExistent&_count=10'),
       );
       when(
         () => mockDb.search(
@@ -1272,7 +1271,9 @@ void main() {
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {'name': ['NonExistent']},
+          searchParameters: {
+            'name': ['NonExistent']
+          },
         ),
       ).thenAnswer((_) async => 0);
 
@@ -1322,7 +1323,9 @@ void main() {
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {'name': ['Smith']},
+          searchParameters: {
+            'name': ['Smith']
+          },
         ),
       ).thenAnswer((_) async => 1);
 
@@ -1369,7 +1372,9 @@ void main() {
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {'name': ['Nobody']},
+          searchParameters: {
+            'name': ['Nobody']
+          },
         ),
       ).thenAnswer((_) async => 0);
 
@@ -1416,7 +1421,9 @@ void main() {
       });
       when(() => mockDb.search(
             resourceType: fhir.R4ResourceType.Patient,
-            searchParameters: {'_id': ['pat-1']},
+            searchParameters: {
+              '_id': ['pat-1']
+            },
             hasParameters: any(named: 'hasParameters'),
             count: any(named: 'count'),
             offset: any(named: 'offset'),
@@ -1424,7 +1431,9 @@ void main() {
           )).thenAnswer((_) async => [patient]);
       when(() => mockDb.searchCount(
             resourceType: fhir.R4ResourceType.Patient,
-            searchParameters: {'_id': ['pat-1']},
+            searchParameters: {
+              '_id': ['pat-1']
+            },
             hasParameters: any(named: 'hasParameters'),
           )).thenAnswer((_) async => 1);
 
@@ -1468,8 +1477,7 @@ void main() {
       expect(body['entry'], isNull);
     });
 
-    test('patient scope restricts Observation search to compartment',
-        () async {
+    test('patient scope restricts Observation search to compartment', () async {
       final obs = fhir.Observation.fromJson({
         'resourceType': 'Observation',
         'id': 'obs-1',
@@ -1619,8 +1627,7 @@ void main() {
         ),
       ).thenAnswer((_) async => [patient]);
       when(
-        () => mockDb.deleteResource(
-            fhir.R4ResourceType.Patient, 'cond-del-1'),
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'cond-del-1'),
       ).thenAnswer((_) async => true);
 
       final response = await conditionalDeleteHandler(
@@ -1631,8 +1638,7 @@ void main() {
 
       expect(response.statusCode, equals(204));
       verify(
-        () => mockDb.deleteResource(
-            fhir.R4ResourceType.Patient, 'cond-del-1'),
+        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'cond-del-1'),
       ).called(1);
     });
 
@@ -1679,10 +1685,12 @@ void main() {
       );
 
       expect(response.statusCode, equals(204));
-      verify(() => mockDb.deleteResource(
-          fhir.R4ResourceType.Patient, 'multi-1')).called(1);
-      verify(() => mockDb.deleteResource(
-          fhir.R4ResourceType.Patient, 'multi-2')).called(1);
+      verify(() =>
+              mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-1'))
+          .called(1);
+      verify(() =>
+              mockDb.deleteResource(fhir.R4ResourceType.Patient, 'multi-2'))
+          .called(1);
     });
 
     test('returns 200 when no matches found', () async {
