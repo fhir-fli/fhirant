@@ -451,6 +451,10 @@ class FhirAntServer {
     );
 
     var pipeline = const Pipeline()
+        // Must run first: pins the client identity to the real connection
+        // address so logging and rate limiting can't be fooled by a spoofed
+        // X-Forwarded-For header.
+        .addMiddleware(_trustedClientIpMiddleware())
         .addMiddleware(_logRequestsMiddleware())
         .addMiddleware(corsMiddleware())
         .addMiddleware(contentNegotiationMiddleware());
@@ -561,6 +565,38 @@ class FhirAntServer {
         };
         final updatedRequest = request.change(context: {'auth_user': devUser});
         return innerHandler(updatedRequest);
+      };
+    };
+  }
+
+  /// Overwrites any incoming `X-Forwarded-For` header with the real TCP
+  /// connection address.
+  ///
+  /// `shelf_rate_limiter` (and our request logging) key on `X-Forwarded-For`,
+  /// falling back to the connection address only when that header is absent.
+  /// Since a client can send any `X-Forwarded-For` it likes, an attacker could
+  /// rotate the header to get a fresh rate-limit bucket per request and defeat
+  /// brute-force/DoS protection — including on `/auth/login`. Pinning the header
+  /// to the connection address (available as `HttpConnectionInfo`) removes that
+  /// bypass for fhirant's direct on-device/LAN deployments.
+  ///
+  /// NOTE: this intentionally does NOT trust an upstream proxy's
+  /// `X-Forwarded-For`. If fhirant is ever run behind a trusted reverse proxy
+  /// (e.g. a cloud load balancer that sets the header), this would need a
+  /// proxy-allowlist so the real client IP from the header is honored there.
+  Middleware _trustedClientIpMiddleware() {
+    return (Handler innerHandler) {
+      return (Request request) {
+        final info = request.context['shelf.io.connection_info'];
+        if (info is HttpConnectionInfo) {
+          return innerHandler(
+            request.change(
+              headers: {'x-forwarded-for': info.remoteAddress.address},
+            ),
+          );
+        }
+        // No connection info (e.g. in-process tests) — leave the request as-is.
+        return innerHandler(request);
       };
     };
   }
