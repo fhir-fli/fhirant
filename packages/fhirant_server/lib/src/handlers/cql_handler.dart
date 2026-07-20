@@ -72,7 +72,7 @@ Future<Response> libraryEvaluateHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: $e',
+      'CQL evaluation error',
     );
   }
 }
@@ -163,7 +163,7 @@ Future<Response> libraryEvaluateByUrlHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: $e',
+      'CQL evaluation error',
     );
   }
 }
@@ -239,7 +239,7 @@ Future<Response> cqlHandler(
     return _errorResponse(
       500,
       'exception',
-      'CQL evaluation error: $e',
+      'CQL evaluation error',
     );
   }
 }

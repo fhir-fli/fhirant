@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
@@ -150,9 +151,10 @@ Future<Response> registerHandler(
         'scopes': effectiveScopes,
       }),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Registration failed', e, stackTrace);
     return Response.internalServerError(
-      body: jsonEncode({'error': 'Registration failed: $e'}),
+      body: jsonEncode({'error': 'Registration failed'}),
     );
   }
 }

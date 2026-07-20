@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -100,6 +101,16 @@ Future<Response> loginHandler(
     // Update last login
     await dbInterface.updateLastLogin(user.id);
 
+    // Transparently upgrade an outdated password hash (legacy HMAC, or PBKDF2
+    // with fewer iterations than the current target) now that we have the
+    // verified plaintext. This migrates existing accounts to the strong KDF
+    // without any user action.
+    if (PasswordHasher.needsRehash(user.passwordHash)) {
+      final newSalt = PasswordHasher.generateSalt();
+      final newHash = PasswordHasher.hashPassword(password, newSalt);
+      await dbInterface.updatePassword(user.id, newHash, newSalt);
+    }
+
     // Compute effective scopes: user-specific or role defaults
     final List<String> effectiveScopes;
     if (user.scopes != null && user.scopes!.isNotEmpty) {
@@ -141,9 +152,10 @@ Future<Response> loginHandler(
         if (patientId != null) 'patient': patientId,
       }),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Login failed', e, stackTrace);
     return Response.internalServerError(
-      body: jsonEncode({'error': 'Login failed: $e'}),
+      body: jsonEncode({'error': 'Login failed'}),
     );
   }
 }
@@ -179,9 +191,10 @@ Future<Response> unlockAccountHandler(
         'username': user.username,
       }),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Unlock failed', e, stackTrace);
     return Response.internalServerError(
-      body: jsonEncode({'error': 'Unlock failed: $e'}),
+      body: jsonEncode({'error': 'Unlock failed'}),
     );
   }
 }

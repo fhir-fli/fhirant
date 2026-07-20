@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
@@ -212,10 +213,11 @@ Future<Response> authorizePostHandler(
         .toString();
 
     return Response(302, headers: {'Location': redirectUrl});
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Authorization failed', e, stackTrace);
     return Response(
       400,
-      body: _errorPage('Authorization failed: $e'),
+      body: _errorPage('Authorization failed'),
       headers: {'Content-Type': 'text/html'},
     );
   }
@@ -348,12 +350,13 @@ Future<Response> authorizeJsonHandler(
       }),
       headers: {'Content-Type': 'application/json'},
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Authorization failed', e, stackTrace);
     return Response(
       400,
       body: jsonEncode({
         'error': 'server_error',
-        'error_description': 'Authorization failed: $e',
+        'error_description': 'Authorization failed',
       }),
     );
   }

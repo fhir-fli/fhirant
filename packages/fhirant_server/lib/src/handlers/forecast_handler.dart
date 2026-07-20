@@ -115,7 +115,7 @@ Future<Response> _handleForecast(
     return _errorResponse(
       500,
       'exception',
-      'Immunization forecast error: $e',
+      'Immunization forecast error',
     );
   }
 }

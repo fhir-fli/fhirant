@@ -154,7 +154,7 @@ Future<Response> exportKickoffHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error in export kick-off', e, stackTrace);
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 
@@ -229,7 +229,7 @@ Future<Response> exportStatusHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error in export status poll', e, stackTrace);
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 
@@ -264,7 +264,7 @@ Future<Response> exportFileHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error serving export file', e, stackTrace);
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 
@@ -306,7 +306,7 @@ Future<Response> exportDeleteHandler(
     return Response(202, body: '');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error deleting export job', e, stackTrace);
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 
@@ -621,7 +621,7 @@ Future<void> _processExport(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Export job $jobId failed', e, stackTrace);
-    await _failJob(dbInterface, jobId, e.toString());
+    await _failJob(dbInterface, jobId, 'Export failed');
   }
 }
 

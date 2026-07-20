@@ -113,7 +113,7 @@ Future<Response> validateCodeHandler(
   } catch (e, stackTrace) {
     FhirantLogging()
         .logError(r'Terminology $validate-code failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 
@@ -291,7 +291,7 @@ Future<Response> lookupHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $lookup failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 
@@ -461,7 +461,7 @@ Future<Response> expandHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $expand failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 
@@ -884,7 +884,7 @@ Future<Response> preferredIdHandler(
   } catch (e, stackTrace) {
     FhirantLogging()
         .logError(r'Terminology $preferred-id failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 
@@ -1022,7 +1022,7 @@ Future<Response> translateHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $translate failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 
@@ -1150,7 +1150,7 @@ Future<Response> subsumesHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $subsumes failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error: $e');
+    return _errorResponse(500, 'Internal error');
   }
 }
 

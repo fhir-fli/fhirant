@@ -116,7 +116,7 @@ Future<Response> validateHandler(
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'Validation error: $e',
+            'diagnostics': 'Validation error',
           }
         ],
       }),

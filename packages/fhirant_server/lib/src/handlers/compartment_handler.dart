@@ -127,7 +127,7 @@ Future<Response> everythingHandler(
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 
@@ -247,7 +247,7 @@ Future<Response> compartmentSearchHandler(
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 

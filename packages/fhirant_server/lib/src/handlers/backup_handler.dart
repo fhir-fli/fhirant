@@ -47,7 +47,7 @@ Future<Response> backupHandler(
         fhir.OperationOutcomeIssue(
           severity: fhir.IssueSeverity.error,
           code: fhir.IssueType.exception,
-          diagnostics: 'Backup failed: $e'.toFhirString,
+          diagnostics: 'Backup failed'.toFhirString,
         ),
       ],
     );
@@ -164,14 +164,19 @@ Future<Response> restoreHandler(
             ),
           );
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         errorCount++;
+        FhirantLogging().logError(
+          'Error saving ${resource.resourceTypeString}/${resource.id}',
+          e,
+          stackTrace,
+        );
         issues.add(
           fhir.OperationOutcomeIssue(
             severity: fhir.IssueSeverity.error,
             code: fhir.IssueType.exception,
             diagnostics:
-                'Error saving ${resource.resourceTypeString}/${resource.id}: $e'
+                'Error saving ${resource.resourceTypeString}/${resource.id}'
                     .toFhirString,
           ),
         );
@@ -205,7 +210,7 @@ Future<Response> restoreHandler(
         fhir.OperationOutcomeIssue(
           severity: fhir.IssueSeverity.error,
           code: fhir.IssueType.exception,
-          diagnostics: 'Restore failed: $e'.toFhirString,
+          diagnostics: 'Restore failed'.toFhirString,
         ),
       ],
     );

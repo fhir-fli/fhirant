@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/pkce.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -50,11 +51,12 @@ Future<Response> refreshHandler(
             'Supported grant types: authorization_code, refresh_token',
       }),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Token exchange failed', e, stackTrace);
     return Response.internalServerError(
       body: jsonEncode({
         'error': 'server_error',
-        'error_description': 'Token exchange failed: $e',
+        'error_description': 'Token exchange failed',
       }),
     );
   }

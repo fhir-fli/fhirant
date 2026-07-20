@@ -117,7 +117,7 @@ Future<Response> resourceHistoryHandler(
     );
     return _errorResponse(
       'Failed to fetch resource history',
-      e.toString(),
+      'Internal error',
     );
   }
 }
@@ -220,7 +220,7 @@ Future<Response> typeHistoryHandler(
     );
     return _errorResponse(
       'Failed to fetch resource type history',
-      e.toString(),
+      'Internal error',
     );
   }
 }
@@ -311,7 +311,7 @@ Future<Response> systemHistoryHandler(
     );
     return _errorResponse(
       'Failed to fetch system history',
-      e.toString(),
+      'Internal error',
     );
   }
 }
@@ -413,7 +413,7 @@ Future<Response> vreadResourceHandler(
     );
     return _errorResponse(
       'Failed to fetch resource version',
-      e.toString(),
+      'Internal error',
     );
   }
 }

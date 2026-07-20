@@ -650,6 +650,15 @@ class FhirAntDb extends FhirDb {
     );
   }
 
+  /// Replaces a user's stored password hash and salt. Used to transparently
+  /// upgrade a legacy/low-cost hash to the current KDF on a successful login.
+  Future<void> updatePassword(int id, String passwordHash, String salt) async {
+    await customStatement(
+      'UPDATE users SET password_hash = ?, salt = ? WHERE id = ?',
+      [passwordHash, salt, id],
+    );
+  }
+
   Future<void> deactivateUser(int id) async {
     await customStatement(
       'UPDATE users SET active = 0 WHERE id = ?',

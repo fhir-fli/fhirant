@@ -51,7 +51,7 @@ Future<Response> metaHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to get resource meta', e.toString());
+    return _errorResponse('Failed to get resource meta', 'Internal error');
   }
 }
 
@@ -117,7 +117,7 @@ Future<Response> metaAddHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to add resource meta', e.toString());
+    return _errorResponse('Failed to add resource meta', 'Internal error');
   }
 }
 
@@ -183,7 +183,7 @@ Future<Response> metaDeleteHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to delete resource meta', e.toString());
+    return _errorResponse('Failed to delete resource meta', 'Internal error');
   }
 }
 

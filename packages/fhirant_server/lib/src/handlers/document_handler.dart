@@ -92,7 +92,7 @@ Future<Response> documentHandler(
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error: $e');
+    return _operationOutcome(500, 'Internal error');
   }
 }
 

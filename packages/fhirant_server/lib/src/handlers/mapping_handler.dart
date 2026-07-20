@@ -250,7 +250,7 @@ Future<Response> mappingHandler(Request request) async {
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'Mapping error: $e',
+            'diagnostics': 'Mapping error',
           }
         ],
       }),

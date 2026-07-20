@@ -65,10 +65,23 @@ void main(List<String> arguments) async {
     );
   }
 
+  final devMode = args['dev-mode'] as bool;
+
+  // The default encryption key is public; a real deployment must set its own.
+  // Refuse to start on the default key unless explicitly in dev mode, so a
+  // production database is never written under a known key by accident.
   if (encryptionKey == 'default-development-key') {
+    if (!devMode) {
+      logger.logError(
+        'Refusing to start: FHIRANT_ENCRYPTION_KEY is not set, so the database '
+        'would be encrypted with a publicly-known default key. Set '
+        'FHIRANT_ENCRYPTION_KEY, or pass --dev-mode for local testing.',
+      );
+      exit(1);
+    }
     logger.logWarning(
-      'Using default encryption key. '
-      'Set FHIRANT_ENCRYPTION_KEY for production.',
+      'Dev mode: using the default (publicly-known) encryption key. '
+      'Set FHIRANT_ENCRYPTION_KEY for any real deployment.',
     );
   }
 
@@ -115,7 +128,6 @@ void main(List<String> arguments) async {
   }
 
   // Create and start server
-  final devMode = args['dev-mode'] as bool;
   final server = FhirAntServer(
     db,
     jwtSecret: jwtSecret,

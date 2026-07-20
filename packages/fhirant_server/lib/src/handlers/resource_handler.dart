@@ -40,7 +40,7 @@ Future<Response> postSearchHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to process search', e.toString());
+    return _errorResponse('Failed to process search', 'Internal error');
   }
 }
 
@@ -160,7 +160,7 @@ Future<Response> postSystemSearchHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to process system search', e.toString());
+    return _errorResponse('Failed to process system search', 'Internal error');
   }
 }
 
@@ -567,7 +567,7 @@ Future<Response> _searchResources(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to fetch resources', e.toString());
+    return _errorResponse('Failed to fetch resources', 'Internal error');
   }
 }
 
@@ -805,7 +805,7 @@ Future<Response> postResourceHandler(
     );
     return _errorResponse(
       'Error processing request',
-      e.toString(),
+      'Internal error',
       statusCode: 400,
     );
   }
@@ -941,7 +941,7 @@ Future<Response> putResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error updating resource', e.toString());
+    return _errorResponse('Error updating resource', 'Internal error');
   }
 }
 
@@ -1088,7 +1088,7 @@ Future<Response> getResourceByIdHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to fetch resource', e.toString());
+    return _errorResponse('Failed to fetch resource', 'Internal error');
   }
 }
 
@@ -1223,7 +1223,7 @@ Future<Response> deleteResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error deleting resource', e.toString());
+    return _errorResponse('Error deleting resource', 'Internal error');
   }
 }
 
@@ -1297,7 +1297,7 @@ Future<Response> conditionalDeleteHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error in conditional delete', e.toString());
+    return _errorResponse('Error in conditional delete', 'Internal error');
   }
 }
 

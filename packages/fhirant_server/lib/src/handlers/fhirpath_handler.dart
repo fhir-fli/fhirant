@@ -153,7 +153,7 @@ Future<Response> fhirPathHandler(
           {
             'severity': 'error',
             'code': 'exception',
-            'diagnostics': 'FHIRPath evaluation error: $e',
+            'diagnostics': 'FHIRPath evaluation error',
           }
         ],
       }),

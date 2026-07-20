@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
@@ -35,11 +36,12 @@ Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
       jsonEncode({'status': 'revoked'}),
       headers: {'Content-Type': 'application/json'},
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Revocation failed', e, stackTrace);
     return Response.internalServerError(
       body: jsonEncode({
         'error': 'server_error',
-        'error_description': 'Revocation failed: $e',
+        'error_description': 'Revocation failed',
       }),
     );
   }
@@ -76,11 +78,12 @@ Future<Response> logoutHandler(Request request, FhirAntDb dbInterface) async {
       jsonEncode({'status': 'logged_out'}),
       headers: {'Content-Type': 'application/json'},
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Logout failed', e, stackTrace);
     return Response.internalServerError(
       body: jsonEncode({
         'error': 'server_error',
-        'error_description': 'Logout failed: $e',
+        'error_description': 'Logout failed',
       }),
     );
   }

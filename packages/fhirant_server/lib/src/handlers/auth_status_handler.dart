@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for auth status. Returns whether this is a first-user setup.
@@ -16,9 +17,10 @@ Future<Response> authStatusHandler(
     return Response.ok(
       jsonEncode({'firstUser': userCount == 0}),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Failed to check auth status', e, stackTrace);
     return Response.internalServerError(
-      body: jsonEncode({'error': 'Failed to check auth status: $e'}),
+      body: jsonEncode({'error': 'Failed to check auth status'}),
     );
   }
 }

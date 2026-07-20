@@ -147,7 +147,7 @@ Future<Response> patchResourceHandler(
     );
     return _errorResponse(
       'Error processing PATCH request',
-      e.toString(),
+      'Internal error',
     );
   }
 }

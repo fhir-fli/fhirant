@@ -37,7 +37,7 @@ Future<Response> bundleHandler(
     FhirantLogging().logError('Error processing Bundle request', e, stackTrace);
     return _errorResponse(
       'Failed to process Bundle',
-      e.toString(),
+      e is BundleEntryException ? e.message : 'Internal error',
       statusCode: 400,
     );
   }
@@ -85,9 +85,11 @@ Future<Response> _processTransaction(
         }
       }
       final txnStatus = e is BundleEntryException ? e.statusCode : 400;
+      final txnDetail =
+          e is BundleEntryException ? e.message : 'Internal error';
       return _errorResponse(
         'Transaction failed at entry $i',
-        e.toString(),
+        txnDetail,
         statusCode: txnStatus,
       );
     }
@@ -160,6 +162,8 @@ Future<Response> _processBatch(
     } catch (e, stackTrace) {
       FhirantLogging().logError('Batch entry $i failed', e, stackTrace);
       final statusCode = e is BundleEntryException ? e.statusCode : 400;
+      final diagnostic =
+          e is BundleEntryException ? e.message : 'Batch entry $i failed';
       resultEntries.add(
         fhir.BundleEntry(
           response: fhir.BundleResponse(
@@ -169,7 +173,7 @@ Future<Response> _processBatch(
                 fhir.OperationOutcomeIssue(
                   severity: fhir.IssueSeverity.error,
                   code: fhir.IssueType.exception,
-                  diagnostics: e.toString().toFhirString,
+                  diagnostics: diagnostic.toFhirString,
                 ),
               ],
             ),
