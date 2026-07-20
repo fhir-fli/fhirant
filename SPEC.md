@@ -65,18 +65,36 @@ FHIRant is an on-device FHIR R4 server written in Dart. It runs as a standalone 
 
 ### Authentication & Authorization — DONE
 
-- [x] User registration with bcrypt password hashing
-- [x] Login with JWT access token (8h) + refresh token (7d)
+- [x] User registration with PBKDF2-HMAC-SHA256 password hashing (120k iters;
+      legacy hashes auto-upgraded on next login)
+- [x] Login with JWT access token (8h) + refresh token (7d); JWT algorithm
+      pinned to HS256 on verify (rejects alg:none / algorithm confusion)
 - [x] Token refresh flow
 - [x] Token revocation + hourly cleanup
 - [x] Logout
 - [x] OAuth 2.0 authorization code flow with PKCE
 - [x] SMART on FHIR scope enforcement (`patient/*.read`, `user/Observation.write`, etc.)
+- [x] System-level operations (`$backup`/`$restore`/`$export`) require admin
+      (system scope); no raw exception text leaked to clients
 - [x] Account lockout (5 failures → 15-minute lock)
 - [x] Admin account unlock
-- [x] Dev mode (bypass auth with synthetic admin)
 - [x] SMART configuration discovery (`/.well-known/smart-configuration`)
 - [x] User roles: admin, clinician, readonly
+
+**Security mode (one app, two modes — see `lib/src/config/security_config.dart`):**
+- [x] **Experimentation** — authentication disabled, for TEST DATA ONLY (LAN
+      testing without friction); a standing on-device banner warns "no PHI".
+      This is `devMode` at the server layer (synthetic-admin middleware).
+- [x] **Secure** — authentication required; switching to it requires creating
+      the single admin account first (first-run bootstrap). Gets all the
+      hardening above plus the rate limiter keyed on the real connection (not a
+      spoofable X-Forwarded-For), and the headless server refuses the default
+      DB encryption key.
+- [x] Default posture is a single documented constant `kDefaultAuthDisabled`
+      (currently `true` for the pre-release/beta phase; flip to `false` for a
+      production/PHI ship). The operator's chosen mode is persisted.
+- [x] Android: `allowBackup=false` + `FLAG_SECURE` (keeps PHI out of cloud
+      backups, screenshots, and the recent-apps thumbnail).
 
 ### CRUD Operations — DONE
 
