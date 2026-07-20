@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
+import 'package:fhirant/src/config/security_config.dart';
 import 'package:fhirant/src/services/database_service.dart';
 import 'package:fhirant/src/services/server_service.dart';
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
@@ -10,6 +11,7 @@ import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum ServerStatus { stopped, starting, running, stopping, error }
 
@@ -20,15 +22,38 @@ class ServerState extends ChangeNotifier {
   })  : _dbService = dbService,
         _serverService = serverService {
     unawaited(_detectWifiIp());
+    unawaited(_loadPersistedMode());
   }
   final DatabaseService _dbService;
   final ServerService _serverService;
+
+  /// SharedPreferences key for the persisted auth posture. Absent until the
+  /// operator has explicitly chosen a mode.
+  static const _authDisabledKey = 'auth_disabled';
 
   ServerStatus _status = ServerStatus.stopped;
   String? _errorMessage;
   String? _wifiIp;
   int _port = 8080;
-  bool _devMode = true;
+
+  /// Whether authentication is disabled (Experimentation mode). Seeded from
+  /// [kDefaultAuthDisabled] for a fresh install and overwritten by the
+  /// operator's persisted choice once they pick a mode.
+  bool _devMode = kDefaultAuthDisabled;
+
+  Future<void> _loadPersistedMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getBool(_authDisabledKey);
+    if (stored != null && stored != _devMode) {
+      _devMode = stored;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _persistMode(bool authDisabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_authDisabledKey, authDisabled);
+  }
 
   final Queue<RequestLogEntry> _requestLog = Queue<RequestLogEntry>();
   static const int _maxLogEntries = 200;
@@ -64,6 +89,9 @@ class ServerState extends ChangeNotifier {
   set devMode(bool value) {
     if (_status != ServerStatus.stopped) return;
     _devMode = value;
+    // Persist the operator's explicit choice so it survives restarts and no
+    // longer follows the ship default.
+    unawaited(_persistMode(value));
     notifyListeners();
   }
 
