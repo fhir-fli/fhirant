@@ -98,8 +98,7 @@ void main() {
         isTrue,
       );
       expect(
-        SmartScopeEnforcer.isAuthorized(
-            ['user/Patient.r'], 'Observation', 'r'),
+        SmartScopeEnforcer.isAuthorized(['user/Patient.r'], 'Observation', 'r'),
         isFalse,
       );
     });
@@ -169,8 +168,7 @@ void main() {
     });
 
     test('PUT is update', () {
-      expect(
-          SmartScopeEnforcer.methodToPermission('PUT', '/Patient/123'), 'u');
+      expect(SmartScopeEnforcer.methodToPermission('PUT', '/Patient/123'), 'u');
     });
 
     test('PATCH is update', () {
@@ -184,13 +182,12 @@ void main() {
     });
 
     test('auth routes return null', () {
-      expect(SmartScopeEnforcer.methodToPermission('POST', '/auth/login'),
-          isNull);
+      expect(
+          SmartScopeEnforcer.methodToPermission('POST', '/auth/login'), isNull);
     });
 
     test('metadata returns null', () {
-      expect(
-          SmartScopeEnforcer.methodToPermission('GET', '/metadata'), isNull);
+      expect(SmartScopeEnforcer.methodToPermission('GET', '/metadata'), isNull);
     });
 
     test('.well-known returns null', () {
@@ -225,6 +222,67 @@ void main() {
 
     test('returns null for metadata', () {
       expect(SmartScopeEnforcer.resourceTypeFromPath('/metadata'), isNull);
+    });
+  });
+
+  group('SmartScopeEnforcer.isPrivilegedSystemOperation', () {
+    test('flags root system operations', () {
+      for (final path in [
+        '/\$backup',
+        '/\$restore',
+        '/\$export',
+        '/\$export-poll-status/abc',
+        '/\$export-file/abc/Patient.ndjson',
+      ]) {
+        expect(SmartScopeEnforcer.isPrivilegedSystemOperation(path), isTrue,
+            reason: path);
+      }
+    });
+
+    test('does not flag instance/type-scoped operations', () {
+      for (final path in [
+        '/Patient/\$export', // patient-level: governed by resource scope
+        '/Group/g1/\$export', // group-level
+        '/Patient/123/\$everything',
+        '/CodeSystem/\$lookup',
+        '/\$validate', // compute op, not a whole-DB dump/overwrite
+        '/\$cql',
+        '/Patient',
+        '/',
+      ]) {
+        expect(SmartScopeEnforcer.isPrivilegedSystemOperation(path), isFalse,
+            reason: path);
+      }
+    });
+
+    test('tolerates a missing leading slash', () {
+      expect(
+          SmartScopeEnforcer.isPrivilegedSystemOperation('\$backup'), isTrue);
+    });
+  });
+
+  group('SmartScopeEnforcer.isSystemAuthorized', () {
+    test('admin role is always authorized', () {
+      expect(SmartScopeEnforcer.isSystemAuthorized([], 'admin'), isTrue);
+    });
+
+    test('a system/ scope authorizes a non-admin role', () {
+      expect(
+          SmartScopeEnforcer.isSystemAuthorized(['system/*.rs'], 'clinician'),
+          isTrue);
+    });
+
+    test('user/ and patient/ scopes are not sufficient', () {
+      expect(SmartScopeEnforcer.isSystemAuthorized(['user/*.*'], 'clinician'),
+          isFalse);
+      expect(
+          SmartScopeEnforcer.isSystemAuthorized(['patient/*.rs'], 'readonly'),
+          isFalse);
+    });
+
+    test('readonly with default scopes is not authorized', () {
+      expect(SmartScopeEnforcer.isSystemAuthorized(['user/*.rs'], 'readonly'),
+          isFalse);
     });
   });
 }

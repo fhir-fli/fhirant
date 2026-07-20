@@ -7,7 +7,13 @@ import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
 /// Paths that do not require authentication.
-const _publicPrefixes = ['auth/', 'metadata', 'favicon.ico', '.well-known/', 'health'];
+const _publicPrefixes = [
+  'auth/',
+  'metadata',
+  'favicon.ico',
+  '.well-known/',
+  'health'
+];
 
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context.
@@ -76,8 +82,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       }
 
       // Check if the token has been revoked
-      final revoked =
-          await dbInterface.isTokenRevoked(TokenHasher.hash(token));
+      final revoked = await dbInterface.isTokenRevoked(TokenHasher.hash(token));
       if (revoked) {
         return Response(401,
             body: jsonEncode({
@@ -105,12 +110,38 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // Extract patient context from JWT (for patient-level scopes)
       final patientId = payload['patient'] as String?;
 
+      // Privileged root-level system operations ($backup/$restore/$export…)
+      // carry no resource type, so the resource-scope check below never
+      // covers them. Enforce system-level authorization (admin role, or an
+      // explicit system/ scope) here, or any authenticated user — including
+      // readonly — could dump or overwrite the entire database.
+      //
+      // On a single-operator on-device deployment the sole account is the
+      // bootstrap admin, so this does not impede the intended mobile use.
+      if (SmartScopeEnforcer.isPrivilegedSystemOperation(path)) {
+        final role = payload['role'] as String? ?? 'readonly';
+        if (!SmartScopeEnforcer.isSystemAuthorized(scopes, role)) {
+          return Response(403,
+              body: jsonEncode({
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'forbidden',
+                    'diagnostics':
+                        'This operation requires system-level (admin) '
+                            'privilege.',
+                  }
+                ]
+              }));
+        }
+      }
+
       // Determine the required permission for this request
       final permission =
           SmartScopeEnforcer.methodToPermission(request.method, path);
       if (permission != null) {
-        final resourceType =
-            SmartScopeEnforcer.resourceTypeFromPath(path);
+        final resourceType = SmartScopeEnforcer.resourceTypeFromPath(path);
         // Only enforce scopes for resource-targeted requests
         if (resourceType != null) {
           if (!SmartScopeEnforcer.isAuthorized(
@@ -141,7 +172,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
                       'code': 'forbidden',
                       'diagnostics':
                           'patient/ scopes require a patient context '
-                          '(patient claim in JWT)',
+                              '(patient claim in JWT)',
                     }
                   ]
                 }));
@@ -154,8 +185,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (patientId != null) {
         payload['patientId'] = patientId;
       }
-      final updatedRequest =
-          request.change(context: {'auth_user': payload});
+      final updatedRequest = request.change(context: {'auth_user': payload});
       return innerHandler(updatedRequest);
     };
   };

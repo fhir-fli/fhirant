@@ -7,6 +7,7 @@ import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
+import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -57,9 +58,19 @@ class FhirAntServer {
     this.devMode = false,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
-    final secret = jwtSecret ??
-        Platform.environment['FHIRANT_JWT_SECRET'] ??
-        'fhirant-dev-secret-change-in-production';
+    // Resolve the signing secret without ever falling back to a shared,
+    // hardcoded value (which would let anyone forge tokens). An explicit
+    // secret (e.g. from the mobile app's secure storage) or FHIRANT_JWT_SECRET
+    // is used as-is; otherwise a strong per-process secret is generated.
+    // Headless deployments should pass a persisted secret (see
+    // JwtSecret.resolveForServer in bin/server.dart) so tokens survive
+    // restarts; an unpersisted generated secret is still safe, just ephemeral.
+    final envSecret = Platform.environment['FHIRANT_JWT_SECRET'];
+    final secret = (jwtSecret != null && jwtSecret.isNotEmpty)
+        ? jwtSecret
+        : (envSecret != null && envSecret.isNotEmpty)
+            ? envSecret
+            : JwtSecret.generate();
     _jwtService = JwtService(secret);
   }
 
@@ -73,20 +84,17 @@ class FhirAntServer {
   Router createRouter() {
     final router = Router()
       // Auth routes
-      ..get('/auth/status',
-          (Request req) => authStatusHandler(req, dbInterface))
+      ..get(
+          '/auth/status', (Request req) => authStatusHandler(req, dbInterface))
       ..post('/auth/register',
           (Request req) => registerHandler(req, dbInterface, _jwtService))
       ..post('/auth/login',
           (Request req) => loginHandler(req, dbInterface, _jwtService))
       ..post('/auth/token',
           (Request req) => refreshHandler(req, dbInterface, _jwtService))
-      ..post('/auth/revoke',
-          (Request req) => revokeHandler(req, dbInterface))
-      ..post('/auth/logout',
-          (Request req) => logoutHandler(req, dbInterface))
-      ..get('/auth/authorize',
-          (Request req) => authorizeGetHandler(req))
+      ..post('/auth/revoke', (Request req) => revokeHandler(req, dbInterface))
+      ..post('/auth/logout', (Request req) => logoutHandler(req, dbInterface))
+      ..get('/auth/authorize', (Request req) => authorizeGetHandler(req))
       ..post('/auth/authorize', (Request req) {
         final contentType = req.headers['content-type'] ?? '';
         if (contentType.contains('application/json')) {
@@ -95,12 +103,10 @@ class FhirAntServer {
         return authorizePostHandler(req, dbInterface);
       })
       // Admin routes (protected by auth middleware — not under auth/ prefix)
-      ..post('/admin/unlock/<userId>',
-          (Request req, String userId) {
+      ..post('/admin/unlock/<userId>', (Request req, String userId) {
         final id = int.tryParse(userId);
         if (id == null) {
-          return Response(400,
-              body: '{"error": "Invalid user ID"}');
+          return Response(400, body: '{"error": "Invalid user ID"}');
         }
         return unlockAccountHandler(req, id, dbInterface);
       })
@@ -130,13 +136,13 @@ class FhirAntServer {
       // Terminology operations
       ..get(
         r'/CodeSystem/<id>/$validate-code',
-        (Request req, String id) => validateCodeHandler(
-            req, dbInterface, 'CodeSystem', id),
+        (Request req, String id) =>
+            validateCodeHandler(req, dbInterface, 'CodeSystem', id),
       )
       ..post(
         r'/CodeSystem/<id>/$validate-code',
-        (Request req, String id) => validateCodeHandler(
-            req, dbInterface, 'CodeSystem', id),
+        (Request req, String id) =>
+            validateCodeHandler(req, dbInterface, 'CodeSystem', id),
       )
       ..get(
         r'/CodeSystem/$validate-code',
@@ -148,13 +154,13 @@ class FhirAntServer {
       )
       ..get(
         r'/ValueSet/<id>/$validate-code',
-        (Request req, String id) => validateCodeHandler(
-            req, dbInterface, 'ValueSet', id),
+        (Request req, String id) =>
+            validateCodeHandler(req, dbInterface, 'ValueSet', id),
       )
       ..post(
         r'/ValueSet/<id>/$validate-code',
-        (Request req, String id) => validateCodeHandler(
-            req, dbInterface, 'ValueSet', id),
+        (Request req, String id) =>
+            validateCodeHandler(req, dbInterface, 'ValueSet', id),
       )
       ..get(
         r'/ValueSet/$validate-code',
@@ -241,10 +247,8 @@ class FhirAntServer {
         (Request req) => subsumesHandler(req, dbInterface),
       )
       // Backup/Restore endpoints
-      ..post(r'/$backup',
-          (Request req) => backupHandler(req, dbInterface))
-      ..post(r'/$restore',
-          (Request req) => restoreHandler(req, dbInterface))
+      ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
+      ..post(r'/$restore', (Request req) => restoreHandler(req, dbInterface))
       // FHIRPath endpoint - supports GET and POST
       ..get('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
       ..post('/\$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
@@ -264,8 +268,7 @@ class FhirAntServer {
       // Bulk Data Export endpoints
       ..get(
         '/\$export',
-        (Request req) => exportKickoffHandler(
-            req, dbInterface, exportDir,
+        (Request req) => exportKickoffHandler(req, dbInterface, exportDir,
             exportLevel: 'system'),
       )
       ..get(
@@ -276,8 +279,7 @@ class FhirAntServer {
       )
       ..get(
         '/Patient/\$export',
-        (Request req) => exportKickoffHandler(
-            req, dbInterface, exportDir,
+        (Request req) => exportKickoffHandler(req, dbInterface, exportDir,
             exportLevel: 'patient'),
       )
       ..get(
@@ -298,8 +300,7 @@ class FhirAntServer {
       // $document operation on Composition
       ..get(
         r'/Composition/<id>/$document',
-        (Request req, String id) =>
-            documentHandler(req, id, dbInterface),
+        (Request req, String id) => documentHandler(req, id, dbInterface),
       )
       // $everything operation (before history to avoid /<type>/<id>/_history match)
       ..get(
@@ -405,7 +406,6 @@ class FhirAntServer {
             conditionalDeleteHandler(req, resourceType, dbInterface),
       );
 
-
     return router;
   }
 
@@ -427,7 +427,8 @@ class FhirAntServer {
     if (devMode) {
       pipeline = pipeline.addMiddleware(_devModeMiddleware());
     } else {
-      pipeline = pipeline.addMiddleware(authMiddleware(_jwtService, dbInterface));
+      pipeline =
+          pipeline.addMiddleware(authMiddleware(_jwtService, dbInterface));
     }
 
     return pipeline
@@ -520,8 +521,7 @@ class FhirAntServer {
           'role': 'admin',
           'scopes': ['system/*.*'],
         };
-        final updatedRequest =
-            request.change(context: {'auth_user': devUser});
+        final updatedRequest = request.change(context: {'auth_user': devUser});
         return innerHandler(updatedRequest);
       };
     };

@@ -21,7 +21,9 @@ void main() {
     final server = await createTestServer(exportDir: exportDir);
     db = server.db;
     handler = server.handler;
-    token = generateTestToken();
+    // System-level $export requires system-level authorization; the operator
+    // running these bulk exports is an admin.
+    token = generateTestToken(role: 'admin', scopes: ['system/*.*']);
   });
 
   tearDown(() async {
@@ -53,7 +55,8 @@ void main() {
   }
 
   /// Helper: Poll until export job is complete (or timeout).
-  Future<Response> pollUntilComplete(String jobId, {int maxAttempts = 20}) async {
+  Future<Response> pollUntilComplete(String jobId,
+      {int maxAttempts = 20}) async {
     for (var i = 0; i < maxAttempts; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       final req = testRequest(
@@ -273,7 +276,8 @@ void main() {
   // Group-level export
   // ─────────────────────────────────────────────────────────────────────────
   group('Group-level \$export', () {
-    test('full workflow: create Group + members -> export -> verify NDJSON', () async {
+    test('full workflow: create Group + members -> export -> verify NDJSON',
+        () async {
       // 1. Create Patient member
       await saveResource(fhir.Patient(
         id: 'gp1'.toFhirString,
@@ -433,20 +437,24 @@ void main() {
         id: 'tf-obs1'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '85354-9'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '85354-9'.toFhirCode,
+            )
+          ],
         ),
       ));
       await saveResource(fhir.Observation(
         id: 'tf-obs2'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '29463-7'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '29463-7'.toFhirCode,
+            )
+          ],
         ),
       ));
 
@@ -519,10 +527,12 @@ void main() {
         id: 'tf-obs-old'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '85354-9'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '85354-9'.toFhirCode,
+            )
+          ],
         ),
       ));
 
@@ -534,10 +544,12 @@ void main() {
         id: 'tf-obs-new'.toFhirString,
         status: fhir.ObservationStatus.final_,
         code: fhir.CodeableConcept(
-          coding: [fhir.Coding(
-            system: 'http://loinc.org'.toFhirUri,
-            code: '85354-9'.toFhirCode,
-          )],
+          coding: [
+            fhir.Coding(
+              system: 'http://loinc.org'.toFhirUri,
+              code: '85354-9'.toFhirCode,
+            )
+          ],
         ),
       ));
 

@@ -123,6 +123,42 @@ class SmartScopeEnforcer {
     return parsed.every((s) => s.context == 'patient');
   }
 
+  /// Root-level (`$`-prefixed) operations that read out or overwrite the
+  /// entire data store, and therefore require system-level authorization.
+  ///
+  /// These have no resource type in the path, so the ordinary resource-type
+  /// scope check does not apply to them — without this list they would be
+  /// reachable by any authenticated user. Instance/type-scoped operations
+  /// like `Patient/$export`, `<type>/$validate`, or `CodeSystem/$lookup`
+  /// are NOT here: their first path segment is a resource type, so they are
+  /// governed by the normal scope check.
+  static const _privilegedSystemOperations = {
+    r'$backup', // full database dump
+    r'$restore', // full database overwrite
+    r'$export', // system-level bulk dump
+    r'$export-poll-status', // export job status/cancel
+    r'$export-file', // export file download
+  };
+
+  /// Whether [urlPath] targets a privileged root-level system operation
+  /// (see [_privilegedSystemOperations]).
+  static bool isPrivilegedSystemOperation(String urlPath) {
+    final path = urlPath.startsWith('/') ? urlPath.substring(1) : urlPath;
+    final first =
+        path.split('/').firstWhere((s) => s.isNotEmpty, orElse: () => '');
+    return _privilegedSystemOperations.contains(first);
+  }
+
+  /// Whether the caller may invoke a privileged system operation: either the
+  /// `admin` role, or possession of an explicit `system/` context scope.
+  static bool isSystemAuthorized(List<String> scopes, String role) {
+    if (role == 'admin') return true;
+    return scopes.any((s) {
+      final parsed = SmartScope.parse(s);
+      return parsed != null && parsed.context == 'system';
+    });
+  }
+
   /// Maps an HTTP method + URL path to a SMART permission character.
   ///
   /// Returns null for paths that don't map to a FHIR permission
@@ -143,16 +179,14 @@ class SmartScopeEnforcer {
     switch (httpMethod.toUpperCase()) {
       case 'GET':
         // Search (type-level GET) vs read (instance-level GET)
-        final segments =
-            path.split('/').where((s) => s.isNotEmpty).toList();
+        final segments = path.split('/').where((s) => s.isNotEmpty).toList();
         if (segments.length == 1 && !segments[0].startsWith('\$')) {
           return 's'; // GET /Patient → search
         }
         return 'r'; // GET /Patient/123 → read
       case 'POST':
         // POST to root = bundle/transaction, POST to type = create
-        final segments =
-            path.split('/').where((s) => s.isNotEmpty).toList();
+        final segments = path.split('/').where((s) => s.isNotEmpty).toList();
         if (segments.length == 1 && !segments[0].startsWith('\$')) {
           return 'c'; // POST /Patient → create
         }

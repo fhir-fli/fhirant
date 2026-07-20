@@ -4,6 +4,7 @@ import 'package:args/args.dart';
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
 
@@ -18,11 +19,9 @@ void main(List<String> arguments) async {
     ..addOption('cert-path', help: 'Path to HTTPS certificate file')
     ..addOption('key-path', help: 'Path to HTTPS private key file')
     ..addFlag('dev-mode',
-        defaultsTo: false,
-        help: 'Disable authentication (for testing only)')
+        defaultsTo: false, help: 'Disable authentication (for testing only)')
     ..addOption('spec-path',
-        defaultsTo: '/app/fhir_spec',
-        help: 'Path to FHIR spec NDJSON files')
+        defaultsTo: '/app/fhir_spec', help: 'Path to FHIR spec NDJSON files')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
@@ -41,6 +40,23 @@ void main(List<String> arguments) async {
   final dbPath = args['db-path'];
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
+
+  // Resolve the JWT signing secret. Preference: FHIRANT_JWT_SECRET (set this
+  // for cloud/multi-instance deployments where instances share a secret and
+  // the filesystem is ephemeral); otherwise a strong secret is generated once
+  // and persisted next to the database so an offline, zero-config deployment
+  // gets a stable, unguessable secret without contacting anything.
+  final jwtSecretEnv = Platform.environment['FHIRANT_JWT_SECRET'];
+  final jwtSecret = JwtSecret.resolveForServer(
+    envValue: jwtSecretEnv,
+    persistPath: '$dbPath/.jwt_secret',
+  );
+  if (jwtSecretEnv == null || jwtSecretEnv.isEmpty) {
+    logger.logInfo(
+      'FHIRANT_JWT_SECRET not set; using a generated secret persisted at '
+      '$dbPath/.jwt_secret. Set the env var for multi-instance deployments.',
+    );
+  }
 
   if (encryptionKey == 'default-development-key') {
     logger.logWarning(
@@ -93,6 +109,7 @@ void main(List<String> arguments) async {
   final devMode = args['dev-mode'] as bool;
   final server = FhirAntServer(
     db,
+    jwtSecret: jwtSecret,
     devMode: devMode,
     maxRequests: devMode ? 1000 : 10,
   );

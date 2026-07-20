@@ -20,13 +20,13 @@ class ServerService {
   Future<void> start(int port, {bool devMode = false}) async {
     if (_server?.isRunning ?? false) return;
 
-    // Get or generate JWT secret
+    // Get or generate the JWT secret, persisted in platform secure storage
+    // (Keystore/Keychain-backed). Generated with cryptographic randomness —
+    // a predictable, timestamp-derived secret would let tokens be forged.
     const secureStorage = FlutterSecureStorage();
     var jwtSecret = await secureStorage.read(key: _jwtSecretKey);
-    if (jwtSecret == null) {
-      jwtSecret = DateTime.now().microsecondsSinceEpoch.toRadixString(36) +
-          Object().hashCode.toRadixString(36) +
-          DateTime.now().millisecondsSinceEpoch.toRadixString(16);
+    if (jwtSecret == null || jwtSecret.isEmpty) {
+      jwtSecret = JwtSecret.generate();
       await secureStorage.write(key: _jwtSecretKey, value: jwtSecret);
     }
 
