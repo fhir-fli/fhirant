@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant/src/screens/dashboard_screen.dart';
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,12 @@ Future<bool> isOnboardingComplete() async {
 }
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({required this.onComplete, super.key});
+
+  /// Called once onboarding is finished. The host swaps to the dashboard in
+  /// place (keeping it inside the ServerState provider) rather than pushing a
+  /// new route, which would escape the provider scope.
+  final VoidCallback onComplete;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -55,11 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_onboardingCompleteKey, true);
     if (mounted) {
-      unawaited(
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
-        ),
-      );
+      widget.onComplete();
     }
   }
 

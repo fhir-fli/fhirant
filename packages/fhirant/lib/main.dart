@@ -140,6 +140,8 @@ class _AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
+  late bool _showOnboarding = widget.showOnboarding;
+
   @override
   void initState() {
     super.initState();
@@ -161,8 +163,13 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    var home = widget.showOnboarding
-        ? const OnboardingScreen()
+    // Both screens stay inside the ServerState provider (this subtree). On
+    // completion we swap in place rather than pushing a new route, which would
+    // land outside the provider scope.
+    var home = _showOnboarding
+        ? OnboardingScreen(
+            onComplete: () => setState(() => _showOnboarding = false),
+          )
         : const DashboardScreen();
     if (Platform.isAndroid) {
       home = WithForegroundTask(child: home);
