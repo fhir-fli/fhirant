@@ -476,11 +476,12 @@ class _ResourceTileState extends State<_ResourceTile> {
       lastEnd = m.end;
     }
 
-    if (lastEnd < line.length) {
-      spans.add(TextSpan(text: line.substring(lastEnd)));
-    }
-    if (lastEnd == 0 && filtered.isEmpty) {
+    if (filtered.isEmpty) {
+      // No tappable links on this line — emit it once, whole.
       spans.add(TextSpan(text: line));
+    } else if (lastEnd < line.length) {
+      // Trailing text after the last link.
+      spans.add(TextSpan(text: line.substring(lastEnd)));
     }
   }
 
