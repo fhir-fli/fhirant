@@ -63,8 +63,7 @@ class FhirResponseShaper {
         return shaped;
 
       case 'data':
-        final shaped = Map<String, dynamic>.from(json);
-        shaped.remove('text');
+        final shaped = Map<String, dynamic>.from(json)..remove('text');
         _addSubsettedTag(shaped);
         return shaped;
 

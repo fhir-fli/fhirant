@@ -36,11 +36,11 @@ Future<Response> refreshHandler(
     final grantType = body['grant_type'] as String?;
 
     if (grantType == 'authorization_code') {
-      return _handleAuthorizationCodeGrant(body, dbInterface, jwtService);
+      return await _handleAuthorizationCodeGrant(body, dbInterface, jwtService);
     }
 
     if (grantType == 'refresh_token') {
-      return _handleRefreshTokenGrant(body, jwtService, dbInterface);
+      return await _handleRefreshTokenGrant(body, jwtService, dbInterface);
     }
 
     return Response(

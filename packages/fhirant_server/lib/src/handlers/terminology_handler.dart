@@ -51,7 +51,7 @@ Future<Response> validateCodeHandler(
           display,
         );
       } else if (resourceType == 'ValueSet' && resource is fhir.ValueSet) {
-        return _validateAgainstValueSet(
+        return await _validateAgainstValueSet(
           resource,
           effectiveCode,
           effectiveSystem,
@@ -100,7 +100,7 @@ Future<Response> validateCodeHandler(
           message: 'ValueSet not found: $url',
         );
       }
-      return _validateAgainstValueSet(
+      return await _validateAgainstValueSet(
         valueSet,
         effectiveCode,
         effectiveSystem,

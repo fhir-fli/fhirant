@@ -33,7 +33,12 @@ Future<Response> postSearchHandler(
     final bodyParams = Uri.splitQueryString(body);
     // Merge with URL query parameters (URL params take precedence)
     final mergedParams = {...bodyParams, ...request.url.queryParameters};
-    return _searchResources(request, resourceType, dbInterface, mergedParams);
+    return await _searchResources(
+      request,
+      resourceType,
+      dbInterface,
+      mergedParams,
+    );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Failed to process POST _search for: $resourceType',

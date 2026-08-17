@@ -148,14 +148,12 @@ class _ResourceCountsCardState extends State<ResourceCountsCard> {
       return InkWell(
         onTap: () {
           if (entry.key is R4ResourceType) {
-            unawaited(
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ChangeNotifierProvider.value(
-                    value: state,
-                    child: ResourceBrowserScreen(
-                      initialType: entry.key as R4ResourceType,
-                    ),
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ChangeNotifierProvider.value(
+                  value: state,
+                  child: ResourceBrowserScreen(
+                    initialType: entry.key as R4ResourceType,
                   ),
                 ),
               ),
