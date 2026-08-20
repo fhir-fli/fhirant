@@ -18,3 +18,11 @@ build/
 
 # Flutter-generated plugin metadata
 **/.flutter-plugins-dependencies
+
+# Local runtime database created by the server on first run
+data/
+
+# Play Store upload certificates: leftovers from the abandoned Play route
+# (release is a direct APK). Public certs, but they are not repo content.
+packages/fhirant/play_store/upload_certificate.der
+packages/fhirant/play_store/upload_certificate.pem
