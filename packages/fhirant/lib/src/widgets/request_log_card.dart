@@ -40,11 +40,16 @@ class RequestLogCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.list_alt, color: Colors.indigo),
                     const SizedBox(width: 8),
-                    Text(
-                      'Request Log',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    // Expanded rather than a Spacer, so the entry count on the
+                    // right has somewhere to come from on a narrow phone
+                    // instead of pushing the row off the card.
+                    Expanded(
+                      child: Text(
+                        'Request Log',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const Spacer(),
                     if (log.isNotEmpty)
                       Text(
                         '${log.length} entries',

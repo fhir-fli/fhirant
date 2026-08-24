@@ -23,9 +23,11 @@ class NetworkInfoCard extends StatelessWidget {
                 children: [
                   Icon(Icons.wifi_off, color: Colors.grey.shade400),
                   const SizedBox(width: 8),
-                  Text(
-                    'Start the server to see network info',
-                    style: TextStyle(color: Colors.grey.shade600),
+                  Expanded(
+                    child: Text(
+                      'Start the server to see network info',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
                   ),
                 ],
               ),

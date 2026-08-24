@@ -81,11 +81,16 @@ class _ServerControlCardState extends State<ServerControlCard> {
                   children: [
                     Icon(Icons.dns, color: color),
                     const SizedBox(width: 8),
-                    Text(
-                      'FHIR Server',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    // Expanded rather than a Spacer: on a narrow phone the
+                    // status badge needs the title to give way, not the row to
+                    // overflow the card.
+                    Expanded(
+                      child: Text(
+                        'FHIR Server',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -152,15 +157,25 @@ class _ServerControlCardState extends State<ServerControlCard> {
                       child: Text(
                         'Authentication',
                         style: Theme.of(context).textTheme.bodyMedium,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      state.devMode ? 'Experimentation' : 'Secure',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: state.devMode
-                            ? Colors.orange.shade700
-                            : Colors.green.shade700,
+                    // Flexible, not fixed: on a 320px phone the posture word
+                    // plus the switch are wider than the row on their own, so
+                    // the Expanded label collapses to zero and this text is
+                    // what has to give. The switch keeps showing the state,
+                    // and Experimentation mode still spells itself out in the
+                    // warning banner below.
+                    Flexible(
+                      child: Text(
+                        state.devMode ? 'Experimentation' : 'Secure',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: state.devMode
+                              ? Colors.orange.shade700
+                              : Colors.green.shade700,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
