@@ -124,7 +124,9 @@ class ServerState extends ChangeNotifier {
         (_) => _refreshResourceCounts(),
       );
 
-      await _detectWifiIp();
+      // Not awaited: interface enumeration can take a while, and it notifies
+      // for itself once it has an answer.
+      unawaited(_detectWifiIp());
 
       // Start Android foreground service to keep server alive
       if (Platform.isAndroid) {
@@ -183,22 +185,29 @@ class ServerState extends ChangeNotifier {
     }
   }
 
+  /// Best-effort address lookup. Notifies on its own when the address lands,
+  /// so no caller has to await it: enumerating network interfaces is slow, and
+  /// the server is running whether or not we have worked out how to reach it
+  /// yet. `serverUrl` simply stays null until this resolves.
   Future<void> _detectWifiIp() async {
+    final previous = _wifiIp;
+    String? found;
     try {
       if (Platform.isAndroid || Platform.isIOS) {
         final info = NetworkInfo();
-        _wifiIp = await info.getWifiIP();
+        found = await info.getWifiIP();
       }
       // Fallback: try to get any non-loopback IPv4 address
-      if (_wifiIp == null) {
+      if (found == null) {
         final interfaces = await NetworkInterface.list(
           type: InternetAddressType.IPv4,
         );
+        outer:
         for (final iface in interfaces) {
           for (final addr in iface.addresses) {
             if (!addr.isLoopback) {
-              _wifiIp = addr.address;
-              return;
+              found = addr.address;
+              break outer;
             }
           }
         }
@@ -206,6 +215,9 @@ class ServerState extends ChangeNotifier {
     } catch (_) {
       // WiFi IP detection is best-effort
     }
+    if (found == null || found == previous) return;
+    _wifiIp = found;
+    notifyListeners();
   }
 
   @override

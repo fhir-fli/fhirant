@@ -229,6 +229,17 @@ void main() {
     test('is null while the server is not running', () {
       expect(_state(_FakeServerService()).serverUrl, isNull);
     });
+
+    test('a start does not wait on the address lookup', () async {
+      // Enumerating network interfaces is slow and can fail; the server is
+      // running whether or not we have worked out how to reach it yet, so
+      // startServer must not block on it. The url simply appears later.
+      final state = _state(_FakeServerService());
+
+      await state.startServer();
+
+      expect(state.status, ServerStatus.running);
+    });
   });
 
   group('request log', () {

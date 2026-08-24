@@ -86,15 +86,15 @@ void main() {
         dbService: _UninitializedDb(),
         serverService: service,
       );
-      // startServer awaits NetworkInterface.list — real I/O, which never
-      // completes inside testWidgets' fake-async zone. runAsync gives it a
-      // real one.
-      await tester.runAsync(state.startServer);
-      addTearDown(state.dispose);
+      await state.startServer();
 
       await _pumpAt(tester, entry.value, _app(state));
 
       expect(tester.takeException(), isNull);
+      // Disposed here rather than in a tearDown: a running server holds a
+      // periodic timer, and the framework checks for pending timers before
+      // tearDowns run.
+      state.dispose();
     });
   }
 
@@ -105,8 +105,7 @@ void main() {
       dbService: _UninitializedDb(),
       serverService: service,
     );
-    await tester.runAsync(state.startServer);
-    addTearDown(state.dispose);
+    await state.startServer();
 
     // Inside runAsync: the log stream is a real broadcast controller, so the
     // event only reaches the listener on a real event loop, not the fake clock
@@ -131,5 +130,6 @@ void main() {
     await _pumpAt(tester, const Size(320, 568), _app(state));
 
     expect(tester.takeException(), isNull);
+    state.dispose();
   });
 }
