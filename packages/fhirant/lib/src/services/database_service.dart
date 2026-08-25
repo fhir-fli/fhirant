@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -22,9 +23,12 @@ class DatabaseService {
     const secureStorage = FlutterSecureStorage();
     var encryptionKey = await secureStorage.read(key: _encryptionKeyName);
     if (encryptionKey == null) {
-      // Generate a random key and persist it
-      encryptionKey = DateTime.now().microsecondsSinceEpoch.toRadixString(36) +
-          Object().hashCode.toRadixString(36);
+      // Cryptographic randomness, for the same reason the JWT secret uses it:
+      // this key encrypts the patient database, and the previous
+      // microsecondsSinceEpoch + Object().hashCode construction was guessable
+      // — the timestamp narrows to whenever the app was first run, and an
+      // identity hash code is not random and carries very little entropy.
+      encryptionKey = SecureStorageService.generateEncryptionKey();
       await secureStorage.write(key: _encryptionKeyName, value: encryptionKey);
     }
 

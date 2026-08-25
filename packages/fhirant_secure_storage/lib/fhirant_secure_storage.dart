@@ -196,8 +196,19 @@ class SecureStorageService {
           'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       final buffer = StringBuffer();
 
+      // Rejection sampling, not `% characters.length`. 256 is not a multiple
+      // of 62, so a plain modulo draws the first 8 letters from five byte
+      // values each and the remaining 54 from four — making A-H about 25%
+      // likelier than the rest and costing entropy in a key generator.
+      // Discarding the short tail of the byte range removes the bias.
+      const limit = 256 - (256 % characters.length);
+
       for (var i = 0; i < length; i++) {
-        buffer.write(characters[secureRandom.nextUint8() % characters.length]);
+        int byte;
+        do {
+          byte = secureRandom.nextUint8();
+        } while (byte >= limit);
+        buffer.write(characters[byte % characters.length]);
       }
 
       return buffer.toString();

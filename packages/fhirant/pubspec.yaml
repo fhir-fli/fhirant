@@ -14,12 +14,14 @@ dependencies:
     path: ../fhirant_db
   fhirant_logging:
     path: ../fhirant_logging
+  fhirant_secure_storage:
+    path: ../fhirant_secure_storage
   fhirant_server:
     path: ../fhirant_server
   flutter:
     sdk: flutter
   flutter_foreground_task: ^8.13.4
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
   network_info_plus: ^6.1.1
   path_provider: ^2.1.5
   provider: ^6.1.2
