@@ -108,7 +108,12 @@ Two related notes, both measured rather than assumed:
 - Compartment enforcement really is present only in `resource_handler.dart` and
   `patch_handler.dart`; `history_handler`, `compartment_handler`,
   `document_handler`, `meta_handler`, `bundle_handler` and `websocket_handler`
-  never call `extractPatientContext`. **This is currently masked** — a
+  never call `extractPatientContext`. Checked by opening each file rather than
+  by grepping one function name: none references `auth_user`, scopes, or a 403
+  path, and none imports `patient_scope.dart` or any auth utility —
+  `history_handler` imports only the database, logging, header helpers and
+  shelf. Enforcement would need one of those imports or the request context,
+  and neither is there. **This is currently masked** — a
   patient-scoped token is stopped earlier by the resource-type and permission
   checks (verified: `GET /_history` and `GET /Patient/patient-B/Observation`
   are both refused for `patient/Observation.read`). So it is latent, not live.
