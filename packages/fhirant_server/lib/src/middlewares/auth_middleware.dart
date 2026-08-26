@@ -112,6 +112,28 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         scopes = SmartScopeEnforcer.defaultScopesForRole(role);
       }
 
+      // A scope this server cannot parse is refused, not skipped. Skipping it
+      // is not the safe direction: the unparsed entry may be the one that
+      // NARROWS access, in which case dropping it leaves the broader scopes
+      // standing and the token ends up more powerful than its issuer intended.
+      if (!SmartScopeEnforcer.allScopesParse(scopes)) {
+        return Response(
+          403,
+          body: jsonEncode({
+            'resourceType': 'OperationOutcome',
+            'issue': [
+              {
+                'severity': 'error',
+                'code': 'forbidden',
+                'diagnostics': 'Token carries a scope this server does not '
+                    'understand. Scopes must use SMART v2 syntax '
+                    '(context/Resource.cruds).',
+              }
+            ],
+          }),
+        );
+      }
+
       // Extract patient context from JWT (for patient-level scopes)
       final patientId = payload['patient'] as String?;
 
@@ -146,6 +168,35 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // Determine the required permission for this request
       final permission =
           SmartScopeEnforcer.methodToPermission(request.method, path);
+
+      // Root-level operations name no resource type, so the resource-scope
+      // check below cannot cover them and used to let any authenticated
+      // caller through — including a read-only or patient-scoped one. Since
+      // several of them read arbitrary stored data ($fhirpath fetches any
+      // resource by id), they are gated here instead, deny-by-default: only
+      // the operations that work purely on what the caller posted are exempt.
+      if (SmartScopeEnforcer.isRootDataOperation(path)) {
+        if (!SmartScopeEnforcer.isUnscopedDataAccessAuthorized(
+          scopes,
+          permission ?? 'r',
+        )) {
+          return Response(
+            403,
+            body: jsonEncode({
+              'resourceType': 'OperationOutcome',
+              'issue': [
+                {
+                  'severity': 'error',
+                  'code': 'forbidden',
+                  'diagnostics': 'This operation can return data the request '
+                      'does not name, so it requires a user- or system-context '
+                      'scope covering all resource types.',
+                }
+              ],
+            }),
+          );
+        }
+      }
       if (permission != null) {
         final resourceType = SmartScopeEnforcer.resourceTypeFromPath(path);
         // Only enforce scopes for resource-targeted requests

@@ -9,7 +9,7 @@ logging. Findings below were confirmed by reading the code at the cited
 locations, not inferred from names or greps.
 
 F1 and F2 are backed by executable evidence, not by reading alone:
-`packages/fhirant_server/test/middleware/scope_bypass_test.dart` (13 tests)
+`packages/fhirant_server/test/middleware/scope_enforcement_test.dart` (13 tests)
 drives the real auth middleware and records what it does today. The tests
 marked BYPASS pass *because the defect is present*; when a finding is fixed the
 expectation inverts and the test becomes its regression guard.
@@ -52,7 +52,7 @@ encryption loses.
 Severity is relative to the threat model above, not to a generic internet-facing
 server.
 
-### F1 — HIGH — Root-level `$` operations bypass scope enforcement entirely
+### F1 — HIGH — ✅ FIXED — Root-level `$` operations bypassed scope enforcement entirely
 
 `SmartScopeEnforcer.resourceTypeFromPath` returns `null` for any path whose
 first segment starts with `$` (`smart_scopes.dart:219`). The auth middleware
@@ -71,13 +71,23 @@ expression against it. A `readonly` user, or one scoped to a single patient,
 can read any resource in the database through it. `$cql` similarly loads
 patient data (`cql_handler.dart:437`).
 
-**Recommendation**: make the scope check fail closed. A path that resolves to no
-resource type should require system-level authorisation by default, with an
-explicit allowlist for the genuinely public/no-data operations. Deny-by-default
-here rather than extending the privileged list, which will drift again the next
-time an operation is added.
+**Fixed**. `isRootDataOperation` treats every root `$` operation as
+data-reading unless it appears on an explicit no-data allowlist — currently
+`$validate` and `$transform`, both of which work only on what the caller
+posted. A new operation added later therefore fails closed instead of
+inheriting the old no-check-at-all behaviour.
 
-### F2 — HIGH — An unparseable scope is dropped rather than rejected, so a malformed narrowing scope silently widens access
+Data-reading root operations now require `isUnscopedDataAccessAuthorized`: a
+`user`/`system` context scope with the `*` resource wildcard and the needed
+permission. A `patient/` context is refused outright even with `patient/*.rs`,
+because nothing downstream confines the result to that patient — which is F2's
+note about latent compartment gaps, closed at the gate rather than left to each
+handler.
+
+Which handlers read data was established by reading them, not by guessing:
+`$immds-forecast` also calls `getResource` and `search`, so it is gated too.
+
+### F2 — HIGH — ✅ FIXED — An unparseable scope was dropped rather than rejected, so a malformed narrowing scope silently widened access
 
 `SmartScope.parse` accepts only SMART **v2** permission letters — `c r u d s *`
 (`smart_scopes.dart:33`). A v1-style scope such as `patient/*.read` fails to
@@ -99,9 +109,13 @@ nothing and is denied. **Mixed, it fails open.** For the token
 The issuer asked for "this patient, read only". What survives is "any patient,
 read and search". The scope that *restricted* access is the one discarded.
 
-**Recommendation**: reject the token when any scope fails to parse, rather than
-ignoring that scope. A scope string the server does not understand is not
-safely ignorable, because it may be the one doing the narrowing.
+**Fixed**. The middleware now calls `allScopesParse` and returns 403 when any
+scope in the token fails to parse, rather than acting on the subset that
+happened to parse. A scope the server does not understand is not safely
+ignorable, because it may be the one doing the narrowing.
+
+Nothing in the existing suite depended on v1 scopes being tolerated: 649 tests
+pass, none changed.
 
 Two related notes, both measured rather than assumed:
 
@@ -264,9 +278,11 @@ Worth recording so it does not get "hardened" into something worse:
 
 ## Suggested order of work
 
-1. F1 and F2 together — they are the same defect wearing two hats: authorisation
-   decided per handler instead of centrally, failing open when a path does not
-   match a known shape. Fix by making the decision central and deny-by-default.
+1. ~~F1 and F2~~ — **done**. They were the same defect wearing two hats:
+   authorisation decided per handler instead of centrally, failing open when a
+   path did not match a known shape. Both now decided centrally and
+   deny-by-default, with `scope_enforcement_test.dart` inverted from evidence into
+   17 regression guards.
 2. F4 with F3 — the passphrase-wrapped export is the piece that makes the
    deployment model coherent, and it reduces how much the transport has to
    carry.

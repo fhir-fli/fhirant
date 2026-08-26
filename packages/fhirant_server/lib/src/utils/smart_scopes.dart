@@ -205,6 +205,74 @@ class SmartScopeEnforcer {
     }
   }
 
+  /// Root-level operations that touch no stored data — they work only on what
+  /// the caller posted. Any authenticated caller may use these.
+  ///
+  /// This is an allowlist on purpose. Anything not named here is treated as
+  /// data-reading, so a new operation added later fails closed rather than
+  /// inheriting the old behaviour of no check at all.
+  ///
+  /// The operations it deliberately leaves out, each checked by reading the
+  /// handler: `$fhirpath` fetches any resource by type and id, `$cql` loads
+  /// patient data for evaluation, and both `$immds-forecast` variants read the
+  /// patient and search immunizations.
+  static const _rootNoDataOperations = {
+    r'$validate',
+    r'$transform',
+  };
+
+  /// The first path segment, with any leading slash removed.
+  static String _firstSegment(String urlPath) {
+    final path = urlPath.startsWith('/') ? urlPath.substring(1) : urlPath;
+    return path.split('/').firstWhere((s) => s.isNotEmpty, orElse: () => '');
+  }
+
+  /// Whether [urlPath] is a root-level `$operation`.
+  static bool isRootOperation(String urlPath) =>
+      _firstSegment(urlPath).startsWith(r'$');
+
+  /// Whether [urlPath] is a root-level operation that reads stored data.
+  ///
+  /// Deny-by-default: a root operation that is not on the no-data allowlist
+  /// counts as data-reading.
+  static bool isRootDataOperation(String urlPath) {
+    final first = _firstSegment(urlPath);
+    if (!first.startsWith(r'$')) return false;
+    if (_privilegedSystemOperations.contains(first)) return false;
+    return !_rootNoDataOperations.contains(first);
+  }
+
+  /// Whether [scopes] permit reading data the caller has not named.
+  ///
+  /// A root data operation can return anything in the database and the
+  /// handlers behind them apply no compartment filter, so this requires a
+  /// scope broad enough to cover that: a non-patient context (`user`/`system`)
+  /// with the `*` resource wildcard and the needed permission.
+  ///
+  /// A `patient/` context is refused outright rather than allowed through,
+  /// because nothing downstream would confine the result to that patient.
+  static bool isUnscopedDataAccessAuthorized(
+    List<String> scopes,
+    String permission,
+  ) {
+    for (final scopeStr in scopes) {
+      final scope = SmartScope.parse(scopeStr);
+      if (scope == null) continue;
+      if (scope.context == 'patient') continue;
+      if (scope.resourceType != '*') continue;
+      if (scope.permissions.contains(permission)) return true;
+    }
+    return false;
+  }
+
+  /// Whether every entry in [scopes] is a scope this server understands.
+  ///
+  /// Callers must reject the request when this is false rather than skipping
+  /// the offending entry: an unparsed scope may be the one that NARROWS
+  /// access, and dropping it silently widens what the token can do.
+  static bool allScopesParse(List<String> scopes) =>
+      scopes.every((s) => SmartScope.parse(s) != null);
+
   /// Extracts the FHIR resource type from a URL path.
   ///
   /// Returns null for paths that don't target a specific resource type.

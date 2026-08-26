@@ -8,12 +8,11 @@ import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
-/// Evidence for findings F1 and F2 of SECURITY-REVIEW-2026-08-25.md.
+/// Regression guards for findings F1 and F2 of SECURITY-REVIEW-2026-08-25.md.
 ///
-/// These tests document what the authorisation layer does *today*, so the
-/// findings rest on observed behaviour rather than on reading. Each one that
-/// asserts a bypass is marked, and is expected to be inverted when the finding
-/// is fixed — at which point it becomes the regression test.
+/// These began as evidence that the two bypasses were real, asserting that the
+/// least privileged token DID reach places it should not. Both findings are
+/// now fixed, so the expectations are inverted and the file guards the fix.
 void main() {
   late JwtService jwtService;
   late MockFhirAntDb mockDb;
@@ -43,13 +42,17 @@ void main() {
     return arrived;
   }
 
-  /// The least privileged account the server can issue: read-only, and scoped
-  /// to a single patient.
+  /// The least privileged account the server can issue: read-only, scoped to a
+  /// single patient and a single resource type.
+  ///
+  /// The scope is deliberately valid SMART v2. An invalid one would now be
+  /// rejected by the parse check, and every test below would pass for that
+  /// reason rather than for the one it claims to be testing.
   String leastPrivilegedToken() => jwtService.generateToken(
         userId: 2,
         username: 'scoped',
         role: 'readonly',
-        scopes: ['patient/Observation.read'],
+        scopes: ['patient/Observation.rs'],
         patientId: 'patient-A',
       );
 
@@ -86,29 +89,66 @@ void main() {
     });
   });
 
-  group(r'F1: root-level $ operations are not scope-checked', () {
+  group(r'F1: root-level $ operations are gated deny-by-default', () {
     // resourceTypeFromPath returns null for a $-prefixed first segment, so the
-    // scope check never runs; and these are not in the privileged list, so the
-    // system-level gate does not run either. The result is authenticated but
-    // unauthorised access.
-    for (final op in [r'$fhirpath', r'$cql', r'$transform', r'$validate']) {
-      test('BYPASS: the least privileged token reaches $op', () async {
+    // resource-scope check cannot cover these. They used to fall through it
+    // entirely; they are now gated on their own.
+    for (final op in [r'$fhirpath', r'$cql', r'$immds-forecast']) {
+      test('a narrowly scoped token is refused $op', () async {
         expect(
           await reaches('POST', op, leastPrivilegedToken()),
-          isTrue,
-          reason: 'if this now fails, F1 has been fixed — invert the '
-              'expectation and keep it as the regression test',
+          isFalse,
+          reason: '$op can return data the request does not name',
         );
       });
     }
 
-    test(r'BYPASS: $fhirpath is a whole-database read primitive', () async {
+    test(r'$fhirpath is no longer a whole-database read primitive', () async {
       // fhirpath_handler.dart:67 fetches any resource by type and id from the
-      // database. Reaching the handler at all is the finding: a token scoped
-      // to patient-A and to Observation only gets to name any resource.
+      // database. The fix is that a token scoped to patient-A and Observation
+      // never reaches it.
       final reached =
           await reaches('POST', r'$fhirpath', leastPrivilegedToken());
-      expect(reached, isTrue);
+      expect(reached, isFalse);
+    });
+
+    test('a patient-context token is refused even with a wildcard scope',
+        () async {
+      // patient/*.rs parses and is broad, but nothing downstream confines the
+      // result to that patient, so the patient context is refused outright.
+      final token = jwtService.generateToken(
+        userId: 5,
+        username: 'patient-app',
+        role: 'readonly',
+        scopes: ['patient/*.rs'],
+        patientId: 'patient-A',
+      );
+      expect(await reaches('POST', r'$fhirpath', token), isFalse);
+    });
+
+    test('a clinician with user/*.rs may still use them', () async {
+      // The gate must not break the operations for the accounts that are
+      // meant to have them.
+      final token = jwtService.generateToken(
+        userId: 6,
+        username: 'clinician',
+        role: 'clinician',
+        scopes: ['user/*.rs'],
+      );
+      expect(await reaches('POST', r'$fhirpath', token), isTrue);
+      expect(await reaches('POST', r'$cql', token), isTrue);
+    });
+
+    test('operations that touch no stored data stay open to any account',
+        () async {
+      // $validate and $transform work only on what the caller posted.
+      for (final op in [r'$validate', r'$transform']) {
+        expect(
+          await reaches('POST', op, leastPrivilegedToken()),
+          isTrue,
+          reason: '$op reads nothing from the database',
+        );
+      }
     });
   });
 
@@ -146,6 +186,36 @@ void main() {
         isTrue,
         reason: 'while the surviving user scope still grants the read',
       );
+
+      // Which is why the middleware now refuses the token outright rather
+      // than acting on the half of it that happened to parse.
+      expect(SmartScopeEnforcer.allScopesParse(intended), isFalse);
+    });
+
+    test('a token carrying an unparseable scope is refused', () async {
+      final token = jwtService.generateToken(
+        userId: 7,
+        username: 'mixed',
+        role: 'readonly',
+        scopes: ['patient/*.read', 'user/*.rs'],
+        patientId: 'patient-A',
+      );
+      expect(
+        await reaches('GET', 'Patient/patient-B', token),
+        isFalse,
+        reason: 'the narrowing scope did not parse, so the token is rejected '
+            'rather than silently widened',
+      );
+    });
+
+    test('a token whose scopes all parse is unaffected', () async {
+      final token = jwtService.generateToken(
+        userId: 8,
+        username: 'ok',
+        role: 'readonly',
+        scopes: ['user/*.rs'],
+      );
+      expect(await reaches('GET', 'Patient/patient-B', token), isTrue);
     });
 
     test('a token carrying ONLY unparseable scopes is denied, which is right',
