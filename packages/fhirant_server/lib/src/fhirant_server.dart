@@ -610,6 +610,23 @@ class FhirAntServer {
     };
   }
 
+  /// Returns [uri] with every query parameter value replaced by a placeholder.
+  ///
+  /// `/Patient?name=Faulkenberry&birthdate=1974-12-25` becomes
+  /// `/Patient?name=[redacted]&birthdate=[redacted]`.
+  ///
+  /// Resource ids in the path are deliberately left. They say which record was
+  /// touched, which is what makes the log useful for working out what happened
+  /// on a device, and on their own they do not name a person the way a search
+  /// on name and birth date does.
+  static String _redactQuery(Uri uri) {
+    if (uri.query.isEmpty) return uri.path;
+    final redacted = uri.queryParametersAll.keys
+        .map((name) => '$name=[redacted]')
+        .join('&');
+    return '${uri.path}?$redacted';
+  }
+
   /// Middleware for logging
   Middleware _logRequestsMiddleware() {
     return (Handler innerHandler) {
@@ -624,9 +641,16 @@ class FhirAntServer {
                 .address ??
             'Unknown';
 
-        // Log the request using platform-agnostic logging
+        // Log the request using platform-agnostic logging.
+        //
+        // The URI is redacted first. Search parameter VALUES are the patient:
+        // `?name=Faulkenberry&birthdate=1974-12-25` identifies someone
+        // outright, and the log file is plaintext, sitting beside the
+        // encrypted database where it undoes the point of encrypting it. The
+        // parameter NAMES are kept, because knowing which search was run is
+        // most of the diagnostic value and none of the identification.
         FhirantLogging().logInfo(
-          '${request.method} ${request.requestedUri} - '
+          '${request.method} ${_redactQuery(request.requestedUri)} - '
           '${response.statusCode} (${duration.inMilliseconds}ms) '
           'from $clientIp',
         );

@@ -228,7 +228,7 @@ nothing has shipped yet: the decision is still free.
 there are no installs, there is no reason to carry the permissive default
 forward.
 
-### F6 — MEDIUM — Plaintext PHI log file sits beside the encrypted database
+### F6 — MEDIUM — ✅ PARTLY FIXED — Plaintext PHI log file sits beside the encrypted database
 
 `FhirantLogging` writes JSON lines to a file in app documents, unencrypted
 (`fhirant_logging.dart:45-50`), and the app enables it (`main.dart`, log path
@@ -241,10 +241,32 @@ the clear, next to the database whose encryption was the point. `Logger.root.lev
 is `Level.ALL`, and error paths log exception messages that may carry resource
 content.
 
-**Recommendation**: log the path without the query string, or redact search
-parameter values; and either store the log inside the encrypted database or
-disable file logging on mobile. The live in-app request log already uses
-`requestedUri.path` without the query — the file log should match it.
+**Confirmed by reading the file, not the code.** A real request driven through
+the real pipeline with file logging on wrote, verbatim:
+
+```
+{"timestamp":"…","level":"INFO","message":"GET http://localhost:8080/Patient?name=Faulkenberry&birthdate=1974-12-25 - 200 (106ms) from 127.0.0.1"}
+```
+
+**Partly fixed.** Query parameter values are redacted before the line is
+written, so the same request now logs:
+
+```
+{"timestamp":"…","level":"INFO","message":"GET /Patient?name=[redacted]&birthdate=[redacted] - 200 (87ms) from 127.0.0.1"}
+```
+
+Parameter names survive on purpose: knowing which search was run is most of the
+diagnostic value and identifies nobody. Resource ids in the path also survive,
+which is a decision rather than an oversight — they say which record was
+touched, and on their own they do not name a person the way a search on name
+and birth date does. The regression test pins both halves of that decision.
+
+**Why "partly"**: the file is still plaintext, and it is still beside the
+encrypted database. Redaction narrows what an attacker holding the device
+learns; it does not stop them reading the file. Storing the log inside the
+encrypted database, or not writing it on mobile at all, is the remaining half
+and is a design decision — it trades away the ability to diagnose a device
+that will not start, which in a disaster setting is not a small thing.
 
 ### F7 — LOW — CORS defaults to `allowOrigin: '*'`
 
@@ -323,5 +345,6 @@ Worth recording so it does not get "hardened" into something worse:
    pinnable identity. Two follow-ups deliberately left: no client pins the
    fingerprint yet, and the app has no backup UI.
 3. F5 — a one-line decision, but take it deliberately.
-4. F6 — small and self-contained.
+4. ~~F6~~ — **partly done**: values redacted, file still plaintext. The
+   remaining half is whether the log belongs inside the encrypted database.
 5. F7, F8, F9 — hardening.
