@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:basic_utils/basic_utils.dart';
+import 'package:crypto/crypto.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -138,6 +139,55 @@ class SecureStorageService {
       FhirantLogging().logError('Error retrieving certificate: $e');
       rethrow;
     }
+  }
+
+  /// The server's TLS identity, generated once and reused thereafter.
+  ///
+  /// Returns the stored key and certificate if there is a complete pair, and
+  /// generates one otherwise. Reuse matters: clients cannot validate a
+  /// self-signed certificate by name — it is issued for `localhost` while the
+  /// server is reached at whatever address the phone has on this network — so
+  /// they pin its fingerprint instead. Regenerating on every start would
+  /// change the fingerprint and break every device that had already been
+  /// paired.
+  ///
+  /// Generating an RSA key pair takes a few seconds on a phone, which is why
+  /// it happens once rather than per start.
+  Future<({String privateKey, String certificate})>
+      loadOrCreateTlsIdentity() async {
+    final existingKey = await getPrivateKey();
+    final existingCert = await getCertificate();
+    if (existingKey != null &&
+        existingKey.isNotEmpty &&
+        existingCert != null &&
+        existingCert.isNotEmpty) {
+      return (privateKey: existingKey, certificate: existingCert);
+    }
+
+    final generated = await generateSelfSignedCertificate();
+    return (
+      privateKey: generated['privateKey']!,
+      certificate: generated['certificate']!,
+    );
+  }
+
+  /// The SHA-256 fingerprint of [certificatePem], lowercase hex, colon
+  /// separated — the form a person can compare by eye and a client can pin.
+  ///
+  /// Computed over the DER bytes, which is what every other tool means by a
+  /// certificate fingerprint; taking it over the PEM text would produce a
+  /// number that matches nothing else.
+  static String certificateFingerprint(String certificatePem) {
+    final der = base64.decode(
+      certificatePem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll(RegExp(r'\s'), ''),
+    );
+    final digest = sha256.convert(der);
+    return digest.bytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join(':');
   }
 
   /// Generate a self-signed certificate

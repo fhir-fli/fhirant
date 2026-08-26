@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class NetworkInfoCard extends StatelessWidget {
     return Consumer<ServerState>(
       builder: (context, state, _) {
         final url = state.serverUrl;
+        final fingerprint = state.certificateFingerprint;
 
         if (!state.isRunning) {
           return Card(
@@ -82,10 +84,35 @@ class NetworkInfoCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (fingerprint != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Certificate fingerprint (SHA-256)',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    const SizedBox(height: 2),
+                    // The connection is TLS with a self-signed certificate, so
+                    // a joining device cannot check it by name. It checks this
+                    // instead — which means the operator has to be able to
+                    // read it out, and the QR carries it so they usually will
+                    // not have to.
+                    SelectableText(
+                      fingerprint,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Center(
                     child: QrImageView(
-                      data: url,
+                      // Address and fingerprint together: scanning is what
+                      // pairs a device, and pairing without the fingerprint
+                      // would mean trusting whatever certificate answered.
+                      data: fingerprint == null
+                          ? url
+                          : jsonEncode({'url': url, 'sha256': fingerprint}),
                       size: 180,
                       backgroundColor: Colors.white,
                     ),

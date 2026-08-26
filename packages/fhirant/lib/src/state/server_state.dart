@@ -77,8 +77,16 @@ class ServerState extends ChangeNotifier {
 
   String? get serverUrl {
     if (_wifiIp == null || !isRunning) return null;
-    return 'http://$_wifiIp:$_port';
+    return 'https://$_wifiIp:$_port';
   }
+
+  /// SHA-256 fingerprint of the certificate the running server presents, or
+  /// null when it is not running.
+  ///
+  /// A joining device cannot validate a self-signed certificate by name, so it
+  /// pins this. It is shown alongside the address, and carried in the QR
+  /// payload, so pairing does not require typing it.
+  String? get certificateFingerprint => _serverService.certificateFingerprint;
 
   set port(int value) {
     if (_status != ServerStatus.stopped) return;

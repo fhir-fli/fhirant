@@ -24,6 +24,9 @@ dependencies:
   fhirant_logging:
     path: ../fhirant_logging
   http: any
+  # AES-GCM for the passphrase-wrapped backup envelope. Pure Dart, so the
+  # export behaves the same on-device and headless.
+  pointycastle: ^4.0.0
   shelf: ^1.4.2
   shelf_rate_limiter: ^1.0.1
   shelf_router: ^1.1.4

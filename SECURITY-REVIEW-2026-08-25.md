@@ -137,7 +137,7 @@ Two related notes, both measured rather than assumed:
   both F1 and F2. The safe shape is one central decision that denies anything
   it does not positively recognise.
 
-### F3 — HIGH — The mobile app serves plaintext HTTP only
+### F3 — HIGH — ✅ FIXED — The mobile app served plaintext HTTP only
 
 `FhirAntServer.startHttps` exists (`fhirant_server.dart:509`) and the CLI
 exposes `--https`, but the app calls `startHttp` unconditionally
@@ -148,13 +148,29 @@ Under this threat model that is the whole record and every bearer token
 crossing an ad-hoc disaster-setting WiFi in the clear, readable by anyone
 associated to the same access point.
 
-**Recommendation**: the app should generate a self-signed certificate on first
-run — `SecureStorageService.generateSelfSignedCertificate` already exists and is
-unused — serve HTTPS, and put the certificate fingerprint in the QR payload so
-the joining device can pin it. Self-signed with pinning is materially better
-here than cleartext, and it needs no CA and no connectivity.
+**Fixed**. `ServerService.start` now calls `startHttps` with a TLS identity
+from `loadOrCreateTlsIdentity`, and the advertised URL is `https://`.
 
-### F4 — HIGH — `$backup` is a plaintext dump, and it is the device-to-device path
+The identity is generated once and reused. That is the part that matters: the
+certificate is self-signed and issued for `localhost`, so a client reaching the
+phone at whatever address it has on this network cannot validate it by name and
+must pin its fingerprint instead — and regenerating on each start would change
+the fingerprint and break every device already paired. Generating an RSA key
+pair takes a few seconds on a phone, which is another reason it happens once.
+
+The SHA-256 fingerprint is shown on the dashboard and carried in the QR payload
+alongside the URL (`{"url":…,"sha256":…}`), so pairing does not depend on
+reading 32 bytes of hex aloud — though an operator can, because it is displayed.
+It is computed over the DER bytes, the same convention as `openssl x509
+-fingerprint -sha256`; a test pins it against OpenSSL's own output for a real
+certificate rather than recomputing it the way the implementation does, because
+that would only prove the code agrees with itself.
+
+Still open, deliberately: **no client in this repo consumes that fingerprint
+yet.** The server presents a pinnable identity; a joining device has to be
+written to check it.
+
+### F4 — HIGH — ✅ FIXED — `$backup` was a plaintext dump, and it is the device-to-device path
 
 `backupHandler` returns a JSON Bundle of the database with no encryption and no
 passphrase (`backup_handler.dart:40`), over the cleartext transport of F3.
@@ -167,14 +183,34 @@ on from another one" is therefore to decrypt everything, ship it in the clear,
 and re-encrypt it on the far side. **The at-rest encryption is defeated at
 exactly the moment the deployment model needs it most.**
 
-**Recommendation**: a passphrase-wrapped export. Operator supplies a passphrase,
-run it through a KDF (PBKDF2 is already in the codebase; Argon2id is better if
-a dependency is acceptable), and encrypt the export blob with the derived key.
-Then the export is safe to move by any means, including an SD card handed to
-someone — which in a disaster setting is more realistic than a network transfer.
-It also removes the keystore as a single point of failure: passphrase plus
-backup file is sufficient to reconstitute the record, which is what "flexible,
-moves between devices" actually requires.
+**Fixed**. `$backup` now requires a passphrase and returns an encrypted
+envelope: PBKDF2-HMAC-SHA256 at 210,000 iterations (higher than the login
+hash's 120,000 — a backup is derived once per export, and the file it protects
+may sit on removable media where an attacker can guess at leisure) into
+AES-256-GCM, with a fresh salt and nonce per export.
+
+`$restore` takes the envelope with the passphrase in an `X-Backup-Passphrase`
+header, and still accepts a plain Bundle so that importing FHIR produced
+elsewhere keeps working — refusing that would not make anything safer, since
+the caller already holds the data.
+
+The passphrase goes in the request body (backup) or a header (restore), never
+the query string, because request URIs are written to the log — see F6.
+
+This is what makes the deployment model coherent: passphrase plus file is
+sufficient to reconstitute the record, so the keystore stops being a single
+point of failure and the export can travel by any means to hand, including an
+SD card — which in a disaster setting is often the only one.
+
+17 tests cover the envelope: round trip including non-ASCII, that no patient
+data or passphrase appears in it, that it carries no key material, that a wrong
+passphrase and a flipped ciphertext byte and a substituted salt all fail the
+authentication tag, and that salt and nonce are never reused across exports.
+
+Still open, deliberately: **the app has no backup UI yet.** The operation is
+correct and reachable over the API; putting it behind a button, with whatever
+passphrase-entry flow makes sense for a clinician in a tent, is a separate
+piece of work.
 
 ### F5 — MEDIUM-HIGH — Authentication is disabled by default, and dev mode is full admin
 
@@ -283,9 +319,9 @@ Worth recording so it does not get "hardened" into something worse:
    path did not match a known shape. Both now decided centrally and
    deny-by-default, with `scope_enforcement_test.dart` inverted from evidence into
    17 regression guards.
-2. F4 with F3 — the passphrase-wrapped export is the piece that makes the
-   deployment model coherent, and it reduces how much the transport has to
-   carry.
+2. ~~F4 with F3~~ — **done**. The passphrase-wrapped export and TLS with a
+   pinnable identity. Two follow-ups deliberately left: no client pins the
+   fingerprint yet, and the app has no backup UI.
 3. F5 — a one-line decision, but take it deliberately.
 4. F6 — small and self-contained.
 5. F7, F8, F9 — hardening.

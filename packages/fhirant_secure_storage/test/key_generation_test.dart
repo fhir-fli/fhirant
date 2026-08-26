@@ -1,3 +1,7 @@
+// A PEM certificate and a 95-character SHA-256 fingerprint cannot be wrapped
+// without changing what they are.
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:convert';
 
 import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
@@ -96,6 +100,46 @@ void main() {
         shared++;
       }
       expect(shared, lessThan(4));
+    });
+  });
+
+  group('certificateFingerprint', () {
+    // A real self-signed certificate, and the fingerprint OpenSSL reports for
+    // it: `openssl x509 -noout -fingerprint -sha256`. Hard-coded rather than
+    // recomputed in the test, because recomputing it the way the
+    // implementation does would only prove the code agrees with itself.
+    // Pinning is worth nothing unless both ends compute the same number as
+    // every other tool.
+    const pem =
+        '-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUQUlreJbB7M1UPvjuxbMP/CsBscowDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MDgyNjAwMzYzMVoXDTI2MDgy\nNzAwMzYzMVowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAuZUJGhf6KsqIEVrMMgb+iv+gT9Ss80TVv/vdcwTdpg9f\n9NTSR+suL6S9oAD59+be+EmFqvbBJhSEQDulyeWyyG3vcwX1fhNLKQB6BJRwYPvU\nXpLvsY1Bjeeyq5BG4GioUvM1nzKMY19u4cQmmLKLnrd0EhJkUX2Q/VJ5HkaU0nf4\nXXSU6MPDMZ57AtBUHz1PLeT2YRfX5oHJbFQ9rPORz3dZy9SXZ5Mff1qAFW6vsWLn\ngxNyk4UXYZFzG4kTG3DzRsLlFrq3nXKOxv8T2UqJobfubV4rF+zFRiZDH3P/9OCW\nPriRjWANlonQeyEM26JNcbSZ2wO7H0LKku7nRuZjyQIDAQABo1MwUTAdBgNVHQ4E\nFgQUYwGON4BscaVMqpFe7aUCOsCaoUAwHwYDVR0jBBgwFoAUYwGON4BscaVMqpFe\n7aUCOsCaoUAwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAnquZ\n/glQPK1YPpv+oHyD2R31ZW9D5KTcnXGE6/RrCHZDHYa5Dx4DxiC7dcXTduIR/xXS\nFR75J1wtWg4v2j+pHMo41PmHV7kwoQ19luU07WYcTLPkTFT20cUjKmdz1SpPl2IX\ny2inH/TYeLaYEnUnZELCYmR/gVXx5brgkdvZoZvr8Mc5rYVCj4HYt+E8I2sIYBUG\nakuhHbPwAbBll1Xud0ymGh062wgI/WcoY8UUqynYzzrP/ZGMopP5aCKn7BYCtMLp\n9asIeACChQu/3M6pet7h/pW1asG9l1FgG9eaRmYW/6yIknBbhm4T/Y06TC+21Gej\nfVrxD1RAWd5RVv4cyQ==\n-----END CERTIFICATE-----';
+
+    const opensslFingerprint =
+        '6f:c9:83:04:68:e4:90:40:01:2e:1b:bf:69:c8:53:a6:84:4a:95:6d:4a:dc:f5:1d:85:85:ae:3a:0f:d4:e4:ca';
+
+    test('matches what OpenSSL reports for the same certificate', () {
+      final computed = SecureStorageService.certificateFingerprint(pem);
+      expect(computed, opensslFingerprint);
+    });
+
+    test('is lowercase hex, colon separated, 32 bytes', () {
+      final parts = SecureStorageService.certificateFingerprint(pem).split(':');
+      expect(parts.length, 32);
+      expect(parts.every((p) => p.length == 2), isTrue);
+    });
+
+    test('is insensitive to PEM line endings', () {
+      // A device paired before the PEM was rewrapped must still connect after.
+      final rewrapped = pem.replaceAll('\n', '\r\n');
+      final computed = SecureStorageService.certificateFingerprint(rewrapped);
+      expect(computed, opensslFingerprint);
+    });
+
+    test('a different certificate gives a different fingerprint', () {
+      final altered = pem.replaceFirst('MII', 'MIJ');
+      expect(
+        SecureStorageService.certificateFingerprint(altered),
+        isNot(opensslFingerprint),
+      );
     });
   });
 }
