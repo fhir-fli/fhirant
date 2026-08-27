@@ -283,8 +283,7 @@ Future<Response> lookupHandler(
     }
 
     final result = fhir.Parameters(parameter: responseParams);
-    FhirantLogging()
-        .logInfo('Lookup found code "$effectiveCode" in CodeSystem');
+    FhirantLogging().logInfo('Lookup resolved a code in CodeSystem');
     return Response.ok(
       result.toJsonString(),
       headers: {'Content-Type': 'application/json'},
@@ -875,8 +874,7 @@ Future<Response> preferredIdHandler(
       ],
     );
 
-    FhirantLogging()
-        .logInfo('NamingSystem \$preferred-id: found $type for "$id"');
+    FhirantLogging().logInfo('NamingSystem \$preferred-id: found $type');
     return Response.ok(
       result.toJsonString(),
       headers: {'Content-Type': 'application/json'},
@@ -992,7 +990,7 @@ Future<Response> translateHandler(
               );
 
               FhirantLogging().logInfo(
-                'ConceptMap \$translate: translated "$effectiveCode"',
+                r'ConceptMap $translate: matched',
               );
               return Response.ok(
                 result.toJsonString(),
@@ -1014,8 +1012,7 @@ Future<Response> translateHandler(
       ],
     );
 
-    FhirantLogging()
-        .logInfo('ConceptMap \$translate: no match for "$effectiveCode"');
+    FhirantLogging().logInfo(r'ConceptMap $translate: no match');
     return Response.ok(
       result.toJsonString(),
       headers: {'Content-Type': 'application/json'},
@@ -1142,7 +1139,7 @@ Future<Response> subsumesHandler(
     );
 
     FhirantLogging().logInfo(
-      'CodeSystem \$subsumes: $effectiveCodeA vs $effectiveCodeB = $outcome',
+      'CodeSystem \$subsumes: $outcome',
     );
     return Response.ok(
       result.toJsonString(),
