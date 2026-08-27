@@ -212,7 +212,7 @@ correct and reachable over the API; putting it behind a button, with whatever
 passphrase-entry flow makes sense for a clinician in a tent, is a separate
 piece of work.
 
-### F5 — MEDIUM-HIGH — Authentication is disabled by default, and dev mode is full admin
+### F5 — MEDIUM-HIGH — ⏸️ DECIDED, DEFERRED — Authentication is disabled by default, and dev mode is full admin
 
 `kDefaultAuthDisabled = true` (`security_config.dart`) makes a fresh install
 default to Experimentation mode. In that mode `_devModeMiddleware` replaces the
@@ -224,9 +224,19 @@ This is deliberate and documented for the pre-release period, and the app shows
 a standing warning. It is listed here because it is the shipping default and
 nothing has shipped yet: the decision is still free.
 
-**Recommendation**: flip it to `false` before any real deployment. Given that
-there are no installs, there is no reason to carry the permissive default
-forward.
+**Decision (Grey, 2026-08-27): stays `true` for now.** The app is in testing
+and authentication off is what makes that testing practical. It is flipped to
+`false` before deployment, not before then.
+
+This is recorded rather than fixed because it is a posture decision with a
+date attached, not a defect. The two things that make it safe to defer are
+that nothing is deployed and that Experimentation mode shows a standing
+warning while it is active.
+
+**The gate**: `kDefaultAuthDisabled` in `security_config.dart` must read
+`false` before the first real deployment. Nothing enforces that today — it is
+a line in a file and a note in this document. If it should be enforced, the
+place to do it is a release check, not a runtime one.
 
 ### F6 — MEDIUM — ✅ PARTLY FIXED — Plaintext PHI log file sits beside the encrypted database
 
@@ -268,17 +278,26 @@ encrypted database, or not writing it on mobile at all, is the remaining half
 and is a design decision — it trades away the ability to diagnose a device
 that will not start, which in a disaster setting is not a small thing.
 
-### F7 — LOW — CORS defaults to `allowOrigin: '*'`
+### F7 — LOW — ✅ FIXED — CORS defaulted to `allowOrigin: '*'`
 
 `CorsConfig.allowOrigin` defaults to `*` (`cors_middleware.dart`). Auth is
 bearer-token rather than cookie-based, so a browser will not attach credentials
 automatically and this is not directly exploitable. It does mean any web page
 the operator visits can reach the API on the local network and probe it.
 
-**Recommendation**: default to the app's own origin and require an explicit
-opt-in for `*`.
+**Fixed**. `allowOrigin` is now nullable and defaults to null, which publishes
+no cross-origin policy at all; `*` remains available as an explicit choice.
 
-### F8 — LOW — Two public-route prefixes are prefix matches rather than exact
+CORS is a browser rule, not access control — a non-browser client is
+unaffected, so device-to-device use does not change. What the old default gave
+away was narrower than it looks: authentication is by bearer token rather than
+cookie, so a wide-open policy does not leak authenticated data on its own. What
+it did allow is any page the operator visits using their browser to reach this
+server on their local network — which the page's author cannot reach directly —
+and read the responses. Publishing nothing closes that; a browser SMART app is
+now a decision an operator makes rather than a default they inherit.
+
+### F8 — LOW — ✅ FIXED — Two public-route prefixes were prefix matches rather than exact
 
 `_publicPrefixes` in `auth_middleware.dart` contains `metadata` and `health`
 alongside genuine prefixes like `auth/`. They are matched with `startsWith`, so
@@ -286,9 +305,11 @@ any future route beginning with those strings becomes unauthenticated silently.
 No current route collides, and FHIR resource types are capitalised, so this is
 latent rather than live.
 
-**Recommendation**: exact-match the non-prefix entries.
+**Fixed**. `_publicPrefixes` now holds only genuine subtree prefixes (`auth/`,
+`.well-known/`); `metadata`, `favicon.ico` and `health` moved to a
+`_publicPaths` set matched exactly.
 
-### F9 — LOW — `x-forwarded-for` is trusted when connection info is absent
+### F9 — LOW — ✅ FIXED — `x-forwarded-for` was trusted when connection info is absent
 
 `_trustedClientIpMiddleware` overwrites the header from the socket address, so
 spoofing is correctly prevented on a real connection. When
@@ -297,7 +318,17 @@ spoofing is correctly prevented on a real connection. When
 logging and rate limiting. That path is reachable in in-process tests rather
 than over a socket.
 
-**Recommendation**: strip the header rather than passing it through.
+**Fixed — but not the way the recommendation said, because the recommendation
+was wrong.** Stripping the header crashes the rate limiter: it casts
+`shelf.io.connection_info` unconditionally and falls back to the header, so
+removing it turns a trust problem into a `type 'Null' is not a subtype of type
+'HttpConnectionInfo'` on every request. That was measured — the change broke 88
+tests before it was corrected.
+
+The header is now overwritten with the sentinel `unknown` instead. Every
+request arriving without connection info shares one rate-limit bucket, which
+throttles them together rather than letting a caller choose their own bucket by
+picking a value.
 
 ---
 
@@ -344,7 +375,8 @@ Worth recording so it does not get "hardened" into something worse:
 2. ~~F4 with F3~~ — **done**. The passphrase-wrapped export and TLS with a
    pinnable identity. Two follow-ups deliberately left: no client pins the
    fingerprint yet, and the app has no backup UI.
-3. F5 — a one-line decision, but take it deliberately.
+3. ~~F5~~ — **decided**: stays off through testing, flipped before
+   deployment.
 4. ~~F6~~ — **partly done**: values redacted, file still plaintext. The
    remaining half is whether the log belongs inside the encrypted database.
-5. F7, F8, F9 — hardening.
+5. ~~F7, F8, F9~~ — **done**.

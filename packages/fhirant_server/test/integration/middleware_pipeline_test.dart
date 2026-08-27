@@ -37,12 +37,11 @@ void main() {
       );
 
       expect(response.statusCode, equals(204));
-      expect(response.headers['access-control-allow-origin'], isNotNull);
-      expect(response.headers['access-control-allow-methods'], isNotNull);
-      expect(
-        response.headers['access-control-allow-methods'],
-        contains('GET'),
-      );
+      // No cross-origin policy is published unless one is configured, so the
+      // preflight is answered without permission in it. A browser client is
+      // an explicit choice an operator makes — see CorsConfig.allowOrigin.
+      expect(response.headers['access-control-allow-origin'], isNull);
+      expect(response.headers['access-control-allow-methods'], isNull);
     });
 
     test('GET response has application/fhir+json Content-Type', () async {

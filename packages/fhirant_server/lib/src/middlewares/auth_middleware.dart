@@ -6,14 +6,23 @@ import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
-/// Paths that do not require authentication.
+/// Path prefixes that do not require authentication.
+///
+/// Genuine prefixes only — each names a subtree. Single paths go in
+/// [_publicPaths] and are matched exactly, so that a future route merely
+/// beginning with one of these words does not become unauthenticated by
+/// accident.
 const _publicPrefixes = [
   'auth/',
+  '.well-known/',
+];
+
+/// Exact paths that do not require authentication.
+const _publicPaths = {
   'metadata',
   'favicon.ico',
-  '.well-known/',
   'health',
-];
+};
 
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context.
@@ -27,7 +36,9 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
 
       // Public routes: auth not required, but optionally inject auth_user
       // if a valid token is present (needed for e.g. admin registering users).
-      final isPublic = path.isEmpty || _publicPrefixes.any(path.startsWith);
+      final isPublic = path.isEmpty ||
+          _publicPaths.contains(path) ||
+          _publicPrefixes.any(path.startsWith);
       if (isPublic) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {

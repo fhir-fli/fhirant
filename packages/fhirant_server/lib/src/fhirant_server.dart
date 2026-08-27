@@ -43,7 +43,7 @@ class FhirAntServer {
     this.maxRequests = 10,
     this.rateLimitDuration = const Duration(seconds: 60),
     this.devMode = false,
-    this.corsAllowOrigin = '*',
+    this.corsAllowOrigin,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     // Resolve the signing secret without ever falling back to a shared,
@@ -69,7 +69,9 @@ class FhirAntServer {
   /// `*` — appropriate for the open LAN/native-client model (fhirant uses
   /// bearer tokens, not cookies, so this is not a CSRF vector) — but a
   /// deployment that serves a known web origin can lock it down here.
-  final String corsAllowOrigin;
+  /// Origin permitted to read this server's responses from a browser, or null
+  /// to publish no cross-origin policy. See [CorsConfig.allowOrigin].
+  final String? corsAllowOrigin;
   final Duration rateLimitDuration;
   late final JwtService _jwtService;
   final DateTime _startTime;
@@ -604,8 +606,17 @@ class FhirAntServer {
             ),
           );
         }
-        // No connection info (e.g. in-process tests) — leave the request as-is.
-        return innerHandler(request);
+        // No connection info to derive a real address from, so there is
+        // nothing to trust — but the header cannot simply be removed either:
+        // the rate limiter keys on it and casts the connection info
+        // unconditionally, so its absence is a crash rather than a fallback.
+        // Overwrite it with a sentinel instead. Every request that arrives
+        // this way shares one rate-limit bucket, which throttles them together
+        // rather than letting a caller pick their own bucket by choosing a
+        // value.
+        return innerHandler(
+          request.change(headers: {'x-forwarded-for': 'unknown'}),
+        );
       };
     };
   }
