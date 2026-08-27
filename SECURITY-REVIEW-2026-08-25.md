@@ -344,6 +344,38 @@ resource to its patient — and give `agent.who` a real reference plus the clien
 address. Not urgent for a system in testing; it is a conformance gap rather
 than an exposure, and it matters when the audit trail is first relied on.
 
+### F11 — MEDIUM — Every resource save commits its own transaction, so bulk writes are slow and Bundle atomicity is manual
+
+Found by measurement, after asserting without it that fanning out AuditEvents
+would be "a volume decision on a phone" and being asked to prove it.
+
+Measured on this machine, file-backed SQLite, steady state after warm-up:
+
+| | time | per resource |
+|---|---|---|
+| 50 `saveResource` calls, sequential | 3584 ms | 71.7 ms |
+| the same 50 inside one transaction | 109 ms | 2.2 ms |
+
+**33x.** SQLite is not slow and the search-parameter indexing is not the
+problem: the cost is one commit — one flush to storage — per `saveResource`
+call.
+
+Neither `bundle_handler.dart` nor `$restore` batches. Extrapolating from the
+measured per-resource cost (arithmetic, not measurement): a 100-entry
+transaction Bundle costs about 7 seconds, and restoring a 5,000-resource
+backup about 6 minutes. The second matters most — restoring onto a replacement
+device is the recovery path the whole deployment model rests on.
+
+There is a correctness edge as well as a speed one. FHIR requires a
+`transaction` Bundle to be all-or-nothing. Without a database transaction,
+`bundle_handler` achieves that by **manual compensating rollback** — re-saving
+`previousResource` on failure (lines 629, 646). That rollback can itself fail
+partway, leaving a state a real transaction would have made impossible.
+
+**Recommendation**: wrap the multi-write paths — Bundle processing, `$restore`,
+and any AuditEvent fan-out — in a single database transaction. It is faster and
+it makes Bundle atomicity real rather than best-effort.
+
 ### F7 — LOW — ✅ FIXED — CORS defaulted to `allowOrigin: '*'`
 
 `CorsConfig.allowOrigin` defaults to `*` (`cors_middleware.dart`). Auth is
@@ -446,6 +478,12 @@ Worth recording so it does not get "hardened" into something worse:
 4. ~~F6~~ — **done**. Query values redacted and path identifiers reduced to
    shape, so the debug log no longer duplicates what the AuditEvent trail holds
    in the encrypted database.
-5. F10 — resolve the subject of care in the AuditEvent. A conformance gap, not
-   an exposure; it matters when the audit trail is first relied on.
+5. F10 — resolve the subject of care in the AuditEvent. The lookup is cheap:
+   the reference search index already holds it, and `fhir_dao.dart:2321`
+   already runs that query shape for reverse chaining. Use only the
+   subject-of-care parameters — recording a `recorder` or `performer` who
+   happens to be a patient would put *wrong* data in a legal record, which is
+   worse than a gap.
+6. F11 — batch the multi-write paths into one transaction. Measured 33x, and
+   it makes Bundle atomicity real rather than a manual rollback.
 5. ~~F7, F8, F9~~ — **done**.
