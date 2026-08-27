@@ -338,6 +338,14 @@ conditions, medications or anything else.
 identifying reference, and there is no `agent.network` recording the client
 address, which IHE ATNA and ASTM E2147 both expect.
 
+**Related, found while answering a question about what `$fhirpath` does**:
+`fhirpath_handler.dart:138` carries `// TODO(fhirant): Add audit log entry for
+PHI access`. That operation reads a resource straight out of the database by
+type and id and deliberately writes no AuditEvent. Together with F1 — which
+let any account reach it — it was the sharpest hole in the server: read any
+record, leave no trace. F1 closed the access half; this is the trace half, and
+it belongs with this finding rather than as a separate TODO.
+
 **Recommendation**: resolve the subject of care when writing the AuditEvent —
 the compartment machinery in `patient_scope.dart` already knows how to map a
 resource to its patient — and give `agent.who` a real reference plus the client
