@@ -19,6 +19,12 @@ token could read another patient's compartment and system-wide history. Both
 are refused — the test proves it — and the actual defect turned out to be a
 different and subtler one. The claim did not survive being run.
 
+Standards consulted for F6 and F10: ISO 27789:2021 (audit trails for EHRs) and
+ASTM E2147-18. Precedent consulted for the F3 follow-up: Syncthing, whose
+device ID *is* the SHA-256 fingerprint of a self-signed certificate generated
+on first run, with trust resting entirely on comparing that fingerprint — the
+same shape as what F3 now builds.
+
 Not covered: the Android/iOS platform configuration (manifest, entitlements,
 network security config), dependency CVE audit beyond the discontinued-package
 cleanup, and any dynamic/fuzz testing. Those are named as gaps, not silently
@@ -271,12 +277,61 @@ which is a decision rather than an oversight — they say which record was
 touched, and on their own they do not name a person the way a search on name
 and birth date does. The regression test pins both halves of that decision.
 
-**Why "partly"**: the file is still plaintext, and it is still beside the
-encrypted database. Redaction narrows what an attacker holding the device
-learns; it does not stop them reading the file. Storing the log inside the
-encrypted database, or not writing it on mobile at all, is the remaining half
-and is a design decision — it trades away the ability to diagnose a device
-that will not start, which in a disaster setting is not a small thing.
+**Why "partly" — and a correction to how this finding was framed.**
+
+The first version of this finding treated the remaining content as a leak to be
+encrypted. That was wrong, and checking the standards rather than reasoning
+about it is what showed why.
+
+**ISO 27789:2021 requires** an EHR audit record to uniquely identify the user,
+uniquely identify the subject of care, identify the function performed, and
+record when it happened. ASTM E2147-18 covers the same ground and adds
+retention — as long as the medical record, at minimum ten years. So *that
+content is mandatory*, not incidental. The question was never whether to hold
+it; it is where it lives and who can read it.
+
+**fhirant already does the compliant thing.** `auditMiddleware` writes FHIR
+`AuditEvent` resources — agent, action, recorded, outcome, entity — into the
+encrypted database on every auditable request. The audit trail is in the
+protected store where it belongs.
+
+Which makes the plaintext file a **duplicate of protected content in an
+unprotected place**, and reframes the remaining work: not "encrypt the log",
+but "the debug log should not carry what the audit trail already holds
+properly". That is a smaller and better-aimed change than encrypting a file or
+moving it into the database, and it does not cost the ability to diagnose a
+device that will not start — which the earlier framing would have.
+
+What is still true: the file is plaintext, it still records resource ids,
+usernames, timestamps and client IPs, and the raw `catch (e)` paths are
+unbounded — whatever a database or parser exception embeds goes to disk, and
+that cannot be bounded by inspection.
+
+### F10 — MEDIUM — The audit trail does not identify the subject of care
+
+Found while checking F6 against the standards rather than while reading for
+bugs.
+
+`_entityReference` in `audit_middleware.dart` takes `Type/id` from the request
+path, so `GET /Observation/123` records the *Observation* as the audited
+entity. For any resource that is not a Patient, the resulting `AuditEvent`
+never names the patient the access concerned.
+
+**ISO 27789:2021 requires the audit record to uniquely identify the subject of
+care.** As it stands, fhirant's audit trail satisfies that only for direct
+Patient reads. "Who looked at this patient's record" — the question an audit
+trail exists to answer — cannot be answered from it for observations,
+conditions, medications or anything else.
+
+`agent.who` is also a display string (`{'display': username}`) rather than an
+identifying reference, and there is no `agent.network` recording the client
+address, which IHE ATNA and ASTM E2147 both expect.
+
+**Recommendation**: resolve the subject of care when writing the AuditEvent —
+the compartment machinery in `patient_scope.dart` already knows how to map a
+resource to its patient — and give `agent.who` a real reference plus the client
+address. Not urgent for a system in testing; it is a conformance gap rather
+than an exposure, and it matters when the audit trail is first relied on.
 
 ### F7 — LOW — ✅ FIXED — CORS defaulted to `allowOrigin: '*'`
 
@@ -377,6 +432,10 @@ Worth recording so it does not get "hardened" into something worse:
    fingerprint yet, and the app has no backup UI.
 3. ~~F5~~ — **decided**: stays off through testing, flipped before
    deployment.
-4. ~~F6~~ — **partly done**: values redacted, file still plaintext. The
-   remaining half is whether the log belongs inside the encrypted database.
+4. ~~F6~~ — **partly done**: values redacted. The remaining half is narrower
+   than first written — stop the debug log duplicating what the AuditEvent
+   trail already holds in the encrypted database, rather than encrypting the
+   file.
+6. F10 — resolve the subject of care in the AuditEvent. A conformance gap, not
+   an exposure; it matters when the audit trail is first relied on.
 5. ~~F7, F8, F9~~ — **done**.
