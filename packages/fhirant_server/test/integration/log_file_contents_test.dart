@@ -61,11 +61,11 @@ void main() {
     expect(contents, contains('/Patient'));
   });
 
-  test('a resource id is still logged, deliberately', () async {
-    // Ids say which record was touched, which is most of what makes the log
-    // useful for working out what happened on a device, and on their own they
-    // do not name a person the way a search on name and birth date does. This
-    // is a decision, so it is pinned rather than left to drift.
+  test('a resource id does not reach the log file', () async {
+    // Which record was touched is recorded as a FHIR AuditEvent inside the
+    // encrypted database — that is what ISO 27789 requires and where it is
+    // protected. Repeating it here would duplicate protected content into an
+    // unprotected place.
     final server = await createTestServer();
     final token = generateTestToken(scopes: ['user/*.rs']);
 
@@ -73,7 +73,10 @@ void main() {
       testRequest('GET', '/Patient/patient-12345', authToken: token),
     );
 
-    expect(logFile.readAsStringSync(), contains('patient-12345'));
+    final contents = logFile.readAsStringSync();
+    expect(contents, isNot(contains('patient-12345')));
+    // The shape survives, which is what the log is for.
+    expect(contents, contains('/Patient/{id}'));
   });
 
   test('the file is still plaintext, but no longer carries the identifiers',
@@ -90,8 +93,9 @@ void main() {
     // the file. Anyone holding the device can read it.
     expect(contents, isNotEmpty);
     expect(contents.trim().split('\n').first, startsWith('{'));
-    // ...but the subject reference, which names a patient, is not in it.
+    // ...but neither the subject reference nor any record identity is in it.
     expect(contents, isNot(contains('Patient/abc')));
     expect(contents, contains('subject=[redacted]'));
+    expect(contents, contains('/Observation'));
   });
 }

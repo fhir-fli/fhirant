@@ -244,7 +244,7 @@ warning while it is active.
 a line in a file and a note in this document. If it should be enforced, the
 place to do it is a release check, not a runtime one.
 
-### F6 — MEDIUM — ✅ PARTLY FIXED — Plaintext PHI log file sits beside the encrypted database
+### F6 — MEDIUM — ✅ FIXED — Plaintext PHI log file sat beside the encrypted database
 
 `FhirantLogging` writes JSON lines to a file in app documents, unencrypted
 (`fhirant_logging.dart:45-50`), and the app enables it (`main.dart`, log path
@@ -302,10 +302,21 @@ properly". That is a smaller and better-aimed change than encrypting a file or
 moving it into the database, and it does not cost the ability to diagnose a
 device that will not start — which the earlier framing would have.
 
-What is still true: the file is plaintext, it still records resource ids,
-usernames, timestamps and client IPs, and the raw `catch (e)` paths are
-unbounded — whatever a database or parser exception embeds goes to disk, and
-that cannot be bounded by inspection.
+**Done.** The logged URI is reduced to its shape — `/Patient/{id}`,
+`/Observation/{id}/_history/{vid}` — so the operation, resource type, outcome
+and timing survive and the record identity does not.
+
+Writing the test against the file rather than the code found a second channel
+the request line alone would have missed: ten call sites in
+`resource_handler.dart` logged ids directly, e.g. `Resource of type Patient
+with ID patient-12345 not found.` Those now log `{id}` too.
+
+What is still true, and is accepted rather than fixed: the file remains
+plaintext and still records usernames, timestamps, client addresses, resource
+*types* and terminology codes. That is a debug log doing a debug log's job. The
+raw `catch (e)` paths also remain unbounded — whatever a database or parser
+exception embeds goes to disk, and that cannot be bounded by inspection, only
+by not logging exception detail at all.
 
 ### F10 — MEDIUM — The audit trail does not identify the subject of care
 
@@ -432,10 +443,9 @@ Worth recording so it does not get "hardened" into something worse:
    fingerprint yet, and the app has no backup UI.
 3. ~~F5~~ — **decided**: stays off through testing, flipped before
    deployment.
-4. ~~F6~~ — **partly done**: values redacted. The remaining half is narrower
-   than first written — stop the debug log duplicating what the AuditEvent
-   trail already holds in the encrypted database, rather than encrypting the
-   file.
-6. F10 — resolve the subject of care in the AuditEvent. A conformance gap, not
+4. ~~F6~~ — **done**. Query values redacted and path identifiers reduced to
+   shape, so the debug log no longer duplicates what the AuditEvent trail holds
+   in the encrypted database.
+5. F10 — resolve the subject of care in the AuditEvent. A conformance gap, not
    an exposure; it matters when the audit trail is first relied on.
 5. ~~F7, F8, F9~~ — **done**.

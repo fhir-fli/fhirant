@@ -779,8 +779,7 @@ Future<Response> postResourceHandler(
       final responseResource = savedResource ?? resourceWithId;
 
       FhirantLogging().logInfo(
-        'Resource of type $resourceType saved successfully with ID: '
-        '${resourceWithId.id}',
+        'Resource of type $resourceType saved successfully with ID: {id}',
       );
 
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
@@ -921,7 +920,7 @@ Future<Response> putResourceHandler(
 
       FhirantLogging().logInfo(
         'Resource of type $resourceType '
-        '${isCreate ? "created" : "updated"} successfully with ID: $id',
+        '${isCreate ? "created" : "updated"} successfully with ID: {id}',
       );
 
       final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
@@ -933,7 +932,7 @@ Future<Response> putResourceHandler(
       );
     } else {
       FhirantLogging().logError(
-        'Failed to update resource of type: $resourceType with ID: $id',
+        'Failed to update resource of type: $resourceType with ID: {id}',
       );
       return _errorResponse(
         'Failed to update resource',
@@ -942,7 +941,7 @@ Future<Response> putResourceHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error updating resource of type: $resourceType with ID: $id',
+      'Error updating resource of type: $resourceType with ID: {id}',
       e,
       stackTrace,
     );
@@ -1013,7 +1012,7 @@ Future<Response> getResourceByIdHandler(
       }
 
       FhirantLogging().logInfo(
-        'Resource of type $resourceType with ID $id found.',
+        'Resource of type $resourceType with ID: {id} found.',
       );
 
       // Apply response shaping
@@ -1079,7 +1078,7 @@ Future<Response> getResourceByIdHandler(
       }
 
       FhirantLogging().logWarning(
-        'Resource of type $resourceType with ID $id not found.',
+        'Resource of type $resourceType with ID: {id} not found.',
       );
       return Response(
         404,
@@ -1089,7 +1088,7 @@ Future<Response> getResourceByIdHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error fetching resource of type: $resourceType with ID: $id',
+      'Error fetching resource of type: $resourceType with ID: {id}',
       e,
       stackTrace,
     );
@@ -1161,7 +1160,7 @@ Future<Response> deleteResourceHandler(
     final resource = await dbInterface.getResource(type, id);
     if (resource == null) {
       FhirantLogging().logWarning(
-        'Resource of type $resourceType with ID $id not found for deletion.',
+        'Resource of type $resourceType with ID: {id} not found for deletion.',
       );
       return _errorResponse(
         'Resource not found',
@@ -1208,14 +1207,14 @@ Future<Response> deleteResourceHandler(
     final success = await dbInterface.deleteResource(type, id);
     if (success) {
       FhirantLogging().logInfo(
-        'Resource of type $resourceType with ID $id deleted successfully.',
+        'Resource of type $resourceType with ID: {id} deleted successfully.',
       );
       // Return 204 No Content per FHIR spec, or 200 with OperationOutcome
       // Using 204 as it's more RESTful for successful deletion
       return Response(204);
     } else {
       FhirantLogging().logError(
-        'Failed to delete resource of type: $resourceType with ID: $id',
+        'Failed to delete resource of type: $resourceType with ID: {id}',
       );
       return _errorResponse(
         'Failed to delete resource',
@@ -1224,7 +1223,7 @@ Future<Response> deleteResourceHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error deleting resource of type: $resourceType with ID: $id',
+      'Error deleting resource of type: $resourceType with ID: {id}',
       e,
       stackTrace,
     );

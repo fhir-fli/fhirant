@@ -621,22 +621,57 @@ class FhirAntServer {
     };
   }
 
-  /// Returns [uri] with every query parameter value replaced by a placeholder.
+  /// Returns [uri] reduced to its shape: identifiers replaced by placeholders
+  /// in the path, and every query parameter value replaced too.
   ///
-  /// `/Patient?name=Faulkenberry&birthdate=1974-12-25` becomes
-  /// `/Patient?name=[redacted]&birthdate=[redacted]`.
+  /// `/Patient/abc?name=Faulkenberry` becomes
+  /// `/Patient/{id}?name=[redacted]`.
   ///
-  /// Resource ids in the path are deliberately left. They say which record was
-  /// touched, which is what makes the log useful for working out what happened
-  /// on a device, and on their own they do not name a person the way a search
-  /// on name and birth date does.
-  static String _redactQuery(Uri uri) {
-    if (uri.query.isEmpty) return uri.path;
+  /// This file is a debug log, not the audit trail. Who touched which record,
+  /// when, and to what effect is recorded as a FHIR AuditEvent inside the
+  /// encrypted database, which is where ISO 27789 wants it and where it is
+  /// protected. Repeating the record identity out here would duplicate
+  /// protected content into an unprotected place, and adds nothing the
+  /// AuditEvent does not already hold.
+  ///
+  /// What is left is what this log is actually for: which operation, against
+  /// which resource type, with what outcome and how long it took.
+  static String _redactUri(Uri uri) {
+    final segments = uri.pathSegments;
+    final shaped = <String>[];
+    for (var i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      // The segment after a resource type is that resource's id; the segment
+      // after _history is a version id. Operations ($…) and the parameter
+      // segments themselves are structure, not identity, so they stay.
+      final followsType = i > 0 &&
+          segments[i - 1].isNotEmpty &&
+          _isResourceType(segments[i - 1]);
+      final followsHistory = i > 0 && segments[i - 1] == '_history';
+      if (segment.startsWith(r'$') || segment.startsWith('_')) {
+        shaped.add(segment);
+      } else if (followsHistory) {
+        shaped.add('{vid}');
+      } else if (followsType) {
+        shaped.add('{id}');
+      } else {
+        shaped.add(segment);
+      }
+    }
+
+    final path = '/${shaped.join('/')}';
+    if (uri.query.isEmpty) return path;
     final redacted = uri.queryParametersAll.keys
         .map((name) => '$name=[redacted]')
         .join('&');
-    return '${uri.path}?$redacted';
+    return '$path?$redacted';
   }
+
+  /// Whether [segment] looks like a FHIR resource type, which is the signal
+  /// that whatever follows it is an identifier.
+  static bool _isResourceType(String segment) =>
+      segment[0].toUpperCase() == segment[0] &&
+      segment[0].toLowerCase() != segment[0];
 
   /// Middleware for logging
   Middleware _logRequestsMiddleware() {
@@ -654,14 +689,11 @@ class FhirAntServer {
 
         // Log the request using platform-agnostic logging.
         //
-        // The URI is redacted first. Search parameter VALUES are the patient:
-        // `?name=Faulkenberry&birthdate=1974-12-25` identifies someone
-        // outright, and the log file is plaintext, sitting beside the
-        // encrypted database where it undoes the point of encrypting it. The
-        // parameter NAMES are kept, because knowing which search was run is
-        // most of the diagnostic value and none of the identification.
+        // The URI is reduced to its shape first — see [_redactUri]. The
+        // record identity belongs to the AuditEvent in the encrypted
+        // database, not to a plaintext file beside it.
         FhirantLogging().logInfo(
-          '${request.method} ${_redactQuery(request.requestedUri)} - '
+          '${request.method} ${_redactUri(request.requestedUri)} - '
           '${response.statusCode} (${duration.inMilliseconds}ms) '
           'from $clientIp',
         );
