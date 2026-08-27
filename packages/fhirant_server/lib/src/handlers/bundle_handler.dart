@@ -60,39 +60,61 @@ Future<Response> _processTransaction(
   final urnMap = _buildUrnUuidMap(bundle.entry!);
 
   for (var i = 0; i < bundle.entry!.length; i++) {
-    final entry = bundle.entry![i];
-    if (entry.request == null) {
+    if (bundle.entry![i].request == null) {
       return _validationErrorResponse('Bundle entry $i missing request');
     }
+  }
 
-    try {
-      final operation =
-          await _processBundleEntry(entry, dbInterface, baseUrl, i, urnMap);
-      operations.add(operation);
-      resultEntries.add(operation.resultEntry);
-    } catch (e, stackTrace) {
-      FhirantLogging().logError(
-        'Transaction failed at entry $i, rolling back',
-        e,
-        stackTrace,
-      );
-      for (var j = operations.length - 1; j >= 0; j--) {
+  // A FHIR transaction Bundle is all-or-nothing, so it runs inside a database
+  // transaction and a failure rolls the whole thing back.
+  //
+  // This used to be done by hand: apply each entry, and on failure walk back
+  // through the ones already applied re-saving their previous state. That is
+  // best-effort by construction — the compensating writes can themselves fail,
+  // and the log said as much ("Error during rollback of operation N"), leaving
+  // a half-applied Bundle that the specification says cannot happen.
+  //
+  // It is also far cheaper. Each saveResource commits on its own, and one
+  // commit per resource measured 71.7ms against 2.2ms inside a shared
+  // transaction — a 100-entry Bundle goes from seconds to well under one.
+  int? failedIndex;
+  Object? failure;
+  try {
+    await dbInterface.transaction<void>(() async {
+      for (var i = 0; i < bundle.entry!.length; i++) {
         try {
-          await _rollbackOperation(operations[j], dbInterface);
-        } catch (rollbackError) {
-          FhirantLogging()
-              .logError('Error during rollback of operation $j', rollbackError);
+          final operation = await _processBundleEntry(
+            bundle.entry![i],
+            dbInterface,
+            baseUrl,
+            i,
+            urnMap,
+          );
+          operations.add(operation);
+          resultEntries.add(operation.resultEntry);
+        } catch (e) {
+          // Recorded, then rethrown: the throw is what aborts the database
+          // transaction, and the record is what builds the response after it
+          // has been rolled back.
+          failedIndex = i;
+          failure = e;
+          rethrow;
         }
       }
-      final txnStatus = e is BundleEntryException ? e.statusCode : 400;
-      final txnDetail =
-          e is BundleEntryException ? e.message : 'Internal error';
-      return _errorResponse(
-        'Transaction failed at entry $i',
-        txnDetail,
-        statusCode: txnStatus,
-      );
-    }
+    });
+  } catch (e, stackTrace) {
+    final index = failedIndex;
+    final cause = failure ?? e;
+    FhirantLogging().logError(
+      'Transaction failed at entry $index, rolled back',
+      cause,
+      stackTrace,
+    );
+    return _errorResponse(
+      'Transaction failed at entry $index',
+      cause is BundleEntryException ? cause.message : 'Internal error',
+      statusCode: cause is BundleEntryException ? cause.statusCode : 400,
+    );
   }
 
   final resultBundle = fhir.Bundle(
@@ -604,54 +626,6 @@ Future<_BundleOperation> _processBundleEntry(
     createdResource: createdResource,
     deletedResource: deletedResource,
   );
-}
-
-Future<void> _rollbackOperation(
-  _BundleOperation operation,
-  FhirAntDb dbInterface,
-) async {
-  switch (operation.method) {
-    case fhir.HTTPVerb.pOST:
-      // Delete the created resource
-      if (operation.createdResource != null && operation.resourceId != null) {
-        await dbInterface.deleteResource(
-          operation.resourceType,
-          operation.resourceId!,
-        );
-        FhirantLogging().logInfo(
-          'Rolled back POST: deleted ${operation.resourceType}/${operation.resourceId}',
-        );
-      }
-    case fhir.HTTPVerb.pUT:
-    case fhir.HTTPVerb.pATCH:
-      if (operation.previousResource != null) {
-        // Restore previous version
-        await dbInterface.saveResource(operation.previousResource!);
-        FhirantLogging().logInfo(
-          'Rolled back ${operation.method}: restored ${operation.resourceType}/${operation.resourceId}',
-        );
-      } else if (operation.resourceId != null) {
-        // No previous version means it was a create-via-PUT; delete it
-        await dbInterface.deleteResource(
-          operation.resourceType,
-          operation.resourceId!,
-        );
-        FhirantLogging().logInfo(
-          'Rolled back create-via-PUT: deleted ${operation.resourceType}/${operation.resourceId}',
-        );
-      }
-    case fhir.HTTPVerb.dELETE:
-      // Re-save the deleted resource
-      if (operation.deletedResource != null) {
-        await dbInterface.saveResource(operation.deletedResource!);
-        FhirantLogging().logInfo(
-          'Rolled back DELETE: re-saved ${operation.resourceType}/${operation.resourceId}',
-        );
-      }
-    default:
-      // GET — nothing to rollback
-      break;
-  }
 }
 
 class _BundleOperation {

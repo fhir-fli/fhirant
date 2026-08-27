@@ -9,6 +9,16 @@ import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
+/// A transaction Bundle now runs inside one database transaction, so the mock
+/// has to actually execute the closure it is handed — otherwise nothing is
+/// written and every entry looks like it failed.
+void _stubTransaction(MockFhirAntDb mockDb) {
+  when(() => mockDb.transaction<void>(any())).thenAnswer(
+    (invocation) async =>
+        (invocation.positionalArguments[0] as Future<void> Function())(),
+  );
+}
+
 class MockRequest extends Mock implements Request {}
 
 void main() {
@@ -23,6 +33,14 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
+      // saveResource commits per call, so the multi-write paths now run inside
+      // one database transaction. The mock has to actually run the closure or
+      // nothing is written.
+      when(() => mockDb.transaction<void>(any())).thenAnswer(
+        (invocation) async =>
+            (invocation.positionalArguments[0] as Future<void> Function())(),
+      );
       mockRequest = MockRequest();
     });
 
@@ -225,6 +243,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
@@ -385,6 +404,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
@@ -515,6 +535,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
@@ -676,6 +697,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
@@ -1034,26 +1056,36 @@ void main() {
     });
   });
 
-  group('bundleHandler - rollback', () {
+  group('bundleHandler - transaction rollback', () {
     late MockFhirAntDb mockDb;
     late MockRequest mockRequest;
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
-    test('rollback after POST calls deleteResource', () async {
-      final savedPatient = fhir.Patient.fromJson({
+    // This group used to assert that a failed transaction issued compensating
+    // writes — delete what was created, re-save what was replaced. That was
+    // testing the mechanism rather than the guarantee, and the mechanism was
+    // best-effort by construction: the compensating writes could themselves
+    // fail, and the code logged exactly that case.
+    //
+    // The Bundle now runs inside a database transaction, so a failure rolls
+    // back rather than being written back. What that guarantees — that nothing
+    // from a failed Bundle survives — cannot be shown against a mock, because
+    // a mock can only report which calls were made. It is proved against a
+    // real database in integration/bundle_atomicity_test.dart.
+    //
+    // What belongs here is the other half: that the handler no longer tries to
+    // undo anything by hand.
+
+    test('a failed transaction issues no compensating writes', () async {
+      final existing = fhir.Patient.fromJson({
         'resourceType': 'Patient',
-        'id': 'rb-post',
-        'meta': {
-          'versionId': '1',
-          'lastUpdated': '2024-01-15T10:30:00.000Z',
-        },
-        'name': [
-          {'family': 'RollbackPost'},
-        ],
+        'id': 'rb-1',
+        'meta': {'versionId': '1'},
       });
 
       final bundleJson = jsonEncode({
@@ -1061,182 +1093,57 @@ void main() {
         'type': 'transaction',
         'entry': [
           {
-            'resource': {
-              'resourceType': 'Patient',
-              'id': 'rb-post',
-              'name': [
-                {'family': 'RollbackPost'},
-              ],
-            },
-            'request': {'method': 'POST', 'url': 'Patient'},
+            'resource': {'resourceType': 'Patient', 'id': 'rb-1'},
+            'request': {'method': 'PUT', 'url': 'Patient/rb-1'},
           },
           {
-            'request': {'method': 'GET', 'url': 'Patient/not-found'},
+            // Mismatched id: the URL names one resource, the body another.
+            'resource': {'resourceType': 'Patient', 'id': 'other'},
+            'request': {'method': 'PUT', 'url': 'Patient/mismatch'},
           },
         ],
       });
 
-      when(
-        () => mockRequest.readAsString(),
-      ).thenAnswer((_) async => bundleJson);
-      when(
-        () => mockRequest.requestedUri,
-      ).thenReturn(Uri.parse('http://localhost:8080/'));
-      when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-post'),
-      ).thenAnswer((_) async => savedPatient);
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'not-found'),
-      ).thenAnswer((_) async => null);
-      when(
-        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-post'),
-      ).thenAnswer((_) async => true);
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => bundleJson);
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/'));
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-1'))
+          .thenAnswer((_) async => existing);
+      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
 
       final response = await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(404));
-      verify(
-        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-post'),
-      ).called(1);
+      expect(response.statusCode, greaterThanOrEqualTo(400));
+      verifyNever(() => mockDb.deleteResource(any(), any()));
     });
 
-    test('rollback after PUT restores previous version', () async {
-      final originalPatient = fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'rb-put',
-        'meta': {
-          'versionId': '1',
-          'lastUpdated': '2024-01-15T10:30:00.000Z',
-        },
-        'name': [
-          {'family': 'Original'},
-        ],
-      });
-      final updatedPatient = fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'rb-put',
-        'meta': {
-          'versionId': '2',
-          'lastUpdated': '2024-01-15T11:30:00.000Z',
-        },
-        'name': [
-          {'family': 'Updated'},
-        ],
-      });
-
+    test('the transaction is what carries the writes', () async {
+      // If the Bundle were not running inside one, every saveResource would
+      // commit on its own and a failure would leave the earlier entries
+      // behind — which is the defect this replaced.
       final bundleJson = jsonEncode({
         'resourceType': 'Bundle',
         'type': 'transaction',
         'entry': [
           {
-            'resource': {
-              'resourceType': 'Patient',
-              'id': 'rb-put',
-              'name': [
-                {'family': 'Updated'},
-              ],
-            },
-            'request': {'method': 'PUT', 'url': 'Patient/rb-put'},
-          },
-          {
-            'request': {'method': 'GET', 'url': 'Patient/not-found'},
+            'resource': {'resourceType': 'Patient', 'id': 'tx-1'},
+            'request': {'method': 'PUT', 'url': 'Patient/tx-1'},
           },
         ],
       });
 
-      var getCallCount = 0;
-      when(
-        () => mockRequest.readAsString(),
-      ).thenAnswer((_) async => bundleJson);
-      when(
-        () => mockRequest.requestedUri,
-      ).thenReturn(Uri.parse('http://localhost:8080/'));
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-put'),
-      ).thenAnswer((_) async {
-        getCallCount++;
-        // First call: get previous version for rollback
-        // Second call: re-fetch after save
-        return getCallCount == 1 ? originalPatient : updatedPatient;
-      });
-      when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'not-found'),
-      ).thenAnswer((_) async => null);
+      when(() => mockRequest.readAsString())
+          .thenAnswer((_) async => bundleJson);
+      when(() => mockRequest.requestedUri)
+          .thenReturn(Uri.parse('http://localhost:8080/'));
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'tx-1'))
+          .thenAnswer((_) async => null);
+      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
 
-      final response = await bundleHandler(mockRequest, mockDb);
+      await bundleHandler(mockRequest, mockDb);
 
-      expect(response.statusCode, equals(404));
-      // Rollback should save back the original resource
-      // First save: the PUT update; second save: the rollback
-      final saves = verify(
-        () => mockDb.saveResource(captureAny()),
-      ).captured;
-      expect(saves.length, equals(2));
-      final rolledBack = saves[1] as fhir.Resource;
-      expect(rolledBack.toJson()['name'][0]['family'], equals('Original'));
-    });
-
-    test('rollback after DELETE re-saves deleted resource', () async {
-      final deletedPatient = fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'rb-del',
-        'meta': {
-          'versionId': '1',
-          'lastUpdated': '2024-01-15T10:30:00.000Z',
-        },
-        'name': [
-          {'family': 'Deleted'},
-        ],
-      });
-
-      final bundleJson = jsonEncode({
-        'resourceType': 'Bundle',
-        'type': 'transaction',
-        'entry': [
-          {
-            'request': {'method': 'DELETE', 'url': 'Patient/rb-del'},
-          },
-          {
-            'request': {'method': 'GET', 'url': 'Patient/not-found'},
-          },
-        ],
-      });
-
-      when(
-        () => mockRequest.readAsString(),
-      ).thenAnswer((_) async => bundleJson);
-      when(
-        () => mockRequest.requestedUri,
-      ).thenReturn(Uri.parse('http://localhost:8080/'));
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-del'),
-      ).thenAnswer((_) async => deletedPatient);
-      when(
-        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'rb-del'),
-      ).thenAnswer((_) async => true);
-      when(
-        () => mockDb.getResource(fhir.R4ResourceType.Patient, 'not-found'),
-      ).thenAnswer((_) async => null);
-      when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
-
-      final response = await bundleHandler(mockRequest, mockDb);
-
-      expect(response.statusCode, equals(404));
-      // Rollback should re-save the deleted resource
-      final saved = verify(
-        () => mockDb.saveResource(captureAny()),
-      ).captured;
-      expect(saved.length, equals(1));
-      final resaved = saved[0] as fhir.Resource;
-      expect(resaved.toJson()['name'][0]['family'], equals('Deleted'));
+      verify(() => mockDb.transaction<void>(any())).called(1);
     });
   });
 
@@ -1246,6 +1153,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 
@@ -1380,6 +1288,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      _stubTransaction(mockDb);
       mockRequest = MockRequest();
     });
 

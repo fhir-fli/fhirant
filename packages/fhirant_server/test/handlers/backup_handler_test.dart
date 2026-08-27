@@ -35,6 +35,13 @@ void main() {
 
   setUp(() {
     mockDb = MockFhirAntDb();
+    // saveResource commits per call, so the multi-write paths now run inside
+    // one database transaction. The mock has to actually run the closure or
+    // nothing is written.
+    when(() => mockDb.transaction<void>(any())).thenAnswer(
+      (invocation) async =>
+          (invocation.positionalArguments[0] as Future<void> Function())(),
+    );
   });
 
   group('backupHandler', () {

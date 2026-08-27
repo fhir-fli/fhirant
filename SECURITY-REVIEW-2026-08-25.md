@@ -344,7 +344,7 @@ resource to its patient — and give `agent.who` a real reference plus the clien
 address. Not urgent for a system in testing; it is a conformance gap rather
 than an exposure, and it matters when the audit trail is first relied on.
 
-### F11 — MEDIUM — Every resource save commits its own transaction, so bulk writes are slow and Bundle atomicity is manual
+### F11 — MEDIUM — ✅ FIXED — Every resource save committed its own transaction, so bulk writes were slow and Bundle atomicity was manual
 
 Found by measurement, after asserting without it that fanning out AuditEvents
 would be "a volume decision on a phone" and being asked to prove it.
@@ -372,9 +372,36 @@ There is a correctness edge as well as a speed one. FHIR requires a
 `previousResource` on failure (lines 629, 646). That rollback can itself fail
 partway, leaving a state a real transaction would have made impossible.
 
-**Recommendation**: wrap the multi-write paths — Bundle processing, `$restore`,
-and any AuditEvent fan-out — in a single database transaction. It is faster and
-it makes Bundle atomicity real rather than best-effort.
+**Fixed** for Bundle processing and `$restore`; the AuditEvent fan-out will use
+the same transaction when F10 lands.
+
+A `transaction` Bundle now runs inside one database transaction and a failure
+rolls it back. The 48 lines of manual compensating rollback are gone — with
+them the log lines that wrote `Type/id` into the debug file.
+
+`batch` keeps its own semantics: entries are independent requests that share an
+envelope, so per-entry failures are caught inside the shared transaction and
+the successful siblings still commit. Sharing a transaction for speed must not
+quietly turn a batch into all-or-nothing, and a test pins that.
+
+`$restore` batches the same way and keeps per-entry error reporting: an
+all-or-nothing import would turn one bad entry into no record at all.
+
+**Verified against a real database, because atomicity is not observable
+against a mock** — a mock can show a rollback was *called*; only a database can
+show the row is gone. `integration/bundle_atomicity_test.dart` drives the full
+pipeline over SQLite and checks the rows afterwards.
+
+**The test was A/B'd rather than assumed meaningful.** With the database
+transaction removed, `Patient/keep-1` — written by an entry *before* the
+failure — survives the failed Bundle, so entries really are written before the
+abort and the assertion is not vacuous. Restored, it is gone.
+
+One thing that A/B does *not* show, and is not claimed: whether the old manual
+rollback would have cleaned up this particular case. It probably would have —
+a create-via-PUT was the case it handled best. The objection to it was
+structural rather than empirical: compensating writes can fail, and the code
+logged that possibility.
 
 ### F7 — LOW — ✅ FIXED — CORS defaulted to `allowOrigin: '*'`
 
@@ -484,6 +511,6 @@ Worth recording so it does not get "hardened" into something worse:
    subject-of-care parameters — recording a `recorder` or `performer` who
    happens to be a patient would put *wrong* data in a legal record, which is
    worse than a gap.
-6. F11 — batch the multi-write paths into one transaction. Measured 33x, and
-   it makes Bundle atomicity real rather than a manual rollback.
+6. ~~F11~~ — **done** for Bundle and `$restore`; the AuditEvent fan-out joins
+   the same transaction when F10 lands.
 5. ~~F7, F8, F9~~ — **done**.
