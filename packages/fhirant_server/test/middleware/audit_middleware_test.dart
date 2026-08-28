@@ -21,6 +21,9 @@ void main() {
 
     // Default stub: accept any saveResource call
     when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+    // The audit trail resolves the subject of care before writing (F10).
+    when(() => mockDb.subjectOfCare(any(), any()))
+        .thenAnswer((_) async => null);
   });
 
   Handler wrapHandler({

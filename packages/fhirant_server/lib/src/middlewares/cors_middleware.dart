@@ -30,6 +30,7 @@ class CorsConfig {
     ],
     this.maxAge = 86400,
   });
+
   /// Origin to allow, or null to emit no CORS headers at all.
   ///
   /// Null is the default, and it means browsers will not let a page read this

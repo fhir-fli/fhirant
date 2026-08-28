@@ -116,6 +116,24 @@ Future<void> _createAuditEvent(
     final outcome = _mapOutcome(response.statusCode);
     final entityRef = _entityReference(request);
 
+    // ISO 27789:2021 requires an audit record to identify the subject of care.
+    // The resource in the URL is often not that person: reading
+    // `Observation/123` is an access to a patient's record, and until the
+    // Observation is resolved back to its subject the trail cannot say whose.
+    String? patientRef;
+    if (entityRef != null) {
+      final parts = entityRef.split('/');
+      if (parts.length == 2) {
+        final subject = await dbInterface.subjectOfCare(parts[0], parts[1]);
+        if (subject != null) {
+          patientRef = 'Patient/$subject';
+        }
+      }
+    }
+
+    // Set by _trustedClientIpMiddleware from the socket, not by the caller.
+    final clientIp = request.headers['x-forwarded-for'];
+
     final auditEventJson = <String, dynamic>{
       'resourceType': 'AuditEvent',
       'type': {
@@ -139,6 +157,11 @@ Future<void> _createAuditEvent(
             'display': username,
           },
           'requestor': true,
+          if (clientIp != null)
+            'network': {
+              'address': clientIp,
+              'type': '2', // IP address
+            },
         },
       ],
       'source': {
@@ -146,11 +169,30 @@ Future<void> _createAuditEvent(
           'display': 'FHIRant Server',
         },
       },
-      if (entityRef != null)
+      if (entityRef != null || patientRef != null)
         'entity': [
-          {
-            'what': {'reference': entityRef},
-          },
+          if (entityRef != null)
+            {
+              'what': {'reference': entityRef},
+            },
+          // R4 has no `AuditEvent.patient` element; the `patient` search
+          // parameter is defined over `agent.who` and `entity.what`, so the
+          // subject of care is carried as an entity with the Patient role.
+          if (patientRef != null && patientRef != entityRef)
+            {
+              'what': {'reference': patientRef},
+              'type': {
+                'system':
+                    'http://terminology.hl7.org/CodeSystem/audit-entity-type',
+                'code': '1',
+                'display': 'Person',
+              },
+              'role': {
+                'system': 'http://terminology.hl7.org/CodeSystem/object-role',
+                'code': '1',
+                'display': 'Patient',
+              },
+            },
         ],
     };
 

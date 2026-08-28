@@ -661,9 +661,8 @@ class FhirAntServer {
 
     final path = '/${shaped.join('/')}';
     if (uri.query.isEmpty) return path;
-    final redacted = uri.queryParametersAll.keys
-        .map((name) => '$name=[redacted]')
-        .join('&');
+    final redacted =
+        uri.queryParametersAll.keys.map((name) => '$name=[redacted]').join('&');
     return '$path?$redacted';
   }
 
