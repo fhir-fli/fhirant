@@ -43,6 +43,7 @@ Future<Response> fhirPathHandler(
     }
 
     fhir.Resource? resource;
+    String? auditedEntity;
 
     // Try to get resource from query parameters first
     if (resourceType != null && resourceId != null) {
@@ -65,6 +66,12 @@ Future<Response> fhirPathHandler(
       }
 
       resource = await dbInterface.getResource(type, resourceId);
+      // The audit middleware sees only `/$fhirpath` in the path, so it cannot
+      // tell which record this disclosed. Hand the identity back up through
+      // the response context, which is shelf's route for handler-to-middleware
+      // data. Only the database read is declared: a resource posted in the
+      // body came from the caller and was never disclosed by the server.
+      auditedEntity = '$resourceType/$resourceId';
       if (resource == null) {
         return Response(
           404,
@@ -136,12 +143,12 @@ Future<Response> fhirPathHandler(
       'FHIRPath expression evaluated successfully: $expression',
     );
 
-    // TODO(fhirant): Add audit log entry for PHI access
-    // await dbInterface.logAuditEvent(...);
-
     return Response.ok(
       jsonEncode(resultJson),
       headers: {'Content-Type': 'application/json'},
+      context: {
+        if (auditedEntity != null) 'audit_entity': auditedEntity,
+      },
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('FHIRPath evaluation failed', e, stackTrace);

@@ -318,7 +318,7 @@ raw `catch (e)` paths also remain unbounded — whatever a database or parser
 exception embeds goes to disk, and that cannot be bounded by inspection, only
 by not logging exception detail at all.
 
-### F10 — MEDIUM — The audit trail does not identify the subject of care
+### F10 — MEDIUM — ✅ FIXED — The audit trail did not identify the subject of care
 
 Found while checking F6 against the standards rather than while reading for
 bugs.
@@ -346,11 +346,44 @@ let any account reach it — it was the sharpest hole in the server: read any
 record, leave no trace. F1 closed the access half; this is the trace half, and
 it belongs with this finding rather than as a separate TODO.
 
-**Recommendation**: resolve the subject of care when writing the AuditEvent —
-the compartment machinery in `patient_scope.dart` already knows how to map a
-resource to its patient — and give `agent.who` a real reference plus the client
-address. Not urgent for a system in testing; it is a conformance gap rather
-than an exposure, and it matters when the audit trail is first relied on.
+**Fixed.** The audit middleware resolves the resource to its patient and
+carries that patient as a second `AuditEvent.entity` with the Patient role. R4
+has no `AuditEvent.patient` element — the `patient` search parameter is defined
+over `agent.who` and `entity.what` — so an entity is where it belongs. A read of
+a Patient adds nothing extra, because the resource entity already is the
+subject and a duplicate would make one access look like two.
+
+The resolution is `FhirDao.subjectOfCare`, added to `fhir_r4_db`, `fhir_r5_db`
+and `fhir_r6_db`. It reads the reference search index, which is already
+populated at save time, so the answer costs one indexed row read rather than
+deserializing the resource. `FhirAntDb` carries its own copy because
+`fhirant_db` resolves `fhir_r4_db` from pub.dev at 0.8.0; the inherited version
+arrives with the next release.
+
+It is deliberately narrow: only `patient` and `subject` count. A `performer` or
+`recorder` is a participant, not the subject of care, and naming one would
+answer "who accessed this person's record" with someone merely mentioned in it
+— worse in a legal record than answering nothing. A resource that names no
+patient records none.
+
+`agent.network` now carries the client address, taken from the socket by the
+trusted-client-IP middleware rather than from a caller-supplied header.
+
+The `$fhirpath` half is closed too. The path is `/$fhirpath` for every call, so
+the middleware could not tell which record was disclosed; the handler now
+declares what it read through the response context, which is shelf's route for
+handler-to-middleware data. Only the database read is declared — a resource
+posted in the request body came from the caller and was never disclosed by the
+server, so recording it would put a disclosure in the trail that did not
+happen.
+
+`agent.who` is still a display string. Giving it an identifying reference means
+storing users as FHIR resources, which the server does not do today; that is a
+separate change and is listed under the remaining follow-ups.
+
+Tests run the whole pipeline against a real database, because what matters is
+the AuditEvent that lands in the store, not that a method was called. Every
+assertion was watched to fail with the change backed out.
 
 ### F11 — MEDIUM — ✅ FIXED — Every resource save committed its own transaction, so bulk writes were slow and Bundle atomicity was manual
 
@@ -380,8 +413,9 @@ There is a correctness edge as well as a speed one. FHIR requires a
 `previousResource` on failure (lines 629, 646). That rollback can itself fail
 partway, leaving a state a real transaction would have made impossible.
 
-**Fixed** for Bundle processing and `$restore`; the AuditEvent fan-out will use
-the same transaction when F10 lands.
+**Fixed** for Bundle processing and `$restore`. F10 landed without needing to
+fan out AuditEvents — it resolves the subject with one indexed read per
+request, so there is no batch of audit writes to join the transaction.
 
 A `transaction` Bundle now runs inside one database transaction and a failure
 rolls it back. The 48 lines of manual compensating rollback are gone — with
@@ -513,12 +547,9 @@ Worth recording so it does not get "hardened" into something worse:
 4. ~~F6~~ — **done**. Query values redacted and path identifiers reduced to
    shape, so the debug log no longer duplicates what the AuditEvent trail holds
    in the encrypted database.
-5. F10 — resolve the subject of care in the AuditEvent. The lookup is cheap:
-   the reference search index already holds it, and `fhir_dao.dart:2321`
-   already runs that query shape for reverse chaining. Use only the
-   subject-of-care parameters — recording a `recorder` or `performer` who
-   happens to be a patient would put *wrong* data in a legal record, which is
-   worse than a gap.
-6. ~~F11~~ — **done** for Bundle and `$restore`; the AuditEvent fan-out joins
-   the same transaction when F10 lands.
+5. ~~F10~~ — **done**. The trail names the subject of care, records the client
+   address, and `$fhirpath` no longer reads a record without leaving a trace.
+   One follow-up left: `agent.who` is a display string, and an identifying
+   reference needs users stored as FHIR resources.
+6. ~~F11~~ — **done** for Bundle and `$restore`.
 5. ~~F7, F8, F9~~ — **done**.

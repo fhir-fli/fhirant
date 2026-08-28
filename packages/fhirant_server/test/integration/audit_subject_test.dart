@@ -108,6 +108,78 @@ void main() {
     expect(await auditedSubjects(server.db), isEmpty);
   });
 
+  test(r'$fhirpath records the record it read, and its patient', () async {
+    // The path is `/$fhirpath` for every call, so before this the trail could
+    // say an expression ran but never against whose record. Combined with the
+    // authorization gap in F1, that made it the sharpest hole in the server:
+    // read any record, leave no trace.
+    final server = await createTestServer();
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+
+    await server.db.saveResource(fhir.Patient(id: 'pat-fp'.toFhirString));
+    await server.db.saveResource(
+      fhir.Observation(
+        id: 'obs-fp'.toFhirString,
+        status: fhir.ObservationStatus.final_,
+        code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+        subject: fhir.Reference(reference: 'Patient/pat-fp'.toFhirString),
+      ),
+    );
+
+    final response = await server.handler(
+      testRequest(
+        'GET',
+        r'/$fhirpath?expression=Observation.status'
+            '&resourceType=Observation&resourceId=obs-fp',
+        authToken: token,
+      ),
+    );
+    expect(response.statusCode, equals(200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    final events = await server.db
+        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final refs = events
+        .whereType<fhir.AuditEvent>()
+        .expand((e) => e.entity ?? <fhir.AuditEventEntity>[])
+        .map((en) => en.what?.reference?.valueString)
+        .whereType<String>()
+        .toList();
+
+    expect(refs, contains('Observation/obs-fp'));
+    expect(await auditedSubjects(server.db), contains('Patient/pat-fp'));
+  });
+
+  test(r'$fhirpath over a posted resource audits no record', () async {
+    // The resource came from the caller and was never disclosed by the
+    // server. Recording it would put a disclosure in the trail that did not
+    // happen.
+    final server = await createTestServer();
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+
+    final response = await server.handler(
+      testRequest(
+        'POST',
+        r'/$fhirpath?expression=Patient.id',
+        body: '{"resourceType":"Patient","id":"posted-1"}',
+        authToken: token,
+      ),
+    );
+    expect(response.statusCode, equals(200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    final events = await server.db
+        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final refs = events
+        .whereType<fhir.AuditEvent>()
+        .expand((e) => e.entity ?? <fhir.AuditEventEntity>[])
+        .map((en) => en.what?.reference?.valueString)
+        .whereType<String>()
+        .toList();
+
+    expect(refs, isEmpty);
+  });
+
   test('the requesting address is recorded', () async {
     // ATNA and ASTM E2147 both expect it, and it comes from the socket rather
     // than from a header the caller controls.

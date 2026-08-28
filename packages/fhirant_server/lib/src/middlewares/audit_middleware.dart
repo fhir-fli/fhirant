@@ -90,7 +90,15 @@ String _mapOutcome(int statusCode) {
 /// Extracts an entity reference from the URL path (e.g., `Patient/123`).
 /// Returns null for type-level operations (no resource ID) since bare
 /// resource type names are not valid FHIR references.
-String? _entityReference(Request request) {
+///
+/// An operation whose path names no resource can declare what it actually
+/// read by putting `audit_entity` in its response context. `$fhirpath` reads
+/// a record straight out of the database, and the path `/$fhirpath` says
+/// nothing about which one.
+String? _entityReference(Request request, Response response) {
+  final declared = response.context['audit_entity'];
+  if (declared is String && declared.isNotEmpty) return declared;
+
   final path = request.url.path;
   final segments = path.split('/');
   if (segments.length >= 2 &&
@@ -114,7 +122,7 @@ Future<void> _createAuditEvent(
     final action = _mapAction(request.method);
     final subtype = _mapSubtype(request.method);
     final outcome = _mapOutcome(response.statusCode);
-    final entityRef = _entityReference(request);
+    final entityRef = _entityReference(request, response);
 
     // ISO 27789:2021 requires an audit record to identify the subject of care.
     // The resource in the URL is often not that person: reading

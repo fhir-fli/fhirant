@@ -6,6 +6,14 @@ analyzer:
     document_ignores: ignore
     comment_references: ignore
     avoid_catches_without_on_clauses: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 linter:
   rules:
     # fhirant is an application, not a published library — its packages have no
