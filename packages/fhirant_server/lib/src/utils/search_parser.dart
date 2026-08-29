@@ -54,6 +54,18 @@ class SearchParameterParser {
       '_filter',
     };
 
+    // Recognised so a lenient request is not rejected, but nothing acts on
+    // them. R4 search.html distinguishes parameters a server does not
+    // recognise from ones it "recognise[s] but do[es] not support", and asks
+    // that both be reported when the client sends Prefer: handling=strict.
+    // Answering 200 with the unfiltered set would tell a client that asked to
+    // be warned that its filter had been applied.
+    const unsupportedParams = {
+      '_contained',
+      '_containedType',
+      '_filter',
+    };
+
     // Common _-prefixed search parameters that are valid across all
     // resource types
     const knownUnderscoreSearchParams = {
@@ -83,6 +95,12 @@ class SearchParameterParser {
       }
 
       if (specialParams.contains(key)) {
+        // Recognised but not acted on: report it alongside the unrecognised
+        // ones so Prefer: handling=strict can refuse, while a lenient request
+        // still ignores it as the spec asks.
+        if (unsupportedParams.contains(key)) {
+          unknownSpecialParams.add(key);
+        }
         // Handle special parameters
         switch (key) {
           case '_count':

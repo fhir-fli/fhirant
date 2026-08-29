@@ -21,11 +21,14 @@ an item up, and record what you checked.
       circuits to a total-only bundle. Verified 2026-08-29.
 - [x] **_elements** — implemented alongside `_summary`, including the
       mutual-exclusivity check the spec requires. Verified 2026-08-29.
-- [ ] **_contained / _containedType** — recognised as valid parameter names
-      so they are not rejected, but nothing acts on them.
-- [ ] **_filter** — recognised as a valid parameter name only; nothing acts
-      on it. (`_filterContains` in `terminology_handler.dart` is ValueSet
-      expansion filtering, unrelated.)
+- [ ] **_contained / _containedType** — recognised so a lenient request is
+      not rejected, and now reported under `Prefer: handling=strict`.
+      Still not acted on. Optional in R4: "servers are not obliged to
+      support this parameter."
+- [ ] **_filter** — same: recognised, reported under strict handling, not
+      acted on. Optional in R4. (`_filterContains` in
+      `terminology_handler.dart` is ValueSet expansion filtering,
+      unrelated.)
 - [ ] **Accent normalization** — for string search (TODO in codebase)
 
 ## Content & Format

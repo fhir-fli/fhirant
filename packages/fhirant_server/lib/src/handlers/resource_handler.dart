@@ -212,7 +212,10 @@ Future<Response> _searchResources(
         unknownParams != null &&
         unknownParams.isNotEmpty) {
       return _validationErrorResponse(
-        'Unrecognized search parameter(s): ${unknownParams.join(', ')}',
+        // "Unsupported" rather than "unrecognized": the spec treats a
+        // parameter the server does not know and one it knows but does not
+        // implement the same way here, and _filter is the second kind.
+        'Unsupported search parameter(s): ${unknownParams.join(', ')}',
       );
     }
 
