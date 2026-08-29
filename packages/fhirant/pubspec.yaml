@@ -9,7 +9,7 @@ environment:
 dependencies:
   cupertino_icons: ^1.0.8
   drift: ^2.29.0
-  fhir_r4: ^0.8.0
+  fhir_r4: ^0.9.0
   fhirant_db:
     path: ../fhirant_db
   fhirant_logging:
