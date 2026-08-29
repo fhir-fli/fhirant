@@ -85,8 +85,13 @@ transform with no test covering it. Verifying the plan is how that was found.
       broken: the handler passed a **null target** to `fhirMappingEngine`,
       which cannot invent one and throws `Unable to create target of type
       <alias>`, so every real transform returned 500. The target now comes from
-      the map's own `structure` entry with `mode = target`, per R4
-      structuremap.html. Measured one variable at a time: with a target
+      the map's own `structure` entry with `mode = target`. 🛑 **That last
+      step is a deviation, not a spec rule.** structuremap.html gives no rule
+      for resolving the target type at execution and types `structure.url` as
+      `canonical(StructureDefinition)`, so a **profile** canonical is legal
+      there and the last-path-segment reading is wrong for it (read
+      2026-08-29; the comment previously cited the page for a rule the page
+      does not contain). Measured one variable at a time: with a target
       supplied the transform succeeds under the handler's existing
       `SimpleResourceCache`, so the `UnimplementedError` stubs in that class
       were not the cause.
@@ -97,6 +102,15 @@ transform with no test covering it. Verifying the plan is how that was found.
       **HTTP 200**; it now returns **422** with the outcome. The open half is
       `fhir_r4_mapping`, not fhirant: whether `Builder.build()` should throw a
       null-check error at all, or name the unset required element.
+- [ ] **A profiled or logical-model target** — `structure.url` is
+      `canonical(StructureDefinition)`, so
+      `.../StructureDefinition/us-core-patient` is a legal target and this
+      server returns 400 for it. The fix is to resolve the target
+      StructureDefinition and read its `type` element, which needs the registry
+      the next item is about. Pinned by a test so it fails loudly when fixed.
+- [ ] **Several target structures** — `structure` is `0..*`. The handler takes
+      the first `mode = target` entry and ignores any others. No spec rule
+      found either way; recorded rather than assumed correct.
 - [ ] **`SimpleResourceCache` stubs** — `getStructureDefinition`,
       `getStructureDefinitions`, `getResourceMap`, `getResourceNames`,
       `getCodeSystem` and `client` all throw `UnimplementedError`. Not reached

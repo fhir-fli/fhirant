@@ -146,6 +146,33 @@ void main() {
         contains('TCustom'),
       );
     });
+
+    test('a PROFILED target is rejected, which is a known limitation',
+        () async {
+      // structuremap.html types structure.url as canonical(StructureDefinition)
+      // and gives no rule for resolving it to a type at execution. This handler
+      // reads the last path segment, so a profile canonical yields the profile
+      // id rather than the resource type. Pinned so the limitation is visible
+      // and fails loudly the day it is fixed, rather than sitting unstated.
+      final response = await post({
+        'map': mapCopying(
+          targetUrl:
+              'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient',
+        ),
+        'source': {'resourceType': 'Patient', 'id': 'a'},
+      });
+
+      expect(
+        response.statusCode,
+        equals(400),
+        reason: 'a profiled target is not resolved to Patient today; the fix '
+            "is to read the target StructureDefinition's own type element",
+      );
+      expect(
+        ((await bodyOf(response))['issue'] as List).first['diagnostics'],
+        contains('us-core-patient'),
+      );
+    });
   });
 
   group(r'$transform performs the transform', () {

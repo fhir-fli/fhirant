@@ -232,8 +232,10 @@ Future<Response> mappingHandler(Request request) async {
               'severity': 'error',
               'code': 'not-supported',
               'diagnostics':
-                  'Unsupported target type "$targetType": only FHIR resource '
-                      'types can be produced by this server',
+                  'Unsupported target type "$targetType". The target '
+                      'structure canonical must name a base FHIR resource; '
+                      'this server does not resolve a profile or logical '
+                      'model canonical to its underlying type.',
             }
           ],
         }),
@@ -320,9 +322,29 @@ Future<Response> mappingHandler(Request request) async {
   }
 }
 
-/// The resource type a [StructureMap] produces, taken from its `structure`
-/// entry with `mode = target`. R4 structuremap.html: the canonical URL of a
-/// resource StructureDefinition ends in the resource type name.
+/// The resource type a [StructureMap] produces, from the FIRST `structure`
+/// entry with `mode = target`.
+///
+/// 🛑 DELIBERATE DEVIATION, and it is not spec-derived. R4 structuremap.html
+/// gives NO rule for how an implementation determines the target type at
+/// execution; it says only that "the StructureMap resource assumes that both
+/// the source and the target models are fully defined using StructureDefinition
+/// resources - either resources, or logical models", and types
+/// `structure.url` as `canonical(StructureDefinition)`. Read 2026-08-29, not
+/// quoted from memory.
+///
+/// Two consequences, both stated rather than hidden:
+///
+///  * `structure` is `0..*`, so a map may name several targets. This takes the
+///    first and ignores the rest.
+///  * A canonical may name a **profile or a logical model**, not a resource:
+///    `.../StructureDefinition/us-core-patient` yields `us-core-patient`, which
+///    is not a resource type, so the caller gets a 400 saying so. The correct
+///    resolution is the target StructureDefinition's own `type` element, which
+///    needs a registry this handler does not have —
+///    `SimpleResourceCache.getStructureDefinition` throws. That is the fix;
+///    this is the interim, and the 400 is honest about it rather than
+///    guessing a type.
 String? _targetResourceType(fhir.StructureMap map) {
   for (final structure in map.structure ?? <fhir.StructureMapStructure>[]) {
     if (structure.mode.valueString != 'target') {
