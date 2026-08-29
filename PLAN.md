@@ -68,13 +68,43 @@ transform with no test covering it. Verifying the plan is how that was found.
 
 ## Subscriptions
 
-- [ ] **Subscription resource support** — create/manage subscriptions
-- [ ] **REST-hook notifications** — POST to subscriber URL on resource change
-- [ ] **WebSocket notifications** — real-time push. `websocket_handler.dart`
-      is an **empty file** that `handlers.dart` still exports, and no
-      `Subscription` appears anywhere in `fhirant_server/lib`. Either write the
-      handler or delete the empty file and its export; an empty exported
-      handler reads as a half-built feature. Verified 2026-08-29.
+Built 2026-08-29. Criteria are matched by running them through the **same**
+parser and the **same** database search the REST endpoint uses, with `_id`
+pinned to the resource that just changed. R4 subscription.html requires
+criteria to be "search strings interpreted identically to REST API queries",
+and reimplementing parameter semantics beside the search engine is how that
+stops being true.
+
+- [x] **Subscription resource support** — the server decides the status, per
+      the lifecycle: `requested` → `active` once it has validated it can
+      process it, or `error` with the reason in `Subscription.error`. An
+      unsupported channel is refused rather than accepted, because telling a
+      client a subscription is active when nothing will ever be delivered is
+      worse than saying no. `end` in the past turns it `off`.
+- [x] **REST-hook notifications** — no payload POSTs an empty body to the
+      endpoint; a payload PUTs the resource to `{endpoint}/{Type}/{id}`, the
+      endpoint being "the nominated URL as the service base".
+      `channel.header` is split on the first colon only.
+- [x] **WebSocket notifications** — `websocket_handler.dart` was a one-byte
+      file that `handlers.dart` exported. It now serves `/ws` and implements
+      the handshake the spec gives: `bind :id` → `bound :id` → `ping :id`. No
+      payload crosses the socket; the client re-runs its own criteria. The
+      endpoint is advertised through HL7's `capabilitystatement-websocket`
+      extension, without which a client cannot find it.
+- [x] **Notifications fire from every write path** — POST, PUT, and the
+      create, update and patch entries of a Bundle. For a transaction they are
+      sent **after the commit**, because a transaction is all-or-nothing and a
+      rest-hook POST cannot be recalled. A DELETE sends nothing, per the spec.
+- [ ] **A Subscription created through a Bundle entry is not activated** — it
+      is stored as the client sent it. The single-resource endpoints activate;
+      the Bundle path does not.
+- [ ] **No retry, and no automatic `off`** — a failed delivery sets `error`,
+      and the next matching write tries again. The spec permits a server to set
+      `off` for a consistently failing subscription; this never does.
+- [ ] **`Subscription.end` is only checked when a write happens** — nothing
+      sweeps expired subscriptions in the background.
+- [ ] **Only rest-hook and websocket** — email, sms and message are refused at
+      activation rather than silently accepted.
 
 ## Advanced Operations
 
@@ -178,7 +208,7 @@ Whole suites, no file arguments. `dart analyze` clean in all five packages.
 
 | package | runner | tests |
 |---|---|---|
-| `fhirant_server` | `dart test` | 716 |
+| `fhirant_server` | `dart test` | 751 |
 | `fhirant_db` | `dart test` | 110 |
 | `fhirant` | `flutter test` | 33 |
 | `fhirant_secure_storage` | `flutter test` | 11 |
