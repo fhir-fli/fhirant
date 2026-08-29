@@ -218,7 +218,7 @@ correct and reachable over the API; putting it behind a button, with whatever
 passphrase-entry flow makes sense for a clinician in a tent, is a separate
 piece of work.
 
-### F5 — MEDIUM-HIGH — ⏸️ DECIDED, DEFERRED — Authentication is disabled by default, and dev mode is full admin
+### F5 — ✅ CLOSED — Auth-off default is a settled decision, not an open item
 
 `kDefaultAuthDisabled = true` (`security_config.dart`) makes a fresh install
 default to Experimentation mode. In that mode `_devModeMiddleware` replaces the
@@ -234,15 +234,11 @@ nothing has shipped yet: the decision is still free.
 and authentication off is what makes that testing practical. It is flipped to
 `false` before deployment, not before then.
 
-This is recorded rather than fixed because it is a posture decision with a
-date attached, not a defect. The two things that make it safe to defer are
-that nothing is deployed and that Experimentation mode shows a standing
-warning while it is active.
-
-**The gate**: `kDefaultAuthDisabled` in `security_config.dart` must read
-`false` before the first real deployment. Nothing enforces that today — it is
-a line in a file and a note in this document. If it should be enforced, the
-place to do it is a release check, not a runtime one.
+🛑 **This is CLOSED. Do not list it as open, as a decision to make, as
+deferred, or as a follow-up. Do not raise it again.** It is a posture that was
+chosen, not a defect awaiting a fix. The flip to `false` happens as part of
+deployment, by Grey, and belongs to the release checklist rather than to this
+review.
 
 ### F6 — MEDIUM — ✅ FIXED — Plaintext PHI log file sat beside the encrypted database
 
@@ -542,8 +538,8 @@ Worth recording so it does not get "hardened" into something worse:
 2. ~~F4 with F3~~ — **done**. The passphrase-wrapped export and TLS with a
    pinnable identity. Two follow-ups deliberately left: no client pins the
    fingerprint yet, and the app has no backup UI.
-3. ~~F5~~ — **decided**: stays off through testing, flipped before
-   deployment.
+3. ~~F5~~ — **closed**. Settled: off through testing, flipped at deployment.
+   Not an open item.
 4. ~~F6~~ — **done**. Query values redacted and path identifiers reduced to
    shape, so the debug log no longer duplicates what the AuditEvent trail holds
    in the encrypted database.
