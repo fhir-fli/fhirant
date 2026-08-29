@@ -267,8 +267,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             theme,
             Icons.backup_rounded,
             'Backup & restore',
-            'Export all your data as a FHIR Bundle and restore '
-                'it anytime. Your data stays on your device.',
+            'Export every record to an encrypted file protected by a '
+                'passphrase you choose, and restore it on another device. '
+                'Your data stays on your device until you export it.',
           ),
         ],
       ),

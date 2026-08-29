@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/services/backup_service.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
 import 'package:shelf/shelf.dart';
 
@@ -34,32 +35,8 @@ Future<Response> backupHandler(
         'the only thing that can decrypt it.',
       );
     }
-    final resourceTypes = await dbInterface.getResourceTypes();
-
-    final entries = <fhir.BundleEntry>[];
-    for (final resourceType in resourceTypes) {
-      final resources = await dbInterface.getResourcesByType(resourceType);
-      for (final resource in resources) {
-        final typeString = resource.resourceTypeString;
-        final id = resource.id?.toString();
-        entries.add(
-          fhir.BundleEntry(
-            fullUrl: id != null ? '$typeString/$id'.toFhirUri : null,
-            resource: resource,
-          ),
-        );
-      }
-    }
-
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.collection,
-      total: entries.length.toFhirUnsignedInt,
-      timestamp: DateTime.now().toUtc().toFhirInstant,
-      entry: entries.isEmpty ? null : entries,
-    );
-
     return Response.ok(
-      BackupCrypto.encrypt(jsonEncode(bundle.toJson()), passphrase),
+      await BackupService.create(dbInterface, passphrase),
       headers: {'content-type': 'application/json'},
     );
   } catch (e, stackTrace) {
@@ -108,155 +85,51 @@ Future<Response> restoreHandler(
       );
     }
 
-    // An encrypted envelope is decrypted first, then restored exactly as a
-    // plain Bundle would be. A plain Bundle is still accepted: importing FHIR
-    // produced elsewhere is a legitimate use, and refusing it would not make
-    // anything safer — the caller already holds the data.
-    var content = body;
-    if (BackupCrypto.isEnvelope(body)) {
-      final passphrase = _passphraseHeader(request);
-      if (passphrase == null || passphrase.isEmpty) {
-        return _outcome(
-          400,
-          fhir.IssueType.required_,
-          'This backup is encrypted. Supply the passphrase it was created '
-          'with in the X-Backup-Passphrase header.',
-        );
-      }
-      try {
-        content = BackupCrypto.decrypt(body, passphrase);
-      } on BackupDecryptionException catch (e) {
-        return _outcome(400, fhir.IssueType.security, e.message);
-      }
-    }
-
-    final Map<String, dynamic> json;
+    // The app performs this same operation in process, so the work lives in
+    // BackupService and this handler is the HTTP shape around it.
+    final BackupRestoreResult result;
     try {
-      json = jsonDecode(content) as Map<String, dynamic>;
-    } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode(
-          fhir.OperationOutcome(
-            issue: [
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.invalid,
-                diagnostics: 'Invalid JSON: $e'.toFhirString,
-              ),
-            ],
-          ).toJson(),
-        ),
-        headers: {'content-type': 'application/fhir+json'},
+      result = await BackupService.restore(
+        dbInterface,
+        body,
+        passphrase: _passphraseHeader(request),
       );
+    } on BackupPassphraseRequired {
+      return _outcome(
+        400,
+        fhir.IssueType.required_,
+        'This backup is encrypted. Supply the passphrase it was created '
+        'with in the X-Backup-Passphrase header.',
+      );
+    } on BackupDecryptionException catch (e) {
+      return _outcome(400, fhir.IssueType.security, e.message);
+    } on FormatException catch (e) {
+      return _outcome(400, fhir.IssueType.invalid, e.message);
     }
 
-    final resourceType = json['resourceType'];
-    if (resourceType != 'Bundle') {
-      return Response(
-        400,
-        body: jsonEncode(
-          fhir.OperationOutcome(
-            issue: [
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.invalid,
-                diagnostics:
-                    'Expected a Bundle, got: $resourceType'.toFhirString,
-              ),
-            ],
-          ).toJson(),
-        ),
-        headers: {'content-type': 'application/fhir+json'},
-      );
-    }
-
-    final bundle = fhir.Bundle.fromJson(json);
-    final bundleEntries = bundle.entry ?? [];
-
-    var savedCount = 0;
-    var errorCount = 0;
-    final issues = <fhir.OperationOutcomeIssue>[];
-
-    // One database transaction for the whole restore. Each saveResource
-    // otherwise commits on its own — measured at 71.7ms per resource against
-    // 2.2ms inside a shared transaction, so a five-thousand-resource backup
-    // would take minutes rather than seconds. Restoring onto a replacement
-    // device is the recovery path this whole design rests on; it cannot be
-    // something an operator waits out.
-    //
-    // Per-entry failures are still caught and reported individually rather
-    // than aborting: a restore reports what it could and could not take, and
-    // an all-or-nothing import would turn one bad entry into no record at all.
-    await dbInterface.transaction<void>(() async {
-      for (final entry in bundleEntries) {
-        final resource = entry.resource;
-        if (resource == null) {
-          errorCount++;
-          issues.add(
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.warning,
-              code: fhir.IssueType.incomplete,
-              diagnostics: 'Bundle entry has no resource'.toFhirString,
-            ),
-          );
-          continue;
-        }
-
-        try {
-          final saved = await dbInterface.saveResource(resource);
-          if (saved) {
-            savedCount++;
-          } else {
-            errorCount++;
-            issues.add(
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.exception,
-                diagnostics:
-                    'Failed to save ${resource.resourceTypeString}/${resource.id}'
-                        .toFhirString,
-              ),
-            );
-          }
-        } catch (e, stackTrace) {
-          errorCount++;
-          FhirantLogging().logError(
-            'Error saving a ${resource.resourceTypeString} during restore',
-            e,
-            stackTrace,
-          );
-          issues.add(
-            fhir.OperationOutcomeIssue(
-              severity: fhir.IssueSeverity.error,
-              code: fhir.IssueType.exception,
-              diagnostics:
-                  'Error saving ${resource.resourceTypeString}/${resource.id}'
-                      .toFhirString,
-            ),
-          );
-        }
-      }
-    });
-
-    // Always include a summary issue
-    issues.insert(
-      0,
+    // The summary issue comes first, so a caller reading only the first issue
+    // still learns whether the restore took everything.
+    final issues = <fhir.OperationOutcomeIssue>[
       fhir.OperationOutcomeIssue(
-        severity: errorCount > 0
+        severity: result.failed > 0
             ? fhir.IssueSeverity.warning
             : fhir.IssueSeverity.information,
         code: fhir.IssueType.informational,
-        diagnostics: 'Restore complete: $savedCount saved, $errorCount errors, '
-                '${bundleEntries.length} total entries'
-            .toFhirString,
+        diagnostics:
+            'Restore complete: ${result.saved} saved, ${result.failed} errors, '
+                    '${result.saved + result.failed} total entries'
+                .toFhirString,
       ),
-    );
-
-    final outcome = fhir.OperationOutcome(issue: issues);
+      for (final message in result.failures)
+        fhir.OperationOutcomeIssue(
+          severity: fhir.IssueSeverity.error,
+          code: fhir.IssueType.exception,
+          diagnostics: message.toFhirString,
+        ),
+    ];
 
     return Response.ok(
-      jsonEncode(outcome.toJson()),
+      jsonEncode(fhir.OperationOutcome(issue: issues).toJson()),
       headers: {'content-type': 'application/fhir+json'},
     );
   } catch (e, stackTrace) {

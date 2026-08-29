@@ -18,6 +18,7 @@ dependencies:
     path: ../fhirant_secure_storage
   fhirant_server:
     path: ../fhirant_server
+  file_picker: ^8.1.7
   flutter:
     sdk: flutter
   flutter_foreground_task: ^8.13.4
@@ -26,6 +27,7 @@ dependencies:
   path_provider: ^2.1.5
   provider: ^6.1.2
   qr_flutter: ^4.1.0
+  share_plus: ^10.1.4
   shared_preferences: ^2.3.0
   sqlite3: ^3.1.5
   url_launcher: ^6.3.1

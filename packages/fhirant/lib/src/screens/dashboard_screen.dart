@@ -1,3 +1,4 @@
+import 'package:fhirant/src/widgets/backup_card.dart';
 import 'package:fhirant/src/widgets/network_info_card.dart';
 import 'package:fhirant/src/widgets/request_log_card.dart';
 import 'package:fhirant/src/widgets/resource_counts_card.dart';
@@ -35,6 +36,8 @@ class DashboardScreen extends StatelessWidget {
               NetworkInfoCard(),
               SizedBox(height: 8),
               ResourceCountsCard(),
+              SizedBox(height: 16),
+              BackupCard(),
               SizedBox(height: 8),
               RequestLogCard(),
             ],
