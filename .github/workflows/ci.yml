@@ -1,0 +1,85 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # fhirant_server depends on cicada by a path that leaves this repo
+      # (../../../cicada/cicada from packages/fhirant_server). A single
+      # checkout cannot resolve it, so both repos are checked out side by side
+      # and this repo goes in a subdirectory to reproduce the local layout:
+      #
+      #   $GITHUB_WORKSPACE/fhirant/packages/fhirant_server
+      #   $GITHUB_WORKSPACE/cicada/cicada
+      #
+      # actions/checkout refuses a path outside the workspace, so the nesting
+      # is not optional.
+      - uses: actions/checkout@v4
+        with:
+          path: fhirant
+      - uses: actions/checkout@v4
+        with:
+          repository: fhir-fli/cicada
+          path: cicada
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Report toolchain
+        run: |
+          flutter --version
+          dart --version
+
+      # Every package is checked even when an earlier one fails. Aborting on
+      # the first failure hides every package after it alphabetically, which is
+      # how the fhir family shipped a 0.8.0 regression: the failure was in a
+      # package that sorts before the one whose tests mattered.
+      - name: Format, analyze and test each package
+        working-directory: fhirant
+        run: |
+          failed=""
+          for d in packages/*/; do
+            [ -f "${d}pubspec.yaml" ] || continue
+            pkg=$(basename "$d")
+
+            # Flutter packages must use the flutter tool; the pure Dart ones
+            # (fhirant_db, fhirant_logging, fhirant_server) must not, because
+            # `flutter test` cannot run a package with no flutter_test dep.
+            if grep -qE '^[[:space:]]+sdk:[[:space:]]*flutter[[:space:]]*$' "${d}pubspec.yaml"; then
+              tool=flutter
+            else
+              tool=dart
+            fi
+
+            echo "::group::$pkg ($tool)"
+            (
+              set -e
+              cd "$d"
+              $tool pub get
+              for f in lib test bin tool; do
+                if [ -d "$f" ]; then
+                  dart format --output=none --set-exit-if-changed "$f"
+                fi
+              done
+              $tool analyze
+              # fhirant_logging has no test directory yet. Recorded in PLAN.md
+              # under Testing Gaps; skip rather than fail the job for it.
+              if [ -d test ]; then $tool test; fi
+            )
+            if [ $? -ne 0 ]; then
+              failed="${failed} ${pkg}"
+              echo "::error::${pkg} failed"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Failing packages:${failed}"
+            exit 1
+          fi
+          echo "All packages passed"

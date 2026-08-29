@@ -111,15 +111,29 @@ transform with no test covering it. Verifying the plan is how that was found.
       `certificateFingerprint`; green under `flutter test` 2026-08-29. Mocking
       `flutter_secure_storage` itself is still not done.
 - [ ] **fhirant_logging tests** — basic smoke tests for log levels and file output
-- [ ] **Coverage reporting** — configure and track code coverage in CI
 - [ ] **Conformance suite** — automated FHIR Touchstone or official test kit testing
 
 ## Deployment
 
 - [x] **Docker** — `Dockerfile`, `docker-compose.yml` and `test_docker.sh` are
       all in the repo root. Verified present 2026-08-29; not run.
-- [ ] **CI/CD** — GitHub Actions for test + analyze + build. There is **no
-      `.github` directory at all**; every test and analyze run is manual.
+- [x] **CI/CD** — `.github/workflows/ci.yml`, added 2026-08-29. Formats,
+      analyzes and tests all five packages on push to `main`, on every pull
+      request, and on demand. Each package is checked even when an earlier one
+      fails, so a failure in `fhirant_db` cannot hide `fhirant_server`.
+      Rehearsed before committing, against a clean clone pair, both
+      directions: green run 868 tests across five packages, exit 0; with a
+      deliberate failure injected into `fhirant_db` (second alphabetically)
+      exit 1, `fhirant_db` named, and the three packages after it still ran.
+- [ ] **`fhirant_server` depends on `cicada` by a path that leaves this repo**
+      (`../../../cicada/cicada`). A clone of fhirant alone therefore cannot
+      resolve, build or test. CI works around it by checking out both repos
+      side by side, which is why this repo is checked out into a `fhirant/`
+      subdirectory. The real fix is for cicada to be a git or hosted
+      dependency; until then the layout is load-bearing and undocumented
+      outside `ci.yml`.
+- [ ] **Coverage reporting** — still not configured; now that CI exists this
+      is a step in `ci.yml`, not a new piece of infrastructure.
 - [ ] **iOS build** — build and test Flutter app on iOS device/simulator
 
 ## Mobile
