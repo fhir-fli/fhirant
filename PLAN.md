@@ -3,8 +3,9 @@
 Living task list of genuinely incomplete features. Update checkboxes as work
 is completed.
 
-🛑 **Checked against the code on 2026-08-29, not trusted.** Six items were
-marked open that are implemented and tested. A stale plan sends work at
+🛑 **Checked against the code on 2026-08-29, not trusted.** Seven items were
+marked open that are implemented; the CORS allowed-headers list had been
+mistaken for the absence of an implementation, in both directions. A stale plan sends work at
 things that are already done, so confirm against the source before picking
 an item up, and record what you checked.
 
@@ -36,13 +37,21 @@ an item up, and record what you checked.
 
 ## HTTP Standards
 
-- [ ] **ETag / If-Match** — still open. Both appear only in the CORS
-      allowed-headers list, which is not an implementation.
+- [x] **ETag / If-Match** — implemented. `FhirHttpHeaders.resourceHeaders`
+      puts a weak `W/"versionId"` ETag on read, create and update;
+      `resource_handler.dart:865` compares If-Match to the stored versionId
+      and returns **412 Precondition Failed** on mismatch, and on a missing
+      resource. Matches R4 http.html: "If the version id given in the
+      If-Match header does not match, the server returns a 412 Precondition
+      Failed status code instead of updating the resource." Verified
+      2026-08-29 against the spec, not from memory.
 - [x] **If-None-Exist** — implemented in `resource_handler.dart`: runs the
       search, returns the existing resource on one match and a `duplicate`
       OperationOutcome on several. Verified 2026-08-29.
-- [ ] **Prefer header** — still open, and likewise only in the CORS
-      allowed-headers list.
+- [x] **Prefer header** — implemented. `parsePreferReturn` handles
+      `return=minimal`, `representation` and `OperationOutcome`;
+      `parsePreferHandling` handles `handling=strict`/`lenient` for
+      unrecognised search parameters. Verified 2026-08-29.
 
 ## Subscriptions
 
