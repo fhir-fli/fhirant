@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/mapping_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -60,18 +64,44 @@ Map<String, dynamic> mapCopying({
       ],
     };
 
+late FhirAntDb db;
+
 Future<Response> post(Object? body) => mappingHandler(
       Request(
         'POST',
         Uri.parse(r'http://localhost:8080/$transform'),
         body: body is String ? body : jsonEncode(body),
       ),
+      db,
     );
+
+/// The real published us-core-patient profile, read off disk rather than
+/// hand-written, so the test cannot agree with a mistake of mine about what a
+/// profile looks like.
+fhir.StructureDefinition? usCorePatientProfile() {
+  final home = Platform.environment['HOME'];
+  final path = '$home/.fhir/packages/hl7.fhir.us.core#3.1.0/package/'
+      'StructureDefinition-us-core-patient.json';
+  final file = File(path);
+  if (!file.existsSync()) {
+    return null;
+  }
+  return fhir.StructureDefinition.fromJson(
+    jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
+  );
+}
 
 Future<Map<String, dynamic>> bodyOf(Response response) async =>
     jsonDecode(await response.readAsString()) as Map<String, dynamic>;
 
 void main() {
+  setUp(() {
+    db = FhirAntDb(NativeDatabase.memory());
+  });
+  tearDown(() async {
+    await db.close();
+  });
+
   group(r'$transform rejects a request it cannot act on', () {
     test('empty body', () async {
       final response = await post('');
@@ -147,13 +177,10 @@ void main() {
       );
     });
 
-    test('a PROFILED target is rejected, which is a known limitation',
+    test('a profiled target the server does NOT hold is refused, not guessed',
         () async {
-      // structuremap.html types structure.url as canonical(StructureDefinition)
-      // and gives no rule for resolving it to a type at execution. This handler
-      // reads the last path segment, so a profile canonical yields the profile
-      // id rather than the resource type. Pinned so the limitation is visible
-      // and fails loudly the day it is fixed, rather than sitting unstated.
+      // Nothing is stored, so the canonical cannot be resolved and the last
+      // path segment is not a resource type. Refusing beats inventing one.
       final response = await post({
         'map': mapCopying(
           targetUrl:
@@ -162,12 +189,7 @@ void main() {
         'source': {'resourceType': 'Patient', 'id': 'a'},
       });
 
-      expect(
-        response.statusCode,
-        equals(400),
-        reason: 'a profiled target is not resolved to Patient today; the fix '
-            "is to read the target StructureDefinition's own type element",
-      );
+      expect(response.statusCode, equals(400));
       expect(
         ((await bodyOf(response))['issue'] as List).first['diagnostics'],
         contains('us-core-patient'),
@@ -210,6 +232,34 @@ void main() {
         isFalse,
         reason: 'the map copies id only, so active must not carry over',
       );
+    });
+
+    test('a profiled target the server DOES hold resolves to its base type',
+        () async {
+      final profile = usCorePatientProfile();
+      if (profile == null) {
+        markTestSkipped('hl7.fhir.us.core#3.1.0 is not in ~/.fhir/packages');
+        return;
+      }
+      // structuredefinition.html: type is 1..1, "the type this structure
+      // describes". The published profile carries type: "Patient", so once the
+      // server holds the definition the target is a Patient, not the profile
+      // id. This is the case the last-path-segment reading got wrong.
+      expect(profile.type.valueString, equals('Patient'));
+      await db.saveResource(profile);
+
+      final response = await post({
+        'map': mapCopying(
+          targetUrl:
+              'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient',
+        ),
+        'source': {'resourceType': 'Patient', 'id': 'abc'},
+      });
+
+      expect(response.statusCode, equals(200));
+      final json = await bodyOf(response);
+      expect(json['resourceType'], equals('Patient'));
+      expect(json['id'], equals('abc'));
     });
 
     test('transforms across resource types', () async {

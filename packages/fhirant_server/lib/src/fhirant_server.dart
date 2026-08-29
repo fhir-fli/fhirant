@@ -283,7 +283,7 @@ class FhirAntServer {
         (Request req) => immdsForecastWhoHandler(req, dbInterface),
       )
       // Mapping/Transform endpoint
-      ..post(r'/$transform', mappingHandler)
+      ..post(r'/$transform', (Request req) => mappingHandler(req, dbInterface))
       // Bulk Data Export endpoints
       ..get(
         r'/$export',

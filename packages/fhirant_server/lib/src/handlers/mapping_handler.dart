@@ -2,29 +2,53 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_mapping/fhir_r4_mapping.dart';
 import 'package:fhir_r4_path/fhir_r4_path.dart';
+import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:http/http.dart' show Client;
 import 'package:shelf/shelf.dart';
 
-/// Simple ResourceCache implementation for mapping
-class SimpleResourceCache implements ResourceCache {
-  final Map<String, fhir.Resource> _cache = {};
+/// The canonical types the mapping engine asks this cache for. The engine
+/// calls `fetchResource<StructureDefinition>` when resolving a type,
+/// `fetchResource<ValueSet>` for a translate target and
+/// `fetchResource<ConceptMap>` for `translate`; StructureMap is here because a
+/// map may `import` another.
+const _canonicalTypes = <fhir.R4ResourceType>[
+  fhir.R4ResourceType.StructureDefinition,
+  fhir.R4ResourceType.ValueSet,
+  fhir.R4ResourceType.CodeSystem,
+  fhir.R4ResourceType.ConceptMap,
+  fhir.R4ResourceType.StructureMap,
+];
 
-  Future<fhir.Resource?> findResourceById(
-    String resourceType,
-    String id,
-  ) async {
-    return _cache['$resourceType/$id'];
-  }
+/// A [ResourceCache] backed by this server's own database.
+///
+/// It replaces a version whose `getStructureDefinition`, `getCodeSystem`,
+/// `getResourceMap`, `getResourceNames`, `getStructureDefinitions` and `client`
+/// all threw `UnimplementedError`, which made any map needing type resolution
+/// fail.
+///
+/// A FHIR server resolves a canonical from what it holds, so a
+/// StructureDefinition, ValueSet, CodeSystem, ConceptMap or StructureMap POSTed
+/// to this server is what `\$transform` resolves against. **Nothing here goes
+/// to the network**: `client` stays null, because fhirant runs on a device that
+/// may not have one, and a transform whose result depended on connectivity
+/// would not be reproducible.
+///
+/// Resources the engine resolves mid-transform are memoised in `_seen` and take
+/// precedence, matching `CanonicalResourceCache`.
+class DbResourceCache extends ResourceCache {
+  /// Creates a cache over [db].
+  DbResourceCache(this.db);
 
-  Future<fhir.Resource?> findResourceByUrl(String url) async {
-    return _cache[url];
-  }
+  /// The server database canonicals are read from.
+  final FhirAntDb db;
+
+  final Map<String, fhir.CanonicalResource> _seen = {};
 
   @override
-  Future<void> saveCanonicalResource(fhir.Resource resource) async {
-    if (resource is fhir.CanonicalResource && resource.url != null) {
-      _cache[resource.url!.valueString ?? ''] = resource;
+  Future<void> saveCanonicalResource(fhir.CanonicalResource resource) async {
+    final url = resource.url?.valueString;
+    if (url != null && url.isNotEmpty) {
+      _seen[url] = resource;
     }
   }
 
@@ -33,47 +57,81 @@ class SimpleResourceCache implements ResourceCache {
     String url, [
     String? version,
   ]) async {
-    final resource = _cache[url];
-    return resource is T? ? resource : null;
+    final seen = _seen[url];
+    final versionMatches =
+        version == null || seen?.version?.valueString == version;
+    if (seen is T && versionMatches) {
+      return seen;
+    }
+    for (final type in _canonicalTypes) {
+      final hits = await db.search(
+        resourceType: type,
+        searchParameters: {
+          'url': [url],
+          if (version != null) 'version': [version],
+        },
+      );
+      for (final hit in hits) {
+        if (hit is T) {
+          await saveCanonicalResource(hit);
+          return hit;
+        }
+      }
+    }
+    return null;
   }
 
   @override
-  // TODO(fhirant): implement client
-  Client? get client => throw UnimplementedError();
+  Future<fhir.StructureDefinition?> getStructureDefinition(String url) =>
+      getCanonicalResource<fhir.StructureDefinition>(url);
 
   @override
-  Future<fhir.CodeSystem?> getCodeSystem(String url, [String? version]) {
-    // TODO(fhirant): implement getCodeSystem
-    throw UnimplementedError();
+  Future<List<fhir.StructureDefinition>> getStructureDefinitions() async {
+    final stored = await db.getResourcesByType(
+      fhir.R4ResourceType.StructureDefinition,
+    );
+    return <fhir.StructureDefinition>{
+      ..._seen.values.whereType<fhir.StructureDefinition>(),
+      ...stored.whereType<fhir.StructureDefinition>(),
+    }.toList();
   }
 
   @override
-  Future<Map<String, dynamic>?> getResourceMap(String url) {
-    // TODO(fhirant): implement getResourceMap
-    throw UnimplementedError();
-  }
+  Future<fhir.CodeSystem?> getCodeSystem(String url, [String? version]) =>
+      getCanonicalResource<fhir.CodeSystem>(url, version);
 
   @override
-  Future<List<String>> getResourceNames() {
-    // TODO(fhirant): implement getResourceNames
-    throw UnimplementedError();
-  }
+  Future<Map<String, dynamic>?> getResourceMap(String url) async =>
+      (await getCanonicalResource(url))?.toJson();
 
+  /// The `name` of every canonical this cache knows about.
+  ///
+  /// `WorkerContext.getResourceNames` unions this with the core resource type
+  /// names from the generated hierarchy table, so returning only what is
+  /// loaded is correct and matches `CanonicalResourceCache`.
   @override
-  Future<fhir.StructureDefinition?> getStructureDefinition(String url) {
-    // TODO(fhirant): implement getStructureDefinition
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<List<fhir.StructureDefinition>> getStructureDefinitions() {
-    // TODO(fhirant): implement getStructureDefinitions
-    throw UnimplementedError();
+  Future<List<String>> getResourceNames() async {
+    final names = <String>{};
+    for (final resource in [
+      ..._seen.values,
+      for (final type in _canonicalTypes) ...await db.getResourcesByType(type),
+    ]) {
+      final name = resource
+          .getChildrenByName('name')
+          .whereType<fhir.FhirString>()
+          .map((e) => e.valueString)
+          .whereType<String>()
+          .firstOrNull;
+      if (name != null && name.isNotEmpty) {
+        names.add(name);
+      }
+    }
+    return names.toList();
   }
 }
 
 /// FHIR Mapping Handler - Transform resources using StructureMap
-Future<Response> mappingHandler(Request request) async {
+Future<Response> mappingHandler(Request request, FhirAntDb db) async {
   try {
     FhirantLogging().logInfo('Received mapping/transform request');
 
@@ -199,7 +257,8 @@ Future<Response> mappingHandler(Request request) async {
     // The engine cannot invent the target: given null it fails with
     // "Unable to create target of type <alias>". StructureMap-transform names
     // the target in the map itself, so build an empty instance of it here.
-    final targetType = _targetResourceType(structureMap);
+    final cache = DbResourceCache(db);
+    final targetType = await _targetResourceType(structureMap, cache);
     if (targetType == null) {
       return Response(
         400,
@@ -242,9 +301,6 @@ Future<Response> mappingHandler(Request request) async {
         headers: {'Content-Type': 'application/json'},
       );
     }
-
-    // Create resource cache for mapping
-    final cache = SimpleResourceCache();
 
     // Convert Resource to builder for mapping engine
     // Resources have a toBuilder() method that returns FhirBaseBuilder
@@ -322,30 +378,35 @@ Future<Response> mappingHandler(Request request) async {
   }
 }
 
-/// The resource type a [StructureMap] produces, from the FIRST `structure`
-/// entry with `mode = target`.
+/// The resource type a [StructureMap] produces.
 ///
-/// 🛑 DELIBERATE DEVIATION, and it is not spec-derived. R4 structuremap.html
-/// gives NO rule for how an implementation determines the target type at
-/// execution; it says only that "the StructureMap resource assumes that both
-/// the source and the target models are fully defined using StructureDefinition
-/// resources - either resources, or logical models", and types
-/// `structure.url` as `canonical(StructureDefinition)`. Read 2026-08-29, not
-/// quoted from memory.
+/// Taken from the FIRST `structure` entry with `mode = target`, whose `url` is
+/// typed `canonical(StructureDefinition)` by R4 structuremap.html. That page
+/// gives **no rule** for turning the canonical into a type at execution; it
+/// says only that "the StructureMap resource assumes that both the source and
+/// the target models are fully defined using StructureDefinition resources -
+/// either resources, or logical models". So this resolves the definition and
+/// reads `StructureDefinition.type`, which structuredefinition.html makes
+/// `1..1` and defines as "the type this structure describes". Checked against
+/// the published definitions on disk rather than assumed: base `Patient` has
+/// `type: "Patient"`, and the profile `us-core-patient` also has
+/// `type: "Patient"` — which is what makes a profiled target resolve.
 ///
-/// Two consequences, both stated rather than hidden:
+/// 🛑 The fallback IS a deviation and is labelled as one. When the canonical is
+/// not in the cache or the database, this reads the last path segment of the
+/// URL. That is right for a base FHIR canonical and wrong for an unknown
+/// profile, so the caller gets a 400 naming what it could not resolve rather
+/// than a guessed type. The cure is to POST the StructureDefinition to the
+/// server first, which is what makes the map's structures "known to the
+/// server".
 ///
-///  * `structure` is `0..*`, so a map may name several targets. This takes the
-///    first and ignores the rest.
-///  * A canonical may name a **profile or a logical model**, not a resource:
-///    `.../StructureDefinition/us-core-patient` yields `us-core-patient`, which
-///    is not a resource type, so the caller gets a 400 saying so. The correct
-///    resolution is the target StructureDefinition's own `type` element, which
-///    needs a registry this handler does not have —
-///    `SimpleResourceCache.getStructureDefinition` throws. That is the fix;
-///    this is the interim, and the 400 is honest about it rather than
-///    guessing a type.
-String? _targetResourceType(fhir.StructureMap map) {
+/// `structure` is `0..*`. A map naming several targets uses the first; no spec
+/// rule was found either way, and it is recorded in PLAN.md rather than
+/// presented as correct.
+Future<String?> _targetResourceType(
+  fhir.StructureMap map,
+  ResourceCache cache,
+) async {
   for (final structure in map.structure ?? <fhir.StructureMapStructure>[]) {
     if (structure.mode.valueString != 'target') {
       continue;
@@ -353,6 +414,11 @@ String? _targetResourceType(fhir.StructureMap map) {
     final url = structure.url.valueString;
     if (url == null || url.isEmpty) {
       continue;
+    }
+    final resolved = await cache.getStructureDefinition(url);
+    final declared = resolved?.type.valueString;
+    if (declared != null && declared.isNotEmpty) {
+      return declared;
     }
     final lastSegment = url.split('/').last;
     if (lastSegment.isNotEmpty) {
