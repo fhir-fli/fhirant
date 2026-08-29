@@ -75,17 +75,18 @@ Future<Response> post(Object? body) => mappingHandler(
       db,
     );
 
-/// The real published us-core-patient profile, read off disk rather than
-/// hand-written, so the test cannot agree with a mistake of mine about what a
-/// profile looks like.
-fhir.StructureDefinition? usCorePatientProfile() {
-  final home = Platform.environment['HOME'];
-  final path = '$home/.fhir/packages/hl7.fhir.us.core#3.1.0/package/'
-      'StructureDefinition-us-core-patient.json';
-  final file = File(path);
-  if (!file.existsSync()) {
-    return null;
-  }
+/// The real published us-core-patient profile, verbatim from
+/// `hl7.fhir.us.core#3.1.0`, so the test cannot agree with a mistake of mine
+/// about what a profile looks like.
+///
+/// It is committed under `test/fixtures/` rather than read from
+/// `~/.fhir/packages`, because that path exists only on a machine that has run
+/// the IG publisher. Read from there, this test **skipped on CI** — the run
+/// reported 715 where the same commit reported 716 locally, and the behaviour
+/// the fixture exists to prove went unverified in the one place that gates
+/// merges.
+fhir.StructureDefinition usCorePatientProfile() {
+  final file = File('test/fixtures/StructureDefinition-us-core-patient.json');
   return fhir.StructureDefinition.fromJson(
     jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
   );
@@ -237,10 +238,15 @@ void main() {
     test('a profiled target the server DOES hold resolves to its base type',
         () async {
       final profile = usCorePatientProfile();
-      if (profile == null) {
-        markTestSkipped('hl7.fhir.us.core#3.1.0 is not in ~/.fhir/packages');
-        return;
-      }
+      // Prove the fixture is the artefact it claims to be before trusting what
+      // the test concludes from it.
+      expect(
+        profile.url?.valueString,
+        equals(
+          'http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient',
+        ),
+      );
+      expect(profile.derivation?.valueString, equals('constraint'));
       // structuredefinition.html: type is 1..1, "the type this structure
       // describes". The published profile carries type: "Patient", so once the
       // server holds the definition the target is a Patient, not the profile
