@@ -1,28 +1,48 @@
 # PLAN.md — FHIRant Remaining Work
 
-Living task list of genuinely incomplete features. Update checkboxes as work is completed.
+Living task list of genuinely incomplete features. Update checkboxes as work
+is completed.
+
+🛑 **Checked against the code on 2026-08-29, not trusted.** Six items were
+marked open that are implemented and tested. A stale plan sends work at
+things that are already done, so confirm against the source before picking
+an item up, and record what you checked.
 
 ---
 
 ## Search Gaps
 
-- [ ] **_has (reverse chaining)** — e.g., `Patient?_has:Observation:patient:code=1234`. Test file exists (`has_search_e2e_test.dart`) but implementation incomplete.
-- [ ] **_summary** — return subset of resource (true, data, text, count)
-- [ ] **_elements** — return only specified fields
-- [ ] **_contained / _containedType** — search within contained resources
-- [ ] **_filter** — FHIRPath-based filtering parameter
+- [x] **_has (reverse chaining)** — implemented. `has_search_e2e_test.dart`
+      has 6 tests that create data, run the search and assert the returned
+      resource by id. Verified 2026-08-29.
+- [x] **_summary** — implemented: parsed in `search_parser.dart`, applied as
+      response shaping in `resource_handler.dart`, `_summary=count` short-
+      circuits to a total-only bundle. Verified 2026-08-29.
+- [x] **_elements** — implemented alongside `_summary`, including the
+      mutual-exclusivity check the spec requires. Verified 2026-08-29.
+- [ ] **_contained / _containedType** — recognised as valid parameter names
+      so they are not rejected, but nothing acts on them.
+- [ ] **_filter** — recognised as a valid parameter name only; nothing acts
+      on it. (`_filterContains` in `terminology_handler.dart` is ValueSet
+      expansion filtering, unrelated.)
 - [ ] **Accent normalization** — for string search (TODO in codebase)
 
 ## Content & Format
 
 - [ ] **XML support** — `application/fhir+xml` serialization (low priority; JSON-only by design for now)
-- [ ] **_format parameter** — allow format override via query parameter
+- [x] **_format parameter** — honoured by `content_negotiation.dart`, which
+      checks it alongside Accept and returns 406 for unsupported types.
+      Verified 2026-08-29.
 
 ## HTTP Standards
 
-- [ ] **ETag / If-Match** — version-aware conditional updates (return 412 on mismatch)
-- [ ] **If-None-Exist** — conditional create
-- [ ] **Prefer header** — `return=minimal` (204) vs `return=representation` (200 with body)
+- [ ] **ETag / If-Match** — still open. Both appear only in the CORS
+      allowed-headers list, which is not an implementation.
+- [x] **If-None-Exist** — implemented in `resource_handler.dart`: runs the
+      search, returns the existing resource on one match and a `duplicate`
+      OperationOutcome on several. Verified 2026-08-29.
+- [ ] **Prefer header** — still open, and likewise only in the CORS
+      allowed-headers list.
 
 ## Subscriptions
 
