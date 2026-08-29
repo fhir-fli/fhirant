@@ -4,6 +4,13 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:shelf/shelf.dart';
 
+/// Identifier system for fhirant's own user accounts.
+///
+/// The accounts live in fhirant's `users` table, not as FHIR resources, so
+/// there is no URL to reference. This names the namespace the id belongs to,
+/// which is what makes the id meaningful to a later reader.
+const _userIdentifierSystem = 'urn:fhirant:users';
+
 /// Middleware that creates FHIR AuditEvent resources for auditable requests.
 ///
 /// Place after auth middleware so that `auth_user` context is available.
@@ -118,6 +125,12 @@ Future<void> _createAuditEvent(
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     final username = authUser?['username'] as String? ?? 'anonymous';
+    // ISO 27789 requires the audit record to identify the user. A display
+    // name does not: two clinicians who share a name are indistinguishable in
+    // a record kept for legal purposes. FHIR lets a Reference identify by
+    // `identifier` without any resource existing, so the account id from the
+    // token identifies the actor without inventing Practitioner resources.
+    final userId = authUser?['userId'];
 
     final action = _mapAction(request.method);
     final subtype = _mapSubtype(request.method);
@@ -162,6 +175,11 @@ Future<void> _createAuditEvent(
       'agent': [
         {
           'who': {
+            if (userId != null)
+              'identifier': {
+                'system': _userIdentifierSystem,
+                'value': '$userId',
+              },
             'display': username,
           },
           'requestor': true,

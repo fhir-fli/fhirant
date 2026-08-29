@@ -373,9 +373,12 @@ posted in the request body came from the caller and was never disclosed by the
 server, so recording it would put a disclosure in the trail that did not
 happen.
 
-`agent.who` is still a display string. Giving it an identifying reference means
-storing users as FHIR resources, which the server does not do today; that is a
-separate change and is listed under the remaining follow-ups.
+`agent.who` now identifies the account, not only names it. A display name is
+not an identifier: two clinicians who share a name were indistinguishable in a
+record kept for legal purposes. This needed no Practitioner resources — FHIR
+lets a `Reference` identify by `identifier` with no resource existing, and the
+JWT already carried `userId` beside `username` — so `who` carries
+`{system: 'urn:fhirant:users', value: userId}` alongside the display name.
 
 Tests run the whole pipeline against a real database, because what matters is
 the AuditEvent that lands in the store, not that a method was called. Every
@@ -545,7 +548,6 @@ Worth recording so it does not get "hardened" into something worse:
    in the encrypted database.
 5. ~~F10~~ — **done**. The trail names the subject of care, records the client
    address, and `$fhirpath` no longer reads a record without leaving a trace.
-   One follow-up left: `agent.who` is a display string, and an identifying
-   reference needs users stored as FHIR resources.
+   `agent.who` now carries an identifier too.
 6. ~~F11~~ — **done** for Bundle and `$restore`.
 5. ~~F7, F8, F9~~ — **done**.

@@ -14,6 +14,26 @@ import 'test_helpers.dart';
 /// Run against a real database rather than a mock: what matters is the
 /// AuditEvent that lands in the store, not that a method was called.
 void main() {
+  /// Waits for the fire-and-forget AuditEvent write to land.
+  ///
+  /// The middleware does not await the write, so the response returns before
+  /// the event exists. A fixed sleep races: it passed locally and went red
+  /// once in a full-suite run on a loaded machine. Poll for the expected
+  /// count instead, and fail on the timeout rather than on a guess. Every
+  /// caller wants at least one event, and asserts on its contents.
+  Future<List<fhir.AuditEvent>> auditEvents(dynamic db) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    var events = <fhir.AuditEvent>[];
+    while (DateTime.now().isBefore(deadline)) {
+      final all =
+          await db.getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+      events = all.whereType<fhir.AuditEvent>().toList();
+      if (events.isNotEmpty) return events;
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+    return events;
+  }
+
   /// The subjects of care named by the stored AuditEvents.
   ///
   /// Only entities carrying the Patient role count. A direct `GET /Patient/x`
@@ -21,10 +41,9 @@ void main() {
   /// so matching any Patient reference would let that case pass without the
   /// subject ever being resolved.
   Future<List<String>> auditedSubjects(dynamic db) async {
-    final events =
-        await db.getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final events = await auditEvents(db);
     final refs = <String>[];
-    for (final e in events.whereType<fhir.AuditEvent>()) {
+    for (final e in events) {
       for (final entity in e.entity ?? <fhir.AuditEventEntity>[]) {
         if (entity.role?.code?.valueString != '1') continue;
         final r = entity.what?.reference?.valueString;
@@ -51,8 +70,6 @@ void main() {
     await server.handler(
       testRequest('GET', '/Observation/obs-1', authToken: token),
     );
-    // The AuditEvent is written fire-and-forget so the response is not delayed.
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     expect(
       await auditedSubjects(server.db),
@@ -72,12 +89,9 @@ void main() {
     await server.handler(
       testRequest('GET', '/Patient/pat-2', authToken: token),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    final events = await server.db
-        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final events = await auditEvents(server.db);
     final refs = events
-        .whereType<fhir.AuditEvent>()
         .expand((e) => e.entity ?? <fhir.AuditEventEntity>[])
         .map((en) => en.what?.reference?.valueString)
         .whereType<String>()
@@ -103,7 +117,6 @@ void main() {
     await server.handler(
       testRequest('GET', '/Organization/org-1', authToken: token),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     expect(await auditedSubjects(server.db), isEmpty);
   });
@@ -135,12 +148,9 @@ void main() {
       ),
     );
     expect(response.statusCode, equals(200));
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    final events = await server.db
-        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final events = await auditEvents(server.db);
     final refs = events
-        .whereType<fhir.AuditEvent>()
         .expand((e) => e.entity ?? <fhir.AuditEventEntity>[])
         .map((en) => en.what?.reference?.valueString)
         .whereType<String>()
@@ -166,18 +176,53 @@ void main() {
       ),
     );
     expect(response.statusCode, equals(200));
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    final events = await server.db
-        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final events = await auditEvents(server.db);
     final refs = events
-        .whereType<fhir.AuditEvent>()
         .expand((e) => e.entity ?? <fhir.AuditEventEntity>[])
         .map((en) => en.what?.reference?.valueString)
         .whereType<String>()
         .toList();
 
     expect(refs, isEmpty);
+  });
+
+  test('the acting user is identified, not merely named', () async {
+    // A display name is not an identifier. Two clinicians who share a name
+    // must not be indistinguishable in a record kept for legal purposes.
+    final server = await createTestServer();
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    await server.db.saveResource(fhir.Patient(id: 'pat-who'.toFhirString));
+
+    await server.handler(
+      testRequest('GET', '/Patient/pat-who', authToken: token),
+    );
+
+    final events = await auditEvents(server.db);
+    final agents = events.expand((e) => e.agent).toList();
+
+    expect(agents, isNotEmpty);
+    final identifiers = agents
+        .map((a) => a.who?.identifier)
+        .whereType<fhir.Identifier>()
+        .toList();
+    expect(
+      identifiers,
+      isNotEmpty,
+      reason: 'agent.who must carry an identifier for the account, not only '
+          'a display name',
+    );
+    expect(
+      identifiers.first.value?.valueString,
+      isNotNull,
+      reason: 'the identifier must carry the account id',
+    );
+    expect(identifiers.first.system?.valueString, equals('urn:fhirant:users'));
+    // The human-readable name stays: it is what makes the record legible.
+    expect(
+      agents.map((a) => a.who?.display?.valueString).whereType<String>(),
+      isNotEmpty,
+    );
   });
 
   test('the requesting address is recorded', () async {
@@ -190,12 +235,9 @@ void main() {
     await server.handler(
       testRequest('GET', '/Patient/pat-3', authToken: token),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    final events = await server.db
-        .getResourcesByType(fhir.R4ResourceType.AuditEvent) as List;
+    final events = await auditEvents(server.db);
     final addresses = events
-        .whereType<fhir.AuditEvent>()
         .expand((e) => e.agent)
         .map((a) => a.network?.address?.valueString)
         .whereType<String>()
