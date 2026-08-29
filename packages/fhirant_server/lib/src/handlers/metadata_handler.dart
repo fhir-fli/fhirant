@@ -30,6 +30,22 @@ Response metadataHandler(Request request) {
       ),
       rest: [
         CapabilityStatementRest(
+          // Without this a client has no way to find the websocket a
+          // Subscription binds over. The extension is HL7's own:
+          // capabilitystatement-websocket, context CapabilityStatement.rest,
+          // value uri, "Where the server provides its web socket end-point"
+          // (read from the published StructureDefinition, not from memory).
+          extension_: [
+            FhirExtension(
+              url: FhirString(
+                'http://hl7.org/fhir/StructureDefinition/'
+                'capabilitystatement-websocket',
+              ),
+              valueX: FhirUri(
+                'ws://${request.requestedUri.authority}/ws',
+              ),
+            ),
+          ],
           mode: RestfulCapabilityMode.server,
           documentation: 'FHIR RESTful API with SMART on FHIR authentication.'
               .toFhirMarkdown,

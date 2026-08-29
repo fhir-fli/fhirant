@@ -10,6 +10,7 @@ import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
+import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
@@ -93,8 +94,11 @@ class FhirAntServer {
   /// Create router with all handlers
   Router createRouter() {
     // One service for the life of the router, so rest-hook delivery reuses a
-    // single HTTP client rather than building one per write.
-    final subscriptions = SubscriptionService(dbInterface);
+    // single HTTP client rather than building one per write, and so every
+    // bound websocket is visible to every write.
+    final websockets = WebSocketSubscriptions();
+    final subscriptions =
+        SubscriptionService(dbInterface, websockets: websockets);
     final router = Router()
       // Auth routes
       ..get(
@@ -286,6 +290,9 @@ class FhirAntServer {
         r'/$immds-forecast-who',
         (Request req) => immdsForecastWhoHandler(req, dbInterface),
       )
+      // Websocket channel for Subscription. R4 subscription.html: the client
+      // connects here, sends `bind :id`, and the server answers `bound :id`.
+      ..get('/ws', websocketHandler(websockets))
       // Mapping/Transform endpoint
       ..post(r'/$transform', (Request req) => mappingHandler(req, dbInterface))
       // Bulk Data Export endpoints

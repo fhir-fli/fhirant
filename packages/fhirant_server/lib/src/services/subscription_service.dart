@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:http/http.dart' as http;
 
@@ -36,7 +37,9 @@ class SubscriptionService {
     this.db, {
     http.Client? httpClient,
     DateTime Function()? clock,
+    WebSocketSubscriptions? websockets,
   })  : _http = httpClient ?? http.Client(),
+        websockets = websockets ?? WebSocketSubscriptions(),
         _clock = clock ?? DateTime.now;
 
   /// The database subscriptions are read from and status written back to.
@@ -44,11 +47,14 @@ class SubscriptionService {
   final http.Client _http;
   final DateTime Function() _clock;
 
+  /// The sockets clients have bound, for the websocket channel.
+  final WebSocketSubscriptions websockets;
+
   /// Channel types this server delivers to. A subscription asking for anything
   /// else is refused at activation rather than accepted and silently ignored,
   /// so a client is never told a subscription is `active` when nothing will
   /// ever be sent.
-  static const supportedChannels = {'rest-hook'};
+  static const supportedChannels = {'rest-hook', 'websocket'};
 
   /// Splits a criteria string into its resource type and search parameters.
   ///
@@ -138,6 +144,8 @@ class SubscriptionService {
       );
     }
 
+    // A websocket subscription needs no endpoint: the client dials the server
+    // and binds by id, so there is nothing for the server to connect out to.
     final endpoint = subscription.channel.endpoint?.valueString;
     if (channelType == 'rest-hook' &&
         (endpoint == null || Uri.tryParse(endpoint) == null)) {
@@ -190,6 +198,16 @@ class SubscriptionService {
     fhir.Subscription subscription,
     fhir.Resource changed,
   ) async {
+    if (subscription.channel.type.valueString == 'websocket') {
+      // The whole websocket protocol is `ping :id`. No payload travels over the
+      // socket; the client re-runs its own criteria to find what changed. A
+      // subscription nobody is bound to is not a failure — the client may
+      // reconnect, and the spec has no queued websocket notification — so this
+      // never marks the subscription in error.
+      websockets.ping(subscription.id?.valueString ?? '');
+      return;
+    }
+
     final endpoint = subscription.channel.endpoint?.valueString;
     if (endpoint == null) {
       return;

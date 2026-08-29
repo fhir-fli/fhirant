@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_server/src/handlers/metadata_handler.dart';
 import 'package:shelf/shelf.dart';
@@ -246,6 +248,27 @@ void main() {
       expect(types, contains('Bundle'));
       expect(types, contains('Practitioner'));
       expect(types, contains('Organization'));
+    });
+  });
+
+  group('the websocket endpoint is discoverable', () {
+    test('rest carries the capabilitystatement-websocket extension', () async {
+      // Without it a client has no way to find the socket a Subscription binds
+      // over. HL7's own extension, context CapabilityStatement.rest, value uri.
+      final response = metadataHandler(
+        Request('GET', Uri.parse('http://localhost:8080/metadata')),
+      );
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final rest = (body['rest'] as List).first as Map<String, dynamic>;
+      final extensions = rest['extension'] as List;
+      final websocket = extensions.firstWhere(
+        (dynamic e) =>
+            (e as Map<String, dynamic>)['url'] ==
+            'http://hl7.org/fhir/StructureDefinition/'
+                'capabilitystatement-websocket',
+      ) as Map<String, dynamic>;
+      expect(websocket['valueUri'], equals('ws://localhost:8080/ws'));
     });
   });
 }
