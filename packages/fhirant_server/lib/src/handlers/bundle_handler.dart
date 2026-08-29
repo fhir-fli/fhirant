@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:shelf/shelf.dart';
@@ -10,8 +11,10 @@ import 'package:shelf/shelf.dart';
 /// Handler for Transaction and Batch operations: POST /
 Future<Response> bundleHandler(
   Request request,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     FhirantLogging().logInfo('Processing Bundle request');
     final body = await request.readAsString();
@@ -29,9 +32,9 @@ Future<Response> bundleHandler(
     }
 
     if (bundle.type == fhir.BundleType.transaction) {
-      return await _processTransaction(bundle, dbInterface, request);
+      return await _processTransaction(bundle, dbInterface, request, subs);
     } else {
-      return await _processBatch(bundle, dbInterface, request);
+      return await _processBatch(bundle, dbInterface, request, subs);
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error processing Bundle request', e, stackTrace);
@@ -47,6 +50,7 @@ Future<Response> _processTransaction(
   fhir.Bundle bundle,
   FhirAntDb dbInterface,
   Request request,
+  SubscriptionService subscriptions,
 ) async {
   FhirantLogging().logInfo(
     'Processing Transaction Bundle with ${bundle.entry!.length} entries',
@@ -117,6 +121,11 @@ Future<Response> _processTransaction(
     );
   }
 
+  // Only now, after the commit. Notifying from inside the transaction would
+  // tell a subscriber a resource exists and then roll it back, and a rest-hook
+  // POST cannot be recalled.
+  await _notify(subscriptions, operations);
+
   final resultBundle = fhir.Bundle(
     type: fhir.BundleType.transactionResponse,
     entry: resultEntries,
@@ -134,12 +143,14 @@ Future<Response> _processBatch(
   fhir.Bundle bundle,
   FhirAntDb dbInterface,
   Request request,
+  SubscriptionService subscriptions,
 ) async {
   FhirantLogging()
       .logInfo('Processing Batch Bundle with ${bundle.entry!.length} entries');
   final baseUrl =
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
+  final operations = <_BundleOperation>[];
 
   // Build urn:uuid map incrementally for batch
   final urnMap = <String, String>{};
@@ -169,6 +180,7 @@ Future<Response> _processBatch(
     try {
       final operation =
           await _processBundleEntry(entry, dbInterface, baseUrl, i, urnMap);
+      operations.add(operation);
       resultEntries.add(operation.resultEntry);
 
       // For batch, update urn map after successful POST
@@ -204,6 +216,10 @@ Future<Response> _processBatch(
       );
     }
   }
+
+  // A batch entry commits on its own, so by here every successful one is
+  // durable and the notifications are safe to send.
+  await _notify(subscriptions, operations);
 
   final resultBundle =
       fhir.Bundle(type: fhir.BundleType.batchResponse, entry: resultEntries);
@@ -625,7 +641,25 @@ Future<_BundleOperation> _processBundleEntry(
     previousResource: previousResource,
     createdResource: createdResource,
     deletedResource: deletedResource,
+    notifiableResource: method == fhir.HTTPVerb.dELETE ? null : resultResource,
   );
+}
+
+/// Sends notifications for the writes a Bundle made, once they are durable.
+///
+/// A create or update of a Subscription itself is not treated specially here:
+/// the entry path stores what the client sent, and activation happens on the
+/// single-resource endpoints. Recorded in PLAN.md rather than left implicit.
+Future<void> _notify(
+  SubscriptionService subscriptions,
+  List<_BundleOperation> operations,
+) async {
+  for (final operation in operations) {
+    final resource = operation.notifiableResource;
+    if (resource != null) {
+      await subscriptions.onResourceChanged(resource);
+    }
+  }
 }
 
 class _BundleOperation {
@@ -637,6 +671,7 @@ class _BundleOperation {
     this.previousResource,
     this.createdResource,
     this.deletedResource,
+    this.notifiableResource,
   });
   final fhir.HTTPVerb method;
   final fhir.R4ResourceType resourceType;
@@ -645,6 +680,12 @@ class _BundleOperation {
   final fhir.Resource? previousResource;
   final fhir.Resource? createdResource;
   final fhir.Resource? deletedResource;
+
+  /// The resource as saved, for a create or an update, and null for a delete.
+  ///
+  /// R4 subscription.html: "there is no notification when a resource is
+  /// deleted", so a delete deliberately leaves this null and nothing is sent.
+  final fhir.Resource? notifiableResource;
 }
 
 /// Exception for bundle entry processing that carries an HTTP status code.

@@ -9,6 +9,7 @@ import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
@@ -91,6 +92,9 @@ class FhirAntServer {
 
   /// Create router with all handlers
   Router createRouter() {
+    // One service for the life of the router, so rest-hook delivery reuses a
+    // single HTTP client rather than building one per write.
+    final subscriptions = SubscriptionService(dbInterface);
     final router = Router()
       // Auth routes
       ..get(
@@ -401,7 +405,8 @@ class FhirAntServer {
       // Transaction/Batch endpoint
       ..post(
         '/',
-        (Request req) => bundleHandler(req, dbInterface),
+        (Request req) =>
+            bundleHandler(req, dbInterface, subscriptions: subscriptions),
       )
       // Resource CRUD endpoints
       ..get(
@@ -417,8 +422,12 @@ class FhirAntServer {
       )
       ..post(
         '/<resourceType>',
-        (Request req, String resourceType) =>
-            postResourceHandler(req, resourceType, dbInterface),
+        (Request req, String resourceType) => postResourceHandler(
+          req,
+          resourceType,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
       )
       ..get(
         '/<resourceType>/<id>',
@@ -427,8 +436,13 @@ class FhirAntServer {
       )
       ..put(
         '/<resourceType>/<id>',
-        (Request req, String resourceType, String id) =>
-            putResourceHandler(req, resourceType, id, dbInterface),
+        (Request req, String resourceType, String id) => putResourceHandler(
+          req,
+          resourceType,
+          id,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
       )
       ..patch(
         '/<resourceType>/<id>',

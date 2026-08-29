@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/compartment_definitions.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
@@ -693,8 +694,13 @@ Future<void> _processRevIncludes(
 Future<Response> postResourceHandler(
   Request request,
   String resourceType,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  // Defaults to a real service rather than to null. A nullable notifier that
+  // quietly does nothing when a caller forgets to pass it is the same defect
+  // as an empty exported handler: it looks wired and is not.
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     final body = await request.readAsString();
     final resource = fhir.Resource.fromJsonString(body);
@@ -771,7 +777,14 @@ Future<Response> postResourceHandler(
     }
 
     // Ensure resource has an ID before saving so we can re-fetch it
-    final resourceWithId = resource.newIdIfNoId();
+    var resourceWithId = resource.newIdIfNoId();
+    // R4 subscription.html: a client creates a Subscription as `requested`,
+    // and the SERVER decides whether it can process it. Deciding before the
+    // save means the stored status is the server's answer, never the client's
+    // claim.
+    if (resourceWithId is fhir.Subscription) {
+      resourceWithId = await subs.activate(resourceWithId);
+    }
     final result = await dbInterface.saveResource(resourceWithId);
     if (result) {
       // Re-fetch to get server-assigned version/lastUpdated
@@ -780,6 +793,8 @@ Future<Response> postResourceHandler(
           ? await dbInterface.getResource(type, resourceWithId.id!.toString())
           : null;
       final responseResource = savedResource ?? resourceWithId;
+
+      await subs.onResourceChanged(responseResource);
 
       FhirantLogging().logInfo(
         'Resource of type $resourceType saved successfully with ID: {id}',
@@ -823,8 +838,10 @@ Future<Response> putResourceHandler(
   Request request,
   String resourceType,
   String id,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     final body = await request.readAsString();
     final updatedResource = fhir.Resource.fromJsonString(body);
@@ -914,12 +931,17 @@ Future<Response> putResourceHandler(
         type != null ? await dbInterface.getResource(type, id) : null;
     final isCreate = existingResource == null;
 
-    final success = await dbInterface.saveResource(updatedResource);
+    final toSave = updatedResource is fhir.Subscription
+        ? await subs.activate(updatedResource)
+        : updatedResource;
+    final success = await dbInterface.saveResource(toSave);
     if (success) {
       // Re-fetch to get server-assigned version/lastUpdated
       final savedResource =
           type != null ? await dbInterface.getResource(type, id) : null;
-      final responseResource = savedResource ?? updatedResource;
+      final responseResource = savedResource ?? toSave;
+
+      await subs.onResourceChanged(responseResource);
 
       FhirantLogging().logInfo(
         'Resource of type $resourceType '
