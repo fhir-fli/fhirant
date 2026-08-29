@@ -196,6 +196,51 @@ Future<Response> mappingHandler(Request request) async {
       );
     }
 
+    // The engine cannot invent the target: given null it fails with
+    // "Unable to create target of type <alias>". StructureMap-transform names
+    // the target in the map itself, so build an empty instance of it here.
+    final targetType = _targetResourceType(structureMap);
+    if (targetType == null) {
+      return Response(
+        400,
+        body: jsonEncode({
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'invalid',
+              'diagnostics': 'StructureMap has no structure with mode "target"',
+            }
+          ],
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    ResourceBuilder targetBuilder;
+    try {
+      targetBuilder = resourceFromJson(<String, dynamic>{
+        'resourceType': targetType,
+      });
+    } catch (e) {
+      return Response(
+        400,
+        body: jsonEncode({
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'not-supported',
+              'diagnostics':
+                  'Unsupported target type "$targetType": only FHIR resource '
+                      'types can be produced by this server',
+            }
+          ],
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
     // Create resource cache for mapping
     final cache = SimpleResourceCache();
 
@@ -208,7 +253,7 @@ Future<Response> mappingHandler(Request request) async {
       sourceBuilder,
       structureMap,
       cache,
-      null, // target (null means create new)
+      targetBuilder,
     );
 
     if (transformed == null) {
@@ -228,13 +273,29 @@ Future<Response> mappingHandler(Request request) async {
       );
     }
 
+    // The engine reports a failed transform by RETURNING an OperationOutcome,
+    // not by throwing: transformBuilder catches and calls _createOutcome. A map
+    // that leaves a required element unset — Observation.status, Basic.code —
+    // fails when the builder is built, and arrives here. Returning that as 200
+    // tells the client the transform succeeded and hands it a resource of the
+    // wrong type.
+    final resultJson = transformed.toJson();
+    if (resultJson['resourceType'] == 'OperationOutcome' &&
+        targetType != 'OperationOutcome') {
+      FhirantLogging().logError(
+        'Mapping/transformation failed: the engine returned an '
+        'OperationOutcome instead of a $targetType',
+      );
+      return Response(
+        422,
+        body: jsonEncode(resultJson),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
     FhirantLogging().logInfo(
       'Resource transformation completed successfully',
     );
-
-    // Convert FhirBase result back to JSON
-    // FhirBase has toJson() method
-    final resultJson = transformed.toJson();
 
     return Response.ok(
       jsonEncode(resultJson),
@@ -257,4 +318,24 @@ Future<Response> mappingHandler(Request request) async {
       headers: {'Content-Type': 'application/json'},
     );
   }
+}
+
+/// The resource type a [StructureMap] produces, taken from its `structure`
+/// entry with `mode = target`. R4 structuremap.html: the canonical URL of a
+/// resource StructureDefinition ends in the resource type name.
+String? _targetResourceType(fhir.StructureMap map) {
+  for (final structure in map.structure ?? <fhir.StructureMapStructure>[]) {
+    if (structure.mode.valueString != 'target') {
+      continue;
+    }
+    final url = structure.url.valueString;
+    if (url == null || url.isEmpty) {
+      continue;
+    }
+    final lastSegment = url.split('/').last;
+    if (lastSegment.isNotEmpty) {
+      return lastSegment;
+    }
+  }
+  return null;
 }

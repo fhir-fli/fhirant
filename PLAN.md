@@ -9,6 +9,12 @@ mistaken for the absence of an implementation, in both directions. A stale plan 
 things that are already done, so confirm against the source before picking
 an item up, and record what you checked.
 
+**Second pass, same day**, prompted by "is there anything left?": three more
+items were open that are done (Docker, secure-storage tests, an accent
+normalization TODO that is in no file), and `$transform` — advertised in the
+CapabilityStatement, gated by a SMART scope — was returning 500 on every real
+transform with no test covering it. Verifying the plan is how that was found.
+
 ---
 
 ## Search Gaps
@@ -29,7 +35,11 @@ an item up, and record what you checked.
       acted on. Optional in R4. (`_filterContains` in
       `terminology_handler.dart` is ValueSet expansion filtering,
       unrelated.)
-- [ ] **Accent normalization** — for string search (TODO in codebase)
+- [ ] **Accent normalization** — for string search. R4 search.html: string
+      search "is insensitive to ... accents". Not implemented; there is no
+      TODO in the codebase either, the plan's old note was wrong (grepped
+      accent/diacritic/normaliz case-insensitively across all five packages,
+      2026-08-29).
 
 ## Content & Format
 
@@ -60,27 +70,79 @@ an item up, and record what you checked.
 
 - [ ] **Subscription resource support** — create/manage subscriptions
 - [ ] **REST-hook notifications** — POST to subscriber URL on resource change
-- [ ] **WebSocket notifications** — real-time push (websocket_handler.dart exists but not functional)
+- [ ] **WebSocket notifications** — real-time push. `websocket_handler.dart`
+      is an **empty file** that `handlers.dart` still exports, and no
+      `Subscription` appears anywhere in `fhirant_server/lib`. Either write the
+      handler or delete the empty file and its export; an empty exported
+      handler reads as a half-built feature. Verified 2026-08-29.
 
 ## Advanced Operations
 
-- [ ] **GraphQL endpoint** — FHIR GraphQL support
+- [ ] **GraphQL endpoint** — FHIR GraphQL support. Nothing exists.
 - [ ] **Profile validation** — validate against StructureDefinition profiles
+- [x] **`$transform`** — fixed 2026-08-29 and now has tests
+      (`test/handlers/mapping_handler_test.dart`, 10). It had none, and it was
+      broken: the handler passed a **null target** to `fhirMappingEngine`,
+      which cannot invent one and throws `Unable to create target of type
+      <alias>`, so every real transform returned 500. The target now comes from
+      the map's own `structure` entry with `mode = target`, per R4
+      structuremap.html. Measured one variable at a time: with a target
+      supplied the transform succeeds under the handler's existing
+      `SimpleResourceCache`, so the `UnimplementedError` stubs in that class
+      were not the cause.
+- [ ] **A target with required elements** — a map that does not set
+      `Observation.status`, `Basic.code` or `RelatedPerson.patient` cannot be
+      built, and `FhirMapEngine.transformBuilder` reports that by **returning
+      an OperationOutcome rather than throwing**. The handler returned it with
+      **HTTP 200**; it now returns **422** with the outcome. The open half is
+      `fhir_r4_mapping`, not fhirant: whether `Builder.build()` should throw a
+      null-check error at all, or name the unset required element.
+- [ ] **`SimpleResourceCache` stubs** — `getStructureDefinition`,
+      `getStructureDefinitions`, `getResourceMap`, `getResourceNames`,
+      `getCodeSystem` and `client` all throw `UnimplementedError`. Not reached
+      by the transforms tested above, but `WorkerContext.fetchTypeDefinition`
+      calls `getStructureDefinition`, so a map needing element resolution
+      across types will hit it. Not yet measured.
 
 ## Testing Gaps
 
-- [ ] **fhirant_secure_storage tests** — mock flutter_secure_storage, test key generation
+- [x] **fhirant_secure_storage tests** — 11 tests in
+      `test/key_generation_test.dart` covering `generateSecureRandomKey` and
+      `certificateFingerprint`; green under `flutter test` 2026-08-29. Mocking
+      `flutter_secure_storage` itself is still not done.
 - [ ] **fhirant_logging tests** — basic smoke tests for log levels and file output
 - [ ] **Coverage reporting** — configure and track code coverage in CI
 - [ ] **Conformance suite** — automated FHIR Touchstone or official test kit testing
 
 ## Deployment
 
-- [ ] **Docker** — Dockerfile + docker-compose for standalone deployment
-- [ ] **CI/CD** — GitHub Actions for test + analyze + build
+- [x] **Docker** — `Dockerfile`, `docker-compose.yml` and `test_docker.sh` are
+      all in the repo root. Verified present 2026-08-29; not run.
+- [ ] **CI/CD** — GitHub Actions for test + analyze + build. There is **no
+      `.github` directory at all**; every test and analyze run is manual.
 - [ ] **iOS build** — build and test Flutter app on iOS device/simulator
 
 ## Mobile
 
 - [ ] **iOS testing** — verify server lifecycle, SQLCipher, background behavior
 - [ ] **Performance** — optimize for large databases (resource count refresh, isolate-based server)
+
+## Flaky
+
+- [ ] **`export_integration_test.dart` "Cancel export DELETE cancels and
+      cleans up"** — failed once in a full-suite run on 2026-08-29 with
+      "Export job did not complete within max attempts", then passed 3/3 run
+      alone. It polls with a fixed attempt count, so it times out under
+      whole-suite load rather than failing. Poll on a deadline, not a count.
+
+## Suite baseline — 2026-08-29
+
+Whole suites, no file arguments. `dart analyze` clean in all five packages.
+
+| package | runner | tests |
+|---|---|---|
+| `fhirant_server` | `dart test` | 714 |
+| `fhirant_db` | `dart test` | 110 |
+| `fhirant` | `flutter test` | 33 |
+| `fhirant_secure_storage` | `flutter test` | 11 |
+| `fhirant_logging` | — | **no test directory** |
