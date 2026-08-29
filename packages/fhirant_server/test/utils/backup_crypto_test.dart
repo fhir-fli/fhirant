@@ -4,9 +4,17 @@ import 'package:fhirant_server/src/utils/backup_crypto.dart';
 import 'package:test/test.dart';
 
 void main() {
+  // The id is long and distinctive on purpose. It used to be "p1", and the
+  // leak test below searched the whole envelope — random salt, IV and base64
+  // ciphertext included — for those two characters. Measured 2026-08-29:
+  // 15 hits in 200 encryptions, a 7.5% false alarm rate on a test whose whole
+  // job is to say whether patient data escaped. A needle short enough to occur
+  // by chance cannot answer that question.
+  const patientId = 'pat-9f3c2a71-leak-canary';
   const bundle =
       '{"resourceType":"Bundle","type":"collection","entry":[{"resource":'
-      '{"resourceType":"Patient","id":"p1","name":[{"family":"Faulkenberry"}]}'
+      '{"resourceType":"Patient","id":"$patientId",'
+      '"name":[{"family":"Faulkenberry"}]}'
       '}]}';
   const passphrase = 'correct horse battery staple';
 
@@ -35,7 +43,7 @@ void main() {
       final envelope = BackupCrypto.encrypt(bundle, passphrase);
       expect(envelope, isNot(contains('Faulkenberry')));
       expect(envelope, isNot(contains('Patient')));
-      expect(envelope, isNot(contains('p1')));
+      expect(envelope, isNot(contains(patientId)));
     });
 
     test('the passphrase does not appear in the envelope', () {
