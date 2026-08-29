@@ -85,16 +85,26 @@ transform with no test covering it. Verifying the plan is how that was found.
       broken: the handler passed a **null target** to `fhirMappingEngine`,
       which cannot invent one and throws `Unable to create target of type
       <alias>`, so every real transform returned 500. The target now comes from
-      the map's own `structure` entry with `mode = target`. 🛑 **That last
-      step is a deviation, not a spec rule.** structuremap.html gives no rule
-      for resolving the target type at execution and types `structure.url` as
-      `canonical(StructureDefinition)`, so a **profile** canonical is legal
-      there and the last-path-segment reading is wrong for it (read
-      2026-08-29; the comment previously cited the page for a rule the page
-      does not contain). Measured one variable at a time: with a target
-      supplied the transform succeeds under the handler's existing
-      `SimpleResourceCache`, so the `UnimplementedError` stubs in that class
-      were not the cause.
+      the map's own `structure` entry with `mode = target`, and the resource
+      type from that definition's `type` element — `1..1`, "the type this
+      structure describes". Checked against the published definitions in
+      `~/.fhir/packages`: base `Patient` carries `type: "Patient"`, and the
+      profile `us-core-patient` carries `type: "Patient"` too.
+      🛑 structuremap.html gives **no** rule for resolving the canonical to a
+      type at execution; an earlier version of this entry and of the code
+      comment cited it for one, wrongly. Twelve tests.
+- [x] **`SimpleResourceCache` stubs** — replaced 2026-08-29 by
+      `DbResourceCache`, backed by the server's own database, so a
+      StructureDefinition, ValueSet, CodeSystem, ConceptMap or StructureMap
+      POSTed to this server is what a transform resolves against. `client`
+      stays null: no network, because the device may not have one.
+      🛑 **Measured, and narrower than it was claimed to be.** A counting
+      cache recorded **zero** calls from inside the mapping engine across a
+      same-type copy, a cross-type copy, a nested `create` and a profiled
+      target, and an A/B against the old throwing implementation passed
+      identically. The stubs were a latent trap in a public contract, not a
+      live engine failure. The only caller today is the target-type
+      resolution.
 - [ ] **A target with required elements** — a map that does not set
       `Observation.status`, `Basic.code` or `RelatedPerson.patient` cannot be
       built, and `FhirMapEngine.transformBuilder` reports that by **returning
@@ -102,21 +112,14 @@ transform with no test covering it. Verifying the plan is how that was found.
       **HTTP 200**; it now returns **422** with the outcome. The open half is
       `fhir_r4_mapping`, not fhirant: whether `Builder.build()` should throw a
       null-check error at all, or name the unset required element.
-- [ ] **A profiled or logical-model target** — `structure.url` is
-      `canonical(StructureDefinition)`, so
-      `.../StructureDefinition/us-core-patient` is a legal target and this
-      server returns 400 for it. The fix is to resolve the target
-      StructureDefinition and read its `type` element, which needs the registry
-      the next item is about. Pinned by a test so it fails loudly when fixed.
+- [ ] **A canonical the server does not hold** — resolution falls back to the
+      last path segment of the URL, which is right for a base FHIR canonical
+      and wrong for an unheld profile, so the caller gets a 400 naming what
+      could not be resolved rather than a guessed type. Deviation, labelled in
+      the code. The cure is to POST the StructureDefinition first.
 - [ ] **Several target structures** — `structure` is `0..*`. The handler takes
       the first `mode = target` entry and ignores any others. No spec rule
       found either way; recorded rather than assumed correct.
-- [ ] **`SimpleResourceCache` stubs** — `getStructureDefinition`,
-      `getStructureDefinitions`, `getResourceMap`, `getResourceNames`,
-      `getCodeSystem` and `client` all throw `UnimplementedError`. Not reached
-      by the transforms tested above, but `WorkerContext.fetchTypeDefinition`
-      calls `getStructureDefinition`, so a map needing element resolution
-      across types will hit it. Not yet measured.
 
 ## Testing Gaps
 
@@ -157,6 +160,12 @@ transform with no test covering it. Verifying the plan is how that was found.
 
 ## Flaky
 
+- [x] **`backup_crypto_test.dart` "no patient data appears in the envelope"**
+      — searched the whole envelope for the patient id `p1`. The envelope is
+      mostly random base64, so two characters occur by chance: **measured 15
+      hits in 200 encryptions, 7.5%**, on a test whose job is to say whether
+      patient data escaped. Id lengthened to `pat-9f3c2a71-leak-canary`,
+      0 in 200. Fixed 2026-08-29.
 - [ ] **`export_integration_test.dart` "Cancel export DELETE cancels and
       cleans up"** — failed once in a full-suite run on 2026-08-29 with
       "Export job did not complete within max attempts", then passed 3/3 run
@@ -169,7 +178,7 @@ Whole suites, no file arguments. `dart analyze` clean in all five packages.
 
 | package | runner | tests |
 |---|---|---|
-| `fhirant_server` | `dart test` | 714 |
+| `fhirant_server` | `dart test` | 716 |
 | `fhirant_db` | `dart test` | 110 |
 | `fhirant` | `flutter test` | 33 |
 | `fhirant_secure_storage` | `flutter test` | 11 |
