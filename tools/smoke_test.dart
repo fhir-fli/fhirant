@@ -1,5 +1,10 @@
 // Smoke test script for FHIRant server.
 //
+// Printing is this script's entire output: it is run from a terminal and
+// read there, so avoid_print is off for the file rather than routed
+// through a logger nobody would see.
+// ignore_for_file: avoid_print
+//
 // Usage:
 //   dart run tools/smoke_test.dart [base-url] [--auth]
 //
@@ -102,8 +107,10 @@ Future<void> _testHealthAndMetadata() async {
   // GET /health
   final health = await _request('GET', '/health');
   _check('GET /health -> 200', health.status == 200, 'got ${health.status}');
-  _check('GET /health body has "status"',
-      health.body is Map && (health.body as Map).containsKey('status'));
+  _check(
+    'GET /health body has "status"',
+    health.body is Map && (health.body as Map).containsKey('status'),
+  );
 
   // GET /metadata
   final meta = await _request('GET', '/metadata');
@@ -116,8 +123,11 @@ Future<void> _testHealthAndMetadata() async {
 
   // GET /.well-known/smart-configuration
   final smart = await _request('GET', '/.well-known/smart-configuration');
-  _check('GET /.well-known/smart-configuration -> 200', smart.status == 200,
-      'got ${smart.status}');
+  _check(
+    'GET /.well-known/smart-configuration -> 200',
+    smart.status == 200,
+    'got ${smart.status}',
+  );
 }
 
 Future<void> _testCrud() async {
@@ -136,7 +146,10 @@ Future<void> _testCrud() async {
   };
   final created = await _request('POST', '/Patient', body: patient);
   _check(
-      'POST /Patient -> 201', created.status == 201, 'got ${created.status}');
+    'POST /Patient -> 201',
+    created.status == 201,
+    'got ${created.status}',
+  );
   final id = created.body is Map ? (created.body as Map)['id'] : null;
   _check('POST /Patient body has id', id != null);
   if (id == null) return; // cannot continue without id
@@ -160,7 +173,10 @@ Future<void> _testCrud() async {
   ];
   final putRes = await _request('PUT', '/Patient/$id', body: updated);
   _check(
-      'PUT /Patient/$id -> 200', putRes.status == 200, 'got ${putRes.status}');
+    'PUT /Patient/$id -> 200',
+    putRes.status == 200,
+    'got ${putRes.status}',
+  );
 
   // GET /Patient/<id> verify update
   final verify = await _request('GET', '/Patient/$id');
@@ -169,13 +185,19 @@ Future<void> _testCrud() async {
 
   // DELETE /Patient/<id>
   final del = await _request('DELETE', '/Patient/$id');
-  _check('DELETE /Patient/$id -> 200 or 204',
-      del.status == 200 || del.status == 204, 'got ${del.status}');
+  _check(
+    'DELETE /Patient/$id -> 200 or 204',
+    del.status == 200 || del.status == 204,
+    'got ${del.status}',
+  );
 
   // GET /Patient/<id> after delete -> 410 or 404
   final gone = await _request('GET', '/Patient/$id');
-  _check('GET /Patient/$id after delete -> 410 or 404',
-      gone.status == 410 || gone.status == 404, 'got ${gone.status}');
+  _check(
+    'GET /Patient/$id after delete -> 410 or 404',
+    gone.status == 410 || gone.status == 404,
+    'got ${gone.status}',
+  );
 
   // Remove from cleanup since already deleted
   _cleanupIds.remove(id.toString());
@@ -196,15 +218,19 @@ Future<void> _testSearch() async {
   // Create 3 patients and 3 observations with different codes
   final patientIds = <String>[];
   for (var i = 1; i <= 3; i++) {
-    final res = await _request('POST', '/Patient', body: {
-      'resourceType': 'Patient',
-      'name': [
-        {
-          'family': 'SearchTest$i',
-          'given': ['Patient$i'],
-        }
-      ],
-    });
+    final res = await _request(
+      'POST',
+      '/Patient',
+      body: {
+        'resourceType': 'Patient',
+        'name': [
+          {
+            'family': 'SearchTest$i',
+            'given': ['Patient$i'],
+          }
+        ],
+      },
+    );
     if (res.status == 201 && res.body is Map) {
       final pid = (res.body as Map)['id']?.toString();
       if (pid != null) {
@@ -228,7 +254,7 @@ Future<void> _testSearch() async {
             'code': code,
             'display': 'Smoke Test Code $i',
           }
-        ]
+        ],
       },
       'subject': {
         'reference': 'Patient/${patientIds[i]}',
@@ -245,7 +271,10 @@ Future<void> _testSearch() async {
   // GET /Observation -> Bundle with entries
   final search = await _request('GET', '/Observation');
   _check(
-      'GET /Observation -> 200', search.status == 200, 'got ${search.status}');
+    'GET /Observation -> 200',
+    search.status == 200,
+    'got ${search.status}',
+  );
   _check(
     'GET /Observation returns Bundle',
     search.body is Map && (search.body as Map)['resourceType'] == 'Bundle',
@@ -253,8 +282,11 @@ Future<void> _testSearch() async {
 
   // GET /Observation?code=smoke-test-code-0 -> filtered
   final filtered = await _request('GET', '/Observation?code=smoke-test-code-0');
-  _check('GET /Observation?code=smoke-test-code-0 -> 200',
-      filtered.status == 200, 'got ${filtered.status}');
+  _check(
+    'GET /Observation?code=smoke-test-code-0 -> 200',
+    filtered.status == 200,
+    'got ${filtered.status}',
+  );
   if (filtered.body is Map) {
     final entries = (filtered.body as Map)['entry'] as List?;
     _check(
@@ -266,8 +298,11 @@ Future<void> _testSearch() async {
 
   // GET /Patient?_elements=name -> SUBSETTED tag
   final elements = await _request('GET', '/Patient?_elements=name');
-  _check('GET /Patient?_elements=name -> 200', elements.status == 200,
-      'got ${elements.status}');
+  _check(
+    'GET /Patient?_elements=name -> 200',
+    elements.status == 200,
+    'got ${elements.status}',
+  );
   if (elements.body is Map) {
     final entries = (elements.body as Map)['entry'] as List?;
     if (entries != null && entries.isNotEmpty) {
@@ -331,8 +366,11 @@ Future<void> _testBundles() async {
   };
 
   final res = await _request('POST', '/', body: bundle);
-  _check('POST / transaction Bundle -> 200', res.status == 200,
-      'got ${res.status}');
+  _check(
+    'POST / transaction Bundle -> 200',
+    res.status == 200,
+    'got ${res.status}',
+  );
   _check(
     'Response is a Bundle',
     res.body is Map && (res.body as Map)['resourceType'] == 'Bundle',
@@ -341,8 +379,11 @@ Future<void> _testBundles() async {
   // Verify both patients created
   if (res.body is Map) {
     final entries = (res.body as Map)['entry'] as List?;
-    _check('Response Bundle has 2 entries',
-        entries != null && entries.length == 2, 'got ${entries?.length ?? 0}');
+    _check(
+      'Response Bundle has 2 entries',
+      entries != null && entries.length == 2,
+      'got ${entries?.length ?? 0}',
+    );
 
     // Track IDs for cleanup
     if (entries != null) {
@@ -364,15 +405,19 @@ Future<void> _testHistory() async {
   _group('Group 5: History');
 
   // Create a patient
-  final created = await _request('POST', '/Patient', body: {
-    'resourceType': 'Patient',
-    'name': [
-      {
-        'family': 'HistoryTest',
-        'given': ['V1']
-      },
-    ],
-  });
+  final created = await _request(
+    'POST',
+    '/Patient',
+    body: {
+      'resourceType': 'Patient',
+      'name': [
+        {
+          'family': 'HistoryTest',
+          'given': ['V1'],
+        },
+      ],
+    },
+  );
   if (created.status != 201 || created.body is! Map) {
     _check('Create patient for history test', false, 'got ${created.status}');
     return;
@@ -390,7 +435,7 @@ Future<void> _testHistory() async {
   v1['name'] = [
     {
       'family': 'HistoryTest',
-      'given': ['V2']
+      'given': ['V2'],
     },
   ];
   await _request('PUT', '/Patient/$id', body: v1);
@@ -402,7 +447,7 @@ Future<void> _testHistory() async {
     v2['name'] = [
       {
         'family': 'HistoryTest',
-        'given': ['V3']
+        'given': ['V3'],
       },
     ];
     await _request('PUT', '/Patient/$id', body: v2);
@@ -410,8 +455,11 @@ Future<void> _testHistory() async {
 
   // GET /Patient/<id>/_history
   final history = await _request('GET', '/Patient/$id/_history');
-  _check('GET /Patient/$id/_history -> 200', history.status == 200,
-      'got ${history.status}');
+  _check(
+    'GET /Patient/$id/_history -> 200',
+    history.status == 200,
+    'got ${history.status}',
+  );
   if (history.body is Map) {
     final entries = (history.body as Map)['entry'] as List?;
     _check(
@@ -426,8 +474,8 @@ Future<void> _testBackupRestore() async {
   _group('Group 6: Backup/Restore');
 
   // POST /$backup
-  final backup = await _request('POST', '/\$backup');
-  _check('POST /\$backup -> 200', backup.status == 200, 'got ${backup.status}');
+  final backup = await _request('POST', r'/$backup');
+  _check(r'POST /$backup -> 200', backup.status == 200, 'got ${backup.status}');
   _check(
     'Backup returns a Bundle',
     backup.body is Map && (backup.body as Map)['resourceType'] == 'Bundle',
@@ -445,16 +493,19 @@ Future<void> _testBackupRestore() async {
           'name': [
             {
               'family': 'RestoreTest',
-              'given': ['Restored']
+              'given': ['Restored'],
             },
           ],
         },
       },
     ],
   };
-  final restore = await _request('POST', '/\$restore', body: restoreBundle);
+  final restore = await _request('POST', r'/$restore', body: restoreBundle);
   _check(
-      'POST /\$restore -> 200', restore.status == 200, 'got ${restore.status}');
+    r'POST /$restore -> 200',
+    restore.status == 200,
+    'got ${restore.status}',
+  );
   _check(
     'Restore returns OperationOutcome',
     restore.body is Map &&
@@ -475,11 +526,15 @@ Future<void> _testAuth() async {
   final password = 'SmokeT3st!Pw_$ts';
 
   // POST /auth/register
-  final reg = await _request('POST', '/auth/register', body: {
-    'username': username,
-    'password': password,
-    'role': 'clinician',
-  });
+  final reg = await _request(
+    'POST',
+    '/auth/register',
+    body: {
+      'username': username,
+      'password': password,
+      'role': 'clinician',
+    },
+  );
   // First user gets 201 (bootstrap), subsequent may need admin token
   _check(
     'POST /auth/register -> 201 or 403',
@@ -488,16 +543,20 @@ Future<void> _testAuth() async {
   );
 
   if (reg.status != 201) {
-    print('  ${_yellow}[SKIP]$_reset Cannot test auth further -- '
+    print('  $_yellow[SKIP]$_reset Cannot test auth further -- '
         'registration requires admin token (users already exist)');
     return;
   }
 
   // POST /auth/login
-  final login = await _request('POST', '/auth/login', body: {
-    'username': username,
-    'password': password,
-  });
+  final login = await _request(
+    'POST',
+    '/auth/login',
+    body: {
+      'username': username,
+      'password': password,
+    },
+  );
   _check('POST /auth/login -> 200', login.status == 200, 'got ${login.status}');
   final token =
       login.body is Map ? (login.body as Map)['token']?.toString() : null;
@@ -506,8 +565,11 @@ Future<void> _testAuth() async {
   if (token != null) {
     // GET /Patient with Bearer token
     final authed = await _request('GET', '/Patient', token: token);
-    _check('GET /Patient with token -> 200', authed.status == 200,
-        'got ${authed.status}');
+    _check(
+      'GET /Patient with token -> 200',
+      authed.status == 200,
+      'got ${authed.status}',
+    );
   }
 
   // GET /Patient without token (should be 401 in non-dev mode)
@@ -516,7 +578,7 @@ Future<void> _testAuth() async {
   if (noAuth.status == 401) {
     _check('GET /Patient without token -> 401 (non-dev mode)', true);
   } else {
-    print('  ${_yellow}[INFO]$_reset GET /Patient without token returned '
+    print('  $_yellow[INFO]$_reset GET /Patient without token returned '
         '${noAuth.status} (server may be in dev mode)');
   }
 }
@@ -528,7 +590,9 @@ Future<void> _testAuth() async {
 Future<void> _cleanup() async {
   if (_cleanupIds.isEmpty) return;
   print(
-      '\n${_bold}Cleaning up ${_cleanupIds.length} test resource(s)...$_reset');
+    '\n${_bold}Cleaning up ${_cleanupIds.length} '
+    'test resource(s)...$_reset',
+  );
   for (final id in _cleanupIds) {
     try {
       await _request('DELETE', '/Patient/$id');
@@ -544,8 +608,8 @@ Future<void> _cleanup() async {
 
 Future<void> main(List<String> args) async {
   // Parse arguments
-  String baseUrl = 'http://localhost:8080';
-  bool runAuth = false;
+  var baseUrl = 'http://localhost:8080';
+  var runAuth = false;
 
   for (final arg in args) {
     if (arg == '--auth') {
@@ -568,7 +632,9 @@ Future<void> main(List<String> args) async {
   print('${_bold}FHIRant Smoke Test$_reset');
   print('Target: $baseUrl');
   print(
-      'Auth tests: ${runAuth ? "enabled" : "disabled (use --auth to enable)"}');
+    'Auth tests: '
+    '${runAuth ? "enabled" : "disabled (use --auth to enable)"}',
+  );
 
   // Check connectivity first
   try {
@@ -616,7 +682,8 @@ Future<void> main(List<String> args) async {
   final total = _passed + _failed;
   print('\n$_bold--- Summary ---$_reset');
   print('$_green$_passed passed$_reset, '
-      '${_failed > 0 ? '$_red$_failed failed$_reset' : '${_green}0 failed$_reset'} '
+      '${_failed > 0 ? '$_red$_failed failed$_reset' : ''
+          '${_green}0 failed$_reset'} '
       '($total total)');
 
   if (_failures.isNotEmpty) {
