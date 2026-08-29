@@ -213,10 +213,19 @@ data or passphrase appears in it, that it carries no key material, that a wrong
 passphrase and a flipped ciphertext byte and a substituted salt all fail the
 authentication tag, and that salt and nonce are never reused across exports.
 
-Still open, deliberately: **the app has no backup UI yet.** The operation is
-correct and reachable over the API; putting it behind a button, with whatever
-passphrase-entry flow makes sense for a clinician in a tent, is a separate
-piece of work.
+**The app can now do this.** `BackupCard` on the dashboard exports and
+restores directly against the database, so it needs no running server, no
+network and no login. The Bundle assembly and restore loop moved out of the
+handler into `BackupService`, which both the card and the handler call, so
+there is one implementation rather than two.
+
+Choosing a passphrase requires confirmation and twelve characters: a mistyped
+passphrase produces a file nobody can ever open, and nothing later can detect
+that. Restore asks for a passphrase only when the file is actually an
+envelope, since a plain FHIR Bundle from elsewhere still imports. The export
+goes to the system share sheet, which is what lets it reach another phone, an
+SD card or a laptop; writing to app storage alone would leave it on the device
+that is failing.
 
 ### F5 — ✅ CLOSED — Auth-off default is a settled decision, not an open item
 
@@ -539,8 +548,10 @@ Worth recording so it does not get "hardened" into something worse:
    deny-by-default, with `scope_enforcement_test.dart` inverted from evidence into
    17 regression guards.
 2. ~~F4 with F3~~ — **done**. The passphrase-wrapped export and TLS with a
-   pinnable identity. Two follow-ups deliberately left: no client pins the
-   fingerprint yet, and the app has no backup UI.
+   pinnable identity. One follow-up left: no client pins the
+   fingerprint yet. That is work for whatever device joins, not for this
+   server, which already presents a pinnable identity and shows the
+   fingerprint with a pairing QR. The backup UI now exists.
 3. ~~F5~~ — **closed**. Settled: off through testing, flipped at deployment.
    Not an open item.
 4. ~~F6~~ — **done**. Query values redacted and path identifiers reduced to
