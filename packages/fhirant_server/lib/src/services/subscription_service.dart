@@ -38,6 +38,7 @@ class SubscriptionService {
     http.Client? httpClient,
     DateTime Function()? clock,
     WebSocketSubscriptions? websockets,
+    this.maxConsecutiveFailures = 5,
   })  : _http = httpClient ?? http.Client(),
         websockets = websockets ?? WebSocketSubscriptions(),
         _clock = clock ?? DateTime.now;
@@ -49,6 +50,34 @@ class SubscriptionService {
 
   /// The sockets clients have bound, for the websocket channel.
   final WebSocketSubscriptions websockets;
+
+  /// Consecutive delivery failures before a subscription is switched `off`.
+  ///
+  /// 🛑 **This number is fhirant's policy, not a specification rule.** R4
+  /// subscription.html delegates it: "The server **may** retry the notification
+  /// a fixed number of times", and "If a subscription fails consistently a
+  /// server **may** choose set the subscription status to off and stop trying
+  /// to send notifications." There is no mandated count, interval or
+  /// escalation.
+  ///
+  /// Five is chosen to ride out a subscriber restarting or a phone changing
+  /// network, while stopping a permanently dead endpoint from being dialled on
+  /// every single write. Configurable because the right number depends on the
+  /// deployment, not on the standard.
+  final int maxConsecutiveFailures;
+
+  /// Where the consecutive-failure count is kept.
+  ///
+  /// R4 has no element for it: `Subscription.error` is `0..1` free text, "a
+  /// record of the LAST error". An extension is the mechanism the standard
+  /// provides for server data it does not itself model, and this one is under
+  /// our own namespace so it can never be mistaken for an HL7 extension.
+  /// It persists in the stored resource on purpose — an in-memory counter
+  /// would reset every time the phone backgrounds the server, so a dead
+  /// endpoint would never reach the threshold.
+  static const failureCountExtensionUrl =
+      'http://fhirant.fhir-fli.dev/StructureDefinition/'
+      'subscription-consecutive-failures';
 
   /// Channel types this server delivers to. A subscription asking for anything
   /// else is refused at activation rather than accepted and silently ignored,
@@ -170,10 +199,16 @@ class SubscriptionService {
   /// subscription itself, which is what `Subscription.error` is for.
   Future<void> onResourceChanged(fhir.Resource changed) async {
     try {
+      // `error` is deliverable, not terminal. R4 subscription.html: "The
+      // server may retry the notification a fixed number of times", and "If
+      // the notification succeeds, the server should update the status to
+      // active again" — neither is reachable if a subscription in `error` is
+      // never dialled again. Only `off` (given up) and `requested` (not yet
+      // accepted by the server) are excluded.
       final stored = await db.search(
         resourceType: fhir.R4ResourceType.Subscription,
         searchParameters: {
-          'status': ['active'],
+          'status': ['active', 'error'],
         },
       );
       for (final resource in stored.whereType<fhir.Subscription>()) {
@@ -234,25 +269,75 @@ class SubscriptionService {
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        // A subscription that had failed and now succeeds returns to active,
-        // which is the "can retry or revert to active" the status list allows.
-        if (subscription.error != null) {
-          await db.saveResource(_withStatus(subscription, 'active', null));
-        }
+        await _recordSuccess(subscription);
         return;
       }
-      await db.saveResource(
-        _withStatus(
-          subscription,
-          'error',
-          'delivery to $endpoint returned ${response.statusCode}',
-        ),
+      await _recordFailure(
+        subscription,
+        'delivery to $endpoint returned ${response.statusCode}',
       );
     } catch (e) {
-      await db.saveResource(
-        _withStatus(subscription, 'error', 'delivery to $endpoint failed: $e'),
-      );
+      await _recordFailure(subscription, 'delivery to $endpoint failed: $e');
     }
+  }
+
+  /// "If the notification succeeds, the server should update the status to
+  /// active again." The failure count goes back to zero with it, so five
+  /// failures spread over a year never add up to a shutdown.
+  Future<void> _recordSuccess(fhir.Subscription subscription) async {
+    if (subscription.error == null && _failureCount(subscription) == 0) {
+      return;
+    }
+    await db.saveResource(
+      _withFailureCount(_withStatus(subscription, 'active', null), 0),
+    );
+  }
+
+  /// "If the notification fails, the server should set the status to error and
+  /// mark the error in the resource", and after
+  /// [maxConsecutiveFailures] of them this server stops trying.
+  Future<void> _recordFailure(
+    fhir.Subscription subscription,
+    String message,
+  ) async {
+    final failures = _failureCount(subscription) + 1;
+    final givenUp = failures >= maxConsecutiveFailures;
+    final withStatus = _withStatus(
+      subscription,
+      givenUp ? 'off' : 'error',
+      givenUp
+          ? '$message (switched off after $failures consecutive failures)'
+          : message,
+    );
+    await db.saveResource(_withFailureCount(withStatus, failures));
+  }
+
+  int _failureCount(fhir.Subscription subscription) {
+    for (final extension in subscription.extension_ ?? <fhir.FhirExtension>[]) {
+      if (extension.url.valueString == failureCountExtensionUrl) {
+        return (extension.valueX as fhir.FhirInteger?)?.valueInt ?? 0;
+      }
+    }
+    return 0;
+  }
+
+  fhir.Subscription _withFailureCount(
+    fhir.Subscription subscription,
+    int failures,
+  ) {
+    final others = (subscription.extension_ ?? <fhir.FhirExtension>[])
+        .where((e) => e.url.valueString != failureCountExtensionUrl)
+        .toList();
+    return subscription.copyWith(
+      extension_: [
+        ...others,
+        if (failures > 0)
+          fhir.FhirExtension(
+            url: fhir.FhirString(failureCountExtensionUrl),
+            valueX: fhir.FhirInteger(failures),
+          ),
+      ],
+    );
   }
 
   /// The extra headers a subscription asks to be sent.

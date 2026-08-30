@@ -100,9 +100,20 @@ stops being true.
       never validated, which the single-resource endpoints do not allow. Create,
       update and patch entries all go through activation; a patch because it can
       change the criteria or the channel, so the server has to decide again.
-- [ ] **No retry, and no automatic `off`** — a failed delivery sets `error`,
-      and the next matching write tries again. The spec permits a server to set
-      `off` for a consistently failing subscription; this never does.
+- [x] **Retry and automatic `off`** — closed 2026-08-29, and it uncovered a
+      worse bug: `error` was **terminal**. `onResourceChanged` searched only for
+      `status=active`, so the first failed delivery silenced a subscription for
+      good while stamping it with a status the spec says can revert to active.
+      Deliverable statuses are now `active` **and** `error`; only `off` (given
+      up) and `requested` (not yet accepted) are excluded.
+      🛑 **The retry numbers are fhirant policy, not spec rules.** R4
+      subscription.html delegates it: the server "**may** retry the
+      notification a fixed number of times" and "**may** choose set the
+      subscription status to off". Five consecutive failures switches it off,
+      configurable, and a success resets the count so failures spread over time
+      never add up. The count lives in an extension under our own namespace
+      because R4 models no element for it and an in-memory counter would reset
+      every time the phone backgrounds the server.
 - [ ] **`Subscription.end` is only checked when a write happens** — nothing
       sweeps expired subscriptions in the background.
 - [ ] **Only rest-hook and websocket** — email, sms and message are refused at
@@ -210,7 +221,7 @@ Whole suites, no file arguments. `dart analyze` clean in all five packages.
 
 | package | runner | tests |
 |---|---|---|
-| `fhirant_server` | `dart test` | 753 |
+| `fhirant_server` | `dart test` | 758 |
 | `fhirant_db` | `dart test` | 110 |
 | `fhirant` | `flutter test` | 33 |
 | `fhirant_secure_storage` | `flutter test` | 11 |

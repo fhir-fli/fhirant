@@ -275,6 +275,115 @@ void main() {
       expect(stored?.error, isNull);
     });
   });
+  group('retry and giving up are fhirant policy, not spec rules', () {
+    // R4 subscription.html delegates both: "The server may retry the
+    // notification a fixed number of times", and "If a subscription fails
+    // consistently a server may choose set the subscription status to off".
+    // These tests pin fhirant's choice, not a requirement of the standard.
+    Future<fhir.Subscription?> stored() async =>
+        await db.getResource(fhir.R4ResourceType.Subscription, 's1')
+            as fhir.Subscription?;
+
+    test('a failure short of the threshold stays in error and keeps trying',
+        () async {
+      recorder.status = 500;
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+
+      await service.onResourceChanged(observation());
+      expect((await stored())?.status.valueString, equals('error'));
+
+      // Delivered to again on the next write, which is the point of `error`
+      // rather than `off`. Before this was fixed the retry never happened:
+      // onResourceChanged searched only for `active`, so the first failure
+      // silenced a subscription permanently while claiming a status the spec
+      // says can revert to active.
+      await service.onResourceChanged(observation());
+      expect(recorder.sent, hasLength(2));
+    });
+
+    test('consecutive failures switch it off and delivery stops', () async {
+      recorder.status = 500;
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+
+      for (var i = 0; i < 5; i++) {
+        await service.onResourceChanged(observation());
+      }
+
+      final off = await stored();
+      expect(off?.status.valueString, equals('off'));
+      expect(off?.error?.valueString, contains('5 consecutive failures'));
+
+      final attempts = recorder.sent.length;
+      await service.onResourceChanged(observation());
+      expect(
+        recorder.sent,
+        hasLength(attempts),
+        reason: 'an off subscription is not delivered to again',
+      );
+    });
+
+    test('the threshold is configurable, because the spec sets no number',
+        () async {
+      final strict = SubscriptionService(
+        db,
+        httpClient: recorder.client,
+        maxConsecutiveFailures: 2,
+      );
+      recorder.status = 500;
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+
+      await strict.onResourceChanged(observation());
+      expect((await stored())?.status.valueString, equals('error'));
+      await strict.onResourceChanged(observation());
+      expect((await stored())?.status.valueString, equals('off'));
+    });
+
+    test(
+        'a success resets the count, so failures spread over time never add up',
+        () async {
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+
+      recorder.status = 500;
+      for (var i = 0; i < 4; i++) {
+        await service.onResourceChanged(observation());
+      }
+      expect((await stored())?.status.valueString, equals('error'));
+
+      recorder.status = 200;
+      await service.onResourceChanged(observation());
+      final recovered = await stored();
+      expect(recovered?.status.valueString, equals('active'));
+      expect(recovered?.error, isNull);
+
+      // Four more failures must not tip it over: the count restarted.
+      recorder.status = 500;
+      for (var i = 0; i < 4; i++) {
+        await service.onResourceChanged(observation());
+      }
+      expect((await stored())?.status.valueString, equals('error'));
+    });
+
+    test('the count lives in an extension under our own namespace', () async {
+      // R4 has no element for it, and the URL must never be mistakable for an
+      // HL7 one.
+      recorder.status = 500;
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+      await service.onResourceChanged(observation());
+
+      final extension = (await stored())!.extension_!.single;
+      expect(
+        extension.url.valueString,
+        equals(SubscriptionService.failureCountExtensionUrl),
+      );
+      expect(extension.url.valueString, startsWith('http://fhirant.'));
+      expect((extension.valueX! as fhir.FhirInteger).valueInt, equals(1));
+    });
+  });
 }
 
 class SocketFailure implements Exception {
