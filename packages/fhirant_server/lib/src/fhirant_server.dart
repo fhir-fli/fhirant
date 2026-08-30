@@ -79,6 +79,10 @@ class FhirAntServer {
   final DateTime _startTime;
   HttpServer? _server;
   Timer? _cleanupTimer;
+
+  /// The subscription service the router built, so the hourly cleanup can
+  /// sweep finished subscriptions with it.
+  SubscriptionService? _subscriptions;
   bool _isRunning = false;
   final StreamController<RequestLogEntry> _requestLogController =
       StreamController<RequestLogEntry>.broadcast();
@@ -99,6 +103,7 @@ class FhirAntServer {
     final websockets = WebSocketSubscriptions();
     final subscriptions =
         SubscriptionService(dbInterface, websockets: websockets);
+    _subscriptions = subscriptions;
     final router = Router()
       // Auth routes
       ..get(
@@ -574,12 +579,18 @@ class FhirAntServer {
     FhirantLogging().logInfo('Server stopped');
   }
 
-  /// Start periodic cleanup of expired revoked tokens (every hour).
+  /// Start periodic cleanup of expired revoked tokens and finished
+  /// subscriptions (every hour).
   void _startCleanupTimer() {
-    _cleanupTimer = Timer.periodic(
-      const Duration(hours: 1),
-      (_) => dbInterface.cleanupRevokedTokens(),
-    );
+    _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) async {
+      await dbInterface.cleanupRevokedTokens();
+      // R4 calls Subscription.end "the time for the server to turn the
+      // subscription off". Delivery already honours it, but without a sweep
+      // the STORED status stays `active` until some unrelated write triggers
+      // an evaluation, and a client reading the resource on a quiet server is
+      // told `active` about a subscription that is finished.
+      await _subscriptions?.sweepExpired();
+    });
   }
 
   /// Middleware that bypasses authentication in dev mode.

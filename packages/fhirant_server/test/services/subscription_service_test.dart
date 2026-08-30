@@ -384,6 +384,65 @@ void main() {
       expect((extension.valueX! as fhir.FhirInteger).valueInt, equals(1));
     });
   });
+
+  group('Subscription.end is the time to turn it off', () {
+    test('delivery already stops at end, before the sweep exists', () async {
+      // Checked first so the sweep is not credited with something that was
+      // already true: onResourceChanged tests `end` before it matches.
+      await db.saveResource(
+        subscription(status: 'active', end: DateTime.utc(2020)),
+      );
+      await db.saveResource(observation());
+
+      await service.onResourceChanged(observation());
+
+      expect(recorder.sent, isEmpty);
+    });
+
+    test('the sweep switches an expired subscription off with no write',
+        () async {
+      // This is what the sweep adds. Without it the stored status stays
+      // `active` until some unrelated write triggers an evaluation, and a
+      // client reading the resource is told `active` about a finished
+      // subscription.
+      await db.saveResource(
+        subscription(status: 'active', end: DateTime.utc(2020)),
+      );
+
+      expect(await service.sweepExpired(), equals(1));
+
+      final stored = await db.getResource(
+        fhir.R4ResourceType.Subscription,
+        's1',
+      ) as fhir.Subscription?;
+      expect(stored?.status.valueString, equals('off'));
+    });
+
+    test('a subscription with no end, or one still in the future, is left',
+        () async {
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(
+        subscription(id: 's2', status: 'active', end: DateTime.utc(2999)),
+      );
+
+      expect(await service.sweepExpired(), equals(0));
+
+      for (final id in ['s1', 's2']) {
+        final stored = await db.getResource(
+          fhir.R4ResourceType.Subscription,
+          id,
+        ) as fhir.Subscription?;
+        expect(stored?.status.valueString, equals('active'), reason: id);
+      }
+    });
+
+    test('one already off is not swept again', () async {
+      await db.saveResource(
+        subscription(status: 'off', end: DateTime.utc(2020)),
+      );
+      expect(await service.sweepExpired(), equals(0));
+    });
+  });
 }
 
 class SocketFailure implements Exception {

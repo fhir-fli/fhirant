@@ -114,8 +114,15 @@ stops being true.
       never add up. The count lives in an extension under our own namespace
       because R4 models no element for it and an in-memory counter would reset
       every time the phone backgrounds the server.
-- [ ] **`Subscription.end` is only checked when a write happens** — nothing
-      sweeps expired subscriptions in the background.
+- [x] **`Subscription.end` is swept** — closed 2026-08-29 by hanging
+      `sweepExpired()` on the hourly cleanup timer that already prunes revoked
+      tokens, rather than adding a second timer. ⚠️ Correcting an earlier note:
+      an expired subscription **never delivered**; `onResourceChanged` checks
+      `end` before it matches. What was wrong was the **stored status**, which
+      stayed `active` until some unrelated write triggered an evaluation, so a
+      client reading the resource on a quiet server was told `active` about a
+      finished subscription. R4 calls `end` "the time for the server to turn
+      the subscription off", which is an instruction to the server.
 - [ ] **Only rest-hook and websocket** — email, sms and message are refused at
       activation rather than silently accepted.
 
@@ -221,7 +228,7 @@ Whole suites, no file arguments. `dart analyze` clean in all five packages.
 
 | package | runner | tests |
 |---|---|---|
-| `fhirant_server` | `dart test` | 758 |
+| `fhirant_server` | `dart test` | 762 |
 | `fhirant_db` | `dart test` | 110 |
 | `fhirant` | `flutter test` | 33 |
 | `fhirant_secure_storage` | `flutter test` | 11 |

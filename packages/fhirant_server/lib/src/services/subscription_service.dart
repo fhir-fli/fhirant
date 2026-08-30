@@ -228,6 +228,40 @@ class SubscriptionService {
     }
   }
 
+  /// Switches off every subscription whose `Subscription.end` has passed.
+  ///
+  /// R4 defines `end` as "the time for the server to turn the subscription
+  /// off", which is an instruction to the server, not merely a filter to apply
+  /// when convenient. Delivery already respects it: [onResourceChanged] checks
+  /// before it matches, so an expired subscription never receives a
+  /// notification. What this fixes is the STORED STATUS, which otherwise stays
+  /// `active` until some unrelated write happens to trigger an evaluation. On
+  /// a quiet server a client reading the resource would be told `active`
+  /// indefinitely about a subscription that is finished.
+  ///
+  /// Returns how many were switched off.
+  Future<int> sweepExpired() async {
+    var switchedOff = 0;
+    try {
+      final stored = await db.search(
+        resourceType: fhir.R4ResourceType.Subscription,
+        searchParameters: {
+          'status': ['active', 'error'],
+        },
+      );
+      for (final subscription in stored.whereType<fhir.Subscription>()) {
+        if (!_hasEnded(subscription)) {
+          continue;
+        }
+        await db.saveResource(_withStatus(subscription, 'off', null));
+        switchedOff++;
+      }
+    } catch (e, stack) {
+      FhirantLogging().logError('Subscription sweep failed', e, stack);
+    }
+    return switchedOff;
+  }
+
   /// Sends one notification, and records the outcome on the subscription.
   Future<void> _deliver(
     fhir.Subscription subscription,
