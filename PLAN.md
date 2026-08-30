@@ -47,10 +47,22 @@ transform with no test covering it. Verifying the plan is how that was found.
       the WRONG record. Measured through this server: 7 of 41 queries worked,
       now 41. Fixed in `fhir_r4_db` 0.10.0; this server returns the 400 the
       spec requires for a modifier it cannot support.
-- [ ] **Comma escaping in the query parser** — R4 3.1.1.4.19 makes `\,` a
-      literal comma, and `search_parser.dart` still does a raw
-      `value.split(',')`. The pipe and dollar halves are handled in
-      `fhir_r4_db`; comma splitting happens here, so this half belongs here.
+- [x] **Comma escaping in the query parser** — done 2026-08-30, and not where
+      this entry said it was. Search parameter values are no longer split
+      here at all: `search_parser.dart` passes each repetition on raw, and
+      `fhir_r4_db` splits it with `splitEscaped(value, ',')`
+      (`lib/src/search/search_escaping.dart`), alongside the pipe and dollar
+      halves it already handled. Values compared whole go through
+      `unescapeValue`. Covered end to end through this server by
+      `test/handlers/search_and_or_test.dart` "an escaped comma is one value,
+      not two": an Organization named `Clinic, North Wing` is found by
+      `name=Clinic\, North` and the plain `Clinic` is not.
+      The raw `value.split(',')` calls left in `search_parser.dart` are on
+      `_sort`, `_include`, `_revinclude`, their `:iterate` forms and
+      `_elements`. R4 3.1.1.4.19 puts escaping on "an actual parameter
+      value"; the items in those lists are parameter, element and resource
+      type names, so a literal comma cannot occur in one. No spec rule was
+      found extending escaping to them either way.
 
 ## Content & Format
 
@@ -188,7 +200,19 @@ stops being true.
       `test/key_generation_test.dart` covering `generateSecureRandomKey` and
       `certificateFingerprint`; green under `flutter test` 2026-08-29. Mocking
       `flutter_secure_storage` itself is still not done.
-- [ ] **fhirant_logging tests** — basic smoke tests for log levels and file output
+- [x] **fhirant_logging tests** — 6 tests in
+      `test/fhirant_logging_test.dart`, added 2026-08-30: the three levels and
+      their JSON shape, the error and stack trace fields, a null path writing
+      no file, and re-initialization. The package had none, and writing them
+      found a defect: `initialize()` called `Logger.root.onRecord.listen`
+      without holding the subscription, and `onRecord` is a broadcast stream,
+      so every call added another listener that wrote the same record again.
+      Measured before the fix: the second test in the file already saw each
+      record 3 times and the sixth saw it 10 times. `initialize` now cancels
+      the previous subscription before it subscribes. The app initializes
+      once; the server tests initialize per test in one process, which is
+      where the duplicates were landing, including in the file
+      `log_file_contents_test.dart` reads for finding F6.
 - [ ] **Conformance suite** — automated FHIR Touchstone or official test kit testing
 
 ## Deployment
