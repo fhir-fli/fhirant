@@ -9,23 +9,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # fhirant_server depends on cicada by a path that leaves this repo
-      # (../../../cicada/cicada from packages/fhirant_server). A single
-      # checkout cannot resolve it, so both repos are checked out side by side
-      # and this repo goes in a subdirectory to reproduce the local layout:
-      #
-      #   $GITHUB_WORKSPACE/fhirant/packages/fhirant_server
-      #   $GITHUB_WORKSPACE/cicada/cicada
-      #
-      # actions/checkout refuses a path outside the workspace, so the nesting
-      # is not optional.
+      # One checkout is enough now. fhirant_server used to depend on cicada by
+      # a path leaving this repo, which forced a second checkout beside it and
+      # this repo into a subdirectory; cicada is a git dependency instead, so
+      # `pub get` fetches it at the commit the lock file names.
       - uses: actions/checkout@v4
-        with:
-          path: fhirant
-      - uses: actions/checkout@v4
-        with:
-          repository: fhir-fli/cicada
-          path: cicada
 
       - uses: subosito/flutter-action@v2
         with:
@@ -41,7 +29,6 @@ jobs:
       # how the fhir family shipped a 0.8.0 regression: the failure was in a
       # package that sorts before the one whose tests mattered.
       - name: Format, analyze and test each package
-        working-directory: fhirant
         run: |
           failed=""
           for d in packages/*/; do
@@ -68,8 +55,8 @@ jobs:
                 fi
               done
               $tool analyze
-              # fhirant_logging has no test directory yet. Recorded in PLAN.md
-              # under Testing Gaps; skip rather than fail the job for it.
+              # Every package has tests now. The guard stays so that a package
+              # added later without them does not fail the job for that alone.
               if [ -d test ]; then $tool test; fi
             )
             if [ $? -ne 0 ]; then

@@ -8,8 +8,17 @@ environment:
 
 dependencies:
   args: ^2.7.0
+  # cicada is a separate repository, so this is a git dependency rather than a
+  # path that leaves this one. With the path, a clone of fhirant alone could
+  # not resolve, build or test, and CI had to check this repo out into a
+  # subdirectory with cicada beside it to reproduce the local layout.
+  # To work on cicada and fhirant together, put a pubspec_overrides.yaml here
+  # pointing at your own checkout; it is gitignored.
   cicada:
-    path: ../../../cicada/cicada
+    git:
+      url: https://github.com/fhir-fli/cicada.git
+      path: cicada
+      ref: main
   cql: ^0.6.3
   crypto: ^3.0.3
   dart_jsonwebtoken: ^3.3.1
