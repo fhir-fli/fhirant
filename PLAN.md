@@ -35,11 +35,22 @@ transform with no test covering it. Verifying the plan is how that was found.
       acted on. Optional in R4. (`_filterContains` in
       `terminology_handler.dart` is ValueSet expansion filtering,
       unrelated.)
-- [ ] **Accent normalization** — for string search. R4 search.html: string
-      search "is insensitive to ... accents". Not implemented; there is no
-      TODO in the codebase either, the plan's old note was wrong (grepped
-      accent/diacritic/normaliz case-insensitively across all five packages,
-      2026-08-29).
+- [x] **Accent normalization** — done 2026-08-30 in `fhir_r4_db` 0.10.0, not
+      here. The string index now holds a folded value for the default and
+      `:contains` searches and the verbatim value for `:exact`, so
+      `family=Munoz` finds `Muñoz` and `family:exact=munoz` no longer matches
+      `Munoz`. Schema 5 → 6, index rebuilt from the stored resources on open.
+- [x] **Search modifiers and comparators** — they were unreachable. The engine
+      read both off the END of the value, a syntax FHIR does not have, so
+      `:exact`, `:contains`, `:missing`, date ranges and the rest returned
+      nothing to a conforming client, and a value containing a colon returned
+      the WRONG record. Measured through this server: 7 of 41 queries worked,
+      now 41. Fixed in `fhir_r4_db` 0.10.0; this server returns the 400 the
+      spec requires for a modifier it cannot support.
+- [ ] **Comma escaping in the query parser** — R4 3.1.1.4.19 makes `\,` a
+      literal comma, and `search_parser.dart` still does a raw
+      `value.split(',')`. The pipe and dollar halves are handled in
+      `fhir_r4_db`; comma splitting happens here, so this half belongs here.
 
 ## Content & Format
 
