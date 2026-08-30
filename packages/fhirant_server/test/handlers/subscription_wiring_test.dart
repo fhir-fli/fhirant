@@ -246,4 +246,81 @@ void main() {
     expect(response.statusCode, equals(200));
     expect(sent, isEmpty);
   });
+
+  test('a Subscription created in a Bundle is activated, like a POST is',
+      () async {
+    // Without this a Bundle was a way to store a subscription the server had
+    // never validated, which the single-resource endpoints do not allow.
+    final response = await bundleHandler(
+      Request(
+        'POST',
+        Uri.parse('http://localhost:8080/'),
+        body: jsonEncode({
+          'resourceType': 'Bundle',
+          'type': 'transaction',
+          'entry': [
+            {
+              'resource': {
+                'resourceType': 'Subscription',
+                'id': 'b1',
+                'status': 'requested',
+                'reason': 'test',
+                'criteria': 'Observation',
+                'channel': {
+                  'type': 'rest-hook',
+                  'endpoint': 'https://example.org/hook',
+                },
+              },
+              'request': {'method': 'PUT', 'url': 'Subscription/b1'},
+            },
+          ],
+        }),
+      ),
+      db,
+      subscriptions: subscriptions,
+    );
+
+    expect(response.statusCode, equals(200));
+    final stored = await db.getResource(
+      fhir.R4ResourceType.Subscription,
+      'b1',
+    ) as fhir.Subscription?;
+    expect(stored?.status.valueString, equals('active'));
+  });
+
+  test('a Bundle cannot store a subscription on an unsupported channel',
+      () async {
+    await bundleHandler(
+      Request(
+        'POST',
+        Uri.parse('http://localhost:8080/'),
+        body: jsonEncode({
+          'resourceType': 'Bundle',
+          'type': 'transaction',
+          'entry': [
+            {
+              'resource': {
+                'resourceType': 'Subscription',
+                'id': 'b2',
+                'status': 'requested',
+                'reason': 'test',
+                'criteria': 'Observation',
+                'channel': {'type': 'sms', 'endpoint': 'tel:+15550100'},
+              },
+              'request': {'method': 'PUT', 'url': 'Subscription/b2'},
+            },
+          ],
+        }),
+      ),
+      db,
+      subscriptions: subscriptions,
+    );
+
+    final stored = await db.getResource(
+      fhir.R4ResourceType.Subscription,
+      'b2',
+    ) as fhir.Subscription?;
+    expect(stored?.status.valueString, equals('error'));
+    expect(stored?.error?.valueString, contains('sms'));
+  });
 }

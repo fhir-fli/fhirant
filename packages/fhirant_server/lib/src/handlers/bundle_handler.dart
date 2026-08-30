@@ -93,6 +93,7 @@ Future<Response> _processTransaction(
             baseUrl,
             i,
             urnMap,
+            subscriptions,
           );
           operations.add(operation);
           resultEntries.add(operation.resultEntry);
@@ -178,8 +179,14 @@ Future<Response> _processBatch(
     }
 
     try {
-      final operation =
-          await _processBundleEntry(entry, dbInterface, baseUrl, i, urnMap);
+      final operation = await _processBundleEntry(
+        entry,
+        dbInterface,
+        baseUrl,
+        i,
+        urnMap,
+        subscriptions,
+      );
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
 
@@ -296,6 +303,7 @@ Future<_BundleOperation> _processBundleEntry(
   String baseUrl,
   int entryIndex,
   Map<String, String> urnMap,
+  SubscriptionService subscriptions,
 ) async {
   final req = entry.request!;
   final method = req.method;
@@ -401,7 +409,10 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         resourceJson = _resolveUrnReferences(resourceJson, urnMap);
       }
-      final resourceToSave = fhir.Resource.fromJson(resourceJson).newIdIfNoId();
+      final resourceToSave = await _activated(
+        fhir.Resource.fromJson(resourceJson).newIdIfNoId(),
+        subscriptions,
+      );
 
       final success = await dbInterface.saveResource(resourceToSave);
       if (!success) {
@@ -478,7 +489,8 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         putJson = _resolveUrnReferences(putJson, urnMap);
       }
-      final putResource = fhir.Resource.fromJson(putJson);
+      final putResource =
+          await _activated(fhir.Resource.fromJson(putJson), subscriptions);
 
       final putSuccess = await dbInterface.saveResource(putResource);
       if (!putSuccess) {
@@ -562,7 +574,10 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
-      final patchSuccess = await dbInterface.saveResource(patchedResource);
+      // A patch can change criteria or channel, so the server has to decide
+      // again whether it can honour the subscription.
+      final patchedToSave = await _activated(patchedResource, subscriptions);
+      final patchSuccess = await dbInterface.saveResource(patchedToSave);
       if (!patchSuccess) {
         throw BundleEntryException(
           500,
@@ -645,11 +660,23 @@ Future<_BundleOperation> _processBundleEntry(
   );
 }
 
+/// Lets the server decide a `Subscription`'s status before it is stored.
+///
+/// R4 subscription.html gives the server that call: a client creates one as
+/// `requested`, and the server moves it to `active` or `error`. Without this a
+/// Bundle was a way to store a subscription the server had never validated,
+/// which the single-resource endpoints do not allow. Any other resource passes
+/// through untouched.
+Future<fhir.Resource> _activated(
+  fhir.Resource resource,
+  SubscriptionService subscriptions,
+) async =>
+    resource is fhir.Subscription
+        ? await subscriptions.activate(resource)
+        : resource;
+
 /// Sends notifications for the writes a Bundle made, once they are durable.
 ///
-/// A create or update of a Subscription itself is not treated specially here:
-/// the entry path stores what the client sent, and activation happens on the
-/// single-resource endpoints. Recorded in PLAN.md rather than left implicit.
 Future<void> _notify(
   SubscriptionService subscriptions,
   List<_BundleOperation> operations,

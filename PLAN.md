@@ -95,9 +95,11 @@ stops being true.
       create, update and patch entries of a Bundle. For a transaction they are
       sent **after the commit**, because a transaction is all-or-nothing and a
       rest-hook POST cannot be recalled. A DELETE sends nothing, per the spec.
-- [ ] **A Subscription created through a Bundle entry is not activated** — it
-      is stored as the client sent it. The single-resource endpoints activate;
-      the Bundle path does not.
+- [x] **A Subscription created through a Bundle entry is activated too** —
+      closed 2026-08-29. It was a way to store a subscription the server had
+      never validated, which the single-resource endpoints do not allow. Create,
+      update and patch entries all go through activation; a patch because it can
+      change the criteria or the channel, so the server has to decide again.
 - [ ] **No retry, and no automatic `off`** — a failed delivery sets `error`,
       and the next matching write tries again. The spec permits a server to set
       `off` for a consistently failing subscription; this never does.
@@ -208,7 +210,7 @@ Whole suites, no file arguments. `dart analyze` clean in all five packages.
 
 | package | runner | tests |
 |---|---|---|
-| `fhirant_server` | `dart test` | 751 |
+| `fhirant_server` | `dart test` | 753 |
 | `fhirant_db` | `dart test` | 110 |
 | `fhirant` | `flutter test` | 33 |
 | `fhirant_secure_storage` | `flutter test` | 11 |
