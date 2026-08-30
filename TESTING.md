@@ -2,14 +2,22 @@
 
 ## Summary
 
-**690 tests** across 45 test files, all passing.
+**936 tests** across 69 test files, all passing. Counted 2026-08-30 by
+running every package the way `.github/workflows/ci.yml` runs it, not from
+memory: the previous figure here (690 across 45) was months old, listed the
+Flutter app not at all, and gave `flutter test` for packages that have no
+`flutter_test` dependency and cannot be run that way.
+
+The tool is not a preference. A package whose pubspec has `sdk: flutter`
+must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 582 | 42 | `cd packages/fhirant_server && flutter test` |
-| fhirant_db | 108 | 3 | `cd packages/fhirant_db && flutter test` |
-| fhirant_logging | 0 | 0 | — |
-| fhirant_secure_storage | 0 | 0 | — |
+| fhirant_server | 775 | 61 | `cd packages/fhirant_server && dart test` |
+| fhirant_db | 111 | 3 | `cd packages/fhirant_db && dart test` |
+| fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
+| fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
+| fhirant_logging | 6 | 1 | `cd packages/fhirant_logging && dart test` |
 
 ## Test Organization
 
