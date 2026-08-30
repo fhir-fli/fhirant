@@ -4,6 +4,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Coverage only. Sunday 04:00 UTC; the `coverage` job below says why it is
+  # not on every push.
+  schedule:
+    - cron: '0 4 * * 0'
 
 jobs:
   build:
@@ -70,3 +74,85 @@ jobs:
             exit 1
           fi
           echo "All packages passed"
+
+  # Coverage is its own job, it does NOT gate anything, and it runs WEEKLY or
+  # on demand rather than on every push. That is a measured choice, made on
+  # this machine on 2026-08-30:
+  #
+  #   fhirant_server, 775 tests, no coverage                   35 seconds
+  #   the same suite, `dart test --coverage`, default parallel WEDGED: stuck
+  #     at test 193 for 6 minutes at 90% CPU and 2.7 GB, killed
+  #   the same suite, `--coverage --concurrency=1`             16m59s, 775/775
+  #
+  # So coverage costs about 29x the run time and only completes serially. That
+  # is worth paying weekly for a number that moves slowly; it is not worth
+  # paying on every commit, and it must never sit in front of a merge. There
+  # is deliberately no threshold: a percentage is reported, not enforced.
+  coverage:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # Flutter packages write coverage/lcov.info themselves. The pure Dart
+      # ones write a directory of JSON that format_coverage turns into lcov,
+      # which is what this provides.
+      - name: Install the coverage tool
+        run: dart pub global activate coverage
+
+      - name: Measure line coverage per package
+        run: |
+          echo "| Package | Lines covered | % |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+          for d in packages/*/; do
+            [ -f "${d}pubspec.yaml" ] || continue
+            [ -d "${d}test" ] || continue
+            pkg=$(basename "$d")
+            if grep -qE '^[[:space:]]+sdk:[[:space:]]*flutter[[:space:]]*$' "${d}pubspec.yaml"; then
+              tool=flutter
+            else
+              tool=dart
+            fi
+
+            echo "::group::$pkg"
+            (
+              cd "$d"
+              $tool pub get
+              if [ "$tool" = flutter ]; then
+                flutter test --coverage
+              else
+                # --concurrency=1 is not tuning. With the default, collecting
+                # coverage over fhirant_server wedges: 90% CPU, 2.7 GB, no
+                # progress past test 193 of 775.
+                dart test --coverage=coverage --concurrency=1
+                dart pub global run coverage:format_coverage \
+                  --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+              fi
+            )
+            echo "::endgroup::"
+
+            lcov="${d}coverage/lcov.info"
+            if [ -f "$lcov" ]; then
+              awk -F: -v pkg="$pkg" '
+                /^LF:/ { found += $2 }
+                /^LH:/ { hit += $2 }
+                END {
+                  pct = found ? 100 * hit / found : 0
+                  printf "| %s | %d/%d | %.1f%% |\n", pkg, hit, found, pct
+                }' "$lcov" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $pkg | no lcov produced | — |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: packages/*/coverage/lcov.info
+          if-no-files-found: warn

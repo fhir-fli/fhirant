@@ -239,8 +239,18 @@ stops being true.
       passed 775/775 twice in a row. Working on cicada and fhirant together
       now needs a `pubspec_overrides.yaml` in `packages/fhirant_server`,
       which is already gitignored.
-- [ ] **Coverage reporting** — still not configured; now that CI exists this
-      is a step in `ci.yml`, not a new piece of infrastructure.
+- [x] **Coverage reporting** — added 2026-08-30 as a separate `coverage` job
+      in `ci.yml`. It does not gate anything and runs **weekly (Sunday 04:00
+      UTC) or on demand**, not on every push, because of what it costs:
+      `fhirant_server`'s 775 tests take **35 seconds** normally, **wedge**
+      under `dart test --coverage` at default parallelism (stuck at test 193
+      for 6 minutes at 90% CPU and 2.7 GB), and take **16m59s** with
+      `--concurrency=1`, which is where the 775/775 came from. Line coverage
+      measured that way: **fhirant_server 80.1%** (4150/5181), fhirant 35.1%
+      (332/945), fhirant_db 22.2% (81/365), fhirant_secure_storage 22.1%
+      (21/95), fhirant_logging 100% (28/28). The job writes a table to the run
+      summary and uploads every `lcov.info`. **No threshold is enforced** —
+      nothing should fail on a number nobody has agreed to yet.
 - [ ] **iOS build** — build and test Flutter app on iOS device/simulator
 
 ## Mobile

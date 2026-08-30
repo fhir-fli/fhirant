@@ -26,3 +26,8 @@ data/
 # (release is a direct APK). Public certs, but they are not repo content.
 packages/fhirant/play_store/upload_certificate.der
 packages/fhirant/play_store/upload_certificate.pem
+
+# Coverage output. CI produces it in a separate job and uploads it as an
+# artifact; a local `dart test --coverage` or `flutter test --coverage`
+# leaves it here.
+coverage/
