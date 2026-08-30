@@ -59,16 +59,25 @@ void main() {
   /// attempts of a 100ms sleep, which is a budget only if every attempt costs
   /// what it usually costs. Measured 2026-08-30 over five whole-suite runs:
   /// all 55 polls returned on the FIRST attempt, so the usual cost is one
-  /// tick out of twenty. This test still failed once, on 2026-08-29, saying
-  /// the job had not completed — an excursion of at least twentyfold whose
-  /// cause is not known. A deadline absorbs that without pretending to
-  /// explain it, and the failure message now carries what it saw.
+  /// tick out of twenty.
+  ///
+  /// The stall is real and it is not understood. It happened once on
+  /// 2026-08-29, and again on 2026-08-30 in the first run against a fresh
+  /// clone, on a different test using this same helper: the job never
+  /// finished and `dart test`'s own 30-second per-test timeout killed it.
+  /// Eight whole-suite runs that day, one occurrence. So the deadline here is
+  /// **20 seconds, deliberately under that 30**, because a failure that comes
+  /// out of the test framework says only "timed out" — this one says which
+  /// job, how long, how many polls, and what the last status line was. The
+  /// framework timeout is left where it is: an export that hangs is a defect
+  /// worth failing on, not one to sit through for two minutes.
   Future<Response> pollUntilComplete(
     String jobId, {
-    Duration timeout = const Duration(seconds: 30),
+    Duration timeout = const Duration(seconds: 20),
   }) async {
     final started = DateTime.now();
     var attempts = 0;
+    var lastStatus = 'none';
     while (DateTime.now().difference(started) < timeout) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       attempts++;
@@ -81,10 +90,14 @@ void main() {
       if (resp.statusCode == 200 || resp.statusCode == 500) {
         return resp;
       }
+      // Shelf lower-cases header names, so this is the X-Progress the
+      // handler sets: 'Queued' while pending, 'Exporting...' once running.
+      final progress = resp.headers['x-progress'] ?? '';
+      lastStatus = '${resp.statusCode} $progress'.trim();
     }
     fail(
-      'Export job $jobId did not complete within ${timeout.inSeconds}s '
-      '($attempts polls, last status was still in progress)',
+      'Export job $jobId did not finish within ${timeout.inSeconds}s: '
+      '$attempts polls, last response was $lastStatus',
     );
   }
 

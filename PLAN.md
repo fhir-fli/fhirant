@@ -227,13 +227,18 @@ stops being true.
       directions: green run 868 tests across five packages, exit 0; with a
       deliberate failure injected into `fhirant_db` (second alphabetically)
       exit 1, `fhirant_db` named, and the three packages after it still ran.
-- [ ] **`fhirant_server` depends on `cicada` by a path that leaves this repo**
-      (`../../../cicada/cicada`). A clone of fhirant alone therefore cannot
-      resolve, build or test. CI works around it by checking out both repos
-      side by side, which is why this repo is checked out into a `fhirant/`
-      subdirectory. The real fix is for cicada to be a git or hosted
-      dependency; until then the layout is load-bearing and undocumented
-      outside `ci.yml`.
+- [x] **`fhirant_server` depends on `cicada` by a path that leaves this repo**
+      — fixed 2026-08-30. It is a git dependency on `fhir-fli/cicada`,
+      `path: cicada`, `ref: main`, and the lock pins the commit. `ci.yml` is
+      back to a single checkout with no `working-directory`, and the repo no
+      longer has to sit in a subdirectory. Rehearsed against a fresh clone
+      with no cicada beside it: all five packages resolved and analyzed, and
+      cicada came down from git at the pinned commit. Four passed outright.
+      `fhirant_server` failed that first run on the export stall below —
+      a test timeout, not a resolution problem, and the same clone then
+      passed 775/775 twice in a row. Working on cicada and fhirant together
+      now needs a `pubspec_overrides.yaml` in `packages/fhirant_server`,
+      which is already gitignored.
 - [ ] **Coverage reporting** — still not configured; now that CI exists this
       is a step in `ci.yml`, not a new piece of infrastructure.
 - [ ] **iOS build** — build and test Flutter app on iOS device/simulator
@@ -251,19 +256,26 @@ stops being true.
       hits in 200 encryptions, 7.5%**, on a test whose job is to say whether
       patient data escaped. Id lengthened to `pat-9f3c2a71-leak-canary`,
       0 in 200. Fixed 2026-08-29.
-- [x] **`export_integration_test.dart` "Cancel export DELETE cancels and
-      cleans up"** — the poll now runs on a 30-second wall-clock deadline
-      instead of 20 attempts of a 100ms sleep. Fixed 2026-08-30.
-      🛑 The cause of the 2026-08-29 failure is still unknown, and the
-      earlier text here — "it times out under whole-suite load" — was a
-      hypothesis written as a finding. It did not reproduce: five whole-suite
-      runs, 55 polls, **every one returned on the first attempt**, 5/5 green.
-      So the usual cost is 1 tick of the 20, and whatever happened on
-      2026-08-29 was an excursion of at least twentyfold. A deadline absorbs
-      that without explaining it, and the failure message now reports the
-      elapsed budget and the number of polls, so a repeat carries evidence.
-      The deadline path was driven once with `Duration.zero` to watch it
-      fail before the 30 seconds went back in.
+- [ ] **An export job occasionally never finishes** (was filed as a flaky
+      test). The poll helper now runs on a 20-second wall-clock deadline
+      instead of 20 attempts of a 100ms sleep, and its failure names the job,
+      the elapsed budget, the number of polls and the last `X-Progress` line.
+      🛑 **The stall itself is real and unexplained, so this stays open.**
+      The old text here — "it times out under whole-suite load" — was a
+      hypothesis written as a finding. What is measured, 2026-08-30, eight
+      whole-suite runs: **55 polls in five runs returned on the FIRST
+      attempt**, and one run — the first against a fresh clone — hung until
+      `dart test`'s own 30-second per-test timeout killed it, on
+      `_typeFilter combined with _since` rather than the cancel test, so the
+      helper is not the subject. Two immediate reruns in that same clone
+      passed 775/775. One occurrence in eight runs, on two different tests.
+      The deadline is deliberately **under** the framework's 30 seconds so
+      the next occurrence reports what it saw instead of "timed out". The
+      framework timeout is not being raised: an export that hangs is a defect
+      to fail on, not one to wait out.
+      Next step when it recurs: the message will say whether the job was
+      still `Queued` or `Exporting...`, which separates a job that never
+      started from one that never finished.
 
 ## Suite baseline — 2026-08-29
 
