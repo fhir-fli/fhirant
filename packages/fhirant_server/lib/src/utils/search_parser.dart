@@ -16,8 +16,15 @@ class SearchParameterParser {
   /// - 'summary': String summary type or null
   /// - 'elements': List of element names or null
   /// - 'has': List of HasParameter for _has reverse chaining
+  /// Parses a query string into search parameters.
+  ///
+  /// Takes the repetitions of each key, because R4 3.1.1.4.17 makes a repeated
+  /// parameter an AND join — `?given=A&given=B` means BOTH — and
+  /// `Uri.queryParameters` keeps only the LAST value for a repeated key, so
+  /// reading it silently discarded every earlier one. `queryParametersAll` is
+  /// what the caller must pass.
   static Map<String, dynamic> parseQueryParameters(
-    Map<String, String> queryParams,
+    Map<String, List<String>> queryParams,
   ) {
     final searchParams = <String, List<String>>{};
     int? count;
@@ -83,85 +90,96 @@ class SearchParameterParser {
 
     for (final entry in queryParams.entries) {
       final key = entry.key;
-      final value = entry.value;
-
-      // Detect _has: prefix before checking special params
-      if (key.startsWith('_has:')) {
-        final parsed = HasParameter.parse(key, value);
-        if (parsed != null) {
-          has.add(parsed);
-        }
-        continue;
-      }
-
-      if (specialParams.contains(key)) {
-        // Recognised but not acted on: report it alongside the unrecognised
-        // ones so Prefer: handling=strict can refuse, while a lenient request
-        // still ignores it as the spec asks.
-        if (unsupportedParams.contains(key)) {
-          unknownSpecialParams.add(key);
-        }
-        // Handle special parameters
-        switch (key) {
-          case '_count':
-            count = int.tryParse(value);
-          case '_offset':
-            offset = int.tryParse(value);
-          case '_sort':
-            // Sort can be comma-separated: _sort=name,-date
-            sort.addAll(
-              value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-            );
-          case '_include':
-            // Include can be repeated or comma-separated
-            include.addAll(
-              value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-            );
-          case '_revinclude':
-            // Revinclude can be repeated or comma-separated
-            revinclude.addAll(
-              value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-            );
-          case '_include:iterate':
-            includeIterate.addAll(
-              value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-            );
-          case '_revinclude:iterate':
-            revincludeIterate.addAll(
-              value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-            );
-          case '_summary':
-            summary = value;
-          case '_elements':
-            // Elements is comma-separated
-            elements = value
-                .split(',')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList();
-          case '_total':
-            // _total: none, accurate, estimate
-            total = value;
-        }
-      } else {
-        // Track unrecognized _-prefixed parameters for Prefer: handling=strict
-        if (key.startsWith('_') && !knownUnderscoreSearchParams.contains(key)) {
-          unknownSpecialParams.add(key);
+      // Control parameters below take one value; only a search parameter
+      // carries repetitions, and it keeps every one of them.
+      for (final value in entry.value) {
+        // Detect _has: prefix before checking special params
+        if (key.startsWith('_has:')) {
+          final parsed = HasParameter.parse(key, value);
+          if (parsed != null) {
+            has.add(parsed);
+          }
+          continue;
         }
 
-        // Regular search parameter
-        // Handle comma-separated values (OR logic)
-        final values = value
-            .split(',')
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty)
-            .toList();
-
-        if (searchParams.containsKey(key)) {
-          // Parameter already exists (can happen with repeated params)
-          searchParams[key]!.addAll(values);
+        if (specialParams.contains(key)) {
+          // Recognised but not acted on: report it alongside the unrecognised
+          // ones so Prefer: handling=strict can refuse, while a lenient request
+          // still ignores it as the spec asks.
+          if (unsupportedParams.contains(key)) {
+            unknownSpecialParams.add(key);
+          }
+          // Handle special parameters
+          switch (key) {
+            case '_count':
+              count = int.tryParse(value);
+            case '_offset':
+              offset = int.tryParse(value);
+            case '_sort':
+              // Sort can be comma-separated: _sort=name,-date
+              sort.addAll(
+                value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty),
+              );
+            case '_include':
+              // Include can be repeated or comma-separated
+              include.addAll(
+                value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty),
+              );
+            case '_revinclude':
+              // Revinclude can be repeated or comma-separated
+              revinclude.addAll(
+                value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty),
+              );
+            case '_include:iterate':
+              includeIterate.addAll(
+                value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty),
+              );
+            case '_revinclude:iterate':
+              revincludeIterate.addAll(
+                value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty),
+              );
+            case '_summary':
+              summary = value;
+            case '_elements':
+              // Elements is comma-separated
+              elements = value
+                  .split(',')
+                  .map((s) => s.trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+            case '_total':
+              // _total: none, accurate, estimate
+              total = value;
+          }
         } else {
-          searchParams[key] = values;
+          // Track unrecognized _-prefixed parameters, for
+          // Prefer: handling=strict
+          if (key.startsWith('_') &&
+              !knownUnderscoreSearchParams.contains(key)) {
+            unknownSpecialParams.add(key);
+          }
+
+          // A regular search parameter is passed on RAW, one entry per
+          // repetition. The comma split and its escaping belong to the database
+          // package, which is the only layer that can tell the two joins apart:
+          // splitting here flattened `?given=A&given=B` (AND) and `?given=A,B`
+          // (OR) into the same list, and they mean different things.
+          (searchParams[key] ??= <String>[]).add(value);
         }
       }
     }
@@ -185,7 +203,11 @@ class SearchParameterParser {
   }
 
   /// Check if there are any search parameters (excluding pagination)
-  static bool hasSearchParameters(Map<String, String> queryParams) {
+  /// Whether any key is a real search parameter rather than a control one.
+  ///
+  /// Only the KEYS are inspected, so it accepts either shape: one value per
+  /// key, or every repetition of it.
+  static bool hasSearchParameters(Map<String, Object?> queryParams) {
     final specialParams = {
       '_count',
       '_offset',

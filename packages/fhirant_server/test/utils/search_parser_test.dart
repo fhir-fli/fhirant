@@ -5,8 +5,8 @@ void main() {
   group('SearchParameterParser', () {
     test('parses simple search parameters', () {
       final queryParams = {
-        'name': 'Smith',
-        'gender': 'male',
+        'name': ['Smith'],
+        'gender': ['male'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -21,8 +21,8 @@ void main() {
 
     test('parses pagination parameters', () {
       final queryParams = {
-        '_count': '10',
-        '_offset': '20',
+        '_count': ['10'],
+        '_offset': ['20'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -34,7 +34,7 @@ void main() {
 
     test('parses sort parameter', () {
       final queryParams = {
-        '_sort': 'name,-date',
+        '_sort': ['name,-date'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -42,33 +42,51 @@ void main() {
       expect(result['sort'], equals(['name', '-date']));
     });
 
-    test('parses comma-separated values (OR logic)', () {
+    test('a comma is carried through, not split here', () {
       final queryParams = {
-        'name': 'Smith,Jones,Brown',
+        'name': ['Smith,Jones,Brown'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
 
       final searchParams = result['searchParams'] as Map<String, List<String>>;
-      expect(searchParams['name'], equals(['Smith', 'Jones', 'Brown']));
+      expect(
+        searchParams['name'],
+        equals(['Smith,Jones,Brown']),
+        reason: 'R4 3.1.1.4.17 makes a comma OR and a repeated parameter AND, '
+            'and one list element is one repetition. Splitting the comma here '
+            'would turn an OR into an AND. fhir_r4_db does the split, where '
+            'the escaping rules and the parameter type are both known.',
+      );
+    });
+
+    test('a repeated parameter arrives as separate elements', () {
+      final queryParams = {
+        'given': ['Anna', 'Beth'],
+      };
+
+      final result = SearchParameterParser.parseQueryParameters(queryParams);
+
+      final searchParams = result['searchParams'] as Map<String, List<String>>;
+      expect(searchParams['given'], equals(['Anna', 'Beth']));
     });
 
     test('parses complex query with all parameter types', () {
       final queryParams = {
-        'name': 'Smith',
-        'gender': 'male,female',
-        '_count': '25',
-        '_offset': '50',
-        '_sort': 'name,-birthDate',
-        '_include': 'Patient:organization',
-        '_summary': 'data',
+        'name': ['Smith'],
+        'gender': ['male,female'],
+        '_count': ['25'],
+        '_offset': ['50'],
+        '_sort': ['name,-birthDate'],
+        '_include': ['Patient:organization'],
+        '_summary': ['data'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
 
       final searchParams = result['searchParams'] as Map<String, List<String>>;
       expect(searchParams['name'], equals(['Smith']));
-      expect(searchParams['gender'], equals(['male', 'female']));
+      expect(searchParams['gender'], equals(['male,female']));
       expect(result['count'], equals(25));
       expect(result['offset'], equals(50));
       expect(result['sort'], equals(['name', '-birthDate']));
@@ -78,8 +96,8 @@ void main() {
 
     test('parses _include:iterate into separate list', () {
       final queryParams = {
-        '_include': 'Patient:managingOrganization',
-        '_include:iterate': 'Organization:partOf',
+        '_include': ['Patient:managingOrganization'],
+        '_include:iterate': ['Organization:partOf'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -90,8 +108,8 @@ void main() {
 
     test('parses _revinclude:iterate into separate list', () {
       final queryParams = {
-        '_revinclude': 'Encounter:subject',
-        '_revinclude:iterate': 'Observation:encounter',
+        '_revinclude': ['Encounter:subject'],
+        '_revinclude:iterate': ['Observation:encounter'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -102,7 +120,7 @@ void main() {
 
     test('_include:iterate not treated as search parameter', () {
       final queryParams = {
-        '_include:iterate': 'Organization:partOf',
+        '_include:iterate': ['Organization:partOf'],
       };
 
       expect(SearchParameterParser.hasSearchParameters(queryParams), isFalse);
@@ -110,8 +128,8 @@ void main() {
 
     test('hasSearchParameters returns true when search params exist', () {
       final queryParams = {
-        'name': 'Smith',
-        '_count': '10',
+        'name': ['Smith'],
+        '_count': ['10'],
       };
 
       expect(SearchParameterParser.hasSearchParameters(queryParams), isTrue);
@@ -120,9 +138,9 @@ void main() {
     test('hasSearchParameters returns false when only special params exist',
         () {
       final queryParams = {
-        '_count': '10',
-        '_offset': '20',
-        '_sort': 'name',
+        '_count': ['10'],
+        '_offset': ['20'],
+        '_sort': ['name'],
       };
 
       expect(SearchParameterParser.hasSearchParameters(queryParams), isFalse);
@@ -130,7 +148,7 @@ void main() {
 
     test('parses _has parameter', () {
       final queryParams = {
-        '_has:Observation:patient:code': '1234',
+        '_has:Observation:patient:code': ['1234'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -150,8 +168,8 @@ void main() {
       // params
       // have different keys
       final queryParams = {
-        '_has:Observation:patient:code': '1234',
-        '_has:Condition:patient:code': 'I10',
+        '_has:Observation:patient:code': ['1234'],
+        '_has:Condition:patient:code': ['I10'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -163,8 +181,8 @@ void main() {
 
     test('hasSearchParameters returns true for _has params', () {
       final queryParams = {
-        '_has:Observation:patient:code': '1234',
-        '_count': '10',
+        '_has:Observation:patient:code': ['1234'],
+        '_count': ['10'],
       };
 
       expect(SearchParameterParser.hasSearchParameters(queryParams), isTrue);
@@ -172,8 +190,8 @@ void main() {
 
     test('_has combined with regular search params', () {
       final queryParams = {
-        '_has:Observation:patient:code': '1234',
-        'name': 'Smith',
+        '_has:Observation:patient:code': ['1234'],
+        'name': ['Smith'],
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -186,7 +204,7 @@ void main() {
 
     test('invalid _has format produces null (ignored)', () {
       final queryParams = {
-        '_has:BadFormat': '1234', // only 1 segment
+        '_has:BadFormat': ['1234'], // only 1 segment
       };
 
       final result = SearchParameterParser.parseQueryParameters(queryParams);
@@ -197,7 +215,7 @@ void main() {
   group('_total parameter', () {
     test('_total=none is parsed', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_total': 'none',
+        '_total': ['none'],
       });
       expect(result['total'], equals('none'));
       expect(result['searchParams'], isNull);
@@ -205,22 +223,22 @@ void main() {
 
     test('_total=accurate is parsed', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_total': 'accurate',
+        '_total': ['accurate'],
       });
       expect(result['total'], equals('accurate'));
     });
 
     test('_total=estimate is parsed', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_total': 'estimate',
+        '_total': ['estimate'],
       });
       expect(result['total'], equals('estimate'));
     });
 
     test('_total is not treated as a search parameter', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_total': 'none',
-        'name': 'Smith',
+        '_total': ['none'],
+        'name': ['Smith'],
       });
       final searchParams = result['searchParams'] as Map<String, List<String>>;
       expect(searchParams.containsKey('_total'), isFalse);

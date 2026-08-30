@@ -103,10 +103,11 @@ class SubscriptionService {
       return null;
     }
 
-    // Uri.splitQueryString handles the percent-decoding and the & splitting,
-    // then the shared parser applies FHIR's own parameter rules.
-    final raw =
-        query.isEmpty ? <String, String>{} : Uri.splitQueryString(query);
+    // Parsed as a URI so repeated keys survive: splitQueryString keeps only
+    // the last value, and a repeated parameter is an AND join.
+    final raw = query.isEmpty
+        ? <String, List<String>>{}
+        : Uri(query: query).queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(raw);
     final parameters =
         (parsed['searchParams'] as Map<String, List<String>>?) ?? {};

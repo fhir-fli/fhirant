@@ -201,7 +201,9 @@ Future<Response> compartmentSearchHandler(
     }
 
     // 6. Parse query parameters for additional search filters
-    final queryParams = request.url.queryParameters;
+    // queryParametersAll keeps every repetition; queryParameters drops all
+    // but the last, and a repeated parameter is an AND join.
+    final queryParams = request.url.queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
     final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
     final count = parsed['count'] as int? ?? 20;

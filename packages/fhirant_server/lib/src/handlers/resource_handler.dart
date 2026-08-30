@@ -18,7 +18,10 @@ Future<Response> getResourcesHandler(
   String resourceType,
   FhirAntDb dbInterface,
 ) async {
-  final queryParams = request.url.queryParameters;
+  // queryParametersAll, not queryParameters: R4 makes a repeated parameter an
+  // AND join, and queryParameters keeps only the LAST value for a repeated
+  // key, so every earlier one was silently discarded.
+  final queryParams = request.url.queryParametersAll;
   return _searchResources(request, resourceType, dbInterface, queryParams);
 }
 
@@ -31,9 +34,12 @@ Future<Response> postSearchHandler(
   try {
     final body = await request.readAsString();
     // Parse form-encoded body into query parameters
-    final bodyParams = Uri.splitQueryString(body);
-    // Merge with URL query parameters (URL params take precedence)
-    final mergedParams = {...bodyParams, ...request.url.queryParameters};
+    // A form-encoded body repeats a key the same way a query string does, and
+    // splitQueryString collapses those to the last one. Parsed by hand so a
+    // repeated parameter in a POST body keeps its AND meaning too.
+    final bodyParams = _splitQueryStringAll(body);
+    // URL parameters take precedence over the body.
+    final mergedParams = {...bodyParams, ...request.url.queryParametersAll};
     return await _searchResources(
       request,
       resourceType,
@@ -60,10 +66,11 @@ Future<Response> postSystemSearchHandler(
 ) async {
   try {
     final body = await request.readAsString();
-    // Parse form-encoded body into query parameters
-    final bodyParams = Uri.splitQueryString(body);
+    // Every repetition is kept: a repeated parameter is an AND join, so
+    // collapsing to one value silently drops half the query.
+    final bodyParams = _splitQueryStringAll(body);
     // Merge with URL query parameters (URL params take precedence)
-    final mergedParams = {...bodyParams, ...request.url.queryParameters};
+    final mergedParams = {...bodyParams, ...request.url.queryParametersAll};
 
     // _type is required for system-level search
     final typeParam = mergedParams['_type'];
@@ -73,9 +80,15 @@ Future<Response> postSystemSearchHandler(
       );
     }
 
-    final typeNames =
-        typeParam.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
-    final searchParams = Map<String, String>.from(mergedParams)
+    // ASSUMPTION, not a spec citation: the AND/OR rule of R4 3.1.1.4.17 cannot
+    // apply to _type, because a resource has exactly one type and an AND of
+    // two of them matches nothing. So repetitions are unioned here, the same
+    // as commas.
+    final typeNames = typeParam
+        .expand((value) => value.split(','))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty);
+    final searchParams = Map<String, List<String>>.from(mergedParams)
       ..remove('_type');
 
     final baseUrl = request.requestedUri.hasPort
@@ -177,7 +190,7 @@ Future<Response> _searchResources(
   Request request,
   String resourceType,
   FhirAntDb dbInterface,
-  Map<String, String> queryParams,
+  Map<String, List<String>> queryParams,
 ) async {
   try {
     FhirantLogging().logInfo(
@@ -1282,7 +1295,7 @@ Future<Response> conditionalDeleteHandler(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    final queryParams = request.url.queryParameters;
+    final queryParams = request.url.queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
     final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
 
@@ -1472,4 +1485,23 @@ Response _unsupportedModifierResponse(UnsupportedSearchModifier failure) {
     ).toJsonString(),
     headers: {'Content-Type': 'application/json'},
   );
+}
+
+/// Splits a form-encoded body keeping EVERY value for a repeated key.
+///
+/// `Uri.splitQueryString` returns `Map<String, String>` and keeps only the
+/// last, which loses the AND join R4 3.1.1.4.17 gives a repeated parameter.
+Map<String, List<String>> _splitQueryStringAll(String body) {
+  final result = <String, List<String>>{};
+  for (final pair in body.split('&')) {
+    if (pair.isEmpty) {
+      continue;
+    }
+    final equals = pair.indexOf('=');
+    final key = equals < 0 ? pair : pair.substring(0, equals);
+    final value = equals < 0 ? '' : pair.substring(equals + 1);
+    (result[Uri.decodeQueryComponent(key)] ??= <String>[])
+        .add(Uri.decodeQueryComponent(value));
+  }
+  return result;
 }

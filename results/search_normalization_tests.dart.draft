@@ -1,0 +1,66 @@
+  group('string search is normalized by case and combining characters', () {
+    test('case, which already worked', () async {
+      expect(
+        await ids(R4ResourceType.Patient, {
+          'family': ['FAULKEN']
+        }),
+        equals(['p1']),
+      );
+    });
+
+    test('an accented stored value is found by an unaccented query', () async {
+      await dao.saveResource(
+        Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'accented',
+          'name': [
+            {'family': 'Muñoz'},
+          ],
+        }),
+      );
+      // R4 search.html: a field matches "after both have been normalized by
+      // case and combining characters".
+      expect(
+        await ids(R4ResourceType.Patient, {
+          'family': ['Munoz']
+        }),
+        equals(['accented', 'p2']),
+      );
+    });
+
+    test('an unaccented stored value is found by an accented query', () async {
+      expect(
+        await ids(R4ResourceType.Patient, {
+          'family': ['Muñoz']
+        }),
+        equals(['p2']),
+      );
+    });
+
+    test(':exact still respects accents, because it is exact', () async {
+      await dao.saveResource(
+        Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'accented',
+          'name': [
+            {'family': 'Muñoz'},
+          ],
+        }),
+      );
+      // ":exact returns results that match the entire supplied parameter,
+      // including casing and combining characters."
+      expect(
+        await ids(R4ResourceType.Patient, {
+          'family:exact': ['Muñoz']
+        }),
+        equals(['accented']),
+      );
+      expect(
+        await ids(R4ResourceType.Patient, {
+          'family:exact': ['Munoz']
+        }),
+        equals(['p2']),
+      );
+    });
+  });
+}

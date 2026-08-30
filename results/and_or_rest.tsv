@@ -1,0 +1,5 @@
+query	ids	expected	verdict
+given=Anna	both,onlyA	both,onlyA	PASS
+given=Anna&given=Beth	both	both	PASS
+given=Anna,Beth	both,onlyA,onlyB	both,onlyA,onlyB	PASS
+given=Anna,Beth&family=Okello	withFamily	withFamily	PASS

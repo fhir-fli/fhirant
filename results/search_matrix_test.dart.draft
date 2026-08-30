@@ -1,0 +1,238 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/handlers/resource_handler.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
+
+/// Every R4 search modifier and value prefix, run through the REST path a
+/// client actually uses, with a known positive beside each so a zero can be
+/// told apart from a broken probe.
+///
+/// Results are written to results/search_matrix.tsv one row at a time, flushed,
+/// so a crash mid-run still leaves everything measured up to that point.
+void main() {
+  late FhirAntDb db;
+  late IOSink out;
+
+  setUpAll(() async {
+    db = FhirAntDb(NativeDatabase.memory());
+    final file = File('results/search_matrix.tsv');
+    file.parent.createSync(recursive: true);
+    out = file.openWrite();
+    out.writeln('type\tquery\texpected\tactual\tverdict');
+    await out.flush();
+
+    await db.saveResource(fhir.Patient.fromJson({
+      'resourceType': 'Patient',
+      'id': 'p1',
+      'active': true,
+      'gender': 'male',
+      'birthDate': '1980-05-15',
+      'name': [
+        {
+          'family': 'Faulkenberry',
+          'given': ['Grey']
+        },
+      ],
+      'identifier': [
+        {
+          'type': {
+            'coding': [
+              {
+                'system': 'http://terminology.hl7.org/CodeSystem/v2-0203',
+                'code': 'MR',
+              },
+            ],
+          },
+          'system': 'http://example.org/mrn',
+          'value': '12345',
+        },
+      ],
+    }));
+    await db.saveResource(fhir.Patient.fromJson({
+      'resourceType': 'Patient',
+      'id': 'p2',
+      'name': [
+        {'family': 'Muñoz'},
+      ],
+    }));
+    await db.saveResource(fhir.Observation.fromJson({
+      'resourceType': 'Observation',
+      'id': 'o1',
+      'status': 'final',
+      'subject': {
+        'reference': 'Patient/p1',
+        'identifier': {
+          'system': 'http://example.org/ref-mrn',
+          'value': '999',
+        },
+      },
+      'code': {
+        'coding': [
+          {
+            'system': 'http://loinc.org',
+            'code': '1975-2',
+            'display': 'Bilirubin total',
+          },
+        ],
+        'text': 'Total bilirubin',
+      },
+      'valueQuantity': {
+        'value': 5,
+        'unit': 'mg/dL',
+        'system': 'http://unitsofmeasure.org',
+        'code': 'mg/dL',
+      },
+    }));
+    await db.saveResource(fhir.ValueSet.fromJson({
+      'resourceType': 'ValueSet',
+      'id': 'vs1',
+      'url': 'http://example.org/ValueSet/bili',
+      'status': 'active',
+      'compose': {
+        'include': [
+          {
+            'system': 'http://loinc.org',
+            'concept': [
+              {'code': '1975-2'},
+            ],
+          },
+        ],
+      },
+    }));
+  });
+
+  tearDownAll(() async {
+    await out.flush();
+    await out.close();
+    await db.close();
+  });
+
+  Future<int> rest(String type, String query) async {
+    final response = await getResourcesHandler(
+      Request('GET', Uri.parse('http://localhost:8080/$type?$query')),
+      type,
+      db,
+    );
+    if (response.statusCode >= 400) {
+      return -1;
+    }
+    final body =
+        jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+    return (body['total'] as int?) ?? (body['entry'] as List?)?.length ?? 0;
+  }
+
+  Future<void> check(
+    String group,
+    String type,
+    String query,
+    int expected,
+  ) async {
+    final actual = await rest(type, query);
+    final verdict = actual == expected ? 'ok' : 'MISMATCH';
+    out.writeln('$group\t$type?$query\t$expected\t$actual\t$verdict');
+    await out.flush();
+    // ignore: avoid_print
+    print(
+        '$verdict\t${'$type?$query'.padRight(52)} want=$expected got=$actual');
+  }
+
+  test('the whole modifier and prefix matrix', () async {
+    // ---- known positives, so a zero elsewhere means something ----
+    await check('baseline', 'Patient', 'family=Faulkenberry', 1);
+    await check('baseline', 'Patient', 'gender=male', 1);
+    await check('baseline', 'Observation', 'code=http://loinc.org|1975-2', 1);
+    await check('baseline', 'Observation', 'subject=Patient/p1', 1);
+    await check('baseline', 'Patient', 'birthdate=1980-05-15', 1);
+    await check('baseline', 'Observation', 'value-quantity=5', 1);
+
+    // ---- :missing, every type ----
+    await check('missing', 'Patient', 'gender:missing=true', 1);
+    await check('missing', 'Patient', 'gender:missing=false', 1);
+    await check('missing', 'Patient', 'birthdate:missing=true', 1);
+
+    // ---- string modifiers ----
+    await check('string', 'Patient', 'family:exact=Faulkenberry', 1);
+    await check('string', 'Patient', 'family:exact=faulkenberry', 0);
+    await check('string', 'Patient', 'family:exact=Faulken', 0);
+    await check('string', 'Patient', 'family:contains=kenberry', 1);
+    await check('string', 'Patient', 'family=Munoz', 1);
+
+    // ---- token modifiers ----
+    await check('token', 'Observation', 'code:text=bilirubin', 1);
+    // R4: ":not ... return all resources that do not have a matching item.
+    // Note that this includes resources that have no value for the parameter."
+    // p1 is male and p2 has no gender at all, so both belong in the result.
+    // An earlier expectation of 1 here was mine, not the spec's.
+    await check('token', 'Patient', 'gender:not=female', 2);
+    await check(
+      'token',
+      'Observation',
+      'code:in=http://example.org/ValueSet/bili',
+      1,
+    );
+    await check(
+      'token',
+      'Observation',
+      'code:not-in=http://example.org/ValueSet/bili',
+      0,
+    );
+    await check(
+        'token',
+        'Patient',
+        'identifier:of-type='
+            'http://terminology.hl7.org/CodeSystem/v2-0203|MR|12345',
+        1);
+
+    // ---- reference modifiers ----
+    await check('reference', 'Observation', 'subject:Patient=p1', 1);
+    // 0, not 1, and this expectation was wrong when it was written.
+    // R4 3.1.1.4.12: :identifier tests Reference.identifier, not the
+    // referenced resource. This Observation's subject is a bare reference
+    // with no identifier on it; the MRN is on the Patient. The spec says
+    // such a search "will not match ... even if the Patient resource for
+    // Patient/abc includes the requested identifier".
+    await check(
+      'reference',
+      'Observation',
+      'subject:identifier=http://example.org/mrn|12345',
+      0,
+    );
+    // The same search against a subject that DOES carry the identifier.
+    await check(
+      'reference',
+      'Observation',
+      'subject:identifier=http://example.org/ref-mrn|999',
+      1,
+    );
+
+    // ---- uri modifiers ----
+    await check('uri', 'ValueSet', 'url=http://example.org/ValueSet/bili', 1);
+    await check('uri', 'ValueSet', 'url:below=http://example.org/ValueSet', 1);
+
+    // ---- value prefixes: date ----
+    await check('prefix-date', 'Patient', 'birthdate=eq1980-05-15', 1);
+    await check('prefix-date', 'Patient', 'birthdate=ne1980-05-15', 0);
+    await check('prefix-date', 'Patient', 'birthdate=gt1980-01-01', 1);
+    await check('prefix-date', 'Patient', 'birthdate=lt1990-01-01', 1);
+    await check('prefix-date', 'Patient', 'birthdate=ge1980-05-15', 1);
+    await check('prefix-date', 'Patient', 'birthdate=le1980-05-15', 1);
+    await check('prefix-date', 'Patient', 'birthdate=gt1990-01-01', 0);
+    await check('prefix-date', 'Patient', 'birthdate=sa1980-01-01', 1);
+    await check('prefix-date', 'Patient', 'birthdate=eb1990-01-01', 1);
+    await check('prefix-date', 'Patient', 'birthdate=ap1980-05-15', 1);
+
+    // ---- value prefixes: quantity ----
+    await check('prefix-qty', 'Observation', 'value-quantity=eq5', 1);
+    await check('prefix-qty', 'Observation', 'value-quantity=ne5', 0);
+    await check('prefix-qty', 'Observation', 'value-quantity=gt1', 1);
+    await check('prefix-qty', 'Observation', 'value-quantity=lt10', 1);
+    await check('prefix-qty', 'Observation', 'value-quantity=ge5', 1);
+    await check('prefix-qty', 'Observation', 'value-quantity=le5', 1);
+    await check('prefix-qty', 'Observation', 'value-quantity=gt10', 0);
+  });
+}

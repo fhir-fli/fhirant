@@ -828,7 +828,7 @@ void main() {
   group('SearchParameterParser _elements parsing', () {
     test('parses comma-separated _elements', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_elements': 'name,gender,birthDate',
+        '_elements': ['name,gender,birthDate'],
       });
 
       final elements = result['elements'] as List<String>?;
@@ -838,7 +838,7 @@ void main() {
 
     test('trims whitespace in _elements values', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_elements': ' name , gender ',
+        '_elements': [' name , gender '],
       });
 
       final elements = result['elements'] as List<String>?;
@@ -847,7 +847,7 @@ void main() {
 
     test('_elements absent returns null', () {
       final result = SearchParameterParser.parseQueryParameters({
-        'name': 'Smith',
+        'name': ['Smith'],
       });
 
       expect(result['elements'], isNull);
@@ -855,8 +855,8 @@ void main() {
 
     test('_elements is not treated as a search parameter', () {
       final result = SearchParameterParser.parseQueryParameters({
-        '_elements': 'name',
-        'name': 'Smith',
+        '_elements': ['name'],
+        'name': ['Smith'],
       });
 
       final searchParams = result['searchParams'] as Map<String, List<String>>?;

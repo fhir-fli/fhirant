@@ -272,7 +272,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1995-01-01:gt'],
+          'birthdate': ['gt1995-01-01'],
         },
       );
 
@@ -507,7 +507,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
-          'url': ['http://example.org/fhir/ValueSet/my-codes:above'],
+          'url:above': ['http://example.org/fhir/ValueSet/my-codes'],
         },
       );
 
@@ -621,7 +621,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['7:gt'],
+          'quantity': ['gt7'],
         },
       );
 
@@ -706,7 +706,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.RiskAssessment,
         searchParameters: {
-          'probability': ['0.5:gt'],
+          'probability': ['gt0.5'],
         },
       );
 
@@ -929,7 +929,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$yesterdayStr:gt'],
+          '_lastUpdated': ['gt$yesterdayStr'],
         },
       );
 
@@ -948,7 +948,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$tomorrowStr:lt'],
+          '_lastUpdated': ['lt$tomorrowStr'],
         },
       );
 
@@ -966,7 +966,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$todayStr:ge'],
+          '_lastUpdated': ['ge$todayStr'],
         },
       );
 
@@ -984,7 +984,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$futureStr:gt'],
+          '_lastUpdated': ['gt$futureStr'],
         },
       );
 
@@ -1153,7 +1153,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'name': ['Smith:exact'],
+          'name:exact': ['Smith'],
         },
       );
 
@@ -1169,7 +1169,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'name': ['NonExistentName:exact'],
+          'name:exact': ['NonExistentName'],
         },
       );
 
@@ -1182,7 +1182,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'name': ['mit:contains'],
+          'name:contains': ['mit'],
         },
       );
 
@@ -1198,7 +1198,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'address': ['true:missing'],
+          'address:missing': ['true'],
         },
       );
 
@@ -1231,7 +1231,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'gender': ['true:missing'],
+          'gender:missing': ['true'],
         },
       );
 
@@ -1244,7 +1244,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'gender': ['true:missing'],
+          'gender:missing': ['true'],
         },
       );
 
@@ -1262,7 +1262,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1995-01-01:gt'],
+          'birthdate': ['gt1995-01-01'],
         },
       );
 
@@ -1276,7 +1276,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1995-01-01:lt'],
+          'birthdate': ['lt1995-01-01'],
         },
       );
 
@@ -1333,7 +1333,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.RiskAssessment,
         searchParameters: {
-          'probability': ['0.5:lt'],
+          'probability': ['lt0.5'],
         },
       );
 
@@ -1346,7 +1346,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.RiskAssessment,
         searchParameters: {
-          'probability': ['0.75:le'],
+          'probability': ['le0.75'],
         },
       );
 
@@ -1360,7 +1360,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.RiskAssessment,
         searchParameters: {
-          'probability': ['0.25:ge'],
+          'probability': ['ge0.25'],
         },
       );
 
@@ -1374,7 +1374,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.RiskAssessment,
         searchParameters: {
-          'probability': ['0.73:ap'],
+          'probability': ['ap0.73'],
         },
       );
 
@@ -1452,7 +1452,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['7:lt'],
+          'quantity': ['lt7'],
         },
       );
 
@@ -1466,7 +1466,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['5:le'],
+          'quantity': ['le5'],
         },
       );
 
@@ -1480,7 +1480,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['10:ge'],
+          'quantity': ['ge10'],
         },
       );
 
@@ -1493,7 +1493,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['7|mL:lt'],
+          'quantity': ['lt7|mL'],
         },
       );
 
@@ -1510,7 +1510,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1990-01-15:le'],
+          'birthdate': ['le1990-01-15'],
         },
       );
 
@@ -1525,7 +1525,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['2000-03-10:ge'],
+          'birthdate': ['ge2000-03-10'],
         },
       );
 
@@ -1539,7 +1539,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1995-01-01:sa'],
+          'birthdate': ['sa1995-01-01'],
         },
       );
 
@@ -1553,7 +1553,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1995-01-01:eb'],
+          'birthdate': ['eb1995-01-01'],
         },
       );
 
@@ -1568,7 +1568,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['1990-01-15:ap'],
+          'birthdate': ['ap1990-01-15'],
         },
       );
 
@@ -1591,7 +1591,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$tomorrowStr:le'],
+          '_lastUpdated': ['le$tomorrowStr'],
         },
       );
 
@@ -1609,7 +1609,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$yesterdayStr:sa'],
+          '_lastUpdated': ['sa$yesterdayStr'],
         },
       );
 
@@ -1627,7 +1627,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          '_lastUpdated': ['$tomorrowStr:eb'],
+          '_lastUpdated': ['eb$tomorrowStr'],
         },
       );
 
@@ -1671,7 +1671,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
-          'url': ['http://example.org/fhir/ValueSet:below'],
+          'url:below': ['http://example.org/fhir/ValueSet'],
         },
       );
 
@@ -1685,7 +1685,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
-          'url': ['http://example.org/fhir/ValueSet/my:below'],
+          'url:below': ['http://example.org/fhir/ValueSet/my'],
         },
       );
 
@@ -1702,7 +1702,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'gender': ['male:not'],
+          'gender:not': ['male'],
         },
       );
 
@@ -1716,7 +1716,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'identifier': ['http://hospital.org/mrn|MRN001:not'],
+          'identifier:not': ['http://hospital.org/mrn|MRN001'],
         },
       );
 
@@ -1731,7 +1731,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'gender': ['nonexistent:not'],
+          'gender:not': ['nonexistent'],
         },
       );
 
@@ -1757,7 +1757,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'gender': ['male:not'],
+          'gender:not': ['male'],
         },
       );
 
@@ -1815,7 +1815,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code': ['Serum:text'],
+          'code:text': ['Serum'],
         },
       );
 
@@ -1830,7 +1830,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code': ['serum:text'],
+          'code:text': ['serum'],
         },
       );
 
@@ -1844,7 +1844,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code': ['Glucose:text'],
+          'code:text': ['Glucose'],
         },
       );
 
@@ -1857,7 +1857,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code': ['Hemoglobin:text'],
+          'code:text': ['Hemoglobin'],
         },
       );
 
@@ -1885,7 +1885,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'birthdate': ['true:missing'],
+          'birthdate:missing': ['true'],
         },
       );
 
@@ -1932,7 +1932,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['true:missing'],
+          'quantity:missing': ['true'],
         },
       );
 
@@ -1963,7 +1963,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
-          'url': ['true:missing'],
+          'url:missing': ['true'],
         },
       );
 
@@ -1990,7 +1990,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'subject': ['true:missing'],
+          'subject:missing': ['true'],
         },
       );
 
