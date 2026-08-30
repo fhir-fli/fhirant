@@ -251,11 +251,19 @@ stops being true.
       hits in 200 encryptions, 7.5%**, on a test whose job is to say whether
       patient data escaped. Id lengthened to `pat-9f3c2a71-leak-canary`,
       0 in 200. Fixed 2026-08-29.
-- [ ] **`export_integration_test.dart` "Cancel export DELETE cancels and
-      cleans up"** — failed once in a full-suite run on 2026-08-29 with
-      "Export job did not complete within max attempts", then passed 3/3 run
-      alone. It polls with a fixed attempt count, so it times out under
-      whole-suite load rather than failing. Poll on a deadline, not a count.
+- [x] **`export_integration_test.dart` "Cancel export DELETE cancels and
+      cleans up"** — the poll now runs on a 30-second wall-clock deadline
+      instead of 20 attempts of a 100ms sleep. Fixed 2026-08-30.
+      🛑 The cause of the 2026-08-29 failure is still unknown, and the
+      earlier text here — "it times out under whole-suite load" — was a
+      hypothesis written as a finding. It did not reproduce: five whole-suite
+      runs, 55 polls, **every one returned on the first attempt**, 5/5 green.
+      So the usual cost is 1 tick of the 20, and whatever happened on
+      2026-08-29 was an excursion of at least twentyfold. A deadline absorbs
+      that without explaining it, and the failure message now reports the
+      elapsed budget and the number of polls, so a repeat carries evidence.
+      The deadline path was driven once with `Duration.zero` to watch it
+      fail before the 30 seconds went back in.
 
 ## Suite baseline — 2026-08-29
 

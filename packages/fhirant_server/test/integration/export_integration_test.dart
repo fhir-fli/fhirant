@@ -53,13 +53,25 @@ void main() {
     return location.split('/').last;
   }
 
-  /// Helper: Poll until export job is complete (or timeout).
+  /// Helper: poll until the export job finishes, or until [timeout] passes.
+  ///
+  /// The budget is wall-clock, not a count of attempts. It used to be 20
+  /// attempts of a 100ms sleep, which is a budget only if every attempt costs
+  /// what it usually costs. Measured 2026-08-30 over five whole-suite runs:
+  /// all 55 polls returned on the FIRST attempt, so the usual cost is one
+  /// tick out of twenty. This test still failed once, on 2026-08-29, saying
+  /// the job had not completed — an excursion of at least twentyfold whose
+  /// cause is not known. A deadline absorbs that without pretending to
+  /// explain it, and the failure message now carries what it saw.
   Future<Response> pollUntilComplete(
     String jobId, {
-    int maxAttempts = 20,
+    Duration timeout = const Duration(seconds: 30),
   }) async {
-    for (var i = 0; i < maxAttempts; i++) {
+    final started = DateTime.now();
+    var attempts = 0;
+    while (DateTime.now().difference(started) < timeout) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
+      attempts++;
       final req = testRequest(
         'GET',
         '/\$export-poll-status/$jobId',
@@ -70,7 +82,10 @@ void main() {
         return resp;
       }
     }
-    fail('Export job did not complete within max attempts');
+    fail(
+      'Export job $jobId did not complete within ${timeout.inSeconds}s '
+      '($attempts polls, last status was still in progress)',
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
