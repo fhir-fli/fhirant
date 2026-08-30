@@ -490,7 +490,10 @@ void main() {
       ).captured;
       final searchParams = captured.first as Map<String, List<String>>;
       expect(searchParams.containsKey('_id'), isTrue);
-      expect(searchParams['_id'], containsAll(['obs-1', 'obs-2']));
+      // One comma-separated element, not two elements: the compartment's ids
+      // are alternatives, and R4 3.1.1.4.17 makes separate elements an AND,
+      // which no single resource could satisfy.
+      expect(searchParams['_id'], equals(['obs-1,obs-2']));
       expect(searchParams.containsKey('code'), isTrue);
     });
 

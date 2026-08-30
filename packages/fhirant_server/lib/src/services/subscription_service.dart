@@ -209,7 +209,10 @@ class SubscriptionService {
       final stored = await db.search(
         resourceType: fhir.R4ResourceType.Subscription,
         searchParameters: {
-          'status': ['active', 'error'],
+          // One element, comma-separated: this is an OR. Separate elements
+          // would be an AND (R4 3.1.1.4.17), and no Subscription is both
+          // active and error at once, so the sweep would find nothing.
+          'status': ['active,error'],
         },
       );
       for (final resource in stored.whereType<fhir.Subscription>()) {
@@ -247,7 +250,10 @@ class SubscriptionService {
       final stored = await db.search(
         resourceType: fhir.R4ResourceType.Subscription,
         searchParameters: {
-          'status': ['active', 'error'],
+          // One element, comma-separated: this is an OR. Separate elements
+          // would be an AND (R4 3.1.1.4.17), and no Subscription is both
+          // active and error at once, so the sweep would find nothing.
+          'status': ['active,error'],
         },
       );
       for (final subscription in stored.whereType<fhir.Subscription>()) {

@@ -161,12 +161,32 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'name': ['Smith', 'Jones'],
+          // One comma-separated element is the OR. Separate elements would
+          // be an AND (R4 3.1.1.4.17), which no one patient could satisfy.
+          'name': ['Smith,Jones'],
         },
       );
 
       expect(ids(results), containsAll(['pt-1', 'pt-2', 'pt-3']));
       expect(results.length, 3);
+    });
+
+    test('separate elements are an AND, not an OR', () async {
+      await seedAll();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'name': ['Smith', 'Jones'],
+        },
+      );
+
+      expect(
+        results,
+        isEmpty,
+        reason: 'R4 3.1.1.4.17: a repeated parameter asks for records having '
+            'BOTH, and no patient here is named both Smith and Jones',
+      );
     });
   });
 
@@ -525,8 +545,8 @@ void main() {
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
           'url': [
-            'http://example.org/fhir/ValueSet/my-codes',
-            'http://different.org/fhir/ValueSet/different',
+            'http://example.org/fhir/ValueSet/my-codes,'
+                'http://different.org/fhir/ValueSet/different',
           ],
         },
       );
@@ -798,7 +818,7 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': [r'12345-6$final', r'78901-2$amended'],
+          'code-status': [r'12345-6$final,78901-2$amended'],
         },
       );
 

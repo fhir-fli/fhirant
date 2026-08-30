@@ -196,10 +196,10 @@ packages:
     dependency: transitive
     description:
       name: fhir_r4_db
-      sha256: c849ed02ef3e07a8f67b80d28807baaf041af2d727f4c81c3f43df21f119efe8
+      sha256: "861ff574b30eb65dd8e22bba3e7ed7acc99d56a3544ced64278433b6e0d9d728"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.0"
+    version: "0.11.0"
   fhir_r4_mapping:
     dependency: "direct main"
     description:

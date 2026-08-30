@@ -217,7 +217,11 @@ Future<Response> compartmentSearchHandler(
     } else if (searchParams != null && searchParams.isNotEmpty) {
       // Combine compartment IDs as _id constraint with additional search
       final combined = Map<String, List<String>>.from(searchParams);
-      combined['_id'] = compartmentResourceIds.toList();
+      // Joined with commas, not left as separate elements: these ids are
+      // alternatives, and separate elements are an AND (R4 3.1.1.4.17), which
+      // no single resource could satisfy. A FHIR id cannot contain a comma
+      // (the type is [A-Za-z0-9-.]{1,64}), so nothing here needs escaping.
+      combined['_id'] = [compartmentResourceIds.join(',')];
       results = await dbInterface.search(
         resourceType: resTypeEnum,
         searchParameters: combined,
