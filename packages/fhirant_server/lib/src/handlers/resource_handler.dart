@@ -160,6 +160,8 @@ Future<Response> postSystemSearchHandler(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
+  } on UnsupportedSearchModifier catch (e) {
+    return _unsupportedModifierResponse(e);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Failed to process POST /_search',
@@ -570,6 +572,11 @@ Future<Response> _searchResources(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
+  } on UnsupportedSearchModifier catch (e) {
+    // R4 3.1.1.4.4 is a SHALL: reject, with a 400 and an OperationOutcome
+    // carrying a clear message. Ignoring it would silently change what the
+    // query means.
+    return _unsupportedModifierResponse(e);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Failed to fetch resources of type: $resourceType',
@@ -1442,4 +1449,27 @@ dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {
   }
 
   return current;
+}
+
+/// The 400 the specification requires for a modifier we do not support.
+///
+/// R4 3.1.1.4.4: "Server SHALL reject any search request that contains is
+/// suffixed by a modifier that the server does not support for that parameter
+/// ... using an HTTP 400 error with an OperationOutcome with a clear error
+/// message."
+Response _unsupportedModifierResponse(UnsupportedSearchModifier failure) {
+  FhirantLogging().logInfo('Rejected search: ${failure.message}');
+  return Response(
+    400,
+    body: fhir.OperationOutcome(
+      issue: [
+        fhir.OperationOutcomeIssue(
+          severity: fhir.IssueSeverity.error,
+          code: fhir.IssueType.notSupported,
+          diagnostics: failure.message.toFhirString,
+        ),
+      ],
+    ).toJsonString(),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
