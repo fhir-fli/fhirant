@@ -229,8 +229,25 @@ stops being true.
 
 ## Deployment
 
-- [x] **Docker** — `Dockerfile`, `docker-compose.yml` and `test_docker.sh` are
-      all in the repo root. Verified present 2026-08-29; not run.
+- [x] **Docker** — built and **run** 2026-08-31, not merely present. The build
+      context is this repository now: it used to have to be the parent
+      directory, for the cicada path dependency that became a git dependency,
+      and `git` was added to the build stage so `pub get` can fetch it.
+      `dart build cli` produces the native bundle with `libsqlite3mc.so`
+      beside it.
+      Smoke test through the running container on port 8099, all from the
+      HTTP side: `/health` and `/metadata` answer; `POST /Patient` → 201;
+      `?family=Okello` → 1; `?family:exact=okello` → 0, which is right,
+      `:exact` being case sensitive; `?birthdate=gt1979-01-01` → 1.
+      Two things learned by running it. **The image requires auth** — a bare
+      request is 401, and `/auth/register` then `/auth/login` gives a token
+      that works. **The default rate limit is 10 requests per 60 seconds**, so
+      a smoke script hits 429 quickly.
+      `$validate` behaves as the tests say: an unheld profile is 400
+      `not-supported`, and a plain Patient is 422 naming
+      `http://hl7.org/fhir/ValueSet/languages` — the base StructureDefinition
+      resolves from the database, and the value set does not, until the
+      `fhir_r4_validation` release lands.
 - [x] **CI/CD** — `.github/workflows/ci.yml`, added 2026-08-29. Formats,
       analyzes and tests all five packages on push to `main`, on every pull
       request, and on demand. Each package is checked even when an earlier one
