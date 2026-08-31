@@ -160,10 +160,14 @@ class FhirAntServer {
         (Request req) => libraryEvaluateByUrlHandler(req, dbInterface),
       )
       // Validation endpoints
-      ..all(r'/$validate', validateHandler)
+      ..all(
+        r'/$validate',
+        (Request req) => validateHandler(req, dbInterface),
+      )
       ..all(
         r'/<resourceType>/$validate',
-        validateHandler,
+        (Request req, String resourceType) =>
+            validateHandler(req, dbInterface, resourceType),
       )
       // Terminology operations
       ..get(

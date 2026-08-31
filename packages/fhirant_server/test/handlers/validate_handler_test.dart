@@ -13,7 +13,7 @@ void main() {
         body: '',
       );
 
-      final response = await validateHandler(request, 'Patient');
+      final response = await validateHandler(request, null, 'Patient');
 
       expect(response.statusCode, equals(400));
       final body = await response.readAsString();
@@ -29,7 +29,7 @@ void main() {
         body: 'not valid json{{{',
       );
 
-      final response = await validateHandler(request, 'Patient');
+      final response = await validateHandler(request, null, 'Patient');
 
       expect(response.statusCode, equals(400));
       final body = await response.readAsString();
@@ -53,7 +53,7 @@ void main() {
         body: patientJson,
       );
 
-      final response = await validateHandler(request, 'Observation');
+      final response = await validateHandler(request, null, 'Observation');
 
       expect(response.statusCode, equals(400));
       final body = await response.readAsString();
@@ -89,7 +89,7 @@ void main() {
       // missing external resources), we get 500 instead. Either outcome
       // is acceptable — we're testing that the handler reaches the
       // validator without erroring on pre-checks.
-      final response = await validateHandler(request);
+      final response = await validateHandler(request, null);
 
       // We accept 200 (valid) or 400 (validation issues) — both mean
       // the validator ran. 500 means an unexpected crash.
