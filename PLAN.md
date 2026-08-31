@@ -28,13 +28,25 @@ transform with no test covering it. Verifying the plan is how that was found.
 - [x] **_elements** — implemented alongside `_summary`, including the
       mutual-exclusivity check the spec requires. Verified 2026-08-29.
 - [ ] **_contained / _containedType** — recognised so a lenient request is
-      not rejected, and now reported under `Prefer: handling=strict`.
-      Still not acted on. Optional in R4: "servers are not obliged to
-      support this parameter."
-- [ ] **_filter** — same: recognised, reported under strict handling, not
-      acted on. Optional in R4. (`_filterContains` in
-      `terminology_handler.dart` is ValueSet expansion filtering,
-      unrelated.)
+      not rejected, and reported under `Prefer: handling=strict`. Still not
+      acted on.
+- [ ] **_filter** — parser done 2026-08-31 (`filter_expression.dart`, 24
+      tests); nothing evaluates it yet. (`_filterContains` in
+      `terminology_handler.dart` is ValueSet expansion filtering, unrelated.)
+
+🛑 **Correcting a quotation that was in both entries above.** They said
+`_filter` and `_contained` are "optional in R4" and quoted *"servers are not
+obliged to support this parameter"*. **That sentence is not in the spec about
+these parameters.** Grepped 2026-08-31: `search.html` uses "not obliged" three
+times, about `_include:iterate`, `_summary` and `_elements`, and never about
+`_filter`; `search_filter.html` does not contain it at all. What the spec
+actually says is broader and does support leaving them unimplemented:
+§3.1.1.4.1 *"Servers are not required to implement any of the standard search
+parameters (except for the `_id` parameter described above)"*, and §3.1.1.4.13
+mentions `_filter` as an alternative "for servers that support this
+parameter". Also §3.1.1.4.21 lists `_filter` as a **special** parameter, where
+*"The general modifiers and comparators do not apply"* — so `_filter` itself
+takes no `:modifier`.
 - [x] **Accent normalization** — done 2026-08-30 in `fhir_r4_db` 0.10.0, not
       here. The string index now holds a folded value for the default and
       `:contains` searches and the verbatim value for `:exact`, so
