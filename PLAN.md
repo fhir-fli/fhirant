@@ -164,7 +164,25 @@ stops being true.
 ## Advanced Operations
 
 - [ ] **GraphQL endpoint** — FHIR GraphQL support. Nothing exists.
-- [ ] **Profile validation** — validate against StructureDefinition profiles
+- [x] **Profile validation** — done 2026-09-02. `$validate` reads `profile`
+      from the query string or a `Parameters` body, resolves it against this
+      server's own StructureDefinitions, and returns 400 `not-supported` when
+      it cannot, which `OperationDefinition/Resource-validate` requires: "if a
+      profile is nominated, and the server cannot validate against the
+      nominated profile, it SHALL return an error."
+      🔴 **It was worse than a missing feature: nothing was validated at all.**
+      `FhirValidationEngine` built an empty in-memory cache per call, so every
+      request answered "No StructureDefinition found for resourceType: X". The
+      one test asserted only `isNot(equals(500))`, so it passed.
+      Three fixes made it work, two of them in published packages:
+      `fhir_r*_validation` 0.12.0 takes a `resourceCache` and looks the base
+      type up by canonical URL rather than bare name; `DbResourceCache` splits
+      `url|version`, without which every versioned binding
+      (`.../administrative-gender|4.3.0`) missed. Measured end to end: with the
+      packaged Patient definition and the packaged value sets in the database,
+      `$validate` on a Patient returns **200 with an empty OperationOutcome**,
+      offline, no network.
+      ⏭️ `mode` (create/update/delete) is still ignored.
 - [x] **`$transform`** — fixed 2026-08-29 and now has tests
       (`test/handlers/mapping_handler_test.dart`, 10). It had none, and it was
       broken: the handler passed a **null target** to `fhirMappingEngine`,

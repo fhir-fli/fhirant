@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_validation/fhir_r4_validation.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:shelf/shelf.dart';
 
 /// `$validate`, per `OperationDefinition/Resource-validate`.
@@ -99,25 +100,10 @@ Future<Response> validateHandler(
               'server. POST the StructureDefinition first.',
         );
       }
-    } else {
-      // No profile nominated: hand the engine the base type's definition
-      // from this server's own store.
-      //
-      // Without this the endpoint could not validate anything.
-      // FhirValidationEngine builds an empty in-memory CanonicalResourceCache
-      // per call and looks the type up in it, so every request came back
-      // "No StructureDefinition found for resourceType: X". The definitions
-      // are already here: spec_loader.dart loads profiles-resources.ndjson
-      // into the database on first boot, so the lookup is local and works
-      // with no network, which is the point of an on-device server.
-      final type = resourceJson['resourceType'];
-      if (type is String && type.isNotEmpty) {
-        structureDefinition = await _resolveProfile(
-          dbInterface,
-          'http://hl7.org/fhir/StructureDefinition/$type',
-        );
-      }
     }
+    // With no profile nominated the engine resolves the base type itself,
+    // through the cache below, by its canonical URL
+    // http://hl7.org/fhir/StructureDefinition/<type>.
 
     final validator = FhirValidationEngine();
     final ValidationResults validationResults;
@@ -125,6 +111,13 @@ Future<Response> validateHandler(
       validationResults = await validator.validateFhirMap(
         structureToValidate: resourceJson,
         structureDefinition: structureDefinition,
+        // Every StructureDefinition, ValueSet and CodeSystem the engine needs
+        // comes from this server's own database, which spec_loader fills from
+        // the packaged specification on first boot. Nothing goes to the
+        // network: the device may not have one, and a validation whose answer
+        // depended on connectivity would not be reproducible.
+        resourceCache:
+            dbInterface == null ? null : DbResourceCache(dbInterface),
       );
     } on Exception catch (e) {
       // The engine throws, rather than returning an issue, when a canonical
@@ -133,11 +126,10 @@ Future<Response> validateHandler(
       // Reporting that as a 500 tells the client we crashed, when what
       // actually happened is that this server cannot answer the question.
       //
-      // The engine builds its own empty in-memory cache per call and, as of
-      // fhir_r4_validation 0.9.0, gives a caller no way to supply one, so the
-      // value sets in this server's own database are unreachable to it. The
-      // seam exists in the package now and this becomes a resolution against
-      // our own store once that release lands.
+      // With fhir_r4_validation 0.12.0 the cache above is this server's own
+      // database, so this now means the canonical genuinely is not stored
+      // here: an IG profile nobody POSTed, or a value set outside the
+      // packaged specification. POST it and the validation completes.
       final message = e.toString();
       if (message.contains('Resource not found at')) {
         return _outcome(

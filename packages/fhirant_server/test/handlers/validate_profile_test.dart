@@ -208,6 +208,33 @@ Future<void> main() async {
     );
   });
 
+  test('with the value sets loaded too, validation completes', () async {
+    // The point of the resourceCache seam: every canonical the engine needs
+    // comes from this server's own store, offline. Loading the base
+    // definition alone leaves it stopping at the first coded element, which
+    // the test above pins; loading the packaged value sets as well lets it
+    // finish. spec_loader.dart does exactly this on first boot.
+    await db.saveResource(_packagedPatientDefinition());
+    for (final valueSet in _packagedValueSets()) {
+      await db.saveResource(valueSet);
+    }
+
+    final response = await validateHandler(post(patient), db, 'Patient');
+    expect(response.statusCode, 200);
+
+    final outcome =
+        jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+    final diagnostics = ((outcome['issue'] as List?) ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map((i) => i['diagnostics'])
+        .toList();
+    expect(diagnostics, isNot(contains(contains('Resource not found at'))));
+    expect(
+      diagnostics,
+      isNot(contains(contains('No StructureDefinition found'))),
+    );
+  });
+
   test('the resource type in the body must still match the path', () async {
     final response = await validateHandler(
       post('{"resourceType":"Observation","status":"final"}'),
@@ -232,4 +259,35 @@ fhir.StructureDefinition _packagedPatientDefinition() {
     }
   }
   throw StateError('Patient StructureDefinition not found in the spec assets');
+}
+
+/// The packaged value sets a Patient's coded elements are bound to.
+///
+/// Read from the shipped specification rather than hand-written, and limited
+/// to the ones this test needs so the in-memory database stays small.
+List<fhir.ValueSet> _packagedValueSets() {
+  const wanted = {
+    'http://hl7.org/fhir/ValueSet/languages',
+    'http://hl7.org/fhir/ValueSet/administrative-gender',
+    'http://hl7.org/fhir/ValueSet/marital-status',
+    'http://hl7.org/fhir/ValueSet/link-type',
+    'http://hl7.org/fhir/ValueSet/name-use',
+    'http://hl7.org/fhir/ValueSet/contact-point-system',
+    'http://hl7.org/fhir/ValueSet/contact-point-use',
+    'http://hl7.org/fhir/ValueSet/address-use',
+    'http://hl7.org/fhir/ValueSet/address-type',
+    'http://hl7.org/fhir/ValueSet/identifier-use',
+    'http://hl7.org/fhir/ValueSet/patient-contactrelationship',
+    'http://hl7.org/fhir/ValueSet/narrative-status',
+  };
+  final found = <fhir.ValueSet>[];
+  for (final line
+      in File('assets/fhir_spec/valuesets.ndjson').readAsLinesSync()) {
+    if (line.trim().isEmpty) continue;
+    final json = jsonDecode(line) as Map<String, dynamic>;
+    if (json['resourceType'] == 'ValueSet' && wanted.contains(json['url'])) {
+      found.add(fhir.ValueSet.fromJson(json));
+    }
+  }
+  return found;
 }
