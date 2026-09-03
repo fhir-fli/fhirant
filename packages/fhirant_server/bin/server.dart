@@ -10,7 +10,15 @@ import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
 
 void main(List<String> arguments) async {
-  final logger = FhirantLogging();
+  final logger = FhirantLogging()
+    // Nothing called this, so Logger.root had no listener and EVERY log line
+    // this binary writes went nowhere: startup, database initialisation,
+    // failures, the lot. The Flutter app calls it (main.dart:46); the
+    // standalone server never did, which is why an unknown flag exited 1 in
+    // silence. Console only by default — a server run from a terminal has its
+    // output collected there, and a file would otherwise appear in the working
+    // directory uninvited.
+    ..initialize(logFilePath: null);
 
   final parser = ArgParser()
     ..addOption('port', abbr: 'p', defaultsTo: '8080', help: 'Server port')
@@ -38,8 +46,11 @@ void main(List<String> arguments) async {
       stdout.writeln('FHIR ANT Server\n\nUsage:\n${parser.usage}');
       exit(0);
     }
-  } catch (e) {
-    logger.logError('Error parsing arguments: $e\n\nUsage:\n${parser.usage}');
+  } on FormatException catch (e) {
+    // Straight to stderr, not through the logger: a usage error is for the
+    // person who typed the command, and it must survive whatever logging is
+    // or is not configured.
+    stderr.writeln('$e\n\nUsage:\n${parser.usage}');
     exit(1);
   }
 
