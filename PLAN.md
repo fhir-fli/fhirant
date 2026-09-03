@@ -377,25 +377,26 @@ stops being true.
       hits in 200 encryptions, 7.5%**, on a test whose job is to say whether
       patient data escaped. Id lengthened to `pat-9f3c2a71-leak-canary`,
       0 in 200. Fixed 2026-08-29.
-- [ ] **An export job occasionally never finishes** (was filed as a flaky
-      test). The poll helper now runs on a 20-second wall-clock deadline
-      instead of 20 attempts of a 100ms sleep, and its failure names the job,
-      the elapsed budget, the number of polls and the last `X-Progress` line.
-      🛑 **The stall itself is real and unexplained, so this stays open.**
-      The old text here — "it times out under whole-suite load" — was a
-      hypothesis written as a finding. What is measured, 2026-08-30, eight
-      whole-suite runs: **55 polls in five runs returned on the FIRST
-      attempt**, and one run — the first against a fresh clone — hung until
-      `dart test`'s own 30-second per-test timeout killed it, on
-      `_typeFilter combined with _since` rather than the cancel test, so the
-      helper is not the subject. Two immediate reruns in that same clone
-      passed 775/775. One occurrence in eight runs, on two different tests.
-      The deadline is deliberately **under** the framework's 30 seconds so
-      the next occurrence reports what it saw instead of "timed out". The
-      framework timeout is not being raised: an export that hangs is a defect
-      to fail on, not one to wait out.
-      Next step when it recurs: the message will say whether the job was
-      still `Queued` or `Exporting...`, which separates a job that never
+- [ ] **An export job occasionally never finishes.** One mechanism is proven
+      and fixed; the two original occurrences remain untraced.
+      **Proven 2026-09-03:** the status endpoint answers **404** for a job that
+      was cancelled or whose row is gone, and `pollUntilComplete` treated only
+      200 and 500 as terminal. Kick off, DELETE, then poll: 404 on every
+      attempt, unbounded, until `dart test`'s 30-second timeout. A 404 now
+      fails the test naming the job.
+      **Also fixed:** the outer `catch` in `_processExport` calls `_failJob`,
+      which is itself a database write. If that write failed too — the database
+      closed under it, the row deleted — the exception escaped and the job
+      stayed `in_progress` for ever, so every poll answered 202. It is wrapped
+      now and logs that the job will stay `in_progress`.
+      🛑 **Whether either mechanism caused the 2026-08-29 failure or the
+      2026-08-30 clone run is NOT established.** Those two were never traced:
+      one occurrence in eight whole-suite runs, on `_typeFilter combined with
+      _since` rather than the cancel test, with two immediate reruns in the
+      same clone passing 775/775.
+      The deadline stays at 20 seconds, under the framework's 30, so a genuine
+      hang reports the job, the elapsed budget, the poll count and the last
+      `X-Progress` line — `Queued` or `Exporting...` separates a job that never
       started from one that never finished.
 
 ## Suite baseline — 2026-08-29
