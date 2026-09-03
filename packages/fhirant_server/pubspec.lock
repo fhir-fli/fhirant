@@ -60,9 +60,11 @@ packages:
   cicada:
     dependency: "direct main"
     description:
-      path: "/home/grey/dev/fhir/cicada/cicada"
-      relative: false
-    source: path
+      path: cicada
+      ref: main
+      resolved-ref: "0914a0361d2d1ac361a1976221b4f704bd85b14c"
+      url: "https://github.com/fhir-fli/cicada.git"
+    source: git
     version: "0.0.1"
   cli_config:
     dependency: transitive
