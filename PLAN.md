@@ -249,13 +249,23 @@ stops being true.
       identically. The stubs were a latent trap in a public contract, not a
       live engine failure. The only caller today is the target-type
       resolution.
-- [ ] **A target with required elements** — a map that does not set
-      `Observation.status`, `Basic.code` or `RelatedPerson.patient` cannot be
-      built, and `FhirMapEngine.transformBuilder` reports that by **returning
-      an OperationOutcome rather than throwing**. The handler returned it with
-      **HTTP 200**; it now returns **422** with the outcome. The open half is
-      `fhir_r4_mapping`, not fhirant: whether `Builder.build()` should throw a
-      null-check error at all, or name the unset required element.
+- [x] **A target with required elements** — closed 2026-09-03. A map that does
+      not set `Observation.status`, `Basic.code` or `RelatedPerson.patient`
+      cannot be built, and `FhirMapEngine.transformBuilder` reports that by
+      **returning an OperationOutcome rather than throwing**. The handler
+      returned it with HTTP 200; it returns **422** with the outcome.
+      The open half was what the outcome SAID: `build()` is
+      `Type.fromJson(toJson())` and `fromJson` dereferences the required
+      elements, so the diagnostics read `Null check operator used on a null
+      value` — no type, no element, nothing a map author can act on.
+      Fixed in `fhir_r4_mapping` on `dev` (`60fd7e5b1`): the build is caught
+      separately and reports the target type plus the elements the map did
+      produce, which is the list the missing one is absent from.
+      ⏭️ fhirant depends on the published 0.12.0, so it still shows the old
+      message; `mapping_handler_test.dart` pins that rather than pretending,
+      and the assertion flips when the next release lands. Naming the exact
+      element at its source would mean changing every generated `fromJson` in
+      `fhir_r4`, which this deliberately does not do.
 - [x] **A canonical the server does not hold** — closed 2026-09-02, and the
       old entry described what the comment claimed rather than what the code
       did. The fallback returned the URL's last segment whatever it was, so an

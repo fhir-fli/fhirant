@@ -298,6 +298,18 @@ void main() {
       final json = await bodyOf(response);
       expect(json['resourceType'], equals('OperationOutcome'));
       expect(json['issue'] as List, isNotEmpty);
+
+      // 🛑 What it SAYS is still useless, and this pins that rather than
+      // pretending otherwise. `build()` is `Type.fromJson(toJson())`, so an
+      // unset required element surfaces as a bare "Null check operator used
+      // on a null value" — naming neither the type nor the element.
+      //
+      // fhir_r4_mapping on `dev` now reports the target type and the elements
+      // the map DID set. fhirant depends on the published 0.12.0, so this
+      // assertion flips to the better message when that release lands.
+      final diagnostics =
+          ((json['issue'] as List).first as Map)['diagnostics'] as String;
+      expect(diagnostics, contains('Null check operator'));
     });
   });
 }
