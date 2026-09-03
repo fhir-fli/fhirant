@@ -13,11 +13,16 @@ import 'test_helpers.dart';
 /// parameters", and a client sending `Prefer: handling=strict` is asking the
 /// server to return an error for them instead.
 ///
-/// `_filter`, `_contained` and `_containedType` are the recognised-but-
-/// unsupported case: fhirant lists them so a lenient request is not rejected,
-/// but nothing acts on them. Silently succeeding under strict handling is the
-/// dangerous direction — the client believes it filtered and is handed the
-/// unfiltered set, which is more of the record than it asked to see.
+/// `_contained` and `_containedType` are the recognised-but-unsupported case:
+/// fhirant lists them so a lenient request is not rejected, but nothing acts
+/// on them. Silently succeeding under strict handling is the dangerous
+/// direction — the client believes it filtered and is handed the unfiltered
+/// set, which is more of the record than it asked to see.
+///
+/// `_filter` was in that list until it was implemented. It is answered now, so
+/// strict handling must NOT reject it. An operator inside a filter that this
+/// server cannot answer is still a 400, under any Prefer header, for the same
+/// reason: returning the unfiltered set would say the filter ran.
 void main() {
   Future<void> seed(dynamic db) async {
     for (final id in ['p-alpha', 'p-beta', 'p-gamma']) {
@@ -34,7 +39,7 @@ void main() {
     final response = await server.handler(
       testRequest(
         'GET',
-        '/Patient?_filter=name%20eq%20%22alpha%22',
+        '/Patient?_contained=true',
         authToken: token,
         headers: {'Prefer': 'handling=strict'},
       ),
@@ -47,7 +52,26 @@ void main() {
           'answering 200 with the unfiltered set tells it the filter ran',
     );
     final body = jsonDecode(await response.readAsString());
-    expect(jsonEncode(body), contains('_filter'));
+    expect(jsonEncode(body), contains('_contained'));
+  });
+
+  test('strict handling accepts _filter, which is implemented', () async {
+    final server = await createTestServer();
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    await seed(server.db);
+
+    final response = await server.handler(
+      testRequest(
+        'GET',
+        '/Patient?_filter=${Uri.encodeQueryComponent('_id eq p-alpha')}',
+        authToken: token,
+        headers: {'Prefer': 'handling=strict'},
+      ),
+    );
+    expect(response.statusCode, equals(200));
+    final bundle =
+        jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+    expect((bundle['entry'] as List?) ?? [], hasLength(1));
   });
 
   test('strict handling rejects _contained and _containedType', () async {
@@ -83,7 +107,7 @@ void main() {
       final response = await server.handler(
         testRequest(
           'GET',
-          '/Patient?_filter=name%20eq%20%22alpha%22',
+          '/Patient?_contained=true',
           authToken: token,
           headers: headers,
         ),
@@ -96,6 +120,31 @@ void main() {
         hasLength(3),
         reason: 'ignored means ignored: all three patients come back',
       );
+    }
+  });
+
+  test('an operator _filter cannot answer is a 400 even under lenient',
+      () async {
+    // Lenient asks the server to ignore what it does not support. It cannot
+    // ignore half a filter: dropping the condition returns every patient and
+    // tells the client its filter ran.
+    final server = await createTestServer();
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    await seed(server.db);
+
+    for (final headers in [
+      <String, String>{},
+      {'Prefer': 'handling=lenient'},
+    ]) {
+      final response = await server.handler(
+        testRequest(
+          'GET',
+          '/Patient?_filter=${Uri.encodeQueryComponent('name eq "alpha"')}',
+          authToken: token,
+          headers: headers,
+        ),
+      );
+      expect(response.statusCode, equals(400), reason: 'headers: $headers');
     }
   });
 

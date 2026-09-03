@@ -6,6 +6,8 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/compartment_definitions.dart';
+import 'package:fhirant_server/src/utils/filter_evaluator.dart';
+import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
@@ -213,6 +215,7 @@ Future<Response> _searchResources(
     final elements = parsed['elements'] as List<String>?;
     final total = parsed['total'] as String?;
     final unknownParams = parsed['unknownParams'] as List<String>?;
+    final filter = parsed['filter'] as String?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -280,6 +283,28 @@ Future<Response> _searchResources(
       );
     }
 
+    // _filter is evaluated into a set of ids, which then joins the ordinary
+    // search parameters as `_id`. Both halves are therefore ANDed, which is
+    // what R4 3.1.1.4 says of parameters that appear together, and the filter
+    // itself runs through the same index rather than a second engine beside
+    // it.
+    Set<String>? filterIds;
+    if (filter != null && filter.trim().isNotEmpty) {
+      try {
+        filterIds = await FilterEvaluator(dbInterface, type)
+            .evaluate(parseFilter(filter));
+      } on FilterParseException catch (e) {
+        return _validationErrorResponse('Invalid _filter: $e');
+      } on FilterNotSupported catch (e) {
+        // R4 3.1.1.4.4 asks for "a clear error message" rather than a result
+        // set that means something the client did not ask for.
+        return _validationErrorResponse(e.message);
+      }
+      if (filterIds.isEmpty) {
+        return _emptySearchBundle(request, total);
+      }
+    }
+
     // Patient-level scope enforcement: restrict results to patient compartment
     final patientId = extractPatientContext(request);
     var effectiveSearchParams = searchParams;
@@ -320,6 +345,27 @@ Future<Response> _searchResources(
       } else {
         // Resource type not in patient compartment — return empty
         return _emptySearchBundle(request, total);
+      }
+    }
+
+    if (filterIds != null) {
+      effectiveSearchParams = Map<String, List<String>>.from(
+        effectiveSearchParams ?? {},
+      );
+      final existing = effectiveSearchParams['_id'];
+      if (existing == null) {
+        // One comma-separated element: the elements of a value list are ANDed
+        // since fhir_r4_db 0.11.0, and these ids are alternatives.
+        effectiveSearchParams['_id'] = [filterIds.join(',')];
+      } else {
+        // A patient compartment already narrowed `_id`. Intersect rather than
+        // append, so the filter cannot widen what the scope allows.
+        final allowed = existing.expand((value) => value.split(',')).toSet();
+        final both = filterIds.intersection(allowed);
+        if (both.isEmpty) {
+          return _emptySearchBundle(request, total);
+        }
+        effectiveSearchParams['_id'] = [both.join(',')];
       }
     }
 

@@ -40,6 +40,7 @@ class SearchParameterParser {
 
     // Special parameters that are not search parameters
     String? total;
+    String? filter;
     final unknownSpecialParams = <String>[];
 
     // All known _-prefixed parameters (special params + common search params)
@@ -70,7 +71,6 @@ class SearchParameterParser {
     const unsupportedParams = {
       '_contained',
       '_containedType',
-      '_filter',
     };
 
     // Common _-prefixed search parameters that are valid across all
@@ -165,6 +165,10 @@ class SearchParameterParser {
             case '_total':
               // _total: none, accurate, estimate
               total = value;
+            case '_filter':
+              // Carried whole. Its own grammar owns every character after
+              // this point, so nothing here splits, trims or lower-cases it.
+              filter = value;
           }
         } else {
           // Track unrecognized _-prefixed parameters, for
@@ -196,6 +200,7 @@ class SearchParameterParser {
       'summary': summary,
       'elements': elements,
       'total': total,
+      'filter': filter,
       'unknownParams':
           unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
       'has': has.isEmpty ? null : has,

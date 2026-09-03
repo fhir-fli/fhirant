@@ -68,7 +68,13 @@ class FilterEvaluator {
 
     final name = comparison.path.map((segment) => segment.name).join('.');
     final root = comparison.path.first.name;
-    final definition = searchParameterTypes[resourceType.toString()]?[root];
+    // The common parameters — _id, _lastUpdated, _tag, _profile, _security and
+    // the rest of R4 3.1.1.4.1 — are published against `Resource` and
+    // `DomainResource`, not against each type, so a filter naming one has to
+    // fall back to those tables.
+    final definition = searchParameterTypes[resourceType.toString()]?[root] ??
+        searchParameterTypes['DomainResource']?[root] ??
+        searchParameterTypes['Resource']?[root];
     if (definition == null) {
       throw FilterNotSupported(
         '"$root" is not a search parameter of $resourceType.',

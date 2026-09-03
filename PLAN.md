@@ -30,8 +30,25 @@ transform with no test covering it. Verifying the plan is how that was found.
 - [ ] **_contained / _containedType** — recognised so a lenient request is
       not rejected, and reported under `Prefer: handling=strict`. Still not
       acted on.
-- [ ] **_filter** — parser done 2026-08-31 (`filter_expression.dart`, 24
-      tests); nothing evaluates it yet. (`_filterContains` in
+- [x] **_filter** — done 2026-09-02, end to end. Parser
+      (`filter_expression.dart`, 24 tests), evaluator
+      (`filter_evaluator.dart`, 18), and wired into the search handler
+      (`filter_e2e_test.dart`, 7 through HTTP against the real database).
+      Every leaf runs as an ordinary search through the same index the REST
+      endpoint uses; `and`/`or`/`not` combine the id sets; the result is
+      ANDed with the ordinary parameters as `_id`, and intersected rather
+      than appended when a patient compartment has already narrowed `_id`.
+      **What it refuses, with a message and a 400 rather than a wrong
+      answer:** `eq` on a string (3.1.3.2 means the whole value compared
+      case-insensitively; we have starts-with and `:exact`), `ne` (not the
+      complement of `eq` for a repeating element), `ew`, `po`, `ss`, `sb`,
+      and any path carrying a `[sub-filter]` (`related-type` and
+      `related-target` are separate index rows, so ANDing them also matches
+      two different components). A filter that cannot be answered is a 400
+      under **any** `Prefer` header: ignoring half a filter returns the
+      unfiltered set and tells the client its filter ran.
+      `_filter` is therefore no longer in the recognised-but-unsupported list
+      that `Prefer: handling=strict` rejects. (`_filterContains` in
       `terminology_handler.dart` is ValueSet expansion filtering, unrelated.)
 
 🛑 **Correcting a quotation that was in both entries above.** They said
