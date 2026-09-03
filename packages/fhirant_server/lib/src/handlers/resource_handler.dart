@@ -307,7 +307,15 @@ Future<Response> _searchResources(
             // No resources in compartment for this type
             return _emptySearchBundle(request, total);
           }
-          effectiveSearchParams['_id'] = allowedIds.toList();
+          // One comma-separated element, not one element per id. Since
+          // fhir_r4_db 0.11.0 the elements of a value list are ANDed, so a
+          // list of ids asks for a resource whose id is all of them at once
+          // and matches nothing. Measured: `_id: ['a','b']` returns [],
+          // `_id: ['a,b']` returns both. compartment_handler.dart:224 already
+          // joins; this site did not, so every patient-scoped search over a
+          // compartment holding more than one resource of a type returned an
+          // empty bundle.
+          effectiveSearchParams['_id'] = [allowedIds.join(',')];
         }
       } else {
         // Resource type not in patient compartment — return empty

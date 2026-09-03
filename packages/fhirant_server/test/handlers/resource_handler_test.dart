@@ -1541,7 +1541,7 @@ void main() {
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
           searchParameters: {
-            '_id': ['obs-1', 'obs-2'],
+            '_id': ['obs-1,obs-2'],
           },
           hasParameters: any(named: 'hasParameters'),
           count: any(named: 'count'),
@@ -1553,7 +1553,7 @@ void main() {
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Observation,
           searchParameters: {
-            '_id': ['obs-1', 'obs-2'],
+            '_id': ['obs-1,obs-2'],
           },
           hasParameters: any(named: 'hasParameters'),
         ),

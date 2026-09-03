@@ -389,4 +389,59 @@ void main() {
       expect(entries[0]['resource']['id'], equals('obs-enc'));
     });
   });
+
+  group('a patient-scoped search over a multi-resource compartment', () {
+    // Against the real database, not a mock. The handler built `_id` as one
+    // element per id, and since fhir_r4_db 0.11.0 the elements of a value
+    // list are ANDed, so it asked for a resource whose id was every id at
+    // once and returned an empty bundle: a patient-scoped client saw none of
+    // its own data. The mocked test in resource_handler_test.dart could not
+    // catch it, because it asserted the broken shape and then answered it.
+    setUp(() async {
+      await testDb.saveResource(fhir.Patient(id: 'pat-1'.toFhirString));
+      for (final id in ['obs-1', 'obs-2', 'obs-3']) {
+        await testDb.saveResource(
+          fhir.Observation(
+            id: id.toFhirString,
+            status: fhir.ObservationStatus.final_,
+            code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+            subject: fhir.Reference(reference: 'Patient/pat-1'.toFhirString),
+          ),
+        );
+      }
+      // A second patient's observation, which must never appear.
+      await testDb.saveResource(fhir.Patient(id: 'pat-2'.toFhirString));
+      await testDb.saveResource(
+        fhir.Observation(
+          id: 'obs-other'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+          subject: fhir.Reference(reference: 'Patient/pat-2'.toFhirString),
+        ),
+      );
+    });
+
+    test('returns every resource in the compartment, not none', () async {
+      final response = await handler(
+        testRequest(
+          'GET',
+          '/Observation',
+          authToken: generateTestToken(
+            scopes: ['patient/Observation.rs'],
+            patientId: 'pat-1',
+          ),
+        ),
+      );
+
+      expect(response.statusCode, 200);
+      final bundle =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final ids = ((bundle['entry'] as List?) ?? [])
+          .map((e) => (e as Map)['resource'] as Map)
+          .map((r) => r['id'] as String)
+          .toList()
+        ..sort();
+      expect(ids, ['obs-1', 'obs-2', 'obs-3']);
+    });
+  });
 }
