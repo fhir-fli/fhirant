@@ -249,14 +249,26 @@ stops being true.
       **HTTP 200**; it now returns **422** with the outcome. The open half is
       `fhir_r4_mapping`, not fhirant: whether `Builder.build()` should throw a
       null-check error at all, or name the unset required element.
-- [ ] **A canonical the server does not hold** — resolution falls back to the
-      last path segment of the URL, which is right for a base FHIR canonical
-      and wrong for an unheld profile, so the caller gets a 400 naming what
-      could not be resolved rather than a guessed type. Deviation, labelled in
-      the code. The cure is to POST the StructureDefinition first.
-- [ ] **Several target structures** — `structure` is `0..*`. The handler takes
-      the first `mode = target` entry and ignores any others. No spec rule
-      found either way; recorded rather than assumed correct.
+- [x] **A canonical the server does not hold** — closed 2026-09-02, and the
+      old entry described what the comment claimed rather than what the code
+      did. The fallback returned the URL's last segment whatever it was, so an
+      unheld profile produced the target type `us-core-patient`. It is guarded
+      now: the last segment is accepted only when it names a real R4 resource
+      type, and otherwise the caller gets a 400 naming the canonical.
+      🔴 **This bites HL7's own published example.**
+      `StructureMap-supplyrequest-transform.json`, in
+      `~/.fhir/packages/hl7.fhir.r4b.core#4.3.0/package/`, gives its target as
+      `http://hl7.org/fhir/StructureDefinition/supplyrequest` — lower case,
+      while the type is `SupplyRequest`, and `R4ResourceType.fromString` is
+      case sensitive. Unguarded that produced the type `supplyrequest`. The
+      cure is unchanged: POST the StructureDefinition first.
+- [x] **Several target structures** — closed 2026-09-02. `structure` is
+      `0..*`, structuremap.html gives no rule for choosing among several
+      targets, and the operation returns exactly one resource. Targets
+      resolving to **different** types are refused with a 400 naming them,
+      because picking one would be inventing the rule the spec does not state.
+      Targets resolving to the **same** type are unambiguous and allowed.
+      Six tests in `mapping_target_test.dart`.
 
 ## Testing Gaps
 

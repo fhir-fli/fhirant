@@ -135,7 +135,27 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
     // "Unable to create target of type <alias>". StructureMap-transform names
     // the target in the map itself, so build an empty instance of it here.
     final cache = DbResourceCache(db);
-    final targetType = await _targetResourceType(structureMap, cache);
+    final String? targetType;
+    try {
+      targetType = await _targetResourceType(structureMap, cache);
+    } on TargetTypeAmbiguous catch (e) {
+      // Refusing beats guessing: a transform that returned a resource of a
+      // type the map did not ask for is a wrong answer, not a limitation.
+      return Response(
+        400,
+        body: jsonEncode({
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'not-supported',
+              'diagnostics': e.message,
+            },
+          ],
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
     if (targetType == null) {
       return Response(
         400,
@@ -269,21 +289,28 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
 /// `type: "Patient"`, and the profile `us-core-patient` also has
 /// `type: "Patient"` — which is what makes a profiled target resolve.
 ///
-/// 🛑 The fallback IS a deviation and is labelled as one. When the canonical is
-/// not in the cache or the database, this reads the last path segment of the
-/// URL. That is right for a base FHIR canonical and wrong for an unknown
-/// profile, so the caller gets a 400 naming what it could not resolve rather
-/// than a guessed type. The cure is to POST the StructureDefinition to the
-/// server first, which is what makes the map's structures "known to the
-/// server".
+/// 🛑 The fallback is a deviation and is labelled as one, and it is now
+/// GUARDED. When the canonical is not in the cache or the database, this reads
+/// the last path segment of the URL, but only accepts it when it names a real
+/// R4 resource type. Unguarded it returned whatever the URL ended with:
+/// `us-core-patient` for an unheld profile, and `supplyrequest` for HL7's own
+/// published `StructureMap-supplyrequest-transform.json`, whose target
+/// canonical is lower case while the type is `SupplyRequest`. Neither is a
+/// type this server can build, so both now produce a 400 naming the canonical
+/// that could not be resolved. The cure is to POST the StructureDefinition
+/// first, which is what makes the map's structures "known to the server".
 ///
-/// `structure` is `0..*`. A map naming several targets uses the first; no spec
-/// rule was found either way, and it is recorded in PLAN.md rather than
-/// presented as correct.
+/// `structure` is `0..*`, and structuremap.html gives no rule for choosing
+/// among several targets while `$transform` returns exactly one resource. So
+/// several target structures resolving to DIFFERENT types is refused rather
+/// than silently answered with the first — the spec does not say which is
+/// meant, and picking one would be inventing the rule. Several resolving to
+/// the same type is unambiguous and is allowed.
 Future<String?> _targetResourceType(
   fhir.StructureMap map,
   ResourceCache cache,
 ) async {
+  final found = <String>{};
   for (final structure in map.structure ?? <fhir.StructureMapStructure>[]) {
     if (structure.mode.valueString != 'target') {
       continue;
@@ -295,12 +322,43 @@ Future<String?> _targetResourceType(
     final resolved = await cache.getStructureDefinition(url);
     final declared = resolved?.type.valueString;
     if (declared != null && declared.isNotEmpty) {
-      return declared;
+      found.add(declared);
+      continue;
     }
+    // Unresolved: the URL's last segment is a guess, and only a guess that
+    // names a real resource type is worth making.
     final lastSegment = url.split('/').last;
-    if (lastSegment.isNotEmpty) {
-      return lastSegment;
+    if (fhir.R4ResourceType.fromString(lastSegment) != null) {
+      found.add(lastSegment);
+    } else {
+      throw TargetTypeAmbiguous(
+        'Cannot resolve the target structure "$url" to a resource type. No '
+        'StructureDefinition with that canonical URL is known to this server, '
+        'and "$lastSegment" is not an R4 resource type. POST the '
+        'StructureDefinition first.',
+      );
     }
   }
-  return null;
+  if (found.length > 1) {
+    final types = (found.toList()..sort()).join(', ');
+    throw TargetTypeAmbiguous(
+      'This StructureMap declares target structures of more than one type '
+      '($types). The operation returns a single resource and '
+      'structuremap.html gives no rule for choosing among them, so this '
+      'server refuses rather than picking one.',
+    );
+  }
+  return found.isEmpty ? null : found.first;
+}
+
+/// Thrown when a map's target type cannot be determined without guessing.
+class TargetTypeAmbiguous implements Exception {
+  /// Creates a refusal explaining [message].
+  const TargetTypeAmbiguous(this.message);
+
+  /// What could not be decided, and what the caller can do about it.
+  final String message;
+
+  @override
+  String toString() => message;
 }
