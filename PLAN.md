@@ -192,8 +192,15 @@ stops being true.
       client reading the resource on a quiet server was told `active` about a
       finished subscription. R4 calls `end` "the time for the server to turn
       the subscription off", which is an instruction to the server.
-- [ ] **Only rest-hook and websocket** — email, sms and message are refused at
-      activation rather than silently accepted.
+- [x] **Only rest-hook and websocket** — closed 2026-09-03: this was never a
+      defect, and listing it as open said otherwise. `supportedChannels` is
+      `{'rest-hook', 'websocket'}` and `subscription_service.dart:167` refuses
+      anything else **at activation**, with `channel.type "<x>" is not
+      supported by this server` in `Subscription.error`. Telling a client a
+      subscription is active when nothing will ever be delivered is the
+      failure worth avoiding, and it is avoided. Implementing email, sms or
+      message would mean a mail or SMS gateway, which an on-device server has
+      no business holding credentials for.
 
 ## Advanced Operations
 

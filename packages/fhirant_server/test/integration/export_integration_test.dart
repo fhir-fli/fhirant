@@ -61,16 +61,17 @@ void main() {
   /// all 55 polls returned on the FIRST attempt, so the usual cost is one
   /// tick out of twenty.
   ///
-  /// The stall is real and it is not understood. It happened once on
-  /// 2026-08-29, and again on 2026-08-30 in the first run against a fresh
-  /// clone, on a different test using this same helper: the job never
-  /// finished and `dart test`'s own 30-second per-test timeout killed it.
-  /// Eight whole-suite runs that day, one occurrence. So the deadline here is
-  /// **20 seconds, deliberately under that 30**, because a failure that comes
-  /// out of the test framework says only "timed out" — this one says which
-  /// job, how long, how many polls, and what the last status line was. The
-  /// framework timeout is left where it is: an export that hangs is a defect
-  /// worth failing on, not one to sit through for two minutes.
+  /// One mechanism for the stall is now proven, and it was in this helper: a
+  /// job that has been cancelled, or whose row is gone, answers **404 for
+  /// ever**, and only 200 and 500 were treated as terminal. Measured
+  /// 2026-09-03 — kick off, DELETE, poll: 404 on every attempt, unbounded. A
+  /// 404 fails the test now, naming the job.
+  ///
+  /// Whether that is what happened on 2026-08-29 and in the 2026-08-30 clone
+  /// run is NOT established; those two occurrences were never traced. The
+  /// deadline stays at **20 seconds, deliberately under `dart test`'s own 30**,
+  /// so a genuine hang reports which job, how long, how many polls and the
+  /// last status line rather than a bare framework timeout.
   Future<Response> pollUntilComplete(
     String jobId, {
     Duration timeout = const Duration(seconds: 20),
@@ -89,6 +90,17 @@ void main() {
       final resp = await handler(req);
       if (resp.statusCode == 200 || resp.statusCode == 500) {
         return resp;
+      }
+      if (resp.statusCode == 404) {
+        // Terminal, and it was not treated as such: the status endpoint
+        // answers 404 for a job that was cancelled or whose row is gone, so a
+        // poll that began after that spun until `dart test`'s own 30-second
+        // timeout killed it. Measured 2026-09-03: kick off, DELETE, then poll
+        // — 404 on every attempt, for ever.
+        fail(
+          'Export job $jobId is gone: the status endpoint answered 404 after '
+          '$attempts polls. A cancelled or deleted job never becomes 200.',
+        );
       }
       // Shelf lower-cases header names, so this is the X-Progress the
       // handler sets: 'Queued' while pending, 'Exporting...' once running.

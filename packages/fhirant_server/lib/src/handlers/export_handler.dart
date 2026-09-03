@@ -621,7 +621,20 @@ Future<void> _processExport(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Export job $jobId failed', e, stackTrace);
-    await _failJob(dbInterface, jobId, 'Export failed');
+    try {
+      await _failJob(dbInterface, jobId, 'Export failed');
+    } catch (inner, innerStack) {
+      // If marking the failure ALSO fails — the database closed under it, the
+      // row deleted — the job would otherwise stay `in_progress` for ever and
+      // every poll would answer 202 until the client gave up. Nothing more can
+      // be written at this point, so say so where it can be read.
+      FhirantLogging().logError(
+        'Export job $jobId could not be marked failed; it will stay '
+        'in_progress until it is cleaned up',
+        inner,
+        innerStack,
+      );
+    }
   }
 }
 
