@@ -13,16 +13,18 @@ import 'test_helpers.dart';
 /// parameters", and a client sending `Prefer: handling=strict` is asking the
 /// server to return an error for them instead.
 ///
-/// `_contained` and `_containedType` are the recognised-but-unsupported case:
-/// fhirant lists them so a lenient request is not rejected, but nothing acts
-/// on them. Silently succeeding under strict handling is the dangerous
-/// direction — the client believes it filtered and is handed the unfiltered
-/// set, which is more of the record than it asked to see.
+/// An unknown `_`-prefixed parameter is the case this covers: the server does
+/// not recognise it, so under lenient handling it is ignored and under strict
+/// it is refused. Silently succeeding under strict is the dangerous direction
+/// — the client believes it filtered and is handed the unfiltered set, which
+/// is more of the record than it asked to see.
 ///
-/// `_filter` was in that list until it was implemented. It is answered now, so
-/// strict handling must NOT reject it. An operator inside a filter that this
-/// server cannot answer is still a 400, under any Prefer header, for the same
-/// reason: returning the unfiltered set would say the filter ran.
+/// `_filter`, `_contained` and `_containedType` were all in that list until
+/// each was addressed. `_filter` is implemented. `_contained=false` is the
+/// default and is answered; `_contained=true|both` is refused under ANY Prefer
+/// header, with its own message, because this server does not index contained
+/// resources and answering with container matches would say it had searched
+/// them. Both are in contained_test.dart.
 void main() {
   Future<void> seed(dynamic db) async {
     for (final id in ['p-alpha', 'p-beta', 'p-gamma']) {
@@ -39,7 +41,7 @@ void main() {
     final response = await server.handler(
       testRequest(
         'GET',
-        '/Patient?_contained=true',
+        '/Patient?_notAParameter=true',
         authToken: token,
         headers: {'Prefer': 'handling=strict'},
       ),
@@ -52,7 +54,7 @@ void main() {
           'answering 200 with the unfiltered set tells it the filter ran',
     );
     final body = jsonDecode(await response.readAsString());
-    expect(jsonEncode(body), contains('_contained'));
+    expect(jsonEncode(body), contains('_notAParameter'));
   });
 
   test('strict handling accepts _filter, which is implemented', () async {
@@ -74,24 +76,6 @@ void main() {
     expect((bundle['entry'] as List?) ?? [], hasLength(1));
   });
 
-  test('strict handling rejects _contained and _containedType', () async {
-    final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
-    await seed(server.db);
-
-    for (final param in ['_contained=true', '_containedType=contained']) {
-      final response = await server.handler(
-        testRequest(
-          'GET',
-          '/Patient?$param',
-          authToken: token,
-          headers: {'Prefer': 'handling=strict'},
-        ),
-      );
-      expect(response.statusCode, equals(400), reason: 'for $param');
-    }
-  });
-
   test('lenient handling ignores them and still searches', () async {
     // The spec's default: "servers SHOULD ignore unknown or unsupported
     // parameters". Rejecting by default would break clients that send them
@@ -107,7 +91,7 @@ void main() {
       final response = await server.handler(
         testRequest(
           'GET',
-          '/Patient?_contained=true',
+          '/Patient?_notAParameter=true',
           authToken: token,
           headers: headers,
         ),

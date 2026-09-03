@@ -41,6 +41,8 @@ class SearchParameterParser {
     // Special parameters that are not search parameters
     String? total;
     String? filter;
+    String? contained;
+    String? containedType;
     final unknownSpecialParams = <String>[];
 
     // All known _-prefixed parameters (special params + common search params)
@@ -68,10 +70,13 @@ class SearchParameterParser {
     // that both be reported when the client sends Prefer: handling=strict.
     // Answering 200 with the unfiltered set would tell a client that asked to
     // be warned that its filter had been applied.
-    const unsupportedParams = {
-      '_contained',
-      '_containedType',
-    };
+    // `_contained=false` is the spec's default and is what this server does,
+    // so it is answered rather than reported. `true` and `both` ask for
+    // resources inside other resources' `contained` element, which is neither
+    // stored nor indexed here (measured 2026-09-02: saving an Observation with
+    // a contained Patient stores the Observation only), so those are refused
+    // in the handler, under any Prefer header.
+    const unsupportedParams = <String>{};
 
     // Common _-prefixed search parameters that are valid across all
     // resource types
@@ -165,6 +170,10 @@ class SearchParameterParser {
             case '_total':
               // _total: none, accurate, estimate
               total = value;
+            case '_contained':
+              contained = value;
+            case '_containedType':
+              containedType = value;
             case '_filter':
               // Carried whole. Its own grammar owns every character after
               // this point, so nothing here splits, trims or lower-cases it.
@@ -176,6 +185,15 @@ class SearchParameterParser {
           if (key.startsWith('_') &&
               !knownUnderscoreSearchParams.contains(key)) {
             unknownSpecialParams.add(key);
+            // And do NOT pass it on as a search parameter. The `_` names are
+            // the specification's own, so one this server does not know is not
+            // a resource-specific parameter that might match something: it is
+            // unrecognised, and R4 search.html says "servers SHOULD ignore
+            // unknown or unsupported parameters". Passing it through made the
+            // search look for a parameter that cannot exist and return
+            // nothing, which is the opposite of ignoring it — a lenient
+            // request got an empty bundle instead of the unfiltered set.
+            continue;
           }
 
           // A regular search parameter is passed on RAW, one entry per
@@ -201,6 +219,8 @@ class SearchParameterParser {
       'elements': elements,
       'total': total,
       'filter': filter,
+      'contained': contained,
+      'containedType': containedType,
       'unknownParams':
           unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
       'has': has.isEmpty ? null : has,

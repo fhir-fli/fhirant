@@ -27,9 +27,26 @@ transform with no test covering it. Verifying the plan is how that was found.
       circuits to a total-only bundle. Verified 2026-08-29.
 - [x] **_elements** — implemented alongside `_summary`, including the
       mutual-exclusivity check the spec requires. Verified 2026-08-29.
-- [ ] **_contained / _containedType** — recognised so a lenient request is
-      not rejected, and reported under `Prefer: handling=strict`. Still not
-      acted on.
+- [x] **_contained / _containedType** — settled 2026-09-02, as far as this
+      server can go. R4 search.html: "_contained — Whether to return resources
+      contained in other resources in the search matches. true | false | both
+      (false is default)".
+      `false`, and an absent parameter, are the default and are what this
+      server does, so they are answered normally rather than reported as
+      unsupported. `true` and `both` are refused with a 400 under **any**
+      `Prefer` header, because answering with container matches would tell the
+      client its search had covered contained resources. A value outside
+      `true|false|both` is refused, as is a `_containedType` outside
+      `container|contained`; `_containedType` alongside `_contained=false`
+      cannot change the answer and is not an error on its own.
+      **The measurement the refusal rests on**, kept as a test so it cannot
+      quietly change: saving an Observation carrying a contained Patient
+      stores the Observation and nothing else, and the contained Patient is
+      not indexed.
+      ⏭️ Answering `_contained=true` means indexing resources held in another
+      resource's `contained` element, which is a change to `fhir_r*_db`'s
+      extraction and storage — contained resources have no independent
+      identity, `#inner` meaning something only inside its container.
 - [x] **_filter** — done 2026-09-02, end to end. Parser
       (`filter_expression.dart`, 24 tests), evaluator
       (`filter_evaluator.dart`, 18), and wired into the search handler

@@ -216,6 +216,8 @@ Future<Response> _searchResources(
     final total = parsed['total'] as String?;
     final unknownParams = parsed['unknownParams'] as List<String>?;
     final filter = parsed['filter'] as String?;
+    final contained = parsed['contained'] as String?;
+    final containedType = parsed['containedType'] as String?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -236,6 +238,41 @@ Future<Response> _searchResources(
         // implement the same way here, and _filter is the second kind.
         'Unsupported search parameter(s): ${unknownParams.join(', ')}',
       );
+    }
+
+    // _contained: "Whether to return resources contained in other resources in
+    // the search matches — true | false | both (false is default)".
+    //
+    // The default is what this server does, so `false` and an absent parameter
+    // are answered normally. `true` and `both` are refused rather than
+    // silently answered with container matches only: a contained resource is
+    // not stored or indexed here, so the search cannot see one, and returning
+    // the containers would tell the client its search covered them.
+    if (contained != null) {
+      const allowed = {'true', 'false', 'both'};
+      if (!allowed.contains(contained)) {
+        return _validationErrorResponse(
+          '_contained must be true, false or both; got "$contained"',
+        );
+      }
+      if (contained != 'false') {
+        return _validationErrorResponse(
+          '_contained=$contained is not supported: this server does not index '
+          "resources held in another resource's contained element, so it "
+          'cannot search them. _contained=false, the default, is supported.',
+        );
+      }
+    }
+    if (containedType != null) {
+      const allowed = {'container', 'contained'};
+      if (!allowed.contains(containedType)) {
+        return _validationErrorResponse(
+          '_containedType must be container or contained; got '
+          '"$containedType"',
+        );
+      }
+      // With _contained=false nothing contained is returned, so this cannot
+      // change the answer and is not an error on its own.
     }
 
     // _summary and _elements are mutually exclusive (per FHIR spec)
