@@ -289,7 +289,18 @@ stops being true.
       once; the server tests initialize per test in one process, which is
       where the duplicates were landing, including in the file
       `log_file_contents_test.dart` reads for finding F6.
-- [ ] **Conformance suite** — automated FHIR Touchstone or official test kit testing
+- [ ] **Conformance suite** — automated FHIR Touchstone or official test kit
+      testing. **Blocked on infrastructure, not on code**: Touchstone calls the
+      server from the internet, the Cloud Run deployment was deleted
+      2026-07-20, and the touchstone.aegis.net account is Grey's. The 1056/1056
+      on record is from 2026-03-17 and has not been re-run since; search,
+      `$validate` and `$transform` have all changed materially since.
+      **What runs instead, in our control:** `tools/smoke_test.dart` against a
+      local server, 35 checks over 8 groups as of 2026-09-02, including
+      `_filter`, `_contained`, `$validate` with a profile and `$transform`
+      target resolution. Start the server with
+      `--dev-mode --spec-path assets/fhir_spec` and an
+      `FHIRANT_ENCRYPTION_KEY`; the flag is `--dev-mode`, not `--dev`.
 
 ## Deployment
 

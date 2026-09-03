@@ -473,12 +473,31 @@ Future<void> _testHistory() async {
 Future<void> _testBackupRestore() async {
   _group('Group 6: Backup/Restore');
 
-  // POST /$backup
-  final backup = await _request('POST', r'/$backup');
+  // POST /$backup. A passphrase is required and the response is the encrypted
+  // envelope, not a Bundle: the backup is AES-256-GCM over a PBKDF2 key, and
+  // the passphrase is the only thing that can decrypt it. This script used to
+  // POST an empty body and expect a Bundle back, which stopped being true when
+  // the envelope landed.
+  final backup = await _request(
+    'POST',
+    r'/$backup',
+    body: {
+      'resourceType': 'Parameters',
+      'parameter': [
+        {'name': 'passphrase', 'valueString': 'smoke-passphrase-1234'},
+      ],
+    },
+  );
   _check(r'POST /$backup -> 200', backup.status == 200, 'got ${backup.status}');
   _check(
-    'Backup returns a Bundle',
-    backup.body is Map && (backup.body as Map)['resourceType'] == 'Bundle',
+    'Backup returns an encrypted envelope',
+    backup.body is Map &&
+        (backup.body as Map).containsKey('fhirantBackup') &&
+        (backup.body as Map).containsKey('ciphertext'),
+  );
+  _check(
+    r'POST /$backup without a passphrase -> 400',
+    (await _request('POST', r'/$backup')).status == 400,
   );
 
   // POST /$restore with a small test Bundle
@@ -514,6 +533,115 @@ Future<void> _testBackupRestore() async {
 
   // Cleanup the restored patient
   await _request('DELETE', '/Patient/smoke-restore-test');
+}
+
+Future<void> _testFilterValidateTransform() async {
+  _group(r'Group 8: _filter, _contained, $validate, $transform');
+
+  final id = 'smoke-filter-${DateTime.now().millisecondsSinceEpoch}';
+  await _request(
+    'PUT',
+    '/Patient/$id',
+    body: {
+      'resourceType': 'Patient',
+      'id': id,
+      'name': [
+        {'family': 'Okelloqz'},
+      ],
+      'gender': 'female',
+    },
+  );
+
+  // _filter, through the endpoint. `co` runs as :contains.
+  final filtered = await _request(
+    'GET',
+    '/Patient?_filter=${Uri.encodeQueryComponent('family co "kelloqz"')}',
+  );
+  _check(
+    '_filter co returns the match',
+    filtered.status == 200 &&
+        ((filtered.body as Map)['entry'] as List?)?.length == 1,
+    'got ${filtered.status}',
+  );
+
+  // An operator this server cannot answer must be refused, never answered
+  // with the unfiltered set.
+  final refused = await _request(
+    'GET',
+    '/Patient?_filter=${Uri.encodeQueryComponent('family eq "Okelloqz"')}',
+  );
+  _check(
+    '_filter eq on a string -> 400',
+    refused.status == 400,
+    'got ${refused.status}',
+  );
+
+  // _contained=false is the default and is answered; true is refused.
+  _check(
+    '_contained=false -> 200',
+    (await _request('GET', '/Patient?_contained=false')).status == 200,
+  );
+  _check(
+    '_contained=true -> 400',
+    (await _request('GET', '/Patient?_contained=true')).status == 400,
+  );
+
+  // $validate with a profile the server does not hold SHALL be an error.
+  final unheld = await _request(
+    'POST',
+    r'/Patient/$validate?profile=http://example.org/StructureDefinition/nope',
+    body: {'resourceType': 'Patient', 'id': 'p1'},
+  );
+  _check(
+    r'$validate with an unheld profile -> 400',
+    unheld.status == 400,
+    'got ${unheld.status}',
+  );
+
+  // $transform must not guess a target type from a canonical it cannot
+  // resolve.
+  final guessy = await _request(
+    'POST',
+    r'/$transform',
+    body: {
+      'map': {
+        'resourceType': 'StructureMap',
+        'id': 'smoke-map',
+        'url': 'http://example.org/StructureMap/smoke',
+        'name': 'Smoke',
+        'status': 'active',
+        'structure': [
+          {
+            'url': 'http://hl7.org/fhir/StructureDefinition/Patient',
+            'mode': 'source',
+          },
+          {
+            'url': 'http://example.org/StructureDefinition/us-core-patient',
+            'mode': 'target',
+          },
+        ],
+        'group': [
+          {
+            'name': 'main',
+            'typeMode': 'none',
+            'input': [
+              {'name': 'src', 'mode': 'source'},
+              {'name': 'tgt', 'mode': 'target'},
+            ],
+            'rule': <Map<String, dynamic>>[],
+          },
+        ],
+      },
+      'source': {'resourceType': 'Patient', 'id': 'p1'},
+    },
+  );
+  _check(
+    r'$transform with an unresolvable target -> 400',
+    guessy.status == 400,
+    'got ${guessy.status}',
+  );
+
+  await _request('DELETE', '/Patient/$id');
 }
 
 Future<void> _testAuth() async {
@@ -666,6 +794,7 @@ Future<void> main(List<String> args) async {
     await _testBundles();
     await _testHistory();
     await _testBackupRestore();
+    await _testFilterValidateTransform();
     if (runAuth) {
       await _testAuth();
     }
