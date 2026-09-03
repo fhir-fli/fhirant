@@ -112,7 +112,7 @@ takes no `:modifier`.
 
 ## Content & Format
 
-- [ ] **XML support** — `application/fhir+xml` serialization (low priority; JSON-only by design for now)
+- [x] **XML support** — 🛑 **CLOSED by Grey, 2026-09-03: "ignore xml and graphql, I don't care, don't bring it up again unless I ask."** Not a gap, not deferred, not a candidate. Do not re-raise it, do not list it as remaining work, and do not re-derive the trade-off.
 - [x] **_format parameter** — honoured by `content_negotiation.dart`, which
       checks it alongside Accept and returns 406 for unsupported types.
       Verified 2026-08-29.
@@ -204,7 +204,7 @@ stops being true.
 
 ## Advanced Operations
 
-- [ ] **GraphQL endpoint** — FHIR GraphQL support. Nothing exists.
+- [x] **GraphQL endpoint** — 🛑 **CLOSED by Grey, 2026-09-03**, in the same breath as XML. Do not re-raise it.
 - [x] **Profile validation** — done 2026-09-02. `$validate` reads `profile`
       from the query string or a `Parameters` body, resolves it against this
       server's own StructureDefinitions, and returns 400 `not-supported` when
