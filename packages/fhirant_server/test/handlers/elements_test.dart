@@ -53,7 +53,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -107,7 +107,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -167,7 +167,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -219,7 +219,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -341,7 +341,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -393,7 +393,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);

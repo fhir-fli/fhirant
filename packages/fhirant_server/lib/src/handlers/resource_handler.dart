@@ -411,24 +411,34 @@ Future<Response> _searchResources(
     final hasSearchParams =
         effectiveSearchParams != null && effectiveSearchParams.isNotEmpty;
     final hasSort = sort != null && sort.isNotEmpty;
+    // One row past the page is fetched and dropped. Its presence is what says
+    // a `next` link is due, and it costs one extra row rather than a count:
+    // with `_total=none` — the thing that makes a page fast on a large
+    // database — the next link used to vanish, because it was derived from
+    // `offset + count < total` and there was no total. R4 search.html asks
+    // for no total to page; the link is what pages.
+    final probeCount = count > 0 ? count + 1 : count;
+    final List<fhir.Resource> fetched;
     if (hasSearchParams || hasHasParams || hasSort) {
       // Use search functionality
-      resources = await dbInterface.search(
+      fetched = await dbInterface.search(
         resourceType: type,
         searchParameters: effectiveSearchParams,
         hasParameters: hasParams,
-        count: count,
+        count: probeCount,
         offset: offset,
         sort: sort,
       );
     } else {
       // Fall back to simple pagination if no search parameters
-      resources = await dbInterface.getResourcesWithPagination(
+      fetched = await dbInterface.getResourcesWithPagination(
         resourceType: type,
-        count: count,
+        count: probeCount,
         offset: offset,
       );
     }
+    final hasMore = count > 0 && fetched.length > count;
+    resources = hasMore ? fetched.sublist(0, count) : fetched;
 
     final baseUrl = request.requestedUri.hasPort
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
@@ -491,8 +501,9 @@ Future<Response> _searchResources(
           );
         }
 
-        // Next link (if there are more results)
-        if (totalCount != null && offset + resources.length < totalCount) {
+        // Next link, from the probe row rather than from the total, so it
+        // survives _total=none.
+        if (hasMore) {
           final nextParams =
               Map<String, String>.from(currentUrl.queryParameters);
           final nextOffset = offset + count;

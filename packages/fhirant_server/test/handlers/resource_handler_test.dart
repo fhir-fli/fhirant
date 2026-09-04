@@ -345,7 +345,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => patients);
@@ -368,7 +368,7 @@ void main() {
       verify(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).called(1);
@@ -407,7 +407,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => patients);
@@ -437,14 +437,14 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).called(1);
       verifyNever(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       );
@@ -490,7 +490,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 20,
+          count: 21,
           offset: 0,
         ),
       ).thenAnswer((_) async => []);
@@ -507,7 +507,7 @@ void main() {
       verify(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 20,
+          count: 21,
           offset: 0,
         ),
       ).called(1);
@@ -525,6 +525,15 @@ void main() {
           'id': '2',
           'meta': {'lastUpdated': DateTime.now().toIso8601String()},
         }),
+        // The third row is the probe: the handler asks for count + 1 and a
+        // `next` link is emitted because this row came back, not because a
+        // total said so. Before, the stub claimed a total of 3 and returned
+        // 2, which only worked because nothing checked.
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': '3',
+          'meta': {'lastUpdated': DateTime.now().toIso8601String()},
+        }),
       ];
 
       when(() => mockRequest.url).thenReturn(
@@ -536,7 +545,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 2,
+          count: 3,
           offset: 0,
         ),
       ).thenAnswer((_) async => patients);
@@ -554,10 +563,12 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['total'], equals(3));
+      expect((json['entry'] as List).length, 2,
+          reason: 'the probe row is dropped');
 
       final links = json['link'] as List?;
       expect(links, isNotNull);
-      // Should have at least a 'next' link since total > offset + count
+      // A 'next' link because a row past the page exists
       final linkRelations = links!.map((l) => l['relation'] as String).toList();
       expect(linkRelations, contains('next'));
       expect(linkRelations, contains('first'));
@@ -592,7 +603,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -663,7 +674,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -734,7 +745,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -801,7 +812,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -878,7 +889,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -968,7 +979,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -1022,7 +1033,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
           sort: ['-name'],
         ),
@@ -1049,7 +1060,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
           sort: ['-name'],
         ),
@@ -1103,7 +1114,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -1154,7 +1165,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -1202,7 +1213,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -1248,7 +1259,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => [patient]);
@@ -1284,7 +1295,7 @@ void main() {
           searchParameters: {
             'name': ['NonExistent'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => []);
@@ -1335,7 +1346,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => patients);
@@ -1383,7 +1394,7 @@ void main() {
           searchParameters: {
             'name': ['Nobody'],
           },
-          count: 10,
+          count: 11,
           offset: 0,
         ),
       ).thenAnswer((_) async => []);
@@ -1586,7 +1597,7 @@ void main() {
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
-          count: 20,
+          count: 21,
           offset: 0,
         ),
       ).thenAnswer((_) async => []);
