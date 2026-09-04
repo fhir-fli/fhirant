@@ -129,6 +129,21 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // The same query for a patient of realistic size: 963 Observations, 35 of
+  // this code. The smallest MIMIC patient has 415; the 48,554 one above is
+  // the largest.
+  await time(
+    'search   subject(963) AND code   ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'subject': ['Patient/42f0ed8f-d744-5edb-a05d-8e011c1fbd64'],
+        'code': ['227969'],
+      },
+      count: 20,
+    ),
+  );
+
   // Quantity, R4B 3.1.1.4.11 forms: value alone, and value|system|code.
   // value-quantity has 366,433 rows here; >100 matches 50,030 of them, and
   // >100 in the MIMIC unit system as mg/dL matches 4,098.
