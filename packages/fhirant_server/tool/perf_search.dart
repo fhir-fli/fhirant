@@ -144,6 +144,33 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // A chain and a reverse chain. The chain used to read every subject
+  // reference row of the type and run a full search on its target for
+  // each; _has used to read every matching target resource.
+  if (!args.contains('--skip-chains')) {
+    await time(
+      'chain    subject.gender=female   ',
+      () => db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: const {
+          'subject.gender': ['female'],
+          'code': ['227969'],
+        },
+        count: 20,
+      ),
+    );
+    await time(
+      'has      Patient?_has:Obs:subject:code',
+      () => db.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        hasParameters: [
+          HasParameter.parse('_has:Observation:subject:code', '227969')!,
+        ],
+        count: 20,
+      ),
+    );
+  }
+
   // Sorted searches. The 963-record patient's observations newest first is
   // the query a chart view makes; the 48,554-record one and the 813,513-row
   // status=final are the sizes a sort has to survive.
