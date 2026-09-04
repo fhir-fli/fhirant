@@ -65,6 +65,43 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // Date eq over a month and a year (R4B 3.1.1.4.7 intervals). MIMIC's
+  // dates are shifted a century forward; 2116-12 holds 30,652 Observation
+  // dates and 2137 holds 60,056.
+  await time(
+    'search   date=2116-12            ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'date': ['2116-12'],
+      },
+      count: 20,
+    ),
+  );
+  await time(
+    'search   date=2137 AND status    ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'date': ['2137'],
+        'status': ['final'],
+      },
+      count: 20,
+    ),
+  );
+  // Encounter.date is Encounter.period: 637 Encounters, zero index rows
+  // before fhir_r4_db schema 8.
+  await time(
+    'search   Encounter?date=ge2110   ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Encounter,
+      searchParameters: const {
+        'date': ['ge2110'],
+      },
+      count: 20,
+    ),
+  );
+
   // A string parameter with real volume: value-string starting with "no"
   // matches "none" and "no" and "normal", ~39k Observations.
   await time(
