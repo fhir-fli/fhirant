@@ -144,6 +144,45 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // Sorted searches. The 963-record patient's observations newest first is
+  // the query a chart view makes; the 48,554-record one and the 813,513-row
+  // status=final are the sizes a sort has to survive.
+  await time(
+    'sort     subject(963) -date       ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'subject': ['Patient/42f0ed8f-d744-5edb-a05d-8e011c1fbd64'],
+      },
+      sort: const ['-date'],
+      count: 20,
+    ),
+  );
+  await time(
+    'sort     subject(48k) -date       ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'subject': ['Patient/77e10fd0-6a1c-5547-a130-fae1341acf36'],
+      },
+      sort: const ['-date'],
+      count: 20,
+    ),
+  );
+  if (!args.contains('--skip-big-sort')) {
+    await time(
+      'sort     status=final -date       ',
+      () => db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: const {
+          'status': ['final'],
+        },
+        sort: const ['-date'],
+        count: 20,
+      ),
+    );
+  }
+
   // Quantity, R4B 3.1.1.4.11 forms: value alone, and value|system|code.
   // value-quantity has 366,433 rows here; >100 matches 50,030 of them, and
   // >100 in the MIMIC unit system as mg/dL matches 4,098.
