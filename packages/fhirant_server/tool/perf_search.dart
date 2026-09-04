@@ -65,6 +65,19 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // A string parameter with real volume: value-string starting with "no"
+  // matches "none" and "no" and "normal", ~39k Observations.
+  await time(
+    'search   string (value-string=no) ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'value-string': ['no'],
+      },
+      count: 20,
+    ),
+  );
+
   await time(
     'search   reference (subject)      ',
     () => db.search(
