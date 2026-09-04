@@ -78,6 +78,46 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // The query a real client makes: one patient's observations of one code.
+  // This patient has 48,554 Observations; code 227969 has 19,330 in all.
+  await time(
+    'search   subject AND code         ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'subject': ['Patient/77e10fd0-6a1c-5547-a130-fae1341acf36'],
+        'code': ['227969'],
+      },
+      count: 20,
+    ),
+  );
+
+  // Quantity, R4B 3.1.1.4.11 forms: value alone, and value|system|code.
+  // value-quantity has 366,433 rows here; >100 matches 50,030 of them, and
+  // >100 in the MIMIC unit system as mg/dL matches 4,098.
+  await time(
+    'search   quantity gt100           ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'value-quantity': ['gt100'],
+      },
+      count: 20,
+    ),
+  );
+  await time(
+    'search   quantity gt100|sys|mg/dL ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'value-quantity': [
+          'gt100|http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units|mg/dL',
+        ],
+      },
+      count: 20,
+    ),
+  );
+
   await time(
     'search   reference (subject)      ',
     () => db.search(
