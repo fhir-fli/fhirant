@@ -39,6 +39,19 @@ Future<void> main(List<String> args) async {
     ),
   );
 
+  // Two token parameters, so the SQL intersection path is measured.
+  await time(
+    'search   status=final AND code   ',
+    () => db.search(
+      resourceType: fhir.R4ResourceType.Observation,
+      searchParameters: const {
+        'status': ['final'],
+        'code': ['227969'],
+      },
+      count: 20,
+    ),
+  );
+
   // Other parameter TYPES, so the id-column change can be measured where it
   // applies: the status query above is a token search.
   await time(
