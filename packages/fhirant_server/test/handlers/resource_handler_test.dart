@@ -1071,6 +1071,11 @@ void main() {
       when(() => mockRequest.url).thenReturn(
         Uri.parse('http://localhost:8080/Patient?_summary=count'),
       );
+      // The count bundle carries a self link (R4 3.1.1.6), built from the
+      // requested URI.
+      when(() => mockRequest.requestedUri).thenReturn(
+        Uri.parse('http://localhost:8080/Patient?_summary=count'),
+      );
       when(
         () => mockDb.getResourceCount(fhir.R4ResourceType.Patient),
       ).thenAnswer((_) async => 5);

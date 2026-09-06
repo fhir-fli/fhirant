@@ -11,6 +11,7 @@ import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
+import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
@@ -222,6 +223,7 @@ Future<Response> _searchResources(
     final filter = parsed['filter'] as String?;
     final contained = parsed['contained'] as String?;
     final containedType = parsed['containedType'] as String?;
+    final namedQuery = parsed['query'] as String?;
 
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -231,16 +233,33 @@ Future<Response> _searchResources(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Prefer: handling=strict rejects unrecognized _-prefixed parameters
+    // R4 3.1.1.7: "Servers processing search requests SHALL refuse to process
+    // a search request if they do not recognize the _query parameter value."
+    // This server defines no named queries, so every value is unrecognised.
+    if (namedQuery != null) {
+      return _searchRefusal(
+        'This server defines no named queries; _query=$namedQuery is not '
+        'recognised.',
+        fhir.IssueType.notSupported,
+      );
+    }
+
+    // R4 3.1.1.6: the self link carries "the parameters that were actually
+    // used", so what was used is decided once, here, and every link is built
+    // from it. A parameter the store has no definition for is ignored under
+    // lenient handling (3.1.1.3) and refused under strict, whether or not it
+    // starts with `_`: the old check only saw `_`-prefixed unknowns, so a
+    // strict client sending `?gendr=male` was answered 200 with every
+    // patient.
+    final links = SearchLinks.decide(resourceType, queryParams);
     final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
-    if (handling == 'strict' &&
-        unknownParams != null &&
-        unknownParams.isNotEmpty) {
+    final refused = <String>[...?unknownParams, ...links.ignored];
+    if (handling == 'strict' && refused.isNotEmpty) {
       return _validationErrorResponse(
         // "Unsupported" rather than "unrecognized": the spec treats a
         // parameter the server does not know and one it knows but does not
         // implement the same way here, and _filter is the second kind.
-        'Unsupported search parameter(s): ${unknownParams.join(', ')}',
+        'Unsupported search parameter(s): ${refused.join(', ')}',
       );
     }
 
@@ -302,8 +321,11 @@ Future<Response> _searchResources(
 
     final hasHasParams = hasParams != null && hasParams.isNotEmpty;
 
-    // Handle _summary=count — return bundle with total only, no entries
-    if (summary == 'count') {
+    // _summary=count returns the total and no entries. R4 3.1.1.5.3:
+    // "_count=0 ... is treated the same as _summary=count". The DAO reads a
+    // count of 0 as "no page", so without this branch `_count=0` returned
+    // every match.
+    if (summary == 'count' || count == 0) {
       int totalCount;
       if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
         totalCount = await dbInterface.searchCount(
@@ -317,6 +339,7 @@ Future<Response> _searchResources(
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         total: fhir.FhirUnsignedInt(totalCount),
+        link: [links.self(request.requestedUri)],
       );
       return Response.ok(
         bundle.toJsonString(),
@@ -342,7 +365,7 @@ Future<Response> _searchResources(
         return _validationErrorResponse(e.message);
       }
       if (filterIds.isEmpty) {
-        return _emptySearchBundle(request, total);
+        return _emptySearchBundle(request, total, links);
       }
     }
 
@@ -371,7 +394,7 @@ Future<Response> _searchResources(
           final allowedIds = compartmentIds[resourceType] ?? {};
           if (allowedIds.isEmpty) {
             // No resources in compartment for this type
-            return _emptySearchBundle(request, total);
+            return _emptySearchBundle(request, total, links);
           }
           // One comma-separated element, not one element per id. Since
           // fhir_r4_db 0.11.0 the elements of a value list are ANDed, so a
@@ -385,7 +408,7 @@ Future<Response> _searchResources(
         }
       } else {
         // Resource type not in patient compartment — return empty
-        return _emptySearchBundle(request, total);
+        return _emptySearchBundle(request, total, links);
       }
     }
 
@@ -404,7 +427,7 @@ Future<Response> _searchResources(
         final allowed = existing.expand((value) => value.split(',')).toSet();
         final both = filterIds.intersection(allowed);
         if (both.isEmpty) {
-          return _emptySearchBundle(request, total);
+          return _emptySearchBundle(request, total, links);
         }
         effectiveSearchParams['_id'] = [both.join(',')];
       }
@@ -463,94 +486,62 @@ Future<Response> _searchResources(
       }
     }
 
-    // Build pagination links (optional - bundle works without them)
-    final links = <fhir.BundleLink>[];
-    // Only try to create links if we have valid data
+    // R4 3.1.1.5.3 and 3.1.1.6: every link is built from the parameters
+    // actually used, with only `_offset` changed. `first` and `self` are
+    // always present; `previous` when there is a page before this one;
+    // `next` from the probe row, so it survives `_total=none`; `last` when
+    // the total is known.
+    final requested = request.requestedUri;
+    final bundleLinks = <fhir.BundleLink>[
+      links.self(requested),
+    ];
     if (count > 0) {
-      try {
-        final currentUrl = request.requestedUri;
-
-        // Self link (current request URL)
-        links.add(
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('first'),
+          url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
+        ),
+      );
+      if (offset > 0) {
+        final prevOffset = (offset - count).clamp(0, offset);
+        bundleLinks.add(
           fhir.BundleLink(
-            relation: fhir.FhirString('self'),
-            url: fhir.FhirUri(currentUrl.toString()),
+            relation: fhir.FhirString('previous'),
+            url: fhir.FhirUri(
+              links.url(requested, offset: prevOffset).toString(),
+            ),
           ),
         );
-
-        // First link
-        final firstParams =
-            Map<String, String>.from(currentUrl.queryParameters);
-        firstParams['_offset'] = '0';
-        final firstUrl = currentUrl.replace(queryParameters: firstParams);
-        links.add(
+      }
+      if (hasMore) {
+        bundleLinks.add(
           fhir.BundleLink(
-            relation: fhir.FhirString('first'),
-            url: fhir.FhirUri(firstUrl.toString()),
+            relation: fhir.FhirString('next'),
+            url: fhir.FhirUri(
+              links.url(requested, offset: offset + count).toString(),
+            ),
           ),
         );
-
-        // Previous link (if not on first page)
-        if (offset > 0) {
-          final prevParams =
-              Map<String, String>.from(currentUrl.queryParameters);
-          final prevOffset = (offset - count).clamp(0, double.infinity).toInt();
-          prevParams['_offset'] = prevOffset.toString();
-          final prevUrl = currentUrl.replace(queryParameters: prevParams);
-          links.add(
-            fhir.BundleLink(
-              relation: fhir.FhirString('previous'),
-              url: fhir.FhirUri(prevUrl.toString()),
+      }
+      if (totalCount != null && totalCount > 0) {
+        final lastOffset = ((totalCount - 1) ~/ count) * count;
+        bundleLinks.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('last'),
+            url: fhir.FhirUri(
+              links.url(requested, offset: lastOffset).toString(),
             ),
-          );
-        }
-
-        // Next link, from the probe row rather than from the total, so it
-        // survives _total=none.
-        if (hasMore) {
-          final nextParams =
-              Map<String, String>.from(currentUrl.queryParameters);
-          final nextOffset = offset + count;
-          nextParams['_offset'] = nextOffset.toString();
-          final nextUrl = currentUrl.replace(queryParameters: nextParams);
-          links.add(
-            fhir.BundleLink(
-              relation: fhir.FhirString('next'),
-              url: fhir.FhirUri(nextUrl.toString()),
-            ),
-          );
-        }
-
-        // Last link
-        if (count > 0 && totalCount != null && totalCount > 0) {
-          final lastParams =
-              Map<String, String>.from(currentUrl.queryParameters);
-          final lastOffset = ((totalCount - 1) ~/ count) * count;
-          lastParams['_offset'] = lastOffset.toString();
-          final lastUrl = currentUrl.replace(queryParameters: lastParams);
-          links.add(
-            fhir.BundleLink(
-              relation: fhir.FhirString('last'),
-              url: fhir.FhirUri(lastUrl.toString()),
-            ),
-          );
-        }
-      } catch (e) {
-        // If link creation fails, just continue without links
-        FhirantLogging().logWarning('Failed to create pagination links: $e');
+          ),
+        );
       }
     }
 
     // Handle empty results
     if (resources.isEmpty) {
-      final selfLink = fhir.BundleLink(
-        relation: fhir.FhirString('self'),
-        url: fhir.FhirUri(request.requestedUri.toString()),
-      );
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
-        link: [selfLink],
+        link: [links.self(requested)],
       );
 
       FhirantLogging().logInfo(
@@ -680,7 +671,7 @@ Future<Response> _searchResources(
       type: fhir.BundleType.searchset,
       entry: [...matchEntries, ...includeEntries],
       total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
-      link: links.isEmpty ? null : links,
+      link: bundleLinks,
     );
 
     FhirantLogging().logInfo(
@@ -1566,10 +1557,15 @@ void _extractAllReferences(
 /// Extracts the patient ID from the request context if patient-level
 /// scopes are in effect. Returns null if no patient context.
 /// Returns an empty searchset Bundle response.
-Response _emptySearchBundle(Request request, String? total) {
+Response _emptySearchBundle(
+  Request request,
+  String? total,
+  SearchLinks links,
+) {
   final bundle = fhir.Bundle(
     type: fhir.BundleType.searchset,
     total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
+    link: [links.self(request.requestedUri)],
   );
   return Response.ok(
     bundle.toJsonString(),

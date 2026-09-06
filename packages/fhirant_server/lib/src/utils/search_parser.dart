@@ -43,6 +43,7 @@ class SearchParameterParser {
     String? filter;
     String? contained;
     String? containedType;
+    String? query;
     final unknownSpecialParams = <String>[];
 
     // All known _-prefixed parameters (special params + common search params)
@@ -62,6 +63,7 @@ class SearchParameterParser {
       '_contained',
       '_containedType',
       '_filter',
+      '_query',
     };
 
     // Recognised so a lenient request is not rejected, but nothing acts on
@@ -178,6 +180,14 @@ class SearchParameterParser {
               // Carried whole. Its own grammar owns every character after
               // this point, so nothing here splits, trims or lower-cases it.
               filter = value;
+            case '_query':
+              // R4 3.1.1.7: "Servers processing search requests SHALL refuse
+              // to process a search request if they do not recognize the
+              // _query parameter value." Carried to the handler, which
+              // defines no named queries and refuses every value. It used to
+              // be an unknown parameter and ignored, so `_query=anything`
+              // was answered with the unfiltered set.
+              query = value;
           }
         } else {
           // Track unrecognized _-prefixed parameters, for
@@ -221,6 +231,7 @@ class SearchParameterParser {
       'filter': filter,
       'contained': contained,
       'containedType': containedType,
+      'query': query,
       'unknownParams':
           unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
       'has': has.isEmpty ? null : has,
