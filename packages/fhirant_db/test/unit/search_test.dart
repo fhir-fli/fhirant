@@ -648,30 +648,53 @@ void main() {
       expect(ids(results), equals(['ci-2']));
     });
 
-    test('value|unit filters by unit', () async {
+    // R4B 3.1.1.4.11: `[parameter]=[prefix][number]|[system]|[code]`. The
+    // spec's own example is `value-quantity=5.4|http://unitsofmeasure.org|mg`,
+    // and `5.4||mg` is "5.4 mg where the unit is either coded 'mg' or literally
+    // 'mg'". These tests used to assert `system|value|code`, the inverted
+    // order fhir_r4_db parsed before 0.13, so the spec's own example returned
+    // nothing.
+    test('number||code filters by unit', () async {
       await seedChargeItems();
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['5|mg'],
+          'quantity': ['5||mg'],
         },
       );
 
       expect(ids(results), equals(['ci-1']));
     });
 
-    test('system|value|unit format narrows results', () async {
+    test('number|system|code narrows results', () async {
       await seedChargeItems();
 
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['http://unitsofmeasure.org|5|mL'],
+          'quantity': ['5|http://unitsofmeasure.org|mL'],
         },
       );
 
       expect(ids(results), equals(['ci-3']));
+    });
+
+    test('the inverted system|number|code form is not a quantity', () async {
+      await seedChargeItems();
+
+      // A URL is not a number, so the value is syntactically invalid for the
+      // type (R4B 3.1.1.3: "Where the content of the parameter is
+      // syntactically incorrect, servers SHOULD return an error").
+      expect(
+        () => db.search(
+          resourceType: fhir.R4ResourceType.ChargeItem,
+          searchParameters: {
+            'quantity': ['http://unitsofmeasure.org|5|mL'],
+          },
+        ),
+        throwsA(isA<InvalidSearchValue>()),
+      );
     });
   });
 
@@ -749,6 +772,13 @@ void main() {
 
   // ── Composite search ────────────────────────────────────────────────
 
+  // R4B 3.1.1.4.17: a composite is a DEFINED search parameter whose value
+  // joins its components with `$`. Observation's are `code-value-concept`,
+  // `code-value-quantity`, `code-value-date`, `code-value-string`, the
+  // `combo-` and `component-` forms. These tests used to search
+  // `code-status`, which no definition declares; the old code took any
+  // hyphenated name for a composite and split it on the hyphen, so it
+  // "worked" on an invented parameter and returned nothing for a real one.
   group('Composite search', () {
     fhir.Observation buildCompObs1() => fhir.Observation.fromJson({
           'resourceType': 'Observation',
@@ -760,6 +790,11 @@ void main() {
             ],
           },
           'subject': {'reference': 'Patient/pt-1'},
+          'valueCodeableConcept': {
+            'coding': [
+              {'system': 'http://snomed.info/sct', 'code': '10828004'},
+            ],
+          },
         });
 
     fhir.Observation buildCompObs2() => fhir.Observation.fromJson({
@@ -772,6 +807,11 @@ void main() {
             ],
           },
           'subject': {'reference': 'Patient/pt-2'},
+          'valueCodeableConcept': {
+            'coding': [
+              {'system': 'http://snomed.info/sct', 'code': '260385009'},
+            ],
+          },
         });
 
     Future<void> seedCompObs() async {
@@ -786,13 +826,11 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': [r'12345-6$final'],
+          'code-value-concept': [r'12345-6$10828004'],
         },
       );
 
-      // The hyphen in param name triggers composite; $ separates values
-      // code=12345-6 matches obs-comp-1, status=final matches obs-comp-1
-      // Intersection = obs-comp-1
+      // code=12345-6 and value=10828004 hold of the same Observation.
       expect(ids(results), equals(['obs-comp-1']));
     });
 
@@ -803,12 +841,12 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': [r'12345-6$amended'],
+          'code-value-concept': [r'12345-6$260385009'],
         },
       );
 
-      // code=12345-6 matches obs-comp-1, status=amended matches obs-comp-2
-      // Intersection = empty
+      // code=12345-6 is obs-comp-1's, value=260385009 is obs-comp-2's; a
+      // composite is not two independent parameters ANDed across resources.
       expect(results, isEmpty);
     });
 
@@ -818,7 +856,26 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.Observation,
         searchParameters: {
-          'code-status': [r'12345-6$final,78901-2$amended'],
+          'code-value-concept': [r'12345-6$10828004,78901-2$260385009'],
+        },
+      );
+
+      expect(ids(results), containsAll(['obs-comp-1', 'obs-comp-2']));
+      expect(results.length, 2);
+    });
+
+    test('a hyphenated name that is not a defined composite is unknown',
+        () async {
+      await seedCompObs();
+
+      // R4B 3.1.1.3: "servers SHOULD ignore unknown or unsupported
+      // parameters". `code-status` is no Observation search parameter, so it
+      // filters nothing. The server refuses it under Prefer: handling=strict;
+      // the store's job is only not to guess what it means.
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code-status': [r'12345-6$final'],
         },
       );
 
@@ -1510,10 +1567,11 @@ void main() {
     test(':lt with unit filter', () async {
       await seedCIs();
 
+      // `lt7||mL`: prefix, number, empty system, code (R4B 3.1.1.4.11).
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ChargeItem,
         searchParameters: {
-          'quantity': ['lt7|mL'],
+          'quantity': ['lt7||mL'],
         },
       );
 
@@ -1829,7 +1887,41 @@ void main() {
       await db.saveResource(buildObsCholesterol());
     }
 
-    test(':text finds by display substring', () async {
+    // R4B 3.1.1.4.10, token `:text`: "The search parameter is processed as a
+    // string that searches text associated with the code/value - either
+    // CodeableConcept.text, Coding.display, or Identifier.type.text." A
+    // string search's default (3.1.1.4.9) is "the field starts with the
+    // supplied value, ignoring case and accents"; R5 says of :text outright
+    // "a case-insensitive, starts-with match". These tests used to assert a
+    // substring match on 'Serum', which is what the pre-0.13 `LIKE %value%`
+    // did and no version of the specification asks for.
+    test(':text matches the start of the display', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code:text': ['Chol'],
+        },
+      );
+
+      expect(ids(results), equals(['obs-chol']));
+    });
+
+    test(':text is case-insensitive', () async {
+      await seedTextObs();
+
+      final results = await db.search(
+        resourceType: fhir.R4ResourceType.Observation,
+        searchParameters: {
+          'code:text': ['glucose'],
+        },
+      );
+
+      expect(ids(results), equals(['obs-glucose']));
+    });
+
+    test(':text is not a substring match', () async {
       await seedTextObs();
 
       final results = await db.search(
@@ -1839,23 +1931,8 @@ void main() {
         },
       );
 
-      // Both have 'Serum' in display
-      expect(ids(results), containsAll(['obs-glucose', 'obs-chol']));
-      expect(results.length, 2);
-    });
-
-    test(':text is case-insensitive', () async {
-      await seedTextObs();
-
-      final results = await db.search(
-        resourceType: fhir.R4ResourceType.Observation,
-        searchParameters: {
-          'code:text': ['serum'],
-        },
-      );
-
-      expect(ids(results), containsAll(['obs-glucose', 'obs-chol']));
-      expect(results.length, 2);
+      // Both displays END in 'Serum'; neither starts with it.
+      expect(results, isEmpty);
     });
 
     test(':text narrows with specific text', () async {

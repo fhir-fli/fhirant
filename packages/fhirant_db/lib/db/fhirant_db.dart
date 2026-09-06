@@ -17,7 +17,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -28,8 +28,14 @@ class FhirAntDb extends FhirDb {
           await _createLogsTable();
           await _createAuthorizationCodesTable();
           await _createRevokedTokensTable();
-          await _createIndexes();
+          await createValueIndexes();
         },
+        // fhir_r4_db runs ANALYZE from its own beforeOpen when the database
+        // has no planner statistics. Overriding `migration` replaces that
+        // beforeOpen wholesale, so it is wired here again; without it the
+        // planner guessed, and on a 5 GB database chose the primary key for
+        // a reference lookup whose leading column matched 2.9 million rows.
+        beforeOpen: ensurePlannerStatistics,
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await _createUsersTable();
@@ -55,7 +61,7 @@ class FhirAntDb extends FhirDb {
             await m.createTable(syncResources);
             await m.createTable(canonicalResources);
             await m.createTable(generalStorage);
-            await _createIndexes();
+            await createValueIndexes();
           }
           if (from < 8) {
             await _createAuthorizationCodesTable();
@@ -155,6 +161,17 @@ class FhirAntDb extends FhirDb {
               );
             }
           }
+          if (from < 14) {
+            // fhir_r4_db schema 7: the search index is derived data and its
+            // extraction changed under this version (dates as [low, high)
+            // ranges at their own precision, Period and Timing indexed,
+            // quantities with low/high, exact and normalized string values,
+            // contained resources under `#Type`, composites, `near`). Every
+            // row is re-extracted from the stored resources; the value
+            // indexes and planner statistics are rebuilt at the end. Paged,
+            // so the 5 GB MIMIC load takes 467s and bounded memory.
+            await rebuildSearchIndex();
+          }
         },
       );
 
@@ -245,54 +262,6 @@ class FhirAntDb extends FhirDb {
         expires_at INTEGER NOT NULL
       )
     ''');
-  }
-
-  Future<void> _createIndexes() async {
-    // Search parameter indexes for performance
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_string_value '
-      'ON string_search_parameters(string_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_token_value '
-      'ON token_search_parameters(token_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_token_system '
-      'ON token_search_parameters(token_system)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_type '
-      'ON reference_search_parameters(reference_resource_type)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_id '
-      'ON reference_search_parameters(reference_id_part)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_sys '
-      'ON reference_search_parameters(identifier_system)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_ref_identifier_val '
-      'ON reference_search_parameters(identifier_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_uri_value '
-      'ON uri_search_parameters(uri_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_date_value '
-      'ON date_search_parameters(date_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_number_value '
-      'ON number_search_parameters(number_value)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_special_value '
-      'ON special_search_parameters(special_value)',
-    );
   }
 
   // ──────────────────────────────────────────────────────────────────────────
