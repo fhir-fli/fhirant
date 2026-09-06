@@ -381,15 +381,31 @@ Future<_BundleOperation> _processBundleEntry(
       // Conditional create: ifNoneExist
       final ifNoneExist = req.ifNoneExist?.valueString;
       if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
-        final searchParams = Uri.splitQueryString(ifNoneExist);
-        final searchMap = <String, List<String>>{};
-        for (final e in searchParams.entries) {
-          searchMap[e.key] = [e.value];
+        // queryParametersAll, not splitQueryString: a repeated parameter is
+        // an AND (R4 3.1.1.4.17) and splitQueryString keeps only the last.
+        final searchMap = Uri(query: ifNoneExist).queryParametersAll;
+        final List<fhir.Resource> existing;
+        try {
+          existing = await dbInterface.search(
+            resourceType: resourceTypeEnum,
+            searchParameters: searchMap,
+          );
+        } on UnsupportedSearchModifier catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ifNoneExist: ${e.message}',
+          );
+        } on InvalidSearchValue catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ifNoneExist: ${e.message}',
+          );
+        } on AmbiguousReference catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ifNoneExist: ${e.message}',
+          );
         }
-        final existing = await dbInterface.search(
-          resourceType: resourceTypeEnum,
-          searchParameters: searchMap,
-        );
         if (existing.length == 1) {
           // Return existing resource
           resultResource = existing.first;

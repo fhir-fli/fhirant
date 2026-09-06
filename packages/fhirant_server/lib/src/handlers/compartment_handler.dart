@@ -247,6 +247,15 @@ Future<Response> compartmentSearchHandler(
 
     final total = compartmentResourceIds.length;
     return _buildSearchsetBundle(request, results, total);
+  } on UnsupportedSearchModifier catch (e) {
+    // R4 3.1.1.4.4: a SHALL, the same as on a type-level search.
+    return _operationOutcome(400, e.message, fhir.IssueType.notSupported);
+  } on InvalidSearchValue catch (e) {
+    // R4B 3.1.1.3: a value that is not valid for its type is an error, not
+    // an empty compartment and not a 500.
+    return _operationOutcome(400, e.message, fhir.IssueType.invalid);
+  } on AmbiguousReference catch (e) {
+    return _operationOutcome(400, e.message, fhir.IssueType.invalid);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Error in compartment search $compartmentType/$compartmentId/$resourceType',
@@ -306,16 +315,21 @@ String _baseUrl(Request request) {
 }
 
 /// Returns an OperationOutcome response.
-Response _operationOutcome(int statusCode, String message) {
+Response _operationOutcome(
+  int statusCode,
+  String message, [
+  fhir.IssueType? code,
+]) {
   final outcome = fhir.OperationOutcome(
     issue: [
       fhir.OperationOutcomeIssue(
         severity: statusCode >= 500
             ? fhir.IssueSeverity.fatal
             : fhir.IssueSeverity.error,
-        code: statusCode == 404
-            ? fhir.IssueType.notFound
-            : fhir.IssueType.processing,
+        code: code ??
+            (statusCode == 404
+                ? fhir.IssueType.notFound
+                : fhir.IssueType.processing),
         diagnostics: message.toFhirString,
       ),
     ],

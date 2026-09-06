@@ -176,7 +176,11 @@ Future<Response> postSystemSearchHandler(
       headers: {'Content-Type': 'application/json'},
     );
   } on UnsupportedSearchModifier catch (e) {
-    return _unsupportedModifierResponse(e);
+    return _searchRefusal(e.message, fhir.IssueType.notSupported);
+  } on InvalidSearchValue catch (e) {
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
+  } on AmbiguousReference catch (e) {
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Failed to process POST /_search',
@@ -691,7 +695,18 @@ Future<Response> _searchResources(
     // R4 3.1.1.4.4 is a SHALL: reject, with a 400 and an OperationOutcome
     // carrying a clear message. Ignoring it would silently change what the
     // query means.
-    return _unsupportedModifierResponse(e);
+    return _searchRefusal(e.message, fhir.IssueType.notSupported);
+  } on InvalidSearchValue catch (e) {
+    // R4B 3.1.1.3: "Where the content of the parameter is syntactically
+    // incorrect, servers SHOULD return an error." A date that is not a date
+    // used to come back as an empty bundle, which told the client there were
+    // no such records when the question had not been understood; before
+    // that, as a 500.
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
+  } on AmbiguousReference catch (e) {
+    // R4B 3.1.1.4.12: "Servers SHOULD reject a search where the logical id
+    // refers to more than one matching resource across different types."
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Failed to fetch resources of type: $resourceType',
@@ -849,10 +864,28 @@ Future<Response> postResourceHandler(
         }
 
         if (searchParams.isNotEmpty) {
-          final existing = await dbInterface.search(
-            resourceType: type,
-            searchParameters: searchParams,
-          );
+          final List<fhir.Resource> existing;
+          try {
+            existing = await dbInterface.search(
+              resourceType: type,
+              searchParameters: searchParams,
+            );
+          } on UnsupportedSearchModifier catch (e) {
+            return _searchRefusal(
+              'If-None-Exist: ${e.message}',
+              fhir.IssueType.notSupported,
+            );
+          } on InvalidSearchValue catch (e) {
+            return _searchRefusal(
+              'If-None-Exist: ${e.message}',
+              fhir.IssueType.invalid,
+            );
+          } on AmbiguousReference catch (e) {
+            return _searchRefusal(
+              'If-None-Exist: ${e.message}',
+              fhir.IssueType.invalid,
+            );
+          }
 
           if (existing.length == 1) {
             return Response.ok(
@@ -1566,22 +1599,25 @@ dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {
   return current;
 }
 
-/// The 400 the specification requires for a modifier we do not support.
+/// A 400 with an OperationOutcome for a search the store refused.
 ///
-/// R4 3.1.1.4.4: "Server SHALL reject any search request that contains is
-/// suffixed by a modifier that the server does not support for that parameter
-/// ... using an HTTP 400 error with an OperationOutcome with a clear error
-/// message."
-Response _unsupportedModifierResponse(UnsupportedSearchModifier failure) {
-  FhirantLogging().logInfo('Rejected search: ${failure.message}');
+/// Three refusals come out of fhir_r4_db and each names its rule: an
+/// unsupported modifier (R4 3.1.1.4.4, a SHALL: "using an HTTP 400 error with
+/// an OperationOutcome with a clear error message"; issue code
+/// `not-supported`), a value that is not syntactically valid for its
+/// parameter's type (3.1.1.3; `invalid`), and a bare logical id that refers
+/// to more than one resource type (3.1.1.4.12; `invalid`). The store's
+/// message already says what was asked for and what was allowed.
+Response _searchRefusal(String message, fhir.IssueType code) {
+  FhirantLogging().logInfo('Rejected search: $message');
   return Response(
     400,
     body: fhir.OperationOutcome(
       issue: [
         fhir.OperationOutcomeIssue(
           severity: fhir.IssueSeverity.error,
-          code: fhir.IssueType.notSupported,
-          diagnostics: failure.message.toFhirString,
+          code: code,
+          diagnostics: message.toFhirString,
         ),
       ],
     ).toJsonString(),
