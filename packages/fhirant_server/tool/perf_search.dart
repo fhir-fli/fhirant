@@ -12,6 +12,8 @@ Future<void> main(List<String> args) async {
   // A/B switch for the sort-index walk (fhir_r4_db): the same build, the
   // same database, one variable.
   if (args.contains('--no-sort-walk')) {
+    // A measurement tool is the other legitimate reader of a testing switch.
+    // ignore: invalid_use_of_visible_for_testing_member
     db.fhirDao.sortIndexWalkEnabled = false;
     print('sort-index walk DISABLED for this run');
   }
