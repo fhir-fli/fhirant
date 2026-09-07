@@ -83,7 +83,7 @@ void main() {
         'recorded': '2024-01-01T00:00:00Z',
         'agent': [
           {
-            'who': {'reference': 'Practitioner/dr1'}
+            'who': {'reference': 'Practitioner/dr1'},
           },
         ],
       }),
