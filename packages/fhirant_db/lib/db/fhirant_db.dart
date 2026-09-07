@@ -17,7 +17,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +171,13 @@ class FhirAntDb extends FhirDb {
             // indexes and planner statistics are rebuilt at the end. Paged,
             // so the 5 GB MIMIC load takes 467s and bounded memory.
             await rebuildSearchIndex();
+          }
+          if (from < 15) {
+            // fhir_r4_db schema 8: partial indexes on id for contained rows,
+            // so re-saving a container deletes its contained rows through an
+            // index instead of scanning every index table (measured 4× on
+            // the save path, fhir_r4_db 2026-09-06).
+            await createValueIndexes();
           }
         },
       );

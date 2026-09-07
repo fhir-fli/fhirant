@@ -9,6 +9,12 @@ import 'package:fhirant_db/fhirant_db.dart';
 
 Future<void> main(List<String> args) async {
   final db = FhirAntDb(NativeDatabase(File('${args[0]}/fhirant.sqlite')));
+  // A/B switch for the sort-index walk (fhir_r4_db): the same build, the
+  // same database, one variable.
+  if (args.contains('--no-sort-walk')) {
+    db.fhirDao.sortIndexWalkEnabled = false;
+    print('sort-index walk DISABLED for this run');
+  }
 
   Future<void> time(String label, Future<Object?> Function() body) async {
     final t = DateTime.now();

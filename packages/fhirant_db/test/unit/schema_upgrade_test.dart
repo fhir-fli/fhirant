@@ -83,6 +83,7 @@ void main() {
         'idx_date_value',
         'idx_date_value_end',
         'idx_quantity_low',
+        'idx_token_search_parameters_contained',
       ]),
     );
     final stats = await second
@@ -92,7 +93,7 @@ void main() {
 
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 14);
+    expect(version.read<int>('user_version'), 15);
     await second.close();
   });
 }
