@@ -205,9 +205,15 @@ Future<Response> metaDeleteHandler(
     final existingMeta = resource.meta ?? const fhir.FhirMeta();
     final reducedMeta = _subtractMeta(existingMeta, inputMeta);
 
-    // Update the resource with reduced meta (via JSON round-trip)
+    // Update the resource with reduced meta (via JSON round-trip). The store
+    // merges stored tags and security labels into a save by default
+    // (resource.html 2.26.3.9); this save must write exactly what is left.
     final updatedResource = _setMeta(resource, reducedMeta);
-    if (await dbInterface.saveResource(updatedResource) == null) {
+    final saved = await dbInterface.saveResource(
+      updatedResource,
+      mergeTags: false,
+    );
+    if (saved == null) {
       return _errorResponse(
         'Failed to delete resource meta',
         'Database operation failed',

@@ -202,4 +202,96 @@ void main() {
     );
     expect(created['meta'], stored!.meta!.toJson());
   });
+
+  group('meta on update (found while fixing the set)', () {
+    Map<String, dynamic> patient(Map<String, dynamic> meta) => {
+          'resourceType': 'Patient',
+          'id': 'pm',
+          'meta': meta,
+        };
+    Map<String, dynamic> tag(String code) =>
+        {'system': 'http://s', 'code': code};
+    List<String> tagCodes(Map<String, dynamic> resource) => [
+          for (final t in (resource['meta']['tag'] as List? ?? const []))
+            t['code'] as String,
+        ];
+    Future<Map<String, dynamic>> read() async =>
+        json(await handler(testRequest('GET', '/Patient/pm')), 200);
+    Future<Response> metaOp(String op, Map<String, dynamic> meta) async =>
+        handler(
+          testRequest(
+            'POST',
+            '/Patient/pm/\$$op',
+            body: jsonEncode({
+              'resourceType': 'Parameters',
+              'parameter': [
+                {'name': 'meta', 'valueMeta': meta},
+              ],
+            }),
+            headers: {'content-type': 'application/fhir+json'},
+          ),
+        );
+
+    test(
+        'a PUT that adds a profile and a tag keeps them; a later PUT replaces '
+        'the profile and merges the tags', () async {
+      await json(
+        await put(
+          patient({
+            'profile': ['http://p/1'],
+            'tag': [tag('a')],
+          }),
+        ),
+        201,
+      );
+      var stored = await read();
+      expect(stored['meta']['profile'], ['http://p/1']);
+      expect(tagCodes(stored), ['a']);
+
+      await json(
+        await put(
+          patient({
+            'profile': ['http://p/2'],
+            'tag': [tag('b')],
+            'versionId': '42',
+          }),
+        ),
+        200,
+      );
+      stored = await read();
+      expect(stored['meta']['profile'], ['http://p/2']);
+      expect(tagCodes(stored), ['a', 'b']);
+      expect(stored['meta']['versionId'], '2');
+    });
+
+    test(r'$meta-add adds a tag and $meta-delete removes it for good',
+        () async {
+      await json(
+        await put(
+          patient({
+            'tag': [tag('a')],
+          }),
+        ),
+        201,
+      );
+      await json(
+        await metaOp('meta-add', {
+          'tag': [tag('b')],
+        }),
+        200,
+      );
+      expect(tagCodes(await read()), ['a', 'b']);
+
+      await json(
+        await metaOp('meta-delete', {
+          'tag': [tag('a')],
+        }),
+        200,
+      );
+      expect(tagCodes(await read()), ['b']);
+      // A plain re-save does not bring the deleted tag back.
+      await json(await put(patient({})), 200);
+      expect(tagCodes(await read()), ['b']);
+    });
+  });
 }

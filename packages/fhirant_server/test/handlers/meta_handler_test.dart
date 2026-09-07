@@ -328,7 +328,7 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer(
+      when(() => mockDb.saveResource(any(), mergeTags: false)).thenAnswer(
         (i) async => i.positionalArguments.first as fhir.Resource,
       );
 
@@ -363,7 +363,7 @@ void main() {
       final tags = meta['tag'] as List;
       expect(tags, hasLength(1));
       expect(tags[0]['code'], equals('keep'));
-      verify(() => mockDb.saveResource(any())).called(1);
+      verify(() => mockDb.saveResource(any(), mergeTags: false)).called(1);
     });
 
     test('removes profiles from resource', () async {
@@ -380,7 +380,7 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer(
+      when(() => mockDb.saveResource(any(), mergeTags: false)).thenAnswer(
         (i) async => i.positionalArguments.first as fhir.Resource,
       );
 

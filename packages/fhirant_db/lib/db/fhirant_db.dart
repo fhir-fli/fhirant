@@ -334,11 +334,13 @@ class FhirAntDb extends FhirDb {
   Future<fhir.Resource?> saveResource(
     fhir.Resource resource, {
     String? ifMatchVersion,
+    bool mergeTags = true,
   }) async {
     try {
       return await fhirDao.saveResource(
         resource,
         ifMatchVersion: ifMatchVersion,
+        mergeTags: mergeTags,
       );
     } on VersionConflict {
       rethrow;
