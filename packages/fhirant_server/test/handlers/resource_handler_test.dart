@@ -18,6 +18,7 @@ void main() {
     registerFallbackValue(<String, List<String>>{});
     registerFallbackValue(<String>[]);
     registerFallbackValue(fhir.R4ResourceType.Patient);
+    registerFallbackValue(const CompartmentScope('Patient', 'x'));
   });
 
   group('deleteResourceHandler', () {
@@ -268,6 +269,19 @@ void main() {
       });
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-2'))
           .thenAnswer((_) async => patient);
+      // A Patient can be in another Patient's compartment through `link`
+      // (compartmentdefinition-patient), so the store is asked; here it
+      // says no.
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            '_id': ['pat-2'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
+        ),
+      ).thenAnswer((_) async => 0);
 
       final response = await deleteResourceHandler(
         mockRequest,
@@ -563,8 +577,11 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['total'], equals(3));
-      expect((json['entry'] as List).length, 2,
-          reason: 'the probe row is dropped');
+      expect(
+        (json['entry'] as List).length,
+        2,
+        reason: 'the probe row is dropped',
+      );
 
       final links = json['link'] as List?;
       expect(links, isNotNull);
@@ -1453,25 +1470,27 @@ void main() {
           'patientId': 'pat-1',
         },
       });
+      // The scope is the compartment context of the search itself (R4B
+      // 3.1.1.2), not an `_id` the handler injects: the store answers
+      // Patient/pat-1's compartment, which for the focal type is pat-1 and
+      // any Patient linked to it.
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {
-            '_id': ['pat-1'],
-          },
+          searchParameters: any(named: 'searchParameters'),
           hasParameters: any(named: 'hasParameters'),
           count: any(named: 'count'),
           offset: any(named: 'offset'),
           sort: any(named: 'sort'),
+          compartment: any(named: 'compartment'),
         ),
       ).thenAnswer((_) async => [patient]);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Patient,
-          searchParameters: {
-            '_id': ['pat-1'],
-          },
+          searchParameters: any(named: 'searchParameters'),
           hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
         ),
       ).thenAnswer((_) async => 1);
 
@@ -1486,6 +1505,19 @@ void main() {
       final entries = body['entry'] as List;
       expect(entries.length, 1);
       expect((entries[0]['resource'] as Map)['id'], 'pat-1');
+      final scope = verify(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+          compartment: captureAny(named: 'compartment'),
+        ),
+      ).captured.single as CompartmentScope;
+      expect(scope.type, 'Patient');
+      expect(scope.id, 'pat-1');
     });
 
     test('patient scope returns empty for non-compartment resource type',
@@ -1502,6 +1534,28 @@ void main() {
           'patientId': 'pat-1',
         },
       });
+      // The store decides membership: a type the Patient compartment does
+      // not include is an empty result and a count of 0
+      // (search_compartment_test.dart in fhir_r4_db pins that).
+      when(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.StructureDefinition,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+          compartment: any(named: 'compartment'),
+        ),
+      ).thenAnswer((_) async => []);
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.StructureDefinition,
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
+        ),
+      ).thenAnswer((_) async => 0);
 
       final response = await getResourcesHandler(
         mockRequest,
@@ -1541,37 +1595,22 @@ void main() {
         },
       });
       when(
-        () => mockDb.getCompartmentResourceIds(
-          compartmentType: 'Patient',
-          compartmentId: 'pat-1',
-          compartmentDefinition: any(named: 'compartmentDefinition'),
-          typeFilter: any(named: 'typeFilter'),
-          since: any(named: 'since'),
-        ),
-      ).thenAnswer(
-        (_) async => {
-          'Observation': {'obs-1', 'obs-2'},
-        },
-      );
-      when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
-          searchParameters: {
-            '_id': ['obs-1,obs-2'],
-          },
+          searchParameters: any(named: 'searchParameters'),
           hasParameters: any(named: 'hasParameters'),
           count: any(named: 'count'),
           offset: any(named: 'offset'),
           sort: any(named: 'sort'),
+          compartment: any(named: 'compartment'),
         ),
       ).thenAnswer((_) async => [obs]);
       when(
         () => mockDb.searchCount(
           resourceType: fhir.R4ResourceType.Observation,
-          searchParameters: {
-            '_id': ['obs-1,obs-2'],
-          },
+          searchParameters: any(named: 'searchParameters'),
           hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
         ),
       ).thenAnswer((_) async => 1);
 
@@ -1584,6 +1623,22 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = jsonDecode(await response.readAsString()) as Map;
       expect(body['total'], 1);
+      // The search ran inside Patient/pat-1's compartment; no `_id` list.
+      final captured = verify(
+        () => mockDb.search(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: captureAny(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+          compartment: captureAny(named: 'compartment'),
+        ),
+      ).captured;
+      expect(captured[0], isNull, reason: 'no _id injected');
+      final scope = captured[1] as CompartmentScope;
+      expect(scope.type, 'Patient');
+      expect(scope.id, 'pat-1');
     });
 
     test('no patient scope does not restrict search', () async {
@@ -1616,14 +1671,16 @@ void main() {
       );
 
       expect(response.statusCode, equals(200));
-      // Should NOT have called getCompartmentResourceIds
+      // No compartment: the unscoped pagination path ran, not a search.
       verifyNever(
-        () => mockDb.getCompartmentResourceIds(
-          compartmentType: any(named: 'compartmentType'),
-          compartmentId: any(named: 'compartmentId'),
-          compartmentDefinition: any(named: 'compartmentDefinition'),
-          typeFilter: any(named: 'typeFilter'),
-          since: any(named: 'since'),
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+          compartment: any(named: 'compartment'),
         ),
       );
     });

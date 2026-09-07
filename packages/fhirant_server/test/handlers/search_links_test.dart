@@ -153,7 +153,7 @@ void main() {
       expect(self, isNot(contains('nope')));
     });
 
-    test('keeps a modifier and a chain, which are the store\'s to judge',
+    test("keeps a modifier and a chain, which are the store's to judge",
         () async {
       final b = await bundle(
         await get('Patient', 'gender:not=male&general-practitioner.name=x'),

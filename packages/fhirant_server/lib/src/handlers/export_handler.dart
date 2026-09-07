@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:fhirant_server/src/utils/compartment_definitions.dart';
 import 'package:fhirant_server/src/utils/ndjson_writer.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
@@ -353,14 +352,12 @@ Future<void> _processExport(
 
     if (job.exportLevel == 'patient') {
       // Patient-level export: restrict to Patient compartment resource types
-      final definition = CompartmentDefinitions.getDefinition('Patient');
-      if (definition == null) {
-        await _failJob(dbInterface, jobId, 'Patient compartment not defined');
-        return;
-      }
-
-      // Filter types to only those in the Patient compartment
-      final compartmentTypes = definition.keys.toSet();
+      // (the published CompartmentDefinition, generated into fhir_r4_db, plus
+      // the Patient itself).
+      final compartmentTypes = {
+        'Patient',
+        ...compartmentDefinitions['Patient']!.keys,
+      };
       if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
         typesToExport = typesToExport
             .where((t) => compartmentTypes.contains(t.toString()))
@@ -380,11 +377,6 @@ Future<void> _processExport(
     if (job.exportLevel == 'group') {
       // Group-level export: export Patient compartment resources for
       // group members
-      final definition = CompartmentDefinitions.getDefinition('Patient');
-      if (definition == null) {
-        await _failJob(dbInterface, jobId, 'Patient compartment not defined');
-        return;
-      }
 
       // Fetch the Group resource
       final groupResource = job.groupId != null
@@ -424,7 +416,10 @@ Future<void> _processExport(
       }
 
       // Determine resource types to export (Patient compartment ∩ _type filter)
-      final compartmentTypes = definition.keys.toSet();
+      final compartmentTypes = {
+        'Patient',
+        ...compartmentDefinitions['Patient']!.keys,
+      };
       final typeFilter = <String>[];
       if (job.resourceTypes != null && job.resourceTypes!.isNotEmpty) {
         typeFilter
@@ -440,11 +435,9 @@ Future<void> _processExport(
         final currentJob = await dbInterface.getExportJob(jobId);
         if (currentJob == null || currentJob.status == 'cancelled') return;
 
-        final compartmentIds = await dbInterface.getCompartmentResourceIds(
-          compartmentType: 'Patient',
-          compartmentId: patientId,
-          compartmentDefinition: definition,
-          typeFilter: typeFilter.isNotEmpty ? typeFilter : null,
+        final compartmentIds = await dbInterface.compartmentMembers(
+          CompartmentScope('Patient', patientId),
+          types: typeFilter.isNotEmpty ? typeFilter : null,
           since: since,
         );
 
@@ -486,11 +479,9 @@ Future<void> _processExport(
           filterIds = {};
           for (final filter in matchingFilters) {
             final queryString = filter.substring(filter.indexOf('?') + 1);
-            final params = Uri.splitQueryString(queryString);
-            final searchMap = <String, List<String>>{};
-            for (final e in params.entries) {
-              searchMap.putIfAbsent(e.key, () => []).add(e.value);
-            }
+            // queryParametersAll: a repeated parameter is an AND (R4
+            // 3.1.1.4.17) and splitQueryString keeps only the last value.
+            final searchMap = Uri(query: queryString).queryParametersAll;
             final results = await dbInterface.search(
               resourceType: resourceType,
               searchParameters: searchMap,
@@ -566,11 +557,7 @@ Future<void> _processExport(
         resources = [];
         for (final filter in matchingFilters) {
           final queryString = filter.substring(filter.indexOf('?') + 1);
-          final params = Uri.splitQueryString(queryString);
-          final searchMap = <String, List<String>>{};
-          for (final e in params.entries) {
-            searchMap.putIfAbsent(e.key, () => []).add(e.value);
-          }
+          final searchMap = Uri(query: queryString).queryParametersAll;
           final results = await dbInterface.search(
             resourceType: resourceType,
             searchParameters: searchMap,

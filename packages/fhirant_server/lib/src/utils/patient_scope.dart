@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_server/src/utils/compartment_definitions.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
@@ -20,7 +20,19 @@ String? extractPatientContext(Request request) {
   return authUser['patientId'] as String?;
 }
 
-/// Checks if a resource is in the patient compartment for the given patient.
+/// The compartment a patient-scoped token confines a request to.
+CompartmentScope patientCompartment(String patientId) =>
+    CompartmentScope('Patient', patientId);
+
+/// Whether the stored `[resourceType]/[resourceId]` is in [patientId]'s
+/// compartment.
+///
+/// One scoped count on the store: `_id=[resourceId]` inside
+/// `CompartmentScope('Patient', patientId)`, which the store answers from
+/// the reference index through the parameters the published
+/// CompartmentDefinition names for the type. A type the compartment does not
+/// include counts 0. This used to fetch every id in the compartment for the
+/// type and look the one id up in Dart.
 Future<bool> isInPatientCompartment(
   String resourceType,
   String resourceId,
@@ -30,21 +42,17 @@ Future<bool> isInPatientCompartment(
   // Patient accessing their own record
   if (resourceType == 'Patient' && resourceId == patientId) return true;
 
-  final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
-  if (compartmentDef == null || !compartmentDef.containsKey(resourceType)) {
-    return false;
-  }
+  final type = fhir.R4ResourceType.fromString(resourceType);
+  if (type == null) return false;
 
-  final paths = compartmentDef[resourceType]!;
-  if (paths.isEmpty) return resourceId == patientId;
-
-  final compartmentIds = await dbInterface.getCompartmentResourceIds(
-    compartmentType: 'Patient',
-    compartmentId: patientId,
-    compartmentDefinition: {resourceType: paths},
+  final count = await dbInterface.searchCount(
+    resourceType: type,
+    searchParameters: {
+      '_id': [resourceId],
+    },
+    compartment: patientCompartment(patientId),
   );
-
-  return (compartmentIds[resourceType] ?? {}).contains(resourceId);
+  return count > 0;
 }
 
 /// Returns a 403 response for patient scope violations.
@@ -70,66 +78,41 @@ Response patientScopeForbiddenResponse(
   );
 }
 
-/// Checks if a new resource (being created) would be in the patient
+/// Whether a resource about to be created would be in [patientId]'s
 /// compartment.
-/// For POST (create), we check references within the resource JSON.
+///
+/// The resource is not stored yet, so the question is put to the same
+/// extractor that will index it: its reference rows are computed, and it is
+/// in the compartment when one of them is on a parameter the published
+/// CompartmentDefinition names for its type and points at `Patient/[id]`.
+/// This used to walk the JSON by hand along a hand-written path list, and
+/// looked only at the FIRST element of any array on the way, so a resource
+/// whose second performer was the patient was refused.
 Future<bool> isNewResourceInPatientCompartment(
-  String resourceType,
-  Map<String, dynamic> resourceJson,
+  fhir.Resource resource,
   String patientId,
 ) async {
-  // Patient creating their own Patient resource
+  final resourceType = resource.resourceTypeString;
+  // A patient creating their own Patient resource.
   if (resourceType == 'Patient') {
-    final resourceId = resourceJson['id'] as String?;
+    final resourceId = resource.id?.valueString;
     return resourceId == null || resourceId == patientId;
   }
 
-  final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
-  if (compartmentDef == null || !compartmentDef.containsKey(resourceType)) {
-    return false;
+  final params = compartmentDefinitions['Patient']?[resourceType];
+  if (params == null) return false;
+
+  // The extractor reads meta.lastUpdated; a new resource may have no meta
+  // yet, so it is versioned the way the save will version it.
+  final indexed = updateSearchParameters(
+    resource.meta?.lastUpdated == null
+        ? resource.updateVersion(oldMeta: resource.meta)
+        : resource,
+  );
+  for (final row in indexed.referenceParams) {
+    if (!params.contains(row.searchName.value)) continue;
+    if (row.referenceResourceType.value != 'Patient') continue;
+    if (row.referenceIdPart.value == patientId) return true;
   }
-
-  final paths = compartmentDef[resourceType]!;
-  if (paths.isEmpty) {
-    return false; // Can't create focal resources in compartment
-  }
-
-  // Check if any compartment path references the patient
-  final patientRef = 'Patient/$patientId';
-  for (final path in paths) {
-    final value = _getNestedValue(resourceJson, path);
-    if (value == null) continue;
-
-    if (value is Map) {
-      if (value['reference'] == patientRef) return true;
-    } else if (value is List) {
-      for (final item in value) {
-        if (item is Map && item['reference'] == patientRef) return true;
-      }
-    }
-  }
-
   return false;
-}
-
-dynamic _getNestedValue(Map<String, dynamic> json, String path) {
-  final parts = path.split('.');
-  dynamic current = json;
-
-  for (final part in parts) {
-    if (current is Map<String, dynamic>) {
-      current = current[part];
-      if (current == null) return null;
-    } else if (current is List) {
-      // Check first item in list
-      if (current.isNotEmpty && current[0] is Map<String, dynamic>) {
-        current = (current[0] as Map<String, dynamic>)[part];
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-  return current;
 }

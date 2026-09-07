@@ -5,7 +5,6 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
-import 'package:fhirant_server/src/utils/compartment_definitions.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
 import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
@@ -321,17 +320,29 @@ Future<Response> _searchResources(
 
     final hasHasParams = hasParams != null && hasParams.isNotEmpty;
 
+    // Patient-level scope enforcement: the whole search runs inside the
+    // patient's compartment, as the compartment context of R4B search.html
+    // 3.1.1.2, one SQL condition in the store. A type the compartment does
+    // not include comes back empty from the store. This used to fetch every
+    // id in the compartment for the type and pass the list back in as `_id`.
+    final patientId = extractPatientContext(request);
+    final compartment =
+        patientId == null ? null : patientCompartment(patientId);
+
     // _summary=count returns the total and no entries. R4 3.1.1.5.3:
     // "_count=0 ... is treated the same as _summary=count". The DAO reads a
     // count of 0 as "no page", so without this branch `_count=0` returned
     // every match.
     if (summary == 'count' || count == 0) {
       int totalCount;
-      if ((searchParams != null && searchParams.isNotEmpty) || hasHasParams) {
+      if ((searchParams != null && searchParams.isNotEmpty) ||
+          hasHasParams ||
+          compartment != null) {
         totalCount = await dbInterface.searchCount(
           resourceType: type,
           searchParameters: searchParams,
           hasParameters: hasParams,
+          compartment: compartment,
         );
       } else {
         totalCount = await dbInterface.getResourceCount(type);
@@ -369,48 +380,7 @@ Future<Response> _searchResources(
       }
     }
 
-    // Patient-level scope enforcement: restrict results to patient compartment
-    final patientId = extractPatientContext(request);
     var effectiveSearchParams = searchParams;
-
-    if (patientId != null) {
-      effectiveSearchParams = Map<String, List<String>>.from(
-        searchParams ?? {},
-      );
-      // Get the patient compartment definition
-      final compartmentDef = CompartmentDefinitions.getDefinition('Patient');
-      if (compartmentDef != null && compartmentDef.containsKey(resourceType)) {
-        final paths = compartmentDef[resourceType]!;
-        if (paths.isEmpty) {
-          // Focal resource (Patient) — restrict to the patient's own ID
-          effectiveSearchParams['_id'] = [patientId];
-        } else {
-          // Non-focal resource — get IDs in the patient compartment
-          final compartmentIds = await dbInterface.getCompartmentResourceIds(
-            compartmentType: 'Patient',
-            compartmentId: patientId,
-            compartmentDefinition: {resourceType: paths},
-          );
-          final allowedIds = compartmentIds[resourceType] ?? {};
-          if (allowedIds.isEmpty) {
-            // No resources in compartment for this type
-            return _emptySearchBundle(request, total, links);
-          }
-          // One comma-separated element, not one element per id. Since
-          // fhir_r4_db 0.11.0 the elements of a value list are ANDed, so a
-          // list of ids asks for a resource whose id is all of them at once
-          // and matches nothing. Measured: `_id: ['a','b']` returns [],
-          // `_id: ['a,b']` returns both. compartment_handler.dart:224 already
-          // joins; this site did not, so every patient-scoped search over a
-          // compartment holding more than one resource of a type returned an
-          // empty bundle.
-          effectiveSearchParams['_id'] = [allowedIds.join(',')];
-        }
-      } else {
-        // Resource type not in patient compartment — return empty
-        return _emptySearchBundle(request, total, links);
-      }
-    }
 
     if (filterIds != null) {
       effectiveSearchParams = Map<String, List<String>>.from(
@@ -422,8 +392,8 @@ Future<Response> _searchResources(
         // since fhir_r4_db 0.11.0, and these ids are alternatives.
         effectiveSearchParams['_id'] = [filterIds.join(',')];
       } else {
-        // A patient compartment already narrowed `_id`. Intersect rather than
-        // append, so the filter cannot widen what the scope allows.
+        // The client's own `_id` narrows the filter's ids: intersect, which
+        // is the AND the two parameters mean together.
         final allowed = existing.expand((value) => value.split(',')).toSet();
         final both = filterIds.intersection(allowed);
         if (both.isEmpty) {
@@ -446,7 +416,7 @@ Future<Response> _searchResources(
     // for no total to page; the link is what pages.
     final probeCount = count > 0 ? count + 1 : count;
     final List<fhir.Resource> fetched;
-    if (hasSearchParams || hasHasParams || hasSort) {
+    if (hasSearchParams || hasHasParams || hasSort || compartment != null) {
       // Use search functionality
       fetched = await dbInterface.search(
         resourceType: type,
@@ -455,6 +425,7 @@ Future<Response> _searchResources(
         count: probeCount,
         offset: offset,
         sort: sort,
+        compartment: compartment,
       );
     } else {
       // Fall back to simple pagination if no search parameters
@@ -475,11 +446,12 @@ Future<Response> _searchResources(
     // _total=none: skip count entirely, _total=estimate: use same as accurate
     int? totalCount;
     if (total != 'none') {
-      if (hasSearchParams || hasHasParams) {
+      if (hasSearchParams || hasHasParams || compartment != null) {
         totalCount = await dbInterface.searchCount(
           resourceType: type,
           searchParameters: effectiveSearchParams,
           hasParameters: hasParams,
+          compartment: compartment,
         );
       } else {
         totalCount = await dbInterface.getResourceCount(type);
@@ -908,10 +880,8 @@ Future<Response> postResourceHandler(
     // Patient-level scope enforcement for create
     final createPatientId = extractPatientContext(request);
     if (createPatientId != null) {
-      final resourceJson = resource.toJson();
       if (!await isNewResourceInPatientCompartment(
-        resourceType,
-        resourceJson,
+        resource,
         createPatientId,
       )) {
         return patientScopeForbiddenResponse(

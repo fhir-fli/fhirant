@@ -464,6 +464,7 @@ class FhirAntDb extends FhirDb {
     int? count,
     int? offset,
     List<String>? sort,
+    CompartmentScope? compartment,
   }) =>
       fhirDao.search(
         resourceType: resourceType,
@@ -472,18 +473,30 @@ class FhirAntDb extends FhirDb {
         count: count,
         offset: offset,
         sort: sort,
+        compartment: compartment,
       );
 
   Future<int> searchCount({
     required fhir.R4ResourceType resourceType,
     Map<String, List<String>>? searchParameters,
     List<HasParameter>? hasParameters,
+    CompartmentScope? compartment,
   }) =>
       fhirDao.searchCount(
         resourceType: resourceType,
         searchParameters: searchParameters,
         hasParameters: hasParameters,
+        compartment: compartment,
       );
+
+  /// Every resource in [scope]'s compartment, by type. See
+  /// `FhirDao.compartmentMembers`.
+  Future<Map<String, Set<String>>> compartmentMembers(
+    CompartmentScope scope, {
+    Iterable<String>? types,
+    DateTime? since,
+  }) =>
+      fhirDao.compartmentMembers(scope, types: types, since: since);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Server-specific: getResourcesByTypeSince
@@ -509,68 +522,6 @@ class FhirAntDb extends FhirDb {
     return rows
         .map((row) => fhir.Resource.fromJsonString(row.resource))
         .toList();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Server-specific: Compartment search
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<Map<String, Set<String>>> getCompartmentResourceIds({
-    required String compartmentType,
-    required String compartmentId,
-    required Map<String, List<String>> compartmentDefinition,
-    List<String>? typeFilter,
-    DateTime? since,
-  }) async {
-    final result = <String, Set<String>>{};
-
-    for (final entry in compartmentDefinition.entries) {
-      final resType = entry.key;
-      final searchPaths = entry.value;
-
-      // Skip the focal resource — it is handled by the caller.
-      if (searchPaths.isEmpty) continue;
-
-      // If typeFilter is provided, skip types not in the filter.
-      if (typeFilter != null && !typeFilter.contains(resType)) continue;
-
-      // Build the OR condition across all search paths for this type.
-      var condition = referenceSearchParameters.resourceType.equals(resType) &
-          referenceSearchParameters.referenceResourceType
-              .equals(compartmentType) &
-          referenceSearchParameters.referenceIdPart.equals(compartmentId);
-
-      // Add search path matching — use LIKE with % suffix to handle
-      // paths like `Observation.subject.where(resolve() is Patient)`.
-      Expression<bool>? pathCondition;
-      for (final sp in searchPaths) {
-        final like = referenceSearchParameters.searchPath.like('$sp%');
-        pathCondition = pathCondition == null ? like : (pathCondition | like);
-      }
-      if (pathCondition != null) {
-        condition = condition & pathCondition;
-      }
-
-      // Optional _since filter
-      if (since != null) {
-        condition = condition &
-            referenceSearchParameters.lastUpdated
-                .isBiggerOrEqualValue(since.millisecondsSinceEpoch);
-      }
-
-      final query = selectOnly(referenceSearchParameters)
-        ..addColumns([referenceSearchParameters.id])
-        ..where(condition);
-
-      final rows = await query.get();
-      if (rows.isNotEmpty) {
-        final ids =
-            rows.map((r) => r.read(referenceSearchParameters.id)!).toSet();
-        result[resType] = ids;
-      }
-    }
-
-    return result;
   }
 
   // ──────────────────────────────────────────────────────────────────────────

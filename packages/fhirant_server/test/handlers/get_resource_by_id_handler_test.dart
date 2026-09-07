@@ -14,6 +14,8 @@ class MockRequest extends Mock implements Request {}
 void main() {
   setUpAll(() {
     registerFallbackValue(fhir.R4ResourceType.Patient);
+    registerFallbackValue(const CompartmentScope('Patient', 'x'));
+    registerFallbackValue(<String, List<String>>{});
   });
 
   group('getResourceByIdHandler', () {
@@ -483,6 +485,19 @@ void main() {
           'patientId': 'pat-1',
         },
       });
+      // A Patient can be in another Patient's compartment through `link`
+      // (compartmentdefinition-patient), so the store is asked; here it
+      // says no.
+      when(
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Patient,
+          searchParameters: {
+            '_id': ['pat-2'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
+        ),
+      ).thenAnswer((_) async => 0);
 
       final response = await getResourceByIdHandler(
         mockRequest,
@@ -523,19 +538,18 @@ void main() {
           'patientId': 'pat-1',
         },
       });
+      // The scope check is one scoped count on the store: `_id=obs-1`
+      // inside Patient/pat-1's compartment.
       when(
-        () => mockDb.getCompartmentResourceIds(
-          compartmentType: 'Patient',
-          compartmentId: 'pat-1',
-          compartmentDefinition: any(named: 'compartmentDefinition'),
-          typeFilter: any(named: 'typeFilter'),
-          since: any(named: 'since'),
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            '_id': ['obs-1'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
         ),
-      ).thenAnswer(
-        (_) async => {
-          'Observation': {'obs-1'},
-        },
-      );
+      ).thenAnswer((_) async => 1);
 
       final response = await getResourceByIdHandler(
         mockRequest,
@@ -577,18 +591,15 @@ void main() {
         },
       });
       when(
-        () => mockDb.getCompartmentResourceIds(
-          compartmentType: 'Patient',
-          compartmentId: 'pat-1',
-          compartmentDefinition: any(named: 'compartmentDefinition'),
-          typeFilter: any(named: 'typeFilter'),
-          since: any(named: 'since'),
+        () => mockDb.searchCount(
+          resourceType: fhir.R4ResourceType.Observation,
+          searchParameters: {
+            '_id': ['obs-other'],
+          },
+          hasParameters: any(named: 'hasParameters'),
+          compartment: any(named: 'compartment'),
         ),
-      ).thenAnswer(
-        (_) async => {
-          'Observation': <String>{},
-        },
-      );
+      ).thenAnswer((_) async => 0);
 
       final response = await getResourceByIdHandler(
         mockRequest,
