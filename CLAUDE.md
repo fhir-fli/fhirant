@@ -84,13 +84,15 @@ Shelf + shelf_router HTTP server. The main class `FhirAntServer` (in `lib/src/fh
 
 Requests pass through middleware in this order:
 
-1. **Logging** — logs method, path, status, duration, client IP; emits to `requestLog` stream
-2. **CORS** — cross-origin headers for web clients
-3. **Content Negotiation** — validates Accept/Content-Type headers
-4. **Auth** — JWT validation + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
-5. **Audit** — writes AuditEvent resources to DB for CRUD operations
-6. **Rate Limiting** — configurable max requests per duration (default 10/60s)
-7. **Router** — dispatches to handler
+1. **Trusted client IP** — overwrites `X-Forwarded-For` with the socket address
+2. **Logging** — logs method, path shape, status, duration, client IP; emits to `requestLog` stream
+3. **CORS** — cross-origin headers only when an origin is configured
+4. **Rate limiting (general)** — before auth and audit, so a flood is counted before it costs anything (default 600 per 60 s per address)
+5. **Content Negotiation** — validates Accept/Content-Type headers
+6. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register` only (default 10 per 60 s)
+7. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
+8. **Audit** — writes AuditEvent resources to DB; a request that presented no credential and got 401 is not recorded
+9. **Router** — dispatches to handler
 
 #### Route Table
 
@@ -157,10 +159,12 @@ Requests pass through middleware in this order:
 
 ### Authentication & Authorization
 
-- **OAuth 2.0** with PKCE, authorization code flow
+- **OAuth 2.0** authorization code flow; PKCE S256 required (`plain` refused); `redirect_uri` pinned per `client_id` on first authorized use (`oauth_clients`), loopback ports free
+- **Granted scope** = requested ∩ account's grant (`SmartScopeEnforcer.grantScopes`); `openid`/`fhirUser`/`launch/*` pass through the response and stay out of the token claim
+- **Patient context** comes from the account (`users.patient_id`, admin-set at `/auth/register` with `patient`), never from the request
 - **JWT tokens**: HS256, 8-hour access tokens, 7-day refresh tokens
 - **SMART on FHIR scopes**: `patient/*.read`, `user/Observation.write`, `system/*.*`, etc.
-- **Account lockout**: 5 failed login attempts → 15-minute lockout
+- **Account lockout**: 5 failed attempts → 15-minute lockout, counted by one credential check shared by login and both authorize handlers (`lib/src/auth/credential_check.dart`)
 - **Token revocation**: explicit revoke + hourly cleanup of expired tokens
 - **Dev mode**: `devMode: true` bypasses auth, injects synthetic admin user
 - **User roles**: admin, clinician, readonly
@@ -188,7 +192,7 @@ All implemented operations:
 
 Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
 
-**Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, `users`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
+**Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, `users` (with `patient_id`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
 
 **Search flow:**
 1. On resource save, `search_parameters.dart` extracts all searchable values and indexes them into the appropriate tables
@@ -217,10 +221,10 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,073 tests** across 84 test files, all passing (counted 2026-09-06).
+**1,092 tests** across 85 test files, all passing (counted 2026-09-07).
 
-- **Server tests** (908 tests, 74 files): `cd packages/fhirant_server && dart test`
-- **DB tests** (115 tests, 4 files): `cd packages/fhirant_db && dart test`
+- **Server tests** (943 tests, 75 files): `cd packages/fhirant_server && dart test`
+- **DB tests** (116 tests, 4 files): `cd packages/fhirant_db && dart test`
 - **App tests** (33 tests, 3 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
   checkouts) until the family's next release.

@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,073 tests** across 84 test files, all passing. Counted 2026-09-06 by
+**1,092 tests** across 85 test files, all passing. Counted 2026-09-07 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,8 +16,8 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 908 | 74 | `cd packages/fhirant_server && dart test` |
-| fhirant_db | 115 | 4 | `cd packages/fhirant_db && dart test` |
+| fhirant_server | 943 | 75 | `cd packages/fhirant_server && dart test` |
+| fhirant_db | 116 | 4 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 6 | 1 | `cd packages/fhirant_logging && dart test` |
