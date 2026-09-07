@@ -116,18 +116,16 @@ packages:
   fhir_r4:
     dependency: "direct main"
     description:
-      name: fhir_r4
-      sha256: "4c3f9931b3d05ed6a3f3169dbeb40bdaeae3af3910acefbacba160a969c0fff0"
-      url: "https://pub.dev"
-    source: hosted
+      path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4"
+      relative: false
+    source: path
     version: "0.12.0"
   fhir_r4_db:
     dependency: "direct main"
     description:
-      name: fhir_r4_db
-      sha256: "5c4fc669f5bf92ebaa44030e73f7fa236b5f76458329d5d36d129ab4329778ee"
-      url: "https://pub.dev"
-    source: hosted
+      path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4_db"
+      relative: false
+    source: path
     version: "0.12.0"
   file:
     dependency: transitive
