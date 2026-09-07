@@ -511,6 +511,11 @@ class FhirAntDb extends FhirDb {
         targetType: targetType,
       );
 
+  /// Refreshes planner statistics where the data has outgrown them. See
+  /// `FhirDb.optimizePlannerStatistics`; the server calls it hourly and on
+  /// stop.
+  Future<void> optimizeStatistics() => optimizePlannerStatistics();
+
   /// Every resource in [scope]'s compartment, by type. See
   /// `FhirDao.compartmentMembers`.
   Future<Map<String, Set<String>>> compartmentMembers(

@@ -604,6 +604,10 @@ class FhirAntServer {
 
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
+    // SQLite's advice (lang_analyze.html, read 2026-09-06) is to run PRAGMA
+    // optimize "just before closing each database connection"; this is the
+    // last moment the server has the connection's query history.
+    await dbInterface.optimizeStatistics();
     await _server!.close(force: true);
     _server = null;
     _isRunning = false;
@@ -616,6 +620,9 @@ class FhirAntServer {
   void _startCleanupTimer() {
     _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) async {
       await dbInterface.cleanupRevokedTokens();
+      // Planner statistics for tables that have grown 10-fold since they
+      // were last analysed (PRAGMA optimize); a no-op otherwise.
+      await dbInterface.optimizeStatistics();
       // R4 calls Subscription.end "the time for the server to turn the
       // subscription off". Delivery already honours it, but without a sweep
       // the STORED status stays `active` until some unrelated write triggers
