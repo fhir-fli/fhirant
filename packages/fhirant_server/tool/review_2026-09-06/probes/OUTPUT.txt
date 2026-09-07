@@ -1,0 +1,109 @@
+# fhir_r4_db probes (dart test test/review_probe_test.dart), 2026-09-06
+00:00 +0 -1: P3 token |code matches only rows with NO system (3.1.1.4.10) [E]
+  Expected: ['no-system']
+    Actual: ['no-system', 'with-system']
+     Which: at location [1] is ['no-system', 'with-system'] which longer than expected
+00:00 +0 -1: P4 absolute versioned reference is parsed as type/id/version
+00:00 +0 -2: P4 absolute versioned reference is parsed as type/id/version [E]
+  Expected: 'Patient'
+    Actual: '_history'
+     Which: is different.
+            Expected: Patient
+              Actual: _history
+00:00 +0 -2: P5 _sort=family orders by the whole name, not a word of it
+00:01 +0 -3: P5 _sort=family orders by the whole name, not a word of it [E]
+  Expected: ['p2', 'p1']
+    Actual: ['p1', 'p2']
+     Which: at location [0] is 'p1' instead of 'p2'
+00:01 +0 -3: P6 _sort=code: a resource with text-only code has no code value and sorts LAST
+00:01 +0 -4: P6 _sort=code: a resource with text-only code has no code value and sorts LAST [E]
+  Expected: ['coded', 'text-only']
+    Actual: ['text-only', 'coded']
+     Which: at location [0] is 'text-only' instead of 'coded'
+00:01 +0 -4: P13 saveResources (bulk) continues the version sequence and keeps history
+00:01 +0 -5: P13 saveResources (bulk) continues the version sequence and keeps history [E]
+  Expected: '3'
+    Actual: '1'
+     Which: is different.
+            Expected: 3
+              Actual: 1
+00:01 +0 -5: P14 deleting a container removes its contained rows
+00:01 +0 -6: P14 deleting a container removes its contained rows [E]
+  Expected: <0>
+    Actual: <1>
+00:01 +0 -6: P16 saveResources is atomic: an indexing failure stores no resource
+00:01 +0 -7: P16 saveResources is atomic: an indexing failure stores no resource [E]
+  Expected: null
+    Actual: <Instance of 'Patient'>
+00:01 +0 -7: P15 query plans (printed, no assertion): string LIKE, token, ORDER BY last_updated
+PRAGMA case_sensitive_like rows: ()
+PLAN[string starts-with (as the DAO writes it)]: SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+PLAN[string starts-with as a range]: SEARCH string_search_parameters USING INDEX idx_string_value (string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+PLAN[token (as the DAO writes it)]: SEARCH token_search_parameters USING INDEX sqlite_autoindex_token_search_parameters_1 (resource_type=?)
+PLAN[resources page by last_updated (getResourcesWithPagination)]: SCAN resources | USE TEMP B-TREE FOR ORDER BY
+PLAN[_lastUpdated search]: SCAN resources
+PLAN[token :text substr]: SEARCH token_search_parameters USING INDEX sqlite_autoindex_token_search_parameters_1 (resource_type=?)
+00:01 +1 -7: Some tests failed.
+
+# fhirant_server probes (dart test test/integration/review_probe_test.dart), 2026-09-06
+00:00 +0 -1: P1 a refresh token is NOT accepted as a Bearer access token [E]
+  Expected: <401>
+    Actual: <200>
+  Expected: <201>
+    Actual: <400>
+00:01 +0 -2: P2b OAuth authorize with standard SMART scopes (openid fhirUser) yields a usable token
+00:02 +0 -3: P2b OAuth authorize with standard SMART scopes (openid fhirUser) yields a usable token [E]
+  Expected: <200>
+    Actual: <403>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Token carries a scope this server does not understand. Scopes must use SMART v2 syntax (context/Resource.cruds)."}]}
+00:02 +0 -3: P7 transaction: a forward urn:uuid reference to a later POST is resolved
+00:02 +0 -4: P7 transaction: a forward urn:uuid reference to a later POST is resolved [E]
+  Expected: a string starting with 'Patient/'
+    Actual: 'urn:uuid:bbbbbbbb-0000-0000-0000-000000000002'
+00:02 +0 -4: P8 JSON Patch add with "-" appends to an array (RFC 6902)
+00:02 +0 -5: P8 JSON Patch add with "-" appends to an array (RFC 6902) [E]
+  Expected: <200>
+    Actual: <400>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Failed to apply patch: FormatException: Array index required for list"}]}
+00:02 +0 -5: P9 _count=-1 is refused, not answered with every resource
+P9 status=200 entries=3
+00:02 +0 -6: P9 _count=-1 is refused, not answered with every resource [E]
+  Expected: <400>
+    Actual: <200>
+00:02 +0 -6: P10 POST /Patient/_search is a search: readonly (user/*.rs) may run it
+00:02 +0 -7: P10 POST /Patient/_search is a search: readonly (user/*.rs) may run it [E]
+  Expected: <200>
+    Actual: <403>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for c on Patient"}]}
+00:02 +0 -7: P11 compartment routes honour scopes P11a patient-scoped token for A cannot read Patient/B/Observation
+00:02 +0 -8: P11 compartment routes honour scopes P11a patient-scoped token for A cannot read Patient/B/Observation [E]
+  Expected: <403>
+    Actual: <200>
+00:02 +0 -8: P11 compartment routes honour scopes P11b patient-scoped token for A cannot run Patient/B/$everything
+00:02 +0 -9: P11 compartment routes honour scopes P11b patient-scoped token for A cannot run Patient/B/$everything [E]
+  Expected: <403>
+    Actual: <200>
+00:02 +0 -9: P11 compartment routes honour scopes P11c a user/Patient.rs-only token cannot read Observations through the compartment route
+00:02 +0 -10: P11 compartment routes honour scopes P11c a user/Patient.rs-only token cannot read Observations through the compartment route [E]
+  Expected: <403>
+    Actual: <200>
+00:02 +0 -10: P12 failed OAuth authorize attempts count toward account lockout
+00:05 +0 -11: P12 failed OAuth authorize attempts count toward account lockout [E]
+  Expected: <423>
+    Actual: <200>
+00:05 +0 -11: P-meta $meta-add is a write: readonly (user/*.rs) is refused
+00:05 +0 -12: P-meta $meta-add is a write: readonly (user/*.rs) is refused [E]
+  Expected: <403>
+    Actual: <200>
+  Expected: <201>
+    Actual: <400>
+00:06 +0 -13: Some tests failed.
+# P2a and P-login rerun after fixing the probe's own two-character usernames
+00:02 +0 -1: P2a OAuth authorize: a readonly user cannot obtain system/*.* by asking for it [E]
+  Expected: <403>
+    Actual: <201>
+00:02 +0 -1: P-login a client cannot choose its own patient context at login
+00:03 +0 -2: P-login a client cannot choose its own patient context at login [E]
+  Expected: not 'someone-else'
+    Actual: 'someone-else'
+00:03 +0 -2: Some tests failed.

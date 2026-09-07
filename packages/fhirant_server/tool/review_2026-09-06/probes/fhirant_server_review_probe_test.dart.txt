@@ -1,0 +1,401 @@
+// REVIEW PROBES 2026-09-06. Each test asserts the behaviour the specification
+// (or the server's own authorization model) requires; a FAILING probe is a
+// confirmed defect. Deleted after the review.
+import 'dart:convert';
+
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
+
+import 'test_helpers.dart';
+
+void main() {
+  late FhirAntDb db;
+  late Handler handler;
+
+  setUp(() async {
+    final server = await createTestServer();
+    db = server.db;
+    handler = server.handler;
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  Future<Map<String, dynamic>> json(Response r) async =>
+      jsonDecode(await r.readAsString()) as Map<String, dynamic>;
+
+  Future<String> registerAdmin() async {
+    final r = await handler(
+      testRequest(
+        'POST',
+        '/auth/register',
+        body: jsonEncode({'username': 'admin1', 'password': 'adminpass12345'}),
+      ),
+    );
+    expect(r.statusCode, 201);
+    return (await json(r))['token'] as String;
+  }
+
+  Future<void> registerReadonly(String adminToken) async {
+    final r = await handler(
+      testRequest(
+        'POST',
+        '/auth/register',
+        body: jsonEncode({
+          'username': 'readonly1',
+          'password': 'readonlypass123',
+          'role': 'readonly',
+        }),
+        authToken: adminToken,
+      ),
+    );
+    expect(r.statusCode, 201, reason: await r.readAsString());
+  }
+
+  test('P1 a refresh token is NOT accepted as a Bearer access token', () async {
+    final refresh = JwtService(testJwtSecret).generateRefreshToken(
+      userId: 1,
+      username: 'u',
+      role: 'admin',
+      scopes: ['system/*.*'],
+    );
+    final r = await handler(testRequest('GET', '/Patient', authToken: refresh));
+    expect(r.statusCode, 401);
+  });
+
+  test('P2a OAuth authorize: a readonly user cannot obtain system/*.* by '
+      'asking for it', () async {
+    final admin = await registerAdmin();
+    await registerReadonly(admin);
+    final auth = await handler(
+      testRequest(
+        'POST',
+        '/auth/authorize',
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode({
+          'response_type': 'code',
+          'client_id': 'c',
+          'redirect_uri': 'http://localhost/cb',
+          'scope': 'system/*.*',
+          'username': 'readonly1',
+          'password': 'readonlypass123',
+        }),
+      ),
+    );
+    expect(auth.statusCode, 200);
+    final code = (await json(auth))['code'] as String;
+    final tok = await handler(
+      testRequest(
+        'POST',
+        '/auth/token',
+        body: jsonEncode({
+          'grant_type': 'authorization_code',
+          'code': code,
+          'redirect_uri': 'http://localhost/cb',
+          'client_id': 'c',
+        }),
+      ),
+    );
+    expect(tok.statusCode, 200);
+    final access = (await json(tok))['access_token'] as String;
+    final create = await handler(
+      testRequest(
+        'POST',
+        '/Patient',
+        body: '{"resourceType":"Patient"}',
+        authToken: access,
+      ),
+    );
+    expect(create.statusCode, 403,
+        reason: 'readonly must not create, whatever scope it asked for');
+  });
+
+  test('P2b OAuth authorize with standard SMART scopes (openid fhirUser) '
+      'yields a usable token', () async {
+    await registerAdmin();
+    final auth = await handler(
+      testRequest(
+        'POST',
+        '/auth/authorize',
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode({
+          'response_type': 'code',
+          'client_id': 'c',
+          'redirect_uri': 'http://localhost/cb',
+          'scope': 'openid fhirUser user/*.rs',
+          'username': 'admin1',
+          'password': 'adminpass12345',
+        }),
+      ),
+    );
+    final code = (await json(auth))['code'] as String;
+    final tok = await handler(
+      testRequest(
+        'POST',
+        '/auth/token',
+        body: jsonEncode({
+          'grant_type': 'authorization_code',
+          'code': code,
+          'redirect_uri': 'http://localhost/cb',
+        }),
+      ),
+    );
+    final access = (await json(tok))['access_token'] as String;
+    final r = await handler(testRequest('GET', '/Patient', authToken: access));
+    expect(r.statusCode, 200, reason: await r.readAsString());
+  });
+
+  test('P7 transaction: a forward urn:uuid reference to a later POST is '
+      'resolved', () async {
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final bundle = {
+      'resourceType': 'Bundle',
+      'type': 'transaction',
+      'entry': [
+        {
+          'fullUrl': 'urn:uuid:aaaaaaaa-0000-0000-0000-000000000001',
+          'resource': {
+            'resourceType': 'Observation',
+            'status': 'final',
+            'code': {'text': 'x'},
+            'subject': {
+              'reference': 'urn:uuid:bbbbbbbb-0000-0000-0000-000000000002',
+            },
+          },
+          'request': {'method': 'POST', 'url': 'Observation'},
+        },
+        {
+          'fullUrl': 'urn:uuid:bbbbbbbb-0000-0000-0000-000000000002',
+          'resource': {'resourceType': 'Patient'},
+          'request': {'method': 'POST', 'url': 'Patient'},
+        },
+      ],
+    };
+    final r = await handler(
+      testRequest('POST', '/', body: jsonEncode(bundle), authToken: token),
+    );
+    expect(r.statusCode, 200);
+    final stored = await db.search(resourceType: fhir.R4ResourceType.Observation);
+    final subject = (stored.single as fhir.Observation).subject!.reference!.valueString!;
+    expect(subject, startsWith('Patient/'), reason: 'was $subject');
+  });
+
+  test('P8 JSON Patch add with "-" appends to an array (RFC 6902)', () async {
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    await db.saveResource(
+      fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'pp',
+        'name': [
+          {'family': 'A'},
+        ],
+      }),
+    );
+    final r = await handler(
+      testRequest(
+        'PATCH',
+        '/Patient/pp',
+        headers: {'content-type': 'application/json-patch+json'},
+        body: jsonEncode([
+          {
+            'op': 'add',
+            'path': '/name/-',
+            'value': {'family': 'B'},
+          },
+        ]),
+        authToken: token,
+      ),
+    );
+    expect(r.statusCode, 200, reason: await r.readAsString());
+  });
+
+  test('P9 _count=-1 is refused, not answered with every resource', () async {
+    final token = generateTestToken(scopes: ['user/*.cruds']);
+    for (var i = 0; i < 3; i++) {
+      await db.saveResource(
+        fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'c$i'}),
+      );
+    }
+    final r = await handler(
+      testRequest('GET', '/Patient?_count=-1&gender:missing=true',
+          authToken: token),
+    );
+    final body = await json(r);
+    // ignore: avoid_print
+    print('P9 status=${r.statusCode} entries=${(body['entry'] as List?)?.length}');
+    expect(r.statusCode, 400);
+  });
+
+  test('P10 POST /Patient/_search is a search: readonly (user/*.rs) may run '
+      'it', () async {
+    final token = generateTestToken(scopes: ['user/*.rs']);
+    final r = await handler(
+      testRequest(
+        'POST',
+        '/Patient/_search',
+        headers: {'content-type': 'application/x-www-form-urlencoded'},
+        body: 'gender=male',
+        authToken: token,
+      ),
+    );
+    expect(r.statusCode, 200, reason: await r.readAsString());
+  });
+
+  group('P11 compartment routes honour scopes', () {
+    setUp(() async {
+      for (final id in ['A', 'B']) {
+        await db.saveResource(
+          fhir.Patient.fromJson({'resourceType': 'Patient', 'id': id}),
+        );
+      }
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'obsB',
+          'status': 'final',
+          'code': {'text': 'x'},
+          'subject': {'reference': 'Patient/B'},
+        }),
+      );
+    });
+
+    test('P11a patient-scoped token for A cannot read Patient/B/Observation',
+        () async {
+      final token = generateTestToken(scopes: ['patient/*.rs'], patientId: 'A');
+      final direct = await handler(
+        testRequest('GET', '/Patient/B', authToken: token),
+      );
+      expect(direct.statusCode, 403, reason: 'control: direct read is refused');
+      final r = await handler(
+        testRequest('GET', '/Patient/B/Observation', authToken: token),
+      );
+      expect(r.statusCode, 403, reason: await r.readAsString());
+    });
+
+    test(r'P11b patient-scoped token for A cannot run Patient/B/$everything',
+        () async {
+      final token = generateTestToken(scopes: ['patient/*.rs'], patientId: 'A');
+      final r = await handler(
+        testRequest('GET', r'/Patient/B/$everything', authToken: token),
+      );
+      expect(r.statusCode, 403, reason: await r.readAsString());
+    });
+
+    test('P11c a user/Patient.rs-only token cannot read Observations through '
+        'the compartment route', () async {
+      final token = generateTestToken(scopes: ['user/Patient.rs']);
+      final control = await handler(
+        testRequest('GET', '/Observation', authToken: token),
+      );
+      expect(control.statusCode, 403, reason: 'control: type search refused');
+      final r = await handler(
+        testRequest('GET', '/Patient/B/Observation', authToken: token),
+      );
+      expect(r.statusCode, 403, reason: await r.readAsString());
+    });
+  });
+
+  test('P12 failed OAuth authorize attempts count toward account lockout',
+      () async {
+    await registerAdmin();
+    for (var i = 0; i < 6; i++) {
+      await handler(
+        testRequest(
+          'POST',
+          '/auth/authorize',
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({
+            'response_type': 'code',
+            'client_id': 'c',
+            'redirect_uri': 'http://localhost/cb',
+            'username': 'admin1',
+            'password': 'wrong-password-$i',
+          }),
+        ),
+      );
+    }
+    final login = await handler(
+      testRequest(
+        'POST',
+        '/auth/login',
+        body: jsonEncode({'username': 'admin1', 'password': 'adminpass12345'}),
+      ),
+    );
+    expect(login.statusCode, 423,
+        reason: 'six wrong passwords through /auth/authorize must lock');
+  });
+
+  test(r'P-meta $meta-add is a write: readonly (user/*.rs) is refused',
+      () async {
+    await db.saveResource(
+      fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'm'}),
+    );
+    final token = generateTestToken(scopes: ['user/*.rs']);
+    final r = await handler(
+      testRequest(
+        'POST',
+        r'/Patient/m/$meta-add',
+        body: jsonEncode({
+          'resourceType': 'Parameters',
+          'parameter': [
+            {
+              'name': 'meta',
+              'valueMeta': {
+                'tag': [
+                  {'system': 'http://t', 'code': 'x'},
+                ],
+              },
+            },
+          ],
+        }),
+        authToken: token,
+      ),
+    );
+    expect(r.statusCode, 403, reason: await r.readAsString());
+  });
+
+  test('P-login a client cannot choose its own patient context at login',
+      () async {
+    await registerAdmin();
+    final admin = await handler(
+      testRequest(
+        'POST',
+        '/auth/login',
+        body: jsonEncode({'username': 'admin1', 'password': 'adminpass12345'}),
+      ),
+    );
+    final adminToken = (await json(admin))['token'] as String;
+    final reg = await handler(
+      testRequest(
+        'POST',
+        '/auth/register',
+        body: jsonEncode({
+          'username': 'patient1',
+          'password': 'patientpass1234',
+          'role': 'readonly',
+          'scopes': ['patient/*.rs'],
+        }),
+        authToken: adminToken,
+      ),
+    );
+    expect(reg.statusCode, 201, reason: await reg.readAsString());
+    final login = await handler(
+      testRequest(
+        'POST',
+        '/auth/login',
+        body: jsonEncode({
+          'username': 'patient1',
+          'password': 'patientpass1234',
+          'patient_id': 'someone-else',
+        }),
+      ),
+    );
+    final body = await json(login);
+    expect(body['patient'], isNot('someone-else'),
+        reason: 'the server, not the client, decides the patient context');
+  });
+}

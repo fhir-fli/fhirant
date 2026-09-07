@@ -1,0 +1,228 @@
+// REVIEW PROBES 2026-09-06. Each test asserts the behaviour the specification
+// requires; a FAILING probe is a confirmed defect. Deleted after the review.
+import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhir_r4_db/fhir_r4_db.dart' hide Resource;
+import 'package:test/test.dart';
+
+Future<void> main() async {
+  late FhirDb db;
+  late FhirDao dao;
+
+  setUp(() async {
+    db = FhirDb(NativeDatabase.memory());
+    dao = db.fhirDao;
+  });
+
+  tearDown(() => db.close());
+
+  Observation obs(String id, Map<String, dynamic> code) => Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': id,
+        'status': 'final',
+        'code': code,
+      });
+
+  test('P3 token |code matches only rows with NO system (3.1.1.4.10)',
+      () async {
+    await dao.saveResource(
+      obs('with-system', {
+        'coding': [
+          {'system': 'http://s', 'code': 'X'},
+        ],
+      }),
+    );
+    await dao.saveResource(
+      obs('no-system', {
+        'coding': [
+          {'code': 'X'},
+        ],
+      }),
+    );
+    final hits = await dao.search(
+      resourceType: R4ResourceType.Observation,
+      searchParameters: {
+        'code': ['|X'],
+      },
+    );
+    expect(hits.map((r) => r.id!.valueString).toList(), ['no-system']);
+  });
+
+  test('P4 absolute versioned reference is parsed as type/id/version',
+      () async {
+    await dao.saveResource(
+      Observation.fromJson({
+        'resourceType': 'Observation',
+        'id': 'o1',
+        'status': 'final',
+        'code': {'text': 'x'},
+        'subject': {
+          'reference': 'http://example.org/fhir/Patient/123/_history/2',
+        },
+      }),
+    );
+    final rows = await (db.select(db.referenceSearchParameters)
+          ..where((t) => t.searchName.equals('subject')))
+        .get();
+    expect(rows, hasLength(1));
+    expect(rows.single.referenceResourceType, 'Patient');
+    expect(rows.single.referenceIdPart, '123');
+    expect(rows.single.referenceVersion, '2');
+  });
+
+  test('P5 _sort=family orders by the whole name, not a word of it', () async {
+    for (final (id, family) in [('p1', 'Zeta Alpha'), ('p2', 'Beta')]) {
+      await dao.saveResource(
+        Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': id,
+          'name': [
+            {'family': family},
+          ],
+        }),
+      );
+    }
+    final ids = (await dao.search(
+      resourceType: R4ResourceType.Patient,
+      sort: ['family'],
+      count: 10,
+    ))
+        .map((r) => r.id!.valueString)
+        .toList();
+    expect(ids, ['p2', 'p1'], reason: 'beta < zeta alpha');
+  });
+
+  test('P6 _sort=code: a resource with text-only code has no code value and '
+      'sorts LAST', () async {
+    await dao.saveResource(obs('text-only', {'text': 'Zzz'}));
+    await dao.saveResource(
+      obs('coded', {
+        'coding': [
+          {'system': 'http://s', 'code': 'M'},
+        ],
+      }),
+    );
+    final ids = (await dao.search(
+      resourceType: R4ResourceType.Observation,
+      sort: ['code'],
+      count: 10,
+    ))
+        .map((r) => r.id!.valueString)
+        .toList();
+    expect(ids, ['coded', 'text-only']);
+  });
+
+  test('P13 saveResources (bulk) continues the version sequence and keeps '
+      'history', () async {
+    final p = Patient.fromJson({'resourceType': 'Patient', 'id': 'v'});
+    await dao.saveResource(p);
+    await dao.saveResource(p);
+    expect(await dao.saveResources([p]), isTrue);
+    final current = await dao.getResource(R4ResourceType.Patient, 'v');
+    expect(current!.meta!.versionId!.valueString, '3');
+    final history = await dao.getResourceHistory(R4ResourceType.Patient, 'v');
+    expect(history, hasLength(3));
+  });
+
+  test('P14 deleting a container removes its contained rows', () async {
+    await dao.saveResource(
+      MedicationRequest.fromJson({
+        'resourceType': 'MedicationRequest',
+        'id': 'mr1',
+        'status': 'active',
+        'intent': 'order',
+        'contained': [
+          {
+            'resourceType': 'Medication',
+            'id': 'm1',
+            'code': {
+              'coding': [
+                {'system': 'http://s', 'code': 'abc'},
+              ],
+            },
+          },
+        ],
+        'medicationReference': {'reference': '#m1'},
+        'subject': {'reference': 'Patient/x'},
+      }),
+    );
+    Future<int> containedRows() async => (await db
+            .customSelect(
+              "SELECT count(*) AS c FROM token_search_parameters "
+              "WHERE resource_type LIKE '#%'",
+            )
+            .getSingle())
+        .read<int>('c');
+    expect(await containedRows(), greaterThan(0), reason: 'indexed on save');
+    expect(await dao.deleteResource(R4ResourceType.MedicationRequest, 'mr1'),
+        isTrue);
+    expect(await containedRows(), 0, reason: 'orphan rows after delete');
+  });
+
+  test('P16 saveResources is atomic: an indexing failure stores no resource',
+      () async {
+    dao.extractSearchParameters = (_) => throw StateError('index failed');
+    final ok = await dao.saveResources([
+      Patient.fromJson({'resourceType': 'Patient', 'id': 'atomic'}),
+    ]);
+    expect(ok, isFalse);
+    expect(await dao.getResource(R4ResourceType.Patient, 'atomic'), isNull);
+  });
+
+  test('P15 query plans (printed, no assertion): string LIKE, token, '
+      'ORDER BY last_updated', () async {
+    for (var i = 0; i < 50; i++) {
+      await dao.saveResource(
+        Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': 'p$i',
+          'gender': i.isEven ? 'male' : 'female',
+          'name': [
+            {'family': 'Family$i'},
+          ],
+        }),
+      );
+    }
+    await db.customStatement('ANALYZE');
+    Future<void> plan(String label, String sql) async {
+      final rows = await db.customSelect('EXPLAIN QUERY PLAN $sql').get();
+      // ignore: avoid_print
+      print('PLAN[$label]: ${rows.map((r) => r.read<String>('detail')).join(' | ')}');
+    }
+
+    final pragma = await db.customSelect('PRAGMA case_sensitive_like').get();
+    // ignore: avoid_print
+    print('PRAGMA case_sensitive_like rows: ${pragma.map((r) => r.data)}');
+    await plan(
+      'string starts-with (as the DAO writes it)',
+      "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' "
+      "AND (search_name = 'family' OR search_path LIKE 'Patient.family' OR search_path LIKE 'Patient.%.family') "
+      "AND string_value LIKE 'family1%'",
+    );
+    await plan(
+      'string starts-with as a range',
+      "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' "
+      "AND search_name = 'family' AND string_value >= 'family1' AND string_value < 'family2'",
+    );
+    await plan(
+      'token (as the DAO writes it)',
+      "SELECT DISTINCT id FROM token_search_parameters WHERE resource_type = 'Patient' "
+      "AND (search_name = 'gender' OR search_path LIKE 'Patient.gender' OR search_path LIKE 'Patient.%.gender') "
+      "AND token_value = 'male'",
+    );
+    await plan(
+      'resources page by last_updated (getResourcesWithPagination)',
+      "SELECT * FROM resources WHERE resource_type = 'Patient' ORDER BY last_updated DESC LIMIT 20",
+    );
+    await plan(
+      '_lastUpdated search',
+      "SELECT id FROM resources WHERE resource_type = 'Patient' AND last_updated >= 0",
+    );
+    await plan(
+      'token :text substr',
+      "SELECT DISTINCT id FROM token_search_parameters WHERE resource_type = 'Patient' "
+      "AND search_name = 'gender' AND substr(token_display, 1, 3) = 'mal'",
+    );
+  });
+}
