@@ -630,6 +630,15 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Organization, 'org-inc-1'),
       ).thenAnswer((_) async => org);
+      // The include follows the search parameter through the reference
+      // index (3.1.1.5.4), not the JSON.
+      when(
+        () => mockDb.referenceTargets(
+          'Patient',
+          any(),
+          parameter: 'managingOrganization',
+        ),
+      ).thenAnswer((_) async => {('Organization', 'org-inc-1')});
 
       final response = await getResourcesHandler(
         mockRequest,
@@ -777,6 +786,14 @@ void main() {
         () =>
             mockDb.getResource(fhir.R4ResourceType.Practitioner, 'prac-wild-1'),
       ).thenAnswer((_) async => prac);
+      when(
+        () => mockDb.referenceTargets('Patient', any()),
+      ).thenAnswer(
+        (_) async => {
+          ('Organization', 'org-wild-1'),
+          ('Practitioner', 'prac-wild-1'),
+        },
+      );
 
       final response = await getResourcesHandler(
         mockRequest,
@@ -840,6 +857,27 @@ void main() {
         () =>
             mockDb.getResource(fhir.R4ResourceType.Organization, 'org-iter-1'),
       ).thenAnswer((_) async => org);
+      // Patient:managingOrganization on the match, then Organization:partOf
+      // on what was included, then nothing more.
+      when(
+        () => mockDb.referenceTargets(
+          'Patient',
+          any(),
+          parameter: 'managingOrganization',
+        ),
+      ).thenAnswer((_) async => {('Organization', 'org-iter-1')});
+      when(
+        () => mockDb.referenceTargets(
+          'Organization',
+          any(),
+          parameter: 'partOf',
+        ),
+      ).thenAnswer((invocation) async {
+        final ids = invocation.positionalArguments[1] as Iterable<String>;
+        return ids.contains('org-iter-1')
+            ? {('Organization', 'org-iter-parent')}
+            : <(String, String)>{};
+      });
       when(
         () => mockDb.getResource(
           fhir.R4ResourceType.Organization,

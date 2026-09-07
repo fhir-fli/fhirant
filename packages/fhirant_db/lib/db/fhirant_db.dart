@@ -489,6 +489,21 @@ class FhirAntDb extends FhirDb {
         compartment: compartment,
       );
 
+  /// The `(type, id)` targets of a reference search parameter on the given
+  /// resources, for `_include`. See `FhirDao.referenceTargets`.
+  Future<Set<(String, String)>> referenceTargets(
+    String resourceType,
+    Iterable<String> ids, {
+    String? parameter,
+    String? targetType,
+  }) =>
+      fhirDao.referenceTargets(
+        resourceType,
+        ids,
+        parameter: parameter,
+        targetType: targetType,
+      );
+
   /// Every resource in [scope]'s compartment, by type. See
   /// `FhirDao.compartmentMembers`.
   Future<Map<String, Set<String>>> compartmentMembers(

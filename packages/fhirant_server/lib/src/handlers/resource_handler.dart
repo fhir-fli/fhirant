@@ -682,8 +682,27 @@ Future<Response> _searchResources(
   }
 }
 
-/// Process _include specs: extract references from [sourceResources] and
-/// fetch them.
+/// `_include`: for each `[source type]:[parameter][:target type]`, the
+/// resources the matches' reference parameter points at, added with
+/// `search.mode=include`.
+///
+/// R4B search.html 3.1.1.5.4, read whole 2026-09-06: "Both _include and
+/// _revinclude are based on search parameters, rather than paths in the
+/// resource, since joins, such as chaining, are already done by search
+/// parameter." The targets come from the store's reference index by
+/// parameter name, so `_include=Observation:patient` follows the `patient`
+/// parameter (element `subject`). This used to walk the resource JSON for a
+/// key named like the parameter, and found nothing for `patient`,
+/// `medication`, or any parameter whose element has another name.
+///
+/// "Parameter values for both _include and _revinclude have three parts,
+/// separated by a : character: The name of the source resource from which the
+/// join comes; The name of the search parameter which must be of type
+/// reference; (Optional) A specific of type of target resource". A spec whose
+/// source type matches none of the sources adds nothing. `*` is "any search
+/// parameter of type=reference". "If there is no reference, or no matching
+/// resource, the resource cannot be retrieved (e.g. on a different server),
+/// then the resource is omitted, and no error is returned."
 Future<void> _processIncludes(
   List<String> includeSpecs,
   List<fhir.Resource> sourceResources,
@@ -694,53 +713,61 @@ Future<void> _processIncludes(
 }) async {
   final allIds = existingIds ?? includedResourceIds;
 
+  // Sources by type: an include spec names the type it joins from.
+  final sourceIdsByType = <String, List<String>>{};
+  for (final resource in sourceResources) {
+    final id = resource.id?.valueString;
+    if (id == null || id.isEmpty) continue;
+    (sourceIdsByType[resource.resourceTypeString] ??= <String>[]).add(id);
+  }
+
   for (final includeSpec in includeSpecs) {
     final parts = includeSpec.split(':');
-    // parts[0] = source type (context)
-    final includeSearchParam = parts.length > 1 ? parts[1] : null;
+    if (parts.length < 2) continue;
+    final sourceType = parts[0];
+    final parameter = parts[1] == '*' ? null : parts[1];
     final targetTypeFilter = parts.length > 2 ? parts[2] : null;
-    final isWildcard = includeSearchParam == '*';
+    final sourceIds = sourceIdsByType[sourceType];
+    if (sourceIds == null) continue;
 
-    for (final resource in sourceResources) {
-      try {
-        final resourceJson =
-            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-        final references = _extractReferences(
-          resourceJson,
-          isWildcard ? null : includeSearchParam,
-        );
-
-        for (final ref in references) {
-          final refType = ref['type'];
-          final refId = ref['id'];
-          if (refType == null || refId == null) continue;
-
-          if (targetTypeFilter != null && refType != targetTypeFilter) {
-            continue;
-          }
-
-          final refTypeEnum = fhir.R4ResourceType.fromString(refType);
-          if (refTypeEnum == null) continue;
-
-          final compositeKey = '$refType/$refId';
-          if (!allIds.contains(compositeKey) &&
-              !includedResourceIds.contains(compositeKey)) {
-            final refResource =
-                await dbInterface.getResource(refTypeEnum, refId);
-            if (refResource != null) {
-              includedResources.add(refResource);
-              includedResourceIds.add(compositeKey);
-            }
-          }
-        }
-      } catch (e) {
+    final targets = await dbInterface.referenceTargets(
+      sourceType,
+      sourceIds,
+      parameter: parameter,
+      targetType: targetTypeFilter,
+    );
+    final sorted = targets.toList()
+      ..sort(
+        (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2),
+      );
+    for (final (refType, refId) in sorted) {
+      final refTypeEnum = fhir.R4ResourceType.fromString(refType);
+      if (refTypeEnum == null) continue;
+      final compositeKey = '$refType/$refId';
+      if (allIds.contains(compositeKey) ||
+          includedResourceIds.contains(compositeKey)) {
         continue;
+      }
+      final refResource = await dbInterface.getResource(refTypeEnum, refId);
+      if (refResource != null) {
+        includedResources.add(refResource);
+        includedResourceIds.add(compositeKey);
       }
     }
   }
 }
 
-/// Process _revinclude specs: find resources that reference [sourceResources].
+/// `_revinclude`: for each `[type]:[parameter][:target type]`, the resources
+/// of that type whose reference parameter points at one of the matches
+/// (3.1.1.5.4: "any provenance resources that refer to the prescription").
+///
+/// One search per spec, with the matches' references as ONE comma-joined
+/// value: R4B 3.1.1.4.17 makes a comma an OR and a repeated parameter an AND,
+/// and this used to pass one element per match, which since fhir_r4_db
+/// 0.11.0 asked for a resource whose parameter pointed at every match at once
+/// and returned nothing for any page with more than one match. The optional
+/// third part names the target type the parameter must point at, which is
+/// the matches' type; a spec naming another type adds nothing.
 Future<void> _processRevIncludes(
   List<String> revincludeSpecs,
   List<fhir.Resource> sourceResources,
@@ -751,42 +778,44 @@ Future<void> _processRevIncludes(
 }) async {
   final allIds = existingIds ?? includedResourceIds;
 
+  // The matches' references, by their type, so a target-type filter can pick.
+  final refsByType = <String, List<String>>{};
+  for (final r in sourceResources) {
+    final id = r.id?.valueString;
+    if (id == null || id.isEmpty) continue;
+    (refsByType[r.resourceTypeString] ??= <String>[])
+        .add('${r.resourceTypeString}/$id');
+  }
+
   for (final revincludeSpec in revincludeSpecs) {
     final parts = revincludeSpec.split(':');
-    final revincludeResourceType = parts[0];
     // Per FHIR spec, search param is required — skip if missing
     if (parts.length < 2) continue;
-    final revincludeSearchParam = parts[1];
-
-    final revincludeType =
-        fhir.R4ResourceType.fromString(revincludeResourceType);
+    final revincludeType = fhir.R4ResourceType.fromString(parts[0]);
     if (revincludeType == null) continue;
+    final revincludeSearchParam = parts[1];
+    final targetTypeFilter = parts.length > 2 ? parts[2] : null;
 
-    // Build full references (ResourceType/ID) for the search
-    final searchResultRefs = sourceResources
-        .where((r) => r.id != null && r.id.toString().isNotEmpty)
-        .map((r) => '${r.resourceTypeString}/${r.id}')
-        .toSet();
+    final refs = targetTypeFilter == null
+        ? refsByType.values.expand((v) => v).toList()
+        : (refsByType[targetTypeFilter] ?? const <String>[]);
+    if (refs.isEmpty) continue;
 
-    if (searchResultRefs.isNotEmpty) {
-      final revincludeParams = <String, List<String>>{
-        revincludeSearchParam: searchResultRefs.toList(),
-      };
+    final revincludeResults = await dbInterface.search(
+      resourceType: revincludeType,
+      searchParameters: {
+        revincludeSearchParam: [refs.join(',')],
+      },
+    );
 
-      final revincludeResults = await dbInterface.search(
-        resourceType: revincludeType,
-        searchParameters: revincludeParams,
-      );
-
-      for (final revResource in revincludeResults) {
-        final revType = revResource.resourceTypeString;
-        final revId = revResource.id?.toString() ?? '';
-        final compositeKey = '$revType/$revId';
-        if (!allIds.contains(compositeKey) &&
-            !includedResourceIds.contains(compositeKey)) {
-          includedResources.add(revResource);
-          includedResourceIds.add(compositeKey);
-        }
+    for (final revResource in revincludeResults) {
+      final revType = revResource.resourceTypeString;
+      final revId = revResource.id?.toString() ?? '';
+      final compositeKey = '$revType/$revId';
+      if (!allIds.contains(compositeKey) &&
+          !includedResourceIds.contains(compositeKey)) {
+        includedResources.add(revResource);
+        includedResourceIds.add(compositeKey);
       }
     }
   }
@@ -1449,85 +1478,6 @@ Future<Response> conditionalDeleteHandler(
 }
 
 /// Helper method to extract references from a resource JSON
-List<Map<String, String?>> _extractReferences(
-  Map<String, dynamic> resourceJson,
-  String? searchParam,
-) {
-  final references = <Map<String, String?>>[];
-
-  // If searchParam is specified, look for that specific field
-  if (searchParam != null) {
-    final value = _getNestedValueFromJson(resourceJson, searchParam);
-    if (value is Map && value['reference'] != null) {
-      final ref = _parseReference(value['reference'].toString());
-      if (ref != null) {
-        references.add(ref);
-      }
-    } else if (value is List) {
-      for (final item in value) {
-        if (item is Map && item['reference'] != null) {
-          final ref = _parseReference(item['reference'].toString());
-          if (ref != null) {
-            references.add(ref);
-          }
-        }
-      }
-    }
-  } else {
-    // Extract all references from the resource
-    _extractAllReferences(resourceJson, references);
-  }
-
-  return references;
-}
-
-Map<String, String?>? _parseReference(String referenceStr) {
-  // Parse reference format: ResourceType/id or just id
-  if (referenceStr.contains('/')) {
-    final parts = referenceStr.split('/');
-    if (parts.length >= 2) {
-      return {
-        'type': parts[parts.length - 2],
-        'id': parts[parts.length - 1],
-      };
-    }
-  }
-  return null;
-}
-
-void _extractAllReferences(
-  Map<String, dynamic> json,
-  List<Map<String, String?>> references,
-) {
-  for (final value in json.values) {
-    if (value is Map) {
-      if (value['reference'] != null) {
-        final ref = _parseReference(value['reference'].toString());
-        if (ref != null) {
-          references.add(ref);
-        }
-      } else {
-        _extractAllReferences(value as Map<String, dynamic>, references);
-      }
-    } else if (value is List) {
-      for (final item in value) {
-        if (item is Map) {
-          if (item['reference'] != null) {
-            final ref = _parseReference(item['reference'].toString());
-            if (ref != null) {
-              references.add(ref);
-            }
-          } else {
-            _extractAllReferences(item as Map<String, dynamic>, references);
-          }
-        }
-      }
-    }
-  }
-}
-
-/// Extracts the patient ID from the request context if patient-level
-/// scopes are in effect. Returns null if no patient context.
 /// Returns an empty searchset Bundle response.
 Response _emptySearchBundle(
   Request request,
@@ -1543,28 +1493,6 @@ Response _emptySearchBundle(
     bundle.toJsonString(),
     headers: {'Content-Type': 'application/json'},
   );
-}
-
-dynamic _getNestedValueFromJson(Map<String, dynamic> json, String path) {
-  final parts = path.split('.');
-  dynamic current = json;
-
-  for (final part in parts) {
-    if (current is Map<String, dynamic>) {
-      current = current[part];
-      if (current == null) return null;
-    } else if (current is List) {
-      if (current.isNotEmpty && current[0] is Map<String, dynamic>) {
-        current = (current[0] as Map<String, dynamic>)[part];
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  return current;
 }
 
 /// A 400 with an OperationOutcome for a search the store refused.
