@@ -10,7 +10,8 @@ import 'package:test/test.dart';
 /// R4 3.1.1.6: "the server SHALL return the parameters that were actually
 /// used to process the search ... these parameters are encoded in the self
 /// link". R4 3.1.1.7: a `_query` value the server does not recognise SHALL be
-/// refused. R4 3.1.1.5.3: `_count=0` "is treated the same as _summary=count".
+/// refused. R4B 3.1.1.5.3: "if _count has the value 0, this shall be treated
+/// the same as _summary=count".
 void main() {
   late FhirAntDb db;
 

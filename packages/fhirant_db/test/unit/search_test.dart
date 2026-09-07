@@ -648,12 +648,13 @@ void main() {
       expect(ids(results), equals(['ci-2']));
     });
 
-    // R4B 3.1.1.4.11: `[parameter]=[prefix][number]|[system]|[code]`. The
-    // spec's own example is `value-quantity=5.4|http://unitsofmeasure.org|mg`,
-    // and `5.4||mg` is "5.4 mg where the unit is either coded 'mg' or literally
-    // 'mg'". These tests used to assert `system|value|code`, the inverted
-    // order fhir_r4_db parsed before 0.13, so the spec's own example returned
-    // nothing.
+    // R4B search.html 3.1.1.4.11, verbatim: "The syntax for the value
+    // follows the form: [parameter]=[prefix][number]|[system]|[code]". Its
+    // examples: `value-quantity=5.4|http://unitsofmeasure.org|mg` and
+    // `value-quantity=5.4||mg`, the latter "where the unit - either the code
+    // (code) or the stated human unit (unit) are "mg"". These tests used to
+    // assert `system|value|code`, the inverted order fhir_r4_db parsed before
+    // 0.13, so the spec's own example returned nothing.
     test('number||code filters by unit', () async {
       await seedChargeItems();
 
@@ -1887,14 +1888,17 @@ void main() {
       await db.saveResource(buildObsCholesterol());
     }
 
-    // R4B 3.1.1.4.10, token `:text`: "The search parameter is processed as a
-    // string that searches text associated with the code/value - either
-    // CodeableConcept.text, Coding.display, or Identifier.type.text." A
-    // string search's default (3.1.1.4.9) is "the field starts with the
-    // supplied value, ignoring case and accents"; R5 says of :text outright
-    // "a case-insensitive, starts-with match". These tests used to assert a
-    // substring match on 'Serum', which is what the pre-0.13 `LIKE %value%`
-    // did and no version of the specification asks for.
+    // R4B search.html 3.1.1.4.10, the token modifier table, verbatim:
+    // ":text The search parameter is processed as a string that searches text
+    // associated with the code/value - either CodeableConcept.text,
+    // Coding.display, or Identifier.type.text. In this case, the search
+    // functions as a normal string search". 3.1.1.4.9: "By default, a field
+    // matches a string query if the value of the field equals or starts with
+    // the supplied parameter value, after both have been normalized by case
+    // and combining characters." These
+    // tests used to assert a substring match on 'Serum', which is what the
+    // pre-0.13 `LIKE %value%` did and no version of the specification asks
+    // for.
     test(':text matches the start of the display', () async {
       await seedTextObs();
 

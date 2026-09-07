@@ -61,8 +61,12 @@ Future<Response> everythingHandler(
     final offset = int.tryParse(offsetParam ?? '') ?? 0;
 
     // 4. Every member of the compartment, by type, from the reference index.
-    // The focal resource is always first: `$everything` is "all information
-    // related to the patient", and the patient is that information's anchor.
+    // The focal resource is always first. OperationDefinition
+    // Patient-everything: "At a minimum, the patient resource(s) itself is
+    // returned, along with any other resources that the server has that are
+    // related to the patient(s)"; `_since`: "Resources updated after this
+    // period will be included in the response."; `_type`: "In the absence of
+    // any specified types, the server returns all resource types".
     final members = await dbInterface.compartmentMembers(
       CompartmentScope(compartmentType, id),
       types: typeFilter,

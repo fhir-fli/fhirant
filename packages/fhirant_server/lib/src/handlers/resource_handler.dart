@@ -329,10 +329,12 @@ Future<Response> _searchResources(
     final compartment =
         patientId == null ? null : patientCompartment(patientId);
 
-    // _summary=count returns the total and no entries. R4 3.1.1.5.3:
-    // "_count=0 ... is treated the same as _summary=count". The DAO reads a
-    // count of 0 as "no page", so without this branch `_count=0` returned
-    // every match.
+    // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
+    // _count has the value 0, this shall be treated the same as
+    // _summary=count: the server returns a bundle that reports the total
+    // number of resources that match in Bundle.total, but with no entries,
+    // and no prev/next/last links". The DAO reads a count of 0 as "no page",
+    // so without this branch `_count=0` returned every match.
     if (summary == 'count' || count == 0) {
       int totalCount;
       if ((searchParams != null && searchParams.isNotEmpty) ||

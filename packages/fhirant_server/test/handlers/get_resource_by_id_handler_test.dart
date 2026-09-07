@@ -666,8 +666,12 @@ void main() {
       expect(json.containsKey('name'), isTrue);
       expect(json.containsKey('gender'), isTrue);
       expect(json.containsKey('birthDate'), isTrue);
-      expect(json.containsKey('contact'), isTrue);
-      expect(json.containsKey('generalPractitioner'), isTrue);
+      // Patient's StructureDefinition (profiles-resources.json, R4B):
+      // Patient.contact and Patient.generalPractitioner have isSummary
+      // false. The old hand-typed list had them as summary and this test
+      // asserted the list.
+      expect(json.containsKey('contact'), isFalse);
+      expect(json.containsKey('generalPractitioner'), isFalse);
       // Non-summary fields should be absent
       expect(json.containsKey('text'), isFalse);
       expect(json.containsKey('extension'), isFalse);

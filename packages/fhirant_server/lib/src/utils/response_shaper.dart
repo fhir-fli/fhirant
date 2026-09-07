@@ -1,7 +1,18 @@
-import 'package:fhirant_server/src/utils/summary_fields.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
 
-/// Utility for shaping FHIR resource responses based on _summary and
-/// _elements parameters.
+/// Shapes a resource's JSON for `_summary` and `_elements`.
+///
+/// R4B search.html 3.1.1.5.8 and 3.1.1.5.9. Which elements are summary,
+/// mandatory and modifier elements comes from `resourceElementSummary` in
+/// fhir_r4, generated from every resource's StructureDefinition. This used to
+/// be a hand-typed list for 24 resource types, with every other type's
+/// `_summary=true` answered as `_summary=text`.
+///
+/// The cut is at the top level of the resource. 3.1.1.5.8 speaks of "all
+/// supported elements that are marked as 'summary'", and the definitions mark
+/// nested elements too (Attachment.data is not summary inside an element that
+/// is); pruning inside a kept element is not done here. Documented deviation,
+/// not an oversight.
 class FhirResponseShaper {
   static const _subsettedTag = {
     'system': 'http://terminology.hl7.org/CodeSystem/v3-ObservationValue',
@@ -9,80 +20,85 @@ class FhirResponseShaper {
     'display': 'subsetted',
   };
 
-  /// Shape a resource JSON according to the _summary mode.
+  /// Always kept: the resource's identity, and `meta`, which carries the
+  /// SUBSETTED tag that says the rest was cut.
+  static const _identity = {'resourceType', 'id', 'meta'};
+
+  /// Shape a resource JSON according to the `_summary` mode.
   ///
-  /// Modes:
-  /// - `text`: keep resourceType, id, meta, text only
-  /// - `data`: remove text field
-  /// - `true`: keep fields marked isSummary in the StructureDefinition
-  ///   (falls back to text behavior for unknown resource types)
-  /// - `false` / unknown: return unchanged
-  /// - `count`: handled at the handler level (bundle with total only)
+  /// - `true`: "a limited subset of elements from the resource. This subset
+  ///   SHOULD consist solely of all supported elements that are marked as
+  ///   'summary' in the base definition of the resource(s)".
+  /// - `text`: "Return only the "text" element, the 'id' element, the 'meta'
+  ///   element, and only top-level mandatory elements".
+  /// - `data`: "Remove the text element".
+  /// - `false`: unchanged. `count` is the handler's (a bundle with a total).
   static Map<String, dynamic> shapeSummary(
     Map<String, dynamic> json,
     String mode,
   ) {
+    final definition = _definitionOf(json);
     switch (mode) {
       case 'text':
-        final shaped = <String, dynamic>{};
-        for (final key in ['resourceType', 'id', 'meta', 'text']) {
-          if (json.containsKey(key)) {
-            shaped[key] = json[key];
-          }
-        }
-        _addSubsettedTag(shaped);
-        return shaped;
-
+        return _keep(json, {
+          ..._identity,
+          'text',
+          ...?definition?.mandatory,
+        });
       case 'true':
-        // Use isSummary field definitions when available
-        final resourceType = json['resourceType'] as String?;
-        final summaryKeys =
-            resourceType != null ? SummaryFields.forType(resourceType) : null;
-
-        if (summaryKeys != null) {
-          // Keep mandatory fields + isSummary fields
-          final allowedKeys = {'resourceType', 'id', 'meta', ...summaryKeys};
-          final shaped = <String, dynamic>{};
-          for (final key in json.keys) {
-            if (allowedKeys.contains(key)) {
-              shaped[key] = json[key];
-            }
-          }
-          _addSubsettedTag(shaped);
-          return shaped;
-        }
-
-        // Fallback for unknown types: same as text
-        final shaped = <String, dynamic>{};
-        for (final key in ['resourceType', 'id', 'meta', 'text']) {
-          if (json.containsKey(key)) {
-            shaped[key] = json[key];
-          }
-        }
-        _addSubsettedTag(shaped);
-        return shaped;
-
+        // A type with no definition (not an R4 resource) keeps its identity
+        // and text, which is the most that can be said of it.
+        return _keep(json, {
+          ..._identity,
+          ...definition?.summary ?? {'text'},
+        });
       case 'data':
         final shaped = Map<String, dynamic>.from(json)..remove('text');
         _addSubsettedTag(shaped);
         return shaped;
-
       case 'false':
       default:
         return json;
     }
   }
 
-  /// Shape a resource JSON to include only the specified elements
-  /// plus the mandatory resourceType, id, and meta fields.
+  /// Shape a resource JSON to the requested [elements].
+  ///
+  /// 3.1.1.5.9: "Only elements that are listed are to be returned ... Servers
+  /// SHOULD always return mandatory elements whether they are requested or
+  /// not." So the mandatory elements of the type come along, and so do
+  /// `resourceType`, `id` and `meta`.
   static Map<String, dynamic> shapeElements(
     Map<String, dynamic> json,
     List<String> elements,
   ) {
-    final allowedKeys = {'resourceType', 'id', 'meta', ...elements};
+    final definition = _definitionOf(json);
+    return _keep(json, {
+      ..._identity,
+      ...elements,
+      ...?definition?.mandatory,
+    });
+  }
+
+  static fhir.ResourceElementSummary? _definitionOf(Map<String, dynamic> json) {
+    final type = json['resourceType'];
+    return type is String ? fhir.resourceElementSummary[type] : null;
+  }
+
+  /// [json] reduced to [names], each with its `_name` companion, tagged
+  /// SUBSETTED. R4B json.html, "JSON representation of primitive elements":
+  /// "If the value has an id attribute, or extensions, then this is
+  /// represented as follows: ... a JSON property with `_` prepended to the
+  /// name of the element, which, if present, contains the value's id and/or
+  /// extensions".
+  static Map<String, dynamic> _keep(
+    Map<String, dynamic> json,
+    Set<String> names,
+  ) {
     final shaped = <String, dynamic>{};
     for (final key in json.keys) {
-      if (allowedKeys.contains(key)) {
+      final base = key.startsWith('_') ? key.substring(1) : key;
+      if (names.contains(base)) {
         shaped[key] = json[key];
       }
     }
@@ -91,10 +107,17 @@ class FhirResponseShaper {
   }
 
   /// Add the SUBSETTED security tag to meta.
+  ///
+  /// 3.1.1.5.8: "Servers SHOULD mark the resources with the tag SUBSETTED to
+  /// ensure that the incomplete resource is not accidentally used to
+  /// overwrite a complete resource."
   static void _addSubsettedTag(Map<String, dynamic> json) {
-    final meta = json['meta'] as Map<String, dynamic>? ?? {};
-    final security =
-        (meta['security'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final meta = Map<String, dynamic>.from(
+      json['meta'] as Map<String, dynamic>? ?? {},
+    );
+    final security = List<Map<String, dynamic>>.from(
+      (meta['security'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+    );
 
     // Don't add if already present
     final alreadyPresent = security.any((t) => t['code'] == 'SUBSETTED');

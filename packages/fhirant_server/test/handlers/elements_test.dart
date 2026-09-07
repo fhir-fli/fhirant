@@ -702,6 +702,95 @@ void main() {
     });
   });
 
+  group('FhirResponseShaper.shapeSummary', () {
+    final observation = <String, dynamic>{
+      'resourceType': 'Observation',
+      'id': 'o1',
+      'meta': <String, dynamic>{'versionId': '1'},
+      'text': {'status': 'generated', 'div': '<div/>'},
+      'status': 'final',
+      'code': {'text': 'test'},
+      'valueQuantity': {'value': 1},
+      'note': [
+        {'text': 'a note'},
+      ],
+      'referenceRange': [
+        {'text': 'normal'},
+      ],
+    };
+
+    test('text keeps text, identity and the top-level mandatory elements', () {
+      // 3.1.1.5.8: "Return only the "text" element, the 'id' element, the
+      // 'meta' element, and only top-level mandatory elements".
+      // Observation.status
+      // and .code are 1..1 and used to be cut.
+      final shaped = FhirResponseShaper.shapeSummary(observation, 'text');
+      expect(shaped.keys.toSet(), {
+        'resourceType',
+        'id',
+        'meta',
+        'text',
+        'status',
+        'code',
+      });
+    });
+
+    test('true keeps the elements the definition marks summary', () {
+      final shaped = FhirResponseShaper.shapeSummary(observation, 'true');
+      expect(shaped.containsKey('status'), isTrue);
+      expect(shaped.containsKey('code'), isTrue);
+      expect(shaped.containsKey('valueQuantity'), isTrue);
+      expect(shaped.containsKey('note'), isFalse);
+      expect(shaped.containsKey('referenceRange'), isFalse);
+      expect(shaped.containsKey('text'), isFalse);
+    });
+
+    test('true on a type the old hand list never had is a real subset', () {
+      // Provenance was not in the 24-type list, so `_summary=true` on it
+      // used to be answered as `_summary=text`. Its R4B definition marks
+      // target and recorded summary; agent is mandatory but NOT summary, and
+      // entity and policy are neither.
+      final provenance = <String, dynamic>{
+        'resourceType': 'Provenance',
+        'id': 'p1',
+        'meta': <String, dynamic>{'versionId': '1'},
+        'text': {'status': 'generated', 'div': '<div/>'},
+        'target': [
+          {'reference': 'Patient/1'},
+        ],
+        'recorded': '2024-01-01T00:00:00Z',
+        'policy': ['http://example.org/policy'],
+        'agent': [
+          {'who': {'reference': 'Practitioner/1'}},
+        ],
+        'entity': [
+          {'role': 'source', 'what': {'reference': 'Device/1'}},
+        ],
+      };
+      final shaped = FhirResponseShaper.shapeSummary(provenance, 'true');
+      expect(shaped.containsKey('target'), isTrue);
+      expect(shaped.containsKey('recorded'), isTrue);
+      expect(shaped.containsKey('agent'), isFalse);
+      expect(shaped.containsKey('policy'), isFalse);
+      expect(shaped.containsKey('entity'), isFalse);
+      expect(shaped.containsKey('text'), isFalse);
+    });
+
+    test('data removes text and tags SUBSETTED', () {
+      final shaped = FhirResponseShaper.shapeSummary(observation, 'data');
+      expect(shaped.containsKey('text'), isFalse);
+      expect(shaped.containsKey('note'), isTrue);
+      final security = (shaped['meta'] as Map)['security'] as List;
+      expect(security.first['code'], equals('SUBSETTED'));
+    });
+
+    test("does not write the tag into the caller's map", () {
+      final before = Map<String, dynamic>.from(observation['meta'] as Map);
+      FhirResponseShaper.shapeSummary(observation, 'true');
+      expect(observation['meta'], equals(before));
+    });
+  });
+
   group('FhirResponseShaper.shapeElements', () {
     test('keeps resourceType, id, meta and requested fields', () {
       final json = <String, dynamic>{
@@ -741,7 +830,39 @@ void main() {
       final security = (shaped['meta'] as Map)['security'] as List;
       expect(security.length, equals(1));
       expect(security.first['code'], equals('SUBSETTED'));
-      expect(shaped.containsKey('code'), isFalse);
+      // Observation.code is 1..1. R4 3.1.1.5.9: "Servers SHOULD always
+      // return mandatory elements whether they are requested or not." It
+      // used to be cut, which handed back an Observation that would not
+      // validate.
+      expect(shaped.containsKey('code'), isTrue);
+    });
+
+    test('a primitive keeps its _element companion', () {
+      final json = <String, dynamic>{
+        'resourceType': 'Patient',
+        'id': '1',
+        'meta': <String, dynamic>{'versionId': '1'},
+        'birthDate': '1990-01-15',
+        '_birthDate': {
+          'extension': [
+            {
+              'url': 'http://hl7.org/fhir/StructureDefinition/patient-birthTime',
+              'valueDateTime': '1990-01-15T08:30:00Z',
+            },
+          ],
+        },
+        'gender': 'male',
+        '_gender': {'id': 'g1'},
+      };
+
+      final shaped = FhirResponseShaper.shapeElements(json, ['birthDate']);
+
+      // json.html: a primitive's id and extensions travel in `_name`; cutting
+      // one without the other loses them or leaves an orphan.
+      expect(shaped.containsKey('birthDate'), isTrue);
+      expect(shaped.containsKey('_birthDate'), isTrue);
+      expect(shaped.containsKey('gender'), isFalse);
+      expect(shaped.containsKey('_gender'), isFalse);
     });
 
     test('does not duplicate SUBSETTED tag if already present', () {
