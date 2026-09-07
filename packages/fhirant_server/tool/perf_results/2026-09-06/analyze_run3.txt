@@ -1,0 +1,25 @@
+== before
+  date_search_parameters  idx_date_search_parameters_contained  0 0
+  reference_search_parameters  idx_reference_search_parameters_contained  0 0
+  token_search_parameters  idx_token_search_parameters_contained  0 0
+  actual rows in resources: 928935
+  actual rows in token_search_parameters: 3655653
+ANALYZE took 5.89s
+== after
+  date_search_parameters  idx_date_search_parameters_contained  0 0
+  date_search_parameters  idx_date_value  921632 12
+  date_search_parameters  idx_date_value_end  921632 12
+  date_search_parameters  sqlite_autoindex_date_search_parameters_1  921632 115204 1 1 1 1
+  reference_search_parameters  idx_ref_id  2925081 88
+  reference_search_parameters  idx_ref_identifier_sys  2925081 2925081
+  reference_search_parameters  idx_ref_identifier_val  2925081 2925081
+  reference_search_parameters  idx_ref_type  2925081 325009
+  reference_search_parameters  idx_reference_search_parameters_contained  0 0
+  reference_search_parameters  sqlite_autoindex_reference_search_parameters_1  2925081 243757 4 1 1 1
+  resources  sqlite_autoindex_resources_1  928935 71457 1
+  token_search_parameters  idx_token_search_parameters_contained  0 0
+  token_search_parameters  idx_token_system  3655653 77780
+  token_search_parameters  idx_token_value  3655653 25
+  token_search_parameters  sqlite_autoindex_token_search_parameters_1  3655653 281205 4 2 1 1
+  actual rows in resources: 928935
+  actual rows in token_search_parameters: 3655653
