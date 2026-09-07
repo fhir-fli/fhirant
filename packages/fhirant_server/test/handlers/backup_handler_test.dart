@@ -152,7 +152,9 @@ void main() {
         ],
       );
 
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final request = Request(
         'POST',
@@ -252,9 +254,11 @@ void main() {
 
       // First save succeeds, second fails
       var callCount = 0;
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async {
+      when(() => mockDb.saveResource(any())).thenAnswer((i) async {
         callCount++;
-        return callCount == 1;
+        return callCount == 1
+            ? i.positionalArguments.first as fhir.Resource
+            : null;
       });
 
       final request = Request(
@@ -373,7 +377,9 @@ void main() {
           .thenAnswer(
         (_) async => [fhir.Patient(id: 'p1'.toFhirString)],
       );
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final envelope =
           await (await backupHandler(_backupRequest(), mockDb)).readAsString();
@@ -435,7 +441,9 @@ void main() {
 
     test('a plain Bundle is still accepted, for importing FHIR from elsewhere',
         () async {
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final restore = await restoreHandler(
         Request(

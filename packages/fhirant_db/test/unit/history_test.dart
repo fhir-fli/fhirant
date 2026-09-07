@@ -189,14 +189,20 @@ void main() {
       final after = await db.getResource(fhir.R4ResourceType.Patient, 'hist-4');
       expect(after, isNull);
 
-      // Verify history entries are still present
-      // (original + deletion tombstone)
-      final history = await db.getResourceHistory(
+      // The history keeps the original and the deletion tombstone. The
+      // tombstone is an entry with no resource; the resource-only view
+      // leaves it out rather than failing to parse it.
+      final history = await db.getHistory(
         fhir.R4ResourceType.Patient,
         'hist-4',
       );
-      expect(history, isNotEmpty);
-      expect(history.length, equals(2));
+      expect(history.map((e) => e.deleted).toList(), [true, false]);
+      expect(history.first.resource, isNull);
+      expect(history.last.resource, isA<fhir.Patient>());
+      expect(
+        await db.getResourceHistory(fhir.R4ResourceType.Patient, 'hist-4'),
+        hasLength(1),
+      );
     });
   });
 }

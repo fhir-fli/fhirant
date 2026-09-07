@@ -128,7 +128,7 @@ Future<Response> metaAddHandler(
 
     // Update the resource with new meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, mergedMeta);
-    if (!await dbInterface.saveResource(updatedResource)) {
+    if (await dbInterface.saveResource(updatedResource) == null) {
       return _errorResponse(
         'Failed to add resource meta',
         'Database operation failed',
@@ -207,7 +207,7 @@ Future<Response> metaDeleteHandler(
 
     // Update the resource with reduced meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, reducedMeta);
-    if (!await dbInterface.saveResource(updatedResource)) {
+    if (await dbInterface.saveResource(updatedResource) == null) {
       return _errorResponse(
         'Failed to delete resource meta',
         'Database operation failed',

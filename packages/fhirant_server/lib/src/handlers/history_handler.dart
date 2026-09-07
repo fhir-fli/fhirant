@@ -41,7 +41,7 @@ Future<Response> resourceHistoryHandler(
     }
 
     // Get history from database (with optional _since or _at filter)
-    final history = await dbInterface.getResourceHistory(
+    final history = await dbInterface.getHistory(
       type,
       id,
       since: since,
@@ -70,33 +70,9 @@ Future<Response> resourceHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory.map(
-        (resource) {
-          final versionId = resource.meta?.versionId?.toString() ?? '1';
-          final lastUpdated = resource.meta?.lastUpdated?.valueString;
-          final tags = resource.meta?.tag;
-          final isDeleted =
-              tags != null && tags.any((t) => t.code?.valueString == 'DELETED');
-
-          return fhir.BundleEntry(
-            resource: isDeleted ? null : resource,
-            fullUrl: fhir.FhirUri(
-              '$baseUrl/$resourceType/$id',
-            ),
-            request: fhir.BundleRequest(
-              method: isDeleted ? fhir.HTTPVerb.dELETE : fhir.HTTPVerb.gET,
-              url: fhir.FhirUri('$resourceType/$id'),
-            ),
-            response: fhir.BundleResponse(
-              status: isDeleted ? '204'.toFhirString : '200'.toFhirString,
-              etag: 'W/"$versionId"'.toFhirString,
-              lastModified: lastUpdated != null
-                  ? fhir.FhirInstant.fromString(lastUpdated)
-                  : null,
-            ),
-          );
-        },
-      ).toList(),
+      entry: [
+        for (final e in paginatedHistory) _historyEntry(e, baseUrl),
+      ],
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -173,33 +149,9 @@ Future<Response> typeHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory.map(
-        (resource) {
-          final resourceTypeString = resource.resourceTypeString;
-          final resourceId = resource.id?.toString() ?? '';
-          final versionId = resource.meta?.versionId?.toString() ?? '1';
-          final lastUpdated = resource.meta?.lastUpdated?.valueString;
-          return fhir.BundleEntry(
-            resource: resource,
-            fullUrl: fhir.FhirUri(
-              '$baseUrl/$resourceTypeString/$resourceId',
-            ),
-            request: fhir.BundleRequest(
-              method: fhir.HTTPVerb.gET,
-              url: fhir.FhirUri(
-                '$resourceTypeString/$resourceId',
-              ),
-            ),
-            response: fhir.BundleResponse(
-              status: '200'.toFhirString,
-              etag: 'W/"$versionId"'.toFhirString,
-              lastModified: lastUpdated != null
-                  ? fhir.FhirInstant.fromString(lastUpdated)
-                  : null,
-            ),
-          );
-        },
-      ).toList(),
+      entry: [
+        for (final e in paginatedHistory) _historyEntry(e, baseUrl),
+      ],
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -264,33 +216,9 @@ Future<Response> systemHistoryHandler(
     // Create Bundle with history entries
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
-      entry: paginatedHistory.map(
-        (resource) {
-          final resourceTypeString = resource.resourceTypeString;
-          final resourceId = resource.id?.toString() ?? '';
-          final versionId = resource.meta?.versionId?.toString() ?? '1';
-          final lastUpdated = resource.meta?.lastUpdated?.valueString;
-          return fhir.BundleEntry(
-            resource: resource,
-            fullUrl: fhir.FhirUri(
-              '$baseUrl/$resourceTypeString/$resourceId',
-            ),
-            request: fhir.BundleRequest(
-              method: fhir.HTTPVerb.gET,
-              url: fhir.FhirUri(
-                '$resourceTypeString/$resourceId',
-              ),
-            ),
-            response: fhir.BundleResponse(
-              status: '200'.toFhirString,
-              etag: 'W/"$versionId"'.toFhirString,
-              lastModified: lastUpdated != null
-                  ? fhir.FhirInstant.fromString(lastUpdated)
-                  : null,
-            ),
-          );
-        },
-      ).toList(),
+      entry: [
+        for (final e in paginatedHistory) _historyEntry(e, baseUrl),
+      ],
       total: fhir.FhirUnsignedInt(total),
     );
 
@@ -338,7 +266,7 @@ Future<Response> vreadResourceHandler(
     }
 
     // Get history for this resource
-    final history = await dbInterface.getResourceHistory(type, id);
+    final history = await dbInterface.getHistory(type, id);
 
     if (history.isEmpty) {
       FhirantLogging().logWarning(
@@ -352,16 +280,15 @@ Future<Response> vreadResourceHandler(
     }
 
     // Find the specific version
-    fhir.Resource? versionedResource;
-    for (final resource in history) {
-      final versionId = resource.meta?.versionId?.toString() ?? '1';
-      if (versionId == vid) {
-        versionedResource = resource;
+    HistoryEntry? entry;
+    for (final e in history) {
+      if (e.versionId == vid) {
+        entry = e;
         break;
       }
     }
 
-    if (versionedResource == null) {
+    if (entry == null) {
       FhirantLogging().logWarning(
         'Version $vid not found for resource: $resourceType/$id',
       );
@@ -372,11 +299,8 @@ Future<Response> vreadResourceHandler(
       );
     }
 
-    // Check if this version is a deletion tombstone
-    final tags = versionedResource.meta?.tag;
-    final isDeleted =
-        tags != null && tags.any((t) => t.code?.valueString == 'DELETED');
-    if (isDeleted) {
+    // A deletion tombstone is 410, not a resource
+    if (entry.deleted) {
       FhirantLogging().logInfo(
         'Version $vid of $resourceType/$id is a deletion tombstone (410)',
       );
@@ -396,6 +320,7 @@ Future<Response> vreadResourceHandler(
         headers: {'Content-Type': 'application/json'},
       );
     }
+    final versionedResource = entry.resource!;
 
     FhirantLogging().logInfo(
       'Successfully fetched version $vid of resource: $resourceType/$id',
@@ -465,5 +390,46 @@ Response _validationErrorResponse(String message) {
     400,
     body: operationOutcome.toJsonString(),
     headers: {'Content-Type': 'application/json'},
+  );
+}
+
+/// One `Bundle.entry` of a history Bundle, the same for instance, type and
+/// system history. R4B http.html "history" (read 2026-09-07): "Each entry
+/// SHALL minimally contain at least one of: a resource which holds the
+/// resource as it is at the conclusion of the interaction, or a request with
+/// entry.request.method"; "If the entry.request.method is a PUT or a POST,
+/// the entry SHALL contain a resource"; its delete example is an entry with
+/// no resource, `method DELETE`, `url Patient/[id]` and a response
+/// `lastModified`. A tombstone is that entry (status 204). Version 1 is the
+/// create (`POST`, url `[type]`, 201); a later version an update (`PUT`,
+/// url `[type]/[id]`, 200); under timestamp versioning the first version is
+/// not told apart, and every version is a `PUT`, which http.html also
+/// allows as a create ("Update as Create"). Type and system history used to
+/// emit the tombstone JSON as a `GET` resource (REVIEW-2026-09-06 finding
+/// 25).
+fhir.BundleEntry _historyEntry(HistoryEntry e, String baseUrl) {
+  final path = '${e.resourceType}/${e.id}';
+  final isCreate = e.versionId == '1';
+  return fhir.BundleEntry(
+    resource: e.resource,
+    fullUrl: fhir.FhirUri('$baseUrl/$path'),
+    request: fhir.BundleRequest(
+      method: e.deleted
+          ? fhir.HTTPVerb.dELETE
+          : isCreate
+              ? fhir.HTTPVerb.pOST
+              : fhir.HTTPVerb.pUT,
+      url: fhir.FhirUri(isCreate && !e.deleted ? e.resourceType : path),
+    ),
+    response: fhir.BundleResponse(
+      status: (e.deleted
+              ? '204'
+              : isCreate
+                  ? '201'
+                  : '200')
+          .toFhirString,
+      etag: 'W/"${e.versionId}"'.toFhirString,
+      lastModified: fhir.FhirInstant.fromDateTime(e.lastUpdated),
+    ),
   );
 }

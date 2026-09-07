@@ -135,7 +135,9 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final inputBody = jsonEncode({
         'resourceType': 'Parameters',
@@ -185,7 +187,9 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final inputBody = jsonEncode({
         'resourceType': 'Parameters',
@@ -228,7 +232,9 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final inputBody = jsonEncode({
         'resourceType': 'Parameters',
@@ -322,7 +328,9 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final inputBody = jsonEncode({
         'resourceType': 'Parameters',
@@ -372,7 +380,9 @@ void main() {
 
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, '123'))
           .thenAnswer((_) async => patient);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final inputBody = jsonEncode({
         'resourceType': 'Parameters',

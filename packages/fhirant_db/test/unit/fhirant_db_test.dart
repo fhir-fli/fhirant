@@ -31,7 +31,9 @@ void main() {
 
       final result = await db.saveResource(patient);
 
-      expect(result, isTrue);
+      // The saved resource comes back with the server's version.
+      expect(result, isA<fhir.Patient>());
+      expect(result!.meta!.versionId!.valueString, '1');
 
       // Verify the resource was saved and can be retrieved
       final retrieved =

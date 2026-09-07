@@ -42,7 +42,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => null);
@@ -103,7 +103,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => false);
+      ).thenAnswer((_) async => null);
 
       final response = await postResourceHandler(
         mockRequest,
@@ -157,7 +157,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => savedPatient);
@@ -197,8 +197,11 @@ void main() {
       ).thenAnswer((_) async => patientJson);
       when(() => mockRequest.headers).thenReturn({});
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => savedPatient);
@@ -241,7 +244,7 @@ void main() {
       });
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => savedPatient);
@@ -287,7 +290,7 @@ void main() {
       });
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => savedPatient);
@@ -330,7 +333,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => savedPatient);
@@ -373,7 +376,7 @@ void main() {
       ).thenAnswer((_) async => []);
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-new'),
       ).thenAnswer((_) async => null);
@@ -502,7 +505,7 @@ void main() {
       });
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-123'),
       ).thenAnswer((_) async => null);

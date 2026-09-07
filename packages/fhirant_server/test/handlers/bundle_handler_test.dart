@@ -82,7 +82,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => patient);
@@ -285,7 +285,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'batch-id'),
       ).thenAnswer((_) async => patient);
@@ -347,7 +347,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'good-id'),
       ).thenAnswer((_) async => patient);
@@ -595,7 +595,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
 
       final response = await bundleHandler(mockRequest, mockDb);
 
@@ -771,7 +771,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-abc'),
       ).thenAnswer((_) async => savedPatient);
@@ -895,7 +895,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'),
       ).thenAnswer((_) async => savedPatient);
@@ -956,7 +956,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Observation, 'obs-bad'),
       ).thenAnswer(
@@ -1038,7 +1038,7 @@ void main() {
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-get'),
       ).thenAnswer((_) async => patient);
@@ -1110,7 +1110,9 @@ void main() {
           .thenReturn(Uri.parse('http://localhost:8080/'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'rb-1'))
           .thenAnswer((_) async => existing);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       final response = await bundleHandler(mockRequest, mockDb);
 
@@ -1139,7 +1141,9 @@ void main() {
           .thenReturn(Uri.parse('http://localhost:8080/'));
       when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'tx-1'))
           .thenAnswer((_) async => null);
-      when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+      when(() => mockDb.saveResource(any())).thenAnswer(
+        (i) async => i.positionalArguments.first as fhir.Resource,
+      );
 
       await bundleHandler(mockRequest, mockDb);
 
@@ -1194,8 +1198,11 @@ void main() {
         () => mockRequest.requestedUri,
       ).thenReturn(Uri.parse('http://localhost:8080/'));
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'enrich-1'),
       ).thenAnswer((_) async => savedPatient);
@@ -1267,8 +1274,11 @@ void main() {
         return getCallCount == 1 ? existingPatient : updatedPatient;
       });
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => updatedPatient);
 
       final response = await bundleHandler(mockRequest, mockDb);
 

@@ -430,18 +430,14 @@ Future<_BundleOperation> _processBundleEntry(
         subscriptions,
       );
 
-      final success = await dbInterface.saveResource(resourceToSave);
-      if (!success) {
+      final saved = await dbInterface.saveResource(resourceToSave);
+      if (saved == null) {
         throw BundleEntryException(
           500,
           'Bundle entry $entryIndex: Failed to create resource',
         );
       }
-
-      // Re-fetch to get server-assigned meta
-      final savedId = resourceToSave.id!.toString();
-      final saved = await dbInterface.getResource(resourceTypeEnum, savedId);
-      resultResource = saved ?? resourceToSave;
+      resultResource = saved;
       createdResource = resultResource;
       status = '201';
       location = '$baseUrl/$resourceType/${resultResource.id}';
@@ -508,18 +504,14 @@ Future<_BundleOperation> _processBundleEntry(
       final putResource =
           await _activated(fhir.Resource.fromJson(putJson), subscriptions);
 
-      final putSuccess = await dbInterface.saveResource(putResource);
-      if (!putSuccess) {
+      final updated = await dbInterface.saveResource(putResource);
+      if (updated == null) {
         throw BundleEntryException(
           500,
           'Bundle entry $entryIndex: Failed to update resource',
         );
       }
-
-      // Re-fetch to get server-assigned meta
-      final updated =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
-      resultResource = updated ?? putResource;
+      resultResource = updated;
       status = '200';
 
     case fhir.HTTPVerb.pATCH:
@@ -593,17 +585,14 @@ Future<_BundleOperation> _processBundleEntry(
       // A patch can change criteria or channel, so the server has to decide
       // again whether it can honour the subscription.
       final patchedToSave = await _activated(patchedResource, subscriptions);
-      final patchSuccess = await dbInterface.saveResource(patchedToSave);
-      if (!patchSuccess) {
+      final patchSaved = await dbInterface.saveResource(patchedToSave);
+      if (patchSaved == null) {
         throw BundleEntryException(
           500,
           'Bundle entry $entryIndex: Failed to save patched resource',
         );
       }
-
-      final patchSaved =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
-      resultResource = patchSaved ?? patchedResource;
+      resultResource = patchSaved;
       status = '200';
 
     case fhir.HTTPVerb.dELETE:

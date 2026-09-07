@@ -173,7 +173,11 @@ void main() {
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
       ).thenAnswer((_) async => patient);
       when(
-        () => mockDb.deleteResource(fhir.R4ResourceType.Patient, '123'),
+        () => mockDb.deleteResource(
+          fhir.R4ResourceType.Patient,
+          '123',
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
       ).thenAnswer((_) async => true);
 
       final response = await deleteResourceHandler(
@@ -205,6 +209,14 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, '123'),
       ).thenAnswer((_) async => patient);
+      // The store checks If-Match inside its delete and refuses.
+      when(
+        () => mockDb.deleteResource(
+          fhir.R4ResourceType.Patient,
+          '123',
+          ifMatchVersion: '1',
+        ),
+      ).thenThrow(const VersionConflict(expected: '1', actual: '5'));
 
       final response = await deleteResourceHandler(
         mockRequest,

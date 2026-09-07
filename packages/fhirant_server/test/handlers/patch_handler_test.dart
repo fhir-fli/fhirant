@@ -66,7 +66,7 @@ void main() {
       ).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
 
       final response = await patchResourceHandler(
         mockRequest,
@@ -222,7 +222,7 @@ void main() {
       ).thenAnswer((_) async => patchBody);
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => false);
+      ).thenAnswer((_) async => null);
 
       final response = await patchResourceHandler(
         mockRequest,
@@ -273,8 +273,11 @@ void main() {
       ).thenAnswer((_) async => patchBody);
       when(() => mockRequest.headers).thenReturn({});
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
 
       final response = await patchResourceHandler(
         mockRequest,
@@ -325,8 +328,11 @@ void main() {
         'prefer': 'return=minimal',
       });
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
 
       final response = await patchResourceHandler(
         mockRequest,

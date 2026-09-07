@@ -42,7 +42,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer(
@@ -139,7 +139,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => false);
+      ).thenAnswer((_) async => null);
 
       final response = await putResourceHandler(
         mockRequest,
@@ -206,8 +206,11 @@ void main() {
       ).thenAnswer((_) async => patientJson);
       when(() => mockRequest.headers).thenReturn({});
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => savedPatient);
@@ -269,8 +272,11 @@ void main() {
         return callCount == 1 ? currentPatient : savedPatient;
       });
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
 
       final response = await putResourceHandler(
         mockRequest,
@@ -312,6 +318,10 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => currentPatient);
+      // The store checks If-Match inside its write and refuses.
+      when(
+        () => mockDb.saveResource(any(), ifMatchVersion: '1'),
+      ).thenThrow(const VersionConflict(expected: '1', actual: '5'));
 
       final response = await putResourceHandler(
         mockRequest,
@@ -341,6 +351,10 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => null);
+      // The store checks If-Match inside its write and refuses.
+      when(
+        () => mockDb.saveResource(any(), ifMatchVersion: '1'),
+      ).thenThrow(const VersionConflict(expected: '1', actual: null));
 
       final response = await putResourceHandler(
         mockRequest,
@@ -378,7 +392,7 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => savedPatient);
@@ -420,8 +434,11 @@ void main() {
         'prefer': 'return=minimal',
       });
       when(
-        () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenAnswer((_) async => savedPatient);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => savedPatient);
@@ -467,7 +484,7 @@ void main() {
       });
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => true);
+      ).thenAnswer((i) async => i.positionalArguments.first as fhir.Resource);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'test-id'),
       ).thenAnswer((_) async => savedPatient);

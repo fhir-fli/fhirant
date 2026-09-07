@@ -131,7 +131,7 @@ class BackupService {
           continue;
         }
         try {
-          if (await db.saveResource(resource)) {
+          if (await db.saveResource(resource) != null) {
             saved++;
           } else {
             failures.add(

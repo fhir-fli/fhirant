@@ -11,6 +11,20 @@ class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 class MockRequest extends Mock implements Request {}
 
+/// History entries for stored versions, as the database hands them to the
+/// handlers.
+List<HistoryEntry> _entries(List<fhir.Resource> resources) => [
+      for (final r in resources)
+        HistoryEntry(
+          resourceType: r.resourceTypeString,
+          id: r.id!.valueString!,
+          versionId: r.meta?.versionId?.valueString ?? '1',
+          lastUpdated: r.meta?.lastUpdated?.valueDateTime ?? DateTime.now(),
+          deleted: false,
+          resource: r,
+        ),
+    ];
+
 void main() {
   setUpAll(() {
     registerFallbackValue(fhir.R4ResourceType.Patient);
@@ -50,13 +64,13 @@ void main() {
         Uri.parse('http://localhost:8080/Patient/123/_history'),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient2, patient1]);
+      ).thenAnswer((_) async => _entries([patient2, patient1]));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -81,13 +95,13 @@ void main() {
         Uri.parse('http://localhost:8080/Patient/123/_history'),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => []);
+      ).thenAnswer((_) async => _entries([]));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -141,13 +155,13 @@ void main() {
         ),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => patients);
+      ).thenAnswer((_) async => _entries(patients));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -186,13 +200,13 @@ void main() {
         ),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient1]);
+      ).thenAnswer((_) async => _entries([patient1]));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -208,7 +222,7 @@ void main() {
 
       // Verify _since was passed to the DB method
       final captured = verify(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: captureAny(named: 'since'),
@@ -237,13 +251,13 @@ void main() {
         ),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient]);
+      ).thenAnswer((_) async => _entries([patient]));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -258,7 +272,7 @@ void main() {
       expect((json['entry'] as List).length, equals(1));
 
       final captured = verify(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
@@ -278,13 +292,13 @@ void main() {
         ),
       );
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => []);
+      ).thenAnswer((_) async => _entries([]));
 
       final response = await resourceHistoryHandler(
         mockRequest,
@@ -361,7 +375,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patientV2, patient]);
+      ).thenAnswer((_) async => _entries([patientV2, patient]));
 
       final response = await typeHistoryHandler(
         mockRequest,
@@ -414,7 +428,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient]);
+      ).thenAnswer((_) async => _entries([patient]));
 
       final response = await typeHistoryHandler(
         mockRequest,
@@ -461,7 +475,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient]);
+      ).thenAnswer((_) async => _entries([patient]));
 
       final response = await typeHistoryHandler(
         mockRequest,
@@ -547,7 +561,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patientV2, patient]);
+      ).thenAnswer((_) async => _entries([patientV2, patient]));
 
       final response = await systemHistoryHandler(
         mockRequest,
@@ -574,7 +588,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => []);
+      ).thenAnswer((_) async => _entries([]));
 
       final response = await systemHistoryHandler(
         mockRequest,
@@ -610,7 +624,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient]);
+      ).thenAnswer((_) async => _entries([patient]));
 
       final response = await systemHistoryHandler(
         mockRequest,
@@ -652,7 +666,7 @@ void main() {
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient]);
+      ).thenAnswer((_) async => _entries([patient]));
 
       final response = await systemHistoryHandler(
         mockRequest,
@@ -725,13 +739,13 @@ void main() {
       });
 
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient2, patient1]);
+      ).thenAnswer((_) async => _entries([patient2, patient1]));
 
       final response = await vreadResourceHandler(
         mockRequest,
@@ -751,13 +765,13 @@ void main() {
 
     test('returns 404 when resource not found', () async {
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => []);
+      ).thenAnswer((_) async => _entries([]));
 
       final response = await vreadResourceHandler(
         mockRequest,
@@ -784,13 +798,13 @@ void main() {
       });
 
       when(
-        () => mockDb.getResourceHistory(
+        () => mockDb.getHistory(
           fhir.R4ResourceType.Patient,
           '123',
           since: any(named: 'since'),
           at: any(named: 'at'),
         ),
-      ).thenAnswer((_) async => [patient1]);
+      ).thenAnswer((_) async => _entries([patient1]));
 
       final response = await vreadResourceHandler(
         mockRequest,

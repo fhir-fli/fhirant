@@ -38,7 +38,7 @@ void main() {
         'name': [
           {
             'family': 'Rebuilt',
-            'given': <String>['Index']
+            'given': <String>['Index'],
           },
         ],
         'birthDate': '1980-02-03',
@@ -48,7 +48,7 @@ void main() {
       (await first.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
-          'family': <String>['Rebuilt']
+          'family': <String>['Rebuilt'],
         },
       ))
           .length,
@@ -65,7 +65,7 @@ void main() {
     final byName = await second.search(
       resourceType: fhir.R4ResourceType.Patient,
       searchParameters: {
-        'family': <String>['Rebuilt']
+        'family': <String>['Rebuilt'],
       },
     );
     expect(byName.map((r) => r.id.toString()), equals(['upgrade-1']));
@@ -73,7 +73,7 @@ void main() {
     final byDate = await second.search(
       resourceType: fhir.R4ResourceType.Patient,
       searchParameters: {
-        'birthdate': <String>['1980-02-03']
+        'birthdate': <String>['1980-02-03'],
       },
     );
     expect(byDate.map((r) => r.id.toString()), equals(['upgrade-1']));
@@ -102,7 +102,7 @@ void main() {
 
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 16);
+    expect(version.read<int>('user_version'), 17);
     await second.close();
   });
 
@@ -137,6 +137,44 @@ void main() {
     expect(await second.getOAuthClientRedirect('app'), 'http://app/cb');
     await second.deleteOAuthClient('app');
     expect(await second.getOAuthClientRedirect('app'), isNull);
+    await second.close();
+  });
+
+  test('opening a schema-16 database rebuilds the search index', () async {
+    // fhir_r4_db schema 9 (fhirant 17): the string index rows of Address
+    // and ContactPoint values moved onto the whole-value convention `_sort`
+    // uses, so the index is re-extracted. Observable: the string rows are
+    // emptied by hand, the version stamped back to 16, and the reopen
+    // brings them back on the new numbers.
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.saveResource(
+      fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'v16',
+        'address': [
+          {
+            'line': ['Zeta Street', 'Alpha Building'],
+            'city': 'Middle',
+          },
+        ],
+      }),
+    );
+    await first.customStatement('DELETE FROM string_search_parameters');
+    await first.customStatement('PRAGMA user_version = 16');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    final rows = await second
+        .customSelect(
+          'SELECT param_index FROM string_search_parameters '
+          "WHERE search_name = 'address' ORDER BY param_index",
+        )
+        .get();
+    expect(rows.map((r) => r.read<int>('param_index')).toList(), [0, 100, 200]);
+    final version =
+        await second.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), 17);
     await second.close();
   });
 }

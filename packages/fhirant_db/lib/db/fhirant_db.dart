@@ -17,7 +17,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -202,6 +202,13 @@ class FhirAntDb extends FhirDb {
             // so an authorization code could be sent anywhere).
             await _createOAuthClientsTable();
           }
+          if (from < 17) {
+            // fhir_r4_db schema 9: Address and ContactPoint string rows
+            // moved onto the whole-value param_index convention `_sort`
+            // relies on, so the search index is re-extracted from the
+            // stored resources (derived data, as the schema-14 step did).
+            await rebuildSearchIndex();
+          }
         },
       );
 
@@ -319,13 +326,25 @@ class FhirAntDb extends FhirDb {
   ) =>
       fhirDao.getResource(resourceType, id);
 
-  Future<bool> saveResource(fhir.Resource resource) async {
+  /// Saves [resource] and returns it as stored (server-assigned version and
+  /// lastUpdated), or null when the save failed. Callers used to get a bool
+  /// and re-read the resource to learn its version (REVIEW-2026-09-06
+  /// finding 32). A [VersionConflict] from [ifMatchVersion] (HTTP `If-Match`)
+  /// is rethrown: it is the caller's 412, not a failure.
+  Future<fhir.Resource?> saveResource(
+    fhir.Resource resource, {
+    String? ifMatchVersion,
+  }) async {
     try {
-      await fhirDao.saveResource(resource);
-      return true;
+      return await fhirDao.saveResource(
+        resource,
+        ifMatchVersion: ifMatchVersion,
+      );
+    } on VersionConflict {
+      rethrow;
     } catch (e) {
       stderr.writeln('Error in saveResource: $e');
-      return false;
+      return null;
     }
   }
 
@@ -341,9 +360,10 @@ class FhirAntDb extends FhirDb {
 
   Future<bool> deleteResource(
     fhir.R4ResourceType resourceType,
-    String id,
-  ) =>
-      fhirDao.deleteResource(resourceType, id);
+    String id, {
+    String? ifMatchVersion,
+  }) =>
+      fhirDao.deleteResource(resourceType, id, ifMatchVersion: ifMatchVersion);
 
   Future<List<fhir.Resource>> getResourcesWithPagination({
     required fhir.R4ResourceType resourceType,
@@ -367,43 +387,26 @@ class FhirAntDb extends FhirDb {
   Future<List<fhir.R4ResourceType>> getResourceTypes() =>
       fhirDao.getResourceTypes();
 
+  /// The versions of one resource that are resources (no tombstone).
   Future<List<fhir.Resource>> getResourceHistory(
+    fhir.R4ResourceType resourceType,
+    String id,
+  ) =>
+      fhirDao.getResourceHistory(resourceType, id);
+
+  /// Every version of one resource, newest first, a delete as a tombstone
+  /// entry; `_since` and `_at` as on the DAO.
+  Future<List<HistoryEntry>> getHistory(
     fhir.R4ResourceType resourceType,
     String id, {
     DateTime? since,
     DateTime? at,
-  }) async {
-    final resourceTypeString = resourceType.toString();
-    final query = select(resourcesHistory)
-      ..where((tbl) {
-        var cond =
-            tbl.resourceType.equals(resourceTypeString) & tbl.id.equals(id);
-        if (at != null) {
-          // _at: return the single version current at that point in time
-          cond = cond &
-              tbl.lastUpdated.isSmallerOrEqualValue(at.millisecondsSinceEpoch);
-        } else if (since != null) {
-          cond = cond &
-              tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
-        }
-        return cond;
-      })
-      ..orderBy([
-        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
-        (tbl) => OrderingTerm.desc(tbl.versionId),
-      ]);
-    if (at != null) {
-      query.limit(1);
-    }
-    final rows = await query.get();
-    return rows
-        .map((row) => fhir.Resource.fromJsonString(row.resource))
-        .toList();
-  }
+  }) =>
+      fhirDao.getHistory(resourceType, id, since: since, at: at);
 
   /// Get history for all resources of a given type, queried directly from the
   /// history table (avoids N+1 queries).
-  Future<List<fhir.Resource>> getTypeHistory(
+  Future<List<HistoryEntry>> getTypeHistory(
     fhir.R4ResourceType resourceType, {
     DateTime? since,
     DateTime? at,
@@ -414,7 +417,7 @@ class FhirAntDb extends FhirDb {
       final atMillis = at.millisecondsSinceEpoch;
       final resourceTypeString = resourceType.toString();
       final rows = await customSelect(
-        'SELECT rh.resource FROM resources_history rh '
+        'SELECT rh.* FROM resources_history rh '
         'INNER JOIN ('
         '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
         '  FROM resources_history '
@@ -428,11 +431,10 @@ class FhirAntDb extends FhirDb {
           Variable.withInt(atMillis),
         ],
       ).get();
-      return rows
-          .map(
-            (row) => fhir.Resource.fromJsonString(row.read<String>('resource')),
-          )
-          .toList();
+      return [
+        for (final row in rows)
+          HistoryEntry.fromRow(resourcesHistory.map(row.data)),
+      ];
     }
 
     final resourceTypeString = resourceType.toString();
@@ -450,14 +452,12 @@ class FhirAntDb extends FhirDb {
         (tbl) => OrderingTerm.desc(tbl.versionId),
       ]);
     final rows = await query.get();
-    return rows
-        .map((row) => fhir.Resource.fromJsonString(row.resource))
-        .toList();
+    return [for (final row in rows) HistoryEntry.fromRow(row)];
   }
 
   /// Get history for all resources across all types, queried directly from the
   /// history table (avoids N+1+1 queries).
-  Future<List<fhir.Resource>> getSystemHistory({
+  Future<List<HistoryEntry>> getSystemHistory({
     DateTime? since,
     DateTime? at,
   }) async {
@@ -466,7 +466,7 @@ class FhirAntDb extends FhirDb {
       // lastUpdated <= at.  Requires a grouped MAX subquery.
       final atMillis = at.millisecondsSinceEpoch;
       final rows = await customSelect(
-        'SELECT rh.resource FROM resources_history rh '
+        'SELECT rh.* FROM resources_history rh '
         'INNER JOIN ('
         '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
         '  FROM resources_history '
@@ -477,11 +477,10 @@ class FhirAntDb extends FhirDb {
         'ORDER BY rh.last_updated DESC, rh.version_id DESC',
         variables: [Variable.withInt(atMillis)],
       ).get();
-      return rows
-          .map(
-            (row) => fhir.Resource.fromJsonString(row.read<String>('resource')),
-          )
-          .toList();
+      return [
+        for (final row in rows)
+          HistoryEntry.fromRow(resourcesHistory.map(row.data)),
+      ];
     }
 
     final query = select(resourcesHistory)
@@ -497,9 +496,7 @@ class FhirAntDb extends FhirDb {
         (tbl) => OrderingTerm.desc(tbl.versionId),
       ]);
     final rows = await query.get();
-    return rows
-        .map((row) => fhir.Resource.fromJsonString(row.resource))
-        .toList();
+    return [for (final row in rows) HistoryEntry.fromRow(row)];
   }
 
   Future<List<fhir.Resource>> search({

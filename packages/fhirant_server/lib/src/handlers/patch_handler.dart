@@ -101,8 +101,8 @@ Future<Response> patchResourceHandler(
       }
 
       // Save the patched resource (creates new version automatically)
-      final success = await dbInterface.saveResource(patchedResource);
-      if (!success) {
+      final savedResource = await dbInterface.saveResource(patchedResource);
+      if (savedResource == null) {
         FhirantLogging().logError(
           'Failed to save patched resource: $resourceType/$id',
         );
@@ -112,9 +112,7 @@ Future<Response> patchResourceHandler(
         );
       }
 
-      // Re-fetch to get server-assigned version/lastUpdated
-      final savedResource = await dbInterface.getResource(type, id);
-      final responseResource = savedResource ?? patchedResource;
+      final responseResource = savedResource;
 
       FhirantLogging().logInfo(
         'Successfully patched resource: $resourceType/$id',

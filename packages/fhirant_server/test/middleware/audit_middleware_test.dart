@@ -20,7 +20,9 @@ void main() {
     middleware = auditMiddleware(mockDb);
 
     // Default stub: accept any saveResource call
-    when(() => mockDb.saveResource(any())).thenAnswer((_) async => true);
+    when(() => mockDb.saveResource(any())).thenAnswer(
+      (i) async => i.positionalArguments.first as fhir.Resource,
+    );
     // The audit trail resolves the subject of care before writing (F10).
     when(() => mockDb.subjectOfCare(any(), any()))
         .thenAnswer((_) async => null);

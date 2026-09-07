@@ -1100,14 +1100,9 @@ Future<Response> postResourceHandler(
     if (resourceWithId is fhir.Subscription) {
       resourceWithId = await subs.activate(resourceWithId);
     }
-    final result = await dbInterface.saveResource(resourceWithId);
-    if (result) {
-      // Re-fetch to get server-assigned version/lastUpdated
-      final type = fhir.R4ResourceType.fromString(resourceType);
-      final savedResource = type != null
-          ? await dbInterface.getResource(type, resourceWithId.id!.toString())
-          : null;
-      final responseResource = savedResource ?? resourceWithId;
+    final savedResource = await dbInterface.saveResource(resourceWithId);
+    if (savedResource != null) {
+      final responseResource = savedResource;
 
       await subs.onResourceChanged(responseResource);
 
@@ -1196,65 +1191,35 @@ Future<Response> putResourceHandler(
       }
     }
 
-    // Conditional update: If-Match header
+    // Conditional update: If-Match header. The check happens INSIDE the
+    // database write (FhirAntDb.saveResource, ifMatchVersion), in the same
+    // transaction as the version read, so no other update can land between
+    // the check and the write; a mismatch surfaces as VersionConflict.
     final ifMatch = FhirHttpHeaders.parseETag(request.headers['if-match']);
-    if (ifMatch != null) {
-      final type = fhir.R4ResourceType.fromString(resourceType);
-      if (type == null) {
-        return _validationErrorResponse('Invalid resource type');
-      }
-      final current = await dbInterface.getResource(type, id);
-      if (current == null) {
-        return Response(
-          412,
-          body: fhir.OperationOutcome(
-            issue: [
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.conflict,
-                diagnostics:
-                    'Resource does not exist (If-Match precondition failed)'
-                        .toFhirString,
-              ),
-            ],
-          ).toJsonString(),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
-      final currentVersion = current.meta?.versionId?.valueString;
-      if (currentVersion != ifMatch) {
-        return Response(
-          412,
-          body: fhir.OperationOutcome(
-            issue: [
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.conflict,
-                diagnostics: 'Version mismatch (If-Match precondition failed)'
-                    .toFhirString,
-              ),
-            ],
-          ).toJsonString(),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
-    }
 
     // Check if this is a create (resource doesn't exist) or update
     final type = fhir.R4ResourceType.fromString(resourceType);
-    final existingResource =
-        type != null ? await dbInterface.getResource(type, id) : null;
-    final isCreate = existingResource == null;
+    final isCreate =
+        type == null || await dbInterface.getResource(type, id) == null;
 
     final toSave = updatedResource is fhir.Subscription
         ? await subs.activate(updatedResource)
         : updatedResource;
-    final success = await dbInterface.saveResource(toSave);
-    if (success) {
-      // Re-fetch to get server-assigned version/lastUpdated
-      final savedResource =
-          type != null ? await dbInterface.getResource(type, id) : null;
-      final responseResource = savedResource ?? toSave;
+    final fhir.Resource? savedResource;
+    try {
+      savedResource = await dbInterface.saveResource(
+        toSave,
+        ifMatchVersion: ifMatch,
+      );
+    } on VersionConflict catch (e) {
+      return _preconditionFailed(
+        e.actual == null
+            ? 'Resource does not exist (If-Match precondition failed)'
+            : 'Version mismatch (If-Match precondition failed)',
+      );
+    }
+    if (savedResource != null) {
+      final responseResource = savedResource;
 
       await subs.onResourceChanged(responseResource);
 
@@ -1522,29 +1487,21 @@ Future<Response> deleteResourceHandler(
       }
     }
 
-    // Conditional delete: If-Match header
+    // Conditional delete: If-Match header, checked inside the delete's
+    // transaction (FhirAntDb.deleteResource, ifMatchVersion).
     final ifMatch = FhirHttpHeaders.parseETag(request.headers['if-match']);
-    if (ifMatch != null) {
-      final currentVersion = resource.meta?.versionId?.valueString;
-      if (currentVersion != ifMatch) {
-        return Response(
-          412,
-          body: fhir.OperationOutcome(
-            issue: [
-              fhir.OperationOutcomeIssue(
-                severity: fhir.IssueSeverity.error,
-                code: fhir.IssueType.conflict,
-                diagnostics: 'Version mismatch (If-Match precondition failed)'
-                    .toFhirString,
-              ),
-            ],
-          ).toJsonString(),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
+    final bool success;
+    try {
+      success = await dbInterface.deleteResource(
+        type,
+        id,
+        ifMatchVersion: ifMatch,
+      );
+    } on VersionConflict {
+      return _preconditionFailed(
+        'Version mismatch (If-Match precondition failed)',
+      );
     }
-
-    final success = await dbInterface.deleteResource(type, id);
     if (success) {
       FhirantLogging().logInfo(
         'Resource of type $resourceType with ID: {id} deleted successfully.',
@@ -1707,3 +1664,18 @@ Map<String, List<String>> _splitQueryStringAll(String body) {
   }
   return result;
 }
+
+/// 412 with an OperationOutcome, for an `If-Match` the store did not accept.
+Response _preconditionFailed(String diagnostics) => Response(
+      412,
+      body: fhir.OperationOutcome(
+        issue: [
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.error,
+            code: fhir.IssueType.conflict,
+            diagnostics: diagnostics.toFhirString,
+          ),
+        ],
+      ).toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
