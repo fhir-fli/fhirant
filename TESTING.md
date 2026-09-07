@@ -2,19 +2,22 @@
 
 ## Summary
 
-**936 tests** across 69 test files, all passing. Counted 2026-08-30 by
+**1,073 tests** across 84 test files, all passing. Counted 2026-09-06 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
-memory: the previous figure here (690 across 45) was months old, listed the
-Flutter app not at all, and gave `flutter test` for packages that have no
-`flutter_test` dependency and cannot be run that way.
+memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
+across 45 that listed the Flutter app not at all and gave `flutter test` for
+packages that have no `flutter_test` dependency and cannot be run that way).
+The server, db and app packages need the gitignored `pubspec_overrides.yaml`
+pointing `fhir_r4` and `fhir_r4_db` at the dev checkouts until the family's
+next release.
 
 The tool is not a preference. A package whose pubspec has `sdk: flutter`
 must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 775 | 61 | `cd packages/fhirant_server && dart test` |
-| fhirant_db | 111 | 3 | `cd packages/fhirant_db && dart test` |
+| fhirant_server | 908 | 74 | `cd packages/fhirant_server && dart test` |
+| fhirant_db | 115 | 4 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 6 | 1 | `cd packages/fhirant_logging && dart test` |
@@ -48,7 +51,11 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/handlers/forecast_handler_test.dart` | $immds-forecast |
 | `test/handlers/document_handler_test.dart` | $document |
 | `test/handlers/meta_handler_test.dart` | $meta / $meta-add / $meta-delete |
-| `test/handlers/elements_test.dart` | _elements response shaping |
+| `test/handlers/elements_test.dart` | _elements and _summary response shaping, from the generated element metadata |
+| `test/handlers/search_and_or_test.dart` | Repeated parameter = AND, comma = OR, through the REST path |
+| `test/handlers/unsupported_modifier_test.dart` | A modifier the store does not support is a 400 |
+| `test/handlers/search_refusal_test.dart` | The store's three refusals reach the client as 400 OperationOutcomes, at every entry point |
+| `test/handlers/search_links_test.dart` | Self and paging links carry the parameters used; `_query` refused; `_count=0` |
 
 ### fhirant_server — Middleware Tests (4 files)
 
@@ -82,6 +89,10 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/dev_mode_test.dart` | Dev mode auth bypass |
 | `test/integration/smart_scopes_e2e_test.dart` | SMART scope enforcement end-to-end |
 | `test/integration/middleware_pipeline_test.dart` | Full middleware chain |
+| `test/integration/include_e2e_test.dart` | `_include`/`_revinclude` by search parameter through the reference index |
+| `test/integration/system_search_e2e_test.dart` | The all-types search: common-parameter rule, one page across types |
+| `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
+| `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
 
 ### fhirant_db — Unit Tests (3 files)
 
@@ -90,6 +101,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/unit/fhirant_db_test.dart` | CRUD operations |
 | `test/unit/history_test.dart` | Version history |
 | `test/unit/search_test.dart` | Search parameter indexing + querying |
+| `test/unit/schema_upgrade_test.dart` | Schema 14 rebuilds the search index from the stored resources |
 
 ## Running Tests
 
