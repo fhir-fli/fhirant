@@ -115,6 +115,8 @@ class ServerState extends ChangeNotifier {
     try {
       await _serverService.start(_port, devMode: _devMode);
       _status = ServerStatus.running;
+      // The address may already be known from an earlier detection.
+      _serverService.baseUrl = serverUrl;
 
       // Listen to request log stream
       _logSubscription = _serverService.requestLog?.listen((entry) {
@@ -225,6 +227,9 @@ class ServerState extends ChangeNotifier {
     }
     if (found == null || found == previous) return;
     _wifiIp = found;
+    // The store learns the address the user is shown, so a search can tell
+    // this server's absolute references from another server's.
+    _serverService.baseUrl = serverUrl;
     notifyListeners();
   }
 

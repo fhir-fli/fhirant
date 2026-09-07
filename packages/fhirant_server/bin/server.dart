@@ -36,6 +36,12 @@ void main(List<String> arguments) async {
       defaultsTo: '/app/fhir_spec',
       help: 'Path to FHIR spec NDJSON files',
     )
+    ..addOption(
+      'base-url',
+      help: 'The URL clients reach this server by (e.g. https://host:8080). '
+          'Lets a search tell an absolute reference to this server from one '
+          'to another server (R4B search 3.1.1.4.12). Optional.',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
@@ -144,6 +150,7 @@ void main(List<String> arguments) async {
     jwtSecret: jwtSecret,
     devMode: devMode,
     maxRequests: devMode ? 1000 : 10,
+    baseUrl: args['base-url'] as String?,
   );
 
   if (devMode) {

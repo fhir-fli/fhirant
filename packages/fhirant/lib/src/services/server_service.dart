@@ -26,6 +26,13 @@ class ServerService {
 
   Stream<RequestLogEntry>? get requestLog => _server?.requestLog;
 
+  /// The URL clients reach this server by, handed to the store so a search
+  /// can tell an absolute reference to this server from another server's
+  /// (`FhirAntServer.baseUrl`). Set by the state once the address is known;
+  /// null until then, which is the store's documented fallback.
+  String? get baseUrl => _server?.baseUrl;
+  set baseUrl(String? value) => _server?.baseUrl = value;
+
   Future<void> start(int port, {bool devMode = false}) async {
     if (_server?.isRunning ?? false) return;
 

@@ -46,8 +46,10 @@ class FhirAntServer {
     this.rateLimitDuration = const Duration(seconds: 60),
     this.devMode = false,
     this.corsAllowOrigin,
+    String? baseUrl,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
+    this.baseUrl = baseUrl;
     // Resolve the signing secret without ever falling back to a shared,
     // hardcoded value (which would let anyone forge tokens). An explicit
     // secret (e.g. from the mobile app's secure storage) or FHIRANT_JWT_SECRET
@@ -66,6 +68,25 @@ class FhirAntServer {
   final FhirAntDb dbInterface;
   final String exportDir;
   final int maxRequests;
+
+  /// The URL clients reach this server by, e.g. `https://10.0.0.5:8080`,
+  /// when it is known. Handed to the store as `FhirDao.serverBaseUrl`.
+  ///
+  /// fhir_r4_db reads references by search: R4B search.html 3.1.1.4.12, "A
+  /// relative reference resolving to the same value as a specified absolute
+  /// URL, or vice versa, qualifies as a match" (quoted in FhirDao). Telling a
+  /// stored `<base>/Patient/1` from another server's `Patient/1` needs the
+  /// base. This server binds every interface, so it cannot derive one
+  /// address; the app sets it once it knows the address it shows the user,
+  /// and the CLI takes `--base-url`. Null means the store's documented
+  /// fallback: a relative search matches any absolute reference with that
+  /// type and id, and an absolute search matches only its own spelling.
+  String? get baseUrl => dbInterface.fhirDao.serverBaseUrl;
+  set baseUrl(String? value) {
+    final trimmed = value?.trim();
+    dbInterface.fhirDao.serverBaseUrl =
+        trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
 
   /// The `Access-Control-Allow-Origin` value for browser clients. Defaults to
   /// `*` — appropriate for the open LAN/native-client model (fhirant uses
