@@ -270,6 +270,7 @@ void main() {
       when(() => mockUser.scopes).thenReturn(scopes);
       when(() => mockUser.failedLoginCount).thenReturn(failedLoginCount);
       when(() => mockUser.lockedUntil).thenReturn(lockedUntil);
+      when(() => mockUser.patientId).thenReturn(null);
       return mockUser;
     }
 

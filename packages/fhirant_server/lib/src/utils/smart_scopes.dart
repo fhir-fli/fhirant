@@ -186,6 +186,18 @@ class SmartScopeEnforcer {
       case 'POST':
         // POST to root = bundle/transaction, POST to type = create
         final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+        // `POST [base]/[type]/_search` and `POST [base]/_search` are the
+        // search interaction (R4B http.html), not a create; this used to
+        // demand `c`, so a read-only account could not search by POST.
+        if (segments.isNotEmpty && segments.last == '_search') return 's';
+        // `$meta-add` and `$meta-delete` write a new version of the resource
+        // (R4 resource-operation-meta-add: "Add profiles, tags, and security
+        // labels to a resource"); they used to pass as a read.
+        if (segments.isNotEmpty &&
+            (segments.last == r'$meta-add' ||
+                segments.last == r'$meta-delete')) {
+          return 'u';
+        }
         if (segments.length == 1 && !segments[0].startsWith(r'$')) {
           return 'c'; // POST /Patient → create
         }
@@ -263,6 +275,82 @@ class SmartScopeEnforcer {
       if (scope.permissions.contains(permission)) return true;
     }
     return false;
+  }
+
+  /// The SMART scopes that are not resource permissions: launch-context
+  /// requests and OpenID Connect scopes. SMART App Launch STU2
+  /// (conformance.html, read whole 2026-09-07) names `openid`
+  /// (sso-openid-connect), `launch`, `launch/patient`, `launch/encounter`,
+  /// `offline_access` and `online_access`; `fhirUser` and `profile` are the
+  /// OpenID Connect identity scopes of the same guide. They say what an app
+  /// wants around the data, never what it may do with it, so the enforcer
+  /// ignores them; they used to fail [allScopesParse] and lock every standard
+  /// SMART app out.
+  static const nonResourceScopes = <String>{
+    'openid',
+    'fhirUser',
+    'profile',
+    'launch',
+    'launch/patient',
+    'launch/encounter',
+    'offline_access',
+    'online_access',
+  };
+
+  /// [scopes] without the entries of [nonResourceScopes].
+  static List<String> resourceScopesOf(Iterable<String> scopes) =>
+      scopes.where((s) => !nonResourceScopes.contains(s)).toList();
+
+  /// Contexts ordered by breadth: a grant at a broader context covers a
+  /// request at a narrower one, never the reverse.
+  static const _contextRank = {'patient': 0, 'user': 1, 'system': 2};
+
+  /// The scopes an account actually receives when it asks for [requested]
+  /// and holds [granted]: for each requested resource scope, the permissions
+  /// it shares with a granted scope of the same or a broader context on the
+  /// same (or wildcard) resource type. A request nothing covers is dropped.
+  ///
+  /// SMART App Launch STU2 app-launch.html, token response `scope`: "Scope
+  /// of access authorized. Note that this can be different from the scopes
+  /// requested by the app." Before this the requested string was issued
+  /// verbatim, so a readonly account could ask for `system/*.*` and get it
+  /// (REVIEW-2026-09-06 finding 1).
+  ///
+  /// With [patientContext] false the account has no Patient to confine a
+  /// `patient/` scope to, so such requests are dropped rather than issued
+  /// unenforceable. Non-resource scopes are carried through unchanged. An
+  /// empty [requested] means "what I have" and returns [granted].
+  static List<String> grantScopes(
+    List<String> requested,
+    List<String> granted, {
+    bool patientContext = true,
+  }) {
+    if (requested.isEmpty) return List.of(granted);
+    final held = granted.map(SmartScope.parse).whereType<SmartScope>().toList();
+    final out = <String>[];
+    for (final wanted in requested) {
+      if (nonResourceScopes.contains(wanted)) {
+        if (!out.contains(wanted)) out.add(wanted);
+        continue;
+      }
+      final r = SmartScope.parse(wanted);
+      if (r == null) continue;
+      if (r.context == 'patient' && !patientContext) continue;
+      final permissions = <String>{};
+      for (final g in held) {
+        if (_contextRank[g.context]! < _contextRank[r.context]!) continue;
+        if (g.resourceType != '*' && g.resourceType != r.resourceType) {
+          continue;
+        }
+        permissions.addAll(r.permissions.intersection(g.permissions));
+      }
+      if (permissions.isEmpty) continue;
+      final letters = ['c', 'r', 'u', 'd', 's'].where(permissions.contains);
+      final suffix = permissions.length == 5 ? '*' : letters.join();
+      final scope = '${r.context}/${r.resourceType}.$suffix';
+      if (!out.contains(scope)) out.add(scope);
+    }
+    return out;
   }
 
   /// Whether every entry in [scopes] is a scope this server understands.

@@ -170,6 +170,32 @@ void main() {
       expect(SmartScopeEnforcer.methodToPermission('POST', '/Patient'), 'c');
     });
 
+    test('POST _search is a search, type- and system-level', () {
+      expect(
+        SmartScopeEnforcer.methodToPermission('POST', '/Patient/_search'),
+        's',
+      );
+      expect(SmartScopeEnforcer.methodToPermission('POST', '/_search'), 's');
+    });
+
+    test(r'$meta-add and $meta-delete are updates', () {
+      expect(
+        SmartScopeEnforcer.methodToPermission('POST', r'/Patient/1/$meta-add'),
+        'u',
+      );
+      expect(
+        SmartScopeEnforcer.methodToPermission(
+          'POST',
+          r'/Patient/1/$meta-delete',
+        ),
+        'u',
+      );
+      expect(
+        SmartScopeEnforcer.methodToPermission('GET', r'/Patient/1/$meta'),
+        'r',
+      );
+    });
+
     test('PUT is update', () {
       expect(SmartScopeEnforcer.methodToPermission('PUT', '/Patient/123'), 'u');
     });
@@ -310,6 +336,67 @@ void main() {
       expect(
         SmartScopeEnforcer.isSystemAuthorized(['user/*.rs'], 'readonly'),
         isFalse,
+      );
+    });
+  });
+
+  group('SmartScopeEnforcer.grantScopes', () {
+    test('a narrower request within the grant is issued as asked', () {
+      expect(
+        SmartScopeEnforcer.grantScopes(['user/Patient.rs'], ['user/*.*']),
+        ['user/Patient.rs'],
+      );
+    });
+
+    test('permissions are intersected, never widened', () {
+      expect(
+        SmartScopeEnforcer.grantScopes(['user/*.cruds'], ['user/*.rs']),
+        ['user/*.rs'],
+      );
+    });
+
+    test('a broader context than the grant is dropped', () {
+      expect(
+        SmartScopeEnforcer.grantScopes(['system/*.*'], ['user/*.*']),
+        isEmpty,
+      );
+    });
+
+    test('a narrower context than the grant is covered', () {
+      expect(
+        SmartScopeEnforcer.grantScopes(
+          ['patient/Observation.r'],
+          ['user/*.rs'],
+        ),
+        ['patient/Observation.r'],
+      );
+    });
+
+    test('patient scopes need a patient to confine them to', () {
+      expect(
+        SmartScopeEnforcer.grantScopes(
+          ['patient/*.rs'],
+          ['user/*.rs'],
+          patientContext: false,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('launch and OpenID scopes pass through; resourceScopesOf drops them',
+        () {
+      final granted = SmartScopeEnforcer.grantScopes(
+        ['openid', 'fhirUser', 'launch/patient', 'user/*.rs'],
+        ['user/*.*'],
+      );
+      expect(granted, ['openid', 'fhirUser', 'launch/patient', 'user/*.rs']);
+      expect(SmartScopeEnforcer.resourceScopesOf(granted), ['user/*.rs']);
+    });
+
+    test('an empty request means the whole grant', () {
+      expect(
+        SmartScopeEnforcer.grantScopes([], ['user/*.rs', 'user/Patient.u']),
+        ['user/*.rs', 'user/Patient.u'],
       );
     });
   });

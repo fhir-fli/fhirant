@@ -202,15 +202,19 @@ Future<Response> _handleAuthorizationCodeGrant(
     );
   }
 
-  // Compute effective scopes
-  final List<String> scopes;
-  if (authCode.scope.isNotEmpty) {
-    scopes = authCode.scope.split(' ');
-  } else if (user.scopes != null && user.scopes!.isNotEmpty) {
-    scopes = (jsonDecode(user.scopes!) as List<dynamic>).cast<String>();
-  } else {
-    scopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
-  }
+  // The scope stored with the code is already the requested scope
+  // intersected with the account's grant (authorize_handler). The token's
+  // scope claim carries the resource scopes; launch and OpenID scopes are
+  // echoed in the response only.
+  final held = user.scopes != null && user.scopes!.isNotEmpty
+      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
+      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final granted = authCode.scope.isNotEmpty
+      ? authCode.scope.split(' ')
+      : List<String>.of(held);
+  final scopes = SmartScopeEnforcer.resourceScopesOf(granted);
+  // The patient context is the account's, never the caller's.
+  final patientId = user.patientId;
 
   // Generate tokens
   final accessToken = jwtService.generateToken(
@@ -218,6 +222,7 @@ Future<Response> _handleAuthorizationCodeGrant(
     username: user.username,
     role: user.role,
     scopes: scopes,
+    patientId: patientId,
   );
 
   final refreshToken = jwtService.generateRefreshToken(
@@ -225,6 +230,7 @@ Future<Response> _handleAuthorizationCodeGrant(
     username: user.username,
     role: user.role,
     scopes: scopes,
+    patientId: patientId,
   );
 
   return Response.ok(
@@ -232,9 +238,10 @@ Future<Response> _handleAuthorizationCodeGrant(
       'access_token': accessToken,
       'token_type': 'Bearer',
       'refresh_token': refreshToken,
-      'scope': scopes.join(' '),
+      'scope': granted.join(' '),
       'username': user.username,
       'role': user.role,
+      if (patientId != null) 'patient': patientId,
     }),
     headers: {'Content-Type': 'application/json'},
   );
@@ -315,11 +322,24 @@ Future<Response> _handleRefreshTokenGrant(
     );
   }
 
-  // Extract scopes and patient context from the refresh token
+  // The refresh token's scopes, narrowed to what the account holds NOW, so
+  // an administrator's downgrade takes effect at the next refresh rather
+  // than at the refresh token's expiry. The patient context is re-read
+  // from the account for the same reason.
+  final held = user.scopes != null && user.scopes!.isNotEmpty
+      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
+      : SmartScopeEnforcer.defaultScopesForRole(user.role);
   final scopeStr = payload['scope'] as String?;
-  final scopes =
-      scopeStr != null && scopeStr.isNotEmpty ? scopeStr.split(' ') : null;
-  final patientId = payload['patient'] as String?;
+  final carried =
+      scopeStr != null && scopeStr.isNotEmpty ? scopeStr.split(' ') : held;
+  final scopes = SmartScopeEnforcer.resourceScopesOf(
+    SmartScopeEnforcer.grantScopes(
+      carried,
+      held,
+      patientContext: user.patientId != null,
+    ),
+  );
+  final patientId = user.patientId;
 
   // Generate new access token
   final newAccessToken = jwtService.generateToken(
@@ -348,10 +368,10 @@ Future<Response> _handleRefreshTokenGrant(
       'access_token': newAccessToken,
       'token_type': 'Bearer',
       'refresh_token': newRefreshToken,
-      'scope': scopes?.join(' ') ?? '',
+      'scope': scopes.join(' '),
       'username': user.username,
       'role': user.role,
-      if (scopes != null) 'scopes': scopes,
+      'scopes': scopes,
       if (patientId != null) 'patient': patientId,
     }),
     headers: {'Content-Type': 'application/json'},

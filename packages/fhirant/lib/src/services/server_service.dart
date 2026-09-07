@@ -52,7 +52,6 @@ class ServerService {
       _dbService.db,
       jwtSecret: jwtSecret,
       exportDir: exportDir,
-      maxRequests: 100,
       devMode: devMode,
     );
 

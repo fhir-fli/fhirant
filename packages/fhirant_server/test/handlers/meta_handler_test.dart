@@ -25,6 +25,9 @@ void main() {
   setUp(() {
     mockDb = MockFhirAntDb();
     mockRequest = MockRequest();
+    // No auth_user: the handler reads the request context for the patient
+    // scope check and treats an absent caller as unscoped.
+    when(() => mockRequest.context).thenReturn(const {});
   });
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -21,6 +21,7 @@ class User {
     this.scopes,
     this.failedLoginCount = 0,
     this.lockedUntil,
+    this.patientId,
   });
 
   factory User.fromRow(QueryRow row) {
@@ -36,6 +37,7 @@ class User {
       scopes: row.readNullable<String>('scopes'),
       failedLoginCount: row.read<int>('failed_login_count'),
       lockedUntil: row.readNullable<DateTime>('locked_until'),
+      patientId: row.readNullable<String>('patient_id'),
     );
   }
   final int id;
@@ -49,6 +51,11 @@ class User {
   final String? scopes;
   final int failedLoginCount;
   final DateTime? lockedUntil;
+
+  /// The logical id of the Patient this account is about, when it is a
+  /// patient-facing account. The server puts it in the token's `patient`
+  /// claim; patient/ scopes are confined to this compartment.
+  final String? patientId;
 
   @override
   String toString() =>

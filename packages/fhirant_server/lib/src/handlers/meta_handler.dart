@@ -3,7 +3,25 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
+
+/// A patient-scoped token reaches a resource's meta only inside its own
+/// compartment, as it does for a read of the resource itself. These
+/// operations used to skip the check (REVIEW-2026-09-06 finding 5).
+Future<Response?> _refuseOutsidePatientCompartment(
+  Request request,
+  String resourceType,
+  String id,
+  FhirAntDb dbInterface,
+) async {
+  final patientId = extractPatientContext(request);
+  if (patientId == null) return null;
+  if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
+    return null;
+  }
+  return patientScopeForbiddenResponse(resourceType, id, patientId);
+}
 
 /// Handler for $meta operation: GET /{resourceType}/{id}/$meta
 ///
@@ -29,6 +47,13 @@ Future<Response> metaHandler(
         headers: {'Content-Type': 'application/json'},
       );
     }
+    final outside = await _refuseOutsidePatientCompartment(
+      request,
+      resourceType,
+      id,
+      dbInterface,
+    );
+    if (outside != null) return outside;
 
     // Return a Parameters resource with the meta
     final meta = resource.meta ?? const fhir.FhirMeta();
@@ -80,6 +105,14 @@ Future<Response> metaAddHandler(
       );
     }
 
+    final outsideAdd = await _refuseOutsidePatientCompartment(
+      request,
+      resourceType,
+      id,
+      dbInterface,
+    );
+    if (outsideAdd != null) return outsideAdd;
+
     // Parse the input Parameters resource
     final body = await request.readAsString();
     final inputMeta = _extractMetaFromParameters(body);
@@ -95,7 +128,12 @@ Future<Response> metaAddHandler(
 
     // Update the resource with new meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, mergedMeta);
-    await dbInterface.saveResource(updatedResource);
+    if (!await dbInterface.saveResource(updatedResource)) {
+      return _errorResponse(
+        'Failed to add resource meta',
+        'Database operation failed',
+      );
+    }
 
     // Return the updated meta
     final parameters = fhir.Parameters(
@@ -146,6 +184,14 @@ Future<Response> metaDeleteHandler(
       );
     }
 
+    final outsideDelete = await _refuseOutsidePatientCompartment(
+      request,
+      resourceType,
+      id,
+      dbInterface,
+    );
+    if (outsideDelete != null) return outsideDelete;
+
     // Parse the input Parameters resource
     final body = await request.readAsString();
     final inputMeta = _extractMetaFromParameters(body);
@@ -161,7 +207,12 @@ Future<Response> metaDeleteHandler(
 
     // Update the resource with reduced meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, reducedMeta);
-    await dbInterface.saveResource(updatedResource);
+    if (!await dbInterface.saveResource(updatedResource)) {
+      return _errorResponse(
+        'Failed to delete resource meta',
+        'Database operation failed',
+      );
+    }
 
     // Return the updated meta
     final parameters = fhir.Parameters(

@@ -32,6 +32,11 @@ class DatabaseService {
       await secureStorage.write(key: _encryptionKeyName, value: encryptionKey);
     }
 
+    // A quote in the key is doubled, as SQL requires, rather than ending
+    // the literal. Computed here, outside the setup closure, where the
+    // null check above has promoted the key.
+    final keyLiteral = encryptionKey.replaceAll("'", "''");
+
     // Set up DB file in app documents directory
     final docsDir = await getApplicationDocumentsDirectory();
     final dbDir = Directory('${docsDir.path}/fhirant_data');
@@ -50,7 +55,7 @@ class DatabaseService {
         rawDb
           ..execute("PRAGMA cipher = 'sqlcipher';")
           ..execute('PRAGMA legacy = 4;')
-          ..execute("PRAGMA key = '$encryptionKey';");
+          ..execute("PRAGMA key = '$keyLiteral';");
         rawDb.config.doubleQuotedStringLiterals = false;
       },
     );

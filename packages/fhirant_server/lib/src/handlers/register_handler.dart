@@ -80,6 +80,32 @@ Future<Response> registerHandler(
       effectiveRole = requestedRole;
     }
 
+    // Optional: the Patient this account is about (`patient`, as
+    // `Patient/[id]` or a bare id). Set here by the administrator, it is
+    // what the server puts in the token's `patient` claim; a caller never
+    // names its own patient context.
+    String? patientId;
+    final rawPatient = body['patient'];
+    if (rawPatient != null) {
+      if (rawPatient is! String) {
+        return Response(
+          400,
+          body: jsonEncode({'error': 'patient must be a Patient reference'}),
+        );
+      }
+      final id = rawPatient.startsWith('Patient/')
+          ? rawPatient.substring('Patient/'.length)
+          : rawPatient;
+      // The FHIR id grammar (datatypes.html, id): [A-Za-z0-9\-\.]{1,64}.
+      if (!RegExp(r'^[A-Za-z0-9\-\.]{1,64}$').hasMatch(id)) {
+        return Response(
+          400,
+          body: jsonEncode({'error': 'patient is not a valid Patient id'}),
+        );
+      }
+      patientId = id;
+    }
+
     // Validate optional scopes
     final List<String> effectiveScopes;
     final rawScopes = body['scopes'];
@@ -123,6 +149,7 @@ Future<Response> registerHandler(
       salt: salt,
       role: effectiveRole,
       scopes: jsonEncode(effectiveScopes),
+      patientId: patientId,
     );
 
     // Generate JWT tokens so the user is logged in immediately
@@ -131,12 +158,14 @@ Future<Response> registerHandler(
       username: username,
       role: effectiveRole,
       scopes: effectiveScopes,
+      patientId: patientId,
     );
     final refreshToken = jwtService.generateRefreshToken(
       userId: userId,
       username: username,
       role: effectiveRole,
       scopes: effectiveScopes,
+      patientId: patientId,
     );
 
     return Response(
@@ -149,6 +178,7 @@ Future<Response> registerHandler(
         'username': username,
         'role': effectiveRole,
         'scopes': effectiveScopes,
+        if (patientId != null) 'patient': patientId,
       }),
     );
   } catch (e, stackTrace) {

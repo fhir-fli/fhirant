@@ -42,7 +42,8 @@ class FhirAntServer {
     this.dbInterface, {
     String? jwtSecret,
     String? exportDir,
-    this.maxRequests = 10,
+    this.maxRequests = 600,
+    this.authMaxRequests = 10,
     this.rateLimitDuration = const Duration(seconds: 60),
     this.devMode = false,
     this.corsAllowOrigin,
@@ -67,7 +68,18 @@ class FhirAntServer {
   }
   final FhirAntDb dbInterface;
   final String exportDir;
+
+  /// Requests per [rateLimitDuration] per client address, for everything
+  /// but the credential endpoints. 600 a minute is ten a second: a client
+  /// app opening a chart makes dozens of calls, and the old ceiling of 10
+  /// refused the eleventh.
   final int maxRequests;
+
+  /// Requests per [rateLimitDuration] per client address on the endpoints
+  /// that take a password or exchange a code: `/auth/login`,
+  /// `/auth/authorize`, `/auth/token`, `/auth/register`. Brute force is
+  /// bounded here without throttling the data API.
+  final int authMaxRequests;
 
   /// The URL clients reach this server by, e.g. `https://10.0.0.5:8080`,
   /// when it is known. Handed to the store as `FhirDao.serverBaseUrl`.
@@ -145,7 +157,10 @@ class FhirAntServer {
       )
       ..post('/auth/revoke', (Request req) => revokeHandler(req, dbInterface))
       ..post('/auth/logout', (Request req) => logoutHandler(req, dbInterface))
-      ..get('/auth/authorize', authorizeGetHandler)
+      ..get(
+        '/auth/authorize',
+        (Request req) => authorizeGetHandler(req, dbInterface),
+      )
       ..post('/auth/authorize', (Request req) {
         final contentType = req.headers['content-type'] ?? '';
         if (contentType.contains('application/json')) {
@@ -509,12 +524,20 @@ class FhirAntServer {
 
   /// Create pipeline with middleware
   Handler createHandler(Router router) {
-    // Setup rate limiting
-    final memoryStorage = MemStorage();
-    final rateLimiter = ShelfRateLimiter(
-      storage: memoryStorage,
+    // Two limiters. The general one runs BEFORE authentication and audit:
+    // it used to run last, so an unauthenticated flood paid a signature
+    // check, a revocation query and an AuditEvent write per request before
+    // it was ever counted (REVIEW-2026-09-06 finding 11). The credential
+    // endpoints get their own, much tighter, bucket.
+    final generalLimiter = ShelfRateLimiter(
+      storage: MemStorage(),
       duration: rateLimitDuration,
       maxRequests: maxRequests,
+    );
+    final authLimiter = ShelfRateLimiter(
+      storage: MemStorage(),
+      duration: rateLimitDuration,
+      maxRequests: authMaxRequests,
     );
 
     var pipeline = const Pipeline()
@@ -526,7 +549,9 @@ class FhirAntServer {
         .addMiddleware(
           corsMiddleware(config: CorsConfig(allowOrigin: corsAllowOrigin)),
         )
-        .addMiddleware(contentNegotiationMiddleware());
+        .addMiddleware(generalLimiter.rateLimiter())
+        .addMiddleware(contentNegotiationMiddleware())
+        .addMiddleware(_onPaths(_credentialPaths, authLimiter.rateLimiter()));
 
     if (devMode) {
       pipeline = pipeline.addMiddleware(_devModeMiddleware());
@@ -537,8 +562,24 @@ class FhirAntServer {
 
     return pipeline
         .addMiddleware(auditMiddleware(dbInterface))
-        .addMiddleware(rateLimiter.rateLimiter())
         .addHandler(router.call);
+  }
+
+  /// The endpoints that take a password or exchange a code.
+  static const _credentialPaths = {
+    'auth/login',
+    'auth/authorize',
+    'auth/token',
+    'auth/register',
+  };
+
+  /// Applies [inner] only to requests whose path is in [paths].
+  static Middleware _onPaths(Set<String> paths, Middleware inner) {
+    return (Handler next) {
+      final limited = inner(next);
+      return (Request request) =>
+          paths.contains(request.url.path) ? limited(request) : next(request);
+    };
   }
 
   /// Start the server with HTTP

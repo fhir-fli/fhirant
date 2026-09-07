@@ -2,18 +2,21 @@ import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/credential_check.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
-import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
-/// Maximum consecutive failed login attempts before lockout.
-const maxFailedAttempts = 5;
-
-/// Duration an account is locked after exceeding [maxFailedAttempts].
-const lockoutDuration = Duration(minutes: 15);
+export 'package:fhirant_server/src/auth/credential_check.dart'
+    show lockoutDuration, maxFailedAttempts;
 
 /// Handler for user login. Validates credentials and returns a JWT.
+///
+/// The patient context of the token comes from the ACCOUNT
+/// (`users.patient_id`, set by an administrator), never from the request.
+/// The body used to carry a `patient_id` the server copied into the token,
+/// so any caller with patient/ scopes chose which patient's compartment it
+/// was confined to (REVIEW-2026-09-06 finding 6).
 Future<Response> loginHandler(
   Request request,
   FhirAntDb dbInterface,
@@ -33,82 +36,30 @@ Future<Response> loginHandler(
       );
     }
 
-    // Look up user
-    final user = await dbInterface.getUserByUsername(username);
-    if (user == null) {
-      return Response(
-        401,
-        body: jsonEncode({'error': 'Invalid username or password'}),
-      );
-    }
-
-    // Check if account is active
-    if (!user.active) {
-      return Response(
-        403,
-        body: jsonEncode({'error': 'Account is deactivated'}),
-      );
-    }
-
-    // Check account lockout
-    if (user.lockedUntil != null) {
-      if (user.lockedUntil!.isAfter(DateTime.now())) {
-        final remaining =
-            user.lockedUntil!.difference(DateTime.now()).inMinutes + 1;
+    final User user;
+    switch (await checkCredentials(dbInterface, username, password)) {
+      case CredentialOk(user: final u):
+        user = u;
+      case CredentialInvalid():
+        return Response(
+          401,
+          body: jsonEncode({'error': 'Invalid username or password'}),
+        );
+      case CredentialInactive():
+        return Response(
+          403,
+          body: jsonEncode({'error': 'Account is deactivated'}),
+        );
+      case CredentialLocked(minutesRemaining: final minutes, :final justLocked):
         return Response(
           423,
           body: jsonEncode({
-            'error': 'Account is locked. Try again in $remaining minute(s).',
+            'error': justLocked
+                ? 'Account locked due to too many failed attempts. '
+                    'Try again in $minutes minutes.'
+                : 'Account is locked. Try again in $minutes minute(s).',
           }),
         );
-      }
-      // Lock has expired — auto-unlock
-      await dbInterface.resetFailedLogins(user.id);
-    }
-
-    // Verify password
-    if (!PasswordHasher.verifyPassword(
-      password,
-      user.salt,
-      user.passwordHash,
-    )) {
-      // Increment failed login counter
-      final newCount = await dbInterface.incrementFailedLogins(user.id);
-      if (newCount >= maxFailedAttempts) {
-        await dbInterface.lockAccount(
-          user.id,
-          DateTime.now().add(lockoutDuration),
-        );
-        return Response(
-          423,
-          body: jsonEncode({
-            'error': 'Account locked due to too many failed attempts. '
-                'Try again in ${lockoutDuration.inMinutes} minutes.',
-          }),
-        );
-      }
-      return Response(
-        401,
-        body: jsonEncode({'error': 'Invalid username or password'}),
-      );
-    }
-
-    // Successful login — reset failed login counter
-    if (user.failedLoginCount > 0) {
-      await dbInterface.resetFailedLogins(user.id);
-    }
-
-    // Update last login
-    await dbInterface.updateLastLogin(user.id);
-
-    // Transparently upgrade an outdated password hash (legacy HMAC, or PBKDF2
-    // with fewer iterations than the current target) now that we have the
-    // verified plaintext. This migrates existing accounts to the strong KDF
-    // without any user action.
-    if (PasswordHasher.needsRehash(user.passwordHash)) {
-      final newSalt = PasswordHasher.generateSalt();
-      final newHash = PasswordHasher.hashPassword(password, newSalt);
-      await dbInterface.updatePassword(user.id, newHash, newSalt);
     }
 
     // Compute effective scopes: user-specific or role defaults
@@ -120,8 +71,7 @@ Future<Response> loginHandler(
       effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
     }
 
-    // Check for optional patient context (for patient-facing apps)
-    final patientId = body['patient_id'] as String?;
+    final patientId = user.patientId;
 
     // Generate JWT access token
     final token = jwtService.generateToken(

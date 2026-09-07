@@ -17,7 +17,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -28,6 +28,7 @@ class FhirAntDb extends FhirDb {
           await _createLogsTable();
           await _createAuthorizationCodesTable();
           await _createRevokedTokensTable();
+          await _createOAuthClientsTable();
           await createValueIndexes();
         },
         // fhir_r4_db runs ANALYZE from its own beforeOpen when the database
@@ -179,6 +180,28 @@ class FhirAntDb extends FhirDb {
             // the save path, fhir_r4_db 2026-09-06).
             await createValueIndexes();
           }
+          if (from < 16) {
+            // The patient an account is about, set by an administrator at
+            // registration. The SERVER puts it in the token's `patient`
+            // claim; until this column existed the login body did, so any
+            // caller with patient/ scopes chose its own compartment
+            // (REVIEW-2026-09-06 finding 6).
+            // Guarded: a database created at the current schema and stamped
+            // back (the upgrade tests do this) already has the column, and
+            // ALTER TABLE ADD COLUMN on an existing column is an error.
+            final columns =
+                await customSelect('PRAGMA table_info(users)').get();
+            if (!columns.any((c) => c.read<String>('name') == 'patient_id')) {
+              await customStatement(
+                'ALTER TABLE users ADD COLUMN patient_id TEXT',
+              );
+            }
+            // The redirect_uri first seen for each OAuth client_id, so a
+            // later authorize request naming the same client and a different
+            // redirect is refused (finding 10: there was no client registry,
+            // so an authorization code could be sent anywhere).
+            await _createOAuthClientsTable();
+          }
         },
       );
 
@@ -199,7 +222,22 @@ class FhirAntDb extends FhirDb {
         last_login INTEGER,
         scopes TEXT,
         failed_login_count INTEGER NOT NULL DEFAULT 0,
-        locked_until INTEGER
+        locked_until INTEGER,
+        patient_id TEXT
+      )
+    ''');
+  }
+
+  /// One row per OAuth client_id this server has issued a code to, pinning
+  /// the redirect_uri it first authorized with. Trust on first use: fhirant
+  /// has no dynamic client registration, and without a pin a crafted
+  /// authorize link could send a real user's authorization code to any URL.
+  Future<void> _createOAuthClientsTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS oauth_clients (
+        client_id TEXT NOT NULL PRIMARY KEY,
+        redirect_uri TEXT NOT NULL,
+        first_seen INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
       )
     ''');
   }
@@ -584,13 +622,15 @@ class FhirAntDb extends FhirDb {
     required String salt,
     String role = 'clinician',
     String? scopes,
+    String? patientId,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await customStatement(
       'INSERT INTO users '
-      '(username, password_hash, salt, role, active, created_at, scopes) '
-      'VALUES (?, ?, ?, ?, 1, ?, ?)',
-      [username, passwordHash, salt, role, now, scopes],
+      '(username, password_hash, salt, role, active, created_at, scopes, '
+      'patient_id) '
+      'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
+      [username, passwordHash, salt, role, now, scopes, patientId],
     );
     final rows = await customSelect('SELECT last_insert_rowid() AS id').get();
     return rows.first.read<int>('id');
@@ -659,6 +699,49 @@ class FhirAntDb extends FhirDb {
 
   /// Unlock an account (admin action). Alias for [resetFailedLogins].
   Future<void> unlockAccount(int id) => resetFailedLogins(id);
+
+  /// Sets (or clears, with null) the Patient this account is about. Its id
+  /// goes into the token's `patient` claim and confines patient/ scopes.
+  Future<void> setUserPatient(int id, String? patientId) async {
+    await customStatement(
+      'UPDATE users SET patient_id = ? WHERE id = ?',
+      [patientId, id],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // OAuth client redirect pins
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// The redirect_uri pinned for [clientId], or null when the client has
+  /// never been issued a code.
+  Future<String?> getOAuthClientRedirect(String clientId) async {
+    final rows = await customSelect(
+      'SELECT redirect_uri FROM oauth_clients WHERE client_id = ?',
+      variables: [Variable.withString(clientId)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return rows.first.read<String>('redirect_uri');
+  }
+
+  /// Pins [redirectUri] for [clientId]; a second call for the same client is
+  /// ignored, the first pin stands.
+  Future<void> registerOAuthClient(String clientId, String redirectUri) async {
+    await customStatement(
+      'INSERT OR IGNORE INTO oauth_clients (client_id, redirect_uri) '
+      'VALUES (?, ?)',
+      [clientId, redirectUri],
+    );
+  }
+
+  /// Removes the pin for [clientId] (an administrator re-registering a
+  /// client whose redirect changed).
+  Future<void> deleteOAuthClient(String clientId) async {
+    await customStatement(
+      'DELETE FROM oauth_clients WHERE client_id = ?',
+      [clientId],
+    );
+  }
 
   // ──────────────────────────────────────────────────────────────────────────
   // Authorization code management methods

@@ -11,8 +11,68 @@ class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 class MockUser extends Mock implements User {}
 
+/// A syntactically valid S256 challenge; the handlers do not verify it
+/// against a verifier (the token endpoint does), only that it is present
+/// with method S256.
+const pkceQuery = '&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
+    '&code_challenge_method=S256';
+const pkceFields = {
+  'code_challenge': 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+  'code_challenge_method': 'S256',
+};
+
+/// A user with valid credentials and nothing standing in the way.
+MockUser activeUser(
+  String username,
+  String password, {
+  String role = 'clinician',
+}) {
+  final salt = PasswordHasher.generateSalt();
+  final hash = PasswordHasher.hashPassword(password, salt);
+  final mockUser = MockUser();
+  when(() => mockUser.id).thenReturn(1);
+  when(() => mockUser.username).thenReturn(username);
+  when(() => mockUser.salt).thenReturn(salt);
+  when(() => mockUser.passwordHash).thenReturn(hash);
+  when(() => mockUser.active).thenReturn(true);
+  when(() => mockUser.role).thenReturn(role);
+  when(() => mockUser.scopes).thenReturn(null);
+  when(() => mockUser.failedLoginCount).thenReturn(0);
+  when(() => mockUser.lockedUntil).thenReturn(null);
+  when(() => mockUser.patientId).thenReturn(null);
+  return mockUser;
+}
+
+/// The stubs every successful authorize needs from the store.
+void stubIssue(MockFhirAntDb mockDb) {
+  when(() => mockDb.getOAuthClientRedirect(any()))
+      .thenAnswer((_) async => null);
+  when(() => mockDb.registerOAuthClient(any(), any())).thenAnswer((_) async {});
+  when(() => mockDb.updateLastLogin(any())).thenAnswer((_) async {});
+  when(
+    () => mockDb.createAuthorizationCode(
+      code: any(named: 'code'),
+      clientId: any(named: 'clientId'),
+      userId: any(named: 'userId'),
+      redirectUri: any(named: 'redirectUri'),
+      scope: any(named: 'scope'),
+      codeChallenge: any(named: 'codeChallenge'),
+      codeChallengeMethod: any(named: 'codeChallengeMethod'),
+      expiresAt: any(named: 'expiresAt'),
+    ),
+  ).thenAnswer((_) async {});
+}
+
 void main() {
   group('authorizeGetHandler', () {
+    late MockFhirAntDb mockDb;
+
+    setUp(() {
+      mockDb = MockFhirAntDb();
+      when(() => mockDb.getOAuthClientRedirect(any()))
+          .thenAnswer((_) async => null);
+    });
+
     test('returns 400 when client_id missing', () async {
       final request = Request(
         'GET',
@@ -21,7 +81,7 @@ void main() {
         ),
       );
 
-      final response = await authorizeGetHandler(request);
+      final response = await authorizeGetHandler(request, mockDb);
       expect(response.statusCode, 400);
       expect(response.headers['content-type'], contains('text/html'));
     });
@@ -34,7 +94,7 @@ void main() {
         ),
       );
 
-      final response = await authorizeGetHandler(request);
+      final response = await authorizeGetHandler(request, mockDb);
       expect(response.statusCode, 400);
     });
 
@@ -46,13 +106,13 @@ void main() {
         ),
       );
 
-      final response = await authorizeGetHandler(request);
+      final response = await authorizeGetHandler(request, mockDb);
       expect(response.statusCode, 302);
       final location = response.headers['location']!;
       expect(location, contains('error=unsupported_response_type'));
     });
 
-    test('returns HTML login form for valid params', () async {
+    test('redirects with invalid_request when PKCE is missing', () async {
       final request = Request(
         'GET',
         Uri.parse(
@@ -60,7 +120,39 @@ void main() {
         ),
       );
 
-      final response = await authorizeGetHandler(request);
+      final response = await authorizeGetHandler(request, mockDb);
+      expect(response.statusCode, 302);
+      final location = response.headers['location']!;
+      expect(location, contains('error=invalid_request'));
+      expect(location, contains('code_challenge'));
+    });
+
+    test(
+        'refuses, without redirecting, a redirect_uri other than the pinned '
+        'one', () async {
+      when(() => mockDb.getOAuthClientRedirect('my-app'))
+          .thenAnswer((_) async => 'http://app/cb');
+      final request = Request(
+        'GET',
+        Uri.parse(
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://evil/cb&scope=user/*.*$pkceQuery',
+        ),
+      );
+
+      final response = await authorizeGetHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      expect(response.headers['location'], isNull);
+    });
+
+    test('returns HTML login form for valid params', () async {
+      final request = Request(
+        'GET',
+        Uri.parse(
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz$pkceQuery',
+        ),
+      );
+
+      final response = await authorizeGetHandler(request, mockDb);
       expect(response.statusCode, 200);
       expect(response.headers['content-type'], contains('text/html'));
 
@@ -76,6 +168,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubIssue(mockDb);
     });
 
     Request makeRequest(Map<String, dynamic> body) {
@@ -147,6 +240,38 @@ void main() {
       expect(body['error'], 'invalid_request');
     });
 
+    test('returns 400 invalid_request without PKCE', () async {
+      final request = makeRequest({
+        'response_type': 'code',
+        'client_id': 'my-app',
+        'redirect_uri': 'http://app/cb',
+        'username': 'testuser',
+        'password': 'validpass',
+      });
+
+      final response = await authorizeJsonHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['error'], 'invalid_request');
+    });
+
+    test('returns 400 invalid_request for the plain method', () async {
+      final request = makeRequest({
+        'response_type': 'code',
+        'client_id': 'my-app',
+        'redirect_uri': 'http://app/cb',
+        'code_challenge': 'abc',
+        'code_challenge_method': 'plain',
+        'username': 'testuser',
+        'password': 'validpass',
+      });
+
+      final response = await authorizeJsonHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['error'], 'invalid_request');
+    });
+
     test('returns 401 for invalid credentials', () async {
       when(() => mockDb.getUserByUsername('baduser'))
           .thenAnswer((_) async => null);
@@ -155,6 +280,7 @@ void main() {
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
+        ...pkceFields,
         'username': 'baduser',
         'password': 'badpass',
       });
@@ -167,14 +293,7 @@ void main() {
     });
 
     test('returns 403 for deactivated user', () async {
-      final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('validpass', salt);
-
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('inactive');
-      when(() => mockUser.salt).thenReturn(salt);
-      when(() => mockUser.passwordHash).thenReturn(hash);
+      final mockUser = activeUser('inactive', 'validpass');
       when(() => mockUser.active).thenReturn(false);
 
       when(() => mockDb.getUserByUsername('inactive'))
@@ -184,6 +303,7 @@ void main() {
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
+        ...pkceFields,
         'username': 'inactive',
         'password': 'validpass',
       });
@@ -193,30 +313,9 @@ void main() {
     });
 
     test('returns authorization code for valid request', () async {
-      final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('validpass', salt);
-
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.salt).thenReturn(salt);
-      when(() => mockUser.passwordHash).thenReturn(hash);
-      when(() => mockUser.active).thenReturn(true);
-
+      final mockUser = activeUser('testuser', 'validpass');
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(
-        () => mockDb.createAuthorizationCode(
-          code: any(named: 'code'),
-          clientId: any(named: 'clientId'),
-          userId: any(named: 'userId'),
-          redirectUri: any(named: 'redirectUri'),
-          scope: any(named: 'scope'),
-          codeChallenge: any(named: 'codeChallenge'),
-          codeChallengeMethod: any(named: 'codeChallengeMethod'),
-          expiresAt: any(named: 'expiresAt'),
-        ),
-      ).thenAnswer((_) async {});
 
       final request = makeRequest({
         'response_type': 'code',
@@ -224,6 +323,7 @@ void main() {
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.*',
         'state': 'csrf-token',
+        ...pkceFields,
         'username': 'testuser',
         'password': 'validpass',
       });
@@ -238,7 +338,7 @@ void main() {
       expect(body['redirect_uri'], contains('code='));
       expect(body['redirect_uri'], contains('state=csrf-token'));
 
-      // Verify the auth code was stored
+      // Verify the auth code was stored, with the redirect pinned.
       verify(
         () => mockDb.createAuthorizationCode(
           code: any(named: 'code'),
@@ -246,36 +346,72 @@ void main() {
           userId: 1,
           redirectUri: 'http://app/cb',
           scope: 'user/*.*',
+          codeChallenge: pkceFields['code_challenge'],
+          codeChallengeMethod: 'S256',
+          expiresAt: any(named: 'expiresAt'),
+        ),
+      ).called(1);
+      verify(() => mockDb.registerOAuthClient('my-app', 'http://app/cb'))
+          .called(1);
+    });
+
+    test('the scope stored is the request intersected with the account',
+        () async {
+      final mockUser = activeUser('ro', 'validpass', role: 'readonly');
+      when(() => mockDb.getUserByUsername('ro'))
+          .thenAnswer((_) async => mockUser);
+
+      final request = makeRequest({
+        'response_type': 'code',
+        'client_id': 'my-app',
+        'redirect_uri': 'http://app/cb',
+        'scope': 'user/*.cruds openid',
+        ...pkceFields,
+        'username': 'ro',
+        'password': 'validpass',
+      });
+
+      final response = await authorizeJsonHandler(request, mockDb);
+      expect(response.statusCode, 200);
+      verify(
+        () => mockDb.createAuthorizationCode(
+          code: any(named: 'code'),
+          clientId: 'my-app',
+          userId: 1,
+          redirectUri: 'http://app/cb',
+          scope: 'user/*.rs openid',
+          codeChallenge: any(named: 'codeChallenge'),
+          codeChallengeMethod: any(named: 'codeChallengeMethod'),
           expiresAt: any(named: 'expiresAt'),
         ),
       ).called(1);
     });
 
-    test('stores PKCE challenge when provided', () async {
-      final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('validpass', salt);
+    test('a request wholly outside the grant is invalid_scope', () async {
+      final mockUser = activeUser('ro', 'validpass', role: 'readonly');
+      when(() => mockDb.getUserByUsername('ro'))
+          .thenAnswer((_) async => mockUser);
 
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.salt).thenReturn(salt);
-      when(() => mockUser.passwordHash).thenReturn(hash);
-      when(() => mockUser.active).thenReturn(true);
+      final request = makeRequest({
+        'response_type': 'code',
+        'client_id': 'my-app',
+        'redirect_uri': 'http://app/cb',
+        'scope': 'system/*.*',
+        ...pkceFields,
+        'username': 'ro',
+        'password': 'validpass',
+      });
 
+      final response = await authorizeJsonHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      final body = jsonDecode(await response.readAsString()) as Map;
+      expect(body['error'], 'invalid_scope');
+    });
+
+    test('stores PKCE challenge', () async {
+      final mockUser = activeUser('testuser', 'validpass');
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(
-        () => mockDb.createAuthorizationCode(
-          code: any(named: 'code'),
-          clientId: any(named: 'clientId'),
-          userId: any(named: 'userId'),
-          redirectUri: any(named: 'redirectUri'),
-          scope: any(named: 'scope'),
-          codeChallenge: any(named: 'codeChallenge'),
-          codeChallengeMethod: any(named: 'codeChallengeMethod'),
-          expiresAt: any(named: 'expiresAt'),
-        ),
-      ).thenAnswer((_) async {});
 
       final request = makeRequest({
         'response_type': 'code',
@@ -312,6 +448,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubIssue(mockDb);
     });
 
     Request makeFormRequest(Map<String, String> fields) {
@@ -330,30 +467,9 @@ void main() {
     }
 
     test('returns 302 redirect with code for valid form submission', () async {
-      final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword('validpass', salt);
-
-      final mockUser = MockUser();
-      when(() => mockUser.id).thenReturn(1);
-      when(() => mockUser.username).thenReturn('testuser');
-      when(() => mockUser.salt).thenReturn(salt);
-      when(() => mockUser.passwordHash).thenReturn(hash);
-      when(() => mockUser.active).thenReturn(true);
-
+      final mockUser = activeUser('testuser', 'validpass');
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
-      when(
-        () => mockDb.createAuthorizationCode(
-          code: any(named: 'code'),
-          clientId: any(named: 'clientId'),
-          userId: any(named: 'userId'),
-          redirectUri: any(named: 'redirectUri'),
-          scope: any(named: 'scope'),
-          codeChallenge: any(named: 'codeChallenge'),
-          codeChallengeMethod: any(named: 'codeChallengeMethod'),
-          expiresAt: any(named: 'expiresAt'),
-        ),
-      ).thenAnswer((_) async {});
 
       final request = makeFormRequest({
         'response_type': 'code',
@@ -361,6 +477,7 @@ void main() {
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.*',
         'state': 'csrf-token',
+        ...pkceFields,
         'username': 'testuser',
         'password': 'validpass',
       });
@@ -382,6 +499,7 @@ void main() {
         'response_type': 'code',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
+        ...pkceFields,
         'username': 'baduser',
         'password': 'badpass',
       });
@@ -406,5 +524,37 @@ void main() {
       final body = await response.readAsString();
       expect(body, contains('Username and password are required'));
     });
+  });
+
+  test('a locked account is told so on the form, and failures count', () async {
+    final mockDb = MockFhirAntDb();
+    stubIssue(mockDb);
+    final mockUser = activeUser('testuser', 'validpass');
+    when(() => mockUser.failedLoginCount).thenReturn(4);
+    when(() => mockDb.getUserByUsername('testuser'))
+        .thenAnswer((_) async => mockUser);
+    when(() => mockDb.incrementFailedLogins(1)).thenAnswer((_) async => 5);
+    when(() => mockDb.lockAccount(1, any())).thenAnswer((_) async {});
+
+    final body = {
+      'response_type': 'code',
+      'client_id': 'my-app',
+      'redirect_uri': 'http://app/cb',
+      ...pkceFields,
+      'username': 'testuser',
+      'password': 'wrong',
+    };
+    final response = await authorizeJsonHandler(
+      Request(
+        'POST',
+        Uri.parse('http://localhost:8080/auth/authorize'),
+        body: jsonEncode(body),
+        headers: {'content-type': 'application/json'},
+      ),
+      mockDb,
+    );
+    expect(response.statusCode, 423);
+    verify(() => mockDb.incrementFailedLogins(1)).called(1);
+    verify(() => mockDb.lockAccount(1, any())).called(1);
   });
 }

@@ -64,6 +64,10 @@ void main(List<String> arguments) async {
   final dbPath = args['db-path'] as String;
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
+  // Keys that are public because they are written in this repository: the
+  // in-code fallback above and the placeholder docker-compose.yml once
+  // carried. A database encrypted under either is encrypted under nothing.
+  const publicKeys = {'default-development-key', 'change-me-in-production'};
 
   // Resolve the JWT signing secret. Preference: FHIRANT_JWT_SECRET (set this
   // for cloud/multi-instance deployments where instances share a secret and
@@ -87,7 +91,7 @@ void main(List<String> arguments) async {
   // The default encryption key is public; a real deployment must set its own.
   // Refuse to start on the default key unless explicitly in dev mode, so a
   // production database is never written under a known key by accident.
-  if (encryptionKey == 'default-development-key') {
+  if (publicKeys.contains(encryptionKey)) {
     if (!devMode) {
       logger.logError(
         'Refusing to start: FHIRANT_ENCRYPTION_KEY is not set, so the database '
@@ -120,7 +124,9 @@ void main(List<String> arguments) async {
       rawDb
         ..execute("PRAGMA cipher = 'sqlcipher';")
         ..execute('PRAGMA legacy = 4;')
-        ..execute("PRAGMA key = '$encryptionKey';");
+        // The key is a passphrase inside a SQL string literal: a quote in
+        // it is doubled, as SQL requires, rather than ending the literal.
+        ..execute("PRAGMA key = '${encryptionKey.replaceAll("'", "''")}';");
       rawDb.config.doubleQuotedStringLiterals = false;
     },
   );
@@ -149,7 +155,7 @@ void main(List<String> arguments) async {
     db,
     jwtSecret: jwtSecret,
     devMode: devMode,
-    maxRequests: devMode ? 1000 : 10,
+    maxRequests: devMode ? 1000 : 600,
     baseUrl: args['base-url'] as String?,
   );
 

@@ -1,9 +1,42 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
+
+/// The token's scopes, or null when no authenticated caller is on the
+/// request (a handler test calling this directly). The middleware in front
+/// of these routes checks the scope against the COMPARTMENT type, which is
+/// the first path segment; what they return is another type, so each
+/// handler checks that here (REVIEW-2026-09-06 findings 3 and 4).
+List<String>? _scopesOf(Request request) {
+  final authUser = request.context['auth_user'] as Map<String, dynamic>?;
+  final scopes = authUser?['scopes'];
+  return scopes is List ? scopes.cast<String>() : null;
+}
+
+/// A patient-scoped token may use these routes only on ITS OWN Patient
+/// compartment. Another patient's compartment is refused; so is a
+/// non-Patient compartment (`Encounter/x/...`), because the store applies
+/// one compartment per search and could not also confine the result to
+/// the patient.
+Response? _refuseOutsidePatientContext(
+  Request request,
+  String compartmentType,
+  String compartmentId,
+) {
+  final patientId = extractPatientContext(request);
+  if (patientId == null) return null;
+  if (compartmentType == 'Patient' && compartmentId == patientId) return null;
+  return patientScopeForbiddenResponse(
+    compartmentType,
+    compartmentId,
+    patientId,
+  );
+}
 
 /// The compartments this server answers `$everything` and compartment
 /// searches for: the published CompartmentDefinitions, as generated into
@@ -36,6 +69,8 @@ Future<Response> everythingHandler(
     if (focalType == null) {
       return _operationOutcome(400, 'Invalid resource type: $compartmentType');
     }
+    final outside = _refuseOutsidePatientContext(request, compartmentType, id);
+    if (outside != null) return outside;
     final focalResource = await dbInterface.getResource(focalType, id);
     if (focalResource == null) {
       return _operationOutcome(
@@ -72,6 +107,26 @@ Future<Response> everythingHandler(
       types: typeFilter,
       since: since,
     );
+
+    // The token must be able to read every type it is about to be handed.
+    // Omitting the types it may not read would answer "$everything" with
+    // something less and say nothing; refusing names the types, and `_type`
+    // narrows the request.
+    final scopes = _scopesOf(request);
+    if (scopes != null) {
+      final unreadable = {compartmentType, ...members.keys}
+          .where((t) => !SmartScopeEnforcer.isAuthorized(scopes, t, 'r'))
+          .toList()
+        ..sort();
+      if (unreadable.isNotEmpty) {
+        return _operationOutcome(
+          403,
+          'Insufficient scope to read ${unreadable.join(', ')}; narrow the '
+          'request with _type or obtain a scope covering them.',
+          fhir.IssueType.forbidden,
+        );
+      }
+    }
 
     // 5. Flatten to (type, id) pairs and fetch resources
     final allResources = <fhir.Resource>[focalResource];
@@ -182,7 +237,25 @@ Future<Response> compartmentSearchHandler(
       );
     }
 
-    // 4. Verify focal resource exists
+    // 4. The caller: its patient context, and its scope on the type it is
+    // asking for (the middleware checked the compartment type only).
+    final outside = _refuseOutsidePatientContext(
+      request,
+      compartmentType,
+      compartmentId,
+    );
+    if (outside != null) return outside;
+    final scopes = _scopesOf(request);
+    if (scopes != null &&
+        !SmartScopeEnforcer.isAuthorized(scopes, resourceType, 's')) {
+      return _operationOutcome(
+        403,
+        'Insufficient scope for s on $resourceType',
+        fhir.IssueType.forbidden,
+      );
+    }
+
+    // 5. Verify focal resource exists
     final focalType = fhir.R4ResourceType.fromString(compartmentType);
     if (focalType == null) {
       return _operationOutcome(
@@ -199,7 +272,7 @@ Future<Response> compartmentSearchHandler(
       );
     }
 
-    // 5. The query, parsed as for any search. queryParametersAll keeps every
+    // 6. The query, parsed as for any search. queryParametersAll keeps every
     // repetition; a repeated parameter is an AND join.
     final queryParams = request.url.queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
@@ -212,7 +285,7 @@ Future<Response> compartmentSearchHandler(
     final links = SearchLinks.decide(resourceType, queryParams);
     final scope = CompartmentScope(compartmentType, compartmentId);
 
-    // 6. One scoped search. One row past the page says whether a `next`
+    // 7. One scoped search. One row past the page says whether a `next`
     // link is due, so paging does not depend on the count.
     final probeCount = count > 0 ? count + 1 : count;
     final fetched = await dbInterface.search(

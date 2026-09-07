@@ -14,9 +14,13 @@ services:
       - "8080:8080"
     volumes:
       - fhirant-data:/data
+    # Both are required. A default written here would be a public key, and
+    # the server refuses the two placeholders this file and bin/server.dart
+    # once carried. `docker compose up` fails with the message below until
+    # they are set in the environment or an .env file.
     environment:
-      - FHIRANT_ENCRYPTION_KEY=${FHIRANT_ENCRYPTION_KEY:-change-me-in-production}
-      - FHIRANT_JWT_SECRET=${FHIRANT_JWT_SECRET:-change-me-in-production}
+      - FHIRANT_ENCRYPTION_KEY=${FHIRANT_ENCRYPTION_KEY:?set FHIRANT_ENCRYPTION_KEY to a strong secret}
+      - FHIRANT_JWT_SECRET=${FHIRANT_JWT_SECRET:?set FHIRANT_JWT_SECRET to a strong secret}
 
 volumes:
   fhirant-data:

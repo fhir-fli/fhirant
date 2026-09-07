@@ -102,6 +102,7 @@ void main() {
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
@@ -163,6 +164,7 @@ void main() {
       when(() => mockUser.username).thenReturn('inactive');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(false);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserByUsername('inactive'))
           .thenAnswer((_) async => mockUser);
@@ -176,13 +178,16 @@ void main() {
       expect(response.statusCode, 403);
     });
 
-    test('preserves patient context through refresh', () async {
+    test('the patient context comes from the ACCOUNT, not the old token',
+        () async {
+      // The account is linked to pat-123, so the new token carries it; a
+      // token naming another patient would be corrected the same way.
       final refreshToken = jwtService.generateRefreshToken(
         userId: 1,
         username: 'patientuser',
         role: 'readonly',
         scopes: ['patient/Patient.r', 'patient/Observation.r'],
-        patientId: 'pat-123',
+        patientId: 'someone-else',
       );
 
       final mockUser = MockUser();
@@ -190,7 +195,9 @@ void main() {
       when(() => mockUser.username).thenReturn('patientuser');
       when(() => mockUser.role).thenReturn('readonly');
       when(() => mockUser.active).thenReturn(true);
-      when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.scopes)
+          .thenReturn('["patient/Patient.r","patient/Observation.r"]');
+      when(() => mockUser.patientId).thenReturn('pat-123');
 
       when(() => mockDb.getUserByUsername('patientuser'))
           .thenAnswer((_) async => mockUser);
@@ -225,6 +232,7 @@ void main() {
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
@@ -255,6 +263,7 @@ void main() {
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserByUsername('testuser'))
           .thenAnswer((_) async => mockUser);
@@ -515,6 +524,7 @@ void main() {
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserById(1)).thenAnswer((_) async => mockUser);
 
@@ -578,6 +588,7 @@ void main() {
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.scopes).thenReturn(null);
+      when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserById(1)).thenAnswer((_) async => mockUser);
 

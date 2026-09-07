@@ -100,6 +100,16 @@ class JwtService {
     }
   }
 
+  /// Verifies an ACCESS token: a valid signature whose payload is not a
+  /// refresh token. A refresh token presented as a Bearer credential is
+  /// refused here, not merely at the resource-scope check.
+  Map<String, dynamic>? verifyAccessToken(String token) {
+    final payload = verifyToken(token);
+    if (payload == null) return null;
+    if (payload['token_type'] == 'refresh') return null;
+    return payload;
+  }
+
   /// Verifies a refresh token. Returns the payload only if it's a valid
   /// refresh token (has `token_type: refresh`). Returns null otherwise.
   Map<String, dynamic>? verifyRefreshToken(String token) {

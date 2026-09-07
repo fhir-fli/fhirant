@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:fhirant_server/src/auth/credential_check.dart';
+import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,15 +21,32 @@ const _uuid = Uuid();
 /// - redirect_uri: where to redirect after authorization
 /// - scope: space-separated SMART scopes
 /// - state: opaque CSRF token
+/// - code_challenge, code_challenge_method=S256: PKCE. SMART App Launch
+///   STU2 app-launch.html (fetched 2026-09-07): "SMART servers SHALL support
+///   the `S256` `code_challenge_method` and SHALL NOT support the `plain`
+///   method", and both parameters are "required". Before this PKCE was
+///   optional and `plain` was accepted (REVIEW-2026-09-06 finding 10).
 ///
 /// Optional:
-/// - code_challenge: PKCE code challenge (required for public clients)
-/// - code_challenge_method: "S256" (recommended) or "plain"
 /// - aud: the FHIR server URL (audience)
 /// - launch: EHR launch context (optional)
+///
+/// Three rules every path here applies (finding 1, 7, 10):
+/// - the scope issued is the requested scope intersected with the account's
+///   grant ([SmartScopeEnforcer.grantScopes]), never the request verbatim;
+/// - credentials go through [checkCredentials], so failures here count
+///   toward the same lockout as `/auth/login`;
+/// - `redirect_uri` is pinned per `client_id` on first use, and a later
+///   request for the same client with a different redirect is refused
+///   without redirecting (RFC 6749 §3.1.2.4 forbids redirecting to an
+///   invalid redirect_uri). Loopback redirects may vary their port
+///   (RFC 8252 §7.3).
 
 /// Handle GET /auth/authorize — return HTML login form.
-Future<Response> authorizeGetHandler(Request request) async {
+Future<Response> authorizeGetHandler(
+  Request request,
+  FhirAntDb dbInterface,
+) async {
   final params = request.url.queryParameters;
 
   final responseType = params['response_type'];
@@ -65,6 +83,21 @@ Future<Response> authorizeGetHandler(Request request) async {
     );
   }
 
+  // The checks that need no credentials run before the form is shown, so a
+  // person is not asked for a password on a request that cannot succeed.
+  final pinned = await _redirectPinProblem(dbInterface, clientId, redirectUri);
+  if (pinned != null) {
+    return Response(
+      400,
+      body: _errorPage(pinned),
+      headers: {'Content-Type': 'text/html'},
+    );
+  }
+  final pkce = _pkceProblem(codeChallenge, codeChallengeMethod);
+  if (pkce != null) {
+    return _errorRedirect(redirectUri, state, 'invalid_request', pkce);
+  }
+
   // Return the login form
   return Response.ok(
     _loginForm(
@@ -95,8 +128,8 @@ Future<Response> authorizePostHandler(
     final redirectUri = params['redirect_uri'];
     final scope = params['scope'] ?? '';
     final state = params['state'] ?? '';
-    final codeChallenge = params['code_challenge'];
-    final codeChallengeMethod = params['code_challenge_method'];
+    final codeChallenge = params['code_challenge'] ?? '';
+    final codeChallengeMethod = params['code_challenge_method'] ?? '';
     final username = params['username'];
     final password = params['password'];
 
@@ -125,94 +158,53 @@ Future<Response> authorizePostHandler(
       );
     }
 
+    Response form(String error) => Response.ok(
+          _loginForm(
+            clientId: clientId,
+            redirectUri: redirectUri,
+            scope: scope,
+            state: state,
+            codeChallenge: codeChallenge,
+            codeChallengeMethod: codeChallengeMethod,
+            aud: '',
+            errorMessage: error,
+          ),
+          headers: {'Content-Type': 'text/html; charset=utf-8'},
+        );
+
     if (username == null ||
         username.isEmpty ||
         password == null ||
         password.isEmpty) {
-      return Response.ok(
-        _loginForm(
-          clientId: clientId,
-          redirectUri: redirectUri,
-          scope: scope,
-          state: state,
-          codeChallenge: codeChallenge ?? '',
-          codeChallengeMethod: codeChallengeMethod ?? '',
-          aud: '',
-          errorMessage: 'Username and password are required',
-        ),
-        headers: {'Content-Type': 'text/html; charset=utf-8'},
-      );
+      return form('Username and password are required');
     }
 
-    // Authenticate user
-    final user = await dbInterface.getUserByUsername(username);
-    if (user == null ||
-        !PasswordHasher.verifyPassword(
-          password,
-          user.salt,
-          user.passwordHash,
-        )) {
-      return Response.ok(
-        _loginForm(
-          clientId: clientId,
-          redirectUri: redirectUri,
-          scope: scope,
-          state: state,
-          codeChallenge: codeChallenge ?? '',
-          codeChallengeMethod: codeChallengeMethod ?? '',
-          aud: '',
-          errorMessage: 'Invalid username or password',
-        ),
-        headers: {'Content-Type': 'text/html; charset=utf-8'},
-      );
-    }
-
-    if (!user.active) {
-      return Response.ok(
-        _loginForm(
-          clientId: clientId,
-          redirectUri: redirectUri,
-          scope: scope,
-          state: state,
-          codeChallenge: codeChallenge ?? '',
-          codeChallengeMethod: codeChallengeMethod ?? '',
-          aud: '',
-          errorMessage: 'Account is deactivated',
-        ),
-        headers: {'Content-Type': 'text/html; charset=utf-8'},
-      );
-    }
-
-    // Generate authorization code
-    final code = _uuid.v4();
-    final expiresAt = DateTime.now().add(const Duration(minutes: 5));
-
-    await dbInterface.createAuthorizationCode(
-      code: code,
+    final outcome = await _authorize(
+      dbInterface,
       clientId: clientId,
-      userId: user.id,
       redirectUri: redirectUri,
       scope: scope,
-      codeChallenge: (codeChallenge != null && codeChallenge.isNotEmpty)
-          ? codeChallenge
-          : null,
-      codeChallengeMethod:
-          (codeChallengeMethod != null && codeChallengeMethod.isNotEmpty)
-              ? codeChallengeMethod
-              : null,
-      expiresAt: expiresAt,
+      state: state,
+      codeChallenge: codeChallenge,
+      codeChallengeMethod: codeChallengeMethod,
+      username: username,
+      password: password,
     );
-
-    // Redirect to redirect_uri with code and state
-    final redirectParams = {
-      'code': code,
-      if (state.isNotEmpty) 'state': state,
-    };
-    final redirectUrl = Uri.parse(redirectUri)
-        .replace(queryParameters: redirectParams)
-        .toString();
-
-    return Response(302, headers: {'Location': redirectUrl});
+    switch (outcome) {
+      case _Issued(redirectUrl: final url):
+        return Response(302, headers: {'Location': url});
+      case _Denied(description: final message):
+        return form(message);
+      case _Invalid(:final error, :final description, :final redirectable):
+        if (redirectable) {
+          return _errorRedirect(redirectUri, state, error, description);
+        }
+        return Response(
+          400,
+          body: _errorPage(description),
+          headers: {'Content-Type': 'text/html'},
+        );
+    }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Authorization failed', e, stackTrace);
     return Response(
@@ -241,115 +233,70 @@ Future<Response> authorizeJsonHandler(
     final redirectUri = body['redirect_uri'] as String?;
     final scope = body['scope'] as String? ?? '';
     final state = body['state'] as String? ?? '';
-    final codeChallenge = body['code_challenge'] as String?;
-    final codeChallengeMethod = body['code_challenge_method'] as String?;
+    final codeChallenge = body['code_challenge'] as String? ?? '';
+    final codeChallengeMethod = body['code_challenge_method'] as String? ?? '';
     final username = body['username'] as String?;
     final password = body['password'] as String?;
 
+    Response error(int status, String error, String description) => Response(
+          status,
+          body: jsonEncode({
+            'error': error,
+            'error_description': description,
+          }),
+          headers: {'Content-Type': 'application/json'},
+        );
+
     if (responseType != 'code') {
-      return Response(
+      return error(
         400,
-        body: jsonEncode({
-          'error': 'unsupported_response_type',
-          'error_description': 'Only response_type=code is supported',
-        }),
+        'unsupported_response_type',
+        'Only response_type=code is supported',
       );
     }
 
     if (clientId == null || clientId.isEmpty) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'error': 'invalid_request',
-          'error_description': 'client_id is required',
-        }),
-      );
+      return error(400, 'invalid_request', 'client_id is required');
     }
 
     if (redirectUri == null || redirectUri.isEmpty) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'error': 'invalid_request',
-          'error_description': 'redirect_uri is required',
-        }),
-      );
+      return error(400, 'invalid_request', 'redirect_uri is required');
     }
 
     if (username == null || password == null) {
-      return Response(
+      return error(
         400,
-        body: jsonEncode({
-          'error': 'invalid_request',
-          'error_description': 'username and password are required',
-        }),
+        'invalid_request',
+        'username and password are required',
       );
     }
 
-    // Authenticate
-    final user = await dbInterface.getUserByUsername(username);
-    if (user == null ||
-        !PasswordHasher.verifyPassword(
-          password,
-          user.salt,
-          user.passwordHash,
-        )) {
-      return Response(
-        401,
-        body: jsonEncode({
-          'error': 'access_denied',
-          'error_description': 'Invalid credentials',
-        }),
-      );
-    }
-
-    if (!user.active) {
-      return Response(
-        403,
-        body: jsonEncode({
-          'error': 'access_denied',
-          'error_description': 'Account is deactivated',
-        }),
-      );
-    }
-
-    // Generate authorization code
-    final code = _uuid.v4();
-    final expiresAt = DateTime.now().add(const Duration(minutes: 5));
-
-    await dbInterface.createAuthorizationCode(
-      code: code,
+    final outcome = await _authorize(
+      dbInterface,
       clientId: clientId,
-      userId: user.id,
       redirectUri: redirectUri,
       scope: scope,
-      codeChallenge: (codeChallenge != null && codeChallenge.isNotEmpty)
-          ? codeChallenge
-          : null,
-      codeChallengeMethod:
-          (codeChallengeMethod != null && codeChallengeMethod.isNotEmpty)
-              ? codeChallengeMethod
-              : null,
-      expiresAt: expiresAt,
+      state: state,
+      codeChallenge: codeChallenge,
+      codeChallengeMethod: codeChallengeMethod,
+      username: username,
+      password: password,
     );
-
-    // Return code in JSON (for programmatic/testing use)
-    final redirectParams = {
-      'code': code,
-      if (state.isNotEmpty) 'state': state,
-    };
-    final fullRedirectUrl = Uri.parse(redirectUri)
-        .replace(queryParameters: redirectParams)
-        .toString();
-
-    return Response.ok(
-      jsonEncode({
-        'code': code,
-        'state': state,
-        'redirect_uri': fullRedirectUrl,
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
+    switch (outcome) {
+      case _Issued(:final code, redirectUrl: final url):
+        return Response.ok(
+          jsonEncode({
+            'code': code,
+            'state': state,
+            'redirect_uri': url,
+          }),
+          headers: {'Content-Type': 'application/json'},
+        );
+      case _Denied(:final status, :final description):
+        return error(status, 'access_denied', description);
+      case _Invalid(error: final code, :final description):
+        return error(400, code, description);
+    }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Authorization failed', e, stackTrace);
     return Response(
@@ -360,6 +307,156 @@ Future<Response> authorizeJsonHandler(
       }),
     );
   }
+}
+
+// ── The one authorization decision the three entry points share ───────────
+
+sealed class _Outcome {
+  const _Outcome();
+}
+
+/// A code was issued; [redirectUrl] carries it back to the client.
+class _Issued extends _Outcome {
+  const _Issued(this.code, this.redirectUrl);
+  final String code;
+  final String redirectUrl;
+}
+
+/// The request was well formed but the credentials did not authorize it.
+class _Denied extends _Outcome {
+  const _Denied(this.status, this.description);
+  final int status;
+  final String description;
+}
+
+/// The request itself is not acceptable. [redirectable] says whether the
+/// error may be sent to the redirect_uri (it may not when the redirect_uri
+/// is the problem).
+class _Invalid extends _Outcome {
+  const _Invalid(this.error, this.description, {this.redirectable = true});
+  final String error;
+  final String description;
+  final bool redirectable;
+}
+
+Future<_Outcome> _authorize(
+  FhirAntDb db, {
+  required String clientId,
+  required String redirectUri,
+  required String scope,
+  required String state,
+  required String codeChallenge,
+  required String codeChallengeMethod,
+  required String username,
+  required String password,
+}) async {
+  final pinned = await _redirectPinProblem(db, clientId, redirectUri);
+  if (pinned != null) {
+    return _Invalid('invalid_request', pinned, redirectable: false);
+  }
+  final pkce = _pkceProblem(codeChallenge, codeChallengeMethod);
+  if (pkce != null) return _Invalid('invalid_request', pkce);
+
+  final User user;
+  switch (await checkCredentials(db, username, password)) {
+    case CredentialOk(user: final u):
+      user = u;
+    case CredentialInvalid():
+      return const _Denied(401, 'Invalid username or password');
+    case CredentialInactive():
+      return const _Denied(403, 'Account is deactivated');
+    case CredentialLocked(minutesRemaining: final minutes):
+      return _Denied(
+        423,
+        'Account is locked. Try again in $minutes minute(s).',
+      );
+  }
+
+  final held = user.scopes != null && user.scopes!.isNotEmpty
+      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
+      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final requested =
+      scope.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+  final granted = SmartScopeEnforcer.grantScopes(
+    requested,
+    held,
+    patientContext: user.patientId != null,
+  );
+  // A request made only of resource scopes that the account does not hold
+  // is refused, not answered with an empty grant that looks like success.
+  if (SmartScopeEnforcer.resourceScopesOf(requested).isNotEmpty &&
+      SmartScopeEnforcer.resourceScopesOf(granted).isEmpty) {
+    return const _Invalid(
+      'invalid_scope',
+      "None of the requested scopes is within this account's grant",
+    );
+  }
+
+  // First use of this client_id: pin its redirect_uri. Done only after the
+  // credentials passed, so an unauthenticated caller cannot squat a client
+  // id by naming it first.
+  await db.registerOAuthClient(clientId, redirectUri);
+
+  final code = _uuid.v4();
+  await db.createAuthorizationCode(
+    code: code,
+    clientId: clientId,
+    userId: user.id,
+    redirectUri: redirectUri,
+    scope: granted.join(' '),
+    codeChallenge: codeChallenge,
+    codeChallengeMethod: codeChallengeMethod,
+    expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+  );
+
+  final redirectParams = {
+    'code': code,
+    if (state.isNotEmpty) 'state': state,
+  };
+  final redirectUrl = Uri.parse(redirectUri)
+      .replace(queryParameters: redirectParams)
+      .toString();
+  return _Issued(code, redirectUrl);
+}
+
+/// Why a PKCE pair is unacceptable, or null when it is fine.
+String? _pkceProblem(String codeChallenge, String codeChallengeMethod) {
+  if (codeChallenge.isEmpty) {
+    return 'code_challenge is required (PKCE, method S256)';
+  }
+  if (codeChallengeMethod != 'S256') {
+    return 'code_challenge_method must be S256; '
+        '"$codeChallengeMethod" is not supported';
+  }
+  return null;
+}
+
+/// Why [redirectUri] is refused for [clientId], or null when it is the pinned
+/// one, an equivalent loopback address, or the client is new.
+Future<String?> _redirectPinProblem(
+  FhirAntDb db,
+  String clientId,
+  String redirectUri,
+) async {
+  final pinned = await db.getOAuthClientRedirect(clientId);
+  if (pinned == null || _sameRedirect(pinned, redirectUri)) return null;
+  return 'redirect_uri does not match the one registered for this '
+      'client_id';
+}
+
+/// Exact match, except that two loopback URIs match regardless of port:
+/// RFC 8252 §7.3, a native app's loopback redirect "MAY" use any port and
+/// "the authorization server MUST allow any port to be specified at the
+/// time of the request for loopback IP redirect URIs" (quoted from the RFC
+/// as read 2026-09-07).
+bool _sameRedirect(String pinned, String offered) {
+  if (pinned == offered) return true;
+  final a = Uri.tryParse(pinned);
+  final b = Uri.tryParse(offered);
+  if (a == null || b == null) return false;
+  const loopback = {'127.0.0.1', 'localhost', '::1', '[::1]'};
+  if (!loopback.contains(a.host) || !loopback.contains(b.host)) return false;
+  return a.scheme == b.scheme && a.path == b.path;
 }
 
 // ── HTML helpers ──────────────────────────────────────────────────────────
@@ -375,7 +472,7 @@ String _loginForm({
   String? errorMessage,
 }) {
   final errorHtml = errorMessage != null
-      ? '<div style="color:#d32f2f;background:#fdecea;padding:10px;border-radius:4px;margin-bottom:16px;">$errorMessage</div>'
+      ? '<div style="color:#d32f2f;background:#fdecea;padding:10px;border-radius:4px;margin-bottom:16px;">${_escapeHtml(errorMessage)}</div>'
       : '';
 
   return '''

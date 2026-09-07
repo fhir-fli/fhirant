@@ -4,15 +4,24 @@ import 'package:shelf/shelf.dart';
 
 /// Handler for `.well-known/smart-configuration`.
 ///
-/// Returns the SMART on FHIR configuration document advertising
-/// supported capabilities and endpoints.
+/// SMART App Launch STU2 conformance.html, read whole 2026-09-07. Every key
+/// here is one that page defines, with the value this server can stand
+/// behind:
+/// - `issuer` is "Required if the server's capabilities include
+///   sso-openid-connect; otherwise, omitted." This server issues no
+///   id_token, so no `issuer`, and no `openid`/`fhirUser` in the scopes.
+/// - `scopes_supported`: "The server SHALL support all scopes listed here".
+/// - `code_challenge_methods_supported`: "The S256 method SHALL be included
+///   in this list, and the plain method SHALL NOT be included".
+/// - `capabilities`: from the page's list. `permission-offline`: refresh
+///   tokens are issued with every grant. `context-standalone-patient`: the
+///   `patient` token parameter comes from the account's linked Patient.
 Response smartConfigHandler(Request request) {
   final host = request.requestedUri.hasPort
       ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
       : '${request.requestedUri.scheme}://${request.requestedUri.host}';
 
   final config = {
-    'issuer': host,
     'authorization_endpoint': '$host/auth/authorize',
     'token_endpoint': '$host/auth/token',
     'revocation_endpoint': '$host/auth/revoke',
@@ -22,10 +31,8 @@ Response smartConfigHandler(Request request) {
       'refresh_token',
     ],
     'scopes_supported': [
-      'openid',
-      'fhirUser',
-      'launch',
       'launch/patient',
+      'offline_access',
       'system/*.*',
       'user/*.*',
       'user/*.rs',
@@ -35,11 +42,15 @@ Response smartConfigHandler(Request request) {
     ],
     'response_types_supported': ['code'],
     'code_challenge_methods_supported': ['S256'],
-    'token_endpoint_auth_methods_supported': ['none'],
     'capabilities': [
-      'permission-v2',
       'launch-standalone',
       'authorize-post',
+      'client-public',
+      'context-standalone-patient',
+      'permission-offline',
+      'permission-patient',
+      'permission-user',
+      'permission-v2',
     ],
   };
 

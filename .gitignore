@@ -31,3 +31,8 @@ packages/fhirant/play_store/upload_certificate.pem
 # artifact; a local `dart test --coverage` or `flutter test --coverage`
 # leaves it here.
 coverage/
+
+# TLS material is generated on first run, never committed. A key pair used
+# to live in packages/fhirant_server/assets/; it is in the history and must
+# be treated as compromised.
+*.pem

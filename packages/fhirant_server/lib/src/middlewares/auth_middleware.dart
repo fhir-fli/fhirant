@@ -43,7 +43,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
           final rawToken = authHeader.substring(7);
-          final payload = jwtService.verifyToken(rawToken);
+          final payload = jwtService.verifyAccessToken(rawToken);
           if (payload != null) {
             // Check revocation — skip injecting auth_user if revoked
             final revoked =
@@ -76,9 +76,12 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         );
       }
 
-      // Verify token
+      // Verify token. A refresh token is a valid signature with the wrong
+      // job: it lives seven days to the access token's eight hours and is
+      // meant only for `/auth/token`. It used to authenticate any request
+      // (REVIEW-2026-09-06 finding 2).
       final token = authHeader.substring(7);
-      final payload = jwtService.verifyToken(token);
+      final payload = jwtService.verifyAccessToken(token);
       if (payload == null) {
         return Response(
           401,

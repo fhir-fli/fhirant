@@ -36,7 +36,10 @@ void main() {
         'resourceType': 'Patient',
         'id': 'upgrade-1',
         'name': [
-          {'family': 'Rebuilt', 'given': <String>['Index']},
+          {
+            'family': 'Rebuilt',
+            'given': <String>['Index']
+          },
         ],
         'birthDate': '1980-02-03',
       }),
@@ -44,7 +47,9 @@ void main() {
     expect(
       (await first.search(
         resourceType: fhir.R4ResourceType.Patient,
-        searchParameters: {'family': <String>['Rebuilt']},
+        searchParameters: {
+          'family': <String>['Rebuilt']
+        },
       ))
           .length,
       1,
@@ -59,13 +64,17 @@ void main() {
     final second = FhirAntDb(NativeDatabase(file));
     final byName = await second.search(
       resourceType: fhir.R4ResourceType.Patient,
-      searchParameters: {'family': <String>['Rebuilt']},
+      searchParameters: {
+        'family': <String>['Rebuilt']
+      },
     );
     expect(byName.map((r) => r.id.toString()), equals(['upgrade-1']));
 
     final byDate = await second.search(
       resourceType: fhir.R4ResourceType.Patient,
-      searchParameters: {'birthdate': <String>['1980-02-03']},
+      searchParameters: {
+        'birthdate': <String>['1980-02-03']
+      },
     );
     expect(byDate.map((r) => r.id.toString()), equals(['upgrade-1']));
 
@@ -93,7 +102,41 @@ void main() {
 
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 15);
+    expect(version.read<int>('user_version'), 16);
+    await second.close();
+  });
+
+  test(
+      'opening a schema-15 database gains users.patient_id and the '
+      'oauth_clients pin table', () async {
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.createUser(
+      username: 'before',
+      passwordHash: 'h',
+      salt: 's',
+    );
+    // Make it look like a 15: drop what 16 adds, stamp the version.
+    await first.customStatement('DROP TABLE oauth_clients');
+    await first.customStatement('ALTER TABLE users DROP COLUMN patient_id');
+    await first.customStatement('PRAGMA user_version = 15');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    final id = await second.createUser(
+      username: 'after',
+      passwordHash: 'h',
+      salt: 's',
+      patientId: 'pat-1',
+    );
+    expect((await second.getUserById(id))!.patientId, 'pat-1');
+    expect((await second.getUserByUsername('before'))!.patientId, isNull);
+
+    await second.registerOAuthClient('app', 'http://app/cb');
+    await second.registerOAuthClient('app', 'http://other/cb');
+    expect(await second.getOAuthClientRedirect('app'), 'http://app/cb');
+    await second.deleteOAuthClient('app');
+    expect(await second.getOAuthClientRedirect('app'), isNull);
     await second.close();
   });
 }

@@ -20,7 +20,13 @@ Middleware auditMiddleware(FhirAntDb dbInterface) {
     return (Request request) async {
       final response = await innerHandler(request);
 
-      if (_shouldAudit(request)) {
+      // A request that presented no credential and was refused for that is
+      // not an access attempt by anyone the trail could name; recording it
+      // gave any unauthenticated caller an unbounded write into the
+      // database. A refused TOKEN is still recorded.
+      final bareRefusal = response.statusCode == 401 &&
+          request.headers['authorization'] == null;
+      if (_shouldAudit(request) && !bareRefusal) {
         // Fire-and-forget — don't await
         unawaited(_createAuditEvent(request, response, dbInterface));
       }
