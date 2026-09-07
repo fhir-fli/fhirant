@@ -82,7 +82,9 @@ void main() {
         ],
         'recorded': '2024-01-01T00:00:00Z',
         'agent': [
-          {'who': {'reference': 'Practitioner/dr1'}},
+          {
+            'who': {'reference': 'Practitioner/dr1'}
+          },
         ],
       }),
     );
@@ -102,8 +104,7 @@ void main() {
           .toList()
         ..sort();
 
-  test('_include follows the search parameter, not the element name',
-      () async {
+  test('_include follows the search parameter, not the element name', () async {
     // `patient` is defined on Observation.subject.where(resolve() is Patient).
     final b = await get('/Observation?_id=o1&_include=Observation:patient');
     expect(entriesOf(b, 'match'), ['Observation/o1']);
@@ -149,7 +150,8 @@ void main() {
   });
 
   test('_revinclude with a target type', () async {
-    final b = await get('/Patient?family=Inc&_revinclude=Provenance:target:Patient');
+    final b =
+        await get('/Patient?family=Inc&_revinclude=Provenance:target:Patient');
     expect(entriesOf(b, 'include'), ['Provenance/prov1']);
     final none = await get(
       '/Patient?family=Inc&_revinclude=Provenance:target:Organization',

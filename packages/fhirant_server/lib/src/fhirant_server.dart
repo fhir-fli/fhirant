@@ -141,7 +141,14 @@ class FhirAntServer {
         return unlockAccountHandler(req, id, dbInterface);
       })
       // Public routes
-      ..get('/', baseHandler)
+      // R4B search.html 3.1.1.2: "All resource types: GET [base]?parameter(s)".
+      // A bare GET / stays the welcome page.
+      ..get(
+        '/',
+        (Request req) => req.url.hasQuery
+            ? getSystemSearchHandler(req, dbInterface)
+            : baseHandler(req),
+      )
       ..get('/favicon.ico', favicoHandler)
       ..get(
         '/health',

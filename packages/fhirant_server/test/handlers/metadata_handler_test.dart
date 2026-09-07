@@ -205,18 +205,52 @@ void main() {
       expect(obsOps, isNot(contains('export')));
     });
 
-    test('searchInclude and searchRevInclude present for annotated types', () {
+    test('searchInclude and searchRevInclude are derived from the definitions',
+        () {
+      // search-parameters.json (R4B): Patient has reference parameters
+      // general-practitioner, link and organization; Observation has
+      // patient, subject, performer, encounter, ...; Observation.subject and
+      // Observation.patient declare Patient among their targets, and
+      // Provenance.target declares every type.
       final patient =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Patient');
-      expect(patient.searchInclude, isNotNull);
-      expect(patient.searchInclude!.length, greaterThan(0));
+      final includes =
+          patient.searchInclude!.map((s) => s.valueString).toList();
       expect(
-        patient.searchInclude!.map((s) => s.valueString).toList(),
-        contains('Patient:organization'),
+        includes,
+        containsAll([
+          'Patient:organization',
+          'Patient:general-practitioner',
+          'Patient:link',
+        ]),
+      );
+      final revIncludes =
+          patient.searchRevInclude!.map((s) => s.valueString).toList();
+      expect(
+        revIncludes,
+        containsAll([
+          'Observation:patient',
+          'Observation:subject',
+          'Provenance:target',
+        ]),
       );
 
-      expect(patient.searchRevInclude, isNotNull);
-      expect(patient.searchRevInclude!.length, greaterThan(0));
+      final obs =
+          rest.resource!.firstWhere((r) => r.type.valueString == 'Observation');
+      expect(
+        obs.searchInclude!.map((s) => s.valueString).toList(),
+        containsAll(['Observation:patient', 'Observation:subject']),
+      );
+      // Every type carries the Resource-level parameters.
+      final names = obs.searchParam!.map((p) => p.name.valueString).toList();
+      expect(names, containsAll(['_id', '_lastUpdated', 'code', 'subject']));
+      // A type the old hand list never covered has its parameters too.
+      final provenance =
+          rest.resource!.firstWhere((r) => r.type.valueString == 'Provenance');
+      expect(
+        provenance.searchParam!.map((p) => p.name.valueString).toList(),
+        containsAll(['target', 'recorded', 'agent']),
+      );
     });
 
     test('validate operation present per-resource', () {

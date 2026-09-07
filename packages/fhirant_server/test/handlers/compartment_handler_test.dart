@@ -49,13 +49,19 @@ void main() {
       fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'pat-3'}),
     );
     await db.saveResource(
-      fhir.Observation.fromJson(observation('obs-1', '85354-9', 'Patient/pat-1')),
+      fhir.Observation.fromJson(
+        observation('obs-1', '85354-9', 'Patient/pat-1'),
+      ),
     );
     await db.saveResource(
-      fhir.Observation.fromJson(observation('obs-2', '8480-6', 'Patient/pat-1')),
+      fhir.Observation.fromJson(
+        observation('obs-2', '8480-6', 'Patient/pat-1'),
+      ),
     );
     await db.saveResource(
-      fhir.Observation.fromJson(observation('obs-other', '99999', 'Patient/pat-2')),
+      fhir.Observation.fromJson(
+        observation('obs-other', '99999', 'Patient/pat-2'),
+      ),
     );
     await db.saveResource(
       fhir.Encounter.fromJson({
@@ -216,8 +222,7 @@ void main() {
       );
     });
 
-    test('returns the resources in the compartment, and only those',
-        () async {
+    test('returns the resources in the compartment, and only those', () async {
       final b = await body(await search('Patient', 'pat-1', 'Observation'));
       expect(b['type'], 'searchset');
       expect(ids(b), ['obs-1', 'obs-2']);

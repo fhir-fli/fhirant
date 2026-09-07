@@ -761,10 +761,15 @@ void main() {
         'recorded': '2024-01-01T00:00:00Z',
         'policy': ['http://example.org/policy'],
         'agent': [
-          {'who': {'reference': 'Practitioner/1'}},
+          {
+            'who': {'reference': 'Practitioner/1'},
+          },
         ],
         'entity': [
-          {'role': 'source', 'what': {'reference': 'Device/1'}},
+          {
+            'role': 'source',
+            'what': {'reference': 'Device/1'},
+          },
         ],
       };
       final shaped = FhirResponseShaper.shapeSummary(provenance, 'true');
@@ -846,7 +851,8 @@ void main() {
         '_birthDate': {
           'extension': [
             {
-              'url': 'http://hl7.org/fhir/StructureDefinition/patient-birthTime',
+              'url':
+                  'http://hl7.org/fhir/StructureDefinition/patient-birthTime',
               'valueDateTime': '1990-01-15T08:30:00Z',
             },
           ],

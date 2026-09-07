@@ -1,7 +1,64 @@
 import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhirant_db/fhirant_db.dart' show searchParameterTypes;
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/search_param_definitions.dart';
 import 'package:shelf/shelf.dart';
+
+/// The search parameters the store defines for [type]: its own, then the
+/// ones published on Resource and DomainResource, which every type takes.
+/// Read from `searchParameterTypes` (generated from search-parameters.json),
+/// so the CapabilityStatement says what the search actually accepts. This
+/// used to be a hand-typed list for a few types.
+List<CapabilityStatementSearchParam> _searchParamsFor(String type) {
+  final own = searchParameterTypes[type] ?? const {};
+  final common = {
+    ...?searchParameterTypes['Resource'],
+    ...?searchParameterTypes['DomainResource'],
+  };
+  final names = <String>{...own.keys, ...common.keys}.toList()..sort();
+  return [
+    for (final name in names)
+      CapabilityStatementSearchParam(
+        name: name.toFhirString,
+        type: SearchParamType((own[name] ?? common[name]!).type),
+      ),
+  ];
+}
+
+/// `[type]:[parameter]` for every reference parameter of [type]: what
+/// `_include` accepts here (search.html 3.1.1.5.4, a join by search
+/// parameter).
+List<FhirString> _searchIncludesFor(String type) {
+  final own = searchParameterTypes[type] ?? const {};
+  final names = own.entries
+      .where((e) => e.value.type == 'reference')
+      .map((e) => e.key)
+      .toList()
+    ..sort();
+  return [for (final name in names) '$type:$name'.toFhirString];
+}
+
+/// `[other type]:[parameter]` for every reference parameter, on any type,
+/// whose declared targets (SearchParameter.target) include [type]: what
+/// `_revinclude` can join to a [type] match. A reference parameter that
+/// declares no target is left out, since nothing says it can point here.
+Map<String, List<FhirString>> _searchRevIncludes() {
+  final byTarget = <String, List<String>>{};
+  for (final entry in searchParameterTypes.entries) {
+    final source = entry.key;
+    if (source == 'Resource' || source == 'DomainResource') continue;
+    for (final param in entry.value.entries) {
+      if (param.value.type != 'reference') continue;
+      for (final target in param.value.targets) {
+        (byTarget[target] ??= <String>[]).add('$source:${param.key}');
+      }
+    }
+  }
+  return {
+    for (final e in byTarget.entries)
+      e.key: (e.value..sort()).map((s) => s.toFhirString).toList(),
+  };
+}
 
 /// Handler for the metadata route — returns a CapabilityStatement.
 Response metadataHandler(Request request) {
@@ -14,6 +71,7 @@ Response metadataHandler(Request request) {
         ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
         : '${request.requestedUri.scheme}://${request.requestedUri.host}';
 
+    final revIncludes = _searchRevIncludes();
     final capabilityStatement = CapabilityStatement(
       status: PublicationStatus.active,
       date: DateTime.now().toFhirDateTime,
@@ -150,12 +208,7 @@ Response metadataHandler(Request request) {
             ),
           ],
           resource: R4ResourceType.typesAsStrings.map((type) {
-            final specificParams =
-                SearchParamDefinitions.resourceSpecific[type];
-            final allParams = [
-              ...SearchParamDefinitions.commonSearchParams,
-              if (specificParams != null) ...specificParams,
-            ];
+            final allParams = _searchParamsFor(type);
 
             // Per-resource operations
             final operations = <CapabilityStatementOperation>[
@@ -258,9 +311,8 @@ Response metadataHandler(Request request) {
                 ),
             ];
 
-            final includeList = SearchParamDefinitions.searchInclude[type];
-            final revIncludeList =
-                SearchParamDefinitions.searchRevInclude[type];
+            final includeList = _searchIncludesFor(type);
+            final revIncludeList = revIncludes[type];
 
             return CapabilityStatementResource(
               type: FhirCode(type),
@@ -302,9 +354,8 @@ Response metadataHandler(Request request) {
               conditionalDelete: ConditionalDeleteStatus.multiple,
               searchParam: allParams,
               operation: operations,
-              searchInclude: includeList?.map((s) => s.toFhirString).toList(),
-              searchRevInclude:
-                  revIncludeList?.map((s) => s.toFhirString).toList(),
+              searchInclude: includeList.isEmpty ? null : includeList,
+              searchRevInclude: revIncludeList,
             );
           }).toList(),
         ),

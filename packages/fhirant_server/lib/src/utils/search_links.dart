@@ -101,6 +101,7 @@ class SearchLinks {
     '_containedType',
     '_filter',
     '_query',
+    '_type',
   };
 
   /// The parameters the search used, one entry per repetition.

@@ -59,87 +59,217 @@ Future<Response> postSearchHandler(
 }
 
 /// Handler for POST system-level search: POST /_search
-///
-/// Requires `_type` parameter to specify which resource types to search.
-/// Aggregates results into a single searchset Bundle.
 Future<Response> postSystemSearchHandler(
   Request request,
   FhirAntDb dbInterface,
 ) async {
+  final body = await request.readAsString();
+  // Every repetition is kept: a repeated parameter is an AND join, so
+  // collapsing to one value silently drops half the query.
+  final bodyParams = _splitQueryStringAll(body);
+  // Merge with URL query parameters (URL params take precedence)
+  return systemSearchHandler(
+    request,
+    dbInterface,
+    {...bodyParams, ...request.url.queryParametersAll},
+  );
+}
+
+/// Handler for GET system-level search: GET [base]?parameter(s)
+Future<Response> getSystemSearchHandler(
+  Request request,
+  FhirAntDb dbInterface,
+) =>
+    systemSearchHandler(request, dbInterface, request.url.queryParametersAll);
+
+/// The all-types search context.
+///
+/// R4B search.html 3.1.1.2, read whole 2026-09-06: "All resource types: GET
+/// [base]?parameter(s) (parameters common to all types). If the _type
+/// parameter is included, all other search parameters SHALL be common to all
+/// provided types. If _type is not included, all parameters SHALL be common
+/// to all resource types."
+///
+/// So every search parameter is checked against every type it will run on
+/// and refused with a 400 when one type lacks it (this used to run the search
+/// anyway, and the store ignored the parameter on the types that lacked it,
+/// which returned records the client had filtered out). Without `_type` the
+/// types are the ones the store holds, and the parameters must be the ones
+/// published on Resource and DomainResource (`_id`, `_lastUpdated`, `_tag`,
+/// `_profile`, `_security`, `_source`, `_text`, `_content`, `_list`); it used
+/// to be refused outright.
+///
+/// One result set is paged across the types in name order: each type's count
+/// is taken in SQL and the requested page is cut from the concatenation, so
+/// `_count` bounds the whole bundle (3.1.1.5.3: "Servers SHALL NOT return
+/// more resources than requested") rather than each type. This used to
+/// return up to `_count` resources PER type and report the page's size as
+/// the total. `_sort` orders within each type.
+Future<Response> systemSearchHandler(
+  Request request,
+  FhirAntDb dbInterface,
+  Map<String, List<String>> mergedParams,
+) async {
   try {
-    final body = await request.readAsString();
-    // Every repetition is kept: a repeated parameter is an AND join, so
-    // collapsing to one value silently drops half the query.
-    final bodyParams = _splitQueryStringAll(body);
-    // Merge with URL query parameters (URL params take precedence)
-    final mergedParams = {...bodyParams, ...request.url.queryParametersAll};
-
-    // _type is required for system-level search
-    final typeParam = mergedParams['_type'];
-    if (typeParam == null || typeParam.isEmpty) {
-      return _validationErrorResponse(
-        'System-level search requires _type parameter',
-      );
-    }
-
     // ASSUMPTION, not a spec citation: the AND/OR rule of R4 3.1.1.4.17 cannot
     // apply to _type, because a resource has exactly one type and an AND of
     // two of them matches nothing. So repetitions are unioned here, the same
     // as commas.
-    final typeNames = typeParam
-        .expand((value) => value.split(','))
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty);
-    final searchParams = Map<String, List<String>>.from(mergedParams)
+    final typeParam = mergedParams['_type'];
+    final List<fhir.R4ResourceType> types;
+    if (typeParam == null || typeParam.isEmpty) {
+      types = await dbInterface.getResourceTypes()
+        ..sort((a, b) => a.toString().compareTo(b.toString()));
+    } else {
+      final names = typeParam
+          .expand((value) => value.split(','))
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+      final resolved = <fhir.R4ResourceType>[];
+      for (final name in names) {
+        final type = fhir.R4ResourceType.fromString(name);
+        if (type == null) {
+          return _validationErrorResponse(
+            'Invalid resource type in _type: $name',
+          );
+        }
+        resolved.add(type);
+      }
+      types = resolved;
+    }
+
+    final searchParamsIn = Map<String, List<String>>.from(mergedParams)
       ..remove('_type');
+    final parsed = SearchParameterParser.parseQueryParameters(searchParamsIn);
+    final searchParameters =
+        parsed['searchParams'] as Map<String, List<String>>?;
+    final hasParams = parsed['has'] as List<HasParameter>?;
+    final count = parsed['count'] as int? ?? 20;
+    final offset = parsed['offset'] as int? ?? 0;
+    final sort = parsed['sort'] as List<String>?;
+    final total = parsed['total'] as String?;
+    final summary = parsed['summary'] as String?;
+    final namedQuery = parsed['query'] as String?;
+    final unknownParams = parsed['unknownParams'] as List<String>?;
 
-    final baseUrl = request.requestedUri.hasPort
-        ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
-        : '${request.requestedUri.scheme}://${request.requestedUri.host}';
+    // R4 3.1.1.7, the same SHALL as on a type-level search.
+    if (namedQuery != null) {
+      return _searchRefusal(
+        'This server defines no named queries; _query=$namedQuery is not '
+        'recognised.',
+        fhir.IssueType.notSupported,
+      );
+    }
 
+    // "all other search parameters SHALL be common to all provided types":
+    // each parameter's name must have a definition on every type, or on
+    // Resource/DomainResource, which every type inherits.
+    final commonScope = typeParam == null || typeParam.isEmpty
+        ? const <String>['Resource']
+        : types.map((t) => t.toString()).toList();
+    for (final key
+        in (searchParameters ?? const <String, List<String>>{}).keys) {
+      final name = SearchQueryKey.parse(key).name;
+      final lacking = commonScope
+          .where((t) => searchParameterFor(t, name) == null)
+          .toList();
+      if (lacking.isNotEmpty) {
+        return _searchRefusal(
+          typeParam == null || typeParam.isEmpty
+              ? 'A search across all resource types takes only the '
+                  'parameters common to all types (_id, _lastUpdated, _tag, '
+                  '_profile, _security, _source, _text, _content, _list); '
+                  '"$name" is not one of them.'
+              : 'Parameter "$name" is not defined for ${lacking.join(", ")}; '
+                  'with _type, every parameter SHALL be common to all the '
+                  'types named.',
+          fhir.IssueType.invalid,
+        );
+      }
+    }
+    // For the has parameters the target type is named in the parameter
+    // itself and validated by the store; for _sort, the rule is the same as
+    // for a search parameter.
+    for (final rule in sort ?? const <String>[]) {
+      final name = rule.startsWith('-') ? rule.substring(1) : rule;
+      if (name == '_id' || name == '_lastUpdated') continue;
+      final lacking = commonScope
+          .where((t) => searchParameterFor(t, name) == null)
+          .toList();
+      if (lacking.isNotEmpty) {
+        return _searchRefusal(
+          '_sort=$rule is not defined for ${lacking.join(", ")}.',
+          fhir.IssueType.invalid,
+        );
+      }
+    }
+
+    // Prefer: handling=strict, as for a type-level search: an unknown
+    // `_`-parameter is refused; anything else unknown was refused above.
+    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
+    if (handling == 'strict' &&
+        unknownParams != null &&
+        unknownParams.isNotEmpty) {
+      return _validationErrorResponse(
+        'Unsupported search parameter(s): ${unknownParams.join(', ')}',
+      );
+    }
+
+    // The links: the parameters were checked common, so any one type decides
+    // the same used set; `_type` is a control parameter and is kept.
+    final links = SearchLinks.decide(commonScope.first, mergedParams);
+    final requested = request.requestedUri;
+
+    // Counts per type, in SQL, for the total and to place the page.
+    final counts = <fhir.R4ResourceType, int>{};
+    for (final type in types) {
+      counts[type] = await dbInterface.searchCount(
+        resourceType: type,
+        searchParameters: searchParameters,
+        hasParameters: hasParams,
+      );
+    }
+    final totalCount = counts.values.fold<int>(0, (a, b) => a + b);
+
+    if (summary == 'count' || count == 0) {
+      return Response.ok(
+        fhir.Bundle(
+          type: fhir.BundleType.searchset,
+          total: fhir.FhirUnsignedInt(totalCount),
+          link: [links.self(requested)],
+        ).toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    // The page [offset, offset + count) of the concatenation.
+    final baseUrl = requested.hasPort
+        ? '${requested.scheme}://${requested.host}:${requested.port}'
+        : '${requested.scheme}://${requested.host}';
     final allEntries = <fhir.BundleEntry>[];
-    var totalCount = 0;
-
-    for (final typeName in typeNames) {
-      final type = fhir.R4ResourceType.fromString(typeName);
-      if (type == null) {
-        return _validationErrorResponse(
-          'Invalid resource type in _type: $typeName',
-        );
+    var skip = offset;
+    var remaining = count > 0 ? count : totalCount;
+    for (final type in types) {
+      if (remaining <= 0) break;
+      final available = counts[type]!;
+      if (skip >= available) {
+        skip -= available;
+        continue;
       }
-
-      final parsed = SearchParameterParser.parseQueryParameters(searchParams);
-      final searchParameters =
-          parsed['searchParams'] as Map<String, List<String>>?;
-      final hasParams = parsed['has'] as List<HasParameter>?;
-      final count = parsed['count'] as int? ?? 20;
-      final offset = parsed['offset'] as int? ?? 0;
-      final sort = parsed['sort'] as List<String>?;
-
-      final List<fhir.Resource> resources;
-      final hasSearchParams =
-          searchParameters != null && searchParameters.isNotEmpty;
-      final hasHasParams = hasParams != null && hasParams.isNotEmpty;
-      final hasSort = sort != null && sort.isNotEmpty;
-
-      if (hasSearchParams || hasHasParams || hasSort) {
-        resources = await dbInterface.search(
-          resourceType: type,
-          searchParameters: searchParameters,
-          hasParameters: hasParams,
-          count: count,
-          offset: offset,
-          sort: sort,
-        );
-      } else {
-        resources = await dbInterface.getResourcesWithPagination(
-          resourceType: type,
-          count: count,
-          offset: offset,
-        );
-      }
-
-      for (final resource in resources) {
+      final page = await dbInterface.search(
+        resourceType: type,
+        searchParameters: searchParameters,
+        hasParameters: hasParams,
+        count: remaining,
+        offset: skip,
+        sort: sort,
+      );
+      skip = 0;
+      remaining -= page.length;
+      for (final resource in page) {
         final resourceId = resource.id?.toString() ?? '';
         final resType = resource.resourceTypeString;
         allEntries.add(
@@ -152,24 +282,62 @@ Future<Response> postSystemSearchHandler(
           ),
         );
       }
-      totalCount += resources.length;
+    }
+
+    final bundleLinks = <fhir.BundleLink>[links.self(requested)];
+    if (count > 0) {
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('first'),
+          url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
+        ),
+      );
+      if (offset > 0) {
+        bundleLinks.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('previous'),
+            url: fhir.FhirUri(
+              links
+                  .url(requested, offset: (offset - count).clamp(0, offset))
+                  .toString(),
+            ),
+          ),
+        );
+      }
+      if (offset + count < totalCount) {
+        bundleLinks.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('next'),
+            url: fhir.FhirUri(
+              links.url(requested, offset: offset + count).toString(),
+            ),
+          ),
+        );
+      }
+      if (totalCount > 0) {
+        bundleLinks.add(
+          fhir.BundleLink(
+            relation: fhir.FhirString('last'),
+            url: fhir.FhirUri(
+              links
+                  .url(requested, offset: ((totalCount - 1) ~/ count) * count)
+                  .toString(),
+            ),
+          ),
+        );
+      }
     }
 
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
-      entry: allEntries,
-      total: fhir.FhirUnsignedInt(totalCount),
-      link: [
-        fhir.BundleLink(
-          relation: fhir.FhirString('self'),
-          url: fhir.FhirUri(request.requestedUri.toString()),
-        ),
-      ],
+      entry: allEntries.isEmpty ? null : allEntries,
+      total: total == 'none' ? null : fhir.FhirUnsignedInt(totalCount),
+      link: bundleLinks,
     );
 
     FhirantLogging().logInfo(
-      'System search returned $totalCount resources across '
-      '${typeNames.length} types',
+      'System search returned ${allEntries.length} of $totalCount resources '
+      'across ${types.length} types',
     );
     return Response.ok(
       bundle.toJsonString(),
@@ -183,7 +351,7 @@ Future<Response> postSystemSearchHandler(
     return _searchRefusal(e.message, fhir.IssueType.invalid);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Failed to process POST /_search',
+      'Failed to process system-level search',
       e,
       stackTrace,
     );
