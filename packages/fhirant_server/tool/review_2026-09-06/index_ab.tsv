@@ -1,0 +1,110 @@
+step	label	ms	rows	note
+0-analyze	ANALYZE	1074	0	
+0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+1-dao-r1	DAO status=final -date	5518	20	
+1-dao-r1	DAO subject=big -date	366	20	
+1-dao-r1	DAO subject=small -date	24	20	
+1-sql-r1	SQL walk status=final (no cover index)	12913	20	
+1-sql-r1	SQL string LIKE (as DAO)	1	0	
+1-sql-r1	SQL string range	0	0	
+1-sql-r1	SQL token (as DAO, with LIKE ORs)	100	20	
+1-sql-r1	SQL token (search_name only)	88	20	
+1-sql-r1	SQL type page ORDER BY last_updated	6414	20	
+1-sql-r1	SQL _lastUpdated >=	6351	0	
+1-dao-r2	DAO status=final -date	9737	20	
+1-dao-r2	DAO subject=big -date	612	20	
+1-dao-r2	DAO subject=small -date	55	20	
+1-sql-r2	SQL walk status=final (no cover index)	12185	20	
+1-sql-r2	SQL string LIKE (as DAO)	0	0	
+1-sql-r2	SQL string range	0	0	
+1-sql-r2	SQL token (as DAO, with LIKE ORs)	98	20	
+1-sql-r2	SQL token (search_name only)	92	20	
+1-sql-r2	SQL type page ORDER BY last_updated	6453	20	
+1-sql-r2	SQL _lastUpdated >=	5563	0	
+1-plan	walk status (no cover)	0	0	SEARCH d USING INDEX sqlite_autoindex_date_search_parameters_1 (resource_type=?) | SEARCH t EXISTS USING INDEX sqlite_autoindex_token_search_parameters_1 (resource_type=? AND id=?) | USE TEMP B-TREE FOR ORDER BY
+1-plan	string LIKE (as DAO)	0	0	SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+1-plan	token (as DAO)	0	0	SEARCH token_search_parameters USING INDEX idx_token_value (token_value=?) | USE TEMP B-TREE FOR DISTINCT
+1-plan	type page	0	0	SEARCH resources USING INDEX sqlite_autoindex_resources_1 (resource_type=?) | USE TEMP B-TREE FOR ORDER BY
+2-size	db bytes before covering indexes	0	0	6210392064
+2-create	CREATE INDEX date cover	2702	0	
+2-create	CREATE INDEX token cover	14838	0	
+2-create	CREATE INDEX reference cover	12651	0	
+2-create	CREATE INDEX string cover	1515	0	
+2-create	CREATE INDEX resources (type,last_updated)	1211	0	
+2-analyze	ANALYZE after	2425	0	
+2-size	db bytes after covering indexes	0	0	6947524608 (+703 MB)
+3-dao-r1	DAO status=final -date (indexes present)	10036	20	
+3-dao-r1	DAO subject=big -date (indexes present)	381	20	
+3-dao-r1	DAO subject=small -date (indexes present)	52	20	
+3-sql-r1	SQL walk status=final (cover)	0	20	
+3-sql-r1	SQL walk subject=big (cover)	2310	20	
+3-sql-r1	SQL walk subject=small (cover)	189	20	
+3-sql-r1	SQL sorted-set subject=small (cover)	9	20	
+3-sql-r1	SQL sorted-set subject=big (cover)	339	20	
+3-sql-r1	SQL string LIKE (as DAO, cover present)	0	0	
+3-sql-r1	SQL string range (cover)	0	0	
+3-sql-r1	SQL token (as DAO, cover present)	103	20	
+3-sql-r1	SQL token (search_name only, cover)	6	20	
+3-sql-r1	SQL type page ORDER BY last_updated (index)	0	20	
+3-sql-r1	SQL _lastUpdated >= (index)	0	0	
+3-dao-r2	DAO status=final -date (indexes present)	10462	20	
+3-dao-r2	DAO subject=big -date (indexes present)	621	20	
+3-dao-r2	DAO subject=small -date (indexes present)	50	20	
+3-sql-r2	SQL walk status=final (cover)	0	20	
+3-sql-r2	SQL walk subject=big (cover)	2174	20	
+3-sql-r2	SQL walk subject=small (cover)	149	20	
+3-sql-r2	SQL sorted-set subject=small (cover)	6	20	
+3-sql-r2	SQL sorted-set subject=big (cover)	191	20	
+3-sql-r2	SQL string LIKE (as DAO, cover present)	0	0	
+3-sql-r2	SQL string range (cover)	0	0	
+3-sql-r2	SQL token (as DAO, cover present)	70	20	
+3-sql-r2	SQL token (search_name only, cover)	0	20	
+3-sql-r2	SQL type page ORDER BY last_updated (index)	0	20	
+3-sql-r2	SQL _lastUpdated >= (index)	0	0	
+3-plan	walk status (cover)	0	0	SEARCH d USING COVERING INDEX idx_review_date_cover (resource_type=? AND search_name=?) | SEARCH t EXISTS USING COVERING INDEX idx_review_token_cover (resource_type=? AND search_name=? AND token_value=? AND id=?)
+3-plan	walk subject=big (cover)	0	0	SEARCH d USING COVERING INDEX idx_review_date_cover (resource_type=? AND search_name=?) | SEARCH r EXISTS USING COVERING INDEX idx_review_ref_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=? AND id=?)
+3-plan	string range (cover)	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_review_string_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+3-plan	string LIKE as DAO (cover present)	0	0	SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+3-plan	token search_name only (cover)	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_review_token_cover (resource_type=? AND search_name=? AND token_value=?)
+3-plan	type page (index)	0	0	SEARCH resources USING INDEX idx_review_resources_lu (resource_type=?)
+4-dbstat	resources_history	0	0	1069707264
+4-dbstat	resources	0	0	1069318144
+4-dbstat	token_search_parameters	0	0	613015552
+4-dbstat	reference_search_parameters	0	0	607555584
+4-dbstat	sqlite_autoindex_token_search_parameters_1	0	0	367235072
+4-dbstat	sqlite_autoindex_reference_search_parameters_1	0	0	335110144
+4-dbstat	idx_review_ref_cover	0	0	334372864
+4-dbstat	composite_search_parameters	0	0	316473344
+4-dbstat	idx_review_token_cover	0	0	274112512
+4-dbstat	idx_token_system	0	0	240717824
+4-dbstat	uri_search_parameters	0	0	172675072
+4-dbstat	quantity_search_parameters	0	0	153174016
+4-dbstat	idx_ref_id	0	0	148668416
+4-dbstat	date_search_parameters	0	0	125968384
+4-dbstat	sqlite_autoindex_composite_search_parameters_1	0	0	124043264
+4-dbstat	sqlite_autoindex_uri_search_parameters_1	0	0	95854592
+4-dbstat	sqlite_autoindex_quantity_search_parameters_1	0	0	95809536
+4-dbstat	idx_uri_value	0	0	93069312
+4-dbstat	sqlite_autoindex_date_search_parameters_1	0	0	92377088
+4-dbstat	idx_token_value	0	0	67207168
+4-dbstat	idx_review_date_cover	0	0	65757184
+4-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+4-dbstat	string_search_parameters	0	0	61468672
+4-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+4-dbstat	idx_ref_type	0	0	54501376
+4-dbstat	sqlite_autoindex_string_search_parameters_1	0	0	50679808
+4-dbstat	idx_review_string_cover	0	0	36782080
+4-dbstat	idx_ref_identifier_val	0	0	30105600
+4-dbstat	idx_ref_identifier_sys	0	0	30105600
+4-dbstat	idx_review_resources_lu	0	0	26107904
+4-dbstat	idx_date_value_end	0	0	16101376
+4-dbstat	idx_date_value	0	0	16011264
+4-dbstat	idx_quantity_low	0	0	14311424
+4-dbstat	idx_quantity_high	0	0	14237696
+4-dbstat	idx_string_value	0	0	11321344
+4-dbstat	sqlite_schema	0	0	20480
+4-dbstat	users	0	0	4096
+4-dbstat	sync_resources	0	0	4096
+4-dbstat	sqlite_stat1	0	0	4096
+4-dbstat	sqlite_sequence	0	0	4096
