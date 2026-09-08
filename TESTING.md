@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,155 tests** across 91 test files, all passing. Counted 2026-09-08 by
+**1,159 tests** across 91 test files, all passing. Counted 2026-09-08 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 978 | 80 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 982 | 80 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 127 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -74,6 +74,15 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/smart_scopes_test.dart` | SMART scope parsing + enforcement |
 | `test/utils/password_hasher_test.dart` | bcrypt hashing |
 | `test/utils/password_policy_test.dart` | Password strength rules |
+
+### fhirant_server — Service Tests (4 files)
+
+| File | Description |
+|------|-------------|
+| `test/services/subscription_service_test.dart` | Criteria through the REST search, server-decided status, rest-hook delivery, failure policy, `end`; delivery from the queue after the write, deadline, order, back-pressure (30) |
+| `test/services/websocket_subscriptions_test.dart` | `bind`/`ping` protocol and a websocket Subscription end to end (10) |
+| `test/services/backup_service_test.dart` | Bundle-envelope backup and restore (10) |
+| `test/services/backup_file_test.dart` | Encrypted SQLite backup file: create, restore, JSON detection (7) |
 
 ### fhirant_server — Integration Tests (12 files)
 

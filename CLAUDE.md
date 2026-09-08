@@ -221,9 +221,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,155 tests** across 91 test files, all passing (counted 2026-09-08).
+**1,159 tests** across 91 test files, all passing (counted 2026-09-08).
 
-- **Server tests** (978 tests, 80 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (982 tests, 80 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (127 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (33 tests, 3 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

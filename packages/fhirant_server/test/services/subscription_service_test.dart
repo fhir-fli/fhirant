@@ -154,6 +154,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       expect(recorder.sent, hasLength(1));
       expect(recorder.sent.single.method, equals('POST'));
@@ -172,6 +173,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       expect(recorder.sent, hasLength(1));
       final request = recorder.sent.single;
@@ -196,6 +198,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       expect(
         recorder.sent.single.headers['Authorization'],
@@ -208,6 +211,7 @@ void main() {
       await db.saveResource(observation(id: 'x', code: '9999-9'));
 
       await service.onResourceChanged(observation(id: 'x', code: '9999-9'));
+      await service.drain();
 
       expect(recorder.sent, isEmpty);
     });
@@ -217,6 +221,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       expect(recorder.sent, isEmpty);
     });
@@ -229,6 +234,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       final stored = await db.getResource(
         fhir.R4ResourceType.Subscription,
@@ -251,6 +257,7 @@ void main() {
         throwing.onResourceChanged(observation()),
         completes,
       );
+      await expectLater(throwing.drain(), completes);
 
       final stored = await db.getResource(
         fhir.R4ResourceType.Subscription,
@@ -266,6 +273,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       final stored = await db.getResource(
         fhir.R4ResourceType.Subscription,
@@ -291,6 +299,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
       expect((await stored())?.status.valueString, equals('error'));
 
       // Delivered to again on the next write, which is the point of `error`
@@ -299,6 +308,7 @@ void main() {
       // silenced a subscription permanently while claiming a status the spec
       // says can revert to active.
       await service.onResourceChanged(observation());
+      await service.drain();
       expect(recorder.sent, hasLength(2));
     });
 
@@ -309,6 +319,7 @@ void main() {
 
       for (var i = 0; i < 5; i++) {
         await service.onResourceChanged(observation());
+        await service.drain();
       }
 
       final off = await stored();
@@ -317,6 +328,7 @@ void main() {
 
       final attempts = recorder.sent.length;
       await service.onResourceChanged(observation());
+      await service.drain();
       expect(
         recorder.sent,
         hasLength(attempts),
@@ -336,8 +348,10 @@ void main() {
       await db.saveResource(observation());
 
       await strict.onResourceChanged(observation());
+      await strict.drain();
       expect((await stored())?.status.valueString, equals('error'));
       await strict.onResourceChanged(observation());
+      await strict.drain();
       expect((await stored())?.status.valueString, equals('off'));
     });
 
@@ -350,11 +364,13 @@ void main() {
       recorder.status = 500;
       for (var i = 0; i < 4; i++) {
         await service.onResourceChanged(observation());
+        await service.drain();
       }
       expect((await stored())?.status.valueString, equals('error'));
 
       recorder.status = 200;
       await service.onResourceChanged(observation());
+      await service.drain();
       final recovered = await stored();
       expect(recovered?.status.valueString, equals('active'));
       expect(recovered?.error, isNull);
@@ -363,6 +379,7 @@ void main() {
       recorder.status = 500;
       for (var i = 0; i < 4; i++) {
         await service.onResourceChanged(observation());
+        await service.drain();
       }
       expect((await stored())?.status.valueString, equals('error'));
     });
@@ -374,6 +391,7 @@ void main() {
       await db.saveResource(subscription(status: 'active'));
       await db.saveResource(observation());
       await service.onResourceChanged(observation());
+      await service.drain();
 
       final extension = (await stored())!.extension_!.single;
       expect(
@@ -382,6 +400,113 @@ void main() {
       );
       expect(extension.url.valueString, startsWith('http://fhirant.'));
       expect((extension.valueX! as fhir.FhirInteger).valueInt, equals(1));
+    });
+  });
+
+  group('delivery happens after the write, from a queue (finding 37)', () {
+    test('onResourceChanged returns before a slow subscriber answers',
+        () async {
+      final slow = SubscriptionService(
+        db,
+        httpClient: MockClient((request) async {
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          recorder.sent.add(request);
+          return http.Response('', 200);
+        }),
+      );
+      await db.saveResource(subscription(status: 'active'));
+      await db.saveResource(observation());
+
+      final sw = Stopwatch()..start();
+      await slow.onResourceChanged(observation());
+      final returned = sw.elapsedMilliseconds;
+      expect(recorder.sent, isEmpty);
+      await slow.drain();
+      sw.stop();
+      expect(returned, lessThan(200));
+      expect(sw.elapsedMilliseconds, greaterThanOrEqualTo(400));
+      expect(recorder.sent, hasLength(1));
+    });
+
+    test(
+        'a subscriber that never answers is a failure after the deadline, '
+        'and the worker moves on', () async {
+      final hung = SubscriptionService(
+        db,
+        deliveryTimeout: const Duration(milliseconds: 200),
+        httpClient: MockClient((request) async {
+          if (request.url.host == 'hung.example.org') {
+            await Future<void>.delayed(const Duration(seconds: 5));
+          }
+          recorder.sent.add(request);
+          return http.Response('', 200);
+        }),
+      );
+      await db.saveResource(
+        subscription(
+          id: 'hung',
+          status: 'active',
+          endpoint: 'https://hung.example.org/hook',
+        ),
+      );
+      await db.saveResource(subscription(id: 'ok', status: 'active'));
+      await db.saveResource(observation());
+
+      final sw = Stopwatch()..start();
+      await hung.onResourceChanged(observation());
+      await hung.drain();
+      expect(sw.elapsedMilliseconds, lessThan(2000));
+
+      final stored = await db.getResource(
+        fhir.R4ResourceType.Subscription,
+        'hung',
+      ) as fhir.Subscription?;
+      expect(stored?.status.valueString, 'error');
+      expect(stored?.error?.valueString, contains('did not answer within'));
+      expect(
+        recorder.sent.map((r) => r.url.host),
+        contains('example.org'),
+      );
+    });
+
+    test('one subscription sees changes in the order they were written',
+        () async {
+      await db.saveResource(
+        subscription(status: 'active', payload: 'application/fhir+json'),
+      );
+      for (var i = 0; i < 5; i++) {
+        await db.saveResource(observation(id: 'o$i'));
+        await service.onResourceChanged(observation(id: 'o$i'));
+      }
+      await service.drain();
+      expect(
+        recorder.sent.map((r) => r.url.pathSegments.last).toList(),
+        ['o0', 'o1', 'o2', 'o3', 'o4'],
+      );
+    });
+
+    test(
+        'the queue is bounded: a write past the bound waits for the worker, '
+        'nothing is dropped', () async {
+      final bounded = SubscriptionService(
+        db,
+        maxQueued: 2,
+        httpClient: MockClient((request) async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          recorder.sent.add(request);
+          return http.Response('', 200);
+        }),
+      );
+      await db.saveResource(subscription(status: 'active'));
+      var peak = 0;
+      for (var i = 0; i < 6; i++) {
+        await db.saveResource(observation(id: 'b$i'));
+        await bounded.onResourceChanged(observation(id: 'b$i'));
+        if (bounded.queued > peak) peak = bounded.queued;
+      }
+      expect(peak, lessThanOrEqualTo(2));
+      await bounded.drain();
+      expect(recorder.sent, hasLength(6));
     });
   });
 
@@ -395,6 +520,7 @@ void main() {
       await db.saveResource(observation());
 
       await service.onResourceChanged(observation());
+      await service.drain();
 
       expect(recorder.sent, isEmpty);
     });

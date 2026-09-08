@@ -654,6 +654,19 @@ class FhirAntServer {
 
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
+    // Queued notifications get a moment to go out; what a dead subscriber
+    // still holds after that is logged and lost, which the spec allows ("The
+    // server may retry the notification a fixed number of times").
+    final subscriptions = _subscriptions;
+    if (subscriptions != null) {
+      await subscriptions.drain().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => FhirantLogging().logWarning(
+              'Stopping with ${subscriptions.queued} subscription '
+              'notification(s) still queued',
+            ),
+          );
+    }
     // SQLite's advice (lang_analyze.html, read 2026-09-06) is to run PRAGMA
     // optimize "just before closing each database connection"; this is the
     // last moment the server has the connection's query history.

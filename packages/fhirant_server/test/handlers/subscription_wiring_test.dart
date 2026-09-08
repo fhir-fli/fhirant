@@ -73,7 +73,9 @@ void main() {
     );
 
     expect(response.statusCode, equals(201));
+    await subscriptions.drain();
     expect(sent, hasLength(1));
+    await subscriptions.drain();
     expect(sent.single.url.toString(), equals('https://example.org/hook'));
   });
 
@@ -93,6 +95,7 @@ void main() {
     );
 
     expect(response.statusCode, anyOf(equals(200), equals(201)));
+    await subscriptions.drain();
     expect(sent, hasLength(1));
   });
 
@@ -177,6 +180,7 @@ void main() {
     );
 
     expect(response.statusCode, equals(200));
+    await subscriptions.drain();
     expect(sent, hasLength(2));
   });
 
@@ -211,6 +215,7 @@ void main() {
     );
 
     expect(response.statusCode, greaterThanOrEqualTo(400));
+    await subscriptions.drain();
     expect(sent, isEmpty);
     expect(
       await db.getResource(fhir.R4ResourceType.Observation, 'a'),
@@ -244,6 +249,7 @@ void main() {
     );
 
     expect(response.statusCode, equals(200));
+    await subscriptions.drain();
     expect(sent, isEmpty);
   });
 

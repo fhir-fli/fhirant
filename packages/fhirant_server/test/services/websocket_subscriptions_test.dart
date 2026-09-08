@@ -158,6 +158,7 @@ void main() {
       });
       await db.saveResource(observation);
       await service.onResourceChanged(observation);
+      await service.drain();
 
       expect(sink.written, equals(['ping ws1']));
     });
@@ -178,6 +179,7 @@ void main() {
       });
       await db.saveResource(observation);
       await service.onResourceChanged(observation);
+      await service.drain();
 
       final stored = await db.getResource(
         fhir.R4ResourceType.Subscription,

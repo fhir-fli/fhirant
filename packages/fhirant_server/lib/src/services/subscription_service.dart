@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -39,6 +40,8 @@ class SubscriptionService {
     DateTime Function()? clock,
     WebSocketSubscriptions? websockets,
     this.maxConsecutiveFailures = 5,
+    this.deliveryTimeout = const Duration(seconds: 10),
+    this.maxQueued = 10000,
   })  : _http = httpClient ?? http.Client(),
         websockets = websockets ?? WebSocketSubscriptions(),
         _clock = clock ?? DateTime.now;
@@ -65,6 +68,32 @@ class SubscriptionService {
   /// every single write. Configurable because the right number depends on the
   /// deployment, not on the standard.
   final int maxConsecutiveFailures;
+
+  /// How long one rest-hook delivery may take before it counts as a failure.
+  ///
+  /// Ten seconds is fhirant's choice, not a specification number: R4
+  /// subscription.html sets no delivery deadline. Without one, a subscriber
+  /// that accepts the TCP connection and never answers held the delivery
+  /// worker for the socket's own timeout, which on a phone can be minutes.
+  final Duration deliveryTimeout;
+
+  /// The most changes waiting for the delivery worker. A write that would
+  /// queue more than this waits for the worker to take one first, so a burst
+  /// (a 20,000-entry transaction, say) is bounded in memory and nothing is
+  /// dropped. Ten thousand is a choice; at ~1 KB a resource it is ~10 MB.
+  final int maxQueued;
+
+  /// Changes the worker has not evaluated yet, oldest first.
+  final Queue<fhir.Resource> _queue = Queue<fhir.Resource>();
+
+  /// The running worker, or null while the queue is empty.
+  Future<void>? _worker;
+
+  /// Completed each time the worker takes a change, for back-pressure.
+  Completer<void> _taken = Completer<void>();
+
+  /// How many changes are waiting for the worker.
+  int get queued => _queue.length;
 
   /// Where the consecutive-failure count is kept.
   ///
@@ -193,12 +222,50 @@ class SubscriptionService {
     return _withStatus(subscription, 'active', null);
   }
 
+  /// Queues [changed] for evaluation and delivery, and returns.
+  ///
+  /// The write that calls this has already been committed; it is answered
+  /// without waiting for any subscriber. One worker takes the queue in order,
+  /// so a subscription sees changes in the order they were written, and a
+  /// dead endpoint costs the worker at most [deliveryTimeout] per delivery
+  /// rather than holding the request. Before 2026-09-08 every POST and PUT
+  /// waited for each rest-hook to answer, with no deadline
+  /// (REVIEW-2026-09-06 finding 37).
+  ///
+  /// Only waits when [maxQueued] changes are already queued, and then only
+  /// until the worker takes one. Never throws.
+  Future<void> onResourceChanged(fhir.Resource changed) async {
+    while (_queue.length >= maxQueued) {
+      await _taken.future;
+    }
+    _queue.add(changed);
+    _worker ??= _run();
+  }
+
+  /// Completes when every queued change has been evaluated and delivered.
+  /// For tests and for an orderly stop; a write never waits on it.
+  Future<void> drain() => _worker ?? Future<void>.value();
+
+  Future<void> _run() async {
+    try {
+      while (_queue.isNotEmpty) {
+        final changed = _queue.removeFirst();
+        final taken = _taken;
+        _taken = Completer<void>();
+        taken.complete();
+        await _evaluate(changed);
+      }
+    } finally {
+      _worker = null;
+    }
+  }
+
   /// Delivers [changed] to every active subscription whose criteria it meets.
   ///
-  /// Never throws: a subscriber that is unreachable must not fail the write
-  /// that triggered the notification. A delivery failure is recorded on the
-  /// subscription itself, which is what `Subscription.error` is for.
-  Future<void> onResourceChanged(fhir.Resource changed) async {
+  /// Never throws: a subscriber that is unreachable must not stop the worker.
+  /// A delivery failure is recorded on the subscription itself, which is what
+  /// `Subscription.error` is for.
+  Future<void> _evaluate(fhir.Resource changed) async {
     try {
       // `error` is deliverable, not terminal. R4 subscription.html: "The
       // server may retry the notification a fixed number of times", and "If
@@ -296,17 +363,21 @@ class SubscriptionService {
       if (payload == null || payload.isEmpty) {
         // "the server POSTs an empty body to the endpoint", and the client
         // then re-runs its own criteria to find what changed.
-        response = await _http.post(Uri.parse(endpoint), headers: headers);
+        response = await _http
+            .post(Uri.parse(endpoint), headers: headers)
+            .timeout(deliveryTimeout);
       } else {
         // "the server forwards a copy of any matching resource ... as an
         // Update operation using the nominated URL as the service base".
         final type = changed.resourceType.name;
         final id = changed.id?.valueString ?? '';
-        response = await _http.put(
-          Uri.parse('${endpoint.replaceAll(RegExp(r"/+$"), "")}/$type/$id'),
-          headers: {...headers, 'Content-Type': payload},
-          body: changed.toJsonString(),
-        );
+        response = await _http
+            .put(
+              Uri.parse('${endpoint.replaceAll(RegExp(r"/+$"), "")}/$type/$id'),
+              headers: {...headers, 'Content-Type': payload},
+              body: changed.toJsonString(),
+            )
+            .timeout(deliveryTimeout);
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -316,6 +387,12 @@ class SubscriptionService {
       await _recordFailure(
         subscription,
         'delivery to $endpoint returned ${response.statusCode}',
+      );
+    } on TimeoutException {
+      await _recordFailure(
+        subscription,
+        'delivery to $endpoint did not answer within '
+        '${deliveryTimeout.inSeconds} s',
       );
     } catch (e) {
       await _recordFailure(subscription, 'delivery to $endpoint failed: $e');
