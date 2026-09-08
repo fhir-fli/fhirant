@@ -88,11 +88,13 @@ void main() {
     expect(
       indexes.map((r) => r.read<String>('name')),
       containsAll(<String>[
-        'idx_string_value',
-        'idx_date_value',
-        'idx_date_value_end',
-        'idx_quantity_low',
+        'idx_string_search_parameters_value_cover',
+        'idx_date_search_parameters_low_cover',
+        'idx_date_search_parameters_high_cover',
+        'idx_quantity_search_parameters_low_cover',
+        'idx_token_search_parameters_owner',
         'idx_token_search_parameters_contained',
+        'idx_resources_type_updated',
       ]),
     );
     final stats = await second
@@ -102,7 +104,7 @@ void main() {
 
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 17);
+    expect(version.read<int>('user_version'), 18);
     await second.close();
   });
 
@@ -174,7 +176,7 @@ void main() {
     expect(rows.map((r) => r.read<int>('param_index')).toList(), [0, 100, 200]);
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 17);
+    expect(version.read<int>('user_version'), 18);
     await second.close();
   });
 }

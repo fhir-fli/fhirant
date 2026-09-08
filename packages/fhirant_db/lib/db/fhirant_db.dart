@@ -17,7 +17,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,14 +171,14 @@ class FhirAntDb extends FhirDb {
             // row is re-extracted from the stored resources; the value
             // indexes and planner statistics are rebuilt at the end. Paged,
             // so the 5 GB MIMIC load takes 467s and bounded memory.
-            await rebuildSearchIndex();
+            // Re-extracted below, once, by the schema-18 step.
           }
           if (from < 15) {
             // fhir_r4_db schema 8: partial indexes on id for contained rows,
             // so re-saving a container deletes its contained rows through an
             // index instead of scanning every index table (measured 4× on
-            // the save path, fhir_r4_db 2026-09-06).
-            await createValueIndexes();
+            // the save path, fhir_r4_db 2026-09-06). Created below by the
+            // schema-18 rebuild, on the tables in their current shape.
           }
           if (from < 16) {
             // The patient an account is about, set by an administrator at
@@ -207,6 +207,16 @@ class FhirAntDb extends FhirDb {
             // moved onto the whole-value param_index convention `_sort`
             // relies on, so the search index is re-extracted from the
             // stored resources (derived data, as the schema-14 step did).
+            // Re-extracted below, once, by the schema-18 step.
+          }
+          if (from < 18) {
+            // fhir_r4_db schema 10 (REVIEW-2026-09-06 §4): the index tables
+            // lose search_path and their five-column key, the single-column
+            // value indexes give way to covering composites, and resources
+            // gains (resource_type, last_updated). The tables are dropped
+            // and re-extracted in the new shape; this one rebuild also
+            // serves the 14 and 17 steps.
+            await dropLegacyValueIndexes();
             await rebuildSearchIndex();
           }
         },

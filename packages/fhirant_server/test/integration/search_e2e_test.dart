@@ -313,6 +313,12 @@ void main() {
     });
 
     test('Search with _include returns referenced resources', () async {
+      // `Patient:organization` names the SEARCH PARAMETER for
+      // Patient.managingOrganization, R4B search.html 3.1.1.5.4 (read whole
+      // 2026-09-06): "Both _include and _revinclude are based on search
+      // parameters, rather than paths in the resource". The element name
+      // used to work only through a dead `search_path LIKE` alternative in
+      // the index query, gone with fhir_r4_db schema 10.
       // Create an Organization first
       await testDb.saveResource(
         fhir.Organization(
@@ -335,7 +341,7 @@ void main() {
       final response = await handler(
         testRequest(
           'GET',
-          '/Patient?family=IncludeTest&_include=Patient:managingOrganization',
+          '/Patient?family=IncludeTest&_include=Patient:organization',
           authToken: authToken,
         ),
       );
@@ -394,7 +400,7 @@ void main() {
       final response = await handler(
         testRequest(
           'GET',
-          '/Patient?family=ModeTest&_include=Patient:managingOrganization',
+          '/Patient?family=ModeTest&_include=Patient:organization',
           authToken: authToken,
         ),
       );
@@ -496,7 +502,7 @@ void main() {
       final response = await handler(
         testRequest(
           'GET',
-          '/Patient?family=IterTest&_include=Patient:managingOrganization&_include:iterate=Organization:partOf',
+          '/Patient?family=IterTest&_include=Patient:organization&_include:iterate=Organization:partof',
           authToken: authToken,
         ),
       );
