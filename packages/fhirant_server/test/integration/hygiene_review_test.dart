@@ -241,6 +241,63 @@ void main() {
     });
   });
 
+  group('_filter goes to the store as an id set (row 38)', () {
+    setUp(() async {
+      for (var i = 0; i < 6; i++) {
+        await save({
+          'resourceType': 'Patient',
+          'id': 'f$i',
+          'gender': i.isEven ? 'male' : 'female',
+          'active': i < 4,
+        });
+      }
+    });
+
+    test('_summary=count and _count=0 count the filtered set', () async {
+      final counted = await json(
+        await handler(
+          testRequest('GET', '/Patient?_filter=gender eq male&_summary=count'),
+        ),
+        200,
+      );
+      expect(counted['total'], 3);
+      expect(counted['entry'], isNull);
+      final zero = await json(
+        await handler(
+          testRequest(
+            'GET',
+            '/Patient?_filter=gender eq male and active eq true&_count=0',
+          ),
+        ),
+        200,
+      );
+      expect(zero['total'], 2);
+    });
+
+    test('the filter ANDs with the other parameters and a client _id',
+        () async {
+      final body = await json(
+        await handler(
+          testRequest('GET', '/Patient?_filter=gender eq male&active=true'),
+        ),
+        200,
+      );
+      expect(body['total'], 2);
+      expect(
+        (body['entry'] as List).map((e) => e['resource']['id']),
+        ['f0', 'f2'],
+      );
+      final narrowed = await json(
+        await handler(
+          testRequest('GET', '/Patient?_filter=gender eq male&_id=f2,f5'),
+        ),
+        200,
+      );
+      expect(narrowed['total'], 1);
+      expect(narrowed['entry'][0]['resource']['id'], 'f2');
+    });
+  });
+
   group('the general search path (row 26)', () {
     test('an unknown parameter is ignored, not guessed at', () async {
       await save({

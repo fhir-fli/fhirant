@@ -511,42 +511,16 @@ Future<Response> _searchResources(
     final compartment =
         patientId == null ? null : patientCompartment(patientId);
 
-    // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
-    // _count has the value 0, this shall be treated the same as
-    // _summary=count: the server returns a bundle that reports the total
-    // number of resources that match in Bundle.total, but with no entries,
-    // and no prev/next/last links". The DAO reads a count of 0 as "no page",
-    // so without this branch `_count=0` returned every match.
-    if (summary == 'count' || count == 0) {
-      int totalCount;
-      if ((searchParams != null && searchParams.isNotEmpty) ||
-          hasHasParams ||
-          compartment != null) {
-        totalCount = await dbInterface.searchCount(
-          resourceType: type,
-          searchParameters: searchParams,
-          hasParameters: hasParams,
-          compartment: compartment,
-        );
-      } else {
-        totalCount = await dbInterface.getResourceCount(type);
-      }
-      final bundle = fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        total: fhir.FhirUnsignedInt(totalCount),
-        link: [links.self(request.requestedUri)],
-      );
-      return Response.ok(
-        bundle.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-
-    // _filter is evaluated into a set of ids, which then joins the ordinary
-    // search parameters as `_id`. Both halves are therefore ANDed, which is
-    // what R4 3.1.1.4 says of parameters that appear together, and the filter
-    // itself runs through the same index rather than a second engine beside
-    // it.
+    // _filter is evaluated into a set of ids, handed to the store as its own
+    // set (`ids:`) and ANDed there with every other parameter, which is what
+    // R4 3.1.1.4 says of parameters that appear together; the filter itself
+    // runs through the same index rather than a second engine beside it. A
+    // client's `_id` stays a parameter and ANDs in the store too. The ids
+    // used to be joined into one comma-separated `_id` value: the string,
+    // its re-parse and the existence check cost 14 of the 19.8 s of
+    // `_filter=status eq final` over 813k Observations (REVIEW-2026-09-06
+    // row 38). Evaluated before the count-only branch below, which used to
+    // run first and count without the filter.
     Set<String>? filterIds;
     if (filter != null && filter.trim().isNotEmpty) {
       try {
@@ -564,28 +538,40 @@ Future<Response> _searchResources(
       }
     }
 
-    var effectiveSearchParams = searchParams;
-
-    if (filterIds != null) {
-      effectiveSearchParams = Map<String, List<String>>.from(
-        effectiveSearchParams ?? {},
-      );
-      final existing = effectiveSearchParams['_id'];
-      if (existing == null) {
-        // One comma-separated element: the elements of a value list are ANDed
-        // since fhir_r4_db 0.11.0, and these ids are alternatives.
-        effectiveSearchParams['_id'] = [filterIds.join(',')];
+    // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
+    // _count has the value 0, this shall be treated the same as
+    // _summary=count: the server returns a bundle that reports the total
+    // number of resources that match in Bundle.total, but with no entries,
+    // and no prev/next/last links". The DAO reads a count of 0 as "no page",
+    // so without this branch `_count=0` returned every match.
+    if (summary == 'count' || count == 0) {
+      int totalCount;
+      if ((searchParams != null && searchParams.isNotEmpty) ||
+          hasHasParams ||
+          compartment != null ||
+          filterIds != null) {
+        totalCount = await dbInterface.searchCount(
+          resourceType: type,
+          searchParameters: searchParams,
+          hasParameters: hasParams,
+          compartment: compartment,
+          ids: filterIds,
+        );
       } else {
-        // The client's own `_id` narrows the filter's ids: intersect, which
-        // is the AND the two parameters mean together.
-        final allowed = existing.expand((value) => value.split(',')).toSet();
-        final both = filterIds.intersection(allowed);
-        if (both.isEmpty) {
-          return _emptySearchBundle(request, total, links);
-        }
-        effectiveSearchParams['_id'] = [both.join(',')];
+        totalCount = await dbInterface.getResourceCount(type);
       }
+      final bundle = fhir.Bundle(
+        type: fhir.BundleType.searchset,
+        total: fhir.FhirUnsignedInt(totalCount),
+        link: [links.self(request.requestedUri)],
+      );
+      return Response.ok(
+        bundle.toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
     }
+
+    final effectiveSearchParams = searchParams;
 
     // Use search if search parameters, _has params, or _sort are provided
     final List<fhir.Resource> resources;
@@ -600,7 +586,11 @@ Future<Response> _searchResources(
     // for no total to page; the link is what pages.
     final probeCount = count > 0 ? count + 1 : count;
     final List<fhir.Resource> fetched;
-    if (hasSearchParams || hasHasParams || hasSort || compartment != null) {
+    if (hasSearchParams ||
+        hasHasParams ||
+        hasSort ||
+        compartment != null ||
+        filterIds != null) {
       // Use search functionality
       fetched = await dbInterface.search(
         resourceType: type,
@@ -610,6 +600,7 @@ Future<Response> _searchResources(
         offset: offset,
         sort: sort,
         compartment: compartment,
+        ids: filterIds,
       );
     } else {
       // Fall back to simple pagination if no search parameters
@@ -630,12 +621,16 @@ Future<Response> _searchResources(
     // _total=none: skip count entirely, _total=estimate: use same as accurate
     int? totalCount;
     if (total != 'none') {
-      if (hasSearchParams || hasHasParams || compartment != null) {
+      if (hasSearchParams ||
+          hasHasParams ||
+          compartment != null ||
+          filterIds != null) {
         totalCount = await dbInterface.searchCount(
           resourceType: type,
           searchParameters: effectiveSearchParams,
           hasParameters: hasParams,
           compartment: compartment,
+          ids: filterIds,
         );
       } else {
         totalCount = await dbInterface.getResourceCount(type);

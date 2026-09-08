@@ -840,12 +840,14 @@ class FhirAntDb extends FhirDb {
     Map<String, List<String>>? searchParameters,
     List<HasParameter>? hasParameters,
     CompartmentScope? compartment,
+    Set<String>? ids,
   }) =>
       fhirDao.searchIds(
         resourceType: resourceType,
         searchParameters: searchParameters,
         hasParameters: hasParameters,
         compartment: compartment,
+        ids: ids,
       );
 
   Future<List<fhir.Resource>> search({
@@ -856,6 +858,7 @@ class FhirAntDb extends FhirDb {
     int? offset,
     List<String>? sort,
     CompartmentScope? compartment,
+    Set<String>? ids,
   }) =>
       fhirDao.search(
         resourceType: resourceType,
@@ -865,6 +868,7 @@ class FhirAntDb extends FhirDb {
         offset: offset,
         sort: sort,
         compartment: compartment,
+        ids: ids,
       );
 
   Future<int> searchCount({
@@ -872,12 +876,14 @@ class FhirAntDb extends FhirDb {
     Map<String, List<String>>? searchParameters,
     List<HasParameter>? hasParameters,
     CompartmentScope? compartment,
+    Set<String>? ids,
   }) =>
       fhirDao.searchCount(
         resourceType: resourceType,
         searchParameters: searchParameters,
         hasParameters: hasParameters,
         compartment: compartment,
+        ids: ids,
       );
 
   /// The `(type, id)` targets of a reference search parameter on the given
