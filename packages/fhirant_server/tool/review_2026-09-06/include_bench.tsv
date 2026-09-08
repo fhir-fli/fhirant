@@ -1,0 +1,7 @@
+label	case	ms	matches	includes	outcomes	rss_mb	rss_open_mb
+old	include	237	100	2	0	1515	1496
+old	revinclude	5820	5	21489	0	1709	1510
+old	include500	650	500	2	0	1570	1533
+new	include	225	100	2	0	1507	1488
+new	include500	633	500	2	0	1541	1506
+new	revinclude	1368	5	1000	1	1553	1493

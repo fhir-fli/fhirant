@@ -629,6 +629,15 @@ void main() {
           'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10',
         ),
       );
+      when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
+        final type = i.positionalArguments[0] as fhir.R4ResourceType;
+        final out = <fhir.Resource>[];
+        for (final id in i.positionalArguments[1] as Iterable<String>) {
+          final r = await mockDb.getResource(type, id);
+          if (r != null) out.add(r);
+        }
+        return out;
+      });
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -709,6 +718,15 @@ void main() {
           'http://localhost:8080/Patient?_revinclude=Observation:subject&_count=10',
         ),
       );
+      when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
+        final type = i.positionalArguments[0] as fhir.R4ResourceType;
+        final out = <fhir.Resource>[];
+        for (final id in i.positionalArguments[1] as Iterable<String>) {
+          final r = await mockDb.getResource(type, id);
+          if (r != null) out.add(r);
+        }
+        return out;
+      });
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -722,6 +740,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
+          count: any(named: 'count'),
           searchParameters: {
             'subject': ['Patient/pt-rev-1'],
           },
@@ -780,6 +799,15 @@ void main() {
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse('http://localhost:8080/Patient?_include=Patient:*&_count=10'),
       );
+      when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
+        final type = i.positionalArguments[0] as fhir.R4ResourceType;
+        final out = <fhir.Resource>[];
+        for (final id in i.positionalArguments[1] as Iterable<String>) {
+          final r = await mockDb.getResource(type, id);
+          if (r != null) out.add(r);
+        }
+        return out;
+      });
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -855,6 +883,15 @@ void main() {
           'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10',
         ),
       );
+      when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
+        final type = i.positionalArguments[0] as fhir.R4ResourceType;
+        final out = <fhir.Resource>[];
+        for (final id in i.positionalArguments[1] as Iterable<String>) {
+          final r = await mockDb.getResource(type, id);
+          if (r != null) out.add(r);
+        }
+        return out;
+      });
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -953,6 +990,15 @@ void main() {
           'http://localhost:8080/Patient?_revinclude=Encounter:subject&_revinclude:iterate=Observation:encounter&_count=10',
         ),
       );
+      when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
+        final type = i.positionalArguments[0] as fhir.R4ResourceType;
+        final out = <fhir.Resource>[];
+        for (final id in i.positionalArguments[1] as Iterable<String>) {
+          final r = await mockDb.getResource(type, id);
+          if (r != null) out.add(r);
+        }
+        return out;
+      });
       when(
         () => mockDb.getResourcesWithPagination(
           resourceType: fhir.R4ResourceType.Patient,
@@ -966,6 +1012,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Encounter,
+          count: any(named: 'count'),
           searchParameters: {
             'subject': ['Patient/pt-reviter-1'],
           },
@@ -974,6 +1021,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
+          count: any(named: 'count'),
           searchParameters: {
             'encounter': ['Encounter/enc-reviter-1'],
           },
@@ -983,6 +1031,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Observation,
+          count: any(named: 'count'),
           searchParameters: {
             'encounter': ['Observation/obs-reviter-1'],
           },

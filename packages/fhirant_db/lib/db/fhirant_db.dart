@@ -814,6 +814,14 @@ class FhirAntDb extends FhirDb {
     return row.read<int>('c');
   }
 
+  /// The resources with these ids that exist, in id order, in `IN (...)`
+  /// chunks; see `FhirDao.getResources`.
+  Future<List<fhir.Resource>> getResources(
+    fhir.R4ResourceType resourceType,
+    Iterable<String> ids,
+  ) =>
+      fhirDao.getResources(resourceType, ids);
+
   /// The matching ids and nothing else read; see `FhirDao.searchIds`.
   Future<Set<String>> searchIds({
     required fhir.R4ResourceType resourceType,

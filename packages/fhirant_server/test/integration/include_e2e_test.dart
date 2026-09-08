@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/handlers/resource_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -157,6 +158,56 @@ void main() {
       '/Patient?family=Inc&_revinclude=Provenance:target:Organization',
     );
     expect(entriesOf(none, 'include'), isEmpty);
+  });
+
+  group('the page carries at most maxIncluded included resources (finding 39)',
+      () {
+    late int previous;
+    setUp(() => previous = maxIncluded);
+    tearDown(() => maxIncluded = previous);
+
+    test('_revinclude past the bound: the first ones, and an outcome entry',
+        () async {
+      maxIncluded = 2;
+      final b =
+          await get('/Patient?family=Inc&_revinclude=Observation:subject');
+      expect(entriesOf(b, 'match'), ['Patient/p1', 'Patient/p2']);
+      expect(entriesOf(b, 'include'), hasLength(2));
+      final outcomes = (b['entry'] as List)
+          .cast<Map<String, dynamic>>()
+          .where((e) => e['search']?['mode'] == 'outcome')
+          .toList();
+      expect(outcomes, hasLength(1));
+      final issue = (outcomes.single['resource']['issue'] as List).single
+          as Map<String, dynamic>;
+      expect(issue['code'], 'too-costly');
+      expect(issue['severity'], 'warning');
+      expect(issue['diagnostics'], contains('first 2 included'));
+    });
+
+    test('_include past the bound: the first ones, and an outcome entry',
+        () async {
+      maxIncluded = 1;
+      final b = await get('/Observation?_include=Observation:subject');
+      expect(entriesOf(b, 'include'), hasLength(1));
+      expect(
+        (b['entry'] as List)
+            .cast<Map<String, dynamic>>()
+            .where((e) => e['search']?['mode'] == 'outcome'),
+        hasLength(1),
+      );
+    });
+
+    test('within the bound there is no outcome entry', () async {
+      final b =
+          await get('/Patient?family=Inc&_revinclude=Observation:subject');
+      expect(
+        (b['entry'] as List)
+            .cast<Map<String, dynamic>>()
+            .where((e) => e['search']?['mode'] == 'outcome'),
+        isEmpty,
+      );
+    });
   });
 
   test('each page carries its own includes (3.1.1.5.7)', () async {

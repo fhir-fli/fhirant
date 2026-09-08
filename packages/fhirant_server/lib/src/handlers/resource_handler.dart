@@ -12,6 +12,7 @@ import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler to fetch all resources of a given type
@@ -703,17 +704,22 @@ Future<Response> _searchResources(
       );
     }
 
-    // Process _include and _revinclude parameters
+    // Process _include and _revinclude parameters. The page carries at most
+    // [maxIncluded] included resources; past that, the rest are left out and
+    // an OperationOutcome entry says so (see [_includeBudgetOutcome]).
     final includedResources = <fhir.Resource>[];
     final includedResourceIds = <String>{};
+    var includesTruncated = false;
+    int remaining() => maxIncluded - includedResources.length;
 
     if (include != null && include.isNotEmpty) {
-      await _processIncludes(
+      includesTruncated |= await _processIncludes(
         include,
         resources,
         includedResources,
         includedResourceIds,
         dbInterface,
+        limit: remaining(),
       );
     }
 
@@ -722,15 +728,20 @@ Future<Response> _searchResources(
     if (includeIterate != null && includeIterate.isNotEmpty) {
       var newlyIncluded = List<fhir.Resource>.from(includedResources);
       for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+        if (remaining() <= 0) {
+          includesTruncated = true;
+          break;
+        }
         final nextBatch = <fhir.Resource>[];
         final nextBatchIds = <String>{};
-        await _processIncludes(
+        includesTruncated |= await _processIncludes(
           includeIterate,
           newlyIncluded,
           nextBatch,
           nextBatchIds,
           dbInterface,
           existingIds: includedResourceIds,
+          limit: remaining(),
         );
         if (nextBatch.isEmpty) break;
         includedResources.addAll(nextBatch);
@@ -740,12 +751,13 @@ Future<Response> _searchResources(
     }
 
     if (revinclude != null && revinclude.isNotEmpty) {
-      await _processRevIncludes(
+      includesTruncated |= await _processRevIncludes(
         revinclude,
         resources,
         includedResources,
         includedResourceIds,
         dbInterface,
+        limit: remaining(),
       );
     }
 
@@ -754,15 +766,20 @@ Future<Response> _searchResources(
     if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
       var newlyIncluded = List<fhir.Resource>.from(includedResources);
       for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+        if (remaining() <= 0) {
+          includesTruncated = true;
+          break;
+        }
         final nextBatch = <fhir.Resource>[];
         final nextBatchIds = <String>{};
-        await _processRevIncludes(
+        includesTruncated |= await _processRevIncludes(
           revincludeIterate,
           newlyIncluded,
           nextBatch,
           nextBatchIds,
           dbInterface,
           existingIds: includedResourceIds,
+          limit: remaining(),
         );
         if (nextBatch.isEmpty) break;
         includedResources.addAll(nextBatch);
@@ -819,7 +836,11 @@ Future<Response> _searchResources(
 
     final bundle = fhir.Bundle(
       type: fhir.BundleType.searchset,
-      entry: [...matchEntries, ...includeEntries],
+      entry: [
+        ...matchEntries,
+        ...includeEntries,
+        if (includesTruncated) _includeBudgetOutcome(),
+      ],
       total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
       link: bundleLinks,
     );
@@ -858,6 +879,40 @@ Future<Response> _searchResources(
   }
 }
 
+/// The most included resources one page carries, across `_include`,
+/// `_revinclude` and their `:iterate` rounds. A thousand is a choice, not a
+/// specification number. R4B search.html 3.1.1.5.4, read 2026-09-08: "both
+/// clients and servers need to take care not to request or return too many
+/// resources when doing this" and "Servers are expected to limit the number
+/// of iterations done to an appropriate level and are not obliged to honor
+/// requests to include additional resources in the search results." A
+/// `_revinclude=Observation:patient` on a page of five MIMIC patients used to
+/// read and return every one of their 21,000 Observations
+/// (REVIEW-2026-09-06 finding 39).
+@visibleForTesting
+int maxIncluded = 1000;
+
+/// The entry that tells the client the page's includes were cut at
+/// [maxIncluded]. `search.mode=outcome` is, per the search-entry-mode code
+/// system read from the R4B core package 2026-09-08, "An OperationOutcome
+/// that provides additional information about the processing of a search";
+/// `too-costly` is "The operation was stopped to protect server resources".
+fhir.BundleEntry _includeBudgetOutcome() => fhir.BundleEntry(
+      resource: fhir.OperationOutcome(
+        issue: [
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.warning,
+            code: fhir.IssueType.tooCostly,
+            diagnostics: 'This page carries the first $maxIncluded included '
+                    'resources; the rest were left out. Narrow the page with '
+                    '_count or the include with a target type.'
+                .toFhirString,
+          ),
+        ],
+      ),
+      search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.outcome),
+    );
+
 /// `_include`: for each `[source type]:[parameter][:target type]`, the
 /// resources the matches' reference parameter points at, added with
 /// `search.mode=include`.
@@ -879,15 +934,22 @@ Future<Response> _searchResources(
 /// parameter of type=reference". "If there is no reference, or no matching
 /// resource, the resource cannot be retrieved (e.g. on a different server),
 /// then the resource is omitted, and no error is returned."
-Future<void> _processIncludes(
+///
+/// Adds at most [limit] resources and returns whether any were left out.
+/// The targets are read per type in one `IN (...)` call each
+/// (`getResources`); this used to read them one by one.
+Future<bool> _processIncludes(
   List<String> includeSpecs,
   List<fhir.Resource> sourceResources,
   List<fhir.Resource> includedResources,
   Set<String> includedResourceIds,
   FhirAntDb dbInterface, {
   Set<String>? existingIds,
+  int limit = 1 << 30,
 }) async {
   final allIds = existingIds ?? includedResourceIds;
+  var added = 0;
+  var truncated = false;
 
   // Sources by type: an include spec names the type it joins from.
   final sourceIdsByType = <String, List<String>>{};
@@ -912,25 +974,45 @@ Future<void> _processIncludes(
       parameter: parameter,
       targetType: targetTypeFilter,
     );
-    final sorted = targets.toList()
-      ..sort(
-        (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2),
-      );
-    for (final (refType, refId) in sorted) {
-      final refTypeEnum = fhir.R4ResourceType.fromString(refType);
-      if (refTypeEnum == null) continue;
+    // New targets, grouped by type, in (type, id) order.
+    final wanted = <String, List<String>>{};
+    for (final (refType, refId) in targets) {
       final compositeKey = '$refType/$refId';
       if (allIds.contains(compositeKey) ||
           includedResourceIds.contains(compositeKey)) {
         continue;
       }
-      final refResource = await dbInterface.getResource(refTypeEnum, refId);
-      if (refResource != null) {
-        includedResources.add(refResource);
-        includedResourceIds.add(compositeKey);
+      (wanted[refType] ??= <String>[]).add(refId);
+    }
+    for (final refType in wanted.keys.toList()..sort()) {
+      final refTypeEnum = fhir.R4ResourceType.fromString(refType);
+      if (refTypeEnum == null) continue;
+      final ids = wanted[refType]!..sort();
+      if (added >= limit) {
+        truncated = true;
+        break;
       }
+      // One read per type, the ids cut to what the budget still allows
+      // (a target that does not exist costs nothing, so a short read may be
+      // followed by another for the rest).
+      var from = 0;
+      while (from < ids.length && added < limit) {
+        final take =
+            ids.sublist(from, (from + (limit - added)).clamp(0, ids.length));
+        from += take.length;
+        for (final refResource
+            in await dbInterface.getResources(refTypeEnum, take)) {
+          final compositeKey = '$refType/${refResource.id?.valueString}';
+          if (includedResourceIds.contains(compositeKey)) continue;
+          includedResources.add(refResource);
+          includedResourceIds.add(compositeKey);
+          added++;
+        }
+      }
+      if (from < ids.length) truncated = true;
     }
   }
+  return truncated;
 }
 
 /// `_revinclude`: for each `[type]:[parameter][:target type]`, the resources
@@ -944,15 +1026,22 @@ Future<void> _processIncludes(
 /// and returned nothing for any page with more than one match. The optional
 /// third part names the target type the parameter must point at, which is
 /// the matches' type; a spec naming another type adds nothing.
-Future<void> _processRevIncludes(
+///
+/// Adds at most [limit] resources and returns whether any were left out:
+/// each spec's search asks for one more than the budget, so the store never
+/// reads more than the page can carry (it used to read every referrer).
+Future<bool> _processRevIncludes(
   List<String> revincludeSpecs,
   List<fhir.Resource> sourceResources,
   List<fhir.Resource> includedResources,
   Set<String> includedResourceIds,
   FhirAntDb dbInterface, {
   Set<String>? existingIds,
+  int limit = 1 << 30,
 }) async {
   final allIds = existingIds ?? includedResourceIds;
+  var added = 0;
+  var truncated = false;
 
   // The matches' references, by their type, so a target-type filter can pick.
   final refsByType = <String, List<String>>{};
@@ -977,11 +1066,16 @@ Future<void> _processRevIncludes(
         : (refsByType[targetTypeFilter] ?? const <String>[]);
     if (refs.isEmpty) continue;
 
+    if (added >= limit) {
+      truncated = true;
+      break;
+    }
     final revincludeResults = await dbInterface.search(
       resourceType: revincludeType,
       searchParameters: {
         revincludeSearchParam: [refs.join(',')],
       },
+      count: limit - added + 1,
     );
 
     for (final revResource in revincludeResults) {
@@ -990,11 +1084,17 @@ Future<void> _processRevIncludes(
       final compositeKey = '$revType/$revId';
       if (!allIds.contains(compositeKey) &&
           !includedResourceIds.contains(compositeKey)) {
+        if (added >= limit) {
+          truncated = true;
+          break;
+        }
         includedResources.add(revResource);
         includedResourceIds.add(compositeKey);
+        added++;
       }
     }
   }
+  return truncated;
 }
 
 /// Handler to create a resource of a given type
