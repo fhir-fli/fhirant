@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fhirant/src/state/server_state.dart';
+import 'package:fhirant_db/fhirant_db.dart' show BackupSchemaTooNew;
 import 'package:fhirant_server/fhirant_server.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -115,17 +116,20 @@ class _BackupCardState extends State<BackupCard> {
     setState(() => _busy = true);
     try {
       final db = context.read<ServerState>().db;
-      final envelope = await BackupService.create(db, passphrase);
-
       final stamp = DateTime.now()
           .toIso8601String()
           .replaceAll(':', '-')
           .split('.')
           .first;
-      final file = File(
-        '${(await getTemporaryDirectory()).path}/fhirant-backup-$stamp.json',
+      // The whole database as one SQLite file encrypted under the
+      // passphrase, streamed by SQLite. The Bundle-in-JSON envelope this
+      // replaced was built in memory and could not reach a real store's
+      // size (REVIEW-2026-09-06 finding 33; 215 s for 7 GB measured).
+      final file = await BackupService.createFile(
+        db,
+        passphrase,
+        '${(await getTemporaryDirectory()).path}/fhirant-backup-$stamp.sqlite',
       );
-      await file.writeAsString(envelope);
 
       // The share sheet is what makes the file reach anywhere useful: another
       // phone, an SD card, a laptop. Writing to app storage alone would leave
@@ -148,13 +152,15 @@ class _BackupCardState extends State<BackupCard> {
     final path = picked?.files.single.path;
     if (path == null || !mounted) return;
 
-    final payload = await File(path).readAsString();
-    if (!mounted) return;
-
     // Only ask for a passphrase when the file actually needs one: a plain
-    // FHIR Bundle produced elsewhere restores without it.
+    // FHIR Bundle produced elsewhere restores without it. An encrypted
+    // SQLite backup and an encrypted envelope both need one.
+    final isJson = await BackupService.isJsonFile(path);
+    final needsPassphrase =
+        !isJson || BackupService.isEncrypted(await File(path).readAsString());
+    if (!mounted) return;
     String? passphrase;
-    if (BackupService.isEncrypted(payload)) {
+    if (needsPassphrase) {
       passphrase = await showDialog<String>(
         context: context,
         builder: (_) => const _PassphraseDialog(confirming: false),
@@ -165,9 +171,9 @@ class _BackupCardState extends State<BackupCard> {
     setState(() => _busy = true);
     try {
       final db = context.read<ServerState>().db;
-      final result = await BackupService.restore(
+      final result = await BackupService.restoreFile(
         db,
-        payload,
+        path,
         passphrase: passphrase,
       );
       _say(
@@ -183,6 +189,8 @@ class _BackupCardState extends State<BackupCard> {
         'altered.',
         error: true,
       );
+    } on BackupSchemaTooNew catch (e) {
+      _say(e.toString(), error: true);
     } on BackupPassphraseRequired catch (e) {
       _say(e.message, error: true);
     } on FormatException catch (e) {

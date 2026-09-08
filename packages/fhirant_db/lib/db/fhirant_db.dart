@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
 import 'package:fhirant_db/db/server_types.dart';
+import 'package:sqlite3/sqlite3.dart' show sqlite3;
 
 /// FHIR ANT server database.
 ///
@@ -325,6 +327,234 @@ class FhirAntDb extends FhirDb {
       )
     ''');
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Backup: the whole database as one passphrase-encrypted SQLite file
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// The cipher scheme every FHIRant database and backup is written with.
+  static const cipherScheme = 'sqlcipher';
+
+  /// Writes every table of this database to [path] as a SQLite file
+  /// encrypted under [passphrase], streamed by SQLite: `ATTACH … KEY` then
+  /// `INSERT INTO bk.t SELECT * FROM main.t` per table, `user_version`
+  /// carried across. No indexes: they are derived, [restoreEncrypted] reads
+  /// the tables and never the indexes, and building them was half the time
+  /// and all the memory (measured 2026-09-07 on the 6.98 GB MIMIC store:
+  /// the table copies held 226 MB resident throughout, the index builds
+  /// took the process to 707 MB and the file to 6.98 GB; without them the
+  /// whole store is written in 41 s as a 4.08 GB file). A backup opened
+  /// directly as a database gets its indexes from [createValueIndexes].
+  ///
+  /// This is the device-to-device path. The database is encrypted at rest
+  /// under a key sealed in platform secure storage, which cannot travel; a
+  /// passphrase is the only thing a replacement device can hold. The key is
+  /// derived by the cipher (SQLCipher-4 scheme, PBKDF2-HMAC-SHA512 with its
+  /// default iteration count) and the file opens as a database with it.
+  ///
+  /// The Bundle-in-JSON export this replaces was measured at 51.8 s and
+  /// 548 MB of memory per 50 MB of resources (REVIEW-2026-09-06 finding
+  /// 33), which does not reach a real store's size at all. `VACUUM INTO`
+  /// was tried first: under sqlite3mc the copy keeps the SOURCE key, which
+  /// is the point of not using it.
+  ///
+  /// [path] must not exist. [passphrase] must not be empty.
+  Future<void> copyEncrypted(String path, String passphrase) async {
+    if (passphrase.isEmpty) {
+      throw ArgumentError.value(passphrase, 'passphrase', 'must not be empty');
+    }
+    if (File(path).existsSync()) {
+      throw ArgumentError.value(path, 'path', 'already exists');
+    }
+    await _requireCipher();
+    await customStatement(
+      "ATTACH DATABASE '${_sqlLiteral(path)}' AS bk "
+      "KEY '${_sqlLiteral(passphrase)}'",
+    );
+    try {
+      final objects = await customSelect(
+        "SELECT name, sql FROM main.sqlite_master WHERE type = 'table' "
+        "AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      ).get();
+      for (final o in objects) {
+        final name = o.read<String>('name');
+        await customStatement(_schemaIn('bk', name, o.read<String>('sql')));
+        await customStatement(
+          'INSERT INTO bk."$name" SELECT * FROM main."$name"',
+        );
+      }
+      final version =
+          await customSelect('PRAGMA main.user_version').getSingle();
+      await customStatement(
+        'PRAGMA bk.user_version = ${version.data.values.first}',
+      );
+    } finally {
+      await customStatement('DETACH DATABASE bk');
+    }
+  }
+
+  /// Merges the backup at [path], written by [copyEncrypted] under
+  /// [passphrase], into this database.
+  ///
+  /// The backup's resources win: `resources` rows replace, history merges,
+  /// the index rows of every restored resource (and of what it contained)
+  /// are replaced by the backup's. Everything else (accounts, OAuth client
+  /// pins, revoked tokens, export jobs, logs, sync and canonical stores) is
+  /// merged with the local rows winning on a key clash, so restoring onto a
+  /// device that already has accounts keeps them. On a replacement device
+  /// every table is empty and the result is the backup, byte for byte.
+  ///
+  /// A backup written by an older schema is upgraded first, in place, by
+  /// opening it as a [FhirAntDb]; one from a newer schema is refused
+  /// ([BackupSchemaTooNew]). A wrong passphrase, or a file that is not a
+  /// backup, is [BackupUnreadable]. Returns the number of resources
+  /// restored.
+  Future<int> restoreEncrypted(String path, String passphrase) async {
+    if (passphrase.isEmpty) {
+      throw ArgumentError.value(passphrase, 'passphrase', 'must not be empty');
+    }
+    if (!File(path).existsSync()) {
+      throw ArgumentError.value(path, 'path', 'does not exist');
+    }
+    await _requireCipher();
+    // The passphrase and the schema version, read raw: drift stamps its own
+    // version on open, so a newer backup would look current by then.
+    final int version;
+    try {
+      final raw = sqlite3.open(path)
+        ..execute("PRAGMA cipher = '$cipherScheme'")
+        ..execute("PRAGMA key = '${_sqlLiteral(passphrase)}'");
+      try {
+        version = raw.select('PRAGMA user_version').first.values.first! as int;
+      } finally {
+        raw.close();
+      }
+    } catch (e) {
+      throw BackupUnreadable('$e');
+    }
+    if (version > schemaVersion) {
+      throw BackupSchemaTooNew(version, schemaVersion);
+    }
+    if (version < schemaVersion) {
+      // Upgrade the backup to this schema, in place, before merging it.
+      final backup = FhirAntDb(
+        NativeDatabase(
+          File(path),
+          setup: (raw) {
+            raw
+              ..execute("PRAGMA cipher = '$cipherScheme'")
+              ..execute("PRAGMA key = '${_sqlLiteral(passphrase)}'");
+          },
+        ),
+      );
+      try {
+        await backup.customSelect('PRAGMA user_version').getSingle();
+      } finally {
+        await backup.close();
+      }
+    }
+
+    await customStatement(
+      "ATTACH DATABASE '${_sqlLiteral(path)}' AS bk "
+      "KEY '${_sqlLiteral(passphrase)}'",
+    );
+    try {
+      final tables = (await customSelect(
+        "SELECT name FROM main.sqlite_master WHERE type = 'table' "
+        "AND name NOT LIKE 'sqlite_%'",
+      ).get())
+          .map((r) => r.read<String>('name'))
+          .toSet();
+      final backupTables = (await customSelect(
+        "SELECT name FROM bk.sqlite_master WHERE type = 'table' "
+        "AND name NOT LIKE 'sqlite_%'",
+      ).get())
+          .map((r) => r.read<String>('name'))
+          .toSet();
+      const searchTables = FhirDb.searchTableNames;
+      final restored = await transaction(() async {
+        // The restored resources' own index rows, and those of anything
+        // they contain, go; the backup's come in their place.
+        for (final table in searchTables) {
+          if (!backupTables.contains(table)) continue;
+          await customStatement(
+            'DELETE FROM main."$table" WHERE (resource_type, id) IN '
+            '(SELECT resource_type, id FROM bk.resources)',
+          );
+          await customStatement(
+            'DELETE FROM main."$table" WHERE rowid IN ( '
+            'SELECT x.rowid FROM main."$table" x JOIN bk.resources r '
+            "ON x.id >= r.resource_type || '/' || r.id || '#' "
+            r"AND x.id < r.resource_type || '/' || r.id || '$' "
+            "WHERE x.resource_type LIKE '#%')",
+          );
+          await customStatement(
+            'INSERT INTO main."$table" SELECT * FROM bk."$table"',
+          );
+        }
+        await customStatement(
+          'INSERT OR REPLACE INTO main.resources SELECT * FROM bk.resources',
+        );
+        for (final table in tables) {
+          if (table == 'resources' ||
+              searchTables.contains(table) ||
+              !backupTables.contains(table)) {
+            continue;
+          }
+          await customStatement(
+            'INSERT OR IGNORE INTO main."$table" SELECT * FROM bk."$table"',
+          );
+        }
+        final n = await customSelect('SELECT count(*) AS c FROM bk.resources')
+            .getSingle();
+        return n.read<int>('c');
+      });
+      await customStatement('ANALYZE');
+      return restored;
+    } finally {
+      await customStatement('DETACH DATABASE bk');
+    }
+  }
+
+  /// Refuses to go on when this SQLite build has no cipher.
+  ///
+  /// On plain SQLite `PRAGMA cipher`, `PRAGMA key` and `ATTACH … KEY` parse
+  /// and do nothing, so a backup would be written in the clear and reported
+  /// as encrypted. The server and the app are built on sqlite3mc (the build
+  /// hook in their pubspecs); this package's own tests are not, which is
+  /// where this was found. sqlite3mc answers `PRAGMA cipher` with the scheme;
+  /// plain SQLite answers with no row.
+  Future<void> _requireCipher() async {
+    await customStatement("PRAGMA cipher = '$cipherScheme'");
+    final rows = await customSelect('PRAGMA cipher').get();
+    if (rows.isEmpty) {
+      throw const NoCipherInThisBuild();
+    }
+  }
+
+  /// A CREATE TABLE / CREATE INDEX statement from `sqlite_master`, rewritten
+  /// to create the same object in schema [schema]. Only the object's own
+  /// name moves; an index's `ON table` stays bare, which SQLite resolves in
+  /// the index's schema.
+  static String _schemaIn(String schema, String name, String sql) {
+    final escaped = RegExp.escape(name);
+    final table = RegExp('^CREATE TABLE\\s+(IF NOT EXISTS\\s+)?"?$escaped"?');
+    if (table.hasMatch(sql)) {
+      return sql.replaceFirst(table, 'CREATE TABLE $schema."$name"');
+    }
+    final index = RegExp(
+      '^CREATE (UNIQUE )?INDEX\\s+(IF NOT EXISTS\\s+)?"?$escaped"?',
+    );
+    if (index.hasMatch(sql)) {
+      return sql.replaceFirstMapped(
+        index,
+        (m) => 'CREATE ${m.group(1) ?? ''}INDEX $schema."$name"',
+      );
+    }
+    throw StateError('unexpected schema object: $sql');
+  }
+
+  static String _sqlLiteral(String value) => value.replaceAll("'", "''");
 
   // ──────────────────────────────────────────────────────────────────────────
   // FHIR Delegation — maintain existing API surface
@@ -959,4 +1189,46 @@ class FhirAntDb extends FhirDb {
       // Note: Logs are intentionally NOT cleared to maintain audit trail
     });
   }
+}
+
+/// The backup was written by a newer FHIRant than this one.
+class BackupSchemaTooNew implements Exception {
+  /// Creates the refusal for a backup at [backupVersion].
+  const BackupSchemaTooNew(this.backupVersion, this.thisVersion);
+
+  /// The backup's schema version.
+  final int backupVersion;
+
+  /// This database's schema version.
+  final int thisVersion;
+
+  @override
+  String toString() =>
+      'This backup was made by a newer FHIRant (schema $backupVersion; this '
+      'one is $thisVersion). Update the app, then restore.';
+}
+
+/// The passphrase does not open the file, or it is not a FHIRant backup.
+class BackupUnreadable implements Exception {
+  /// Creates the failure with the cipher's message.
+  const BackupUnreadable(this.detail);
+
+  /// What SQLite said.
+  final String detail;
+
+  @override
+  String toString() =>
+      'That passphrase does not open this file, or the file is not a FHIRant '
+      'backup.';
+}
+
+/// This SQLite build has no cipher, so nothing here can be encrypted.
+class NoCipherInThisBuild implements Exception {
+  /// Creates the refusal.
+  const NoCipherInThisBuild();
+
+  @override
+  String toString() =>
+      'This build of SQLite has no cipher (PRAGMA cipher answers nothing): a '
+      'backup would be written in the clear, so none is written.';
 }

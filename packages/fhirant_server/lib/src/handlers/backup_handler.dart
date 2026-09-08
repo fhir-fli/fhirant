@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -20,12 +22,19 @@ import 'package:shelf/shelf.dart';
 /// `{"resourceType":"Parameters","parameter":[{"name":"passphrase",
 /// "valueString":"…"}]}`. In the body rather than the query string on purpose
 /// — request URIs are written to the server log.
+///
+/// The response is the whole database as one SQLite file encrypted under the
+/// passphrase (`application/vnd.sqlite3`, streamed), the shape that scales
+/// (REVIEW-2026-09-06 finding 33). A `format` parameter of `bundle` asks
+/// for the older Bundle-in-JSON envelope instead, which is built in memory
+/// and is for small stores and interop.
 Future<Response> backupHandler(
   Request request,
   FhirAntDb dbInterface,
 ) async {
   try {
-    final passphrase = await _readPassphrase(request);
+    final params = await _readParameters(request);
+    final passphrase = params['passphrase'];
     if (passphrase == null || passphrase.isEmpty) {
       return _outcome(
         400,
@@ -35,9 +44,36 @@ Future<Response> backupHandler(
         'the only thing that can decrypt it.',
       );
     }
+    if (params['format'] == 'bundle') {
+      return Response.ok(
+        await BackupService.create(dbInterface, passphrase),
+        headers: {'content-type': 'application/json'},
+      );
+    }
+    final dir = await Directory.systemTemp.createTemp('fhirant-backup-');
+    final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(':', '-');
+    final file = await BackupService.createFile(
+      dbInterface,
+      passphrase,
+      '${dir.path}/fhirant-backup-$stamp.sqlite',
+    );
+    // Streamed from disk; the temporary directory goes when the stream does.
+    final body = file.openRead().transform(
+      StreamTransformer<List<int>, List<int>>.fromHandlers(
+        handleDone: (sink) {
+          sink.close();
+          dir.delete(recursive: true).ignore();
+        },
+      ),
+    );
     return Response.ok(
-      await BackupService.create(dbInterface, passphrase),
-      headers: {'content-type': 'application/json'},
+      body,
+      headers: {
+        'content-type': 'application/vnd.sqlite3',
+        'content-length': '${file.lengthSync()}',
+        'content-disposition':
+            'attachment; filename="fhirant-backup-$stamp.sqlite"',
+      },
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Backup failed', e, stackTrace);
@@ -57,17 +93,22 @@ Future<Response> backupHandler(
   }
 }
 
-/// Handler for POST /$restore — imports resources from a FHIR Bundle.
+/// Handler for POST /$restore — restores a backup.
 ///
-/// Accepts a Bundle (type: collection or transaction) and upserts each
-/// entry's resource into the database.
+/// The body is the file: an encrypted SQLite backup from `$backup`, an
+/// encrypted Bundle envelope, or a plain FHIR Bundle (collection or
+/// transaction), told apart by its first byte. It is streamed to a
+/// temporary file first, so a multi-gigabyte backup never sits in memory.
 Future<Response> restoreHandler(
   Request request,
   FhirAntDb dbInterface,
 ) async {
+  Directory? dir;
   try {
-    final body = await request.readAsString();
-    if (body.isEmpty) {
+    dir = await Directory.systemTemp.createTemp('fhirant-restore-');
+    final upload = File('${dir.path}/upload');
+    await request.read().pipe(upload.openWrite());
+    if (upload.lengthSync() == 0) {
       return Response(
         400,
         body: jsonEncode(
@@ -89,11 +130,13 @@ Future<Response> restoreHandler(
     // BackupService and this handler is the HTTP shape around it.
     final BackupRestoreResult result;
     try {
-      result = await BackupService.restore(
+      result = await BackupService.restoreFile(
         dbInterface,
-        body,
+        upload.path,
         passphrase: _passphraseHeader(request),
       );
+    } on BackupSchemaTooNew catch (e) {
+      return _outcome(400, fhir.IssueType.notSupported, e.toString());
     } on BackupPassphraseRequired {
       return _outcome(
         400,
@@ -147,35 +190,39 @@ Future<Response> restoreHandler(
       body: jsonEncode(outcome.toJson()),
       headers: {'content-type': 'application/fhir+json'},
     );
+  } finally {
+    await dir?.delete(recursive: true);
   }
 }
 
-/// Reads the `passphrase` parameter from a Parameters body.
+/// Reads the string parameters of a Parameters body: `passphrase` and,
+/// optionally, `format`.
 ///
 /// Returns null when the body is absent, unparseable, or carries no such
 /// parameter — the caller turns all of those into the same "passphrase
 /// required" answer, so a malformed body cannot be mistaken for consent to an
 /// unencrypted export.
-Future<String?> _readPassphrase(Request request) async {
+Future<Map<String, String>> _readParameters(Request request) async {
   final body = await request.readAsString();
-  if (body.isEmpty) return null;
+  if (body.isEmpty) return const {};
 
   final Map<String, dynamic> json;
   try {
     json = jsonDecode(body) as Map<String, dynamic>;
   } catch (_) {
-    return null;
+    return const {};
   }
 
   final parameters = json['parameter'];
-  if (parameters is! List) return null;
-  for (final entry in parameters) {
-    if (entry is Map && entry['name'] == 'passphrase') {
-      final value = entry['valueString'];
-      if (value is String) return value;
-    }
+  if (parameters is! List) return const {};
+  final out = <String, String>{};
+  for (final p in parameters) {
+    if (p is! Map<String, dynamic>) continue;
+    final name = p['name'];
+    final value = p['valueString'] ?? p['valueCode'];
+    if (name is String && value is String) out[name] = value;
   }
-  return null;
+  return out;
 }
 
 Response _outcome(int status, fhir.IssueType code, String diagnostics) {

@@ -1,0 +1,10 @@
+step	ms	rss_mb	note
+open	0	932	
+createFile	203805	1162	6978076672 bytes
+reopen with passphrase	10466	1162	928935 resources
+open	0	889	
+createFile	182983	1095	6978076672 bytes
+reopen with passphrase	11093	1095	928935 resources
+open	0	905	
+createFile	41094	728	4080181248 bytes
+reopen with passphrase	751	729	928935 resources

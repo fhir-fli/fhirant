@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -35,6 +36,68 @@ class BackupService {
     }
     final json = jsonEncode((await bundle(db)).toJson());
     return BackupCrypto.encrypt(json, passphrase);
+  }
+
+  /// The whole database as one SQLite file encrypted under [passphrase],
+  /// written to [path] (which must not exist). See
+  /// [FhirAntDb.copyEncrypted]: streamed by SQLite, so a 7 GB store is a
+  /// matter of minutes and no memory, where [create]'s Bundle-in-JSON was
+  /// measured at 51.8 s and 548 MB per 50 MB (REVIEW-2026-09-06 finding
+  /// 33). The file restores with [restoreFile], or opens as a database.
+  static Future<File> createFile(
+    FhirAntDb db,
+    String passphrase,
+    String path,
+  ) async {
+    if (passphrase.isEmpty) {
+      throw const BackupPassphraseRequired(
+        'A backup cannot be created without a passphrase',
+      );
+    }
+    await db.copyEncrypted(path, passphrase);
+    return File(path);
+  }
+
+  /// Restores the file at [path]: an encrypted SQLite backup from
+  /// [createFile], an encrypted Bundle envelope from [create], or a plain
+  /// FHIR Bundle, told apart by the first byte (JSON starts with `{`; a
+  /// SQLCipher file starts with its random salt).
+  static Future<BackupRestoreResult> restoreFile(
+    FhirAntDb db,
+    String path, {
+    String? passphrase,
+  }) async {
+    if (await isJsonFile(path)) {
+      return restore(
+        db,
+        await File(path).readAsString(),
+        passphrase: passphrase,
+      );
+    }
+    if (passphrase == null || passphrase.isEmpty) {
+      throw const BackupPassphraseRequired(
+        'This backup is encrypted and cannot be read without its passphrase',
+      );
+    }
+    try {
+      final restored = await db.restoreEncrypted(path, passphrase);
+      return BackupRestoreResult(saved: restored, failures: const []);
+    } on BackupUnreadable catch (e) {
+      throw BackupDecryptionException(e.toString());
+    }
+  }
+
+  /// Whether the file's first non-blank byte is `{`: a Bundle or an
+  /// envelope rather than an encrypted database.
+  static Future<bool> isJsonFile(String path) async {
+    final file = File(path);
+    if (!file.existsSync() || file.lengthSync() == 0) return false;
+    final head = await file.openRead(0, 64).first;
+    for (final b in head) {
+      if (b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D) continue;
+      return b == 0x7B;
+    }
+    return false;
   }
 
   /// Every stored resource as a collection Bundle, unencrypted.

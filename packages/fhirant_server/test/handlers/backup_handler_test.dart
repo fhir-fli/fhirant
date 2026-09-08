@@ -13,7 +13,9 @@ class MockFhirAntDb extends Mock implements FhirAntDb {}
 const _passphrase = 'a passphrase the operator chose';
 
 /// A `\$backup` request carrying the passphrase, the way a caller must now
-/// send it.
+/// send it, asking for the Bundle envelope: these tests run against a mocked
+/// store, and the default, the encrypted database file, needs a real one
+/// (backup_file_e2e_test.dart).
 Request _backupRequest({String passphrase = _passphrase}) => Request(
       'POST',
       Uri.parse(r'http://localhost:8080/$backup'),
@@ -21,6 +23,7 @@ Request _backupRequest({String passphrase = _passphrase}) => Request(
         'resourceType': 'Parameters',
         'parameter': [
           {'name': 'passphrase', 'valueString': passphrase},
+          {'name': 'format', 'valueString': 'bundle'},
         ],
       }),
     );
@@ -198,7 +201,11 @@ void main() {
       expect((body['issue'] as List)[0]['diagnostics'], contains('empty'));
     });
 
-    test('returns 400 for invalid JSON', () async {
+    test(
+        'a body that is not JSON is taken for an encrypted file, and needs '
+        'its passphrase', () async {
+      // Nothing tells an encrypted database from noise without the
+      // passphrase, so the answer names the passphrase, not JSON.
       final request = Request(
         'POST',
         Uri.parse(r'http://localhost:8080/$restore'),
@@ -212,6 +219,24 @@ void main() {
       final body =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(body['resourceType'], equals('OperationOutcome'));
+      expect(
+        (body['issue'] as List)[0]['diagnostics'],
+        contains('passphrase'),
+      );
+    });
+
+    test('malformed JSON that starts like JSON is reported as invalid JSON',
+        () async {
+      final request = Request(
+        'POST',
+        Uri.parse(r'http://localhost:8080/$restore'),
+        body: '{not-json{{{',
+        headers: {'content-type': 'application/fhir+json'},
+      );
+      final response = await restoreHandler(request, mockDb);
+      expect(response.statusCode, equals(400));
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       expect(
         (body['issue'] as List)[0]['diagnostics'],
         contains('Invalid JSON'),

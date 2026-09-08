@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,103 tests** across 86 test files, all passing. Counted 2026-09-07 by
+**1,118 tests** across 89 test files, all passing. Counted 2026-09-07 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,8 +16,8 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 953 | 76 | `cd packages/fhirant_server && dart test` |
-| fhirant_db | 117 | 4 | `cd packages/fhirant_db && dart test` |
+| fhirant_server | 965 | 78 | `cd packages/fhirant_server && dart test` |
+| fhirant_db | 120 | 5 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 6 | 1 | `cd packages/fhirant_logging && dart test` |
@@ -92,6 +92,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/include_e2e_test.dart` | `_include`/`_revinclude` by search parameter through the reference index |
 | `test/integration/system_search_e2e_test.dart` | The all-types search: common-parameter rule, one page across types |
 | `test/integration/authorization_review_test.dart` | REVIEW-2026-09-06 §1: scope grant, refresh tokens, compartments, lockout, PKCE, pipeline order (19) |
+| `test/integration/backup_file_e2e_test.dart` | `$backup` as an encrypted SQLite file, streamed; `$restore` of that file, the envelope or a Bundle (4) |
 | `test/integration/integrity_review_test.dart` | REVIEW-2026-09-06 §3 at the HTTP surface: If-Match inside the write, stored resource returned, deleted-resource history and 410, meta kept on update (10) |
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
