@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -221,6 +221,11 @@ class FhirAntDb extends FhirDb {
             // serves the 14 and 17 steps.
             await dropLegacyValueIndexes();
             await rebuildSearchIndex();
+          }
+          if (from < 19) {
+            // fhir_r4_db schema 11: open number and quantity bounds are
+            // stored as ±infinity, so each prefix is one index range.
+            await storeOpenBoundsAsInfinity();
           }
         },
       );
