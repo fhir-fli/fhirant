@@ -554,12 +554,18 @@ Future<_BundleOperation> _processBundleEntry(
         final decoded = utf8.decode(base64Decode(data));
         patchOperations = jsonDecode(decoded) as List<dynamic>;
       } else if (patchResource.resourceTypeString == 'Parameters') {
-        patchOperations = convertFhirPatchToJsonPatch(patchResource.toJson());
+        // FHIRPath Patch is not implemented (REVIEW-2026-09-06 finding 23);
+        // the same refusal as PATCH on a resource.
+        throw BundleEntryException(
+          415,
+          'Bundle entry $entryIndex: FHIRPath Patch (a Parameters body) is '
+          'not supported; send a JSON Patch document as a Binary',
+        );
       } else {
         throw BundleEntryException(
           400,
-          'Bundle entry $entryIndex: PATCH document must be Binary '
-          'or Parameters',
+          'Bundle entry $entryIndex: PATCH document must be a Binary '
+          'carrying a JSON Patch document',
         );
       }
 

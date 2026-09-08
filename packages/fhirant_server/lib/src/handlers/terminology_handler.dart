@@ -351,6 +351,16 @@ Future<Response> expandHandler(
       }
     }
 
+    // What this server cannot expand is refused, not answered from the
+    // parts it can (REVIEW-2026-09-06 finding 24); an expansion already on
+    // the resource is authoritative and needs none of the compose.
+    if (valueSet.expansion?.contains == null) {
+      final unsupported = unsupportedCompose(valueSet);
+      if (unsupported != null) {
+        return _errorResponse(422, unsupported, code: 'not-supported');
+      }
+    }
+
     // If already has an expansion, optionally filter it
     if (valueSet.expansion?.contains != null &&
         valueSet.expansion!.contains!.isNotEmpty) {
@@ -667,7 +677,13 @@ Future<Response> _validateAgainstValueSet(
     );
   }
 
-  // 2. Check compose.include rules
+  // 2. Check compose.include rules. A compose this server cannot evaluate
+  // is refused rather than answered from the parts it can (REVIEW-2026-09-06
+  // finding 24).
+  final unsupported = unsupportedCompose(valueSet);
+  if (unsupported != null) {
+    return _errorResponse(422, unsupported, code: 'not-supported');
+  }
   if (valueSet.compose?.include != null) {
     for (final include in valueSet.compose!.include) {
       // Check if system matches
@@ -779,7 +795,7 @@ Response _validationResult({
   );
 }
 
-Response _errorResponse(int statusCode, String message) {
+Response _errorResponse(int statusCode, String message, {String? code}) {
   return Response(
     statusCode,
     body: jsonEncode({
@@ -787,7 +803,7 @@ Response _errorResponse(int statusCode, String message) {
       'issue': [
         {
           'severity': 'error',
-          'code': statusCode == 404 ? 'not-found' : 'invalid',
+          'code': code ?? (statusCode == 404 ? 'not-found' : 'invalid'),
           'diagnostics': message,
         }
       ],
@@ -1181,4 +1197,38 @@ bool _containsCode(List<fhir.CodeSystemConcept>? concepts, String code) {
     if (_containsCode(concept.concept, code)) return true;
   }
   return false;
+}
+
+/// Why this server cannot evaluate [valueSet]'s compose, or null when it
+/// can: it implements `include.concept` lists, whole-CodeSystem includes and
+/// `exclude.concept` lists. An `include.filter` (a property-based selection
+/// over the CodeSystem), an `include.valueSet` (a nested value set) and the
+/// same two on `exclude` are not implemented; answering as if they were
+/// absent expanded or validated against a different set than the one
+/// defined, silently.
+String? unsupportedCompose(fhir.ValueSet valueSet) {
+  final compose = valueSet.compose;
+  if (compose == null) return null;
+  final url = valueSet.url?.valueString ?? valueSet.id?.valueString ?? '?';
+  for (final include in compose.include) {
+    if (include.filter != null && include.filter!.isNotEmpty) {
+      return 'ValueSet $url uses compose.include.filter, which this server '
+          'does not implement';
+    }
+    if (include.valueSet != null && include.valueSet!.isNotEmpty) {
+      return 'ValueSet $url uses compose.include.valueSet, which this server '
+          'does not implement';
+    }
+  }
+  for (final exclude in compose.exclude ?? const <fhir.ValueSetInclude>[]) {
+    if (exclude.filter != null && exclude.filter!.isNotEmpty) {
+      return 'ValueSet $url uses compose.exclude.filter, which this server '
+          'does not implement';
+    }
+    if (exclude.valueSet != null && exclude.valueSet!.isNotEmpty) {
+      return 'ValueSet $url uses compose.exclude.valueSet, which this server '
+          'does not implement';
+    }
+  }
+  return null;
 }

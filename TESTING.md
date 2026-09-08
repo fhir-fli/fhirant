@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,168 tests** across 93 test files, all passing. Counted 2026-09-08 by
+**1,183 tests** across 95 test files, all passing. Counted 2026-09-08 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 988 | 81 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,003 | 83 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 127 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -66,7 +66,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/middleware/cors_middleware_test.dart` | CORS headers |
 | `test/middleware/content_negotiation_test.dart` | Accept/Content-Type handling |
 
-### fhirant_server — Utility Tests (5 files)
+### fhirant_server — Utility Tests (6 files)
 
 | File | Description |
 |------|-------------|
@@ -74,6 +74,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/smart_scopes_test.dart` | SMART scope parsing + enforcement |
 | `test/utils/password_hasher_test.dart` | bcrypt hashing |
 | `test/utils/password_policy_test.dart` | Password strength rules |
+| `test/utils/json_patch_test.dart` | RFC 6902 arrays: `-` appends, add inserts and shifts, replace overwrites, move to `-` (6) |
 | `test/utils/spec_loader_test.dart` | The specification loaded from an asset bundle in chunks, once (3) |
 
 ### fhirant_server — Service Tests (4 files)
@@ -85,7 +86,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/services/backup_service_test.dart` | Bundle-envelope backup and restore (10) |
 | `test/services/backup_file_test.dart` | Encrypted SQLite backup file: create, restore, JSON detection (7) |
 
-### fhirant_server — Integration Tests (12 files)
+### fhirant_server — Integration Tests (13 files)
 
 | File | Description |
 |------|-------------|
@@ -105,6 +106,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/authorization_review_test.dart` | REVIEW-2026-09-06 §1: scope grant, refresh tokens, compartments, lockout, PKCE, pipeline order (19) |
 | `test/integration/backup_file_e2e_test.dart` | `$backup` as an encrypted SQLite file, streamed; `$restore` of that file, the envelope or a Bundle (4) |
 | `test/integration/integrity_review_test.dart` | REVIEW-2026-09-06 §3 at the HTTP surface: If-Match inside the write, stored resource returned, deleted-resource history and 410, meta kept on update, history paged in SQL (11) |
+| `test/integration/hygiene_review_test.dart` | REVIEW-2026-09-06 §2 rows 21, 23, 24, 26 at the HTTP surface: `-` append through PATCH, Parameters patch 415 alone and in a Bundle, unsupported ValueSet compose refused by `$expand`, `$validate-code` and `:in`, `exclude.concept` honoured, unknown parameter ignored, a value ending in `:missing` is a value (9) |
 | `test/integration/scale_review_test.dart` | REVIEW-2026-09-06 §5 at the HTTP surface: `_count` refused below zero and capped at 500 with the client's value in the self link, `$everything` paged before hydrating with links, conditional delete bounded at 100 and transactional (7) |
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |

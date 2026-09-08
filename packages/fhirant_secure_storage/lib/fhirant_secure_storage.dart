@@ -209,10 +209,14 @@ class SecureStorageService {
       );
 
       FhirantLogging().logInfo('Generating self-signed certificate...');
+      // Ten years. Paired clients pin this certificate's fingerprint, so a
+      // new certificate is a re-pair of every client; a one-year certificate
+      // forced that yearly and was never rotated in the app anyway
+      // (REVIEW-2026-09-06 section 6). Ten years outlives the device.
       final certificatePem = X509Utils.generateSelfSignedCertificate(
         keyPair.privateKey as RSAPrivateKey,
         csr,
-        365,
+        3650,
         sans: ['localhost'],
         keyUsage: [KeyUsage.DIGITAL_SIGNATURE, KeyUsage.KEY_ENCIPHERMENT],
         extKeyUsage: [ExtendedKeyUsage.SERVER_AUTH],

@@ -56,7 +56,7 @@ assert_contains() {
 
 # --- Build ---
 echo "=== Building Docker image ==="
-docker build -f Dockerfile -t "$IMAGE_NAME" .. || {
+docker build -f Dockerfile -t "$IMAGE_NAME" . || {
   echo "FAIL: Docker build failed"
   exit 1
 }

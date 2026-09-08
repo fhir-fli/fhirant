@@ -39,103 +39,6 @@ Map<String, dynamic> applyJsonPatch(
   return result;
 }
 
-/// Convert FHIR Patch (Parameters resource) to JSON Patch format.
-List<dynamic> convertFhirPatchToJsonPatch(Map<dynamic, dynamic> fhirPatch) {
-  final operations = <Map<String, dynamic>>[];
-
-  if (fhirPatch['parameter'] != null) {
-    final parameters = fhirPatch['parameter'] as List;
-    for (final param in parameters) {
-      if (param is Map && param['name'] == 'operation') {
-        final parts = param['part'] as List?;
-        if (parts == null) continue;
-
-        String? opType;
-        String? path;
-        dynamic value;
-
-        for (final part in parts) {
-          if (part is Map) {
-            final name = part['name'] as String?;
-            if (name == 'type') {
-              opType = part['valueCode'] as String?;
-            } else if (name == 'path') {
-              path = part['valueString'] as String?;
-            } else if (name == 'value') {
-              value = _extractFhirValue(part as Map<String, dynamic>);
-            }
-          }
-        }
-
-        if (opType != null && path != null) {
-          final jsonPath = _convertFhirPathToJsonPointer(path);
-
-          final operation = <String, dynamic>{
-            'op': _convertFhirOpToJsonOp(opType),
-            'path': jsonPath,
-          };
-
-          if (value != null && opType != 'delete') {
-            operation['value'] = value;
-          }
-
-          operations.add(operation);
-        }
-      }
-    }
-  }
-
-  return operations;
-}
-
-/// Extract value from FHIR value* field.
-dynamic _extractFhirValue(Map<String, dynamic> part) {
-  for (final key in part.keys) {
-    if (key.startsWith('value') && key != 'valueString') {
-      return part[key];
-    }
-  }
-  return part['valueString'];
-}
-
-/// Convert FHIR operation type to JSON Patch operation.
-String _convertFhirOpToJsonOp(String fhirOp) {
-  switch (fhirOp.toLowerCase()) {
-    case 'add':
-      return 'add';
-    case 'insert':
-      return 'add';
-    case 'replace':
-      return 'replace';
-    case 'delete':
-    case 'remove':
-      return 'remove';
-    case 'move':
-      return 'move';
-    default:
-      return fhirOp.toLowerCase();
-  }
-}
-
-/// Convert FHIR path to JSON Pointer.
-String _convertFhirPathToJsonPointer(String fhirPath) {
-  var path = fhirPath;
-  if (path.contains('.')) {
-    final parts = path.split('.');
-    if (parts.length > 1) {
-      path = parts.sublist(1).join('.');
-    }
-  }
-
-  path = path.replaceAll('.', '/');
-
-  if (!path.startsWith('/')) {
-    path = '/$path';
-  }
-
-  return path;
-}
-
 void _applyAdd(Map<String, dynamic> document, Map<String, dynamic> op) {
   final path = op['path'] as String?;
   final value = op['value'];
@@ -288,8 +191,9 @@ void _setValueAtPath(
         if (add) {
           final nextSegment = path[i + 1];
           final nextIndex = int.tryParse(nextSegment);
-          current[segment] =
-              nextIndex != null ? <dynamic>[] : <String, dynamic>{};
+          current[segment] = nextIndex != null || nextSegment == '-'
+              ? <dynamic>[]
+              : <String, dynamic>{};
         } else {
           throw FormatException(
             'Path not found: ${path.sublist(0, i + 1).join('/')}',
@@ -319,11 +223,27 @@ void _setValueAtPath(
     }
     current[lastSegment] = value;
   } else if (current is List) {
+    // RFC 6902 section 4.1, read 2026-09-08: for an array, "the supplied
+    // value is added to the array at the indicated location. Any elements
+    // at or above the specified index are shifted one position to the
+    // right. The specified index MUST NOT be greater than the number of
+    // elements in the array. If the "-" character is used to index the end
+    // of the array (see [RFC6901]), this has the effect of appending the
+    // value to the array." Before this, `-` was refused ("Array index
+    // required for list") and an add at an existing index overwrote the
+    // element instead of shifting it (REVIEW-2026-09-06 finding 21).
+    if (add && lastSegment == '-') {
+      current.add(value);
+      return;
+    }
     if (lastIndex == null) {
       throw const FormatException('Array index required for list');
     }
-    if (add && lastIndex == current.length) {
-      current.add(value);
+    if (add) {
+      if (lastIndex < 0 || lastIndex > current.length) {
+        throw FormatException('Array index out of bounds: $lastIndex');
+      }
+      current.insert(lastIndex, value);
     } else if (lastIndex >= 0 && lastIndex < current.length) {
       current[lastIndex] = value;
     } else {

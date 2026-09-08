@@ -63,8 +63,14 @@ Future<Response> patchResourceHandler(
       if (patchDoc is List) {
         patchOperations = patchDoc;
       } else if (patchDoc is Map && patchDoc['resourceType'] == 'Parameters') {
-        // FHIR Patch format - convert to JSON Patch
-        patchOperations = convertFhirPatchToJsonPatch(patchDoc);
+        // FHIRPath Patch (a Parameters body) is not implemented. It used to
+        // be converted by dropping the type prefix and turning dots into
+        // slashes, which handles no `where()` and no index, so most patches
+        // applied to the wrong element or failed obscurely
+        // (REVIEW-2026-09-06 finding 23). The CapabilityStatement advertises
+        // JSON Patch only; a Parameters body is refused as a media type
+        // this server does not support.
+        return _fhirPatchNotSupported();
       } else {
         return _validationErrorResponse(
           'Invalid patch format. Expected JSON Patch array or FHIR '
@@ -193,3 +199,22 @@ Response _validationErrorResponse(String message) {
     headers: {'Content-Type': 'application/json'},
   );
 }
+
+/// 415 for a FHIRPath Patch body: the CapabilityStatement's patchFormat is
+/// `application/json-patch+json` only.
+Response _fhirPatchNotSupported() => Response(
+      415,
+      body: fhir.OperationOutcome(
+        issue: [
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.error,
+            code: fhir.IssueType.notSupported,
+            diagnostics: 'FHIRPath Patch (a Parameters body) is not '
+                    'supported; send a JSON Patch document '
+                    '(application/json-patch+json).'
+                .toFhirString,
+          ),
+        ],
+      ).toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
