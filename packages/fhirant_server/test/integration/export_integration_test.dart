@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/fhirant_server.dart'
+    show specTagCode, specTagSystem;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -228,6 +230,72 @@ void main() {
       final types = output.map((o) => o['type']).toSet();
       expect(types, contains('Patient'));
       expect(types, isNot(contains('Observation')));
+    });
+
+    test('leaves the specification load out unless _type names its type',
+        () async {
+      // Two CodeSystems: one from the specification load (tagged, no
+      // history), one the deployment's own.
+      await db.saveResources(
+        [
+          fhir.CodeSystem.fromJson({
+            'resourceType': 'CodeSystem',
+            'id': 'from-spec',
+            'status': 'active',
+            'content': 'complete',
+            'meta': {
+              'tag': [
+                {'system': specTagSystem, 'code': specTagCode},
+              ],
+            },
+          }),
+        ],
+        recordHistory: false,
+      );
+      await saveResource(
+        fhir.CodeSystem.fromJson({
+          'resourceType': 'CodeSystem',
+          'id': 'ours',
+          'status': 'active',
+          'content': 'complete',
+        }),
+      );
+
+      Future<Map<String, List<String>>> exported(String query) async {
+        final kickoff = await handler(
+          testRequest(
+            'GET',
+            '/\$export$query',
+            authToken: token,
+            headers: {'prefer': 'respond-async'},
+          ),
+        );
+        expect(kickoff.statusCode, 202);
+        final status = await pollUntilComplete(extractJobId(kickoff));
+        final manifest = jsonDecode(await status.readAsString());
+        final byType = <String, List<String>>{};
+        for (final o in manifest['output'] as List) {
+          final file = await handler(
+            testRequest(
+              'GET',
+              Uri.parse(o['url'] as String).path,
+              authToken: token,
+            ),
+          );
+          byType[o['type'] as String] = [
+            for (final line
+                in const LineSplitter().convert(await file.readAsString()))
+              (jsonDecode(line) as Map<String, dynamic>)['id'] as String,
+          ];
+        }
+        return byType;
+      }
+
+      expect((await exported(''))['CodeSystem'], ['ours']);
+      expect(
+        (await exported('?_type=CodeSystem'))['CodeSystem'],
+        unorderedEquals(['from-spec', 'ours']),
+      );
     });
 
     test('with _since filter', () async {

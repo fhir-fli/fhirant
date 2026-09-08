@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
+import 'package:fhirant_server/src/utils/spec_loader.dart'
+    show isSpecResource, specTag;
 
 /// Creating and restoring the encrypted export, independent of HTTP.
 ///
@@ -20,7 +22,8 @@ import 'package:fhirant_server/src/utils/backup_crypto.dart';
 class BackupService {
   const BackupService._();
 
-  /// Every stored resource as an encrypted envelope.
+  /// Every stored resource as an encrypted envelope, less the specification
+  /// load (see [createFile]).
   ///
   /// [passphrase] must not be empty. It is the only thing protecting the
   /// result, which is expected to sit on removable media where an attacker
@@ -44,6 +47,11 @@ class BackupService {
   /// matter of minutes and no memory, where [create]'s Bundle-in-JSON was
   /// measured at 51.8 s and 548 MB per 50 MB (REVIEW-2026-09-06 finding
   /// 33). The file restores with [restoreFile], or opens as a database.
+  ///
+  /// The specification load (the resources tagged [specTag], 4,212 of them,
+  /// 48 MB) is left out of both backup formats: it ships with every install,
+  /// and a restore into a fresh one reloads it from the bundle when it finds
+  /// no CodeSystems (REVIEW §6.1, decided 2026-09-08).
   static Future<File> createFile(
     FhirAntDb db,
     String passphrase,
@@ -54,7 +62,7 @@ class BackupService {
         'A backup cannot be created without a passphrase',
       );
     }
-    await db.copyEncrypted(path, passphrase);
+    await db.copyEncrypted(path, passphrase, withoutTag: specTag);
     return File(path);
   }
 
@@ -108,6 +116,7 @@ class BackupService {
     final entries = <fhir.BundleEntry>[];
     for (final resourceType in await db.getResourceTypes()) {
       for (final resource in await db.getResourcesByType(resourceType)) {
+        if (isSpecResource(resource)) continue;
         final id = resource.id?.toString();
         entries.add(
           fhir.BundleEntry(

@@ -146,13 +146,18 @@ FHIRant is an on-device FHIR R4 server written in Dart. It runs as a standalone 
       measured, as a 4 GB file without its indexes);
       `$restore` takes that file, an encrypted Bundle envelope, or a plain
       Bundle. On a SQLite build without the cipher both refuse rather than
-      write or read plaintext.
+      write or read plaintext. Both formats leave out the specification
+      load (the resources tagged `spec`): a restore into a fresh install
+      reloads it from the bundle.
 - [x] $fhirpath (server-side evaluation)
 - [x] $cql (Clinical Quality Language)
 - [x] Library/$evaluate (CQL library evaluation)
 - [x] $transform (FHIR Mapping Language)
 - [x] $immds-forecast, $immds-forecast-who (immunization forecasting)
-- [x] $export (bulk data — system, group, patient levels)
+- [x] $export (bulk data — system, group, patient levels). A system-level
+      export with no `_type` is the deployment's data: the specification
+      load (tagged `spec`) is left out; `_type=ValueSet` and the like
+      include it.
 - [x] $validate-code (CodeSystem, ValueSet)
 - [x] $lookup (CodeSystem)
 - [x] $expand (ValueSet)
@@ -303,6 +308,8 @@ Scenario: Bulk export
   export retention (24 hours unless configured); the hourly sweep deletes the
   job and its files after that, and a job left running by a previous process
   is reported as failed
+  And the files hold none of the specification load unless _type names
+  its resource types
 
 Scenario: Terminology $validate-code
   Given a CodeSystem exists with code "active"

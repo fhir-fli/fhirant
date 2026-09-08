@@ -44,6 +44,54 @@ void main() {
       expect(jsonDecode(line), stored!.toJson());
     });
 
+    test('withoutTag leaves out the resources carrying that tag, both paths',
+        () async {
+      final tag = fhir.Coding(
+        system: 'http://example.org/tags'.toFhirUri,
+        code: 'spec'.toFhirCode,
+      );
+      final sameSystemOtherCode = fhir.Coding(
+        system: 'http://example.org/tags'.toFhirUri,
+        code: 'other'.toFhirCode,
+      );
+      fhir.Observation tagged(int i) => obs(i).copyWith(
+            meta: fhir.FhirMeta(tag: [tag]),
+          );
+      // Even ids tagged, odd ids not: 600 rows, more than one page.
+      await db.saveResources(
+        [
+          for (var i = 0; i < 600; i++)
+            if (i.isEven) tagged(i) else obs(i),
+        ],
+      );
+      const type = fhir.R4ResourceType.Observation;
+      Set<String> idsOf(List<String> lines) => lines
+          .map((l) => (jsonDecode(l) as Map<String, dynamic>)['id'] as String)
+          .toSet();
+      expect(await db.exportJson(type).length, 600);
+      final kept = idsOf(await db.exportJson(type, withoutTag: tag).toList());
+      expect(kept, hasLength(300));
+      expect(kept.every((id) => int.parse(id.substring(1)).isOdd), isTrue);
+      // The id path applies it too.
+      expect(
+        idsOf(
+          await db
+              .exportJson(
+                type,
+                ids: ['o00000', 'o00001', 'o00002'],
+                withoutTag: tag,
+              )
+              .toList(),
+        ),
+        {'o00001'},
+      );
+      // The code has to match, not only the system.
+      expect(
+        await db.exportJson(type, withoutTag: sameSystemOtherCode).length,
+        600,
+      );
+    });
+
     test('a page size that divides the count exactly ends cleanly', () async {
       await db.saveResources([for (var i = 0; i < 1000; i++) obs(i)]);
       expect(

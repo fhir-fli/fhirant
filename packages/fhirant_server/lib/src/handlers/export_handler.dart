@@ -6,6 +6,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/ndjson_writer.dart';
+import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 
@@ -541,6 +542,17 @@ Future<void> _processExport(
       return;
     }
 
+    // With no `_type`, the export is the deployment's data: the
+    // specification load's tagged conformance resources are left out.
+    // Naming a type includes them, which is how the terminology comes out.
+    // Bulk Data v2.0.0 export.html, read 2026-09-08, on the system-level
+    // export: it "supports use cases like backing up a server, or exporting
+    // terminology data by restricting the resources returned using the
+    // _type parameter".
+    final withoutTag = job.resourceTypes == null || job.resourceTypes!.isEmpty
+        ? specTag
+        : null;
+
     // Export resources (works for both system and patient level)
     for (final resourceType in typesToExport) {
       // Check for cancellation
@@ -571,9 +583,18 @@ Future<void> _processExport(
             if (id.isNotEmpty) ids.add(id);
           }
         }
-        lines = dbInterface.exportJson(resourceType, since: since, ids: ids);
+        lines = dbInterface.exportJson(
+          resourceType,
+          since: since,
+          ids: ids,
+          withoutTag: withoutTag,
+        );
       } else {
-        lines = dbInterface.exportJson(resourceType, since: since);
+        lines = dbInterface.exportJson(
+          resourceType,
+          since: since,
+          withoutTag: withoutTag,
+        );
       }
 
       final path = '$exportDir/$jobId/$typeName.ndjson';

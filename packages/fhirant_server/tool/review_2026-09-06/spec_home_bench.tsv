@@ -1,0 +1,10 @@
+step	ms	rss_mb	note
+open fresh	0	703	
+load spec	17789	772	4212 resources, 1 history rows, 4212 tagged, 100753408 bytes
+copyEncrypted all	1427	773	70635520 bytes
+copyEncrypted withoutTag	817	773	139264 bytes
+exportJson ValueSet	15	773	721 lines
+exportJson ValueSet withoutTag	3	773	0 lines
+exportJson StructureDefinition	271	829	918 lines
+exportJson StructureDefinition withoutTag	7	829	0 lines
+nospec copy	0	830	0 resources, 0 token rows, 0 string rows, 0 uri rows

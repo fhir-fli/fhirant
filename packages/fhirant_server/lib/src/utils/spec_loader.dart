@@ -17,6 +17,42 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 /// see the note on [loadSpecLines].
 const _chunkSize = 20;
 
+/// The `meta.tag` every resource of the specification load carries, so the
+/// store can tell a deployment's own data from the 4,212 conformance
+/// resources that ship with the server. A system-level `$export` with no
+/// `_type` and `$backup` leave tagged resources out; REST, a resource's own
+/// `_history` and the dashboard see them as any resource (REVIEW-2026-09-06
+/// §6.1, decided 2026-09-08: the specification stays in `resources`).
+const specTagSystem = 'http://fhirant.fhir-fli.dev/CodeSystem/tags';
+
+/// The code of [specTag].
+const specTagCode = 'spec';
+
+/// The tag itself, as written into `meta.tag`.
+final fhir.Coding specTag = fhir.Coding(
+  system: specTagSystem.toFhirUri,
+  code: specTagCode.toFhirCode,
+);
+
+/// Whether [resource] carries [specTag].
+bool isSpecResource(fhir.Resource resource) =>
+    resource.meta?.tag?.any(
+      (t) =>
+          t.system?.toString() == specTagSystem &&
+          t.code?.toString() == specTagCode,
+    ) ??
+    false;
+
+/// [resource] with [specTag] added to its `meta.tag`.
+fhir.Resource _tagged(fhir.Resource resource) {
+  final meta = resource.meta;
+  return resource.copyWith(
+    meta: (meta ?? const fhir.FhirMeta()).copyWith(
+      tag: [...?meta?.tag, specTag],
+    ),
+  );
+}
+
 /// Whether the store already holds the specification: the loader runs once,
 /// on the first boot, and a store with CodeSystems in it has had it.
 Future<bool> specResourcesLoaded(FhirAntDb db) async =>
@@ -162,6 +198,12 @@ Stream<List<int>> _pieces(Uint8List bytes) async* {
 /// previous loader parsed a whole file into a list first, which on the
 /// 31 MB profiles-resources file held every StructureDefinition at once
 /// (813 MB RSS measured 2026-09-08 for the whole set).
+///
+/// Every resource is saved tagged [specTag] and without a first-version
+/// history row (`recordHistory: false`): the load used to write a second
+/// 48 MB copy of the set into `resources_history` (measured 2026-09-08 on
+/// a fresh store: 4,213 history rows for 4,212 resources). A later update
+/// of a specification resource writes history as any save does.
 Future<(int, int)> loadSpecLines(
   FhirAntDb db,
   Stream<String> lines,
@@ -172,7 +214,7 @@ Future<(int, int)> loadSpecLines(
   var chunk = <fhir.Resource>[];
   Future<void> save() async {
     if (chunk.isEmpty) return;
-    await db.saveResources(chunk);
+    await db.saveResources(chunk, recordHistory: false);
     loaded += chunk.length;
     chunk = <fhir.Resource>[];
     // A real event-loop turn, so timers, the UI and other requests run
@@ -184,7 +226,9 @@ Future<(int, int)> loadSpecLines(
     if (line.trim().isEmpty) continue;
     try {
       chunk.add(
-        fhir.Resource.fromJson(jsonDecode(line) as Map<String, dynamic>),
+        _tagged(
+          fhir.Resource.fromJson(jsonDecode(line) as Map<String, dynamic>),
+        ),
       );
     } catch (_) {
       errors++;

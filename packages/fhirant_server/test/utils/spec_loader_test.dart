@@ -66,6 +66,20 @@ void main() {
     expect((vs! as fhir.ValueSet).url?.valueString, 'http://example.org/vs/2');
   });
 
+  test('every loaded resource is tagged spec and has no history row', () async {
+    await load();
+    final cs = await db.getResource(fhir.R4ResourceType.CodeSystem, 'cs7');
+    expect(isSpecResource(cs!), isTrue);
+    expect(cs.meta!.versionId!.valueString, '1');
+    expect(await db.getHistory(fhir.R4ResourceType.CodeSystem, 'cs7'), isEmpty);
+    // A later save of a specification resource writes history as any save.
+    await db.saveResource(cs);
+    expect(
+      await db.getHistory(fhir.R4ResourceType.CodeSystem, 'cs7'),
+      hasLength(1),
+    );
+  });
+
   test('a store that already holds CodeSystems is left alone', () async {
     await db.saveResource(
       fhir.CodeSystem.fromJson({

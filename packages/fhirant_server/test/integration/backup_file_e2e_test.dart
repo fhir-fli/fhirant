@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/fhirant_server.dart'
+    show BackupService, specTagCode, specTagSystem;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -81,6 +83,85 @@ void main() {
       },
     );
     expect(found, hasLength(1));
+  });
+
+  test('the specification load is left out of the file and the Bundle',
+      () async {
+    fhir.CodeSystem codeSystem(String id, {bool spec = false}) =>
+        fhir.CodeSystem.fromJson({
+          'resourceType': 'CodeSystem',
+          'id': id,
+          'status': 'active',
+          'content': 'complete',
+          if (spec) ...{
+            'meta': {
+              'tag': [
+                {'system': specTagSystem, 'code': specTagCode},
+              ],
+            },
+            // Its contained resource's index rows are filed under `#ValueSet`
+            // with this CodeSystem's key as their id prefix; they go too.
+            'contained': [
+              {'resourceType': 'ValueSet', 'id': 'inner', 'status': 'active'},
+            ],
+          },
+        });
+    await db.saveResources(
+      [codeSystem('from-spec', spec: true)],
+      recordHistory: false,
+    );
+    await db.saveResource(codeSystem('ours'));
+
+    final bundle = await BackupService.bundle(db);
+    expect(
+      bundle.entry!.map((e) => e.fullUrl.toString()),
+      unorderedEquals(['Patient/p1', 'CodeSystem/ours']),
+    );
+
+    final r = await backup({'passphrase': 'correct horse'});
+    final bytes = await r.read().expand((chunk) => chunk).toList();
+    final other = await createTestServer(devMode: true);
+    addTearDown(other.db.close);
+    final restored = await other.handler(
+      Request(
+        'POST',
+        Uri.parse(r'http://localhost:8080/$restore'),
+        body: bytes,
+        headers: {
+          'x-forwarded-for': '127.0.0.1',
+          'content-type': 'application/vnd.sqlite3',
+          'x-backup-passphrase': 'correct horse',
+        },
+      ),
+    );
+    expect(restored.statusCode, 200);
+    expect(
+      await other.db.getResource(fhir.R4ResourceType.CodeSystem, 'ours'),
+      isNotNull,
+    );
+    expect(
+      await other.db.getResource(fhir.R4ResourceType.CodeSystem, 'from-spec'),
+      isNull,
+    );
+    expect(
+      await other.db.search(
+        resourceType: fhir.R4ResourceType.CodeSystem,
+        searchParameters: {
+          '_tag': ['$specTagSystem|$specTagCode'],
+        },
+      ),
+      isEmpty,
+      reason: 'no index row of the dropped resource survives in the copy',
+    );
+    Future<int> containedRows(FhirAntDb d) async => (await d
+            .customSelect(
+              'SELECT count(*) AS c FROM token_search_parameters '
+              "WHERE resource_type = '#ValueSet'",
+            )
+            .getSingle())
+        .read<int>('c');
+    expect(await containedRows(db), greaterThan(0));
+    expect(await containedRows(other.db), 0);
   });
 
   test('a wrong passphrase on the file is refused as such', () async {

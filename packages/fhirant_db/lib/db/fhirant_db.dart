@@ -369,8 +369,23 @@ class FhirAntDb extends FhirDb {
   /// was tried first: under sqlite3mc the copy keeps the SOURCE key, which
   /// is the point of not using it.
   ///
+  /// [withoutTag] leaves every resource carrying that `meta.tag` out of the
+  /// copy: its `resources` and `resources_history` rows, its rows in every
+  /// index table and the rows of anything it contains (filed under `#Type`
+  /// with the container's key as the id prefix), found through the `_tag`
+  /// index rows. Left out at copy time rather than deleted afterwards: a
+  /// delete leaves the pages in the file (measured 2026-09-08, the same
+  /// 70.6 MB file either way). The server backs up without its
+  /// specification load (4,212 tagged conformance resources); a restore
+  /// into a fresh install reloads the specification from the bundle when it
+  /// finds no CodeSystems (REVIEW-2026-09-06 §6.1).
+  ///
   /// [path] must not exist. [passphrase] must not be empty.
-  Future<void> copyEncrypted(String path, String passphrase) async {
+  Future<void> copyEncrypted(
+    String path,
+    String passphrase, {
+    fhir.Coding? withoutTag,
+  }) async {
     if (passphrase.isEmpty) {
       throw ArgumentError.value(passphrase, 'passphrase', 'must not be empty');
     }
@@ -387,11 +402,15 @@ class FhirAntDb extends FhirDb {
         "SELECT name, sql FROM main.sqlite_master WHERE type = 'table' "
         "AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY name",
       ).get();
+      final keyed = withoutTag == null
+          ? const <String>{}
+          : await _collectTagged(withoutTag);
       for (final o in objects) {
         final name = o.read<String>('name');
         await customStatement(_schemaIn('bk', name, o.read<String>('sql')));
         await customStatement(
-          'INSERT INTO bk."$name" SELECT * FROM main."$name"',
+          'INSERT INTO bk."$name" SELECT * FROM main."$name" AS s'
+          '${keyed.contains(name) ? ' WHERE $_notTaggedSql' : ''}',
         );
       }
       final version =
@@ -400,8 +419,54 @@ class FhirAntDb extends FhirDb {
         'PRAGMA bk.user_version = ${version.data.values.first}',
       );
     } finally {
+      await customStatement('DROP TABLE IF EXISTS temp.$_taggedKeys');
       await customStatement('DETACH DATABASE bk');
     }
+  }
+
+  /// The temp table [_collectTagged] fills with the `Type/id` keys of the
+  /// tagged resources.
+  static const _taggedKeys = '_copy_without_tag';
+
+  /// Row `s` of a keyed table is neither a tagged resource's own row nor a
+  /// row of something a tagged resource contains (`#Type` rows whose id is
+  /// `Type/id#contained`, the key up to the `#`).
+  static const _notTaggedSql =
+      "s.resource_type || '/' || s.id NOT IN (SELECT key FROM temp.$_taggedKeys) "
+      "AND NOT (s.resource_type LIKE '#%' "
+      "AND substr(s.id, 1, instr(s.id, '#') - 1) "
+      'IN (SELECT key FROM temp.$_taggedKeys))';
+
+  /// Fills [_taggedKeys] with the keys of every resource tagged [tag], read
+  /// from `main`'s `_tag` index rows, and returns the names of the tables
+  /// the filter applies to: those with `resource_type` and `id` columns.
+  Future<Set<String>> _collectTagged(fhir.Coding tag) async {
+    await customStatement('DROP TABLE IF EXISTS temp.$_taggedKeys');
+    await customStatement(
+      'CREATE TEMP TABLE $_taggedKeys (key TEXT PRIMARY KEY)',
+    );
+    await customStatement(
+      "INSERT OR IGNORE INTO temp.$_taggedKeys SELECT resource_type || '/' || id "
+      "FROM main.token_search_parameters WHERE search_name = '_tag' "
+      'AND token_system = ? AND token_value = ?',
+      [tag.system?.toString() ?? '', tag.code?.toString() ?? ''],
+    );
+    final tables = (await customSelect(
+      "SELECT name FROM main.sqlite_master WHERE type = 'table' "
+      "AND name NOT LIKE 'sqlite_%'",
+    ).get())
+        .map((r) => r.read<String>('name'));
+    final keyed = <String>{};
+    for (final name in tables) {
+      final columns =
+          (await customSelect('PRAGMA main.table_info("$name")').get())
+              .map((r) => r.read<String>('name'))
+              .toSet();
+      if (columns.contains('resource_type') && columns.contains('id')) {
+        keyed.add(name);
+      }
+    }
+    return keyed;
   }
 
   /// Merges the backup at [path], written by [copyEncrypted] under
@@ -603,8 +668,13 @@ class FhirAntDb extends FhirDb {
     }
   }
 
-  Future<bool> saveResources(List<fhir.Resource> resourcesList) =>
-      fhirDao.saveResources(resourcesList);
+  /// [recordHistory] false writes no history row for a resource's first
+  /// version (the specification load); see [FhirDao.saveResources].
+  Future<bool> saveResources(
+    List<fhir.Resource> resourcesList, {
+    bool recordHistory = true,
+  }) =>
+      fhirDao.saveResources(resourcesList, recordHistory: recordHistory);
 
   /// The patient this resource is about, or null when it names none.
   ///
@@ -934,9 +1004,21 @@ class FhirAntDb extends FhirDb {
   /// rows: 1.3 s). This keyset walks the index in order for both: 100k
   /// Observations in 366 ms, 5k Conditions in 13 ms.
   ///
+  /// `resources` rows that carry a given `meta.tag`, as a predicate on the
+  /// `_tag` index rows; binds the tag's system and code, in that order.
+  static const _taggedSql = 'EXISTS (SELECT 1 FROM token_search_parameters t '
+      'WHERE t.resource_type = resources.resource_type '
+      "AND t.id = resources.id AND t.search_name = '_tag' "
+      'AND t.token_system = ? AND t.token_value = ?)';
+
   /// [since] keeps resources with `last_updated >= since`. [ids] restricts
   /// to those ids, read in `IN (...)` chunks of [pageSize]. Row order is
-  /// last-updated order, or id order when [ids] is given.
+  /// last-updated order, or id order when [ids] is given. [withoutTag]
+  /// leaves out every resource carrying that `meta.tag` (system and code,
+  /// through the `_tag` index rows): the server's specification load tags
+  /// its 4,212 conformance resources, and a system-level `$export` with no
+  /// `_type` is the deployment's data, not the specification (REVIEW
+  /// §6.1).
   ///
   /// REVIEW-2026-09-06 finding 34: `$export` used to read a whole type into
   /// a `List<Resource>` (decode, then re-encode every one) before writing.
@@ -944,10 +1026,18 @@ class FhirAntDb extends FhirDb {
     fhir.R4ResourceType resourceType, {
     DateTime? since,
     Iterable<String>? ids,
+    fhir.Coding? withoutTag,
     int pageSize = 500,
   }) async* {
     final type = resourceType.toString();
     final sinceMs = since?.millisecondsSinceEpoch;
+    final notTagged = withoutTag == null ? '' : 'AND NOT $_taggedSql ';
+    final tagVariables = withoutTag == null
+        ? const <Variable<Object>>[]
+        : [
+            Variable.withString(withoutTag.system?.toString() ?? ''),
+            Variable.withString(withoutTag.code?.toString() ?? ''),
+          ];
     if (ids != null) {
       final sorted = ids.toList()..sort();
       for (var i = 0; i < sorted.length; i += pageSize) {
@@ -958,12 +1048,14 @@ class FhirAntDb extends FhirDb {
         final marks = List.filled(chunk.length, '?').join(', ');
         final rows = await customSelect(
           'SELECT resource FROM resources WHERE resource_type = ? '
-          'AND id IN ($marks)'
-          '${sinceMs == null ? '' : ' AND last_updated >= ?'} ORDER BY id',
+          'AND id IN ($marks) '
+          '${sinceMs == null ? '' : 'AND last_updated >= ? '}'
+          '${notTagged}ORDER BY id',
           variables: [
             Variable.withString(type),
             for (final id in chunk) Variable.withString(id),
             if (sinceMs != null) Variable.withInt(sinceMs),
+            ...tagVariables,
           ],
           readsFrom: {resources},
         ).get();
@@ -980,11 +1072,13 @@ class FhirAntDb extends FhirDb {
         'SELECT last_updated AS lu, rowid AS rid, resource FROM resources '
         'WHERE resource_type = ? '
         '${sinceMs == null ? '' : 'AND last_updated >= ? '}'
+        '$notTagged'
         'AND (last_updated, rowid) > (?, ?) '
         'ORDER BY last_updated, rowid LIMIT ?',
         variables: [
           Variable.withString(type),
           if (sinceMs != null) Variable.withInt(sinceMs),
+          ...tagVariables,
           Variable.withInt(lastUpdated),
           Variable.withInt(lastRowid),
           Variable.withInt(pageSize),
