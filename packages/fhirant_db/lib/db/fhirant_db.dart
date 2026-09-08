@@ -515,7 +515,9 @@ class FhirAntDb extends FhirDb {
             .getSingle();
         return n.read<int>('c');
       });
-      await customStatement('ANALYZE');
+      // Every row: the connection's analysis_limit would make this the
+      // approximate refresh, and a restore rewrote every table.
+      await analyzeFully();
       return restored;
     } finally {
       await customStatement('DETACH DATABASE bk');
