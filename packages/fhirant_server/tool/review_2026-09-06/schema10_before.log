@@ -1,0 +1,115 @@
+Running build hooks...Running build hooks...[before 0-open] open (upgrade if behind): 1022.627s (17) 
+[before 0-open] user_version: 0.000s (17) 
+[before 0-open] db bytes: 0.000s (0) 6947524608
+[before 0-analyze] ANALYZE: 2.478s (0) 
+[before 0-patients] big patient 77e10fd0-6a1c-5547-a130-fae1341acf36: 0.000s (48554) 
+[before 0-patients] small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64: 0.000s (963) 
+[before 0-patients] system of code 227969: 0.000s (0) http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+[before 1-r1] status=final&_sort=-date: 2.448s (20) 
+[before 1-r1] subject=big&_sort=-date: 0.686s (20) 
+[before 1-r1] subject=small&_sort=-date: 0.049s (20) 
+[before 1-r1] subject=big: 0.397s (20) 
+[before 1-r1] Patient/big compartment Observation: 0.425s (20) 
+[before 1-r1] code=227969: 0.164s (20) 
+[before 1-r1] code=system|227969: 0.157s (20) 
+[before 1-r1] code=system| (system only): 0.011s (20) 
+[before 1-r1] status=final&code=227969: 0.425s (20) 
+[before 1-r1] code:text=glucose (documented scan): 0.025s (20) 
+[before 1-r1] no parameters (type page): 0.014s (20) 
+[before 1-r1] _lastUpdated=ge2000-01-01 (all): 0.020s (20) 
+[before 1-r1] _lastUpdated=ge2999-01-01 (none): 9.909s (0) 
+[before 1-r1] date=ge2150-01-01: 0.036s (20) 
+[before 1-r1] value-quantity=gt100: 0.023s (20) 
+[before 1-r1] Patient?family=a (string starts-with): 0.004s (0) 
+[before 1-r1] Patient?family:exact=Smith: 0.004s (0) 
+[before 1-r1] _id=<big patient>: 0.015s (1) 
+[before 1-r1] searchCount subject=big: 0.369s (48554) 
+[before 1-r2] status=final&_sort=-date: 2.566s (20) 
+[before 1-r2] subject=big&_sort=-date: 0.673s (20) 
+[before 1-r2] subject=small&_sort=-date: 0.042s (20) 
+[before 1-r2] subject=big: 0.370s (20) 
+[before 1-r2] Patient/big compartment Observation: 0.393s (20) 
+[before 1-r2] code=227969: 0.172s (20) 
+[before 1-r2] code=system|227969: 0.159s (20) 
+[before 1-r2] code=system| (system only): 0.009s (20) 
+[before 1-r2] status=final&code=227969: 0.504s (20) 
+[before 1-r2] code:text=glucose (documented scan): 0.036s (20) 
+[before 1-r2] no parameters (type page): 0.014s (20) 
+[before 1-r2] _lastUpdated=ge2000-01-01 (all): 0.014s (20) 
+[before 1-r2] _lastUpdated=ge2999-01-01 (none): 10.407s (0) 
+[before 1-r2] date=ge2150-01-01: 0.025s (20) 
+[before 1-r2] value-quantity=gt100: 0.028s (20) 
+[before 1-r2] Patient?family=a (string starts-with): 0.003s (0) 
+[before 1-r2] Patient?family:exact=Smith: 0.003s (0) 
+[before 1-r2] _id=<big patient>: 0.001s (1) 
+[before 1-r2] searchCount subject=big: 0.441s (48554) 
+[before 2-plan] token code: 0.000s (0) SEARCH token_search_parameters USING INDEX idx_token_value (token_value=?) | USE TEMP B-TREE FOR DISTINCT
+[before 2-plan] reference subject: 0.000s (0) SEARCH reference_search_parameters USING INDEX idx_ref_id (reference_id_part=?) | USE TEMP B-TREE FOR DISTINCT
+[before 2-plan] date range: 0.000s (0) SEARCH date_search_parameters USING INDEX sqlite_autoindex_date_search_parameters_1 (resource_type=?)
+[before 2-plan] string starts-with LIKE: 0.000s (0) SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+[before 2-plan] string starts-with range: 0.000s (0) SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+[before 2-plan] type page: 0.000s (0) SEARCH resources USING INDEX sqlite_autoindex_resources_1 (resource_type=?) | USE TEMP B-TREE FOR ORDER BY
+[before 2-plan] last_updated range: 0.000s (0) SEARCH resources USING INDEX sqlite_autoindex_resources_1 (resource_type=?)
+[before 2-plan] owner delete: 0.000s (0) SEARCH token_search_parameters USING INDEX sqlite_autoindex_token_search_parameters_1 (resource_type=? AND id=?)
+[before 3-size] db bytes: 0.000s (0) 6947524608
+[before 3-dbstat] resources_history: 0.000s (0) 1069707264
+[before 3-dbstat] resources: 0.000s (0) 1069318144
+[before 3-dbstat] token_search_parameters: 0.000s (0) 612065280
+[before 3-dbstat] reference_search_parameters: 0.000s (0) 607461376
+[before 3-dbstat] sqlite_autoindex_token_search_parameters_1: 0.000s (0) 358047744
+[before 3-dbstat] sqlite_autoindex_reference_search_parameters_1: 0.000s (0) 326590464
+[before 3-dbstat] composite_search_parameters: 0.000s (0) 316473344
+[before 3-dbstat] idx_token_system: 0.000s (0) 217894912
+[before 3-dbstat] uri_search_parameters: 0.000s (0) 173899776
+[before 3-dbstat] quantity_search_parameters: 0.000s (0) 152002560
+[before 3-dbstat] idx_ref_id: 0.000s (0) 133214208
+[before 3-dbstat] date_search_parameters: 0.000s (0) 125972480
+[before 3-dbstat] sqlite_autoindex_composite_search_parameters_1: 0.000s (0) 122548224
+[before 3-dbstat] sqlite_autoindex_uri_search_parameters_1: 0.000s (0) 96210944
+[before 3-dbstat] sqlite_autoindex_quantity_search_parameters_1: 0.000s (0) 94363648
+[before 3-dbstat] sqlite_autoindex_date_search_parameters_1: 0.000s (0) 92303360
+[before 3-dbstat] idx_uri_value: 0.000s (0) 85954560
+[before 3-dbstat] sqlite_autoindex_resources_history_1: 0.000s (0) 62697472
+[before 3-dbstat] string_search_parameters: 0.000s (0) 61480960
+[before 3-dbstat] idx_token_value: 0.000s (0) 60907520
+[before 3-dbstat] sqlite_autoindex_resources_1: 0.000s (0) 60715008
+[before 3-dbstat] sqlite_autoindex_string_search_parameters_1: 0.000s (0) 50135040
+[before 3-dbstat] idx_ref_type: 0.000s (0) 49442816
+[before 3-dbstat] idx_ref_identifier_val: 0.000s (0) 26390528
+[before 3-dbstat] idx_ref_identifier_sys: 0.000s (0) 26390528
+[before 3-dbstat] idx_date_value_end: 0.000s (0) 13869056
+[before 3-dbstat] idx_date_value: 0.000s (0) 13869056
+[before 3-dbstat] idx_quantity_low: 0.000s (0) 12574720
+[before 3-dbstat] idx_quantity_high: 0.000s (0) 12574720
+[before 3-dbstat] idx_string_value: 0.000s (0) 9826304
+[before 3-dbstat] sqlite_schema: 0.000s (0) 20480
+[before 3-dbstat] users: 0.000s (0) 4096
+[before 3-dbstat] sync_resources: 0.000s (0) 4096
+[before 3-dbstat] sqlite_stat1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_sequence: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_users_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_sync_resources_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_special_search_parameters_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_revoked_tokens_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_oauth_clients_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_number_search_parameters_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_export_jobs_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_canonical_resources_1: 0.000s (0) 4096
+[before 3-dbstat] sqlite_autoindex_authorization_codes_1: 0.000s (0) 4096
+[before 3-dbstat] special_search_parameters: 0.000s (0) 4096
+[before 3-dbstat] revoked_tokens: 0.000s (0) 4096
+[before 3-dbstat] oauth_clients: 0.000s (0) 4096
+[before 3-dbstat] number_search_parameters: 0.000s (0) 4096
+[before 3-dbstat] logs: 0.000s (0) 4096
+[before 3-dbstat] idx_uri_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_token_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_string_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_special_value: 0.000s (0) 4096
+[before 3-dbstat] idx_special_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_reference_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_quantity_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_number_search_parameters_contained: 0.000s (0) 4096
+[before 3-dbstat] idx_number_low: 0.000s (0) 4096
+[before 3-dbstat] idx_number_high: 0.000s (0) 4096
+[before 3-dbstat] idx_date_search_parameters_contained: 0.000s (0) 4096
+done; results in /tmp/claude-1000/-home-grey-dev-fhir/0976abe2-97c6-4d50-a3d1-bcf85d293a3b/scratchpad/perffull/schema10_ab.tsv

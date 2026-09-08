@@ -1,0 +1,689 @@
+label	step	query	ms	rows	note
+before	0-open	open (upgrade if behind)	1022627	17	
+before	0-open	user_version	0	17	
+before	0-open	db bytes	0	0	6947524608
+before	0-analyze	ANALYZE	2478	0	
+before	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+before	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+before	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+before	1-r1	status=final&_sort=-date	2448	20	
+before	1-r1	subject=big&_sort=-date	686	20	
+before	1-r1	subject=small&_sort=-date	49	20	
+before	1-r1	subject=big	397	20	
+before	1-r1	Patient/big compartment Observation	425	20	
+before	1-r1	code=227969	164	20	
+before	1-r1	code=system|227969	157	20	
+before	1-r1	code=system| (system only)	11	20	
+before	1-r1	status=final&code=227969	425	20	
+before	1-r1	code:text=glucose (documented scan)	25	20	
+before	1-r1	no parameters (type page)	14	20	
+before	1-r1	_lastUpdated=ge2000-01-01 (all)	20	20	
+before	1-r1	_lastUpdated=ge2999-01-01 (none)	9909	0	
+before	1-r1	date=ge2150-01-01	36	20	
+before	1-r1	value-quantity=gt100	23	20	
+before	1-r1	Patient?family=a (string starts-with)	4	0	
+before	1-r1	Patient?family:exact=Smith	4	0	
+before	1-r1	_id=<big patient>	15	1	
+before	1-r1	searchCount subject=big	369	48554	
+before	1-r2	status=final&_sort=-date	2566	20	
+before	1-r2	subject=big&_sort=-date	673	20	
+before	1-r2	subject=small&_sort=-date	42	20	
+before	1-r2	subject=big	370	20	
+before	1-r2	Patient/big compartment Observation	393	20	
+before	1-r2	code=227969	172	20	
+before	1-r2	code=system|227969	159	20	
+before	1-r2	code=system| (system only)	9	20	
+before	1-r2	status=final&code=227969	504	20	
+before	1-r2	code:text=glucose (documented scan)	36	20	
+before	1-r2	no parameters (type page)	14	20	
+before	1-r2	_lastUpdated=ge2000-01-01 (all)	14	20	
+before	1-r2	_lastUpdated=ge2999-01-01 (none)	10407	0	
+before	1-r2	date=ge2150-01-01	25	20	
+before	1-r2	value-quantity=gt100	28	20	
+before	1-r2	Patient?family=a (string starts-with)	3	0	
+before	1-r2	Patient?family:exact=Smith	3	0	
+before	1-r2	_id=<big patient>	1	1	
+before	1-r2	searchCount subject=big	441	48554	
+before	2-plan	token code	0	0	SEARCH token_search_parameters USING INDEX idx_token_value (token_value=?) | USE TEMP B-TREE FOR DISTINCT
+before	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING INDEX idx_ref_id (reference_id_part=?) | USE TEMP B-TREE FOR DISTINCT
+before	2-plan	date range	0	0	SEARCH date_search_parameters USING INDEX sqlite_autoindex_date_search_parameters_1 (resource_type=?)
+before	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+before	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING INDEX sqlite_autoindex_string_search_parameters_1 (resource_type=?)
+before	2-plan	type page	0	0	SEARCH resources USING INDEX sqlite_autoindex_resources_1 (resource_type=?) | USE TEMP B-TREE FOR ORDER BY
+before	2-plan	last_updated range	0	0	SEARCH resources USING INDEX sqlite_autoindex_resources_1 (resource_type=?)
+before	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX sqlite_autoindex_token_search_parameters_1 (resource_type=? AND id=?)
+before	3-size	db bytes	0	0	6947524608
+before	3-dbstat	resources_history	0	0	1069707264
+before	3-dbstat	resources	0	0	1069318144
+before	3-dbstat	token_search_parameters	0	0	612065280
+before	3-dbstat	reference_search_parameters	0	0	607461376
+before	3-dbstat	sqlite_autoindex_token_search_parameters_1	0	0	358047744
+before	3-dbstat	sqlite_autoindex_reference_search_parameters_1	0	0	326590464
+before	3-dbstat	composite_search_parameters	0	0	316473344
+before	3-dbstat	idx_token_system	0	0	217894912
+before	3-dbstat	uri_search_parameters	0	0	173899776
+before	3-dbstat	quantity_search_parameters	0	0	152002560
+before	3-dbstat	idx_ref_id	0	0	133214208
+before	3-dbstat	date_search_parameters	0	0	125972480
+before	3-dbstat	sqlite_autoindex_composite_search_parameters_1	0	0	122548224
+before	3-dbstat	sqlite_autoindex_uri_search_parameters_1	0	0	96210944
+before	3-dbstat	sqlite_autoindex_quantity_search_parameters_1	0	0	94363648
+before	3-dbstat	sqlite_autoindex_date_search_parameters_1	0	0	92303360
+before	3-dbstat	idx_uri_value	0	0	85954560
+before	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+before	3-dbstat	string_search_parameters	0	0	61480960
+before	3-dbstat	idx_token_value	0	0	60907520
+before	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+before	3-dbstat	sqlite_autoindex_string_search_parameters_1	0	0	50135040
+before	3-dbstat	idx_ref_type	0	0	49442816
+before	3-dbstat	idx_ref_identifier_val	0	0	26390528
+before	3-dbstat	idx_ref_identifier_sys	0	0	26390528
+before	3-dbstat	idx_date_value_end	0	0	13869056
+before	3-dbstat	idx_date_value	0	0	13869056
+before	3-dbstat	idx_quantity_low	0	0	12574720
+before	3-dbstat	idx_quantity_high	0	0	12574720
+before	3-dbstat	idx_string_value	0	0	9826304
+before	3-dbstat	sqlite_schema	0	0	20480
+before	3-dbstat	users	0	0	4096
+before	3-dbstat	sync_resources	0	0	4096
+before	3-dbstat	sqlite_stat1	0	0	4096
+before	3-dbstat	sqlite_sequence	0	0	4096
+before	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_special_search_parameters_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_number_search_parameters_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+before	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+before	3-dbstat	special_search_parameters	0	0	4096
+before	3-dbstat	revoked_tokens	0	0	4096
+before	3-dbstat	oauth_clients	0	0	4096
+before	3-dbstat	number_search_parameters	0	0	4096
+before	3-dbstat	logs	0	0	4096
+before	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_special_value	0	0	4096
+before	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_number_search_parameters_contained	0	0	4096
+before	3-dbstat	idx_number_low	0	0	4096
+before	3-dbstat	idx_number_high	0	0	4096
+before	3-dbstat	idx_date_search_parameters_contained	0	0	4096
+after	0-open	open (upgrade if behind)	992712	18	
+after	0-open	user_version	0	18	
+after	0-open	db bytes	0	0	6947524608
+after	0-analyze	ANALYZE	3350	0	
+after	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+after	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+after	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+after	1-r1	status=final&_sort=-date	1101	20	
+after	1-r1	subject=big&_sort=-date	275	20	
+after	1-r1	subject=small&_sort=-date	32	20	
+after	1-r1	subject=big	14	20	
+after	1-r1	Patient/big compartment Observation	39	20	
+after	1-r1	code=227969	21	20	
+after	1-r1	code=system|227969	16	20	
+after	1-r1	code=system| (system only)	20	20	
+after	1-r1	status=final&code=227969	162	20	
+after	1-r1	code:text=glucose (documented scan)	27	20	
+after	1-r1	no parameters (type page)	17	20	
+after	1-r1	_lastUpdated=ge2000-01-01 (all)	23	20	
+after	1-r1	_lastUpdated=ge2999-01-01 (none)	8717	0	
+after	1-r1	date=ge2150-01-01	793	20	
+after	1-r1	value-quantity=gt100	35	20	
+after	1-r1	Patient?family=a (string starts-with)	6	0	
+after	1-r1	Patient?family:exact=Smith	2	0	
+after	1-r1	_id=<big patient>	5	1	
+after	1-r1	searchCount subject=big	15	48554	
+after	1-r2	status=final&_sort=-date	959	20	
+after	1-r2	subject=big&_sort=-date	257	20	
+after	1-r2	subject=small&_sort=-date	26	20	
+after	1-r2	subject=big	15	20	
+after	1-r2	Patient/big compartment Observation	33	20	
+after	1-r2	code=227969	9	20	
+after	1-r2	code=system|227969	13	20	
+after	1-r2	code=system| (system only)	10	20	
+after	1-r2	status=final&code=227969	131	20	
+after	1-r2	code:text=glucose (documented scan)	17	20	
+after	1-r2	no parameters (type page)	18	20	
+after	1-r2	_lastUpdated=ge2000-01-01 (all)	13	20	
+after	1-r2	_lastUpdated=ge2999-01-01 (none)	9116	0	
+after	1-r2	date=ge2150-01-01	764	20	
+after	1-r2	value-quantity=gt100	18	20	
+after	1-r2	Patient?family=a (string starts-with)	1	0	
+after	1-r2	Patient?family:exact=Smith	1	0	
+after	1-r2	_id=<big patient>	1	1	
+after	1-r2	searchCount subject=big	13	48554	
+after	2-plan	token code	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_value_cover (resource_type=? AND search_name=? AND token_value=?)
+after	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_target_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=?)
+after	2-plan	date range	0	0	SEARCH date_search_parameters USING COVERING INDEX idx_date_search_parameters_low_cover (resource_type=? AND search_name=? AND date_value>?) | USE TEMP B-TREE FOR DISTINCT
+after	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX idx_string_search_parameters_owner (resource_type=?)
+after	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_string_search_parameters_value_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+after	2-plan	type page	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=?)
+after	2-plan	last_updated range	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=? AND last_updated>?)
+after	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=? AND id=?)
+after	3-size	db bytes	0	0	6947524608
+after	3-dbstat	resources_history	0	0	1069707264
+after	3-dbstat	resources	0	0	1069318144
+after	3-dbstat	token_search_parameters	0	0	535465984
+after	3-dbstat	reference_search_parameters	0	0	505294848
+after	3-dbstat	idx_token_search_parameters_system_cover	0	0	437178368
+after	3-dbstat	idx_reference_search_parameters_value_cover	0	0	334376960
+after	3-dbstat	idx_reference_search_parameters_target_cover	0	0	334376960
+after	3-dbstat	composite_search_parameters	0	0	301236224
+after	3-dbstat	idx_token_search_parameters_value_cover	0	0	274096128
+after	3-dbstat	idx_token_search_parameters_owner	0	0	213204992
+after	3-dbstat	idx_reference_search_parameters_identifier_cover	0	0	200986624
+after	3-dbstat	idx_reference_search_parameters_owner	0	0	172322816
+after	3-dbstat	uri_search_parameters	0	0	147775488
+after	3-dbstat	idx_uri_search_parameters_value_cover	0	0	142032896
+after	3-dbstat	quantity_search_parameters	0	0	125968384
+after	3-dbstat	idx_composite_search_parameters_values_cover	0	0	111345664
+after	3-dbstat	date_search_parameters	0	0	104603648
+after	3-dbstat	idx_composite_search_parameters_owner	0	0	68235264
+after	3-dbstat	idx_date_search_parameters_low_cover	0	0	65773568
+after	3-dbstat	idx_date_search_parameters_high_cover	0	0	65773568
+after	3-dbstat	idx_quantity_search_parameters_high_cover	0	0	63029248
+after	3-dbstat	idx_quantity_search_parameters_low_cover	0	0	63025152
+after	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+after	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+after	3-dbstat	idx_uri_search_parameters_owner	0	0	54538240
+after	3-dbstat	idx_date_search_parameters_owner	0	0	53993472
+after	3-dbstat	string_search_parameters	0	0	46714880
+after	3-dbstat	idx_quantity_search_parameters_owner	0	0	42557440
+after	3-dbstat	idx_string_search_parameters_exact_cover	0	0	36909056
+after	3-dbstat	idx_string_search_parameters_value_cover	0	0	36782080
+after	3-dbstat	idx_resources_type_updated	0	0	26107904
+after	3-dbstat	idx_resources_history_type_updated	0	0	26107904
+after	3-dbstat	idx_string_search_parameters_owner	0	0	24670208
+after	3-dbstat	sqlite_schema	0	0	20480
+after	3-dbstat	users	0	0	4096
+after	3-dbstat	sync_resources	0	0	4096
+after	3-dbstat	sqlite_stat1	0	0	4096
+after	3-dbstat	sqlite_sequence	0	0	4096
+after	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+after	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+after	3-dbstat	special_search_parameters	0	0	4096
+after	3-dbstat	revoked_tokens	0	0	4096
+after	3-dbstat	oauth_clients	0	0	4096
+after	3-dbstat	number_search_parameters	0	0	4096
+after	3-dbstat	logs	0	0	4096
+after	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_special_search_parameters_value_cover	0	0	4096
+after	3-dbstat	idx_special_search_parameters_owner	0	0	4096
+after	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+after	3-dbstat	idx_number_search_parameters_owner	0	0	4096
+after	3-dbstat	idx_number_search_parameters_low_cover	0	0	4096
+after-shape	0-open	open (upgrade if behind)	132	18	
+after-shape	0-open	user_version	0	18	
+after-shape	0-open	createValueIndexes (IF NOT EXISTS)	38531	0	
+after-shape	0-open	db bytes	0	0	6947524608
+after-shape	0-analyze	ANALYZE	4020	0	
+after-shape	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+after-shape	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+after-shape	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+after-shape	1-r1	status=final&_sort=-date	1834	20	
+after-shape	1-r1	subject=big&_sort=-date	390	20	
+after-shape	1-r1	subject=small&_sort=-date	107	20	
+after-shape	1-r1	subject=big	933	20	
+after-shape	1-r1	Patient/big compartment Observation	657	20	
+after-shape	1-r1	code=227969	256	20	
+after-shape	1-r1	code=system|227969	466	20	
+after-shape	1-r1	code=system| (system only)	140	20	
+after-shape	1-r1	status=final&code=227969	233	20	
+after-shape	1-r1	code:text=glucose (documented scan)	4688	20	
+after-shape	1-r1	no parameters (type page)	38	20	
+after-shape	1-r1	_lastUpdated=ge2000-01-01 (all)	74	20	
+after-shape	1-r1	_lastUpdated=ge2999-01-01 (none)	4	0	
+after-shape	1-r1	date=ge2150-01-01	81	20	
+after-shape	1-r1	value-quantity=gt100	1680	20	
+after-shape	1-r1	Patient?family=a (string starts-with)	8	0	
+after-shape	1-r1	Patient?family:exact=Smith	4	0	
+after-shape	1-r1	_id=<big patient>	21	1	
+after-shape	1-r1	searchCount subject=big	42	48554	
+after-shape	1-r2	status=final&_sort=-date	1520	20	
+after-shape	1-r2	subject=big&_sort=-date	382	20	
+after-shape	1-r2	subject=small&_sort=-date	80	20	
+after-shape	1-r2	subject=big	604	20	
+after-shape	1-r2	Patient/big compartment Observation	633	20	
+after-shape	1-r2	code=227969	206	20	
+after-shape	1-r2	code=system|227969	620	20	
+after-shape	1-r2	code=system| (system only)	71	20	
+after-shape	1-r2	status=final&code=227969	229	20	
+after-shape	1-r2	code:text=glucose (documented scan)	4669	20	
+after-shape	1-r2	no parameters (type page)	29	20	
+after-shape	1-r2	_lastUpdated=ge2000-01-01 (all)	79	20	
+after-shape	1-r2	_lastUpdated=ge2999-01-01 (none)	3	0	
+after-shape	1-r2	date=ge2150-01-01	81	20	
+after-shape	1-r2	value-quantity=gt100	1623	20	
+after-shape	1-r2	Patient?family=a (string starts-with)	4	0	
+after-shape	1-r2	Patient?family:exact=Smith	2	0	
+after-shape	1-r2	_id=<big patient>	6	1	
+after-shape	1-r2	searchCount subject=big	35	48554	
+after-shape	2-plan	token code	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_value_cover (resource_type=? AND search_name=? AND token_value=?)
+after-shape	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_target_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=?)
+after-shape	2-plan	date range	0	0	SEARCH date_search_parameters USING COVERING INDEX idx_date_search_parameters_low_cover (resource_type=? AND search_name=? AND date_value>?) | USE TEMP B-TREE FOR DISTINCT
+after-shape	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX idx_string_search_parameters_owner (resource_type=?)
+after-shape	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_string_search_parameters_value_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+after-shape	2-plan	type page	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=?)
+after-shape	2-plan	last_updated range	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=? AND last_updated>?)
+after-shape	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=? AND id=?)
+after-shape	3-size	db bytes	0	0	6947524608
+after-shape	3-dbstat	resources_history	0	0	1069707264
+after-shape	3-dbstat	resources	0	0	1069318144
+after-shape	3-dbstat	token_search_parameters	0	0	535465984
+after-shape	3-dbstat	reference_search_parameters	0	0	505294848
+after-shape	3-dbstat	idx_token_search_parameters_system_cover	0	0	437178368
+after-shape	3-dbstat	idx_reference_search_parameters_value_cover	0	0	334376960
+after-shape	3-dbstat	idx_reference_search_parameters_target_cover	0	0	334376960
+after-shape	3-dbstat	composite_search_parameters	0	0	301236224
+after-shape	3-dbstat	idx_token_search_parameters_value_cover	0	0	274096128
+after-shape	3-dbstat	idx_token_search_parameters_owner	0	0	213204992
+after-shape	3-dbstat	idx_reference_search_parameters_identifier_cover	0	0	200986624
+after-shape	3-dbstat	idx_reference_search_parameters_owner	0	0	172322816
+after-shape	3-dbstat	uri_search_parameters	0	0	147775488
+after-shape	3-dbstat	idx_uri_search_parameters_value_cover	0	0	142032896
+after-shape	3-dbstat	quantity_search_parameters	0	0	125968384
+after-shape	3-dbstat	idx_composite_search_parameters_values_cover	0	0	111345664
+after-shape	3-dbstat	date_search_parameters	0	0	104603648
+after-shape	3-dbstat	idx_composite_search_parameters_owner	0	0	68235264
+after-shape	3-dbstat	idx_date_search_parameters_low_cover	0	0	65773568
+after-shape	3-dbstat	idx_date_search_parameters_high_cover	0	0	65773568
+after-shape	3-dbstat	idx_quantity_search_parameters_high_cover	0	0	63029248
+after-shape	3-dbstat	idx_quantity_search_parameters_low_cover	0	0	63025152
+after-shape	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+after-shape	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+after-shape	3-dbstat	idx_uri_search_parameters_owner	0	0	54538240
+after-shape	3-dbstat	idx_date_search_parameters_owner	0	0	53993472
+after-shape	3-dbstat	string_search_parameters	0	0	46714880
+after-shape	3-dbstat	idx_quantity_search_parameters_owner	0	0	42557440
+after-shape	3-dbstat	idx_string_search_parameters_exact_cover	0	0	36909056
+after-shape	3-dbstat	idx_string_search_parameters_value_cover	0	0	36782080
+after-shape	3-dbstat	idx_resources_type_updated	0	0	26107904
+after-shape	3-dbstat	idx_resources_history_type_updated	0	0	26107904
+after-shape	3-dbstat	idx_string_search_parameters_owner	0	0	24670208
+after-shape	3-dbstat	sqlite_schema	0	0	20480
+after-shape	3-dbstat	users	0	0	4096
+after-shape	3-dbstat	sync_resources	0	0	4096
+after-shape	3-dbstat	sqlite_stat1	0	0	4096
+after-shape	3-dbstat	sqlite_sequence	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+after-shape	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+after-shape	3-dbstat	special_search_parameters	0	0	4096
+after-shape	3-dbstat	revoked_tokens	0	0	4096
+after-shape	3-dbstat	oauth_clients	0	0	4096
+after-shape	3-dbstat	number_search_parameters	0	0	4096
+after-shape	3-dbstat	logs	0	0	4096
+after-shape	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_special_search_parameters_value_cover	0	0	4096
+after-shape	3-dbstat	idx_special_search_parameters_owner	0	0	4096
+after-shape	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+after-shape	3-dbstat	idx_number_search_parameters_owner	0	0	4096
+after-shape	3-dbstat	idx_number_search_parameters_low_cover	0	0	4096
+after-ranged	0-open	open (upgrade if behind)	169	18	
+after-ranged	0-open	user_version	0	18	
+after-ranged	0-open	createValueIndexes (IF NOT EXISTS)	9	0	
+after-ranged	0-open	db bytes	0	0	6947524608
+after-ranged	0-analyze	ANALYZE	2913	0	
+after-ranged	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+after-ranged	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+after-ranged	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+after-ranged	1-r1	status=final&_sort=-date	1237	20	
+after-ranged	1-r1	subject=big&_sort=-date	268	20	
+after-ranged	1-r1	subject=small&_sort=-date	76	20	
+after-ranged	1-r1	subject=big	177	20	
+after-ranged	1-r1	Patient/big compartment Observation	179	20	
+after-ranged	1-r1	code=227969	117	20	
+after-ranged	1-r1	code=system|227969	138	20	
+after-ranged	1-r1	code=system| (system only)	132	20	
+after-ranged	1-r1	status=final&code=227969	154	20	
+after-ranged	1-r1	code:text=glucose (documented scan)	135	20	
+after-ranged	1-r1	no parameters (type page)	29	20	
+after-ranged	1-r1	_lastUpdated=ge2000-01-01 (all)	44	20	
+after-ranged	1-r1	_lastUpdated=ge2999-01-01 (none)	4	0	
+after-ranged	1-r1	date=ge2150-01-01	61	20	
+after-ranged	1-r1	value-quantity=gt100	1244	20	
+after-ranged	1-r1	Patient?family=a (string starts-with)	10	0	
+after-ranged	1-r1	Patient?family:exact=Smith	4	0	
+after-ranged	1-r1	_id=<big patient>	18	1	
+after-ranged	1-r1	searchCount subject=big	15	48554	
+after-ranged	1-r2	status=final&_sort=-date	975	20	
+after-ranged	1-r2	subject=big&_sort=-date	271	20	
+after-ranged	1-r2	subject=small&_sort=-date	50	20	
+after-ranged	1-r2	subject=big	121	20	
+after-ranged	1-r2	Patient/big compartment Observation	134	20	
+after-ranged	1-r2	code=227969	114	20	
+after-ranged	1-r2	code=system|227969	115	20	
+after-ranged	1-r2	code=system| (system only)	104	20	
+after-ranged	1-r2	status=final&code=227969	193	20	
+after-ranged	1-r2	code:text=glucose (documented scan)	149	20	
+after-ranged	1-r2	no parameters (type page)	27	20	
+after-ranged	1-r2	_lastUpdated=ge2000-01-01 (all)	26	20	
+after-ranged	1-r2	_lastUpdated=ge2999-01-01 (none)	1	0	
+after-ranged	1-r2	date=ge2150-01-01	43	20	
+after-ranged	1-r2	value-quantity=gt100	1306	20	
+after-ranged	1-r2	Patient?family=a (string starts-with)	1	0	
+after-ranged	1-r2	Patient?family:exact=Smith	0	0	
+after-ranged	1-r2	_id=<big patient>	4	1	
+after-ranged	1-r2	searchCount subject=big	13	48554	
+after-ranged	2-plan	token code	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_value_cover (resource_type=? AND search_name=? AND token_value=?)
+after-ranged	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_target_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=?)
+after-ranged	2-plan	date range	0	0	SEARCH date_search_parameters USING COVERING INDEX idx_date_search_parameters_low_cover (resource_type=? AND search_name=? AND date_value>?) | USE TEMP B-TREE FOR DISTINCT
+after-ranged	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX idx_string_search_parameters_owner (resource_type=?)
+after-ranged	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_string_search_parameters_value_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+after-ranged	2-plan	type page	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=?)
+after-ranged	2-plan	last_updated range	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=? AND last_updated>?)
+after-ranged	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=? AND id=?)
+after-ranged	3-size	db bytes	0	0	6947524608
+after-ranged	3-dbstat	resources_history	0	0	1069707264
+after-ranged	3-dbstat	resources	0	0	1069318144
+after-ranged	3-dbstat	token_search_parameters	0	0	535465984
+after-ranged	3-dbstat	reference_search_parameters	0	0	505294848
+after-ranged	3-dbstat	idx_token_search_parameters_system_cover	0	0	437178368
+after-ranged	3-dbstat	idx_reference_search_parameters_value_cover	0	0	334376960
+after-ranged	3-dbstat	idx_reference_search_parameters_target_cover	0	0	334376960
+after-ranged	3-dbstat	composite_search_parameters	0	0	301236224
+after-ranged	3-dbstat	idx_token_search_parameters_value_cover	0	0	274096128
+after-ranged	3-dbstat	idx_token_search_parameters_owner	0	0	213204992
+after-ranged	3-dbstat	idx_reference_search_parameters_identifier_cover	0	0	200986624
+after-ranged	3-dbstat	idx_reference_search_parameters_owner	0	0	172322816
+after-ranged	3-dbstat	uri_search_parameters	0	0	147775488
+after-ranged	3-dbstat	idx_uri_search_parameters_value_cover	0	0	142032896
+after-ranged	3-dbstat	quantity_search_parameters	0	0	125968384
+after-ranged	3-dbstat	idx_composite_search_parameters_values_cover	0	0	111345664
+after-ranged	3-dbstat	date_search_parameters	0	0	104603648
+after-ranged	3-dbstat	idx_composite_search_parameters_owner	0	0	68235264
+after-ranged	3-dbstat	idx_date_search_parameters_low_cover	0	0	65773568
+after-ranged	3-dbstat	idx_date_search_parameters_high_cover	0	0	65773568
+after-ranged	3-dbstat	idx_quantity_search_parameters_high_cover	0	0	63029248
+after-ranged	3-dbstat	idx_quantity_search_parameters_low_cover	0	0	63025152
+after-ranged	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+after-ranged	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+after-ranged	3-dbstat	idx_uri_search_parameters_owner	0	0	54538240
+after-ranged	3-dbstat	idx_date_search_parameters_owner	0	0	53993472
+after-ranged	3-dbstat	string_search_parameters	0	0	46714880
+after-ranged	3-dbstat	idx_quantity_search_parameters_owner	0	0	42557440
+after-ranged	3-dbstat	idx_string_search_parameters_exact_cover	0	0	36909056
+after-ranged	3-dbstat	idx_string_search_parameters_value_cover	0	0	36782080
+after-ranged	3-dbstat	idx_resources_type_updated	0	0	26107904
+after-ranged	3-dbstat	idx_resources_history_type_updated	0	0	26107904
+after-ranged	3-dbstat	idx_string_search_parameters_owner	0	0	24670208
+after-ranged	3-dbstat	sqlite_schema	0	0	20480
+after-ranged	3-dbstat	users	0	0	4096
+after-ranged	3-dbstat	sync_resources	0	0	4096
+after-ranged	3-dbstat	sqlite_stat1	0	0	4096
+after-ranged	3-dbstat	sqlite_sequence	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+after-ranged	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+after-ranged	3-dbstat	special_search_parameters	0	0	4096
+after-ranged	3-dbstat	revoked_tokens	0	0	4096
+after-ranged	3-dbstat	oauth_clients	0	0	4096
+after-ranged	3-dbstat	number_search_parameters	0	0	4096
+after-ranged	3-dbstat	logs	0	0	4096
+after-ranged	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_special_search_parameters_value_cover	0	0	4096
+after-ranged	3-dbstat	idx_special_search_parameters_owner	0	0	4096
+after-ranged	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+after-ranged	3-dbstat	idx_number_search_parameters_owner	0	0	4096
+after-ranged	3-dbstat	idx_number_search_parameters_low_cover	0	0	4096
+after-ranged2	0-open	open (upgrade if behind)	152	18	
+after-ranged2	0-open	user_version	0	18	
+after-ranged2	0-open	createValueIndexes (IF NOT EXISTS)	4	0	
+after-ranged2	0-open	db bytes	0	0	6947524608
+after-ranged2	0-analyze	ANALYZE	3243	0	
+after-ranged2	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+after-ranged2	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+after-ranged2	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+after-ranged2	1-r1	status=final&_sort=-date	1212	20	
+after-ranged2	1-r1	subject=big&_sort=-date	344	20	
+after-ranged2	1-r1	subject=small&_sort=-date	78	20	
+after-ranged2	1-r1	subject=big	49	20	
+after-ranged2	1-r1	Patient/big compartment Observation	74	20	
+after-ranged2	1-r1	code=227969	36	20	
+after-ranged2	1-r1	code=system|227969	39	20	
+after-ranged2	1-r1	code=system| (system only)	45	20	
+after-ranged2	1-r1	status=final&code=227969	195	20	
+after-ranged2	1-r1	code:text=glucose (documented scan)	68	20	
+after-ranged2	1-r1	no parameters (type page)	44	20	
+after-ranged2	1-r1	_lastUpdated=ge2000-01-01 (all)	54	20	
+after-ranged2	1-r1	_lastUpdated=ge2999-01-01 (none)	6	0	
+after-ranged2	1-r1	date=ge2150-01-01	79	20	
+after-ranged2	1-r1	value-quantity=gt100	1626	20	
+after-ranged2	1-r1	Patient?family=a (string starts-with)	13	0	
+after-ranged2	1-r1	Patient?family:exact=Smith	4	0	
+after-ranged2	1-r1	_id=<big patient>	28	1	
+after-ranged2	1-r1	searchCount subject=big	18	48554	
+after-ranged2	1-r2	status=final&_sort=-date	1028	20	
+after-ranged2	1-r2	subject=big&_sort=-date	289	20	
+after-ranged2	1-r2	subject=small&_sort=-date	64	20	
+after-ranged2	1-r2	subject=big	29	20	
+after-ranged2	1-r2	Patient/big compartment Observation	59	20	
+after-ranged2	1-r2	code=227969	33	20	
+after-ranged2	1-r2	code=system|227969	29	20	
+after-ranged2	1-r2	code=system| (system only)	29	20	
+after-ranged2	1-r2	status=final&code=227969	155	20	
+after-ranged2	1-r2	code:text=glucose (documented scan)	35	20	
+after-ranged2	1-r2	no parameters (type page)	22	20	
+after-ranged2	1-r2	_lastUpdated=ge2000-01-01 (all)	38	20	
+after-ranged2	1-r2	_lastUpdated=ge2999-01-01 (none)	1	0	
+after-ranged2	1-r2	date=ge2150-01-01	58	20	
+after-ranged2	1-r2	value-quantity=gt100	1232	20	
+after-ranged2	1-r2	Patient?family=a (string starts-with)	1	0	
+after-ranged2	1-r2	Patient?family:exact=Smith	0	0	
+after-ranged2	1-r2	_id=<big patient>	3	1	
+after-ranged2	1-r2	searchCount subject=big	14	48554	
+after-ranged2	2-plan	token code	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_value_cover (resource_type=? AND search_name=? AND token_value=?)
+after-ranged2	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_target_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=?)
+after-ranged2	2-plan	date range	0	0	SEARCH date_search_parameters USING COVERING INDEX idx_date_search_parameters_low_cover (resource_type=? AND search_name=? AND date_value>?) | USE TEMP B-TREE FOR DISTINCT
+after-ranged2	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX idx_string_search_parameters_owner (resource_type=?)
+after-ranged2	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_string_search_parameters_value_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+after-ranged2	2-plan	type page	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=?)
+after-ranged2	2-plan	last_updated range	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=? AND last_updated>?)
+after-ranged2	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=? AND id=?)
+after-ranged2	3-size	db bytes	0	0	6947524608
+after-ranged2	3-dbstat	resources_history	0	0	1069707264
+after-ranged2	3-dbstat	resources	0	0	1069318144
+after-ranged2	3-dbstat	token_search_parameters	0	0	535465984
+after-ranged2	3-dbstat	reference_search_parameters	0	0	505294848
+after-ranged2	3-dbstat	idx_token_search_parameters_system_cover	0	0	437178368
+after-ranged2	3-dbstat	idx_reference_search_parameters_value_cover	0	0	334376960
+after-ranged2	3-dbstat	idx_reference_search_parameters_target_cover	0	0	334376960
+after-ranged2	3-dbstat	composite_search_parameters	0	0	301236224
+after-ranged2	3-dbstat	idx_token_search_parameters_value_cover	0	0	274096128
+after-ranged2	3-dbstat	idx_token_search_parameters_owner	0	0	213204992
+after-ranged2	3-dbstat	idx_reference_search_parameters_identifier_cover	0	0	200986624
+after-ranged2	3-dbstat	idx_reference_search_parameters_owner	0	0	172322816
+after-ranged2	3-dbstat	uri_search_parameters	0	0	147775488
+after-ranged2	3-dbstat	idx_uri_search_parameters_value_cover	0	0	142032896
+after-ranged2	3-dbstat	quantity_search_parameters	0	0	125968384
+after-ranged2	3-dbstat	idx_composite_search_parameters_values_cover	0	0	111345664
+after-ranged2	3-dbstat	date_search_parameters	0	0	104603648
+after-ranged2	3-dbstat	idx_composite_search_parameters_owner	0	0	68235264
+after-ranged2	3-dbstat	idx_date_search_parameters_low_cover	0	0	65773568
+after-ranged2	3-dbstat	idx_date_search_parameters_high_cover	0	0	65773568
+after-ranged2	3-dbstat	idx_quantity_search_parameters_high_cover	0	0	63029248
+after-ranged2	3-dbstat	idx_quantity_search_parameters_low_cover	0	0	63025152
+after-ranged2	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+after-ranged2	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+after-ranged2	3-dbstat	idx_uri_search_parameters_owner	0	0	54538240
+after-ranged2	3-dbstat	idx_date_search_parameters_owner	0	0	53993472
+after-ranged2	3-dbstat	string_search_parameters	0	0	46714880
+after-ranged2	3-dbstat	idx_quantity_search_parameters_owner	0	0	42557440
+after-ranged2	3-dbstat	idx_string_search_parameters_exact_cover	0	0	36909056
+after-ranged2	3-dbstat	idx_string_search_parameters_value_cover	0	0	36782080
+after-ranged2	3-dbstat	idx_resources_type_updated	0	0	26107904
+after-ranged2	3-dbstat	idx_resources_history_type_updated	0	0	26107904
+after-ranged2	3-dbstat	idx_string_search_parameters_owner	0	0	24670208
+after-ranged2	3-dbstat	sqlite_schema	0	0	20480
+after-ranged2	3-dbstat	users	0	0	4096
+after-ranged2	3-dbstat	sync_resources	0	0	4096
+after-ranged2	3-dbstat	sqlite_stat1	0	0	4096
+after-ranged2	3-dbstat	sqlite_sequence	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+after-ranged2	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+after-ranged2	3-dbstat	special_search_parameters	0	0	4096
+after-ranged2	3-dbstat	revoked_tokens	0	0	4096
+after-ranged2	3-dbstat	oauth_clients	0	0	4096
+after-ranged2	3-dbstat	number_search_parameters	0	0	4096
+after-ranged2	3-dbstat	logs	0	0	4096
+after-ranged2	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_special_search_parameters_value_cover	0	0	4096
+after-ranged2	3-dbstat	idx_special_search_parameters_owner	0	0	4096
+after-ranged2	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+after-ranged2	3-dbstat	idx_number_search_parameters_owner	0	0	4096
+after-ranged2	3-dbstat	idx_number_search_parameters_low_cover	0	0	4096
+after-final	0-open	open (upgrade if behind)	144	18	
+after-final	0-open	user_version	0	18	
+after-final	0-open	createValueIndexes (IF NOT EXISTS)	13	0	
+after-final	0-open	db bytes	0	0	6947524608
+after-final	0-analyze	ANALYZE	3389	0	
+after-final	0-patients	big patient 77e10fd0-6a1c-5547-a130-fae1341acf36	0	48554	
+after-final	0-patients	small patient 42f0ed8f-d744-5edb-a05d-8e011c1fbd64	0	963	
+after-final	0-patients	system of code 227969	0	0	http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+after-final	1-r1	status=final&_sort=-date	1240	20	
+after-final	1-r1	subject=big&_sort=-date	325	20	
+after-final	1-r1	subject=small&_sort=-date	84	20	
+after-final	1-r1	subject=big	51	20	
+after-final	1-r1	Patient/big compartment Observation	79	20	
+after-final	1-r1	code=227969	44	20	
+after-final	1-r1	code=system|227969	27	20	
+after-final	1-r1	code=system| (system only)	42	20	
+after-final	1-r1	status=final&code=227969	193	20	
+after-final	1-r1	code:text=glucose (documented scan)	53	20	
+after-final	1-r1	no parameters (type page)	34	20	
+after-final	1-r1	_lastUpdated=ge2000-01-01 (all)	48	20	
+after-final	1-r1	_lastUpdated=ge2999-01-01 (none)	6	0	
+after-final	1-r1	date=ge2150-01-01	57	20	
+after-final	1-r1	value-quantity=gt100	49	20	
+after-final	1-r1	Patient?family=a (string starts-with)	9	0	
+after-final	1-r1	Patient?family:exact=Smith	2	0	
+after-final	1-r1	_id=<big patient>	14	1	
+after-final	1-r1	searchCount subject=big	15	48554	
+after-final	1-r2	status=final&_sort=-date	1004	20	
+after-final	1-r2	subject=big&_sort=-date	292	20	
+after-final	1-r2	subject=small&_sort=-date	58	20	
+after-final	1-r2	subject=big	36	20	
+after-final	1-r2	Patient/big compartment Observation	55	20	
+after-final	1-r2	code=227969	37	20	
+after-final	1-r2	code=system|227969	33	20	
+after-final	1-r2	code=system| (system only)	34	20	
+after-final	1-r2	status=final&code=227969	175	20	
+after-final	1-r2	code:text=glucose (documented scan)	58	20	
+after-final	1-r2	no parameters (type page)	35	20	
+after-final	1-r2	_lastUpdated=ge2000-01-01 (all)	42	20	
+after-final	1-r2	_lastUpdated=ge2999-01-01 (none)	4	0	
+after-final	1-r2	date=ge2150-01-01	48	20	
+after-final	1-r2	value-quantity=gt100	37	20	
+after-final	1-r2	Patient?family=a (string starts-with)	6	0	
+after-final	1-r2	Patient?family:exact=Smith	2	0	
+after-final	1-r2	_id=<big patient>	7	1	
+after-final	1-r2	searchCount subject=big	15	48554	
+after-final	2-plan	token code	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_value_cover (resource_type=? AND search_name=? AND token_value=?)
+after-final	2-plan	reference subject	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_target_cover (resource_type=? AND search_name=? AND reference_resource_type=? AND reference_id_part=?)
+after-final	2-plan	date range	0	0	SEARCH date_search_parameters USING COVERING INDEX idx_date_search_parameters_low_cover (resource_type=? AND search_name=? AND date_value>?) | USE TEMP B-TREE FOR DISTINCT
+after-final	2-plan	string starts-with LIKE	0	0	SEARCH string_search_parameters USING INDEX idx_string_search_parameters_owner (resource_type=?)
+after-final	2-plan	string starts-with range	0	0	SEARCH string_search_parameters USING COVERING INDEX idx_string_search_parameters_value_cover (resource_type=? AND search_name=? AND string_value>? AND string_value<?) | USE TEMP B-TREE FOR DISTINCT
+after-final	2-plan	type page	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=?)
+after-final	2-plan	last_updated range	0	0	SEARCH resources USING INDEX idx_resources_type_updated (resource_type=? AND last_updated>?)
+after-final	2-plan	owner delete	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=? AND id=?)
+after-final	3-size	db bytes	0	0	6947524608
+after-final	3-dbstat	resources_history	0	0	1069707264
+after-final	3-dbstat	resources	0	0	1069318144
+after-final	3-dbstat	token_search_parameters	0	0	535465984
+after-final	3-dbstat	reference_search_parameters	0	0	505294848
+after-final	3-dbstat	idx_token_search_parameters_system_cover	0	0	437178368
+after-final	3-dbstat	idx_reference_search_parameters_value_cover	0	0	334376960
+after-final	3-dbstat	idx_reference_search_parameters_target_cover	0	0	334376960
+after-final	3-dbstat	composite_search_parameters	0	0	301236224
+after-final	3-dbstat	idx_token_search_parameters_value_cover	0	0	274096128
+after-final	3-dbstat	idx_token_search_parameters_owner	0	0	213204992
+after-final	3-dbstat	idx_reference_search_parameters_identifier_cover	0	0	200986624
+after-final	3-dbstat	idx_reference_search_parameters_owner	0	0	172322816
+after-final	3-dbstat	uri_search_parameters	0	0	147775488
+after-final	3-dbstat	idx_uri_search_parameters_value_cover	0	0	142032896
+after-final	3-dbstat	quantity_search_parameters	0	0	125968384
+after-final	3-dbstat	idx_composite_search_parameters_values_cover	0	0	111345664
+after-final	3-dbstat	date_search_parameters	0	0	104603648
+after-final	3-dbstat	idx_composite_search_parameters_owner	0	0	68235264
+after-final	3-dbstat	idx_date_search_parameters_low_cover	0	0	65773568
+after-final	3-dbstat	idx_date_search_parameters_high_cover	0	0	65773568
+after-final	3-dbstat	idx_quantity_search_parameters_high_cover	0	0	63029248
+after-final	3-dbstat	idx_quantity_search_parameters_low_cover	0	0	63025152
+after-final	3-dbstat	sqlite_autoindex_resources_history_1	0	0	62697472
+after-final	3-dbstat	sqlite_autoindex_resources_1	0	0	60715008
+after-final	3-dbstat	idx_uri_search_parameters_owner	0	0	54538240
+after-final	3-dbstat	idx_date_search_parameters_owner	0	0	53993472
+after-final	3-dbstat	string_search_parameters	0	0	46714880
+after-final	3-dbstat	idx_quantity_search_parameters_owner	0	0	42557440
+after-final	3-dbstat	idx_string_search_parameters_exact_cover	0	0	36909056
+after-final	3-dbstat	idx_string_search_parameters_value_cover	0	0	36782080
+after-final	3-dbstat	idx_resources_type_updated	0	0	26107904
+after-final	3-dbstat	idx_resources_history_type_updated	0	0	26107904
+after-final	3-dbstat	idx_string_search_parameters_owner	0	0	24670208
+after-final	3-dbstat	sqlite_schema	0	0	20480
+after-final	3-dbstat	users	0	0	4096
+after-final	3-dbstat	sync_resources	0	0	4096
+after-final	3-dbstat	sqlite_stat1	0	0	4096
+after-final	3-dbstat	sqlite_sequence	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_users_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_sync_resources_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_revoked_tokens_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_oauth_clients_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_export_jobs_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_canonical_resources_1	0	0	4096
+after-final	3-dbstat	sqlite_autoindex_authorization_codes_1	0	0	4096
+after-final	3-dbstat	special_search_parameters	0	0	4096
+after-final	3-dbstat	revoked_tokens	0	0	4096
+after-final	3-dbstat	oauth_clients	0	0	4096
+after-final	3-dbstat	number_search_parameters	0	0	4096
+after-final	3-dbstat	logs	0	0	4096
+after-final	3-dbstat	idx_uri_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_token_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_string_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_special_search_parameters_value_cover	0	0	4096
+after-final	3-dbstat	idx_special_search_parameters_owner	0	0	4096
+after-final	3-dbstat	idx_special_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_reference_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_quantity_search_parameters_contained	0	0	4096
+after-final	3-dbstat	idx_number_search_parameters_owner	0	0	4096
+after-final	3-dbstat	idx_number_search_parameters_low_cover	0	0	4096

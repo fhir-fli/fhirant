@@ -1,0 +1,33 @@
+phase	query	ms	rows	note
+0	systems	0	0	code: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items; rare category system: http://terminology.hl7.org/CodeSystem/observation-category
+1-with-r1	code=system| (system only, the common system)	325	20	
+1-with-r1	code=system|227969	61	20	
+1-with-r1	category=rareSystem|	79	20	
+1-with-r1	category=http://nobody.example|	2	0	
+1-with-r1	SQL absolute reference (no match)	2	0	
+1-with-r1	SQL reference :below (no match)	1062	0	
+1-with-r2	code=system| (system only, the common system)	42	20	
+1-with-r2	code=system|227969	42	20	
+1-with-r2	category=rareSystem|	58	20	
+1-with-r2	category=http://nobody.example|	2	0	
+1-with-r2	SQL absolute reference (no match)	0	0	
+1-with-r2	SQL reference :below (no match)	1119	0	
+1-with-plan	absolute reference	0	0	SEARCH reference_search_parameters USING COVERING INDEX idx_reference_search_parameters_value_cover (resource_type=? AND search_name=? AND reference_value=?)
+1-with-plan	system only	0	0	SEARCH token_search_parameters USING COVERING INDEX idx_token_search_parameters_system_cover (resource_type=? AND search_name=? AND token_system=?)
+2-drop	DROP INDEX idx_token_search_parameters_system_cover	593	0	
+2-drop	DROP INDEX idx_reference_search_parameters_value_cover	593	0	
+2-analyze	ANALYZE	2730	0	
+3-without-r1	code=system| (system only, the common system)	40	20	
+3-without-r1	code=system|227969	49	20	
+3-without-r1	category=rareSystem|	57	20	
+3-without-r1	category=http://nobody.example|	1194	0	
+3-without-r1	SQL absolute reference (no match)	1006	0	
+3-without-r1	SQL reference :below (no match)	1044	0	
+3-without-r2	code=system| (system only, the common system)	39	20	
+3-without-r2	code=system|227969	26	20	
+3-without-r2	category=rareSystem|	52	20	
+3-without-r2	category=http://nobody.example|	1150	0	
+3-without-r2	SQL absolute reference (no match)	1014	0	
+3-without-r2	SQL reference :below (no match)	1076	0	
+3-without-plan	absolute reference	0	0	SEARCH reference_search_parameters USING INDEX idx_reference_search_parameters_owner (resource_type=?)
+3-without-plan	system only	0	0	SEARCH token_search_parameters USING INDEX idx_token_search_parameters_owner (resource_type=?)

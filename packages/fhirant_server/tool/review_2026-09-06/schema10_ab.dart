@@ -50,6 +50,12 @@ Future<void> main(List<String> args) async {
     return v.data.values.first as int;
   });
   row('0-open', 'user_version', 0, version);
+  // The package's full index set, IF NOT EXISTS: restores anything an
+  // experiment dropped (index_trim_ab.dart) without touching the rest.
+  await timed('0-open', 'createValueIndexes (IF NOT EXISTS)', () async {
+    await db.createValueIndexes();
+    return 0;
+  });
   row('0-open', 'db bytes', 0, 0, '${File('$dir/fhirant.sqlite').lengthSync()}');
   await timed('0-analyze', 'ANALYZE', () async {
     await db.customStatement('ANALYZE');

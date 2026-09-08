@@ -1,0 +1,31 @@
+round	step	ms
+1	DAO search subject=big count 20	475
+1	SQL id page (covering index)	1
+1	20 x getResource	49
+1	SQL 20 rows IN (...)	4
+1	DAO search code=227969 count 20	162
+2	DAO search subject=big count 20	163
+2	SQL id page (covering index)	0
+2	20 x getResource	31
+2	SQL 20 rows IN (...)	2
+2	DAO search code=227969 count 20	123
+3	DAO search subject=big count 20	131
+3	SQL id page (covering index)	0
+3	20 x getResource	29
+3	SQL 20 rows IN (...)	0
+3	DAO search code=227969 count 20	146
+1	DAO search subject=big count 20	172
+1	SQL id page (covering index)	0
+1	20 x getResource	10
+1	SQL 20 rows IN (...)	1
+1	DAO search code=227969 count 20	17
+2	DAO search subject=big count 20	21
+2	SQL id page (covering index)	0
+2	20 x getResource	6
+2	SQL 20 rows IN (...)	0
+2	DAO search code=227969 count 20	8
+3	DAO search subject=big count 20	11
+3	SQL id page (covering index)	0
+3	20 x getResource	13
+3	SQL 20 rows IN (...)	0
+3	DAO search code=227969 count 20	9
