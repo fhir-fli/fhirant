@@ -7,7 +7,10 @@ import 'package:fhirant/src/services/database_service.dart';
 import 'package:fhirant/src/services/server_service.dart';
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/fhirant_server.dart'
+    show loadSpecResourcesFromAssets;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -64,6 +67,12 @@ class _FhirantStartupState extends State<FhirantStartup> {
     // Initialize database
     final dbService = DatabaseService();
     await dbService.initialize();
+    // The specification's canonical resources (REVIEW-2026-09-06 finding
+    // 43): loaded from the asset bundle on the first boot, in the background,
+    // so `$validate` can resolve a base type or a bound value set on the
+    // phone. The store answers requests while this runs; a `$validate` that
+    // arrives first is told what it cannot resolve, as before.
+    unawaited(_loadSpecification(dbService));
 
     // Create server service
     final serverService = ServerService(dbService);
@@ -262,5 +271,20 @@ class _ErrorScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Future<void> _loadSpecification(DatabaseService dbService) async {
+  try {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    await loadSpecResourcesFromAssets(
+      dbService.db,
+      assetKeys: manifest
+          .listAssets()
+          .where((key) => key.startsWith('assets/fhir_spec/')),
+      loadBytes: rootBundle.load,
+    );
+  } catch (e, stack) {
+    FhirantLogging().logError('Loading the specification failed', e, stack);
   }
 }

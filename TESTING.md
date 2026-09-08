@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,164 tests** across 91 test files, all passing. Counted 2026-09-08 by
+**1,168 tests** across 93 test files, all passing. Counted 2026-09-08 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,9 +16,9 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 985 | 80 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 988 | 81 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 127 | 6 | `cd packages/fhirant_db && dart test` |
-| fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
+| fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 8 | 1 | `cd packages/fhirant_logging && dart test` |
 
@@ -66,7 +66,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/middleware/cors_middleware_test.dart` | CORS headers |
 | `test/middleware/content_negotiation_test.dart` | Accept/Content-Type handling |
 
-### fhirant_server — Utility Tests (4 files)
+### fhirant_server — Utility Tests (5 files)
 
 | File | Description |
 |------|-------------|
@@ -74,6 +74,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/smart_scopes_test.dart` | SMART scope parsing + enforcement |
 | `test/utils/password_hasher_test.dart` | bcrypt hashing |
 | `test/utils/password_policy_test.dart` | Password strength rules |
+| `test/utils/spec_loader_test.dart` | The specification loaded from an asset bundle in chunks, once (3) |
 
 ### fhirant_server — Service Tests (4 files)
 

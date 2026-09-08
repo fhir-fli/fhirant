@@ -47,3 +47,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    # The R4B specification's canonical resources (StructureDefinitions,
+    # ValueSets, CodeSystems, ...), the same NDJSON set the CLI loads, loaded
+    # into the store on first boot so $validate can resolve them on the
+    # phone (REVIEW-2026-09-06 finding 43). A symlink to the server
+    # package's copy, so there is one set.
+    - assets/fhir_spec/
