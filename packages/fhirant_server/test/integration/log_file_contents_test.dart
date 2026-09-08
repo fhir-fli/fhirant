@@ -44,6 +44,7 @@ void main() {
       ),
     );
 
+    await FhirantLogging().flush();
     final contents = logFile.readAsStringSync();
 
     expect(
@@ -73,6 +74,7 @@ void main() {
       testRequest('GET', '/Patient/patient-12345', authToken: token),
     );
 
+    await FhirantLogging().flush();
     final contents = logFile.readAsStringSync();
     expect(contents, isNot(contains('patient-12345')));
     // The shape survives, which is what the log is for.
@@ -88,6 +90,7 @@ void main() {
       testRequest('GET', '/Observation?subject=Patient/abc', authToken: token),
     );
 
+    await FhirantLogging().flush();
     final contents = logFile.readAsStringSync();
     // Still plaintext — F6's fix narrowed what is written, it did not encrypt
     // the file. Anyone holding the device can read it.

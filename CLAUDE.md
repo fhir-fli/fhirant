@@ -221,7 +221,7 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,162 tests** across 91 test files, all passing (counted 2026-09-08).
+**1,164 tests** across 91 test files, all passing (counted 2026-09-08).
 
 - **Server tests** (985 tests, 80 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (127 tests, 6 files): `cd packages/fhirant_db && dart test`
