@@ -49,7 +49,17 @@ class DatabaseService {
     // via the build hook declared in pubspec.yaml. The cipher/legacy PRAGMAs
     // select the SQLCipher-v4-compatible scheme so databases created by the
     // previous sqlcipher_flutter_libs builds keep opening.
-    final nativeDb = NativeDatabase(
+    //
+    // The store runs on its own isolate (REVIEW-2026-09-06 §6.1): every SQL
+    // statement used to execute on the UI isolate, so a search, a count, an
+    // export or the specification load held the interface for its duration
+    // (0.5–1.1 s at a stretch measured for the load, row 43). Measured
+    // 2026-09-08 on the 929k MIMIC copy, same isolate against background:
+    // a round trip costs 0.07 ms (`SELECT 1` ×200: 1–5 ms → 14–20 ms) and a
+    // real query nothing visible (100 single reads 22 → 26 ms, a token page
+    // 12 → 6 ms, a count 70 → 73 ms, RSS unchanged). The JSON decode of
+    // each row still happens on the caller.
+    final nativeDb = NativeDatabase.createInBackground(
       dbFile,
       setup: (rawDb) {
         rawDb

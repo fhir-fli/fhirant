@@ -57,16 +57,16 @@ Future<void> main(List<String> args) async {
     // Date and _lastUpdated ranges share the single-range page rule, so a
     // change to it is measured on them too (the §4.7 cases).
     'date=ge2150': {
-      'date': ['ge2150']
+      'date': ['ge2150'],
     },
     'date=2137': {
-      'date': ['2137']
+      'date': ['2137'],
     },
     '_lastUpdated=ge2999': {
-      '_lastUpdated': ['ge2999']
+      '_lastUpdated': ['ge2999'],
     },
     '_lastUpdated=ge2100': {
-      '_lastUpdated': ['ge2100']
+      '_lastUpdated': ['ge2100'],
     },
   };
   // Counts read every match: no LIMIT to stop at.
@@ -81,7 +81,7 @@ Future<void> main(List<String> args) async {
       'value-quantity': ['le5'],
     },
     'count date=ge2150': {
-      'date': ['ge2150']
+      'date': ['ge2150'],
     },
   };
   for (final entry in queries.entries) {
