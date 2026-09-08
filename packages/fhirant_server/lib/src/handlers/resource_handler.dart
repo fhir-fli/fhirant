@@ -154,6 +154,10 @@ Future<Response> systemSearchHandler(
     final summary = parsed['summary'] as String?;
     final namedQuery = parsed['query'] as String?;
     final unknownParams = parsed['unknownParams'] as List<String>?;
+    final invalidParams = parsed['invalidParams'] as List<String>?;
+    if (invalidParams != null) {
+      return _searchRefusal(invalidParams.join('; '), fhir.IssueType.invalid);
+    }
 
     // R4 3.1.1.7, the same SHALL as on a type-level search.
     if (namedQuery != null) {
@@ -387,6 +391,10 @@ Future<Response> _searchResources(
     final elements = parsed['elements'] as List<String>?;
     final total = parsed['total'] as String?;
     final unknownParams = parsed['unknownParams'] as List<String>?;
+    final invalidParams = parsed['invalidParams'] as List<String>?;
+    if (invalidParams != null) {
+      return _searchRefusal(invalidParams.join('; '), fhir.IssueType.invalid);
+    }
     final filter = parsed['filter'] as String?;
     final contained = parsed['contained'] as String?;
     final containedType = parsed['containedType'] as String?;
@@ -1556,10 +1564,36 @@ Future<Response> conditionalDeleteHandler(
       );
     }
 
+    // Bounded: R4B http.html "conditional delete" leaves the multiple-match
+    // case to server policy ("the server may delete all matching resources,
+    // or return 412 Precondition Failed"); this server deletes up to
+    // [kMaxConditionalDeletes] in one transaction and refuses beyond that,
+    // so one URL cannot empty a store or leave it half emptied
+    // (REVIEW-2026-09-06 finding 41). One more than the limit is asked for,
+    // to know whether the limit was exceeded without counting the whole set.
     final results = await dbInterface.search(
       resourceType: type,
       searchParameters: searchParams,
+      count: kMaxConditionalDeletes + 1,
     );
+    if (results.length > kMaxConditionalDeletes) {
+      return Response(
+        412,
+        body: fhir.OperationOutcome(
+          issue: [
+            fhir.OperationOutcomeIssue(
+              severity: fhir.IssueSeverity.error,
+              code: fhir.IssueType.tooCostly,
+              diagnostics: 'Conditional delete matches more than '
+                      '$kMaxConditionalDeletes $resourceType resources; narrow '
+                      'the criteria'
+                  .toFhirString,
+            ),
+          ],
+        ).toJsonString(),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
 
     if (results.isEmpty) {
       return Response.ok(
@@ -1577,14 +1611,17 @@ Future<Response> conditionalDeleteHandler(
       );
     }
 
-    // Delete all matching resources
-    var deleted = 0;
-    for (final resource in results) {
-      final id = resource.id?.toString() ?? '';
-      if (await dbInterface.deleteResource(type, id)) {
-        deleted++;
+    // Delete all matching resources, together or not at all.
+    final deleted = await dbInterface.transaction(() async {
+      var n = 0;
+      for (final resource in results) {
+        final id = resource.id?.toString() ?? '';
+        if (await dbInterface.deleteResource(type, id)) {
+          n++;
+        }
       }
-    }
+      return n;
+    });
 
     FhirantLogging().logInfo(
       'Conditional delete: deleted $deleted of ${results.length} '
@@ -1678,3 +1715,6 @@ Response _preconditionFailed(String diagnostics) => Response(
       ).toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
+
+/// The most resources one conditional delete may remove; more is a 412.
+const kMaxConditionalDeletes = 100;

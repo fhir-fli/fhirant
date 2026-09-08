@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
+import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for resource-level history: GET /{resourceType}/{id}/_history
@@ -28,8 +29,13 @@ Future<Response> resourceHistoryHandler(
 
     // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
-    final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
-    final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final pageError = pageArgumentError(
+      queryParams['_count'],
+      queryParams['_offset'],
+    );
+    if (pageError != null) return _validationErrorResponse(pageError);
+    final count = pageSize(queryParams['_count']);
+    final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
 
@@ -125,8 +131,13 @@ Future<Response> typeHistoryHandler(
 
     // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
-    final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
-    final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final pageError = pageArgumentError(
+      queryParams['_count'],
+      queryParams['_offset'],
+    );
+    if (pageError != null) return _validationErrorResponse(pageError);
+    final count = pageSize(queryParams['_count']);
+    final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
 
@@ -193,8 +204,13 @@ Future<Response> systemHistoryHandler(
 
     // Get pagination and history parameters
     final queryParams = request.url.queryParameters;
-    final count = int.tryParse(queryParams['_count'] ?? '20') ?? 20;
-    final offset = int.tryParse(queryParams['_offset'] ?? '0') ?? 0;
+    final pageError = pageArgumentError(
+      queryParams['_count'],
+      queryParams['_offset'],
+    );
+    if (pageError != null) return _validationErrorResponse(pageError);
+    final count = pageSize(queryParams['_count']);
+    final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
 

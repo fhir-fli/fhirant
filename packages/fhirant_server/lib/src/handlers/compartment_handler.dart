@@ -92,8 +92,12 @@ Future<Response> everythingHandler(
     if (sinceParam != null) {
       since = DateTime.tryParse(sinceParam);
     }
-    final count = int.tryParse(countParam ?? '') ?? 100;
-    final offset = int.tryParse(offsetParam ?? '') ?? 0;
+    final pageError = pageArgumentError(countParam, offsetParam);
+    if (pageError != null) {
+      return _operationOutcome(400, pageError, fhir.IssueType.invalid);
+    }
+    final count = pageSize(countParam, defaultCount: 100);
+    final offset = int.parse(offsetParam ?? '0');
 
     // 4. Every member of the compartment, by type, from the reference index.
     // The focal resource is always first. OperationDefinition
@@ -128,25 +132,67 @@ Future<Response> everythingHandler(
       }
     }
 
-    // 5. Flatten to (type, id) pairs and fetch resources
-    final allResources = <fhir.Resource>[focalResource];
+    // 5. The page, cut from the ordered (type, id) list BEFORE anything is
+    // read: the focal resource at position 0, then each type in name order
+    // with its ids sorted. Only the page's resources are hydrated; the
+    // total is the member count. This used to read every member of the
+    // compartment and then skip to the page, so a patient's whole record
+    // was decoded to answer for its first hundred resources
+    // (REVIEW-2026-09-06 finding 35).
+    final pageIds = <(fhir.R4ResourceType, String)>[];
+    var position = 1;
     final types = members.keys.toList()..sort();
     for (final typeName in types) {
       final resTypeEnum = fhir.R4ResourceType.fromString(typeName);
       if (resTypeEnum == null) continue;
-      final ids = members[typeName]!.toList()..sort();
+      final ids = members[typeName]!
+          .where((r) => !(typeName == compartmentType && r == id))
+          .toList()
+        ..sort();
       for (final resId in ids) {
-        if (typeName == compartmentType && resId == id) continue;
-        final resource = await dbInterface.getResource(resTypeEnum, resId);
-        if (resource != null) {
-          allResources.add(resource);
+        if (position >= offset && position < offset + count) {
+          pageIds.add((resTypeEnum, resId));
         }
+        position++;
       }
     }
+    final total = position;
+    final paged = <fhir.Resource>[
+      if (offset == 0 && count > 0) focalResource,
+    ];
+    for (final (resTypeEnum, resId) in pageIds) {
+      final resource = await dbInterface.getResource(resTypeEnum, resId);
+      if (resource != null) paged.add(resource);
+    }
 
-    // 6. Paginate
-    final total = allResources.length;
-    final paged = allResources.skip(offset).take(count).toList();
+    // 6. Links. The self link repeats the request with its page position;
+    // next and previous move `_offset` by the page size and keep every
+    // other parameter, `_count` included, as the client sent it.
+    final requested = request.requestedUri;
+    Uri pageUrl(int pageOffset) => requested.replace(
+          queryParameters: {
+            ...requested.queryParametersAll,
+            '_offset': ['$pageOffset'],
+          },
+        );
+    final links = <fhir.BundleLink>[
+      fhir.BundleLink(
+        relation: fhir.FhirString('self'),
+        url: fhir.FhirUri(pageUrl(offset).toString()),
+      ),
+      if (count > 0 && offset > 0)
+        fhir.BundleLink(
+          relation: fhir.FhirString('previous'),
+          url: fhir.FhirUri(
+            pageUrl((offset - count).clamp(0, offset)).toString(),
+          ),
+        ),
+      if (count > 0 && offset + count < total)
+        fhir.BundleLink(
+          relation: fhir.FhirString('next'),
+          url: fhir.FhirUri(pageUrl(offset + count).toString()),
+        ),
+    ];
 
     // 7. Build Bundle
     final baseUrl = _baseUrl(request);
@@ -155,6 +201,7 @@ Future<Response> everythingHandler(
       final bundle = fhir.Bundle(
         type: fhir.BundleType.searchset,
         total: fhir.FhirUnsignedInt(total),
+        link: links,
       );
       return Response.ok(
         bundle.toJsonString(),
@@ -176,10 +223,12 @@ Future<Response> everythingHandler(
       type: fhir.BundleType.searchset,
       total: fhir.FhirUnsignedInt(total),
       entry: entries,
+      link: links,
     );
 
     FhirantLogging().logInfo(
-      '\$everything for $compartmentType/$id returned $total resources',
+      '\$everything for $compartmentType/$id: $total resources, '
+      '${entries.length} on this page',
     );
 
     return Response.ok(

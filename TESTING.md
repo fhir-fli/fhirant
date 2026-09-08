@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,119 tests** across 89 test files, all passing. Counted 2026-09-07 by
+**1,143 tests** across 89 test files, all passing. Counted 2026-09-08 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 966 | 78 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 973 | 79 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 120 | 5 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -75,7 +75,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/password_hasher_test.dart` | bcrypt hashing |
 | `test/utils/password_policy_test.dart` | Password strength rules |
 
-### fhirant_server — Integration Tests (10 files)
+### fhirant_server — Integration Tests (11 files)
 
 | File | Description |
 |------|-------------|
@@ -94,6 +94,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/authorization_review_test.dart` | REVIEW-2026-09-06 §1: scope grant, refresh tokens, compartments, lockout, PKCE, pipeline order (19) |
 | `test/integration/backup_file_e2e_test.dart` | `$backup` as an encrypted SQLite file, streamed; `$restore` of that file, the envelope or a Bundle (4) |
 | `test/integration/integrity_review_test.dart` | REVIEW-2026-09-06 §3 at the HTTP surface: If-Match inside the write, stored resource returned, deleted-resource history and 410, meta kept on update, history paged in SQL (11) |
+| `test/integration/scale_review_test.dart` | REVIEW-2026-09-06 §5 at the HTTP surface: `_count` refused below zero and capped at 500 with the client's value in the self link, `$everything` paged before hydrating with links, conditional delete bounded at 100 and transactional (7) |
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
 

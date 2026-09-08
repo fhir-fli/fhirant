@@ -1743,6 +1743,9 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockDb.transaction<int>(any())).thenAnswer(
+        (i) => (i.positionalArguments.first as Future<int> Function())(),
+      );
     });
 
     test('returns 400 when no search params provided', () async {
@@ -1778,6 +1781,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
+          count: kMaxConditionalDeletes + 1,
           searchParameters: {
             'name': ['CondDelete'],
           },
@@ -1823,6 +1827,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
+          count: kMaxConditionalDeletes + 1,
           searchParameters: {
             'name': ['MultiMatch'],
           },
@@ -1857,6 +1862,7 @@ void main() {
       when(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
+          count: kMaxConditionalDeletes + 1,
           searchParameters: {
             'name': ['NoMatch'],
           },

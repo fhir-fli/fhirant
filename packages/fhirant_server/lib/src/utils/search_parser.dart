@@ -1,12 +1,45 @@
 import 'package:fhirant_db/fhirant_db.dart';
 
 /// Utility for parsing FHIR search parameters from query strings
+/// The most entries one page carries; a larger `_count` is clamped to it.
+/// R4B search.html 3.1.1.5.3 "Page Count", read 2026-09-08: "Servers SHALL
+/// NOT return more resources than requested, even if they don't support
+/// paging, but may return less than the client requested. The server should
+/// repeat the original _count parameter in its returned page links so that
+/// subsequent paging requests honor the original _count." So the page is
+/// smaller and the links carry the `_count` the client sent. Before this a
+/// `_count=100000` hydrated every match into one bundle
+/// (REVIEW-2026-09-06 finding 22).
+const kMaxPageSize = 500;
+
+/// Why `_count` or `_offset` cannot page a result, or null when they can:
+/// each must be an integer of zero or more. Nothing negative pages anything,
+/// and reading `_count=-1` as the default answered a malformed request as
+/// though it were well formed.
+String? pageArgumentError(String? count, String? offset) {
+  if (count != null && (int.tryParse(count) ?? -1) < 0) {
+    return '_count must be an integer of zero or more, not "$count"';
+  }
+  if (offset != null && (int.tryParse(offset) ?? -1) < 0) {
+    return '_offset must be an integer of zero or more, not "$offset"';
+  }
+  return null;
+}
+
+/// [count], already checked by [pageArgumentError], as a page size:
+/// [defaultCount] when absent, never above [kMaxPageSize].
+int pageSize(String? count, {int defaultCount = 20}) =>
+    (count == null ? defaultCount : int.parse(count)).clamp(0, kMaxPageSize);
+
 class SearchParameterParser {
   /// Parse query parameters into search parameters and pagination parameters
   ///
   /// Returns a map with:
   /// - 'searchParams': Map of search parameter name to list of values
-  /// - 'count': int or null
+  /// - 'count': int or null, never above [kMaxPageSize]
+  /// - 'invalidParams': a `List<String>` of why `_count`/`_offset` are
+  ///   refused,
+  ///   or null
   /// - 'offset': int or null
   /// - 'sort': List of sort parameters (e.g., ['name', '-date'])
   /// - 'include': List of include parameters
@@ -45,6 +78,7 @@ class SearchParameterParser {
     String? containedType;
     String? query;
     final unknownSpecialParams = <String>[];
+    final invalidParams = <String>[];
 
     // All known _-prefixed parameters (special params + common search params)
     final specialParams = {
@@ -119,9 +153,19 @@ class SearchParameterParser {
           // Handle special parameters
           switch (key) {
             case '_count':
-              count = int.tryParse(value);
+              final error = pageArgumentError(value, null);
+              if (error != null) {
+                invalidParams.add(error);
+              } else {
+                count = pageSize(value);
+              }
             case '_offset':
-              offset = int.tryParse(value);
+              final error = pageArgumentError(null, value);
+              if (error != null) {
+                invalidParams.add(error);
+              } else {
+                offset = int.parse(value);
+              }
             case '_sort':
               // Sort can be comma-separated: _sort=name,-date
               sort.addAll(
@@ -234,6 +278,7 @@ class SearchParameterParser {
       'query': query,
       'unknownParams':
           unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
+      'invalidParams': invalidParams.isEmpty ? null : invalidParams,
       'has': has.isEmpty ? null : has,
     };
   }
