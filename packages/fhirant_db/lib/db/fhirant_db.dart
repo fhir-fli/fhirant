@@ -814,6 +814,20 @@ class FhirAntDb extends FhirDb {
     return row.read<int>('c');
   }
 
+  /// The matching ids and nothing else read; see `FhirDao.searchIds`.
+  Future<Set<String>> searchIds({
+    required fhir.R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+    List<HasParameter>? hasParameters,
+    CompartmentScope? compartment,
+  }) =>
+      fhirDao.searchIds(
+        resourceType: resourceType,
+        searchParameters: searchParameters,
+        hasParameters: hasParameters,
+        compartment: compartment,
+      );
+
   Future<List<fhir.Resource>> search({
     required fhir.R4ResourceType resourceType,
     Map<String, List<String>>? searchParameters,

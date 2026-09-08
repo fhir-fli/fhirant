@@ -88,16 +88,15 @@ class FilterEvaluator {
     final key = _key(name, comparison, type);
     final value = _value(comparison, type, definition.comparators);
 
-    final matches = await db.search(
+    // Ids only: the leaf's resources are never read. Each leaf used to run
+    // the full search and take the id off every hydrated resource
+    // (REVIEW-2026-09-06 finding 38).
+    return db.searchIds(
       resourceType: resourceType,
       searchParameters: {
         key: [value],
       },
     );
-    return matches
-        .map((resource) => resource.id?.valueString)
-        .whereType<String>()
-        .toSet();
   }
 
   /// The search key, which is the parameter name plus a modifier where the
@@ -220,14 +219,6 @@ class FilterEvaluator {
   }
 
   /// Every id of this resource type, needed to complement a `not(...)`.
-  Future<Set<String>> _allIds() async {
-    final all = await db.search(
-      resourceType: resourceType,
-      searchParameters: const {},
-    );
-    return all
-        .map((resource) => resource.id?.valueString)
-        .whereType<String>()
-        .toSet();
-  }
+  Future<Set<String>> _allIds() =>
+      db.searchIds(resourceType: resourceType, searchParameters: const {});
 }

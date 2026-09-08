@@ -544,7 +544,9 @@ void main() {
       final results = await db.search(
         resourceType: fhir.R4ResourceType.ValueSet,
         searchParameters: {
+          // One value, comma-joined: an OR of the two urls.
           'url': [
+            // ignore: no_adjacent_strings_in_list
             'http://example.org/fhir/ValueSet/my-codes,'
                 'http://different.org/fhir/ValueSet/different',
           ],
