@@ -41,14 +41,24 @@ Future<Response> resourceHistoryHandler(
     }
 
     // Get history from database (with optional _since or _at filter)
-    final history = await dbInterface.getHistory(
+    final total = await dbInterface.countHistory(
       type,
       id,
       since: since,
       at: at,
     );
+    final paginatedHistory = total == 0
+        ? const <HistoryEntry>[]
+        : await dbInterface.getHistory(
+            type,
+            id,
+            since: since,
+            at: at,
+            count: count,
+            offset: offset,
+          );
 
-    if (history.isEmpty) {
+    if (total == 0) {
       FhirantLogging().logWarning(
         'No history found for resource: $resourceType/$id',
       );
@@ -58,10 +68,6 @@ Future<Response> resourceHistoryHandler(
         headers: {'Content-Type': 'application/json'},
       );
     }
-
-    // Apply pagination
-    final total = history.length;
-    final paginatedHistory = history.skip(offset).take(count).toList();
 
     // Build base URL
     final baseUrl =
@@ -131,16 +137,16 @@ Future<Response> typeHistoryHandler(
       );
     }
 
-    // Query history table directly (no more N+1 queries)
-    final allHistory = await dbInterface.getTypeHistory(
+    // The page and the total come from SQL (REVIEW-2026-09-06 finding 36).
+    final total =
+        await dbInterface.countTypeHistory(type, since: since, at: at);
+    final paginatedHistory = await dbInterface.getTypeHistory(
       type,
       since: since,
       at: at,
+      count: count,
+      offset: offset,
     );
-
-    // Apply pagination
-    final total = allHistory.length;
-    final paginatedHistory = allHistory.skip(offset).take(count).toList();
 
     // Build base URL
     final baseUrl =
@@ -199,15 +205,14 @@ Future<Response> systemHistoryHandler(
       );
     }
 
-    // Query history table directly (no more N+1+1 queries)
-    final allHistory = await dbInterface.getSystemHistory(
+    // The page and the total come from SQL (REVIEW-2026-09-06 finding 36).
+    final total = await dbInterface.countSystemHistory(since: since, at: at);
+    final paginatedHistory = await dbInterface.getSystemHistory(
       since: since,
       at: at,
+      count: count,
+      offset: offset,
     );
-
-    // Apply pagination
-    final total = allHistory.length;
-    final paginatedHistory = allHistory.skip(offset).take(count).toList();
 
     // Build base URL
     final baseUrl =
@@ -265,36 +270,21 @@ Future<Response> vreadResourceHandler(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Get history for this resource
-    final history = await dbInterface.getHistory(type, id);
-
-    if (history.isEmpty) {
-      FhirantLogging().logWarning(
-        'No history found for resource: $resourceType/$id',
-      );
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-
-    // Find the specific version
-    HistoryEntry? entry;
-    for (final e in history) {
-      if (e.versionId == vid) {
-        entry = e;
-        break;
-      }
-    }
-
+    // One row by its key (REVIEW-2026-09-06 finding 36: every version used
+    // to be read to find one).
+    final entry = await dbInterface.getVersion(type, id, vid);
     if (entry == null) {
+      final any = await dbInterface.countHistory(type, id);
       FhirantLogging().logWarning(
-        'Version $vid not found for resource: $resourceType/$id',
+        any == 0
+            ? 'No history found for resource: $resourceType/$id'
+            : 'Version $vid not found for resource: $resourceType/$id',
       );
       return Response(
         404,
-        body: jsonEncode({'error': 'Version not found'}),
+        body: jsonEncode({
+          'error': any == 0 ? 'Resource not found' : 'Version not found',
+        }),
         headers: {'Content-Type': 'application/json'},
       );
     }

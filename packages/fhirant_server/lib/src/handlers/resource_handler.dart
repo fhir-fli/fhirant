@@ -1361,8 +1361,7 @@ Future<Response> getResourceByIdHandler(
       );
     } else {
       // Check if resource was previously deleted (has history but no current)
-      final history = await dbInterface.getResourceHistory(type, id);
-      if (history.isNotEmpty) {
+      if (await dbInterface.countHistory(type, id) > 0) {
         FhirantLogging().logWarning(
           'Resource $resourceType/$id was deleted (410 Gone).',
         );

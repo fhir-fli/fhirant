@@ -637,108 +637,180 @@ class FhirAntDb extends FhirDb {
       fhirDao.getResourceHistory(resourceType, id);
 
   /// Every version of one resource, newest first, a delete as a tombstone
-  /// entry; `_since` and `_at` as on the DAO.
+  /// entry; `_since`, `_at` and the page as on the DAO.
   Future<List<HistoryEntry>> getHistory(
     fhir.R4ResourceType resourceType,
     String id, {
     DateTime? since,
     DateTime? at,
+    int? count,
+    int? offset,
   }) =>
-      fhirDao.getHistory(resourceType, id, since: since, at: at);
+      fhirDao.getHistory(
+        resourceType,
+        id,
+        since: since,
+        at: at,
+        count: count,
+        offset: offset,
+      );
 
-  /// Get history for all resources of a given type, queried directly from the
-  /// history table (avoids N+1 queries).
+  /// The total [getHistory] pages over.
+  Future<int> countHistory(
+    fhir.R4ResourceType resourceType,
+    String id, {
+    DateTime? since,
+    DateTime? at,
+  }) =>
+      fhirDao.countHistory(resourceType, id, since: since, at: at);
+
+  /// One version by its key, or null; see [FhirDao.getVersion].
+  Future<HistoryEntry?> getVersion(
+    fhir.R4ResourceType resourceType,
+    String id,
+    String versionId,
+  ) =>
+      fhirDao.getVersion(resourceType, id, versionId);
+
+  /// Every version of every resource of one type, newest first, one page
+  /// (REVIEW-2026-09-06 finding 36: the whole table was read and parsed per
+  /// request and paged in Dart). `_at` is the version current at that
+  /// instant per resource; `_since` the versions written after it.
   Future<List<HistoryEntry>> getTypeHistory(
     fhir.R4ResourceType resourceType, {
     DateTime? since,
     DateTime? at,
-  }) async {
-    if (at != null) {
-      // _at: return the latest version per (resourceType, id) where
-      // lastUpdated <= at.  Requires a grouped MAX subquery.
-      final atMillis = at.millisecondsSinceEpoch;
-      final resourceTypeString = resourceType.toString();
-      final rows = await customSelect(
-        'SELECT rh.* FROM resources_history rh '
-        'INNER JOIN ('
-        '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
-        '  FROM resources_history '
-        '  WHERE resource_type = ? AND last_updated <= ? '
-        '  GROUP BY resource_type, id '
-        ') sub ON rh.resource_type = sub.resource_type '
-        '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
-        'ORDER BY rh.last_updated DESC, rh.version_id DESC',
-        variables: [
-          Variable.withString(resourceTypeString),
-          Variable.withInt(atMillis),
-        ],
-      ).get();
-      return [
-        for (final row in rows)
-          HistoryEntry.fromRow(resourcesHistory.map(row.data)),
-      ];
-    }
+    int? count,
+    int? offset,
+  }) =>
+      _historyPage(
+        resourceType: resourceType.toString(),
+        since: since,
+        at: at,
+        count: count,
+        offset: offset,
+      );
 
-    final resourceTypeString = resourceType.toString();
-    final query = select(resourcesHistory)
-      ..where((tbl) {
-        var cond = tbl.resourceType.equals(resourceTypeString);
-        if (since != null) {
-          cond = cond &
-              tbl.lastUpdated.isBiggerThanValue(since.millisecondsSinceEpoch);
-        }
-        return cond;
-      })
-      ..orderBy([
-        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
-        (tbl) => OrderingTerm.desc(tbl.versionId),
-      ]);
-    final rows = await query.get();
-    return [for (final row in rows) HistoryEntry.fromRow(row)];
-  }
+  /// The total [getTypeHistory] pages over.
+  Future<int> countTypeHistory(
+    fhir.R4ResourceType resourceType, {
+    DateTime? since,
+    DateTime? at,
+  }) =>
+      _historyCount(
+        resourceType: resourceType.toString(),
+        since: since,
+        at: at,
+      );
 
-  /// Get history for all resources across all types, queried directly from the
-  /// history table (avoids N+1+1 queries).
+  /// Every version of every resource, newest first, one page.
   Future<List<HistoryEntry>> getSystemHistory({
     DateTime? since,
     DateTime? at,
-  }) async {
-    if (at != null) {
-      // _at: return the latest version per (resourceType, id) where
-      // lastUpdated <= at.  Requires a grouped MAX subquery.
-      final atMillis = at.millisecondsSinceEpoch;
-      final rows = await customSelect(
-        'SELECT rh.* FROM resources_history rh '
-        'INNER JOIN ('
-        '  SELECT resource_type, id, MAX(last_updated) AS max_lu '
-        '  FROM resources_history '
-        '  WHERE last_updated <= ? '
-        '  GROUP BY resource_type, id '
-        ') sub ON rh.resource_type = sub.resource_type '
-        '  AND rh.id = sub.id AND rh.last_updated = sub.max_lu '
-        'ORDER BY rh.last_updated DESC, rh.version_id DESC',
-        variables: [Variable.withInt(atMillis)],
-      ).get();
-      return [
-        for (final row in rows)
-          HistoryEntry.fromRow(resourcesHistory.map(row.data)),
-      ];
-    }
+    int? count,
+    int? offset,
+  }) =>
+      _historyPage(since: since, at: at, count: count, offset: offset);
 
-    final query = select(resourcesHistory)
-      ..where((tbl) {
-        if (since != null) {
-          return tbl.lastUpdated
-              .isBiggerThanValue(since.millisecondsSinceEpoch);
-        }
-        return const Constant(true);
-      })
-      ..orderBy([
-        (tbl) => OrderingTerm.desc(tbl.lastUpdated),
-        (tbl) => OrderingTerm.desc(tbl.versionId),
-      ]);
-    final rows = await query.get();
-    return [for (final row in rows) HistoryEntry.fromRow(row)];
+  /// The total [getSystemHistory] pages over.
+  Future<int> countSystemHistory({DateTime? since, DateTime? at}) =>
+      _historyCount(since: since, at: at);
+
+  /// The rows of type or system history as SQL: `_at` is a join to the
+  /// latest `last_updated` per resource at or before that instant, `_since`
+  /// a range; the page is `LIMIT/OFFSET` on the ordered rows, and the count
+  /// is `count(*)` over the same rows. Both go through
+  /// `(resource_type, last_updated)` on `resources_history`.
+  String _historySql({
+    required String select,
+    required String? resourceType,
+    required DateTime? since,
+    required DateTime? at,
+  }) {
+    final typeWhere = resourceType == null ? '' : 'resource_type = ? AND ';
+    if (at != null) {
+      return 'SELECT $select FROM resources_history rh INNER JOIN ( '
+          'SELECT resource_type, id, MAX(last_updated) AS max_lu '
+          'FROM resources_history WHERE ${typeWhere}last_updated <= ? '
+          'GROUP BY resource_type, id) sub '
+          'ON rh.resource_type = sub.resource_type AND rh.id = sub.id '
+          'AND rh.last_updated = sub.max_lu';
+    }
+    final sinceWhere = since == null ? '' : 'last_updated > ? ';
+    final where = '$typeWhere$sinceWhere'.trim();
+    final cut =
+        where.endsWith('AND') ? where.substring(0, where.length - 3) : where;
+    return 'SELECT $select FROM resources_history rh'
+        '${cut.trim().isEmpty ? '' : ' WHERE ${cut.trim()}'}';
+  }
+
+  List<Variable<Object>> _historyVariables({
+    required String? resourceType,
+    required DateTime? since,
+    required DateTime? at,
+  }) =>
+      [
+        if (resourceType != null) Variable.withString(resourceType),
+        if (at != null)
+          Variable.withInt(at.millisecondsSinceEpoch)
+        else if (since != null)
+          Variable.withInt(since.millisecondsSinceEpoch),
+      ];
+
+  Future<List<HistoryEntry>> _historyPage({
+    String? resourceType,
+    DateTime? since,
+    DateTime? at,
+    int? count,
+    int? offset,
+  }) async {
+    var sql = _historySql(
+      select: 'rh.*',
+      resourceType: resourceType,
+      since: since,
+      at: at,
+    );
+    sql += ' ORDER BY rh.last_updated DESC, rh.version_id DESC';
+    if (count != null) {
+      sql += ' LIMIT $count OFFSET ${offset ?? 0}';
+    } else if (offset != null && offset > 0) {
+      sql += ' LIMIT -1 OFFSET $offset';
+    }
+    final rows = await customSelect(
+      sql,
+      variables: _historyVariables(
+        resourceType: resourceType,
+        since: since,
+        at: at,
+      ),
+      readsFrom: {resourcesHistory},
+    ).get();
+    return [
+      for (final row in rows)
+        HistoryEntry.fromRow(resourcesHistory.map(row.data)),
+    ];
+  }
+
+  Future<int> _historyCount({
+    String? resourceType,
+    DateTime? since,
+    DateTime? at,
+  }) async {
+    final row = await customSelect(
+      _historySql(
+        select: 'count(*) AS c',
+        resourceType: resourceType,
+        since: since,
+        at: at,
+      ),
+      variables: _historyVariables(
+        resourceType: resourceType,
+        since: since,
+        at: at,
+      ),
+      readsFrom: {resourcesHistory},
+    ).getSingle();
+    return row.read<int>('c');
   }
 
   Future<List<fhir.Resource>> search({

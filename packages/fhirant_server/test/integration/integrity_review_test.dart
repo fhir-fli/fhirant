@@ -169,6 +169,34 @@ void main() {
       }
     });
 
+    test(
+        'history pages in SQL: _count and _offset cut the page, total is the '
+        'whole', () async {
+      for (final path in [
+        '/Observation/gone/_history',
+        '/Observation/_history',
+        '/_history',
+      ]) {
+        final page = await json(
+          await handler(testRequest('GET', '$path?_count=2&_offset=1')),
+          200,
+        );
+        final entries = (page['entry'] as List).cast<Map<String, dynamic>>();
+        expect(entries, hasLength(2), reason: path);
+        if (path == '/_history') {
+          // System history also carries the AuditEvents the audit
+          // middleware wrote for these very requests.
+          expect(page['total'], greaterThanOrEqualTo(3), reason: path);
+          continue;
+        }
+        expect(page['total'], 3, reason: path);
+        // Newest first: the tombstone is entry 0 of the full list, so the
+        // page from offset 1 starts at the update.
+        expect(entries[0]['request']['method'], 'PUT', reason: path);
+        expect(entries[1]['request']['method'], 'POST', reason: path);
+      }
+    });
+
     test('vread of the tombstone version is 410; of an earlier one, 200',
         () async {
       await json(
