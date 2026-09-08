@@ -1,0 +1,7 @@
+mode	type	ms	resources	file_mb	rss_mb	max_stall_ms	rss_open_mb
+new	MedicationAdministration	3798	56535	53	751	50
+old	MedicationAdministration	5744	56535	53	1054	4450
+new	Observation	146509	813540	705	665	184
+old	Observation	99878	813540	705	5128	75545	895
+new	MedicationAdministration	2775	56535	53	734	53	701
+new	Observation	23523	813540	705	741	33	710

@@ -299,6 +299,10 @@ Scenario: Bulk export
   Then a 202 response is returned with Content-Location polling URL
   When the polling URL is checked after completion
   Then NDJSON file URLs are returned
+  And the manifest's Expires header is the completion time plus the server's
+  export retention (24 hours unless configured); the hourly sweep deletes the
+  job and its files after that, and a job left running by a previous process
+  is reported as failed
 
 Scenario: Terminology $validate-code
   Given a CodeSystem exists with code "active"

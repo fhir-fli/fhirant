@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,143 tests** across 89 test files, all passing. Counted 2026-09-08 by
+**1,155 tests** across 91 test files, all passing. Counted 2026-09-08 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,8 +16,8 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 973 | 79 | `cd packages/fhirant_server && dart test` |
-| fhirant_db | 120 | 5 | `cd packages/fhirant_db && dart test` |
+| fhirant_server | 978 | 80 | `cd packages/fhirant_server && dart test` |
+| fhirant_db | 127 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 33 | 3 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 6 | 1 | `cd packages/fhirant_logging && dart test` |
@@ -75,7 +75,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/password_hasher_test.dart` | bcrypt hashing |
 | `test/utils/password_policy_test.dart` | Password strength rules |
 
-### fhirant_server — Integration Tests (11 files)
+### fhirant_server — Integration Tests (12 files)
 
 | File | Description |
 |------|-------------|
@@ -85,6 +85,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/bundle_e2e_test.dart` | Transaction/batch with real DB |
 | `test/integration/compartment_e2e_test.dart` | Compartment search with real DB |
 | `test/integration/export_integration_test.dart` | Bulk export end-to-end |
+| `test/integration/export_scale_test.dart` | REVIEW-2026-09-06 finding 34: export file is the stored JSON streamed with Content-Length, `Expires` = completion + retention, the sweep removes expired jobs and orphan directories, a job left running at restart is reported failed, an empty type leaves no output item (5) |
 | `test/integration/auth_flow_test.dart` | Full auth lifecycle |
 | `test/integration/dev_mode_test.dart` | Dev mode auth bypass |
 | `test/integration/smart_scopes_e2e_test.dart` | SMART scope enforcement end-to-end |
@@ -98,7 +99,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
 
-### fhirant_db — Unit Tests (3 files)
+### fhirant_db — Unit Tests (6 files)
 
 | File | Description |
 |------|-------------|
@@ -106,6 +107,8 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/unit/history_test.dart` | Version history |
 | `test/unit/search_test.dart` | Search parameter indexing + querying |
 | `test/unit/schema_upgrade_test.dart` | Schema 14 rebuilds the search index from the stored resources |
+| `test/unit/backup_file_test.dart` | `copyEncrypted`/`restoreEncrypted` refuse a build without the cipher (3) |
+| `test/unit/export_stream_test.dart` | `exportJson` streams the stored JSON by rowid keyset, `since` and `ids` chunks; finished-job and stale-job queries for the export sweep (7) |
 
 ## Running Tests
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -875,6 +876,92 @@ class FhirAntDb extends FhirDb {
       fhirDao.compartmentMembers(scope, types: types, since: since);
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Server-specific: export
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// The stored JSON of every current [resourceType] resource, one string
+  /// per resource, in pages of [pageSize] rows read by keyset on the
+  /// `(resource_type, last_updated)` index with rowid as the tie-break
+  /// (`(last_updated, rowid) > (?, ?) ORDER BY last_updated, rowid LIMIT n`),
+  /// so an export of any size holds one page at a time and never decodes a
+  /// resource: the text is what `saveResource` stored and is written out as
+  /// it is.
+  ///
+  /// Measured on the 929k MIMIC copy (2026-09-08, plain sqlite3): a rowid
+  /// keyset with `resource_type = ?` made the planner take the type index
+  /// and sort every Observation rowid PER PAGE (2.8 s per 10k rows); forcing
+  /// the rowid scan reads the whole table for a small type (Condition, 5k
+  /// rows: 1.3 s). This keyset walks the index in order for both: 100k
+  /// Observations in 366 ms, 5k Conditions in 13 ms.
+  ///
+  /// [since] keeps resources with `last_updated >= since`. [ids] restricts
+  /// to those ids, read in `IN (...)` chunks of [pageSize]. Row order is
+  /// last-updated order, or id order when [ids] is given.
+  ///
+  /// REVIEW-2026-09-06 finding 34: `$export` used to read a whole type into
+  /// a `List<Resource>` (decode, then re-encode every one) before writing.
+  Stream<String> exportJson(
+    fhir.R4ResourceType resourceType, {
+    DateTime? since,
+    Iterable<String>? ids,
+    int pageSize = 500,
+  }) async* {
+    final type = resourceType.toString();
+    final sinceMs = since?.millisecondsSinceEpoch;
+    if (ids != null) {
+      final sorted = ids.toList()..sort();
+      for (var i = 0; i < sorted.length; i += pageSize) {
+        final chunk = sorted.sublist(
+          i,
+          i + pageSize > sorted.length ? sorted.length : i + pageSize,
+        );
+        final marks = List.filled(chunk.length, '?').join(', ');
+        final rows = await customSelect(
+          'SELECT resource FROM resources WHERE resource_type = ? '
+          'AND id IN ($marks)'
+          '${sinceMs == null ? '' : ' AND last_updated >= ?'} ORDER BY id',
+          variables: [
+            Variable.withString(type),
+            for (final id in chunk) Variable.withString(id),
+            if (sinceMs != null) Variable.withInt(sinceMs),
+          ],
+          readsFrom: {resources},
+        ).get();
+        for (final row in rows) {
+          yield row.read<String>('resource');
+        }
+      }
+      return;
+    }
+    var lastUpdated = -1;
+    var lastRowid = -1;
+    while (true) {
+      final rows = await customSelect(
+        'SELECT last_updated AS lu, rowid AS rid, resource FROM resources '
+        'WHERE resource_type = ? '
+        '${sinceMs == null ? '' : 'AND last_updated >= ? '}'
+        'AND (last_updated, rowid) > (?, ?) '
+        'ORDER BY last_updated, rowid LIMIT ?',
+        variables: [
+          Variable.withString(type),
+          if (sinceMs != null) Variable.withInt(sinceMs),
+          Variable.withInt(lastUpdated),
+          Variable.withInt(lastRowid),
+          Variable.withInt(pageSize),
+        ],
+        readsFrom: {resources},
+      ).get();
+      if (rows.isEmpty) return;
+      for (final row in rows) {
+        lastUpdated = row.read<int>('lu');
+        lastRowid = row.read<int>('rid');
+        yield row.read<String>('resource');
+      }
+      if (rows.length < pageSize) return;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Server-specific: getResourcesByTypeSince
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -1233,6 +1320,45 @@ class FhirAntDb extends FhirDb {
     await customStatement(
       'DELETE FROM export_jobs WHERE job_id = ?',
       [jobId],
+    );
+  }
+
+  /// The finished jobs (completed, error, cancelled) whose `completed_at` is
+  /// before [cutoff]: what an export sweep deletes, files and row.
+  Future<List<ExportJob>> finishedExportJobsBefore(DateTime cutoff) async {
+    final rows = await customSelect(
+      "SELECT * FROM export_jobs WHERE status IN ('completed', 'error', "
+      "'cancelled') AND completed_at IS NOT NULL AND completed_at < ?",
+      variables: [Variable.withInt(cutoff.millisecondsSinceEpoch ~/ 1000)],
+    ).get();
+    return rows.map(ExportJob.fromRow).toList();
+  }
+
+  /// Every job id in the table, for reconciling the export directory.
+  Future<Set<String>> exportJobIds() async {
+    final rows = await customSelect('SELECT job_id FROM export_jobs').get();
+    return rows.map((r) => r.read<String>('job_id')).toSet();
+  }
+
+  /// Marks every job still `pending` or `in_progress` as failed. A job runs
+  /// as a future in the server process; after a restart nothing is running
+  /// it, and without this it would answer 202 to every poll for ever.
+  /// Returns how many were marked.
+  Future<int> failStaleExportJobs(String reason) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final error = jsonEncode([
+      {
+        'resourceType': 'OperationOutcome',
+        'issue': [
+          {'severity': 'error', 'code': 'exception', 'diagnostics': reason},
+        ],
+      },
+    ]);
+    return customUpdate(
+      "UPDATE export_jobs SET status = 'error', error_json = ?, "
+      "completed_at = ? WHERE status IN ('pending', 'in_progress')",
+      variables: [Variable.withString(error), Variable.withInt(now)],
+      updates: {},
     );
   }
 

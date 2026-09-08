@@ -164,8 +164,9 @@ Future<Response> exportKickoffHandler(
 Future<Response> exportStatusHandler(
   Request request,
   FhirAntDb dbInterface,
-  String jobId,
-) async {
+  String jobId, {
+  Duration retention = kExportRetention,
+}) async {
   try {
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
@@ -196,11 +197,17 @@ Future<Response> exportStatusHandler(
               ? jsonDecode(job.errorJson!) as List<dynamic>
               : <dynamic>[],
         };
+        // Bulk Data v2.0.0 export.html "Response - Complete Status", read
+        // 2026-09-08: "The server SHOULD return an Expires header indicating
+        // when the files listed will no longer be available for access."
+        // The files go when the sweep runs after `completedAt + retention`;
+        // this used to name the completion time itself, a date already past.
+        final expires = job.completedAt?.add(retention);
         return Response.ok(
           jsonEncode(manifest),
           headers: {
             'Content-Type': 'application/json',
-            'Expires': job.completedAt?.toUtc().toIso8601String() ?? '',
+            if (expires != null) 'Expires': HttpDate.format(expires.toUtc()),
           },
         );
 
@@ -256,10 +263,15 @@ Future<Response> exportFileHandler(
       return _operationOutcome(404, 'Export file not found: $fileName');
     }
 
-    final content = await file.readAsString();
+    // Streamed from disk with its length: the file used to be read into one
+    // String per download (REVIEW-2026-09-06 finding 34).
+    final length = await file.length();
     return Response.ok(
-      content,
-      headers: {'Content-Type': 'application/fhir+ndjson'},
+      file.openRead(),
+      headers: {
+        'Content-Type': 'application/fhir+ndjson',
+        'Content-Length': '$length',
+      },
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error serving export file', e, stackTrace);
@@ -493,34 +505,25 @@ Future<void> _processExport(
           }
         }
 
-        // Fetch each resource by ID
-        final resources = <fhir.Resource>[];
-        for (final id in ids) {
-          // Skip if typeFilter active and this ID didn't match
-          if (filterIds != null && !filterIds.contains(id)) continue;
-
-          final resource = await dbInterface.getResource(resourceType, id);
-          if (resource != null) {
-            // Apply _since filter for directly-included Patient resources
-            if (since != null && resource.meta?.lastUpdated != null) {
-              final lastUpdated = resource.meta!.lastUpdated!.valueDateTime;
-              if (lastUpdated != null && lastUpdated.isBefore(since)) continue;
-            }
-            resources.add(resource);
-          }
+        // The compartment's ids (those the filter kept), streamed from the
+        // store in chunks; `_since` applies in SQL, which also covers the
+        // Patient resources added above without a `since` on their lookup.
+        final wanted =
+            filterIds == null ? ids : ids.where(filterIds.contains).toSet();
+        final path = '$exportDir/$jobId/$typeName.ndjson';
+        final count = await writeNdjsonFile(
+          path,
+          dbInterface.exportJson(resourceType, since: since, ids: wanted),
+        );
+        if (count == 0) {
+          await File(path).delete();
+          continue;
         }
-
-        if (resources.isNotEmpty) {
-          final count = await writeNdjsonFile(
-            '$exportDir/$jobId/$typeName.ndjson',
-            resources,
-          );
-          outputManifest.add({
-            'type': typeName,
-            'url': '$baseUrl/\$export-file/$jobId/$typeName.ndjson',
-            'count': count,
-          });
-        }
+        outputManifest.add({
+          'type': typeName,
+          'url': '$baseUrl/\$export-file/$jobId/$typeName.ndjson',
+          'count': count,
+        });
       }
 
       // Mark job as completed
@@ -550,11 +553,12 @@ Future<void> _processExport(
       final matchingFilters =
           typeFilters?.where((f) => f.startsWith('$typeName?')).toList() ?? [];
 
-      List<fhir.Resource> resources;
+      // The stored JSON is streamed to the file a page at a time
+      // (FhirAntDb.exportJson); a _typeFilter picks the ids first, each
+      // filter one search, united (OR), and `_since` is applied in SQL.
+      Stream<String> lines;
       if (matchingFilters.isNotEmpty) {
-        // Use db.search() for each filter, union results (OR semantics)
-        final seen = <String>{};
-        resources = [];
+        final ids = <String>{};
         for (final filter in matchingFilters) {
           final queryString = filter.substring(filter.indexOf('?') + 1);
           final searchMap = Uri(query: queryString).queryParametersAll;
@@ -564,34 +568,28 @@ Future<void> _processExport(
           );
           for (final r in results) {
             final id = r.id?.toString() ?? '';
-            if (id.isNotEmpty && seen.add(id)) resources.add(r);
+            if (id.isNotEmpty) ids.add(id);
           }
         }
-        // Post-filter by _since
-        if (since != null) {
-          resources = resources.where((r) {
-            final lu = r.meta?.lastUpdated?.valueDateTime;
-            return lu != null && !lu.isBefore(since);
-          }).toList();
-        }
+        lines = dbInterface.exportJson(resourceType, since: since, ids: ids);
       } else {
-        resources = await dbInterface.getResourcesByTypeSince(
-          resourceType,
-          since: since,
-        );
+        lines = dbInterface.exportJson(resourceType, since: since);
       }
 
-      if (resources.isNotEmpty) {
-        final count = await writeNdjsonFile(
-          '$exportDir/$jobId/$typeName.ndjson',
-          resources,
-        );
-        outputManifest.add({
-          'type': typeName,
-          'url': '$baseUrl/\$export-file/$jobId/$typeName.ndjson',
-          'count': count,
-        });
+      final path = '$exportDir/$jobId/$typeName.ndjson';
+      final count = await writeNdjsonFile(path, lines);
+      if (count == 0) {
+        // Bulk Data v2.0.0 export.html, read 2026-09-08: "If no data are
+        // found for a resource, the server SHOULD NOT return an output item
+        // for that resource in the response."
+        await File(path).delete();
+        continue;
       }
+      outputManifest.add({
+        'type': typeName,
+        'url': '$baseUrl/\$export-file/$jobId/$typeName.ndjson',
+        'count': count,
+      });
     }
 
     // Mark job as completed
@@ -623,6 +621,55 @@ Future<void> _processExport(
       );
     }
   }
+}
+
+/// How long a finished export's files stay after it completes, when the
+/// server is not told otherwise. A day is a choice, not a measurement: long
+/// enough to download after an overnight run, short enough that a phone is
+/// not carrying last month's exports.
+const kExportRetention = Duration(hours: 24);
+
+/// Deletes the files and the row of every finished job older than
+/// [retention], and any directory under [exportDir] that no job owns (left by
+/// a crash mid-export). Returns how many jobs were removed.
+///
+/// Bulk Data v2.0.0 export.html, read 2026-09-08: "removal of the file from
+/// the server is left up to the server implementer" and "A server SHOULD NOT
+/// delete files from a Bulk Data response that a client is actively in the
+/// process of downloading regardless of the pre-specified expiration time."
+/// A download in progress holds the file open, and unlinking an open file on
+/// Linux and Android leaves its data readable until it is closed, so a
+/// stream already started completes.
+Future<int> sweepExpiredExports(
+  FhirAntDb dbInterface,
+  String exportDir, {
+  Duration retention = kExportRetention,
+  DateTime? now,
+}) async {
+  final cutoff = (now ?? DateTime.now()).subtract(retention);
+  final expired = await dbInterface.finishedExportJobsBefore(cutoff);
+  for (final job in expired) {
+    final dir = Directory('$exportDir/${job.jobId}');
+    if (dir.existsSync()) await dir.delete(recursive: true);
+    await dbInterface.deleteExportJob(job.jobId);
+  }
+  final root = Directory(exportDir);
+  if (root.existsSync()) {
+    final owned = await dbInterface.exportJobIds();
+    await for (final entry in root.list()) {
+      final name = entry.uri.pathSegments
+          .lastWhere((s) => s.isNotEmpty, orElse: () => '');
+      if (entry is Directory && _isValidJobId(name) && !owned.contains(name)) {
+        await entry.delete(recursive: true);
+      }
+    }
+  }
+  if (expired.isNotEmpty) {
+    FhirantLogging().logInfo(
+      'Export sweep removed ${expired.length} job(s) older than $retention',
+    );
+  }
+  return expired.length;
 }
 
 /// Marks a job as failed with an error message.

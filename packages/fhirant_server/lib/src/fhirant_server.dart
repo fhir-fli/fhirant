@@ -48,6 +48,7 @@ class FhirAntServer {
     this.devMode = false,
     this.corsAllowOrigin,
     String? baseUrl,
+    this.exportRetention = kExportRetention,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -68,6 +69,10 @@ class FhirAntServer {
   }
   final FhirAntDb dbInterface;
   final String exportDir;
+
+  /// How long a finished `$export`'s files stay (`Expires` on the manifest;
+  /// the hourly sweep deletes them after it).
+  final Duration exportRetention;
 
   /// Requests per [rateLimitDuration] per client address, for everything
   /// but the credential endpoints. 600 a minute is ten a second: a client
@@ -377,8 +382,12 @@ class FhirAntServer {
       )
       ..get(
         r'/$export-poll-status/<jobId>',
-        (Request req, String jobId) =>
-            exportStatusHandler(req, dbInterface, jobId),
+        (Request req, String jobId) => exportStatusHandler(
+          req,
+          dbInterface,
+          jobId,
+          retention: exportRetention,
+        ),
       )
       ..delete(
         r'/$export-poll-status/<jobId>',
@@ -659,8 +668,13 @@ class FhirAntServer {
   /// Start periodic cleanup of expired revoked tokens and finished
   /// subscriptions (every hour).
   void _startCleanupTimer() {
+    // An export runs as a future in this process, so one that was pending or
+    // in progress when the last process ended will never finish; say so
+    // rather than answering 202 for ever. Then clear what has expired.
+    unawaited(_reconcileExports(atStart: true));
     _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) async {
       await dbInterface.cleanupRevokedTokens();
+      await _reconcileExports();
       // Planner statistics for tables that have grown 10-fold since they
       // were last analysed (PRAGMA optimize); a no-op otherwise.
       await dbInterface.optimizeStatistics();
@@ -671,6 +685,32 @@ class FhirAntServer {
       // told `active` about a subscription that is finished.
       await _subscriptions?.sweepExpired();
     });
+  }
+
+  /// Fails the export jobs no process is running (at start) and sweeps the
+  /// expired ones. Errors are logged, never thrown into the timer.
+  Future<void> _reconcileExports({bool atStart = false}) async {
+    try {
+      if (atStart) {
+        final failed = await dbInterface.failStaleExportJobs(
+          'The server restarted before this export finished; request it '
+          'again.',
+        );
+        if (failed > 0) {
+          FhirantLogging().logWarning(
+            '$failed export job(s) were still running at the last shutdown '
+            'and are now marked failed',
+          );
+        }
+      }
+      await sweepExpiredExports(
+        dbInterface,
+        exportDir,
+        retention: exportRetention,
+      );
+    } catch (e, st) {
+      FhirantLogging().logError('Export reconciliation failed', e, st);
+    }
   }
 
   /// Middleware that bypasses authentication in dev mode.
