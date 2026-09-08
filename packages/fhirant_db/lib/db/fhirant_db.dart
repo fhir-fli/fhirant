@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -226,6 +226,11 @@ class FhirAntDb extends FhirDb {
             // fhir_r4_db schema 11: open number and quantity bounds are
             // stored as ±infinity, so each prefix is one index range.
             await storeOpenBoundsAsInfinity();
+          }
+          if (from < 20) {
+            // fhir_r4_db schema 12: the same for open date bounds and the
+            // composite table's slots.
+            await storeOpenDateBoundsAsSentinels();
           }
         },
       );
