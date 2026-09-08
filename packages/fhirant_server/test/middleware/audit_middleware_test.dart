@@ -10,19 +10,20 @@ class MockFhirAntDb extends Mock implements FhirAntDb {}
 void main() {
   late MockFhirAntDb mockDb;
   late Middleware middleware;
+  late AuditQueue queue;
 
   setUpAll(() {
     registerFallbackValue(const fhir.Patient());
+    registerFallbackValue(<fhir.Resource>[]);
   });
 
   setUp(() {
     mockDb = MockFhirAntDb();
-    middleware = auditMiddleware(mockDb);
+    queue = AuditQueue(mockDb);
+    middleware = auditMiddleware(mockDb, queue: queue);
 
-    // Default stub: accept any saveResource call
-    when(() => mockDb.saveResource(any())).thenAnswer(
-      (i) async => i.positionalArguments.first as fhir.Resource,
-    );
+    // Default stub: accept any batch write
+    when(() => mockDb.saveResources(any())).thenAnswer((_) async => true);
     // The audit trail resolves the subject of care before writing (F10).
     when(() => mockDb.subjectOfCare(any(), any()))
         .thenAnswer((_) async => null);
@@ -44,6 +45,17 @@ void main() {
     return middleware(inner);
   }
 
+  /// The events written so far, once the queue has flushed them.
+  Future<List<fhir.Resource>> savedAuditEvents() async {
+    // The event is built after the response, asynchronously; give it a turn.
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await queue.drain();
+    final batches = verify(() => mockDb.saveResources(captureAny())).captured;
+    return [
+      for (final batch in batches) ...(batch as List<fhir.Resource>),
+    ];
+  }
+
   group('auditMiddleware', () {
     test('audit event created on POST (action=C, subtype=create)', () async {
       final handler = wrapHandler();
@@ -56,13 +68,10 @@ void main() {
       );
 
       await handler(request);
-      // Allow fire-and-forget to complete
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = await savedAuditEvents();
       expect(captured, isNotEmpty);
 
-      final auditEvent = captured.last as fhir.Resource;
+      final auditEvent = captured.last;
       final json = auditEvent.toJson();
       expect(json['resourceType'], equals('AuditEvent'));
       expect(json['action'], equals('C'));
@@ -82,10 +91,10 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
+      final captured = await savedAuditEvents();
       expect(captured, isNotEmpty);
 
-      final json = (captured.last as fhir.Resource).toJson();
+      final json = captured.last.toJson();
       expect(json['action'], equals('R'));
       expect(json['subtype'][0]['code'], equals('read'));
       expect(json['entity'][0]['what']['reference'], equals('Patient/123'));
@@ -104,8 +113,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['action'], equals('U'));
       expect(json['subtype'][0]['code'], equals('update'));
     });
@@ -123,8 +132,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['action'], equals('D'));
       expect(json['subtype'][0]['code'], equals('delete'));
     });
@@ -142,8 +151,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['outcome'], equals('4'));
     });
 
@@ -160,8 +169,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['outcome'], equals('8'));
     });
 
@@ -178,8 +187,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['agent'][0]['who']['display'], equals('dr_smith'));
       // No fragment reference — display-only is spec-compliant
       expect(json['agent'][0]['who']['reference'], isNull);
@@ -196,8 +205,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['agent'][0]['who']['display'], equals('anonymous'));
     });
 
@@ -215,8 +224,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['entity'], isNull);
     });
 
@@ -233,8 +242,8 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final captured = verify(() => mockDb.saveResource(captureAny())).captured;
-      final json = (captured.last as fhir.Resource).toJson();
+      final captured = await savedAuditEvents();
+      final json = captured.last.toJson();
       expect(json['entity'], isNull);
     });
 
@@ -248,7 +257,9 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      verifyNever(() => mockDb.saveResource(any()));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await queue.drain();
+      verifyNever(() => mockDb.saveResources(any()));
     });
 
     test('AuditEvent POST not audited (infinite loop prevention)', () async {
@@ -261,7 +272,9 @@ void main() {
       await handler(request);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      verifyNever(() => mockDb.saveResource(any()));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await queue.drain();
+      verifyNever(() => mockDb.saveResources(any()));
     });
   });
 }

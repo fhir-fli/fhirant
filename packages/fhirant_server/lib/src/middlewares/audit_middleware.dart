@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 /// Identifier system for fhirant's own user accounts.
@@ -11,11 +12,107 @@ import 'package:shelf/shelf.dart';
 /// which is what makes the id meaningful to a later reader.
 const _userIdentifierSystem = 'urn:fhirant:users';
 
+/// Collects AuditEvents and writes them in one transaction per tick.
+///
+/// Every audited request used to be its own `saveResource`, one commit
+/// each, started from the response path and never waited for
+/// (REVIEW-2026-09-06 finding 40; F11 measured a commit at 71.7 ms on this
+/// desktop's disk). The events now wait here and go to the store together:
+/// after [tick] at the latest, or at once when [flushAt] are pending. Nothing
+/// is dropped; an audit trail that loses records under load is not one.
+/// [drain] writes what is pending and is what the server calls on stop.
+class AuditQueue {
+  /// Creates a queue writing to [db]. [tick] and [flushAt] are choices, not
+  /// specification numbers: a quarter second is below what a client notices
+  /// when it reads its own trail back, and 200 events are one transaction of
+  /// a few hundred kilobytes.
+  AuditQueue(
+    this.db, {
+    this.tick = const Duration(milliseconds: 250),
+    this.flushAt = 200,
+  });
+
+  /// Where the events are written.
+  final FhirAntDb db;
+
+  /// How long an event waits at most before its transaction.
+  final Duration tick;
+
+  /// How many pending events trigger a transaction at once.
+  final int flushAt;
+
+  final List<fhir.Resource> _pending = [];
+  Timer? _timer;
+  Future<void>? _writing;
+
+  /// How many events are waiting for a transaction.
+  int get pending => _pending.length;
+
+  /// Queues [event]. Returns at once.
+  void add(fhir.Resource event) {
+    _pending.add(event);
+    if (_pending.length >= flushAt) {
+      _timer?.cancel();
+      _timer = null;
+      unawaited(_flush());
+      return;
+    }
+    _timer ??= Timer(tick, () {
+      _timer = null;
+      unawaited(_flush());
+    });
+  }
+
+  /// Writes everything pending, including what arrives while writing.
+  Future<void> drain() async {
+    _timer?.cancel();
+    _timer = null;
+    while (_pending.isNotEmpty || _writing != null) {
+      await _flush();
+    }
+  }
+
+  Future<void> _flush() async {
+    // One writer at a time; a flush that finds one running waits for it and
+    // then takes whatever has arrived since.
+    while (_writing != null) {
+      await _writing;
+    }
+    if (_pending.isEmpty) return;
+    final batch = List<fhir.Resource>.of(_pending);
+    _pending.clear();
+    final write = _write(batch);
+    _writing = write;
+    try {
+      await write;
+    } finally {
+      if (identical(_writing, write)) _writing = null;
+    }
+  }
+
+  Future<void> _write(List<fhir.Resource> batch) async {
+    try {
+      await db.saveResources(batch);
+    } catch (e, stack) {
+      // The events are already built; a failed write is logged with what it
+      // held rather than lost silently. Never thrown into the timer.
+      FhirantLogging().logError(
+        'Audit write of ${batch.length} event(s) failed',
+        e,
+        stack,
+      );
+    }
+  }
+}
+
 /// Middleware that creates FHIR AuditEvent resources for auditable requests.
 ///
 /// Place after auth middleware so that `auth_user` context is available.
-/// AuditEvents are saved fire-and-forget so they don't slow down responses.
-Middleware auditMiddleware(FhirAntDb dbInterface) {
+/// The event is built after the response is decided and handed to [queue],
+/// which writes events in one transaction per tick; the response never
+/// waits for the store. A caller that passes no [queue] gets one of its own.
+Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
+  final events = queue ?? AuditQueue(dbInterface);
   return (Handler innerHandler) {
     return (Request request) async {
       final response = await innerHandler(request);
@@ -27,8 +124,8 @@ Middleware auditMiddleware(FhirAntDb dbInterface) {
       final bareRefusal = response.statusCode == 401 &&
           request.headers['authorization'] == null;
       if (_shouldAudit(request) && !bareRefusal) {
-        // Fire-and-forget — don't await
-        unawaited(_createAuditEvent(request, response, dbInterface));
+        // Built off the response path, queued, written per tick.
+        unawaited(_queueAuditEvent(request, response, dbInterface, events));
       }
 
       return response;
@@ -122,11 +219,12 @@ String? _entityReference(Request request, Response response) {
   return null;
 }
 
-/// Creates and saves a FHIR AuditEvent resource.
-Future<void> _createAuditEvent(
+/// Builds the AuditEvent for one request and queues it.
+Future<void> _queueAuditEvent(
   Request request,
   Response response,
   FhirAntDb dbInterface,
+  AuditQueue queue,
 ) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
@@ -228,8 +326,7 @@ Future<void> _createAuditEvent(
         ],
     };
 
-    final auditEvent = fhir.Resource.fromJson(auditEventJson);
-    await dbInterface.saveResource(auditEvent);
+    queue.add(fhir.Resource.fromJson(auditEventJson));
   } catch (_) {
     // Audit logging must never break the response pipeline
   }

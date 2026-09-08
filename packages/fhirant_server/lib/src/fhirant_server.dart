@@ -121,6 +121,13 @@ class FhirAntServer {
   /// The subscription service the router built, so the hourly cleanup can
   /// sweep finished subscriptions with it.
   SubscriptionService? _subscriptions;
+
+  /// The audit trail's write queue, one transaction per tick; drained on
+  /// stop so no audited request goes unrecorded.
+  late final AuditQueue _audit = AuditQueue(dbInterface);
+
+  /// The audit queue, for a test that must see its events stored.
+  AuditQueue get auditQueue => _audit;
   bool _isRunning = false;
   final StreamController<RequestLogEntry> _requestLogController =
       StreamController<RequestLogEntry>.broadcast();
@@ -570,7 +577,7 @@ class FhirAntServer {
     }
 
     return pipeline
-        .addMiddleware(auditMiddleware(dbInterface))
+        .addMiddleware(auditMiddleware(dbInterface, queue: _audit))
         .addHandler(router.call);
   }
 
@@ -667,6 +674,7 @@ class FhirAntServer {
             ),
           );
     }
+    await _audit.drain();
     // SQLite's advice (lang_analyze.html, read 2026-09-06) is to run PRAGMA
     // optimize "just before closing each database connection"; this is the
     // last moment the server has the connection's query history.

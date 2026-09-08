@@ -84,13 +84,16 @@ void main() {
         ),
       );
 
-      // Audit middleware is fire-and-forget, wait for it to complete
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      // Search for AuditEvents in the DB
-      final auditEvents = await testDb.getResourcesByType(
-        fhir.R4ResourceType.AuditEvent,
-      );
+      // The event is queued and written within the audit queue's tick
+      // (250 ms); poll for it rather than sleep a guessed time.
+      var auditEvents = <fhir.Resource>[];
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (auditEvents.isEmpty && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+        auditEvents = await testDb.getResourcesByType(
+          fhir.R4ResourceType.AuditEvent,
+        );
+      }
 
       expect(auditEvents, isNotEmpty);
 
