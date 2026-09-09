@@ -24,8 +24,7 @@ Future<Response> libraryEvaluateHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    FhirantLogging()
-        .logInfo('Library/${'evaluate'}: loading Library/$libraryId');
+    FhirantLogging().logInfo('Library/${'evaluate'}: loading Library/{id}');
 
     // Load the Library resource from the database
     final libraryResource = await dbInterface.getResource(
@@ -64,7 +63,7 @@ Future<Response> libraryEvaluateHandler(
     final result = await cqlLibrary.execute(context);
 
     FhirantLogging()
-        .logInfo('Library/$libraryId/${'evaluate'} completed successfully');
+        .logInfo('Library/{id}/${'evaluate'} completed successfully');
 
     return Response.ok(
       jsonEncode(_buildParametersResponse(result)),
@@ -137,8 +136,13 @@ Future<Response> libraryEvaluateByUrlHandler(
       }
       cqlLibrary = _extractCqlFromLibrary(results.first as fhir.Library);
     } else if (evalParams.cqlSource != null) {
-      // Convenience: inline CQL source
-      cqlLibrary = _parseCql(evalParams.cqlSource!);
+      // Convenience: inline CQL source. CQL that does not translate is
+      // the client's error (400), not a 500 (REVIEW-2026-09-08 row 32).
+      try {
+        cqlLibrary = _parseCql(evalParams.cqlSource!);
+      } catch (e) {
+        return _errorResponse(400, 'invalid', 'The CQL does not translate: $e');
+      }
     } else if (evalParams.elmJson != null) {
       // Convenience: inline ELM JSON
       final elmMap = jsonDecode(evalParams.elmJson!) as Map<String, dynamic>;
@@ -507,7 +511,35 @@ Future<Map<String, dynamic>> _buildContext(
 }
 
 /// Parse CQL source text into a CqlLibrary (CQL -> ELM translation).
-CqlLibrary _parseCql(String cqlSource) => libraryFromCql(cqlSource);
+///
+/// `libraryFromCql` records translation errors as annotations on the
+/// library (as the reference translator does) rather than throwing, so a
+/// library that did not translate would otherwise be executed and answer
+/// `null` for every definition. An error-severity annotation is refused
+/// here as a [FormatException], which the callers answer with 400
+/// (REVIEW-2026-09-08 row 32).
+CqlLibrary _parseCql(String cqlSource) {
+  final library = libraryFromCql(cqlSource);
+  // Read through `toJson()`: the published `cql` 0.6.3 does not export the
+  // annotation types (the export is on cql's main for the next release;
+  // the keys are ErrorAnnotation.toJson's, read 2026-09-09).
+  final errors = (library.annotation ?? const [])
+      .map((a) => a.toJson())
+      .where(
+        (j) => (j['errorSeverity'] as String? ?? '').toLowerCase() == 'error',
+      )
+      .toList();
+  if (errors.isNotEmpty) {
+    final described = errors
+        .map(
+          (e) => 'line ${e['startLine'] ?? '?'}: '
+              '${e['message'] ?? e['errorType']}',
+        )
+        .join('; ');
+    throw FormatException('The CQL does not translate: $described');
+  }
+  return library;
+}
 
 /// Load common resource types for a patient from the database.
 Future<void> _loadPatientData(

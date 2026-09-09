@@ -198,6 +198,64 @@ void main() {
     });
   });
 
+  group(r'$transform takes the StructureMap-transform Parameters (row 30)', () {
+    Map<String, dynamic> parameters({String? source, Object? content}) => {
+          'resourceType': 'Parameters',
+          'parameter': [
+            if (source != null) {'name': 'source', 'valueUri': source},
+            if (content != null) {'name': 'content', 'resource': content},
+          ],
+        };
+
+    setUp(() async {
+      await db.saveResource(
+        fhir.StructureMap.fromJson(
+          mapCopying(
+            targetUrl: 'http://hl7.org/fhir/StructureDefinition/Patient',
+          ),
+        ),
+      );
+    });
+
+    test('source names a stored map by url; content is transformed', () async {
+      final response = await post(
+        parameters(
+          source: 'http://example.org/StructureMap/test',
+          content: {'resourceType': 'Patient', 'id': 'from-params'},
+        ),
+      );
+      final json = await bodyOf(response);
+      expect(response.statusCode, 200, reason: jsonEncode(json));
+      expect(json['resourceType'], 'Patient');
+      expect(json['id'], 'from-params');
+    });
+
+    test('a source url no stored map carries is 404', () async {
+      final response = await post(
+        parameters(
+          source: 'http://example.org/StructureMap/none',
+          content: {'resourceType': 'Patient', 'id': 'x'},
+        ),
+      );
+      expect(response.statusCode, 404);
+      expect((await bodyOf(response))['resourceType'], 'OperationOutcome');
+    });
+
+    test('content without source, and source without content, are 400',
+        () async {
+      expect(
+        (await post(parameters(content: {'resourceType': 'Patient'})))
+            .statusCode,
+        400,
+      );
+      expect(
+        (await post(parameters(source: 'http://example.org/StructureMap/test')))
+            .statusCode,
+        400,
+      );
+    });
+  });
+
   group(r'$transform performs the transform', () {
     test('copies an element into a new target resource', () async {
       final response = await post({

@@ -95,15 +95,16 @@ Future<Response> authorizeGetHandler(
       headers: {'Content-Type': 'text/html'},
     );
   }
-  final pkce = _pkceProblem(codeChallenge, codeChallengeMethod);
-  if (pkce != null) {
+  final problem = _requestProblem(request, state, aud) ??
+      _pkceProblem(codeChallenge, codeChallengeMethod);
+  if (problem != null) {
     return _errorToClient(
       dbInterface,
       clientId,
       redirectUri,
       state,
       'invalid_request',
-      pkce,
+      problem,
     );
   }
 
@@ -139,6 +140,7 @@ Future<Response> authorizePostHandler(
     final state = params['state'] ?? '';
     final codeChallenge = params['code_challenge'] ?? '';
     final codeChallengeMethod = params['code_challenge_method'] ?? '';
+    final aud = params['aud'] ?? '';
     final username = params['username'];
     final password = params['password'];
 
@@ -177,11 +179,23 @@ Future<Response> authorizePostHandler(
             state: state,
             codeChallenge: codeChallenge,
             codeChallengeMethod: codeChallengeMethod,
-            aud: '',
+            aud: aud,
             errorMessage: error,
           ),
           headers: {'Content-Type': 'text/html; charset=utf-8'},
         );
+
+    final problem = _requestProblem(request, state, aud);
+    if (problem != null) {
+      return await _errorToClient(
+        dbInterface,
+        clientId,
+        redirectUri,
+        state,
+        'invalid_request',
+        problem,
+      );
+    }
 
     if (username == null ||
         username.isEmpty ||
@@ -253,6 +267,7 @@ Future<Response> authorizeJsonHandler(
     final state = body['state'] as String? ?? '';
     final codeChallenge = body['code_challenge'] as String? ?? '';
     final codeChallengeMethod = body['code_challenge_method'] as String? ?? '';
+    final aud = body['aud'] as String? ?? '';
     final username = body['username'] as String?;
     final password = body['password'] as String?;
 
@@ -279,6 +294,10 @@ Future<Response> authorizeJsonHandler(
 
     if (redirectUri == null || redirectUri.isEmpty) {
       return error(400, 'invalid_request', 'redirect_uri is required');
+    }
+    final problem = _requestProblem(request, state, aud);
+    if (problem != null) {
+      return error(400, 'invalid_request', problem);
     }
 
     if (username == null || password == null) {
@@ -469,6 +488,32 @@ Future<Response> _errorToClient(
     body: _errorPage('$error: $description'),
     headers: {'Content-Type': 'text/html'},
   );
+}
+
+/// Why an authorization request is refused before anything else is looked
+/// at, or null. SMART App Launch STU2 app-launch.html, authorization
+/// request parameters (read 2026-09-08): `state` "required … The parameter
+/// SHALL be used for preventing cross-site request forgery or session
+/// fixation attacks"; `aud` "required … URL of the EHR resource server from
+/// which the app wishes to retrieve FHIR data. This parameter prevents
+/// leaking a genuine bearer token to a counterfeit resource server", and
+/// the resource server "validates that the aud parameter associated with
+/// the authorization … matches the resource server's own FHIR endpoint".
+/// This server is both, so it checks at authorization: `aud` must be the
+/// origin the request came to (with or without a trailing slash). Both used
+/// to be optional and `aud` was never read (REVIEW-2026-09-08 row 16).
+String? _requestProblem(Request request, String state, String aud) {
+  if (state.isEmpty) return 'state is required';
+  if (aud.isEmpty) return 'aud is required';
+  final here = request.requestedUri;
+  final origin = here.hasPort
+      ? '${here.scheme}://${here.host}:${here.port}'
+      : '${here.scheme}://${here.host}';
+  final offered = aud.endsWith('/') ? aud.substring(0, aud.length - 1) : aud;
+  if (offered != origin) {
+    return 'aud does not name this server ($origin)';
+  }
+  return null;
 }
 
 /// Why a PKCE pair is unacceptable, or null when it is fine.

@@ -588,6 +588,8 @@ Future<_BundleOperation> _processBundleEntry(
             ? withId.newId()
             : withId.copyWith(id: assignedId.toFhirString),
         subscriptions,
+        principal,
+        entryIndex,
       );
       await _requireBodyInCompartment(
         createPatient,
@@ -669,8 +671,12 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         putJson = _resolveUrnReferences(putJson, urnMap);
       }
-      final putResource =
-          await _activated(fhir.Resource.fromJson(putJson), subscriptions);
+      final putResource = await _activated(
+        fhir.Resource.fromJson(putJson),
+        subscriptions,
+        principal,
+        entryIndex,
+      );
       await _requireBodyInCompartment(updatePatient, putResource, entryIndex);
 
       final fhir.Resource? updated;
@@ -785,7 +791,12 @@ Future<_BundleOperation> _processBundleEntry(
 
       // A patch can change criteria or channel, so the server has to decide
       // again whether it can honour the subscription.
-      final patchedToSave = await _activated(patchedResource, subscriptions);
+      final patchedToSave = await _activated(
+        patchedResource,
+        subscriptions,
+        principal,
+        entryIndex,
+      );
       final fhir.Resource? patchSaved;
       try {
         patchSaved = await dbInterface.saveResource(
@@ -1013,13 +1024,27 @@ Future<int> _entryConditionalDelete(
 /// Bundle was a way to store a subscription the server had never validated,
 /// which the single-resource endpoints do not allow. Any other resource passes
 /// through untouched.
+///
+/// The same rule as the REST handlers' `storeRefusal`: a rest-hook
+/// Subscription is system authority's to create or change.
 Future<fhir.Resource> _activated(
   fhir.Resource resource,
   SubscriptionService subscriptions,
-) async =>
-    resource is fhir.Subscription
-        ? await subscriptions.activate(resource)
-        : resource;
+  Principal? principal,
+  int entryIndex,
+) async {
+  final refused = storeRefusal(principal, resource);
+  if (refused != null) {
+    throw BundleEntryException(
+      403,
+      'Bundle entry $entryIndex: a rest-hook Subscription requires '
+      'system-level (admin) privilege',
+    );
+  }
+  return resource is fhir.Subscription
+      ? await subscriptions.activate(resource)
+      : resource;
+}
 
 /// Sends notifications for the writes a Bundle made, once they are durable.
 ///

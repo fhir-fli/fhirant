@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -28,7 +28,6 @@ class FhirAntDb extends FhirDb {
           await m.createAll(); // Creates FhirDb's 14 tables
           await _createUsersTable();
           await _createExportJobsTable();
-          await _createLogsTable();
           await _createAuthorizationCodesTable();
           await _createRevokedTokensTable();
           await _createOAuthClientsTable();
@@ -238,6 +237,12 @@ class FhirAntDb extends FhirDb {
             // (REVIEW-2026-09-08 row 36).
             await addHistoryDeletedColumn();
           }
+          if (from < 22) {
+            // The `logs` table was created on every store and never written
+            // (REVIEW-2026-09-08 row 38); the log is a file, and the audit
+            // trail is AuditEvent.
+            await customStatement('DROP TABLE IF EXISTS logs');
+          }
         },
       );
 
@@ -296,24 +301,6 @@ class FhirAntDb extends FhirDb {
         group_id TEXT,
         type_filters TEXT,
         requested_by TEXT
-      )
-    ''');
-  }
-
-  Future<void> _createLogsTable() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        level TEXT NOT NULL CHECK(length(level) >= 4 AND length(level) <= 10),
-        message TEXT NOT NULL,
-        method TEXT,
-        url TEXT,
-        status_code INTEGER,
-        response_time INTEGER,
-        client_ip TEXT,
-        "user" TEXT,
-        stack_trace TEXT,
-        timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
       )
     ''');
   }
@@ -1093,6 +1080,19 @@ class FhirAntDb extends FhirDb {
   }) =>
       fhirDao.compartmentMembers(scope, types: types, since: since);
 
+  /// The ids of every [resourceType] resource in any [compartmentType]
+  /// compartment; see `FhirDao.compartmentTypeMembers`.
+  Future<Set<String>> compartmentTypeMembers(
+    String compartmentType,
+    String resourceType, {
+    DateTime? since,
+  }) =>
+      fhirDao.compartmentTypeMembers(
+        compartmentType,
+        resourceType,
+        since: since,
+      );
+
   // ──────────────────────────────────────────────────────────────────────────
   // Server-specific: export
   // ──────────────────────────────────────────────────────────────────────────
@@ -1204,9 +1204,13 @@ class FhirAntDb extends FhirDb {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Server-specific: getResourcesByTypeSince
+  // Server-specific: getResourcesByTypeSince (unused by the server since
+  // the streamed export of 2026-09-08; kept for
+  // fhirant_server/tool/review_2026-09-06/export_stream_bench.dart, which
+  // measures the old way against the new)
   // ──────────────────────────────────────────────────────────────────────────
 
+  @Deprecated('Unused by the server; the export streams FhirAntDb.exportJson')
   Future<List<fhir.Resource>> getResourcesByTypeSince(
     fhir.R4ResourceType resourceType, {
     DateTime? since,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
@@ -178,6 +179,27 @@ Response? authorizeRequest(
         );
       }
     }
+  }
+  return null;
+}
+
+/// Why [principal] may not store [resource], or null. A `Subscription` with
+/// a rest-hook channel makes this server PUT every matching resource to a
+/// URL of the subscriber's choosing, with headers of the subscriber's
+/// choosing, from inside the network, on every write: an outbound feed of
+/// the record. Creating or changing one is system authority (the admin
+/// role or a `system/` scope); a websocket subscription, which the client
+/// dials in for, stays open to anyone who may create Subscriptions. Any
+/// account with `c` on Subscription could register a rest-hook
+/// (REVIEW-2026-09-08 row 18).
+Response? storeRefusal(Principal? principal, fhir.Resource resource) {
+  if (principal == null || resource is! fhir.Subscription) return null;
+  final channel = resource.channel.type.valueString;
+  if (channel == 'rest-hook' && !principal.isSystem) {
+    return forbidden(
+      'A rest-hook Subscription sends resources out of this server; creating '
+      'or changing one requires system-level (admin) privilege.',
+    );
   }
   return null;
 }

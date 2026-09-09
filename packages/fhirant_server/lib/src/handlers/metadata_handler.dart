@@ -61,7 +61,7 @@ Map<String, List<FhirString>> _searchRevIncludes() {
 }
 
 /// Handler for the metadata route — returns a CapabilityStatement.
-Response metadataHandler(Request request) {
+Response metadataHandler(Request request, {bool corsEnabled = false}) {
   try {
     FhirantLogging().logInfo(
       'Fetching metadata request from ${request.requestedUri}',
@@ -99,8 +99,11 @@ Response metadataHandler(Request request) {
                 'http://hl7.org/fhir/StructureDefinition/'
                 'capabilitystatement-websocket',
               ),
+              // The scheme follows the request: `wss` under TLS. It used to
+              // say `ws` under https too (REVIEW-2026-09-08 row 31).
               valueX: FhirUri(
-                'ws://${request.requestedUri.authority}/ws',
+                '${request.requestedUri.scheme == 'https' ? 'wss' : 'ws'}'
+                '://${request.requestedUri.authority}/ws',
               ),
             ),
           ],
@@ -108,7 +111,9 @@ Response metadataHandler(Request request) {
           documentation: 'FHIR RESTful API with SMART on FHIR authentication.'
               .toFhirMarkdown,
           security: CapabilityStatementSecurity(
-            cors: FhirBoolean(true),
+            // What the server is configured to do, not a constant: CORS is
+            // off unless an origin is configured (REVIEW-2026-09-08 row 31).
+            cors: FhirBoolean(corsEnabled),
             service: [
               CodeableConcept(
                 coding: [
@@ -173,8 +178,13 @@ Response metadataHandler(Request request) {
             ),
             CapabilityStatementOperation(
               name: 'fhirpath'.toFhirString,
+              // This server's own operation: R4B publishes no
+              // OperationDefinition/Resource-fhirpath (profiles-resources.json
+              // read 2026-09-08 lists Resource-convert/graph/graphql/meta/
+              // meta-add/meta-delete/validate), and the CapabilityStatement
+              // used to cite that non-existent canonical (row 31).
               definition: FhirCanonical(
-                'http://hl7.org/fhir/OperationDefinition/Resource-fhirpath',
+                'http://fhirant.fhir-fli.dev/OperationDefinition/fhirpath',
               ),
             ),
             CapabilityStatementOperation(

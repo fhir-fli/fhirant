@@ -402,17 +402,25 @@ Future<Response> exportDeleteHandler(
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
 
-    // Mark as cancelled (the background worker checks this)
-    await dbInterface.updateExportJob(jobId, status: 'cancelled');
-
-    // Delete output files if they exist
+    // Mark as cancelled. A job that is still running keeps its row: the
+    // worker sees `cancelled` at its next check, stops, and removes its own
+    // directory, and the hourly sweep removes the row after the retention
+    // period. Deleting the row and the directory here while the worker was
+    // writing left files nobody owned until the sweep (REVIEW-2026-09-08
+    // row 39). A finished job is removed at once.
+    final running = job.status == 'pending' || job.status == 'in_progress';
+    await dbInterface.updateExportJob(
+      jobId,
+      status: 'cancelled',
+      completedAt: DateTime.now().toUtc(),
+    );
     final jobDir = Directory('$exportDir/$jobId');
-    if (jobDir.existsSync()) {
-      await jobDir.delete(recursive: true);
+    if (!running) {
+      if (jobDir.existsSync()) {
+        await jobDir.delete(recursive: true);
+      }
+      await dbInterface.deleteExportJob(jobId);
     }
-
-    // Remove the job row
-    await dbInterface.deleteExportJob(jobId);
 
     FhirantLogging().logInfo('Export job $jobId cancelled and cleaned up');
 
@@ -421,6 +429,13 @@ Future<Response> exportDeleteHandler(
     FhirantLogging().logError('Error deleting export job', e, stackTrace);
     return _operationOutcome(500, 'Internal error');
   }
+}
+
+/// Removes a job's output directory, if it exists; the worker's own
+/// clean-up when it finds the job cancelled.
+Future<void> _removeJobDir(String exportDir, String jobId) async {
+  final dir = Directory('$exportDir/$jobId');
+  if (dir.existsSync()) await dir.delete(recursive: true);
 }
 
 /// Background worker that processes an export job.
@@ -437,7 +452,10 @@ Future<void> _processExport(
     await dbInterface.updateExportJob(jobId, status: 'in_progress');
 
     final job = await dbInterface.getExportJob(jobId);
-    if (job == null || job.status == 'cancelled') return;
+    if (job == null || job.status == 'cancelled') {
+      await _removeJobDir(exportDir, jobId);
+      return;
+    }
 
     final baseUrl = _baseUrl(request);
     final since = job.since;
@@ -463,7 +481,14 @@ Future<void> _processExport(
 
     final outputManifest = <Map<String, dynamic>>[];
 
-    if (job.exportLevel == 'patient') {
+    // Patient-level: the members of the Patient compartments, by type.
+    // Bulk Data export.html, patient-level: "Obtain a detailed set of FHIR
+    // resources of diverse resource types pertaining to all patients". A
+    // resource of a compartment type with no patient (an Observation with
+    // no subject) is not about a patient; every resource of the type used
+    // to be written (REVIEW-2026-09-08 row 40).
+    final patientLevel = job.exportLevel == 'patient';
+    if (patientLevel) {
       // Patient-level export: restrict to Patient compartment resource types
       // (the published CompartmentDefinition, generated into fhir_r4_db, plus
       // the Patient itself).
@@ -546,7 +571,10 @@ Future<void> _processExport(
       for (final patientId in patientIds) {
         // Check for cancellation
         final currentJob = await dbInterface.getExportJob(jobId);
-        if (currentJob == null || currentJob.status == 'cancelled') return;
+        if (currentJob == null || currentJob.status == 'cancelled') {
+          await _removeJobDir(exportDir, jobId);
+          return;
+        }
 
         final compartmentIds = await dbInterface.compartmentMembers(
           CompartmentScope('Patient', patientId),
@@ -571,7 +599,10 @@ Future<void> _processExport(
       // Fetch and write NDJSON files per resource type
       for (final entry in allResourceIds.entries) {
         final currentJob = await dbInterface.getExportJob(jobId);
-        if (currentJob == null || currentJob.status == 'cancelled') return;
+        if (currentJob == null || currentJob.status == 'cancelled') {
+          await _removeJobDir(exportDir, jobId);
+          return;
+        }
 
         final typeName = entry.key;
         final ids = entry.value;
@@ -656,7 +687,10 @@ Future<void> _processExport(
     for (final resourceType in typesToExport) {
       // Check for cancellation
       final currentJob = await dbInterface.getExportJob(jobId);
-      if (currentJob == null || currentJob.status == 'cancelled') return;
+      if (currentJob == null || currentJob.status == 'cancelled') {
+        await _removeJobDir(exportDir, jobId);
+        return;
+      }
 
       final typeName = resourceType.toString();
 
@@ -667,6 +701,19 @@ Future<void> _processExport(
       // The stored JSON is streamed to the file a page at a time
       // (FhirAntDb.exportJson); a _typeFilter picks the ids first, each
       // filter one search, united (OR), and `_since` is applied in SQL.
+      // Patient-level, member type: the ids in some Patient's compartment.
+      // Every Patient is in its own compartment, so the Patient type itself
+      // is not narrowed.
+      Set<String>? memberIds;
+      if (patientLevel && typeName != 'Patient') {
+        memberIds = await dbInterface.compartmentTypeMembers(
+          'Patient',
+          typeName,
+          since: since,
+        );
+        if (memberIds.isEmpty) continue;
+      }
+
       Stream<String> lines;
       if (matchingFilters.isNotEmpty) {
         final ids = <String>{};
@@ -685,13 +732,14 @@ Future<void> _processExport(
         lines = dbInterface.exportJson(
           resourceType,
           since: since,
-          ids: ids,
+          ids: memberIds == null ? ids : ids.where(memberIds.contains),
           withoutTag: withoutTag,
         );
       } else {
         lines = dbInterface.exportJson(
           resourceType,
           since: since,
+          ids: memberIds,
           withoutTag: withoutTag,
         );
       }

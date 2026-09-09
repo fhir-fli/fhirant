@@ -38,6 +38,14 @@ COPY --from=build /app/out/bundle/ /app/
 COPY --from=build /app/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
 COPY --from=build /app/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
 
+# The process runs as the image's unprivileged user; the data volume is
+# handed to it. It used to run as root (REVIEW-2026-09-08 row 48).
+RUN mkdir -p /data && chown -R 1000:1000 /app /data
+USER 1000:1000
+
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD \
+  ["/app/bin/server", "--help"] || exit 1
 
 CMD ["/app/bin/server", "--port", "8080", "--db-path", "/data"]

@@ -1268,6 +1268,8 @@ Future<Response> postResourceHandler(
         );
       }
     }
+    final storeRefused = storeRefusal(Principal.of(request), resource);
+    if (storeRefused != null) return storeRefused;
 
     // R4B http.html §3.1.0.8 create (read 2026-09-08): "If an id is
     // provided, the server SHALL ignore it." and "The server SHALL populate
@@ -1355,8 +1357,7 @@ Future<Response> putResourceHandler(
     final resourceId = updatedResource.id?.toString() ?? '';
     if (resourceId != id) {
       FhirantLogging().logWarning(
-        'Resource ID mismatch in update: expected $id, '
-        'got $resourceId',
+        'Resource ID mismatch in update',
       );
       return _validationErrorResponse(
         'Resource ID in URL does not match resource ID in body',
@@ -1385,6 +1386,9 @@ Future<Response> putResourceHandler(
         return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
     }
+
+    final storeRefused = storeRefusal(Principal.of(request), updatedResource);
+    if (storeRefused != null) return storeRefused;
 
     // Conditional update: If-Match header. The check happens INSIDE the
     // database write (FhirAntDb.saveResource, ifMatchVersion), in the same
@@ -1558,7 +1562,7 @@ Future<Response> getResourceByIdHandler(
       // Check if resource was previously deleted (has history but no current)
       if (await dbInterface.countHistory(type, id) > 0) {
         FhirantLogging().logWarning(
-          'Resource $resourceType/$id was deleted (410 Gone).',
+          'Resource $resourceType/{id} was deleted (410 Gone).',
         );
         return Response(
           410,
@@ -1855,7 +1859,7 @@ Response _emptySearchBundle(
 /// to more than one resource type (3.1.1.4.12; `invalid`). The store's
 /// message already says what was asked for and what was allowed.
 Response _searchRefusal(String message, fhir.IssueType code) {
-  FhirantLogging().logInfo('Rejected search: $message');
+  FhirantLogging().logInfo('Rejected search ($code)');
   return Response(
     400,
     body: fhir.OperationOutcome(

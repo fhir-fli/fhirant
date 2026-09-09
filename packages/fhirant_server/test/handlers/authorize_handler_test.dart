@@ -77,7 +77,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=code&redirect_uri=http://app/cb',
+          'http://localhost:8080/auth/authorize?response_type=code&redirect_uri=http://app/cb&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -90,7 +90,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app',
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -106,7 +106,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=token&client_id=my-app&redirect_uri=http://app/cb',
+          'http://localhost:8080/auth/authorize?response_type=token&client_id=my-app&redirect_uri=http://app/cb&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -126,7 +126,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=token&client_id=new-app&redirect_uri=https://evil.example/cb&state=x',
+          'http://localhost:8080/auth/authorize?response_type=token&client_id=new-app&redirect_uri=https://evil.example/cb&state=x&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -143,7 +143,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz',
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -162,7 +162,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://evil/cb&scope=user/*.*$pkceQuery',
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://evil/cb&scope=user/*.*$pkceQuery&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -175,7 +175,7 @@ void main() {
       final request = Request(
         'GET',
         Uri.parse(
-          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz$pkceQuery',
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=my-app&redirect_uri=http://app/cb&scope=user/*.*&state=xyz$pkceQuery&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
 
@@ -198,11 +198,17 @@ void main() {
       stubIssue(mockDb);
     });
 
+    // `state` and `aud` are required (SMART App Launch STU2; REVIEW-2026-09-08
+    // row 16): every request carries them unless a test overrides them.
     Request makeRequest(Map<String, dynamic> body) {
       return Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/authorize'),
-        body: jsonEncode(body),
+        body: jsonEncode({
+          'state': 'xyz',
+          'aud': 'http://localhost:8080',
+          ...body,
+        }),
         headers: {'content-type': 'application/json'},
       );
     }
@@ -210,6 +216,8 @@ void main() {
     test('returns 400 for unsupported response_type', () async {
       final request = makeRequest({
         'response_type': 'token',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'username': 'test',
@@ -226,6 +234,8 @@ void main() {
     test('returns 400 when client_id missing', () async {
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'redirect_uri': 'http://app/cb',
         'username': 'test',
         'password': 'pass',
@@ -241,6 +251,8 @@ void main() {
     test('returns 400 when redirect_uri missing', () async {
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'username': 'test',
         'password': 'pass',
@@ -256,6 +268,8 @@ void main() {
     test('returns 400 when credentials missing', () async {
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
       });
@@ -270,6 +284,8 @@ void main() {
     test('returns 400 invalid_request without PKCE', () async {
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'username': 'testuser',
@@ -285,6 +301,8 @@ void main() {
     test('returns 400 invalid_request for the plain method', () async {
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'code_challenge': 'abc',
@@ -305,6 +323,8 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         ...pkceFields,
@@ -328,6 +348,8 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         ...pkceFields,
@@ -346,6 +368,7 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.*',
@@ -390,6 +413,8 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.cruds openid',
@@ -421,6 +446,8 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'scope': 'system/*.*',
@@ -442,6 +469,8 @@ void main() {
 
       final request = makeRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.*',
@@ -500,6 +529,7 @@ void main() {
 
       final request = makeFormRequest({
         'response_type': 'code',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         'scope': 'user/*.*',
@@ -524,6 +554,8 @@ void main() {
 
       final request = makeFormRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
         ...pkceFields,
@@ -542,6 +574,8 @@ void main() {
     test('returns login form when credentials missing', () async {
       final request = makeFormRequest({
         'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
         'client_id': 'my-app',
         'redirect_uri': 'http://app/cb',
       });
@@ -565,6 +599,8 @@ void main() {
 
     final body = {
       'response_type': 'code',
+      'state': 'xyz',
+      'aud': 'http://localhost:8080',
       'client_id': 'my-app',
       'redirect_uri': 'http://app/cb',
       ...pkceFields,

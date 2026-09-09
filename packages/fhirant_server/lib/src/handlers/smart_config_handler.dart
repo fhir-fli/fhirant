@@ -25,7 +25,10 @@ Response smartConfigHandler(Request request) {
     'authorization_endpoint': '$host/auth/authorize',
     'token_endpoint': '$host/auth/token',
     'revocation_endpoint': '$host/auth/revoke',
-    'registration_endpoint': '$host/auth/register',
+    // No `registration_endpoint`: that key is RFC 7591 dynamic CLIENT
+    // registration, and `/auth/register` creates user accounts; a SMART
+    // client following the document posted client metadata there
+    // (REVIEW-2026-09-08 row 20).
     'grant_types_supported': [
       'authorization_code',
       'refresh_token',

@@ -27,7 +27,7 @@ Requires Android 7.0 (API 24) or newer.
 - FHIR Mapping Language transforms (`$transform`)
 - Immunization forecasting (`$immds-forecast` — CDC and WHO schedules)
 - Patient `$everything`, `$document` generation, `_history`
-- `$backup` / `$restore` of the whole dataset as a FHIR Bundle
+- `$backup` / `$restore` of the whole dataset as an encrypted SQLite file (a passphrase-wrapped FHIR Bundle is still accepted on restore)
 - Built-in resource browser with JSON/YAML views and clickable references
 - Bundled MIMIC-IV demo dataset to load with one tap
 

@@ -50,6 +50,52 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
       );
     }
 
+    // R4B OperationDefinition StructureMap-transform (profiles-resources.json,
+    // read 2026-09-08): in `source` 0..1 uri (the map's canonical), in
+    // `content` 1..1 Resource, out `return`. A Parameters body of that shape
+    // is answered here by resolving the StructureMap by `url`; the original
+    // `{map: <StructureMap>, source: <resource>}` body stays as an extension
+    // (REVIEW-2026-09-08 row 30).
+    if (requestJson['resourceType'] == 'Parameters') {
+      String? sourceUri;
+      Object? content;
+      for (final p
+          in (requestJson['parameter'] as List<dynamic>? ?? const [])) {
+        if (p is! Map<String, dynamic>) continue;
+        switch (p['name']) {
+          case 'source':
+            sourceUri = (p['valueUri'] ??
+                p['valueCanonical'] ??
+                p['valueString']) as String?;
+          case 'content':
+            content = p['resource'];
+        }
+      }
+      if (sourceUri == null || sourceUri.isEmpty || content == null) {
+        return _outcome(
+          400,
+          'invalid',
+          'StructureMap-transform takes `source` (the canonical url of a '
+              'stored StructureMap) and `content` (the resource to transform)',
+        );
+      }
+      final maps = await db.search(
+        resourceType: fhir.R4ResourceType.StructureMap,
+        searchParameters: {
+          'url': [sourceUri],
+        },
+        count: 1,
+      );
+      if (maps.isEmpty) {
+        return _outcome(
+          404,
+          'not-found',
+          'No StructureMap with url $sourceUri',
+        );
+      }
+      requestJson = {'map': maps.first.toJson(), 'source': content};
+    }
+
     if (requestJson['map'] == null) {
       return Response(
         400,
@@ -362,3 +408,14 @@ class TargetTypeAmbiguous implements Exception {
   @override
   String toString() => message;
 }
+
+Response _outcome(int status, String code, String diagnostics) => Response(
+      status,
+      body: jsonEncode({
+        'resourceType': 'OperationOutcome',
+        'issue': [
+          {'severity': 'error', 'code': code, 'diagnostics': diagnostics},
+        ],
+      }),
+      headers: {'Content-Type': 'application/fhir+json'},
+    );

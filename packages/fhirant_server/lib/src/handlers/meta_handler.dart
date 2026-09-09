@@ -71,7 +71,7 @@ Future<Response> metaHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in \$meta for $resourceType/$id',
+      'Error in \$meta for $resourceType/{id}',
       e,
       stackTrace,
     );
@@ -147,7 +147,7 @@ Future<Response> metaAddHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in \$meta-add for $resourceType/$id',
+      'Error in \$meta-add for $resourceType/{id}',
       e,
       stackTrace,
     );
@@ -229,7 +229,7 @@ Future<Response> metaDeleteHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in \$meta-delete for $resourceType/$id',
+      'Error in \$meta-delete for $resourceType/{id}',
       e,
       stackTrace,
     );

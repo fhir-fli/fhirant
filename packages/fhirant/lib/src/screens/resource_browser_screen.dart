@@ -282,7 +282,27 @@ class _ResourceBrowserScreenState extends State<ResourceBrowserScreen> {
     // Check if it's a URL
     if (reference.startsWith('http://') || reference.startsWith('https://')) {
       final uri = Uri.tryParse(reference);
-      if (uri != null) {
+      if (uri == null) return;
+      // A URL stored in a resource is data a client wrote; the operator
+      // confirms before the phone opens it (REVIEW-2026-09-08 row 49).
+      final open = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Open link?'),
+          content: Text(reference),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Open'),
+            ),
+          ],
+        ),
+      );
+      if (open ?? false) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
       return;

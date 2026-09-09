@@ -131,16 +131,37 @@ Future<Response> fhirPathHandler(
       );
     }
 
-    // Evaluate the FHIRPath expression
+    // Evaluate the FHIRPath expression. An expression that does not parse
+    // is the client's error (400), not the server's (it used to be a 500;
+    // REVIEW-2026-09-08 row 32).
     final engine = await _fhirPathEngine;
-    final result = (await engine.evaluate(resource, engine.parse(expression)))
-        .cast<fhir.FhirBase>();
+    final ExpressionNode parsed;
+    try {
+      parsed = engine.parse(expression);
+    } catch (e) {
+      return Response(
+        400,
+        body: jsonEncode({
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'invalid',
+              'diagnostics': 'The FHIRPath expression does not parse: $e',
+            }
+          ],
+        }),
+        headers: {'Content-Type': 'application/fhir+json'},
+      );
+    }
+    final result =
+        (await engine.evaluate(resource, parsed)).cast<fhir.FhirBase>();
 
     // Convert result to JSON
     final resultJson = result.map((e) => e.toJson()).toList();
 
     FhirantLogging().logInfo(
-      'FHIRPath expression evaluated successfully: $expression',
+      'FHIRPath expression evaluated successfully',
     );
 
     return Response.ok(

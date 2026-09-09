@@ -18,7 +18,7 @@ Future<Response> resourceHistoryHandler(
 ) async {
   try {
     FhirantLogging().logInfo(
-      'Fetching history for resource: $resourceType/$id',
+      'Fetching history for resource: $resourceType/{id}',
     );
 
     final type = fhir.R4ResourceType.fromString(resourceType);
@@ -40,6 +40,8 @@ Future<Response> resourceHistoryHandler(
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
+    final instantError = _instantError(queryParams, since, at);
+    if (instantError != null) return _validationErrorResponse(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
@@ -74,9 +76,9 @@ Future<Response> resourceHistoryHandler(
 
     if (total == 0) {
       FhirantLogging().logWarning(
-        'No history found for resource: $resourceType/$id',
+        'No history found for resource: $resourceType/{id}',
       );
-      return notFoundOutcome('$resourceType/$id');
+      return notFoundOutcome('$resourceType/{id}');
     }
 
     // Build base URL
@@ -101,7 +103,7 @@ Future<Response> resourceHistoryHandler(
 
     FhirantLogging().logInfo(
       'Successfully fetched ${paginatedHistory.length} history entries '
-      'for resource: $resourceType/$id',
+      'for resource: $resourceType/{id}',
     );
 
     return Response.ok(
@@ -110,7 +112,7 @@ Future<Response> resourceHistoryHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error fetching history for resource: $resourceType/$id',
+      'Error fetching history for resource: $resourceType/{id}',
       e,
       stackTrace,
     );
@@ -151,6 +153,8 @@ Future<Response> typeHistoryHandler(
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
+    final instantError = _instantError(queryParams, since, at);
+    if (instantError != null) return _validationErrorResponse(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
@@ -240,6 +244,8 @@ Future<Response> systemHistoryHandler(
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
+    final instantError = _instantError(queryParams, since, at);
+    if (instantError != null) return _validationErrorResponse(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
@@ -329,7 +335,7 @@ Future<Response> vreadResourceHandler(
 ) async {
   try {
     FhirantLogging().logInfo(
-      'Fetching version $vid of resource: $resourceType/$id',
+      'Fetching version {vid} of resource: $resourceType/{id}',
     );
 
     final type = fhir.R4ResourceType.fromString(resourceType);
@@ -351,18 +357,18 @@ Future<Response> vreadResourceHandler(
       final any = await dbInterface.countHistory(type, id);
       FhirantLogging().logWarning(
         any == 0
-            ? 'No history found for resource: $resourceType/$id'
-            : 'Version $vid not found for resource: $resourceType/$id',
+            ? 'No history found for resource: $resourceType/{id}'
+            : 'Version $vid not found for resource: $resourceType/{id}',
       );
       return notFoundOutcome(
-        any == 0 ? '$resourceType/$id' : '$resourceType/$id/_history/$vid',
+        any == 0 ? '$resourceType/{id}' : '$resourceType/{id}/_history/$vid',
       );
     }
 
     // A deletion tombstone is 410, not a resource
     if (entry.deleted) {
       FhirantLogging().logInfo(
-        'Version $vid of $resourceType/$id is a deletion tombstone (410)',
+        'Version {vid} of $resourceType/{id} is a deletion tombstone (410)',
       );
       return Response(
         410,
@@ -372,7 +378,7 @@ Future<Response> vreadResourceHandler(
               severity: fhir.IssueSeverity.error,
               code: fhir.IssueType.deleted,
               diagnostics:
-                  'Resource $resourceType/$id version $vid has been deleted'
+                  'Resource $resourceType/{id} version $vid has been deleted'
                       .toFhirString,
             ),
           ],
@@ -383,7 +389,7 @@ Future<Response> vreadResourceHandler(
     final versionedResource = entry.resource!;
 
     FhirantLogging().logInfo(
-      'Successfully fetched version $vid of resource: $resourceType/$id',
+      'Successfully fetched version {vid} of resource: $resourceType/{id}',
     );
 
     return Response.ok(
@@ -392,7 +398,7 @@ Future<Response> vreadResourceHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error fetching version $vid of resource: $resourceType/$id',
+      'Error fetching version {vid} of resource: $resourceType/{id}',
       e,
       stackTrace,
     );
@@ -419,6 +425,23 @@ Future<Response?> _refuseOutsideCompartment(
     return null;
   }
   return patientScopeForbiddenResponse(resourceType, id, patientId);
+}
+
+/// A `_since` or `_at` that was given and did not parse: R4B 3.1.1.3, a
+/// syntactically incorrect parameter is an error, not something to ignore
+/// (REVIEW-2026-09-08 row 32).
+String? _instantError(
+  Map<String, String> queryParams,
+  DateTime? since,
+  DateTime? at,
+) {
+  for (final (name, parsed) in [('_since', since), ('_at', at)]) {
+    final raw = queryParams[name];
+    if (raw != null && raw.isNotEmpty && parsed == null) {
+      return '$name must be an instant; got "$raw"';
+    }
+  }
+  return null;
 }
 
 /// Parse a FHIR instant/dateTime string into a [DateTime].

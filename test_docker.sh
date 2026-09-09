@@ -15,8 +15,10 @@ BASE="http://localhost:$PORT"
 PASS=0
 FAIL=0
 
-# Use X-Forwarded-For to avoid sharing rate-limit budget between
-# readiness probes and actual test requests (server limit: 10 req/60s).
+# X-Forwarded-For is OVERWRITTEN by the server with the connection address
+# (_trustedClientIpMiddleware), so every request here shares one rate-limit
+# bucket; the credential endpoints allow 10 per 60 s and this script makes
+# fewer than that. The three addresses are kept for readability only.
 PROBE_IP="10.0.0.99"
 TEST_IP="10.0.0.1"
 TEST_IP2="10.0.0.2"

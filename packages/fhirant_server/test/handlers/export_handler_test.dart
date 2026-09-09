@@ -644,17 +644,29 @@ void main() {
       when(() => mockDb.getExportJob(jobId)).thenAnswer(
         (_) async => _fakeExportJob(jobId: jobId, status: 'in_progress'),
       );
-      when(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
-          .thenAnswer((_) async {});
+      when(
+        () => mockDb.updateExportJob(
+          jobId,
+          status: 'cancelled',
+          completedAt: any(named: 'completedAt'),
+        ),
+      ).thenAnswer((_) async {});
       when(() => mockDb.deleteExportJob(jobId)).thenAnswer((_) async {});
 
       final response =
           await exportDeleteHandler(request, mockDb, exportDir, jobId);
 
       expect(response.statusCode, equals(202));
-      verify(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
-          .called(1);
-      verify(() => mockDb.deleteExportJob(jobId)).called(1);
+      verify(
+        () => mockDb.updateExportJob(
+          jobId,
+          status: 'cancelled',
+          completedAt: any(named: 'completedAt'),
+        ),
+      ).called(1);
+      // A running job keeps its row: the worker sees `cancelled` and stops,
+      // the sweep removes the row later (REVIEW-2026-09-08 row 39).
+      verifyNever(() => mockDb.deleteExportJob(jobId));
     });
 
     test('cleans up export files on delete', () async {
@@ -670,8 +682,13 @@ void main() {
       when(() => mockDb.getExportJob(jobId)).thenAnswer(
         (_) async => _fakeExportJob(jobId: jobId, status: 'completed'),
       );
-      when(() => mockDb.updateExportJob(jobId, status: 'cancelled'))
-          .thenAnswer((_) async {});
+      when(
+        () => mockDb.updateExportJob(
+          jobId,
+          status: 'cancelled',
+          completedAt: any(named: 'completedAt'),
+        ),
+      ).thenAnswer((_) async {});
       when(() => mockDb.deleteExportJob(jobId)).thenAnswer((_) async {});
 
       final response =
@@ -679,6 +696,8 @@ void main() {
 
       expect(response.statusCode, equals(202));
       expect(jobDir.existsSync(), isFalse);
+      // A finished job is removed at once.
+      verify(() => mockDb.deleteExportJob(jobId)).called(1);
     });
   });
 }

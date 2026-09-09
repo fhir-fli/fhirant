@@ -1,5 +1,6 @@
 // lib/src/core/server_core.dart
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:fhirant_db/fhirant_db.dart';
@@ -172,8 +173,14 @@ class FhirAntServer {
         '/auth/token',
         (Request req) => refreshHandler(req, dbInterface, _jwtService),
       )
-      ..post('/auth/revoke', (Request req) => revokeHandler(req, dbInterface))
-      ..post('/auth/logout', (Request req) => logoutHandler(req, dbInterface))
+      ..post(
+        '/auth/revoke',
+        (Request req) => revokeHandler(req, dbInterface, _jwtService),
+      )
+      ..post(
+        '/auth/logout',
+        (Request req) => logoutHandler(req, dbInterface, _jwtService),
+      )
       ..get(
         '/auth/authorize',
         (Request req) => authorizeGetHandler(req, dbInterface),
@@ -207,7 +214,11 @@ class FhirAntServer {
         '/health',
         (Request req) => healthHandler(req, dbInterface, _startTime),
       )
-      ..get('/metadata', metadataHandler)
+      ..get(
+        '/metadata',
+        (Request req) =>
+            metadataHandler(req, corsEnabled: corsAllowOrigin != null),
+      )
       ..get('/.well-known/smart-configuration', smartConfigHandler)
       // Library/$evaluate (must be before generic /<resourceType>/$validate)
       ..post(
@@ -583,7 +594,45 @@ class FhirAntServer {
 
     return pipeline
         .addMiddleware(auditMiddleware(dbInterface, queue: _audit))
+        .addMiddleware(_uncaughtErrorMiddleware())
         .addHandler(router.call);
+  }
+
+  /// An exception that escapes a handler is answered as a 500
+  /// OperationOutcome and logged by its type, never by its message: shelf's
+  /// own fallback was a plain-text 500 that skipped the request log line
+  /// (REVIEW-2026-09-08 row 47). Innermost, so the audit and request-log
+  /// middleware see the response like any other.
+  Middleware _uncaughtErrorMiddleware() {
+    return (Handler innerHandler) {
+      return (Request request) async {
+        try {
+          return await innerHandler(request);
+        } on HijackException {
+          rethrow;
+        } catch (e, stackTrace) {
+          FhirantLogging().logError(
+            'Unhandled ${e.runtimeType} in ${request.method} '
+            '${_redactUri(request.requestedUri)}',
+            e,
+            stackTrace,
+          );
+          return Response.internalServerError(
+            body: jsonEncode({
+              'resourceType': 'OperationOutcome',
+              'issue': [
+                {
+                  'severity': 'fatal',
+                  'code': 'exception',
+                  'diagnostics': 'Internal error',
+                }
+              ],
+            }),
+            headers: {'Content-Type': 'application/fhir+json'},
+          );
+        }
+      };
+    };
   }
 
   /// The endpoints that take a password or exchange a code.
@@ -679,12 +728,20 @@ class FhirAntServer {
             ),
           );
     }
+    // The listener closes first and in-flight requests get five seconds to
+    // finish, so what they audit is still drained below; a request finishing
+    // during a forced close used to be audited into a queue nobody drained.
+    final server = _server!;
+    try {
+      await server.close().timeout(const Duration(seconds: 5));
+    } on TimeoutException {
+      await server.close(force: true);
+    }
     await _audit.drain();
     // SQLite's advice (lang_analyze.html, read 2026-09-06) is to run PRAGMA
     // optimize "just before closing each database connection"; this is the
     // last moment the server has the connection's query history.
     await dbInterface.optimizeStatistics();
-    await _server!.close(force: true);
     _server = null;
     _isRunning = false;
     await _requestLogController.close();
@@ -700,6 +757,10 @@ class FhirAntServer {
     unawaited(_reconcileExports(atStart: true));
     _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) async {
       await dbInterface.cleanupRevokedTokens();
+      // Used and expired authorization codes. The method existed and
+      // nothing called it, so the table grew by a row per authorize for
+      // ever (REVIEW-2026-09-08 row 38).
+      await dbInterface.cleanupAuthorizationCodes();
       await _reconcileExports();
       // Planner statistics for tables that have grown 10-fold since they
       // were last analysed (PRAGMA optimize); a no-op otherwise.
@@ -881,7 +942,9 @@ class FhirAntServer {
             RequestLogEntry(
               timestamp: startTime,
               method: request.method,
-              path: request.requestedUri.path,
+              // The shape, as the log line: the card used to carry the
+              // path with its ids (REVIEW-2026-09-08 row 46).
+              path: _redactUri(request.requestedUri),
               statusCode: response.statusCode,
               durationMs: duration.inMilliseconds,
               clientIp: clientIp,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
@@ -19,7 +20,7 @@ Future<Response> patchResourceHandler(
 ) async {
   try {
     FhirantLogging().logInfo(
-      'Patching resource: $resourceType/$id',
+      'Patching resource: $resourceType/{id}',
     );
 
     final type = fhir.R4ResourceType.fromString(resourceType);
@@ -34,9 +35,9 @@ Future<Response> patchResourceHandler(
     final currentResource = await dbInterface.getResource(type, id);
     if (currentResource == null) {
       FhirantLogging().logWarning(
-        'Resource not found for PATCH: $resourceType/$id',
+        'Resource not found for PATCH: $resourceType/{id}',
       );
-      return notFoundOutcome('$resourceType/$id');
+      return notFoundOutcome('$resourceType/{id}');
     }
 
     // Patient-level scope enforcement for patch
@@ -103,6 +104,9 @@ Future<Response> patchResourceHandler(
         );
       }
 
+      final storeRefused = storeRefusal(Principal.of(request), patchedResource);
+      if (storeRefused != null) return storeRefused;
+
       // The patched resource must still be in the compartment, as a PUT's
       // body must (REVIEW-2026-09-08 row 11).
       if (patchPatientId != null &&
@@ -144,7 +148,7 @@ Future<Response> patchResourceHandler(
       }
       if (savedResource == null) {
         FhirantLogging().logError(
-          'Failed to save patched resource: $resourceType/$id',
+          'Failed to save patched resource: $resourceType/{id}',
         );
         return _errorResponse(
           'Failed to save patched resource',
@@ -155,7 +159,7 @@ Future<Response> patchResourceHandler(
       final responseResource = savedResource;
 
       FhirantLogging().logInfo(
-        'Successfully patched resource: $resourceType/$id',
+        'Successfully patched resource: $resourceType/{id}',
       );
 
       final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
@@ -167,7 +171,7 @@ Future<Response> patchResourceHandler(
       );
     } catch (e, stackTrace) {
       FhirantLogging().logError(
-        'Error applying patch to resource: $resourceType/$id',
+        'Error applying patch to resource: $resourceType/{id}',
         e,
         stackTrace,
       );
@@ -179,7 +183,7 @@ Future<Response> patchResourceHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error processing PATCH request for: $resourceType/$id',
+      'Error processing PATCH request for: $resourceType/{id}',
       e,
       stackTrace,
     );

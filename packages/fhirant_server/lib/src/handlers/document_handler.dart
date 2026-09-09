@@ -118,7 +118,7 @@ Future<Response> documentHandler(
     );
 
     FhirantLogging().logInfo(
-      '\$document for Composition/$id returned ${entries.length} entries',
+      '\$document for Composition/{id} returned ${entries.length} entries',
     );
 
     return Response.ok(
@@ -127,7 +127,7 @@ Future<Response> documentHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in \$document for Composition/$id',
+      r'Error in $document for Composition/{id}',
       e,
       stackTrace,
     );

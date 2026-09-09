@@ -34,7 +34,7 @@ void main() {
         body: jsonEncode({'token': token}),
       );
 
-      final response = await revokeHandler(request, mockDb);
+      final response = await revokeHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       final body = jsonDecode(await response.readAsString()) as Map;
@@ -57,7 +57,7 @@ void main() {
         body: jsonEncode({'token': token}),
       );
 
-      final response = await revokeHandler(request, mockDb);
+      final response = await revokeHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       verify(() => mockDb.revokeToken(TokenHasher.hash(token), any()))
@@ -71,7 +71,7 @@ void main() {
         body: jsonEncode({'not_a_token': 'value'}),
       );
 
-      final response = await revokeHandler(request, mockDb);
+      final response = await revokeHandler(request, mockDb, jwtService);
       expect(response.statusCode, 400);
 
       final body = jsonDecode(await response.readAsString()) as Map;
@@ -85,13 +85,12 @@ void main() {
         body: jsonEncode({'token': 'garbage-not-a-jwt'}),
       );
 
-      final response = await revokeHandler(request, mockDb);
+      final response = await revokeHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
-      // Still revoked — the hash is stored regardless
-      verify(
-        () => mockDb.revokeToken(TokenHasher.hash('garbage-not-a-jwt'), any()),
-      ).called(1);
+      // 200 as RFC 7009 asks, and nothing stored: only a token this server
+      // signed is written to revoked_tokens (REVIEW-2026-09-08 row 17).
+      verifyNever(() => mockDb.revokeToken(any(), any()));
     });
 
     test('supports form-encoded body', () async {
@@ -107,7 +106,7 @@ void main() {
         body: 'token=${Uri.encodeComponent(token)}',
       );
 
-      final response = await revokeHandler(request, mockDb);
+      final response = await revokeHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       verify(() => mockDb.revokeToken(TokenHasher.hash(token), any()))
@@ -129,7 +128,7 @@ void main() {
         headers: {'authorization': 'Bearer $token'},
       );
 
-      final response = await logoutHandler(request, mockDb);
+      final response = await logoutHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       final body = jsonDecode(await response.readAsString()) as Map;
@@ -158,7 +157,7 @@ void main() {
         body: jsonEncode({'refresh_token': refreshToken}),
       );
 
-      final response = await logoutHandler(request, mockDb);
+      final response = await logoutHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       // Both tokens should be revoked
@@ -174,7 +173,7 @@ void main() {
         Uri.parse('http://localhost:8080/auth/logout'),
       );
 
-      final response = await logoutHandler(request, mockDb);
+      final response = await logoutHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       verifyNever(() => mockDb.revokeToken(any(), any()));
@@ -193,7 +192,7 @@ void main() {
         body: jsonEncode({'refresh_token': refreshToken}),
       );
 
-      final response = await logoutHandler(request, mockDb);
+      final response = await logoutHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
       verify(() => mockDb.revokeToken(TokenHasher.hash(refreshToken), any()))

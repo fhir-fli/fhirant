@@ -137,8 +137,14 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
 bool _shouldAudit(Request request) {
   final path = request.url.path;
 
-  // Skip empty path (root), metadata, favicon
-  if (path.isEmpty || path == 'metadata' || path == 'favicon.ico') {
+  // Skip empty path (root), metadata, favicon, and the health poll, which
+  // reads no record and was written as an anonymous access on every poll
+  // (REVIEW-2026-09-08 row 45).
+  if (path.isEmpty ||
+      path == 'metadata' ||
+      path == 'favicon.ico' ||
+      path == 'health' ||
+      path == '.well-known/smart-configuration') {
     return false;
   }
 
@@ -150,8 +156,14 @@ bool _shouldAudit(Request request) {
   return true;
 }
 
-/// Maps an HTTP method to a FHIR AuditEvent action code.
-String _mapAction(String method) {
+/// Maps a request to a FHIR AuditEvent action code (audit-event-action:
+/// C R U D E). A `POST …/_search` is a read, and a `POST …/$operation` an
+/// execute; both used to be recorded as a create (REVIEW-2026-09-08 row
+/// 46).
+String _mapAction(String method, String path) {
+  final segments = path.split('/');
+  if (segments.isNotEmpty && segments.last == '_search') return 'R';
+  if (segments.any((s) => s.startsWith(r'$'))) return 'E';
   switch (method) {
     case 'POST':
       return 'C';
@@ -168,8 +180,11 @@ String _mapAction(String method) {
   }
 }
 
-/// Maps an HTTP method to a FHIR AuditEvent subtype display.
-String _mapSubtype(String method) {
+/// Maps a request to a FHIR AuditEvent subtype display.
+String _mapSubtype(String method, String path) {
+  final segments = path.split('/');
+  if (segments.isNotEmpty && segments.last == '_search') return 'search';
+  if (segments.any((s) => s.startsWith(r'$'))) return 'execute';
   switch (method) {
     case 'POST':
       return 'create';
@@ -209,11 +224,16 @@ String? _entityReference(Request request, Response response) {
   final declared = response.context['audit_entity'];
   if (declared is String && declared.isNotEmpty) return declared;
 
+  // Only `[ResourceType]/[id]`: `auth/login`, `admin/unlock/3`,
+  // `Patient/$export` and `ValueSet/$expand` are not references to a record
+  // and used to be recorded as if they were (REVIEW-2026-09-08 row 46).
   final path = request.url.path;
   final segments = path.split('/');
   if (segments.length >= 2 &&
+      fhir.R4ResourceType.fromString(segments[0]) != null &&
       segments[1].isNotEmpty &&
-      !segments[1].startsWith('_')) {
+      !segments[1].startsWith('_') &&
+      !segments[1].startsWith(r'$')) {
     return '${segments[0]}/${segments[1]}';
   }
   return null;
@@ -236,8 +256,8 @@ Future<void> _queueAuditEvent(
     // token identifies the actor without inventing Practitioner resources.
     final userId = authUser?['userId'];
 
-    final action = _mapAction(request.method);
-    final subtype = _mapSubtype(request.method);
+    final action = _mapAction(request.method, request.url.path);
+    final subtype = _mapSubtype(request.method, request.url.path);
     final outcome = _mapOutcome(response.statusCode);
     final entityRef = _entityReference(request, response);
 

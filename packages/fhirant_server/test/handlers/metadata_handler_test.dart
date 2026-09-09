@@ -49,7 +49,8 @@ void main() {
 
     test('security section present with CORS and SMART-on-FHIR', () {
       final security = rest.security!;
-      expect(security.cors!.valueBoolean, isTrue);
+      // Off unless an origin is configured (REVIEW-2026-09-08 row 31).
+      expect(security.cors!.valueBoolean, isFalse);
       expect(
         security.service!.first.coding!.first.code!.valueString,
         equals('SMART-on-FHIR'),
@@ -303,6 +304,33 @@ void main() {
                 'capabilitystatement-websocket',
       ) as Map<String, dynamic>;
       expect(websocket['valueUri'], equals('ws://localhost:8080/ws'));
+    });
+
+    test('under https the websocket is wss (REVIEW-2026-09-08 row 31)',
+        () async {
+      final response = metadataHandler(
+        Request('GET', Uri.parse('https://fhir.example.org/metadata')),
+      );
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final rest = (body['rest'] as List).first as Map<String, dynamic>;
+      final extensions =
+          (rest['extension'] as List).cast<Map<String, dynamic>>();
+      final websocket = extensions.firstWhere(
+        (e) => (e['url'] as String).contains('capabilitystatement-websocket'),
+      );
+      expect(websocket['valueUri'], equals('wss://fhir.example.org/ws'));
+    });
+
+    test('cors is advertised only when configured (row 31)', () async {
+      final response = metadataHandler(
+        Request('GET', Uri.parse('http://localhost:8080/metadata')),
+        corsEnabled: true,
+      );
+      final cs = fhir.CapabilityStatement.fromJsonString(
+        await response.readAsString(),
+      );
+      expect(cs.rest!.first.security!.cors!.valueBoolean, isTrue);
     });
   });
 }

@@ -110,6 +110,10 @@ Future<Response> _handleForecast(
       'invalid',
       'Expected a Parameters resource or JSON with patientId',
     );
+  } on PatientNotFound catch (e) {
+    // A patient the request names and the store does not hold is a 404, not
+    // a 500 (REVIEW-2026-09-08 row 32).
+    return _errorResponse(404, 'not-found', 'Patient/${e.id} not found');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Immunization forecast failed', e, stackTrace);
     return _errorResponse(
@@ -118,6 +122,15 @@ Future<Response> _handleForecast(
       'Immunization forecast error',
     );
   }
+}
+
+/// The Patient a forecast request named is not in the store.
+class PatientNotFound implements Exception {
+  /// Creates the exception for [id].
+  const PatientNotFound(this.id);
+
+  /// The logical id that was not found.
+  final String id;
 }
 
 /// Check if the Parameters resource already contains a Patient resource.
@@ -158,7 +171,7 @@ Future<Map<String, dynamic>> _buildParametersFromDb(
     id,
   );
   if (patient == null) {
-    throw Exception('Patient not found: $id');
+    throw PatientNotFound(id);
   }
 
   final parameters = <Map<String, dynamic>>[];

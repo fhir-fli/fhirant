@@ -207,13 +207,32 @@ class ServerState extends ChangeNotifier {
         final info = NetworkInfo();
         found = await info.getWifiIP();
       }
-      // Fallback: try to get any non-loopback IPv4 address
+      // Fallback: a non-loopback IPv4 address, preferring an interface
+      // whose name says WiFi or ethernet over a cellular or VPN one, which
+      // the LAN cannot reach (REVIEW-2026-09-08 row 49).
       if (found == null) {
         final interfaces = await NetworkInterface.list(
           type: InternetAddressType.IPv4,
         );
+        int rank(NetworkInterface i) {
+          final n = i.name.toLowerCase();
+          if (n.startsWith('wlan') || n.contains('wifi') || n == 'en0') {
+            return 0;
+          }
+          if (n.startsWith('eth') || n.startsWith('en')) return 1;
+          if (n.startsWith('rmnet') ||
+              n.startsWith('ccmni') ||
+              n.startsWith('tun') ||
+              n.startsWith('ppp')) {
+            return 3;
+          }
+          return 2;
+        }
+
+        final ordered = interfaces.toList()
+          ..sort((a, b) => rank(a).compareTo(rank(b)));
         outer:
-        for (final iface in interfaces) {
+        for (final iface in ordered) {
           for (final addr in iface.addresses) {
             if (!addr.isLoopback) {
               found = addr.address;

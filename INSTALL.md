@@ -80,6 +80,7 @@ happens, uninstall first — **which erases the app's database.**
 ## Uninstalling
 
 Uninstalling removes the encrypted database along with the app. If you want to
-keep the data, export it first with the server's `$backup` operation
-(`POST /$backup`, admin-only in Secure mode), which returns your whole dataset
-as a FHIR Bundle.
+keep the data, use **Backup & restore** on the dashboard, which writes an
+encrypted copy of the whole database that a passphrase you choose opens on
+another device. (The same file comes from the server's `$backup` operation,
+`POST /$backup`, admin-only in Secure mode.)

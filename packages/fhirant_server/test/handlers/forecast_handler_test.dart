@@ -160,6 +160,22 @@ void main() {
       expect(evaluations, isNotEmpty);
     });
 
+    test(
+        'a patientId the store does not hold is 404, not 500 '
+        '(REVIEW-2026-09-08 row 32)', () async {
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'ghost'))
+          .thenAnswer((_) async => null);
+      final response = await immdsForecastHandler(
+        postJson(r'/$immds-forecast', {'patientId': 'ghost'}),
+        mockDb,
+      );
+      expect(response.statusCode, 404);
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      expect(body['resourceType'], 'OperationOutcome');
+      expect((body['issue'] as List).first['code'], 'not-found');
+    });
+
     test('loads patient data from DB via patientId', () async {
       final patient = fhir.Patient(
         id: 'db-pat'.toFhirString,

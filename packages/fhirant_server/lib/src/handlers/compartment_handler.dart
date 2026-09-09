@@ -99,6 +99,17 @@ Future<Response> everythingHandler(
     DateTime? since;
     if (sinceParam != null) {
       since = DateTime.tryParse(sinceParam);
+      // R4B 3.1.1.3: "Where the content of the parameter is syntactically
+      // incorrect, servers SHOULD return an error." A `_since` that was not
+      // an instant used to be ignored, and everything returned
+      // (REVIEW-2026-09-08 row 32).
+      if (since == null) {
+        return _operationOutcome(
+          400,
+          '_since must be an instant; got "$sinceParam"',
+          fhir.IssueType.invalid,
+        );
+      }
     }
     final pageError = pageArgumentError(countParam, offsetParam);
     if (pageError != null) {
@@ -168,9 +179,21 @@ Future<Response> everythingHandler(
     final paged = <fhir.Resource>[
       if (offset == 0 && count > 0) focalResource,
     ];
+    // One `IN (...)` read per type on the page, in the page's order, rather
+    // than one read per resource (REVIEW-2026-09-08 row 43).
+    final idsByType = <fhir.R4ResourceType, List<String>>{};
     for (final (resTypeEnum, resId) in pageIds) {
-      final resource = await dbInterface.getResource(resTypeEnum, resId);
-      if (resource != null) paged.add(resource);
+      (idsByType[resTypeEnum] ??= []).add(resId);
+    }
+    for (final entry in idsByType.entries) {
+      final byId = {
+        for (final r in await dbInterface.getResources(entry.key, entry.value))
+          r.id?.toString(): r,
+      };
+      for (final resId in entry.value) {
+        final resource = byId[resId];
+        if (resource != null) paged.add(resource);
+      }
     }
 
     // 6. Links. The self link repeats the request with its page position;
@@ -235,7 +258,7 @@ Future<Response> everythingHandler(
     );
 
     FhirantLogging().logInfo(
-      '\$everything for $compartmentType/$id: $total resources, '
+      '\$everything for $compartmentType/{id}: $total resources, '
       '${entries.length} on this page',
     );
 
@@ -245,7 +268,7 @@ Future<Response> everythingHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in \$everything for $compartmentType/$id',
+      'Error in \$everything for $compartmentType/{id}',
       e,
       stackTrace,
     );
@@ -389,7 +412,7 @@ Future<Response> compartmentSearchHandler(
     return _operationOutcome(400, e.message, fhir.IssueType.invalid);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
-      'Error in compartment search $compartmentType/$compartmentId/$resourceType',
+      'Error in compartment search $compartmentType/{id}/$resourceType',
       e,
       stackTrace,
     );

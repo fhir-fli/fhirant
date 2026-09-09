@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
 import 'package:shelf/shelf.dart';
 
@@ -11,7 +12,17 @@ import 'package:shelf/shelf.dart';
 /// Accepts `token` in JSON or form-encoded body. Always returns 200 per
 /// RFC 7009 (the server MUST respond with 200 even for invalid tokens).
 /// Returns 400 only when the `token` field is completely missing.
-Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
+///
+/// Only a token this server signed is written to `revoked_tokens`: the
+/// endpoint is public, and it used to store a row for any string, so a
+/// caller could grow the table without bound (REVIEW-2026-09-08 row 17).
+/// A string that does not verify is answered 200 all the same, as RFC 7009
+/// asks, and nothing is stored.
+Future<Response> revokeHandler(
+  Request request,
+  FhirAntDb dbInterface,
+  JwtService jwtService,
+) async {
   try {
     final body = await _parseBody(request);
 
@@ -27,10 +38,11 @@ Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
       );
     }
 
-    final tokenHash = TokenHasher.hash(token);
-    final expiresAt = _extractExpiresAt(token);
-
-    await dbInterface.revokeToken(tokenHash, expiresAt);
+    if (jwtService.verifyToken(token) != null) {
+      final tokenHash = TokenHasher.hash(token);
+      final expiresAt = _extractExpiresAt(token);
+      await dbInterface.revokeToken(tokenHash, expiresAt);
+    }
 
     return Response.ok(
       jsonEncode({'status': 'revoked'}),
@@ -51,15 +63,21 @@ Future<Response> revokeHandler(Request request, FhirAntDb dbInterface) async {
 ///
 /// Revokes the Bearer token from the Authorization header and optionally
 /// a `refresh_token` from the request body.
-Future<Response> logoutHandler(Request request, FhirAntDb dbInterface) async {
+Future<Response> logoutHandler(
+  Request request,
+  FhirAntDb dbInterface,
+  JwtService jwtService,
+) async {
   try {
     // Revoke the access token from the Authorization header
     final authHeader = request.headers['authorization'];
     if (authHeader != null && authHeader.startsWith('Bearer ')) {
       final accessToken = authHeader.substring(7);
-      final tokenHash = TokenHasher.hash(accessToken);
-      final expiresAt = _extractExpiresAt(accessToken);
-      await dbInterface.revokeToken(tokenHash, expiresAt);
+      if (jwtService.verifyToken(accessToken) != null) {
+        final tokenHash = TokenHasher.hash(accessToken);
+        final expiresAt = _extractExpiresAt(accessToken);
+        await dbInterface.revokeToken(tokenHash, expiresAt);
+      }
     }
 
     // Optionally revoke a refresh token from the body
@@ -67,7 +85,9 @@ Future<Response> logoutHandler(Request request, FhirAntDb dbInterface) async {
     if (bodyStr.isNotEmpty) {
       final body = _tryParseBody(bodyStr);
       final refreshToken = body['refresh_token'] as String?;
-      if (refreshToken != null && refreshToken.isNotEmpty) {
+      if (refreshToken != null &&
+          refreshToken.isNotEmpty &&
+          jwtService.verifyToken(refreshToken) != null) {
         final refreshHash = TokenHasher.hash(refreshToken);
         final expiresAt = _extractExpiresAt(refreshToken);
         await dbInterface.revokeToken(refreshHash, expiresAt);

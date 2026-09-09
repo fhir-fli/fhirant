@@ -94,6 +94,8 @@ void main() {
         headers: {'content-type': 'application/json'},
         body: jsonEncode({
           'response_type': 'code',
+          'state': 'xyz',
+          'aud': 'http://localhost:8080',
           'client_id': clientId,
           'redirect_uri': redirect,
           'scope': scope,
@@ -151,6 +153,8 @@ void main() {
           headers: {'content-type': 'application/json'},
           body: jsonEncode({
             'response_type': 'code',
+            'state': 'xyz',
+            'aud': 'http://localhost:8080',
             'client_id': 'app',
             'redirect_uri': 'http://localhost/cb',
             'scope': 'system/*.*',
@@ -242,6 +246,8 @@ void main() {
             headers: {'content-type': 'application/json'},
             body: jsonEncode({
               'response_type': 'code',
+              'state': 'xyz',
+              'aud': 'http://localhost:8080',
               'client_id': 'app',
               'redirect_uri': 'http://localhost/cb',
               'scope': 'user/*.rs',
@@ -265,7 +271,8 @@ void main() {
           'GET',
           '/auth/authorize?response_type=code&client_id=app'
               '&redirect_uri=https://evil.example/cb&scope=user/*.rs'
-              '&code_challenge=$challenge&code_challenge_method=S256',
+              '&code_challenge=$challenge&code_challenge_method=S256'
+              '&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
         ),
       );
       // Refused, and NOT redirected: RFC 6749 §3.1.2.4.
@@ -451,6 +458,8 @@ void main() {
           headers: {'content-type': 'application/json'},
           body: jsonEncode({
             'response_type': 'code',
+            'state': 'xyz',
+            'aud': 'http://localhost:8080',
             'client_id': 'app',
             'redirect_uri': 'http://localhost/cb',
             'code_challenge': challenge,
