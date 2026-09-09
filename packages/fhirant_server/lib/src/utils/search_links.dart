@@ -81,6 +81,50 @@ class SearchLinks {
     return SearchLinks._(used, ignored);
   }
 
+  /// The links of a history interaction: every parameter history takes
+  /// (`_count`, `_offset`, `_since`, `_at`) is used, anything else ignored.
+  /// http.html §3.1.0.14 (read 2026-09-08): "Servers SHOULD support paging
+  /// for the results of a search or history interaction, and if they do,
+  /// they SHALL conform to this method". History Bundles used to carry no
+  /// links at all (REVIEW-2026-09-08 row 25).
+  factory SearchLinks.history(Map<String, List<String>> query) {
+    const known = {'_count', '_offset', '_since', '_at', '_format', '_pretty'};
+    final used = <String, List<String>>{};
+    final ignored = <String>[];
+    for (final entry in query.entries) {
+      if (known.contains(entry.key)) {
+        used[entry.key] = entry.value;
+      } else {
+        ignored.add(entry.key);
+      }
+    }
+    return SearchLinks._(used, ignored);
+  }
+
+  /// The links of one page: `self` and `first` always; `previous` when
+  /// there is a page before; `next` while [offset] + [count] < [total];
+  /// `last` when [total] is known and positive. A [count] of zero is a
+  /// count-only page and carries `self` alone.
+  List<fhir.BundleLink> page(
+    Uri requested, {
+    required int count,
+    required int offset,
+    required int total,
+  }) {
+    fhir.BundleLink link(String relation, int at) => fhir.BundleLink(
+          relation: fhir.FhirString(relation),
+          url: fhir.FhirUri(url(requested, offset: at).toString()),
+        );
+    if (count <= 0) return [self(requested)];
+    return [
+      self(requested),
+      link('first', 0),
+      if (offset > 0) link('previous', (offset - count).clamp(0, offset)),
+      if (offset + count < total) link('next', offset + count),
+      if (total > 0) link('last', ((total - 1) ~/ count) * count),
+    ];
+  }
+
   /// The result parameters of R4 3.1.1.1 and the ones this server adds
   /// (`_offset`, `_filter`). Not search parameters; kept as the client sent
   /// them.

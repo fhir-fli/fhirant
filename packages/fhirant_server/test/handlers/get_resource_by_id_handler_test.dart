@@ -80,7 +80,8 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['error'], equals('Resource not found'));
+      expect(json['resourceType'], equals('OperationOutcome'));
+      expect(json['issue'][0]['code'], equals('not-found'));
     });
 
     test('returns 400 for invalid resource type', () async {
@@ -418,8 +419,8 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json.containsKey('name'), isTrue);
       expect(json.containsKey('gender'), isFalse);
-      final security = (json['meta'] as Map)['security'] as List;
-      expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
+      final tags = (json['meta'] as Map)['tag'] as List;
+      expect(tags.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
 
     test('patient scope allows read of own Patient resource', () async {
@@ -676,8 +677,8 @@ void main() {
       expect(json.containsKey('text'), isFalse);
       expect(json.containsKey('extension'), isFalse);
       // SUBSETTED tag should be present
-      final security = (json['meta'] as Map)['security'] as List;
-      expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
+      final tags = (json['meta'] as Map)['tag'] as List;
+      expect(tags.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
   });
 }

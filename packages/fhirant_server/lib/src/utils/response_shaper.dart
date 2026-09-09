@@ -106,26 +106,28 @@ class FhirResponseShaper {
     return shaped;
   }
 
-  /// Add the SUBSETTED security tag to meta.
+  /// Add the SUBSETTED tag to `meta.tag`.
   ///
-  /// 3.1.1.5.8: "Servers SHOULD mark the resources with the tag SUBSETTED to
-  /// ensure that the incomplete resource is not accidentally used to
-  /// overwrite a complete resource."
+  /// R4B search.html 3.1.1.5.8 (read 2026-09-08): "Servers SHOULD mark the
+  /// resources with the tag SUBSETTED to ensure that the incomplete resource
+  /// is not accidentally used to overwrite a complete resource." It is a
+  /// tag; it used to be written to `meta.security`, where a client reading
+  /// security labels would take it for one (REVIEW-2026-09-08 row 28).
   static void _addSubsettedTag(Map<String, dynamic> json) {
     final meta = Map<String, dynamic>.from(
       json['meta'] as Map<String, dynamic>? ?? {},
     );
-    final security = List<Map<String, dynamic>>.from(
-      (meta['security'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+    final tags = List<Map<String, dynamic>>.from(
+      (meta['tag'] as List?)?.cast<Map<String, dynamic>>() ?? [],
     );
 
     // Don't add if already present
-    final alreadyPresent = security.any((t) => t['code'] == 'SUBSETTED');
+    final alreadyPresent = tags.any((t) => t['code'] == 'SUBSETTED');
     if (!alreadyPresent) {
-      security.add(Map<String, dynamic>.from(_subsettedTag));
+      tags.add(Map<String, dynamic>.from(_subsettedTag));
     }
 
-    meta['security'] = security;
+    meta['tag'] = tags;
     json['meta'] = meta;
   }
 }

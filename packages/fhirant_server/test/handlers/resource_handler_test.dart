@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart';
+import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -1259,7 +1260,7 @@ void main() {
       expect(resource.containsKey('name'), isFalse);
       expect(resource.containsKey('gender'), isFalse);
       // Has SUBSETTED tag
-      final security = (resource['meta'] as Map)['security'] as List;
+      final security = (resource['meta'] as Map)['tag'] as List;
       expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
 
@@ -1356,7 +1357,7 @@ void main() {
       expect(resource.containsKey('name'), isTrue);
       expect(resource.containsKey('gender'), isTrue);
       expect(resource.containsKey('birthDate'), isFalse);
-      final security = (resource['meta'] as Map)['security'] as List;
+      final security = (resource['meta'] as Map)['tag'] as List;
       expect(security.any((t) => t['code'] == 'SUBSETTED'), isTrue);
     });
 

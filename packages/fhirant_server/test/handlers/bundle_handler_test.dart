@@ -798,10 +798,17 @@ void main() {
       final captured = verify(
         () => mockDb.saveResource(captureAny()),
       ).captured;
-      // Second save is the Observation
+      // Second save is the Observation. The Patient's id is the one the
+      // server assigned (a client id on a POST is ignored, REVIEW-2026-09-08
+      // row 21), and the reference names it.
+      final savedPatientResource = captured[0] as fhir.Resource;
       final savedObsResource = captured[1] as fhir.Resource;
       final obsJson = savedObsResource.toJson();
-      expect(obsJson['subject']['reference'], equals('Patient/pat-abc'));
+      expect(savedPatientResource.id?.valueString, isNot('pat-abc'));
+      expect(
+        obsJson['subject']['reference'],
+        equals('Patient/${savedPatientResource.id?.valueString}'),
+      );
     });
 
     test('multiple urn:uuid references all resolved', () async {
@@ -923,10 +930,18 @@ void main() {
       final captured = verify(
         () => mockDb.saveResource(captureAny()),
       ).captured;
+      final savedPatientResource = captured[0] as fhir.Resource;
+      final savedEncounterResource = captured[1] as fhir.Resource;
       final savedObsResource = captured[2] as fhir.Resource;
       final obsJson = savedObsResource.toJson();
-      expect(obsJson['subject']['reference'], equals('Patient/pat-1'));
-      expect(obsJson['encounter']['reference'], equals('Encounter/enc-1'));
+      expect(
+        obsJson['subject']['reference'],
+        equals('Patient/${savedPatientResource.id?.valueString}'),
+      );
+      expect(
+        obsJson['encounter']['reference'],
+        equals('Encounter/${savedEncounterResource.id?.valueString}'),
+      );
     });
 
     test('unresolvable urn:uuid in batch does not fail entire batch', () async {
@@ -1416,12 +1431,23 @@ void main() {
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'cond-2'),
       ).thenAnswer((_) async => existingPatient);
+      // The version check is the store's, inside the write
+      // (REVIEW-2026-09-08 row 22): the entry's ifMatch reaches
+      // saveResource as ifMatchVersion and the mismatch is a
+      // VersionConflict.
+      when(
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
+      ).thenThrow(const VersionConflict(expected: '1', actual: '3'));
 
       final response = await bundleHandler(mockRequest, mockDb);
 
       expect(response.statusCode, equals(412));
-      // saveResource should NOT have been called
-      verifyNever(() => mockDb.saveResource(any()));
+      verify(
+        () => mockDb.saveResource(any(), ifMatchVersion: '1'),
+      ).called(1);
     });
   });
 }

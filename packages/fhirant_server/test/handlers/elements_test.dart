@@ -87,7 +87,7 @@ void main() {
       expect(resource.containsKey('active'), isFalse);
     });
 
-    test('_elements adds SUBSETTED tag to meta.security', () async {
+    test('_elements adds SUBSETTED tag to meta.tag', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': '1',
@@ -126,7 +126,7 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entry = (json['entry'] as List).first;
       final resource = entry['resource'] as Map<String, dynamic>;
-      final security = (resource['meta'] as Map)['security'] as List;
+      final security = (resource['meta'] as Map)['tag'] as List;
       expect(
         security.any(
           (t) =>
@@ -474,7 +474,7 @@ void main() {
       expect(json.containsKey('birthDate'), isFalse);
     });
 
-    test('_elements adds SUBSETTED tag to meta.security', () async {
+    test('_elements adds SUBSETTED tag to meta.tag', () async {
       final patient = fhir.Patient.fromJson({
         'resourceType': 'Patient',
         'id': '123',
@@ -506,7 +506,7 @@ void main() {
       expect(response.statusCode, equals(200));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      final security = (json['meta'] as Map)['security'] as List;
+      final security = (json['meta'] as Map)['tag'] as List;
       expect(
         security.any(
           (t) =>
@@ -698,7 +698,7 @@ void main() {
       expect(json.containsKey('birthDate'), isTrue);
       // No SUBSETTED tag
       final meta = json['meta'] as Map;
-      expect(meta.containsKey('security'), isFalse);
+      expect(meta.containsKey('tag'), isFalse);
     });
   });
 
@@ -785,7 +785,7 @@ void main() {
       final shaped = FhirResponseShaper.shapeSummary(observation, 'data');
       expect(shaped.containsKey('text'), isFalse);
       expect(shaped.containsKey('note'), isTrue);
-      final security = (shaped['meta'] as Map)['security'] as List;
+      final security = (shaped['meta'] as Map)['tag'] as List;
       expect(security.first['code'], equals('SUBSETTED'));
     });
 
@@ -832,7 +832,7 @@ void main() {
 
       final shaped = FhirResponseShaper.shapeElements(json, ['status']);
 
-      final security = (shaped['meta'] as Map)['security'] as List;
+      final security = (shaped['meta'] as Map)['tag'] as List;
       expect(security.length, equals(1));
       expect(security.first['code'], equals('SUBSETTED'));
       // Observation.code is 1..1. R4 3.1.1.5.9: "Servers SHOULD always
@@ -893,7 +893,7 @@ void main() {
 
       final shaped = FhirResponseShaper.shapeElements(json, ['name']);
 
-      final security = (shaped['meta'] as Map)['security'] as List;
+      final security = (shaped['meta'] as Map)['tag'] as List;
       // Should still be just one SUBSETTED tag
       final subsettedCount =
           security.where((t) => t['code'] == 'SUBSETTED').length;

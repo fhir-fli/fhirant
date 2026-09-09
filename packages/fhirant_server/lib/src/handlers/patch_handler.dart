@@ -5,6 +5,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
 
@@ -35,11 +36,7 @@ Future<Response> patchResourceHandler(
       FhirantLogging().logWarning(
         'Resource not found for PATCH: $resourceType/$id',
       );
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
 
     // Patient-level scope enforcement for patch
@@ -116,8 +113,35 @@ Future<Response> patchResourceHandler(
         return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
       }
 
-      // Save the patched resource (creates new version automatically)
-      final savedResource = await dbInterface.saveResource(patchedResource);
+      // Save the patched resource (creates new version automatically). The
+      // If-Match version is checked inside the store's write, the same
+      // compare-and-swap as PUT: http.html §3.1.0.13 (read 2026-09-08),
+      // "servers SHALL support conditional PATCH, which works exactly the
+      // same as specified for update in Concurrency Management". PATCH used
+      // to ignore the header (REVIEW-2026-09-08 row 22).
+      final fhir.Resource? savedResource;
+      try {
+        savedResource = await dbInterface.saveResource(
+          patchedResource,
+          ifMatchVersion:
+              FhirHttpHeaders.parseETag(request.headers['if-match']),
+        );
+      } on VersionConflict {
+        return Response(
+          412,
+          body: fhir.OperationOutcome(
+            issue: [
+              fhir.OperationOutcomeIssue(
+                severity: fhir.IssueSeverity.error,
+                code: fhir.IssueType.conflict,
+                diagnostics: 'Version mismatch (If-Match precondition failed)'
+                    .toFhirString,
+              ),
+            ],
+          ).toJsonString(),
+          headers: {'Content-Type': 'application/fhir+json'},
+        );
+      }
       if (savedResource == null) {
         FhirantLogging().logError(
           'Failed to save patched resource: $resourceType/$id',

@@ -12,6 +12,10 @@ import 'package:fhirant_db/fhirant_db.dart';
 /// (REVIEW-2026-09-06 finding 22).
 const kMaxPageSize = 500;
 
+/// The most resources one conditional delete may remove, on the REST path
+/// and inside a Bundle entry; more is a 412 (REVIEW-2026-09-06 finding 41).
+const kMaxConditionalDeletes = 100;
+
 /// Why `_count` or `_offset` cannot page a result, or null when they can:
 /// each must be an integer of zero or more. Nothing negative pages anything,
 /// and reading `_count=-1` as the default answered a malformed request as

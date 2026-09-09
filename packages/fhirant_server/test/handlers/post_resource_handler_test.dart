@@ -348,7 +348,9 @@ void main() {
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       expect(json['resourceType'], equals('Patient'));
-      expect(json['id'], equals('test-123'));
+      // http.html create: a client-supplied id is ignored (REVIEW-2026-09-08
+      // row 21); the server assigns one.
+      expect(json['id'], isNot(equals('test-123')));
     });
 
     test('If-None-Exist with no match creates normally', () async {

@@ -1,11 +1,11 @@
-import 'dart:convert';
-
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
@@ -76,24 +76,27 @@ Future<Response> resourceHistoryHandler(
       FhirantLogging().logWarning(
         'No history found for resource: $resourceType/$id',
       );
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
 
     // Build base URL
     final baseUrl =
         '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
 
-    // Create Bundle with history entries
+    // Create Bundle with history entries, paged with the links of
+    // http.html §3.1.0.14.
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
       entry: [
         for (final e in paginatedHistory) _historyEntry(e, baseUrl),
       ],
       total: fhir.FhirUnsignedInt(total),
+      link: SearchLinks.history(request.url.queryParametersAll).page(
+        request.requestedUri,
+        count: count,
+        offset: offset,
+        total: total,
+      ),
     );
 
     FhirantLogging().logInfo(
@@ -180,13 +183,20 @@ Future<Response> typeHistoryHandler(
     final baseUrl =
         '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
 
-    // Create Bundle with history entries
+    // Create Bundle with history entries, paged with the links of
+    // http.html §3.1.0.14.
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
       entry: [
         for (final e in paginatedHistory) _historyEntry(e, baseUrl),
       ],
       total: fhir.FhirUnsignedInt(total),
+      link: SearchLinks.history(request.url.queryParametersAll).page(
+        request.requestedUri,
+        count: count,
+        offset: offset,
+        total: total,
+      ),
     );
 
     FhirantLogging().logInfo(
@@ -271,13 +281,20 @@ Future<Response> systemHistoryHandler(
     final baseUrl =
         '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
 
-    // Create Bundle with history entries
+    // Create Bundle with history entries, paged with the links of
+    // http.html §3.1.0.14.
     final bundle = fhir.Bundle(
       type: fhir.BundleType.history,
       entry: [
         for (final e in paginatedHistory) _historyEntry(e, baseUrl),
       ],
       total: fhir.FhirUnsignedInt(total),
+      link: SearchLinks.history(request.url.queryParametersAll).page(
+        request.requestedUri,
+        count: count,
+        offset: offset,
+        total: total,
+      ),
     );
 
     FhirantLogging().logInfo(
@@ -337,12 +354,8 @@ Future<Response> vreadResourceHandler(
             ? 'No history found for resource: $resourceType/$id'
             : 'Version $vid not found for resource: $resourceType/$id',
       );
-      return Response(
-        404,
-        body: jsonEncode({
-          'error': any == 0 ? 'Resource not found' : 'Version not found',
-        }),
-        headers: {'Content-Type': 'application/json'},
+      return notFoundOutcome(
+        any == 0 ? '$resourceType/$id' : '$resourceType/$id/_history/$vid',
       );
     }
 

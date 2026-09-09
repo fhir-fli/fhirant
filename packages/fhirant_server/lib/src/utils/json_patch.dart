@@ -71,7 +71,33 @@ void _applyReplace(Map<String, dynamic> document, Map<String, dynamic> op) {
   }
 
   final pointer = _parseJsonPointer(path);
+  // RFC 6902 §4.3 (read 2026-09-08): "The target location MUST exist for
+  // the operation to be successful." A replace of an absent member used to
+  // add it (REVIEW-2026-09-08 row 23).
+  if (!_pathExists(document, pointer)) {
+    throw FormatException('Replace target does not exist: $path');
+  }
   _setValueAtPath(document, pointer, value, add: false);
+}
+
+/// Whether [path] names an existing location in [document]: every segment
+/// resolves, and the last one is a present member or an index in range. A
+/// member whose value is JSON null exists.
+bool _pathExists(Map<String, dynamic> document, List<String> path) {
+  dynamic current = document;
+  for (final segment in path) {
+    if (current is Map<String, dynamic>) {
+      if (!current.containsKey(segment)) return false;
+      current = current[segment];
+    } else if (current is List) {
+      final index = int.tryParse(segment);
+      if (index == null || index < 0 || index >= current.length) return false;
+      current = current[index];
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 void _applyMove(Map<String, dynamic> document, Map<String, dynamic> op) {

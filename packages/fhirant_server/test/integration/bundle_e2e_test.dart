@@ -68,10 +68,17 @@ void main() {
       expect(body['entry'], hasLength(2));
 
       // Verify both resources exist in DB
+      // A POST ignores a client id (http.html create; REVIEW-2026-09-08 row
+      // 21): the created ids are the response's, not the request's.
+      final ids = [
+        for (final e in body['entry'] as List)
+          (e as Map)['resource']['id'] as String,
+      ];
+      expect(ids, isNot(contains('txn-pat-1')));
       final pat1 =
-          await testDb.getResource(fhir.R4ResourceType.Patient, 'txn-pat-1');
+          await testDb.getResource(fhir.R4ResourceType.Patient, ids[0]);
       final pat2 =
-          await testDb.getResource(fhir.R4ResourceType.Patient, 'txn-pat-2');
+          await testDb.getResource(fhir.R4ResourceType.Patient, ids[1]);
       expect(pat1, isNotNull);
       expect(pat2, isNotNull);
     });
@@ -120,13 +127,18 @@ void main() {
 
       expect(response.statusCode, equals(200));
 
-      // Verify the Patient's reference was resolved
+      // Verify the Patient's reference was resolved to the Organization the
+      // server created (its id, not the client's).
+      final body = jsonDecode(await response.readAsString());
+      final entries = body['entry'] as List;
+      final orgId = (entries[0] as Map)['resource']['id'] as String;
+      final patId = (entries[1] as Map)['resource']['id'] as String;
       final patient =
-          await testDb.getResource(fhir.R4ResourceType.Patient, 'urn-pat-1');
+          await testDb.getResource(fhir.R4ResourceType.Patient, patId);
       expect(patient, isNotNull);
       final patJson = patient!.toJson();
       final ref = patJson['managingOrganization']['reference'] as String;
-      expect(ref, equals('Organization/urn-org-1'));
+      expect(ref, equals('Organization/$orgId'));
     });
 
     test('Batch with mixed success/failure returns partial results', () async {

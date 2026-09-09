@@ -35,12 +35,16 @@ void main() {
     }
   });
 
-  /// Helper: Save a FHIR resource via POST through the pipeline.
+  /// Helper: save a FHIR resource through the pipeline. A resource that
+  /// carries an id goes by PUT (update-as-create), so the id the test
+  /// addresses it by later stands; a POST ignores a client id
+  /// (REVIEW-2026-09-08 row 21).
   Future<void> saveResource(fhir.Resource resource) async {
     final resourceType = resource.resourceTypeString;
+    final id = resource.id?.valueString;
     final req = testRequest(
-      'POST',
-      '/$resourceType',
+      id == null ? 'POST' : 'PUT',
+      id == null ? '/$resourceType' : '/$resourceType/$id',
       body: resource.toJsonString(),
       authToken: token,
       headers: {'content-type': 'application/json'},

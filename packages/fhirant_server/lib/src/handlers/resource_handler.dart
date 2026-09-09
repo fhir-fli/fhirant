@@ -9,6 +9,7 @@ import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
 import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
@@ -1268,8 +1269,12 @@ Future<Response> postResourceHandler(
       }
     }
 
-    // Ensure resource has an ID before saving so we can re-fetch it
-    var resourceWithId = resource.newIdIfNoId();
+    // R4B http.html §3.1.0.8 create (read 2026-09-08): "If an id is
+    // provided, the server SHALL ignore it." and "The server SHALL populate
+    // the id, meta.versionId and meta.lastUpdated with the new correct
+    // values." A POST used to keep the client's id and update the resource
+    // that had it, answering 201 (REVIEW-2026-09-08 row 21).
+    var resourceWithId = resource.newId();
     // R4 subscription.html: a client creates a Subscription as `requested`,
     // and the SERVER decides whether it can process it. Deciding before the
     // save means the stored status is the server's answer, never the client's
@@ -1288,7 +1293,10 @@ Future<Response> postResourceHandler(
       );
 
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
-      headers['Location'] = '/$resourceType/${resourceWithId.id}';
+      // http.html create: "Location: [base]/[type]/[id]/_history/[vid] …
+      // if the server understands versioning, the version is included."
+      headers['Location'] = '/$resourceType/${resourceWithId.id}/_history/'
+          '${responseResource.meta?.versionId?.valueString ?? '1'}';
 
       final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
       return FhirHttpHeaders.preferredResponse(
@@ -1571,11 +1579,7 @@ Future<Response> getResourceByIdHandler(
       FhirantLogging().logWarning(
         'Resource of type $resourceType with ID: {id} not found.',
       );
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
@@ -1900,6 +1904,3 @@ Response _preconditionFailed(String diagnostics) => Response(
       ).toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
-
-/// The most resources one conditional delete may remove; more is a 412.
-const kMaxConditionalDeletes = 100;

@@ -8,6 +8,7 @@ import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -59,18 +60,41 @@ Future<Response> _processTransaction(
   );
   final baseUrl =
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
-  final resultEntries = <fhir.BundleEntry>[];
   final operations = <_BundleOperation>[];
   final principal = Principal.of(request);
-
-  // Build urn:uuid map for cross-reference resolution
-  final urnMap = _buildUrnUuidMap(bundle.entry!);
 
   for (var i = 0; i < bundle.entry!.length; i++) {
     if (bundle.entry![i].request == null) {
       return _validationErrorResponse('Bundle entry $i missing request');
     }
   }
+
+  // Every POST gets its id now, before anything runs, and the urn:uuid map
+  // is complete from the start: a reference to a POST later in the Bundle
+  // resolves (REVIEW-2026-09-06 row 16; a forward `urn:uuid` used to be
+  // stored unresolved), and a client-supplied id on a POST is ignored as
+  // http.html's create requires (REVIEW-2026-09-08 row 21).
+  final assignedIds = _assignPostIds(bundle.entry!);
+  final urnMap = _buildUrnUuidMap(bundle.entry!, assignedIds);
+
+  // R4B http.html "Transaction Processing Rules" (read 2026-09-06): "Process
+  // any DELETE interactions", "Process any POST interactions", "Process any
+  // PUT or PATCH interactions", "Process any GET or HEAD interactions",
+  // "Resolve any conditional references"; "The outcome of processing the
+  // transaction SHALL NOT depend on the order of the resources in the
+  // transaction." Entries run in that order; the response keeps the
+  // Bundle's order ("entries in the response bundle SHALL be in the same
+  // order as the entries in the request").
+  final order = List<int>.generate(bundle.entry!.length, (i) => i)
+    ..sort((a, b) {
+      final byMethod = _methodRank(bundle.entry![a].request!.method)
+          .compareTo(_methodRank(bundle.entry![b].request!.method));
+      return byMethod != 0 ? byMethod : a.compareTo(b);
+    });
+  final resultByIndex = List<fhir.BundleEntry?>.filled(
+    bundle.entry!.length,
+    null,
+  );
 
   // A FHIR transaction Bundle is all-or-nothing, so it runs inside a database
   // transaction and a failure rolls the whole thing back.
@@ -88,7 +112,7 @@ Future<Response> _processTransaction(
   Object? failure;
   try {
     await dbInterface.transaction<void>(() async {
-      for (var i = 0; i < bundle.entry!.length; i++) {
+      for (final i in order) {
         try {
           final operation = await _processBundleEntry(
             bundle.entry![i],
@@ -98,9 +122,10 @@ Future<Response> _processTransaction(
             urnMap,
             subscriptions,
             principal,
+            assignedId: assignedIds[i],
           );
           operations.add(operation);
-          resultEntries.add(operation.resultEntry);
+          resultByIndex[i] = operation.resultEntry;
         } catch (e) {
           // Recorded, then rethrown: the throw is what aborts the database
           // transaction, and the record is what builds the response after it
@@ -131,6 +156,7 @@ Future<Response> _processTransaction(
   // POST cannot be recalled.
   await _notify(subscriptions, operations);
 
+  final resultEntries = resultByIndex.whereType<fhir.BundleEntry>().toList();
   final resultBundle = fhir.Bundle(
     type: fhir.BundleType.transactionResponse,
     entry: resultEntries,
@@ -158,7 +184,10 @@ Future<Response> _processBatch(
   final operations = <_BundleOperation>[];
   final principal = Principal.of(request);
 
-  // Build urn:uuid map incrementally for batch
+  // A POST's id is assigned here too, so a client-supplied id is ignored as
+  // on the REST path (REVIEW-2026-09-08 row 21). Batch entries are
+  // independent, so the urn map is filled as each POST lands.
+  final assignedIds = _assignPostIds(bundle.entry!);
   final urnMap = <String, String>{};
 
   for (var i = 0; i < bundle.entry!.length; i++) {
@@ -192,6 +221,7 @@ Future<Response> _processBatch(
         urnMap,
         subscriptions,
         principal,
+        assignedId: assignedIds[i],
       );
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
@@ -244,30 +274,46 @@ Future<Response> _processBatch(
   );
 }
 
-/// Build a map of urn:uuid → ResourceType/id for all POST entries.
-/// Pre-assigns IDs for resources that don't have them.
-Map<String, String> _buildUrnUuidMap(List<fhir.BundleEntry> entries) {
-  final map = <String, String>{};
+/// The processing rank of a method in a transaction: DELETE, then POST,
+/// then PUT and PATCH, then GET and HEAD (http.html, quoted in
+/// `_processTransaction`).
+int _methodRank(fhir.HTTPVerb method) => switch (method) {
+      fhir.HTTPVerb.dELETE => 0,
+      fhir.HTTPVerb.pOST => 1,
+      fhir.HTTPVerb.pUT || fhir.HTTPVerb.pATCH => 2,
+      _ => 3,
+    };
 
-  for (final entry in entries) {
+/// A fresh id for every POST entry that carries a resource, by entry index.
+/// The id a client put on a POST body is not used: http.html create, "If an
+/// id is provided, the server SHALL ignore it."
+Map<int, String> _assignPostIds(List<fhir.BundleEntry> entries) {
+  final ids = <int, String>{};
+  for (var i = 0; i < entries.length; i++) {
+    final entry = entries[i];
+    if (entry.request?.method != fhir.HTTPVerb.pOST) continue;
+    final resource = entry.resource;
+    if (resource == null) continue;
+    ids[i] = resource.newId().id!.valueString!;
+  }
+  return ids;
+}
+
+/// The map of urn:uuid → ResourceType/id for every POST entry, complete
+/// before processing starts, from the ids [_assignPostIds] gave them.
+Map<String, String> _buildUrnUuidMap(
+  List<fhir.BundleEntry> entries,
+  Map<int, String> assignedIds,
+) {
+  final map = <String, String>{};
+  for (var i = 0; i < entries.length; i++) {
+    final entry = entries[i];
     final fullUrl = entry.fullUrl?.toString() ?? '';
     if (!fullUrl.startsWith('urn:uuid:')) continue;
-    if (entry.request?.method != fhir.HTTPVerb.pOST) continue;
-    if (entry.resource == null) continue;
-
-    final resource = entry.resource!;
-    final resourceType = resource.resourceTypeString;
-    final id = resource.id?.toString() ?? '';
-
-    if (id.isNotEmpty) {
-      map[fullUrl] = '$resourceType/$id';
-    }
-    // If no ID, it will be assigned by newIdIfNoId() during save;
-    // we can't predict it here, so we skip pre-mapping.
-    // The resource will get an ID during processing and the map
-    // will be updated after the POST succeeds.
+    final id = assignedIds[i];
+    if (id == null) continue;
+    map[fullUrl] = '${entry.resource!.resourceTypeString}/$id';
   }
-
   return map;
 }
 
@@ -383,8 +429,9 @@ Future<_BundleOperation> _processBundleEntry(
   int entryIndex,
   Map<String, String> urnMap,
   SubscriptionService subscriptions,
-  Principal? principal,
-) async {
+  Principal? principal, {
+  String? assignedId,
+}) async {
   final req = entry.request!;
   final method = req.method;
   var url = req.url.toString();
@@ -401,7 +448,14 @@ Future<_BundleOperation> _processBundleEntry(
     }
   }
 
-  final urlParts = url.split('/').where((p) => p.isNotEmpty).toList();
+  // The entry URL is a relative FHIR URL: `[type]`, `[type]/[id]`, or
+  // either with a query (`Patient?family=One`, a search; `Patient?identifier=x`
+  // on a DELETE, a conditional delete). It used to be split on `/` alone, so
+  // a search URL became the "resource type" `Patient?family=One` and was
+  // refused as invalid (REVIEW-2026-09-08 row 24).
+  final entryUri = Uri.parse(url);
+  final urlParts = entryUri.path.split('/').where((p) => p.isNotEmpty).toList();
+  final query = entryUri.queryParametersAll;
   if (urlParts.isEmpty) {
     throw BundleEntryException(
       400,
@@ -418,7 +472,7 @@ Future<_BundleOperation> _processBundleEntry(
       'Bundle entry $entryIndex: Invalid resource type: $resourceType',
     );
   }
-  _authorizeEntry(principal, method, url.split('?').first, entryIndex);
+  _authorizeEntry(principal, method, entryUri.path, entryIndex);
 
   fhir.Resource? resultResource;
   fhir.Resource? previousResource;
@@ -430,10 +484,19 @@ Future<_BundleOperation> _processBundleEntry(
   switch (method) {
     case fhir.HTTPVerb.gET:
       if (resourceId == null) {
-        throw BundleEntryException(
-          400,
-          'Bundle entry $entryIndex: GET requires resource ID',
+        // A type-level GET is a search, answered as a searchset Bundle
+        // inside the entry (http.html batch/transaction: "The response for
+        // a search is a Bundle").
+        resultResource = await _entrySearch(
+          dbInterface,
+          resourceTypeEnum,
+          query,
+          baseUrl,
+          principal?.compartmentFor(resourceType, 's'),
+          entryIndex,
         );
+        status = '200';
+        break;
       }
       resultResource =
           await dbInterface.getResource(resourceTypeEnum, resourceId);
@@ -518,8 +581,12 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         resourceJson = _resolveUrnReferences(resourceJson, urnMap);
       }
+      // The id assigned before processing began; never the client's.
+      final withId = fhir.Resource.fromJson(resourceJson);
       final resourceToSave = await _activated(
-        fhir.Resource.fromJson(resourceJson).newIdIfNoId(),
+        assignedId == null
+            ? withId.newId()
+            : withId.copyWith(id: assignedId.toFhirString),
         subscriptions,
       );
       await _requireBodyInCompartment(
@@ -538,7 +605,9 @@ Future<_BundleOperation> _processBundleEntry(
       resultResource = saved;
       createdResource = resultResource;
       status = '201';
-      location = '$baseUrl/$resourceType/${resultResource.id}';
+      // http.html create: "Location: [base]/[type]/[id]/_history/[vid]".
+      location = '$baseUrl/$resourceType/${resultResource.id}/_history/'
+          '${resultResource.meta?.versionId?.valueString ?? '1'}';
 
       // Update urn map for subsequent entries
       final fullUrl = entry.fullUrl?.toString() ?? '';
@@ -585,26 +654,15 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
-      // Conditional update: ifMatch
-      final ifMatch = req.ifMatch?.valueString;
-      if (ifMatch != null && ifMatch.isNotEmpty) {
-        final existingResource =
-            await dbInterface.getResource(resourceTypeEnum, resourceId);
-        if (existingResource != null) {
-          final currentEtag = FhirHttpHeaders.etag(existingResource);
-          if (currentEtag != ifMatch) {
-            throw BundleEntryException(
-              412,
-              'Bundle entry $entryIndex: ETag mismatch (ifMatch)',
-            );
-          }
-          previousResource = existingResource;
-        }
-      } else {
-        // Capture previous version for rollback
-        previousResource =
-            await dbInterface.getResource(resourceTypeEnum, resourceId);
-      }
+      // Conditional update: ifMatch, checked INSIDE the store's write
+      // (`saveResource(ifMatchVersion:)`, the same compare-and-swap as
+      // `PUT /[type]/[id]`). It used to compare the raw header string to
+      // `W/"n"` outside the write, and a mismatch on a resource that did
+      // not exist yet silently created it (REVIEW-2026-09-08 row 22).
+      final ifMatchVersion =
+          FhirHttpHeaders.parseETag(req.ifMatch?.valueString);
+      previousResource =
+          await dbInterface.getResource(resourceTypeEnum, resourceId);
 
       // Resolve urn:uuid references in the resource
       var putJson = entry.resource!.toJson();
@@ -615,7 +673,19 @@ Future<_BundleOperation> _processBundleEntry(
           await _activated(fhir.Resource.fromJson(putJson), subscriptions);
       await _requireBodyInCompartment(updatePatient, putResource, entryIndex);
 
-      final updated = await dbInterface.saveResource(putResource);
+      final fhir.Resource? updated;
+      try {
+        updated = await dbInterface.saveResource(
+          putResource,
+          ifMatchVersion: ifMatchVersion,
+        );
+      } on VersionConflict {
+        throw BundleEntryException(
+          412,
+          'Bundle entry $entryIndex: version mismatch (ifMatch precondition '
+          'failed)',
+        );
+      }
       if (updated == null) {
         throw BundleEntryException(
           500,
@@ -623,7 +693,7 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
       resultResource = updated;
-      status = '200';
+      status = previousResource == null ? '201' : '200';
 
     case fhir.HTTPVerb.pATCH:
       if (resourceId == null) {
@@ -716,7 +786,19 @@ Future<_BundleOperation> _processBundleEntry(
       // A patch can change criteria or channel, so the server has to decide
       // again whether it can honour the subscription.
       final patchedToSave = await _activated(patchedResource, subscriptions);
-      final patchSaved = await dbInterface.saveResource(patchedToSave);
+      final fhir.Resource? patchSaved;
+      try {
+        patchSaved = await dbInterface.saveResource(
+          patchedToSave,
+          ifMatchVersion: FhirHttpHeaders.parseETag(req.ifMatch?.valueString),
+        );
+      } on VersionConflict {
+        throw BundleEntryException(
+          412,
+          'Bundle entry $entryIndex: version mismatch (ifMatch precondition '
+          'failed)',
+        );
+      }
       if (patchSaved == null) {
         throw BundleEntryException(
           500,
@@ -728,10 +810,18 @@ Future<_BundleOperation> _processBundleEntry(
 
     case fhir.HTTPVerb.dELETE:
       if (resourceId == null) {
-        throw BundleEntryException(
-          400,
-          'Bundle entry $entryIndex: DELETE requires resource ID',
+        // A type-level DELETE with a query is the conditional delete,
+        // bounded as `DELETE /[type]?…` is.
+        final deleted = await _entryConditionalDelete(
+          dbInterface,
+          resourceTypeEnum,
+          query,
+          principal?.compartmentFor(resourceType, 'd'),
+          entryIndex,
         );
+        resultResource = null;
+        status = deleted == 0 ? '200' : '204';
+        break;
       }
 
       final existingResource =
@@ -801,6 +891,119 @@ Future<_BundleOperation> _processBundleEntry(
     deletedResource: deletedResource,
     notifiableResource: method == fhir.HTTPVerb.dELETE ? null : resultResource,
   );
+}
+
+/// A type-level GET inside a Bundle: the search, answered as a searchset
+/// Bundle with `total` and the page's match entries. The page is `_count`
+/// (default 20) and `_offset`; `_sort` is applied; a parameter the store
+/// has no definition for is ignored, as on the REST path under lenient
+/// handling. Inside [compartment] when the caller's search of the type is
+/// confined.
+Future<fhir.Bundle> _entrySearch(
+  FhirAntDb dbInterface,
+  fhir.R4ResourceType type,
+  Map<String, List<String>> query,
+  String baseUrl,
+  CompartmentScope? compartment,
+  int entryIndex,
+) async {
+  final parsed = SearchParameterParser.parseQueryParameters(query);
+  final invalid = parsed['invalidParams'] as List<String>?;
+  if (invalid != null) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: ${invalid.join('; ')}',
+    );
+  }
+  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  final count = parsed['count'] as int? ?? 20;
+  final offset = parsed['offset'] as int? ?? 0;
+  final sort = parsed['sort'] as List<String>?;
+  try {
+    final total = await dbInterface.searchCount(
+      resourceType: type,
+      searchParameters: searchParams,
+      compartment: compartment,
+    );
+    final page = count == 0
+        ? const <fhir.Resource>[]
+        : await dbInterface.search(
+            resourceType: type,
+            searchParameters: searchParams,
+            count: count,
+            offset: offset,
+            sort: sort,
+            compartment: compartment,
+          );
+    return fhir.Bundle(
+      type: fhir.BundleType.searchset,
+      total: fhir.FhirUnsignedInt(total),
+      entry: page.isEmpty
+          ? null
+          : [
+              for (final r in page)
+                fhir.BundleEntry(
+                  resource: r,
+                  fullUrl: fhir.FhirUri(
+                    '$baseUrl/${r.resourceTypeString}/${r.id?.valueString}',
+                  ),
+                  search: const fhir.BundleSearch(
+                    mode: fhir.SearchEntryMode.match,
+                  ),
+                ),
+            ],
+    );
+  } on UnsupportedSearchModifier catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on InvalidSearchValue catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on AmbiguousReference catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on UnsupportedValueSetCompose catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  }
+}
+
+/// A type-level DELETE inside a Bundle: the conditional delete, bounded at
+/// [kMaxConditionalDeletes] matches as `DELETE /[type]?…` is (more is a
+/// 412), inside [compartment] when the caller's delete of the type is
+/// confined. Returns how many were deleted.
+Future<int> _entryConditionalDelete(
+  FhirAntDb dbInterface,
+  fhir.R4ResourceType type,
+  Map<String, List<String>> query,
+  CompartmentScope? compartment,
+  int entryIndex,
+) async {
+  final parsed = SearchParameterParser.parseQueryParameters(query);
+  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  if (searchParams == null || searchParams.isEmpty) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: a DELETE without an id needs search '
+      'criteria (conditional delete)',
+    );
+  }
+  final matches = await dbInterface.search(
+    resourceType: type,
+    searchParameters: searchParams,
+    count: kMaxConditionalDeletes + 1,
+    compartment: compartment,
+  );
+  if (matches.length > kMaxConditionalDeletes) {
+    throw BundleEntryException(
+      412,
+      'Bundle entry $entryIndex: conditional delete matches more than '
+      '$kMaxConditionalDeletes resources; narrow the criteria',
+    );
+  }
+  var deleted = 0;
+  for (final r in matches) {
+    if (await dbInterface.deleteResource(type, r.id!.valueString!)) {
+      deleted++;
+    }
+  }
+  return deleted;
 }
 
 /// Lets the server decide a `Subscription`'s status before it is stored.

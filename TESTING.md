@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,213 tests** across 96 test files, all passing. Counted 2026-09-09 by
+**1,235 tests** across 97 test files, all passing. Counted 2026-09-09 by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,051 | 84 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,073 | 85 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 128 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -105,6 +105,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/system_search_e2e_test.dart` | The all-types search: common-parameter rule, one page across types |
 | `test/integration/authorization_review_test.dart` | REVIEW-2026-09-06 §1: scope grant, refresh tokens, compartments, lockout, PKCE, pipeline order (19) |
 | `test/integration/authorization_review_2026_09_08_test.dart` | REVIEW-2026-09-08 §1: the root path, Bundle entries, per-type compartment, history, system search, `$document`, `$evaluate`, conditional create/delete, includes, write bodies, export ownership, account re-read, authorize redirect, dev-mode registration (36) |
+| `test/integration/wrong_answers_review_2026_09_08_test.dart` | REVIEW-2026-09-08 §2: POST ignores the client id, If-Match on PATCH and Bundle entries, JSON Patch replace, Bundle entry searches and conditional deletes, transaction processing order (2026-09-06 row 16), history paging links, versioned Location, OperationOutcome 404s, SUBSETTED as a tag, `$export` parameter refusal (22) |
 | `test/integration/backup_file_e2e_test.dart` | `$backup` as an encrypted SQLite file, streamed; `$restore` of that file, the envelope or a Bundle (4) |
 | `test/integration/integrity_review_test.dart` | REVIEW-2026-09-06 §3 at the HTTP surface: If-Match inside the write, stored resource returned, deleted-resource history and 410, meta kept on update, history paged in SQL (11) |
 | `test/integration/hygiene_review_test.dart` | REVIEW-2026-09-06 §2 rows 21, 23, 24, 26 at the HTTP surface: `-` append through PATCH, Parameters patch 415 alone and in a Bundle, unsupported ValueSet compose refused by `$expand`, `$validate-code` and `:in`, `exclude.concept` honoured, unknown parameter ignored, a value ending in `:missing` is a value (9) |

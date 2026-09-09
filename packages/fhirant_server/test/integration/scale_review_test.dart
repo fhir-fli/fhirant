@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_server/src/handlers/resource_handler.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';

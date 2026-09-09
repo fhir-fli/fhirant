@@ -106,6 +106,28 @@ Future<Response> exportKickoffHandler(
         'Supported formats: ${bulkOutputFormats.join(', ')}',
       );
     }
+    // Bulk Data 2.0.0 export.html "Query Parameters" (read 2026-09-08): "A
+    // server that is unable to support _elements SHOULD return an error and
+    // FHIR OperationOutcome resource so the client can re-submit a request
+    // omitting the _elements parameter. When a Prefer: handling=lenient
+    // header is included in the request, the server MAY process the request
+    // instead of returning an error." The same sentence stands for `patient`
+    // and `includeAssociatedData`. These used to be parsed and ignored, so
+    // `?patient=Patient/p1` ran a full export (REVIEW-2026-09-08 row 29).
+    final unsupported = <String>[
+      if (kickoff.elements.isNotEmpty) '_elements',
+      if (kickoff.patients.isNotEmpty) 'patient',
+      if (kickoff.includeAssociatedData.isNotEmpty) 'includeAssociatedData',
+    ];
+    final prefersLenient =
+        (request.headers['prefer'] ?? '').contains('handling=lenient');
+    if (unsupported.isNotEmpty && !prefersLenient) {
+      return _operationOutcome(
+        400,
+        'This server does not support ${unsupported.join(', ')}; omit the '
+        'parameter, or send Prefer: handling=lenient to have it ignored.',
+      );
+    }
     for (final filter in kickoff.typeFilters) {
       if (!filter.resourceTypeKnown) {
         return _operationOutcome(

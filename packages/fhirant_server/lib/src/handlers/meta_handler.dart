@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
 
@@ -42,11 +43,7 @@ Future<Response> metaHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource == null) {
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
     final outside = await _refuseOutsidePatientCompartment(
       request,
@@ -100,11 +97,7 @@ Future<Response> metaAddHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource == null) {
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
 
     final outsideAdd = await _refuseOutsidePatientCompartment(
@@ -180,11 +173,7 @@ Future<Response> metaDeleteHandler(
 
     final resource = await dbInterface.getResource(type, id);
     if (resource == null) {
-      return Response(
-        404,
-        body: jsonEncode({'error': 'Resource not found'}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return notFoundOutcome('$resourceType/$id');
     }
 
     final outsideDelete = await _refuseOutsidePatientCompartment(

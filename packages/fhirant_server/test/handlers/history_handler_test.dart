@@ -150,7 +150,8 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['error'], equals('Resource not found'));
+      expect(json['resourceType'], equals('OperationOutcome'));
+      expect(json['issue'][0]['code'], equals('not-found'));
     });
 
     test('returns 400 for invalid type', () async {
@@ -935,7 +936,8 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['error'], equals('Resource not found'));
+      expect(json['resourceType'], equals('OperationOutcome'));
+      expect(json['issue'][0]['code'], equals('not-found'));
     });
 
     test('returns 404 when version not found', () async {
@@ -969,7 +971,8 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['error'], equals('Version not found'));
+      expect(json['resourceType'], equals('OperationOutcome'));
+      expect(json['issue'][0]['diagnostics'], contains('_history/'));
     });
 
     test('returns 400 for invalid type', () async {

@@ -24,6 +24,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
       when(() => mockRequest.context).thenReturn({});
     });
 
@@ -98,7 +99,8 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = await response.readAsString();
       final json = jsonDecode(body) as Map<String, dynamic>;
-      expect(json['error'], equals('Resource not found'));
+      expect(json['resourceType'], equals('OperationOutcome'));
+      expect(json['issue'][0]['code'], equals('not-found'));
     });
 
     test('returns 400 for invalid resource type', () async {
@@ -221,7 +223,10 @@ void main() {
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patchBody);
       when(
-        () => mockDb.saveResource(any()),
+        () => mockDb.saveResource(
+          any(),
+          ifMatchVersion: any(named: 'ifMatchVersion'),
+        ),
       ).thenAnswer((_) async => null);
 
       final response = await patchResourceHandler(
