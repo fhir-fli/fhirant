@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -231,6 +231,12 @@ class FhirAntDb extends FhirDb {
             // fhir_r4_db schema 12: the same for open date bounds and the
             // composite table's slots.
             await storeOpenDateBoundsAsSentinels();
+          }
+          if (from < 21) {
+            // fhir_r4_db schema 13: the tombstone flag is a column of
+            // resources_history, back-filled from the tombstone JSON
+            // (REVIEW-2026-09-08 row 36).
+            await addHistoryDeletedColumn();
           }
         },
       );
@@ -571,8 +577,12 @@ class FhirAntDb extends FhirDb {
         await customStatement(
           'INSERT OR REPLACE INTO main.resources SELECT * FROM bk.resources',
         );
+        if (backupTables.contains('users')) {
+          await _mergeUsers();
+        }
         for (final table in tables) {
           if (table == 'resources' ||
+              table == 'users' ||
               searchTables.contains(table) ||
               !backupTables.contains(table)) {
             continue;
@@ -592,6 +602,39 @@ class FhirAntDb extends FhirDb {
     } finally {
       await customStatement('DETACH DATABASE bk');
     }
+  }
+
+  /// Merges the backup's accounts into `users` by USERNAME. An account the
+  /// local store already has (same username) is left as it is: the local
+  /// password stands. An account it does not have comes in with its backup
+  /// id when that id is free, and with a fresh id when a different local
+  /// account holds it. This used to be `INSERT OR IGNORE` on the
+  /// AUTOINCREMENT id, so a replacement device that had provisioned its own
+  /// admin (id 1) silently dropped the backup's admin, also id 1
+  /// (REVIEW-2026-09-08 row 35). Rows that name a user id in other tables
+  /// (authorization codes, export jobs) are transient and are not
+  /// renumbered.
+  Future<void> _mergeUsers() async {
+    const columns = 'username, password_hash, salt, role, active, '
+        'created_at, last_login, scopes, failed_login_count, locked_until, '
+        'patient_id';
+    // New usernames whose id is free keep it.
+    await customStatement(
+      'INSERT INTO main.users (id, $columns) '
+      'SELECT b.id, ${columns.split(', ').map((c) => 'b.$c').join(', ')} '
+      'FROM bk.users b '
+      'WHERE NOT EXISTS '
+      '(SELECT 1 FROM main.users m WHERE m.username = b.username) '
+      'AND NOT EXISTS (SELECT 1 FROM main.users m WHERE m.id = b.id)',
+    );
+    // New usernames whose id is taken get the next one.
+    await customStatement(
+      'INSERT INTO main.users ($columns) '
+      'SELECT ${columns.split(', ').map((c) => 'b.$c').join(', ')} '
+      'FROM bk.users b '
+      'WHERE NOT EXISTS '
+      '(SELECT 1 FROM main.users m WHERE m.username = b.username)',
+    );
   }
 
   /// Refuses to go on when this SQLite build has no cipher.

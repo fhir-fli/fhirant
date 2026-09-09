@@ -104,7 +104,7 @@ void main() {
 
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 20);
+    expect(version.read<int>('user_version'), second.schemaVersion);
     await second.close();
   });
 
@@ -176,7 +176,7 @@ void main() {
     expect(rows.map((r) => r.read<int>('param_index')).toList(), [0, 100, 200]);
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 20);
+    expect(version.read<int>('user_version'), second.schemaVersion);
     await second.close();
   });
 }

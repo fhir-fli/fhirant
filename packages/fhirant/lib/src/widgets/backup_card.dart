@@ -148,16 +148,21 @@ class _BackupCardState extends State<BackupCard> {
   }
 
   Future<void> _import() async {
-    final picked = await FilePicker.platform.pickFiles(withData: true);
+    // The path only: `withData: true` loads the whole picked file into
+    // memory (PlatformFile.bytes) and nothing here read it, so a multi-GB
+    // backup sat in RAM before the streaming restore began
+    // (REVIEW-2026-09-08 row 42).
+    final picked = await FilePicker.platform.pickFiles();
     final path = picked?.files.single.path;
     if (path == null || !mounted) return;
 
     // Only ask for a passphrase when the file actually needs one: a plain
     // FHIR Bundle produced elsewhere restores without it. An encrypted
-    // SQLite backup and an encrypted envelope both need one.
+    // SQLite backup and an encrypted envelope both need one. Both checks
+    // read the file's head, not the file.
     final isJson = await BackupService.isJsonFile(path);
     final needsPassphrase =
-        !isJson || BackupService.isEncrypted(await File(path).readAsString());
+        !isJson || await BackupService.isEncryptedFile(path);
     if (!mounted) return;
     String? passphrase;
     if (needsPassphrase) {

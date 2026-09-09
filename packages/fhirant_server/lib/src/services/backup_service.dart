@@ -95,6 +95,19 @@ class BackupService {
     }
   }
 
+  /// Whether the file at [path] is one of our encrypted Bundle envelopes,
+  /// read from its first 4 KB: the envelope is written with `fhirantBackup`
+  /// as its first key. The app used to read the whole file into a String
+  /// to ask [isEncrypted] (REVIEW-2026-09-08 row 42).
+  static Future<bool> isEncryptedFile(String path) async {
+    final file = File(path);
+    if (!file.existsSync() || file.lengthSync() == 0) return false;
+    final bytes = <int>[];
+    await file.openRead(0, 4096).forEach(bytes.addAll);
+    final head = utf8.decode(bytes, allowMalformed: true);
+    return RegExp(r'^\s*\{\s*"fhirantBackup"\s*:').hasMatch(head);
+  }
+
   /// Whether the file's first non-blank byte is `{`: a Bundle or an
   /// envelope rather than an encrypted database.
   static Future<bool> isJsonFile(String path) async {
