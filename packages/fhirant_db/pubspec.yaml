@@ -13,6 +13,24 @@ dependencies:
   path: ^1.9.1
   sqlite3: ^3.1.5
 
+# fhirant is developed against the fhir_r4 family's dev branch, which is
+# ahead of the published 0.12.0 (fhir_r4_db schema 9-12, HistoryEntry,
+# CompartmentScope, the Bulk Data models). Local checkouts keep winning
+# through the gitignored pubspec_overrides.yaml, which replaces this whole
+# section; a clean clone, CI included, resolves the same code from git.
+# Remove this section at the next family release.
+dependency_overrides:
+  fhir_r4:
+    git:
+      url: https://github.com/fhir-fli/fhir_r4.git
+      ref: dev
+      path: packages/fhir_r4
+  fhir_r4_db:
+    git:
+      url: https://github.com/fhir-fli/fhir_r4.git
+      ref: dev
+      path: packages/fhir_r4_db
+
 dev_dependencies:
   mocktail: ^1.0.4
   test: ^1.25.8

@@ -16,7 +16,9 @@ void main(List<String> args) {
   // 1. plain VACUUM INTO
   db.execute("VACUUM INTO '$dir/copy_plain.sqlite'");
   // 2. attach with its own key, copy the schema+rows (SQLCipher's sqlcipher_export idea)
-  db.execute("ATTACH DATABASE '$dir/copy_attached.sqlite' AS bk KEY 'backup-passphrase'");
+  db.execute(
+    "ATTACH DATABASE '$dir/copy_attached.sqlite' AS bk KEY 'backup-passphrase'",
+  );
   db.execute('CREATE TABLE bk.t AS SELECT * FROM main.t');
   db.execute('DETACH DATABASE bk');
   // 3. sqlite3mc: is there an export function?
@@ -49,6 +51,8 @@ void main(List<String> args) {
   }
   for (final f in ['src.sqlite', 'copy_plain.sqlite', 'copy_attached.sqlite']) {
     final bytes = File('$dir/$f').readAsBytesSync();
-    print('$f header: ${String.fromCharCodes(bytes.take(15)).replaceAll(RegExp(r'[^ -~]'), '.')} (${bytes.length} bytes)');
+    print(
+      '$f header: ${String.fromCharCodes(bytes.take(15)).replaceAll(RegExp(r'[^ -~]'), '.')} (${bytes.length} bytes)',
+    );
   }
 }

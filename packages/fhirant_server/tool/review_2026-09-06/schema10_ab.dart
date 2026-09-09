@@ -30,7 +30,8 @@ Future<void> main(List<String> args) async {
   void row(String step, String query, int ms, int rows, [String note = '']) {
     tsv.writeAsStringSync('$label\t$step\t$query\t$ms\t$rows\t$note\n',
         mode: FileMode.append);
-    print('[$label $step] $query: ${(ms / 1000).toStringAsFixed(3)}s ($rows) $note');
+    print(
+        '[$label $step] $query: ${(ms / 1000).toStringAsFixed(3)}s ($rows) $note');
   }
 
   Future<int> timed(String step, String query, Future<int> Function() body,
@@ -56,7 +57,8 @@ Future<void> main(List<String> args) async {
     await db.createValueIndexes();
     return 0;
   });
-  row('0-open', 'db bytes', 0, 0, '${File('$dir/fhirant.sqlite').lengthSync()}');
+  row('0-open', 'db bytes', 0, 0,
+      '${File('$dir/fhirant.sqlite').lengthSync()}');
   await timed('0-analyze', 'ANALYZE', () async {
     await db.customStatement('ANALYZE');
     return 0;
@@ -87,7 +89,9 @@ Future<void> main(List<String> args) async {
   row('0-patients', 'system of code 227969', 0, 0, '$system');
 
   Future<int> search(Map<String, List<String>> params,
-          {List<String>? sort, CompartmentScope? compartment, String type = 'Observation'}) async =>
+          {List<String>? sort,
+          CompartmentScope? compartment,
+          String type = 'Observation'}) async =>
       (await db.search(
         resourceType: fhir.R4ResourceType.fromString(type)!,
         searchParameters: params,
@@ -98,24 +102,114 @@ Future<void> main(List<String> args) async {
           .length;
 
   final queries = <(String, Future<int> Function())>[
-    ('status=final&_sort=-date', () => search({'status': ['final']}, sort: ['-date'])),
-    ('subject=big&_sort=-date', () => search({'subject': ['Patient/$big']}, sort: ['-date'])),
-    ('subject=small&_sort=-date', () => search({'subject': ['Patient/$smallPid']}, sort: ['-date'])),
-    ('subject=big', () => search({'subject': ['Patient/$big']})),
-    ('Patient/big compartment Observation', () => search({}, compartment: CompartmentScope('Patient', big))),
-    ('code=227969', () => search({'code': ['227969']})),
-    ('code=system|227969', () => search({'code': ['$system|227969']})),
-    ('code=system| (system only)', () => search({'code': ['$system|']})),
-    ('status=final&code=227969', () => search({'status': ['final'], 'code': ['227969']})),
-    ('code:text=glucose (documented scan)', () => search({'code:text': ['glucose']})),
+    (
+      'status=final&_sort=-date',
+      () => search({
+            'status': ['final']
+          }, sort: [
+            '-date'
+          ])
+    ),
+    (
+      'subject=big&_sort=-date',
+      () => search({
+            'subject': ['Patient/$big']
+          }, sort: [
+            '-date'
+          ])
+    ),
+    (
+      'subject=small&_sort=-date',
+      () => search({
+            'subject': ['Patient/$smallPid']
+          }, sort: [
+            '-date'
+          ])
+    ),
+    (
+      'subject=big',
+      () => search({
+            'subject': ['Patient/$big']
+          })
+    ),
+    (
+      'Patient/big compartment Observation',
+      () => search({}, compartment: CompartmentScope('Patient', big))
+    ),
+    (
+      'code=227969',
+      () => search({
+            'code': ['227969']
+          })
+    ),
+    (
+      'code=system|227969',
+      () => search({
+            'code': ['$system|227969']
+          })
+    ),
+    (
+      'code=system| (system only)',
+      () => search({
+            'code': ['$system|']
+          })
+    ),
+    (
+      'status=final&code=227969',
+      () => search({
+            'status': ['final'],
+            'code': ['227969']
+          })
+    ),
+    (
+      'code:text=glucose (documented scan)',
+      () => search({
+            'code:text': ['glucose']
+          })
+    ),
     ('no parameters (type page)', () => search({})),
-    ('_lastUpdated=ge2000-01-01 (all)', () => search({'_lastUpdated': ['ge2000-01-01']})),
-    ('_lastUpdated=ge2999-01-01 (none)', () => search({'_lastUpdated': ['ge2999-01-01']})),
-    ('date=ge2150-01-01', () => search({'date': ['ge2150-01-01']})),
-    ('value-quantity=gt100', () => search({'value-quantity': ['gt100']})),
-    ('Patient?family=a (string starts-with)', () => search({'family': ['a']}, type: 'Patient')),
-    ('Patient?family:exact=Smith', () => search({'family:exact': ['Smith']}, type: 'Patient')),
-    ('_id=<big patient>', () => search({'_id': [big]}, type: 'Patient')),
+    (
+      '_lastUpdated=ge2000-01-01 (all)',
+      () => search({
+            '_lastUpdated': ['ge2000-01-01']
+          })
+    ),
+    (
+      '_lastUpdated=ge2999-01-01 (none)',
+      () => search({
+            '_lastUpdated': ['ge2999-01-01']
+          })
+    ),
+    (
+      'date=ge2150-01-01',
+      () => search({
+            'date': ['ge2150-01-01']
+          })
+    ),
+    (
+      'value-quantity=gt100',
+      () => search({
+            'value-quantity': ['gt100']
+          })
+    ),
+    (
+      'Patient?family=a (string starts-with)',
+      () => search({
+            'family': ['a']
+          }, type: 'Patient')
+    ),
+    (
+      'Patient?family:exact=Smith',
+      () => search({
+            'family:exact': ['Smith']
+          }, type: 'Patient')
+    ),
+    (
+      '_id=<big patient>',
+      () => search({
+            '_id': [big]
+          }, type: 'Patient')
+    ),
   ];
   for (final round in [1, 2]) {
     for (final (name, body) in queries) {
@@ -125,9 +219,14 @@ Future<void> main(List<String> args) async {
         row('1-r$round', name, -1, 0, 'ERROR $e');
       }
     }
-    await timed('1-r$round', 'searchCount subject=big', () => db.searchCount(
-        resourceType: fhir.R4ResourceType.Observation,
-        searchParameters: {'subject': ['Patient/$big']}));
+    await timed(
+        '1-r$round',
+        'searchCount subject=big',
+        () => db.searchCount(
+                resourceType: fhir.R4ResourceType.Observation,
+                searchParameters: {
+                  'subject': ['Patient/$big']
+                }));
   }
 
   // Plans of the shapes the DAO writes, as hand SQL, for the record.
@@ -135,21 +234,47 @@ Future<void> main(List<String> args) async {
       (await db.customSelect('EXPLAIN QUERY PLAN $sql').get())
           .map((r) => r.read<String>('detail'))
           .join(' | ');
-  final hasPath = (await db.customSelect("PRAGMA table_info(token_search_parameters)").get())
+  final hasPath = (await db
+          .customSelect("PRAGMA table_info(token_search_parameters)")
+          .get())
       .any((r) => r.read<String>('name') == 'search_path');
   final nameOnly = !hasPath;
   String path(String t, String name) => nameOnly
       ? "search_name = '$name'"
       : "(search_name = '$name' OR search_path LIKE '$t.$name' OR search_path LIKE '$t.%.$name')";
   for (final (name, sql) in [
-    ('token code', "SELECT DISTINCT id FROM token_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'code')} AND token_value = '227969' ORDER BY id LIMIT 20"),
-    ('reference subject', "SELECT DISTINCT id FROM reference_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'subject')} AND reference_resource_type = 'Patient' AND reference_id_part = '$big'"),
-    ('date range', "SELECT DISTINCT id FROM date_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'date')} AND date_value >= 5000000000 LIMIT 20"),
-    ('string starts-with LIKE', "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' AND ${path('Patient', 'family')} AND string_value LIKE 'a%'"),
-    ('string starts-with range', "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' AND ${path('Patient', 'family')} AND string_value >= 'a' AND string_value < 'b'"),
-    ('type page', "SELECT id FROM resources WHERE resource_type = 'Observation' ORDER BY last_updated DESC LIMIT 20"),
-    ('last_updated range', "SELECT id FROM resources WHERE resource_type = 'Observation' AND last_updated >= 4000000000000 LIMIT 20"),
-    ('owner delete', "DELETE FROM token_search_parameters WHERE resource_type = 'Observation' AND id = 'x'"),
+    (
+      'token code',
+      "SELECT DISTINCT id FROM token_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'code')} AND token_value = '227969' ORDER BY id LIMIT 20"
+    ),
+    (
+      'reference subject',
+      "SELECT DISTINCT id FROM reference_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'subject')} AND reference_resource_type = 'Patient' AND reference_id_part = '$big'"
+    ),
+    (
+      'date range',
+      "SELECT DISTINCT id FROM date_search_parameters WHERE resource_type = 'Observation' AND ${path('Observation', 'date')} AND date_value >= 5000000000 LIMIT 20"
+    ),
+    (
+      'string starts-with LIKE',
+      "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' AND ${path('Patient', 'family')} AND string_value LIKE 'a%'"
+    ),
+    (
+      'string starts-with range',
+      "SELECT DISTINCT id FROM string_search_parameters WHERE resource_type = 'Patient' AND ${path('Patient', 'family')} AND string_value >= 'a' AND string_value < 'b'"
+    ),
+    (
+      'type page',
+      "SELECT id FROM resources WHERE resource_type = 'Observation' ORDER BY last_updated DESC LIMIT 20"
+    ),
+    (
+      'last_updated range',
+      "SELECT id FROM resources WHERE resource_type = 'Observation' AND last_updated >= 4000000000000 LIMIT 20"
+    ),
+    (
+      'owner delete',
+      "DELETE FROM token_search_parameters WHERE resource_type = 'Observation' AND id = 'x'"
+    ),
   ]) {
     try {
       row('2-plan', name, 0, 0, await plan(sql));
@@ -158,10 +283,12 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  row('3-size', 'db bytes', 0, 0, '${File('$dir/fhirant.sqlite').lengthSync()}');
+  row('3-size', 'db bytes', 0, 0,
+      '${File('$dir/fhirant.sqlite').lengthSync()}');
   try {
     final sizes = await db
-        .customSelect('SELECT name, SUM(pgsize) AS bytes FROM dbstat GROUP BY name ORDER BY bytes DESC LIMIT 60')
+        .customSelect(
+            'SELECT name, SUM(pgsize) AS bytes FROM dbstat GROUP BY name ORDER BY bytes DESC LIMIT 60')
         .get();
     for (final s in sizes) {
       row('3-dbstat', s.read<String>('name'), 0, 0, '${s.read<int>('bytes')}');

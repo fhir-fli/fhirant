@@ -1,7 +1,7 @@
 // The encrypted-file backup through BackupService on the MIMIC copy: wall
 // time and resident memory, appended to <db-dir>/backup_file_bench.tsv.
 //   dart run tool/review_2026-09-06/backup_file_bench.dart <db-dir> <out-file>
-// ignore_for_file: avoid_print, lines_longer_than_80_chars
+// ignore_for_file: avoid_print
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -18,12 +18,14 @@ Future<void> main(List<String> args) async {
     tsv.writeAsStringSync('$step\t$ms\t$rss\t$note\n', mode: FileMode.append);
     print('$step: ${ms}ms rss=${rss}MB $note');
   }
+
   if (File(out).existsSync()) File(out).deleteSync();
   final db = FhirAntDb(NativeDatabase(File('$dir/fhirant.sqlite')));
   await db.customSelect('SELECT 1').get();
   row('open', 0);
   final sw = Stopwatch()..start();
-  final file = await BackupService.createFile(db, 'correct horse battery staple', out);
+  final file =
+      await BackupService.createFile(db, 'correct horse battery staple', out);
   row('createFile', sw.elapsedMilliseconds, '${file.lengthSync()} bytes');
   await db.close();
   final check = Stopwatch()..start();
@@ -35,7 +37,13 @@ Future<void> main(List<String> args) async {
         ..execute("PRAGMA key = 'correct horse battery staple'"),
     ),
   );
-  final n = await copy.customSelect('SELECT count(*) AS c FROM resources').getSingle();
-  row('reopen with passphrase', check.elapsedMilliseconds, '${n.read<int>('c')} resources');
+  final n = await copy
+      .customSelect('SELECT count(*) AS c FROM resources')
+      .getSingle();
+  row(
+    'reopen with passphrase',
+    check.elapsedMilliseconds,
+    '${n.read<int>('c')} resources',
+  );
   await copy.close();
 }

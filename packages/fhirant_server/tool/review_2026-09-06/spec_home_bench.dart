@@ -41,18 +41,30 @@ Future<void> main(List<String> args) async {
     "AND token_system = '$specTagSystem' AND token_value = '$specTagCode'",
   );
   await db.customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
-  row('load spec', sw.elapsedMilliseconds,
-      '$n resources, $h history rows, $tagged tagged, ${File(storePath).lengthSync()} bytes',);
+  row(
+    'load spec',
+    sw.elapsedMilliseconds,
+    '$n resources, $h history rows, $tagged tagged, ${File(storePath).lengthSync()} bytes',
+  );
 
   sw = Stopwatch()..start();
   await db.copyEncrypted('$dir/bk_all.sqlite', 'correct horse');
-  row('copyEncrypted all', sw.elapsedMilliseconds,
-      '${File('$dir/bk_all.sqlite').lengthSync()} bytes',);
+  row(
+    'copyEncrypted all',
+    sw.elapsedMilliseconds,
+    '${File('$dir/bk_all.sqlite').lengthSync()} bytes',
+  );
   sw = Stopwatch()..start();
-  await db.copyEncrypted('$dir/bk_nospec.sqlite', 'correct horse',
-      withoutTag: specTag,);
-  row('copyEncrypted withoutTag', sw.elapsedMilliseconds,
-      '${File('$dir/bk_nospec.sqlite').lengthSync()} bytes',);
+  await db.copyEncrypted(
+    '$dir/bk_nospec.sqlite',
+    'correct horse',
+    withoutTag: specTag,
+  );
+  row(
+    'copyEncrypted withoutTag',
+    sw.elapsedMilliseconds,
+    '${File('$dir/bk_nospec.sqlite').lengthSync()} bytes',
+  );
 
   for (final type in [
     fhir.R4ResourceType.ValueSet,
