@@ -146,7 +146,8 @@ void main() {
     );
     expect(r.statusCode, 500);
     final body = jsonDecode(await r.readAsString()) as Map<String, dynamic>;
-    expect(jsonEncode(body['error']), contains('restarted'));
+    expect(body['resourceType'], 'OperationOutcome');
+    expect(jsonEncode(body['issue']), contains('restarted'));
   });
 
   test('a type with no rows leaves no file and no output item', () async {

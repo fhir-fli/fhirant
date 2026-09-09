@@ -298,6 +298,45 @@ void main() {
       );
     });
 
+    test('a repeated _type is the same list as a comma-delimited one',
+        () async {
+      // Bulk Data v2.0.0 export.html, read 2026-09-08: "A client MAY repeat
+      // kick-off parameters that accept comma delimited values multiple
+      // times in a kick-off request. The server SHALL treat the values
+      // provided as if they were comma delimited values within a single
+      // instance of the parameter." The kick-off used to read the last
+      // `_type` only.
+      await saveResource(
+        fhir.Patient(id: 'p-rep'.toFhirString),
+      );
+      await saveResource(
+        fhir.Observation(
+          id: 'obs-rep'.toFhirString,
+          status: fhir.ObservationStatus.final_,
+          code: fhir.CodeableConcept(text: 'x'.toFhirString),
+        ),
+      );
+      await saveResource(
+        fhir.Condition(
+          id: 'cond-rep'.toFhirString,
+          subject: fhir.Reference(reference: 'Patient/p-rep'.toFhirString),
+        ),
+      );
+      final kickoff = await handler(
+        testRequest(
+          'GET',
+          r'/$export?_type=Patient&_type=Observation',
+          authToken: token,
+          headers: {'prefer': 'respond-async'},
+        ),
+      );
+      expect(kickoff.statusCode, 202);
+      final status = await pollUntilComplete(extractJobId(kickoff));
+      final manifest = jsonDecode(await status.readAsString());
+      final types = (manifest['output'] as List).map((o) => o['type']).toSet();
+      expect(types, {'Patient', 'Observation'});
+    });
+
     test('with _since filter', () async {
       await saveResource(
         fhir.Patient(

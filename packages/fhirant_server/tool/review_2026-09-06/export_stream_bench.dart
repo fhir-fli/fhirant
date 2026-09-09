@@ -14,8 +14,8 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_bulk/fhir_r4_bulk.dart';
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_server/src/utils/ndjson_writer.dart';
 
 Future<void> main(List<String> args) async {
   final dir = args[0];
@@ -65,7 +65,18 @@ Future<void> main(List<String> args) async {
     await sink.close();
     count = resources.length;
   } else {
-    count = await writeNdjsonFile(out, db.exportJson(type));
+    final file = File(out);
+    await file.parent.create(recursive: true);
+    final sink = file.openWrite();
+    try {
+      count = await NdjsonStream.write(
+        db.exportJson(type),
+        sink,
+        flush: sink.flush,
+      );
+    } finally {
+      await sink.close();
+    }
   }
   sw.stop();
   ticker.cancel();

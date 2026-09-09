@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on the published packages (`fhir_r4`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql`, `cql`) from pub.dev at ^0.7.0 (cql ^0.6.3); the only path dependencies are the internal `fhirant_*` packages and sibling repo `cicada`.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on the published packages (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql`, `cql`) from pub.dev at ^0.7.0 (cql ^0.6.3); the only path dependencies are the internal `fhirant_*` packages and sibling repo `cicada`.
 
 ## Package Structure
 
@@ -221,9 +221,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,189 tests** across 95 test files, all passing (counted 2026-09-08).
+**1,190 tests** across 95 test files, all passing (counted 2026-09-08).
 
-- **Server tests** (1,008 tests, 83 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,009 tests, 83 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (128 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

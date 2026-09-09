@@ -3,18 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_bulk/fhir_r4_bulk.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:fhirant_server/src/utils/ndjson_writer.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
-
-const _validFormats = [
-  'application/fhir+ndjson',
-  'application/ndjson',
-  'ndjson',
-];
 
 /// Export job ids are UUIDs (see [exportKickoffHandler]). Anything else in a
 /// `jobId` path segment is rejected so it can never traverse the export dir.
@@ -24,6 +18,52 @@ final _jobIdPattern = RegExp(
 );
 
 bool _isValidJobId(String jobId) => _jobIdPattern.hasMatch(jobId);
+
+/// The file items stored on a job (`outputJson`/`errorJson`), as the
+/// manifest's items.
+List<BulkExportFile> _files(String? json) => json == null
+    ? const []
+    : [
+        for (final item in jsonDecode(json) as List<dynamic>)
+          BulkExportFile.fromJson(item as Map<String, dynamic>),
+      ];
+
+/// The OperationOutcome a failed job answers its status request with: the
+/// issues of every OperationOutcome stored on the job (`_failJob`,
+/// `FhirAntDb.failStaleExportJobs`), or one saying only that it failed.
+Map<String, dynamic> _failureOutcome(String? errorJson) {
+  final issues = <dynamic>[
+    if (errorJson != null)
+      for (final outcome in jsonDecode(errorJson) as List<dynamic>)
+        ...?(outcome as Map<String, dynamic>)['issue'] as List<dynamic>?,
+  ];
+  return {
+    'resourceType': 'OperationOutcome',
+    'issue': issues.isNotEmpty
+        ? issues
+        : [
+            {
+              'severity': 'error',
+              'code': 'exception',
+              'diagnostics': 'The export failed',
+            },
+          ],
+  };
+}
+
+/// Writes [lines] to an NDJSON file at [filePath] as they arrive
+/// (`NdjsonStream.write`, flushed every 500 lines so the file, not the
+/// heap, holds the output) and returns how many were written.
+Future<int> _writeNdjsonFile(String filePath, Stream<String> lines) async {
+  final file = File(filePath);
+  await file.parent.create(recursive: true);
+  final sink = file.openWrite();
+  try {
+    return await NdjsonStream.write(lines, sink, flush: sink.flush);
+  } finally {
+    await sink.close();
+  }
+}
 
 /// Handler for `GET /$export` (system-level), `GET /Patient/$export` (patient-level),
 /// and `GET /Group/<id>/$export` (group-level).
@@ -48,52 +88,36 @@ Future<Response> exportKickoffHandler(
       );
     }
 
-    // 2. Parse _outputFormat (optional, default is ndjson)
-    final queryParams = request.url.queryParameters;
-    final outputFormat = queryParams['_outputFormat'];
-    if (outputFormat != null && !_validFormats.contains(outputFormat)) {
+    // 2. The kick-off parameters (fhir_r4_bulk's BulkExportKickoff): a
+    // repeated `_type` and a comma-delimited one are the same list, which
+    // export.html requires and `queryParameters['_type']` (the last value
+    // only) did not give; `_since` and `_typeFilter` are checked as parsed.
+    final BulkExportKickoff kickoff;
+    try {
+      kickoff = BulkExportKickoff.fromQuery(request.url.queryParametersAll);
+    } on FormatException catch (e) {
+      return _operationOutcome(400, e.message);
+    }
+    if (!kickoff.outputFormatSupported) {
       return _operationOutcome(
         400,
-        'Unsupported _outputFormat: $outputFormat. '
-        'Supported formats: ${_validFormats.join(', ')}',
+        'Unsupported _outputFormat: ${kickoff.outputFormat}. '
+        'Supported formats: ${bulkOutputFormats.join(', ')}',
       );
     }
-
-    // 3. Parse _type filter
-    final typeParam = queryParams['_type'];
-
-    // 4. Parse _since filter
-    DateTime? since;
-    final sinceParam = queryParams['_since'];
-    if (sinceParam != null) {
-      since = DateTime.tryParse(sinceParam);
-      if (since == null) {
+    for (final filter in kickoff.typeFilters) {
+      if (!filter.resourceTypeKnown) {
         return _operationOutcome(
           400,
-          'Invalid _since value: $sinceParam. Expected ISO 8601 date.',
+          'Invalid resource type in _typeFilter: ${filter.resourceType}',
         );
       }
     }
-
-    // 4b. Parse _typeFilter (may appear multiple times)
-    final typeFilterParams =
-        request.url.queryParametersAll['_typeFilter'] ?? [];
-    for (final filter in typeFilterParams) {
-      if (!filter.contains('?')) {
-        return _operationOutcome(
-          400,
-          'Invalid _typeFilter: $filter. '
-          'Expected format: ResourceType?searchParams',
-        );
-      }
-      final typeName = filter.split('?')[0];
-      if (fhir.R4ResourceType.fromString(typeName) == null) {
-        return _operationOutcome(
-          400,
-          'Invalid resource type in _typeFilter: $typeName',
-        );
-      }
-    }
+    final typeParam = kickoff.types.isEmpty ? null : kickoff.types.join(',');
+    final since = kickoff.since;
+    final typeFilterParams = [
+      for (final filter in kickoff.typeFilters) filter.toString(),
+    ];
 
     // 5. Validate group-level: ensure the Group resource exists
     if (exportLevel == 'group' && groupId != null) {
@@ -187,17 +211,13 @@ Future<Response> exportStatusHandler(
         );
 
       case 'completed':
-        final manifest = <String, dynamic>{
-          'transactionTime': job.transactionTime.toUtc().toIso8601String(),
-          'request': job.requestUrl,
-          'requiresAccessToken': true,
-          'output': job.outputJson != null
-              ? jsonDecode(job.outputJson!) as List<dynamic>
-              : <dynamic>[],
-          'error': job.errorJson != null
-              ? jsonDecode(job.errorJson!) as List<dynamic>
-              : <dynamic>[],
-        };
+        final manifest = BulkExportManifest(
+          transactionTime: job.transactionTime,
+          request: job.requestUrl,
+          requiresAccessToken: true,
+          output: _files(job.outputJson),
+          error: _files(job.errorJson),
+        ).toJson();
         // Bulk Data v2.0.0 export.html "Response - Complete Status", read
         // 2026-09-08: "The server SHOULD return an Expires header indicating
         // when the files listed will no longer be available for access."
@@ -213,19 +233,19 @@ Future<Response> exportStatusHandler(
         );
 
       case 'error':
-        final errors = job.errorJson != null
-            ? jsonDecode(job.errorJson!) as List<dynamic>
-            : <dynamic>[];
+        // Bulk Data v2.0.0 export.html, section "Bulk Data Status Request",
+        // read whole 2026-09-08, verbatim: "In the case that errors prevent
+        // the export from completing, the server SHOULD respond with a FHIR
+        // OperationOutcome resource in JSON format." and, under "Response -
+        // Error Status", verbatim: "Content-Type header of
+        // application/fhir+json when body is a FHIR OperationOutcome
+        // resource". This used to answer with a manifest whose `error`
+        // array held the OperationOutcomes inline, which is neither the
+        // error body nor the manifest's file-item shape.
         return Response(
           500,
-          body: jsonEncode({
-            'transactionTime': job.transactionTime.toUtc().toIso8601String(),
-            'request': job.requestUrl,
-            'requiresAccessToken': true,
-            'output': <dynamic>[],
-            'error': errors,
-          }),
-          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(_failureOutcome(job.errorJson)),
+          headers: {'Content-Type': 'application/fhir+json'},
         );
 
       case 'cancelled':
@@ -361,7 +381,6 @@ Future<void> _processExport(
     }
 
     final outputManifest = <Map<String, dynamic>>[];
-    final errorManifest = <Map<String, dynamic>>[];
 
     if (job.exportLevel == 'patient') {
       // Patient-level export: restrict to Patient compartment resource types
@@ -512,7 +531,7 @@ Future<void> _processExport(
         final wanted =
             filterIds == null ? ids : ids.where(filterIds.contains).toSet();
         final path = '$exportDir/$jobId/$typeName.ndjson';
-        final count = await writeNdjsonFile(
+        final count = await _writeNdjsonFile(
           path,
           dbInterface.exportJson(resourceType, since: since, ids: wanted),
         );
@@ -532,7 +551,6 @@ Future<void> _processExport(
         jobId,
         status: 'completed',
         outputJson: jsonEncode(outputManifest),
-        errorJson: errorManifest.isNotEmpty ? jsonEncode(errorManifest) : null,
         completedAt: DateTime.now().toUtc(),
       );
 
@@ -598,7 +616,7 @@ Future<void> _processExport(
       }
 
       final path = '$exportDir/$jobId/$typeName.ndjson';
-      final count = await writeNdjsonFile(path, lines);
+      final count = await _writeNdjsonFile(path, lines);
       if (count == 0) {
         // Bulk Data v2.0.0 export.html, read 2026-09-08: "If no data are
         // found for a resource, the server SHOULD NOT return an output item
@@ -618,7 +636,6 @@ Future<void> _processExport(
       jobId,
       status: 'completed',
       outputJson: jsonEncode(outputManifest),
-      errorJson: errorManifest.isNotEmpty ? jsonEncode(errorManifest) : null,
       completedAt: DateTime.now().toUtc(),
     );
 

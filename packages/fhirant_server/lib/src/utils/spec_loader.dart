@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_bulk/fhir_r4_bulk.dart' show NdjsonStream;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 
@@ -97,8 +98,7 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
 
   for (final file in ndjsonFiles) {
     final fileName = file.path.split('/').last;
-    final lines =
-        file.openRead().transform(utf8.decoder).transform(const LineSplitter());
+    final lines = NdjsonStream.lines(file.openRead());
     final (loaded, errors) = await loadSpecLines(db, lines, fileName);
     totalLoaded += loaded;
     totalErrors += errors;
@@ -165,8 +165,7 @@ Future<void> loadSpecResourcesFromAssets(
     final data = await loadBytes(key);
     final bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    final lines =
-        _pieces(bytes).transform(utf8.decoder).transform(const LineSplitter());
+    final lines = NdjsonStream.lines(_pieces(bytes));
     final (loaded, errors) = await loadSpecLines(
       db,
       lines,
@@ -222,17 +221,12 @@ Future<(int, int)> loadSpecLines(
     await Future<void>.delayed(Duration.zero);
   }
 
-  await for (final line in lines) {
-    if (line.trim().isEmpty) continue;
-    try {
-      chunk.add(
-        _tagged(
-          fhir.Resource.fromJson(jsonDecode(line) as Map<String, dynamic>),
-        ),
-      );
-    } catch (_) {
-      errors++;
-    }
+  final resources = NdjsonStream.resources(
+    lines.where((line) => line.trim().isNotEmpty),
+    onBadLine: (_, __) => errors++,
+  );
+  await for (final resource in resources) {
+    chunk.add(_tagged(resource));
     if (chunk.length >= _chunkSize) await save();
   }
   await save();

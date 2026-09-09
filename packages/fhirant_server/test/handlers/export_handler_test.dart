@@ -502,9 +502,15 @@ void main() {
       final response = await exportStatusHandler(request, mockDb, jobId);
 
       expect(response.statusCode, equals(500));
+      // export.html, "Bulk Data Status Request", read whole 2026-09-08,
+      // verbatim: "In the case that errors prevent the export from
+      // completing, the server SHOULD respond with a FHIR OperationOutcome
+      // resource in JSON format."
+      expect(response.headers['content-type'], 'application/fhir+json');
       final body = jsonDecode(await response.readAsString());
-      expect(body['error'], isList);
-      expect(body['error'].length, equals(1));
+      expect(body['resourceType'], 'OperationOutcome');
+      expect(body['issue'], hasLength(1));
+      expect(body['issue'][0]['diagnostics'], 'Something went wrong');
     });
 
     test('returns 404 for cancelled job', () async {
