@@ -34,6 +34,13 @@ jobs:
       # package that sorts before the one whose tests mattered.
       - name: Format, analyze and test each package
         run: |
+          # GitHub runs this with `bash -e`, under which the first package's
+          # failing subshell ended the whole step: run 34288171022
+          # (2026-09-08) stopped at the app's format check with no
+          # "::error::fhirant failed" line and never reached the other
+          # packages. errexit stays off out here; the subshell below sets
+          # it for itself, and the loop names every package that failed.
+          set +e
           failed=""
           for d in packages/*/; do
             [ -f "${d}pubspec.yaml" ] || continue

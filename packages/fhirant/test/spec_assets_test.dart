@@ -18,8 +18,8 @@ void main() {
     expect(spec, contains('assets/fhir_spec/profiles-resources.ndjson'));
     expect(spec, contains('assets/fhir_spec/valuesets.ndjson'));
     expect(spec, hasLength(9));
-    final text =
-        await rootBundle.loadString('assets/fhir_spec/search-parameters.ndjson');
+    final text = await rootBundle
+        .loadString('assets/fhir_spec/search-parameters.ndjson');
     expect(text, startsWith('{"resourceType":"SearchParameter"'));
   });
 }
