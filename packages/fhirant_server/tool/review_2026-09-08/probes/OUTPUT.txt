@@ -1,0 +1,459 @@
+# fhir_r4_db probes (dart test test/review_probe_2026_09_08_test.dart), 2026-09-08
+Running build hooks...Running build hooks...00:00 +0: loading test/review_probe_2026_09_08_test.dart
+00:00 +0: C52 rebuildSearchIndex keeps the contained-resource (#Type) rows
+C52 contained rows before=4 after=0; chained hits before=1 after=0
+00:02 +0 -1: C52 rebuildSearchIndex keeps the contained-resource (#Type) rows [E]
+  Expected: <4>
+    Actual: <0>
+  the rebuild dropped the contained rows
+  
+  package:matcher                              expect
+  test/review_probe_2026_09_08_test.dart 44:5  main.<fn>
+  
+00:02 +0 -1: C53 :missing on the general path does not reference the removed search_path column
+C53 gender:missing=true: 1
+C53 gender:missing=false: 1
+C53 birthdate:missing=true: 2
+C53 general-practitioner:missing=true: 2
+C53 gender:missing=true + _id list (501): ERROR SqliteException(1): while preparing statement, no such column: search_path, SQL logic error (code 1)
+C53 gender:missing=true + name (two params): 0
+C53 gender:missing=true + _sort: 1
+00:02 +0 -2: C53 :missing on the general path does not reference the removed search_path column [E]
+  Expected: empty
+    Actual: {
+              'gender:missing=true + _id list (501)': 'SqliteException(1): while preparing statement, no such column: search_path, SQL logic error (code 1)'
+            }
+  {gender:missing=true + _id list (501): SqliteException(1): while preparing statement, no such column: search_path, SQL logic error (code 1)}
+  
+  package:matcher                              expect
+  test/review_probe_2026_09_08_test.dart 72:5  main.<fn>
+  
+00:02 +0 -2: C55 a live resource that happens to carry the tombstone tag is not reported deleted
+C55 history entries: [v1 deleted=true]
+00:02 +0 -3: C55 a live resource that happens to carry the tombstone tag is not reported deleted [E]
+  Expected: false
+    Actual: <true>
+  a client-written meta.tag makes the store report the version as a deletion
+  
+  package:matcher                              expect
+  test/review_probe_2026_09_08_test.dart 85:5  main.<fn>
+  
+00:02 +0 -3: C54 a token value with two unescaped pipes is refused, not matched literally
+C54 urn:s|a|b -> 0 hits
+00:02 +0 -4: C54 a token value with two unescaped pipes is refused, not matched literally [E]
+  Expected: not null
+    Actual: <null>
+  search.html token syntax is [system]|[code]; a third segment is not defined and was taken as the code
+  
+  package:matcher                               expect
+  test/review_probe_2026_09_08_test.dart 100:5  main.<fn>
+  
+00:02 +0 -4: Some tests failed.
+
+Failing tests:
+  test/review_probe_2026_09_08_test.dart: C52 rebuildSearchIndex keeps the contained-resource (#Type) rows
+  test/review_probe_2026_09_08_test.dart: C53 :missing on the general path does not reference the removed search_path column
+  test/review_probe_2026_09_08_test.dart: C54 a token value with two unescaped pipes is refused, not matched literally
+  test/review_probe_2026_09_08_test.dart: C55 a live resource that happens to carry the tombstone tag is not reported deleted
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+# fhirant_server probes (dart test test/integration/review_probe_2026_09_08_test.dart), 2026-09-08
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/review_probe_2026_09_08_test.dart
+00:00 +0: C7a POST / (transaction) without a token is refused
+00:02 +0 -1: C7a POST / (transaction) without a token is refused [E]
+  Expected: <401>
+    Actual: <200>
+  {"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://localhost:8080/Patient/px","resource":{"resourceType":"Patient","id":"px","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:55.546862Z"}},"response":{"status":"200","etag":"W/\"1\"","lastModified":"2026-09-09T01:47:55.546862Z"}}]}
+  
+  package:matcher                                          expect
+  test/integration/review_probe_2026_09_08_test.dart 81:5  main.<fn>
+  
+00:02 +0 -1: C7b GET /?_type=Patient (system search) without a token is refused
+00:02 +0 -2: C7b GET /?_type=Patient (system search) without a token is refused [E]
+  Expected: <401>
+    Actual: <200>
+  {"resourceType":"Bundle","type":"searchset","total":2,"link":[{"relation":"self","url":"http://localhost:8080/?_type=Patient"},{"relation":"first","url":"http://localhost:8080/?_type=Patient&_offset=0"},{"relation":"last","url":"http://localhost:8080/?_type=Patient&_offset=0"}],"entry":[{"fullUrl":"http://localhost:8080/Patient/p1","resource":{"resourceType":"Patient","id":"p1","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:55.817036Z"},"name":[{"family":"One"}]},"search":{"mode":"match"}},{"fullUrl":"http://localhost:8080/Patient/p2","resource":{"resourceType":"Patient","id":"p2","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:55.839253Z"},"name":[{"family":"Two"}]},"search":{"mode":"match"}}]}
+  
+  package:matcher                                          expect
+  test/integration/review_probe_2026_09_08_test.dart 86:5  main.<fn>
+  
+00:02 +0 -2: C11 the 401 body declares a content type
+00:02 +0 -3: C11 the 401 body declares a content type [E]
+  Expected: not null
+    Actual: <null>
+  an OperationOutcome body with no content-type
+  
+  package:matcher                                          expect
+  test/integration/review_probe_2026_09_08_test.dart 93:5  main.<fn>
+  
+00:02 +0 -3: C12 a mixed patient/ + user/ token keeps the patient compartment on the patient-scoped type
+00:03 +0 -4: C12 a mixed patient/ + user/ token keeps the patient compartment on the patient-scoped type [E]
+  Expected: not contains 'Observation/o2'
+    Actual: ['Observation/o2', 'Observation/o1']
+  p2's Observation returned to a patient/Observation token
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 101:5  main.<fn>
+  
+00:03 +0 -4: C13 Group/<id>/$export needs read on the exported types, not only on Group
+00:03 +0 -5: C13 Group/<id>/$export needs read on the exported types, not only on Group [E]
+  Expected: not <202>
+    Actual: <202>
+  export of every Patient-compartment type started for a user/Group.r token: {"message":"Export job accepted","jobId":"ccae846b-2fd0-48dc-b5b1-2d6494714501"}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 109:5  main.<fn>
+  
+00:03 +0 -5: C12 a mixed patient/ + user/ token keeps the patient compartment on the patient-scoped type
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +0 -5: C14 Composition/$document is confined to the token's patient compartment
+00:03 +0 -6: C14 Composition/$document is confined to the token's patient compartment [E]
+  Expected: <403>
+    Actual: <200>
+  p1's token got p2's document: {"resourceType":"Bundle","type":"document","timestamp":"2026-09-08T21:47:57.220410-04:00","entry":[{"fullUrl":"http://localhost:8080/Composition/c2","resource":{"resourceType":"Composition","id":"c2",
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 115:5  main.<fn>
+  
+00:03 +0 -6: C16 GET /?_type=Observation applies the patient compartment
+00:03 +0 -7: C16 GET /?_type=Observation applies the patient compartment [E]
+  Expected: not contains 'Observation/o2'
+    Actual: ['Observation/o1', 'Observation/o2']
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 122:5  main.<fn>
+  
+00:03 +0 -7: C13 Group/<id>/$export needs read on the exported types, not only on Group
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +0 -7: C15 POST /_search applies the patient compartment
+00:03 +0 -8: C15 POST /_search applies the patient compartment [E]
+  Expected: not contains 'Observation/o2'
+    Actual: ['Observation/o1', 'Observation/o2']
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 127:5  main.<fn>
+  
+00:03 +0 -8: C14 Composition/$document is confined to the token's patient compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +0 -8: C8 POST /Observation/_search applies the patient compartment
+00:03 +1 -8: C17 If-None-Exist cannot match another patient's resource
+00:04 +1 -9: C17 If-None-Exist cannot match another patient's resource [E]
+  Expected: <201>
+    Actual: <200>
+  matched p2's o2 and answered with it: {"resourceType":"Observation","id":"o2","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:57.732567Z"},"status":"final","code":{"text":"weight"},"subject":{"reference":"Patient/p2"}}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 139:5  main.<fn>
+  
+00:04 +1 -9: C18 conditional DELETE under a patient token stays inside the compartment
+C18 status 204 
+00:04 +1 -10: C18 conditional DELETE under a patient token stays inside the compartment [E]
+  Expected: not null
+    Actual: <null>
+  p1's token deleted p2's Observation
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 146:5  main.<fn>
+  
+00:04 +1 -10: C15 POST /_search applies the patient compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -10: C19 _include does not pull another patient's resource into a patient-scoped page
+00:04 +1 -11: C19 _include does not pull another patient's resource into a patient-scoped page [E]
+  Expected: not contains 'Observation/o2'
+    Actual: ['Observation/o1', 'Observation/o2']
+  included across the compartment boundary
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 153:5  main.<fn>
+  
+00:04 +1 -11: C8 POST /Observation/_search applies the patient compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -11: C20 POST ignores a client-supplied id (http.html create)
+00:04 +1 -12: C20 POST ignores a client-supplied id (http.html create) [E]
+  Expected: not 'p2'
+    Actual: 'p2'
+  the server kept the client id and overwrote Patient/p2
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 161:5  main.<fn>
+  
+00:04 +1 -12: C17 If-None-Exist cannot match another patient's resource
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -12: C21 PUT under a patient token cannot move a resource out of the compartment
+00:04 +1 -13: C21 PUT under a patient token cannot move a resource out of the compartment [E]
+  Expected: <403>
+    Actual: <200>
+  stored a resource whose new content is outside the compartment: {"resourceType":"Observation","id":"o1","meta":{"versionId":"2","lastUpdated":"2026-09-09T01:47:58.168244Z"},"status":"final","code":{"text":"weight"},"subject":{"reference":"Patient/p2"}}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 170:5  main.<fn>
+  
+00:04 +1 -13: C18 conditional DELETE under a patient token stays inside the compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -13: C22 a 404 body is an OperationOutcome
+00:04 +1 -14: C22 a 404 body is an OperationOutcome [E]
+  Expected: 'OperationOutcome'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  {"error":"Resource not found"}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 177:5  main.<fn>
+  
+00:04 +1 -14: C19 _include does not pull another patient's resource into a patient-scoped page
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -14: C24 a transaction entry is authorized like the same request sent alone
+C24 status 200
+00:04 +1 -15: C24 a transaction entry is authorized like the same request sent alone [E]
+  Expected: 'Two'
+    Actual: 'Overwritten'
+     Which: is different.
+            Expected: Two
+              Actual: Overwritte ...
+                      ^
+             Differ at offset 0
+  a read-only patient token rewrote Patient/p2 through a transaction (200): {"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://localhost:8080/Patient/p2","resource":{"resourceType":"Patient","id":"p2","meta":{"versionId":"2","lastUpdated":"2026-09-09T01:47:58.376524Z"},"name":[{"family":"Overwritten"}]},"response":{"status":"200","etag":"W/\"2\"","lastModified":"2026-09-09T01:47:58.376524Z"}}]}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 186:5  main.<fn>
+  
+00:04 +1 -15: C20 POST ignores a client-supplied id (http.html create)
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -15: C26 a batch GET with a search URL is answered
+00:04 +1 -16: C26 a batch GET with a search URL is answered [E]
+  Expected: a string starting with '200'
+    Actual: '400'
+  {"response":{"status":"400","outcome":{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Bundle entry 0: Invalid resource type: Patient?family=One"}]}}}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 194:5  main.<fn>
+  
+00:04 +1 -16: C21 PUT under a patient token cannot move a resource out of the compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -16: C22 a 404 body is an OperationOutcome
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +1 -16: C27a instance history of another patient's resource is refused
+00:04 +1 -17: C27a instance history of another patient's resource is refused [E]
+  Expected: <403>
+    Actual: <200>
+  {"resourceType":"Bundle","type":"history","total":1,"entry":[{"fullUrl":"http://localhost:8080/Observation/o2","resource":{"resourceType":"Observation","id":"o2","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:58.557341Z"},"status":"final","code":{"text":"weight"},"subject":{"reference":"Patient/p2"}},"request":{"method":"POST","url":"Observation"},"response":{"status":"201","etag":"W/\"1\"","lastModified":"2026-09-09T01:47:58.557Z"}}]}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 200:5  main.<fn>
+  
+00:04 +1 -17: C27b vread of another patient's resource is refused
+00:04 +1 -18: C27b vread of another patient's resource is refused [E]
+  Expected: <403>
+    Actual: <200>
+  {"resourceType":"Observation","id":"o2","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:47:58.639547Z"},"status":"final","code":{"text":"weight"},"subject":{"reference":"Patient/p2"}}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 204:5  main.<fn>
+  
+00:04 +1 -18: C27c type history is confined to the compartment
+00:05 +1 -19: C27c type history is confined to the compartment [E]
+  Expected: not contains 'Observation/o2'
+    Actual: ['Observation/o2', 'Observation/o1']
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 209:5  main.<fn>
+  
+00:05 +1 -19: C27d system history is confined to the compartment
+00:05 +1 -20: C27d system history is confined to the compartment [E]
+  Expected: not contains 'Observation/o2'
+    Actual: [
+              'Composition/c2',
+              'Observation/o2',
+              'Observation/o1',
+              'Patient/p2',
+              'Patient/p1'
+            ]
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 214:5  main.<fn>
+  
+00:05 +1 -20: C27a instance history of another patient's resource is refused
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +1 -20: C28 a history bundle larger than _count carries a next link
+00:05 +1 -21: C28 a history bundle larger than _count carries a next link [E]
+  Expected: contains 'next'
+    Actual: []
+     Which: does not contain 'next'
+  total 4, entries 2, links []
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 227:5  main.<fn>
+  
+00:05 +1 -21: C27b vread of another patient's resource is refused
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +1 -21: C30 Location on create carries the version (http.html create)
+00:05 +1 -22: C30 Location on create carries the version (http.html create) [E]
+  Expected: match '/Patient/[^/]+/_history/1$'
+    Actual: '/Patient/ce073b91-7aea-4a58-942a-511218f92287'
+  /Patient/ce073b91-7aea-4a58-942a-511218f92287
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 234:5  main.<fn>
+  
+00:05 +1 -22: C27c type history is confined to the compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +1 -22: C27d system history is confined to the compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +1 -22: C31 PATCH honours If-Match
+00:05 +1 -23: C31 PATCH honours If-Match [E]
+  Expected: <412>
+    Actual: <200>
+  stale If-Match accepted: 200 {"resourceType":"Patient","id":"p1","meta":{"versionId":"2","lastUpdated":"2026-09-09T01:47:59.186115Z"},"name":[{"family":"Patched"}]}
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 240:5  main.<fn>
+  
+00:05 +1 -23: C32 JSON Patch replace of a missing member fails (RFC 6902 4.3)
+00:05 +1 -24: C32 JSON Patch replace of a missing member fails (RFC 6902 4.3) [E]
+  Expected: (<400> or <409> or <422>)
+    Actual: <200>
+  replace on absent /gender succeeded: 200
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 246:5  main.<fn>
+  
+00:05 +1 -24: C28 a history bundle larger than _count carries a next link
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +1 -24: C33 the self link carries only the parameters the server used
+00:05 +2 -24: C34 SUBSETTED is a meta.tag, not a meta.security label
+00:05 +2 -24: C30 Location on create carries the version (http.html create)
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +2 -25: C34 SUBSETTED is a meta.tag, not a meta.security label [E]
+  Expected: contains 'SUBSETTED'
+    Actual: []
+     Which: does not contain 'SUBSETTED'
+  tag=[] security=[SUBSETTED]
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 265:5  main.<fn>
+  
+00:05 +2 -25: C35 GET /health is not written to the audit trail
+00:05 +2 -25: C31 PATCH honours If-Match
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +2 -25: C32 JSON Patch replace of a missing member fails (RFC 6902 4.3)
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +2 -25: C33 the self link carries only the parameters the server used
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +2 -25: C34 SUBSETTED is a meta.tag, not a meta.security label
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:06 +2 -26: C35 GET /health is not written to the audit trail [E]
+  Expected: empty
+    Actual: [Instance of 'AuditEvent']
+  1 AuditEvent(s) for a health poll
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 274:5  main.<fn>
+  
+00:06 +2 -26: C36 an unsupported response_type is not redirected to an unregistered redirect_uri
+00:06 +2 -27: C36 an unsupported response_type is not redirected to an unregistered redirect_uri [E]
+  Expected: not <302>
+    Actual: <302>
+  Location: https://evil.example/cb?error=unsupported_response_type&error_description=Only+response_type%3Dcode+is+supported&state=x
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 280:5  main.<fn>
+  
+00:06 +2 -27: C38 a deactivated account's live access token stops working
+00:06 +2 -28: C38 a deactivated account's live access token stops working [E]
+  Expected: <401>
+    Actual: <200>
+  deactivated user still reads: 200
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 291:5  main.<fn>
+  
+00:06 +2 -28: C36 an unsupported response_type is not redirected to an unregistered redirect_uri
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:06 +2 -28: C39 /auth/revoke does not store arbitrary unauthenticated strings
+00:06 +2 -29: C39 /auth/revoke does not store arbitrary unauthenticated strings [E]
+  Expected: <0>
+    Actual: <5>
+  revoked_tokens grew by 5 rows from unauthenticated junk
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 301:5  main.<fn>
+  
+00:06 +2 -29: C43 $export rejects an unsupported parameter (export.html: SHOULD return an error)
+00:07 +2 -30: C43 $export rejects an unsupported parameter (export.html: SHOULD return an error) [E]
+  Expected: not <202>
+    Actual: <202>
+  accepted with an unsupported `patient` parameter: 202
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 308:5  main.<fn>
+  
+00:07 +2 -30: C46 Library/$evaluate with inline CQL is confined to the token's patient
+00:08 +2 -31: C46 Library/$evaluate with inline CQL is confined to the token's patient [E]
+  Expected: <403>
+    Actual: <200>
+  evaluated over p2 for p1's token: 200 {"resourceType":"Parameters","parameter":[{"name":"Patient","resource":{"resourceType":"Patient","id":"p2","meta":{"versionId":"1","lastUpdated":"2026-09-09T01:48:00.820200Z"},"name":[{"family":"Two"}]}},{"name":"Observation","part":[{"name":"item","resource":{"resourceType":"Observation","id":"o2",
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 318:5  main.<fn>
+  
+00:08 +2 -31: C38 a deactivated account's live access token stops working
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:08 +2 -31: C39 /auth/revoke does not store arbitrary unauthenticated strings
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:08 +2 -31: C43 $export rejects an unsupported parameter (export.html: SHOULD return an error)
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:08 +2 -31: C51 restoring a backup keeps a backed-up account whose id collides locally
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_r4_db/src/fhir_db.g.dart:6514:31)
+#4      new FhirDb (package:fhir_r4_db/src/fhir_db.dart)
+#5      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#6      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/review_probe_2026_09_08_test.dart:324:17)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#9      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+C51 restored 0
+00:13 +2 -32: C51 restoring a backup keeps a backed-up account whose id collides locally [E]
+  Expected: not null
+    Actual: <null>
+  the backup's admin account was silently dropped
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 334:5  main.<fn>
+  
+00:13 +2 -32: C46 Library/$evaluate with inline CQL is confined to the token's patient
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:13 +2 -32: A2 Experimentation mode: a stranger registers the first (admin) account that Secure mode then trusts
+A2 dev-mode register: 201 {"id":1,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoic3RyYW5nZXIiLCJyb2xlIjoiYWRtaW4iLCJzY29wZSI6InN5c3RlbS8qLioiLCJpYXQiOjE3ODg5MTg0ODcsImV4cCI6MTc4ODk0NzI4N30.No8yqMfRUXxd9jRks9NtnIP0QIxPdmBRPl1pXJOgRQY","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoic3RyYW5nZXIiLCJyb2xlIjoiYWRtaW4iLCJ0b2tlbl90eXBlIjoicmVmcmVzaCIsInNjb3BlIjoic3lzdGVtLyouKiIsImlhdCI6MTc4ODkxODQ4NywiZXhwIjoxNzg5NTIzMjg3fQ.pgSU65jztqMIuEVmSiLRgh3oUc-p7lsA3S6MfdTXlto","token_type":"Bearer","username":"stranger","role":"admin","scopes":["system/*.*"]}
+00:14 +2 -33: A2 Experimentation mode: a stranger registers the first (admin) account that Secure mode then trusts [E]
+  Expected: not 'admin'
+    Actual: 'admin'
+  the account registered over the WiFi in Experimentation mode is the admin of Secure mode (200)
+  
+  package:matcher                                           expect
+  test/integration/review_probe_2026_09_08_test.dart 348:5  main.<fn>
+  
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:14 +2 -33: C3 the credential limiter also covers /auth/login/ (trailing slash)
+C3 12th /auth/login/ status: 404
+00:14 +3 -33: Some tests failed.
+
+Failing tests:
+  test/integration/review_probe_2026_09_08_test.dart: A2 Experimentation mode: a stranger registers the first (admin) account that Secure mode then trusts
+  test/integration/review_probe_2026_09_08_test.dart: C11 the 401 body declares a content type
+  test/integration/review_probe_2026_09_08_test.dart: C12 a mixed patient/ + user/ token keeps the patient compartment on the patient-scoped type
+  test/integration/review_probe_2026_09_08_test.dart: C13 Group/<id>/$export needs read on the exported types, not only on Group
+  ... and 29 more
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

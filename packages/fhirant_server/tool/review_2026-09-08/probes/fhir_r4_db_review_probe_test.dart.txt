@@ -1,0 +1,102 @@
+// Probes for the 2026-09-08 fresh review of fhirant, the fhir_r4_db half.
+// Each test asserts what the store should do; a FAILURE confirms the
+// candidate it is named after. Removed from test/ once run; kept with its
+// verbatim output under fhirant_server/tool/review_2026-09-08/probes/.
+// ignore_for_file: lines_longer_than_80_chars, avoid_print
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_db/fhir_r4_db.dart';
+import 'package:test/test.dart';
+
+void main() {
+  late FhirDb db;
+
+  setUp(() async {
+    db = FhirDb(NativeDatabase.memory());
+    await db.customSelect('SELECT 1').get();
+  });
+  tearDown(() => db.close());
+
+  Future<int> containedRows() async {
+    var n = 0;
+    for (final t in ['string_search_parameters', 'token_search_parameters', 'reference_search_parameters', 'date_search_parameters']) {
+      n += (await db.customSelect("SELECT count(*) AS c FROM $t WHERE resource_type LIKE '#%'").getSingle()).read<int>('c');
+    }
+    return n;
+  }
+
+  // ---------------------------------------------------------------- C52
+  test('C52 rebuildSearchIndex keeps the contained-resource (#Type) rows', () async {
+    await db.fhirDao.saveResource(fhir.Observation(
+      id: 'o1'.toFhirString,
+      status: fhir.ObservationStatus.final_,
+      code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+      contained: [fhir.Patient(id: 'inner'.toFhirString, name: [fhir.HumanName(family: 'Contained'.toFhirString)])],
+      subject: fhir.Reference(reference: '#inner'.toFhirString),
+    ));
+    final before = await containedRows();
+    expect(before, greaterThan(0), reason: 'the save did not index the contained Patient at all');
+    final chainedBefore = await db.fhirDao.search(resourceType: fhir.R4ResourceType.Observation, searchParameters: {'subject.family': ['Contained']});
+    await db.rebuildSearchIndex();
+    final after = await containedRows();
+    final chainedAfter = await db.fhirDao.search(resourceType: fhir.R4ResourceType.Observation, searchParameters: {'subject.family': ['Contained']});
+    print('C52 contained rows before=$before after=$after; chained hits before=${chainedBefore.length} after=${chainedAfter.length}');
+    expect(after, before, reason: 'the rebuild dropped the contained rows');
+    expect(chainedAfter.length, chainedBefore.length);
+  });
+
+  // ---------------------------------------------------------------- C53
+  test('C53 :missing on the general path does not reference the removed search_path column', () async {
+    await db.fhirDao.saveResource(fhir.Patient(id: 'a'.toFhirString, gender: fhir.AdministrativeGender.female));
+    await db.fhirDao.saveResource(fhir.Patient(id: 'b'.toFhirString));
+    final shapes = <String, Map<String, List<String>>>{
+      'gender:missing=true': {'gender:missing': ['true']},
+      'gender:missing=false': {'gender:missing': ['false']},
+      'birthdate:missing=true': {'birthdate:missing': ['true']},
+      'general-practitioner:missing=true': {'general-practitioner:missing': ['true']},
+      'gender:missing=true + _id list (501)': {'gender:missing': ['true'], '_id': [List.generate(501, (i) => 'id$i').join(',')]},
+      'gender:missing=true + name (two params)': {'gender:missing': ['true'], 'name': ['x']},
+      'gender:missing=true + _sort': {'gender:missing': ['true'], '_sort': ['birthdate']},
+    };
+    final errors = <String, String>{};
+    final results = <String, int>{};
+    for (final e in shapes.entries) {
+      try {
+        final sort = e.value.remove('_sort');
+        results[e.key] = (await db.fhirDao.search(resourceType: fhir.R4ResourceType.Patient, searchParameters: e.value, sort: sort)).length;
+      } catch (err) {
+        errors[e.key] = err.toString().split('\n').first;
+      }
+      print('C53 ${e.key}: ${results[e.key] ?? 'ERROR ${errors[e.key]}'}');
+    }
+    expect(errors, isEmpty, reason: errors.toString());
+    expect(results['gender:missing=true'], 1);
+    expect(results['gender:missing=false'], 1);
+  });
+
+  // ---------------------------------------------------------------- C55
+  test('C55 a live resource that happens to carry the tombstone tag is not reported deleted', () async {
+    await db.fhirDao.saveResource(fhir.Patient(
+      id: 'tagged'.toFhirString,
+      meta: fhir.FhirMeta(tag: [fhir.Coding(system: fhir.FhirUri(HistoryEntry.deletedTagSystem), code: fhir.FhirCode('DELETED'))]),
+    ));
+    final versions = await db.fhirDao.getHistory(fhir.R4ResourceType.Patient, 'tagged');
+    print('C55 history entries: ${versions.map((HistoryEntry v) => 'v${v.versionId} deleted=${v.deleted}').toList()}');
+    expect(versions.first.deleted, isFalse, reason: 'a client-written meta.tag makes the store report the version as a deletion');
+    expect(versions.first.resource, isNotNull);
+  });
+
+  // ---------------------------------------------------------------- C54
+  test('C54 a token value with two unescaped pipes is refused, not matched literally', () async {
+    await db.fhirDao.saveResource(fhir.Patient(id: 'i'.toFhirString, identifier: [fhir.Identifier(system: fhir.FhirUri('urn:s'), value: 'a|b'.toFhirString)]));
+    Object? err;
+    List<fhir.Resource> hits = const [];
+    try {
+      hits = await db.fhirDao.search(resourceType: fhir.R4ResourceType.Patient, searchParameters: {'identifier': ['urn:s|a|b']});
+    } catch (e) {
+      err = e;
+    }
+    print('C54 urn:s|a|b -> ${err ?? '${hits.length} hits'}');
+    expect(err, isNotNull, reason: 'search.html token syntax is [system]|[code]; a third segment is not defined and was taken as the code');
+  });
+}

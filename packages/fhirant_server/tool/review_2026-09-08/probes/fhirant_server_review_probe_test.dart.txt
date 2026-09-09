@@ -1,0 +1,362 @@
+// Probes for the 2026-09-08 fresh review of fhirant. Each test asserts what
+// the specification (or the security model the server documents) requires;
+// a FAILURE confirms the candidate finding it is named after. The file is a
+// probe, not a regression suite: it is removed from test/ once run and kept
+// as tool/review_2026-09-08/probes/*.dart.txt with its verbatim output.
+// ignore_for_file: lines_longer_than_80_chars, avoid_print
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/services/backup_service.dart';
+import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
+
+import 'test_helpers.dart';
+
+void main() {
+  late FhirAntDb db;
+  late Handler handler;
+  late Directory exportDir;
+
+  setUp(() async {
+    exportDir = await Directory.systemTemp.createTemp('probe-export');
+    final server = await createTestServer(exportDir: exportDir.path);
+    db = server.db;
+    handler = server.handler;
+    // Two patients, one Observation each, one Composition each.
+    await db.saveResource(fhir.Patient(id: 'p1'.toFhirString, name: [fhir.HumanName(family: 'One'.toFhirString)]));
+    await db.saveResource(fhir.Patient(id: 'p2'.toFhirString, name: [fhir.HumanName(family: 'Two'.toFhirString)]));
+    await db.saveResource(fhir.Observation(
+      id: 'o1'.toFhirString,
+      status: fhir.ObservationStatus.final_,
+      code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+      subject: fhir.Reference(reference: 'Patient/p1'.toFhirString),
+      hasMember: [fhir.Reference(reference: 'Observation/o2'.toFhirString)],
+    ));
+    await db.saveResource(fhir.Observation(
+      id: 'o2'.toFhirString,
+      status: fhir.ObservationStatus.final_,
+      code: fhir.CodeableConcept(text: 'weight'.toFhirString),
+      subject: fhir.Reference(reference: 'Patient/p2'.toFhirString),
+    ));
+    await db.saveResource(fhir.Composition(
+      id: 'c2'.toFhirString,
+      status: fhir.CompositionStatus.final_,
+      type: fhir.CodeableConcept(text: 'note'.toFhirString),
+      date: fhir.FhirDateTime.fromString('2026-01-01'),
+      author: [fhir.Reference(reference: 'Patient/p2'.toFhirString)],
+      title: 'p2 note'.toFhirString,
+      subject: fhir.Reference(reference: 'Patient/p2'.toFhirString),
+    ));
+  });
+
+  tearDown(() async {
+    await db.close();
+    await exportDir.delete(recursive: true);
+  });
+
+  Future<(int, String)> call(String method, String path, {String? body, String? token, Map<String, String>? headers}) async {
+    final r = await handler(testRequest(method, path, body: body, authToken: token, headers: {'content-type': 'application/fhir+json', ...?headers}));
+    return (r.statusCode, await r.readAsString());
+  }
+
+  String p1Token([List<String>? scopes]) => generateTestToken(scopes: scopes ?? ['patient/*.cruds'], patientId: 'p1', role: 'readonly', userId: 7, username: 'p1user');
+  String clinician() => generateTestToken(scopes: ['user/*.cruds'], userId: 2, username: 'clin');
+
+  List<String> entryIds(String body) {
+    final j = jsonDecode(body) as Map<String, dynamic>;
+    return [for (final e in (j['entry'] as List? ?? const [])) '${(e as Map)['resource']?['resourceType']}/${e['resource']?['id']}'];
+  }
+
+  Map<String, dynamic> tx(List<Map<String, dynamic>> entries, {String type = 'transaction'}) => {'resourceType': 'Bundle', 'type': type, 'entry': entries};
+
+  // ---------------------------------------------------------------- C7
+  test('C7a POST / (transaction) without a token is refused', () async {
+    final (s, b) = await call('POST', '/', body: jsonEncode(tx([{'resource': {'resourceType': 'Patient', 'id': 'px'}, 'request': {'method': 'PUT', 'url': 'Patient/px'}}])));
+    expect(s, 401, reason: b);
+    expect(await db.getResource(fhir.R4ResourceType.Patient, 'px'), isNull, reason: 'the unauthenticated transaction wrote a resource');
+  });
+  test('C7b GET /?_type=Patient (system search) without a token is refused', () async {
+    final (s, b) = await call('GET', '/?_type=Patient');
+    expect(s, 401, reason: b);
+  });
+
+  // ---------------------------------------------------------------- C11
+  test('C11 the 401 body declares a content type', () async {
+    final r = await handler(testRequest('GET', '/Patient'));
+    expect(r.statusCode, 401);
+    expect(r.headers['content-type'], isNotNull, reason: 'an OperationOutcome body with no content-type');
+  });
+
+  // ---------------------------------------------------------------- C12
+  test('C12 a mixed patient/ + user/ token keeps the patient compartment on the patient-scoped type', () async {
+    final tok = generateTestToken(scopes: ['patient/Observation.rs', 'user/Practitioner.rs'], patientId: 'p1', role: 'readonly');
+    final (s, b) = await call('GET', '/Observation', token: tok);
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')), reason: "p2's Observation returned to a patient/Observation token");
+  });
+
+  // ---------------------------------------------------------------- C13
+  test("C13 Group/<id>/\$export needs read on the exported types, not only on Group", () async {
+    await db.saveResource(fhir.FhirGroup(id: 'g1'.toFhirString, type: fhir.GroupType.person, actual: fhir.FhirBoolean(true), member: [fhir.GroupMember(entity: fhir.Reference(reference: 'Patient/p2'.toFhirString))]));
+    final tok = generateTestToken(scopes: ['user/Group.r'], userId: 3, username: 'grouponly');
+    final (s, b) = await call('GET', r'/Group/g1/$export', token: tok, headers: {'accept': 'application/fhir+json', 'prefer': 'respond-async'});
+    expect(s, isNot(202), reason: 'export of every Patient-compartment type started for a user/Group.r token: $b');
+  });
+
+  // ---------------------------------------------------------------- C14
+  test("C14 Composition/\$document is confined to the token's patient compartment", () async {
+    final (s, b) = await call('GET', r'/Composition/c2/$document', token: p1Token(['patient/*.rs']));
+    expect(s, 403, reason: "p1's token got p2's document: ${b.substring(0, b.length.clamp(0, 200))}");
+  });
+
+  // ---------------------------------------------------------------- C15/C16
+  test('C16 GET /?_type=Observation applies the patient compartment', () async {
+    final (s, b) = await call('GET', '/?_type=Observation', token: p1Token(['patient/*.rs']));
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')));
+  });
+  test('C15 POST /_search applies the patient compartment', () async {
+    final (s, b) = await call('POST', '/_search', token: p1Token(['patient/*.rs']), body: '_type=Observation', headers: {'content-type': 'application/x-www-form-urlencoded'});
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')));
+  });
+  test('C8 POST /Observation/_search applies the patient compartment', () async {
+    final (s, b) = await call('POST', '/Observation/_search', token: p1Token(['patient/*.rs']), body: 'status=final', headers: {'content-type': 'application/x-www-form-urlencoded'});
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')));
+  });
+
+  // ---------------------------------------------------------------- C17
+  test("C17 If-None-Exist cannot match another patient's resource", () async {
+    final body = jsonEncode({'resourceType': 'Observation', 'status': 'final', 'code': {'text': 'weight'}, 'subject': {'reference': 'Patient/p1'}});
+    final (s, b) = await call('POST', '/Observation', token: p1Token(), body: body, headers: {'if-none-exist': '_id=o2'});
+    expect(s, 201, reason: "matched p2's o2 and answered with it: $b");
+  });
+
+  // ---------------------------------------------------------------- C18
+  test('C18 conditional DELETE under a patient token stays inside the compartment', () async {
+    final (s, b) = await call('DELETE', '/Observation?status=final', token: p1Token());
+    print('C18 status $s $b');
+    expect(await db.getResource(fhir.R4ResourceType.Observation, 'o2'), isNotNull, reason: "p1's token deleted p2's Observation");
+  });
+
+  // ---------------------------------------------------------------- C19
+  test('C19 _include does not pull another patient\'s resource into a patient-scoped page', () async {
+    final (s, b) = await call('GET', '/Observation?_include=Observation:has-member', token: p1Token(['patient/*.rs']));
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')), reason: 'included across the compartment boundary');
+  });
+
+  // ---------------------------------------------------------------- C20
+  test('C20 POST ignores a client-supplied id (http.html create)', () async {
+    final (s, b) = await call('POST', '/Patient', token: clinician(), body: jsonEncode({'resourceType': 'Patient', 'id': 'p2', 'name': [{'family': 'Hijack'}]}));
+    expect(s, 201, reason: b);
+    final created = jsonDecode(b) as Map<String, dynamic>;
+    expect(created['id'], isNot('p2'), reason: 'the server kept the client id and overwrote Patient/p2');
+    final p2 = await db.getResource(fhir.R4ResourceType.Patient, 'p2') as fhir.Patient;
+    expect(p2.name?.first.family?.valueString, 'Two', reason: 'Patient/p2 was overwritten by a POST');
+  });
+
+  // ---------------------------------------------------------------- C21
+  test('C21 PUT under a patient token cannot move a resource out of the compartment', () async {
+    final body = jsonEncode({'resourceType': 'Observation', 'id': 'o1', 'status': 'final', 'code': {'text': 'weight'}, 'subject': {'reference': 'Patient/p2'}});
+    final (s, b) = await call('PUT', '/Observation/o1', token: p1Token(), body: body);
+    expect(s, 403, reason: 'stored a resource whose new content is outside the compartment: $b');
+  });
+
+  // ---------------------------------------------------------------- C22
+  test('C22 a 404 body is an OperationOutcome', () async {
+    final (s, b) = await call('GET', '/Patient/nope', token: clinician());
+    expect(s, 404);
+    expect((jsonDecode(b) as Map)['resourceType'], 'OperationOutcome', reason: b);
+  });
+
+  // ---------------------------------------------------------------- C24
+  test('C24 a transaction entry is authorized like the same request sent alone', () async {
+    final readOnly = generateTestToken(scopes: ['patient/Observation.rs'], patientId: 'p1', role: 'readonly', userId: 9);
+    final (s, b) = await call('POST', '/', token: readOnly, body: jsonEncode(tx([{'resource': {'resourceType': 'Patient', 'id': 'p2', 'name': [{'family': 'Overwritten'}]}, 'request': {'method': 'PUT', 'url': 'Patient/p2'}}])));
+    print('C24 status $s');
+    final p2 = await db.getResource(fhir.R4ResourceType.Patient, 'p2') as fhir.Patient;
+    expect(p2.name?.first.family?.valueString, 'Two', reason: 'a read-only patient token rewrote Patient/p2 through a transaction ($s): $b');
+  });
+
+  // ---------------------------------------------------------------- C26
+  test('C26 a batch GET with a search URL is answered', () async {
+    final (s, b) = await call('POST', '/', token: clinician(), body: jsonEncode(tx([{'request': {'method': 'GET', 'url': 'Patient?family=One'}}], type: 'batch')));
+    expect(s, 200, reason: b);
+    final entry = ((jsonDecode(b) as Map)['entry'] as List).first as Map;
+    expect((entry['response'] as Map)['status'], startsWith('200'), reason: jsonEncode(entry));
+  });
+
+  // ---------------------------------------------------------------- C27
+  test('C27a instance history of another patient\'s resource is refused', () async {
+    final (s, b) = await call('GET', '/Observation/o2/_history', token: p1Token(['patient/*.rs']));
+    expect(s, 403, reason: b);
+  });
+  test('C27b vread of another patient\'s resource is refused', () async {
+    final (s, b) = await call('GET', '/Observation/o2/_history/1', token: p1Token(['patient/*.rs']));
+    expect(s, 403, reason: b);
+  });
+  test('C27c type history is confined to the compartment', () async {
+    final (s, b) = await call('GET', '/Observation/_history', token: p1Token(['patient/*.rs']));
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')));
+  });
+  test('C27d system history is confined to the compartment', () async {
+    final (s, b) = await call('GET', '/_history', token: p1Token(['patient/*.rs']));
+    expect(s, 200, reason: b);
+    expect(entryIds(b), isNot(contains('Observation/o2')));
+    expect(entryIds(b), isNot(contains('Patient/p2')));
+  });
+
+  // ---------------------------------------------------------------- C28
+  test('C28 a history bundle larger than _count carries a next link', () async {
+    for (var i = 0; i < 3; i++) {
+      await call('PUT', '/Patient/p1', token: clinician(), body: jsonEncode({'resourceType': 'Patient', 'id': 'p1', 'name': [{'family': 'One$i'}]}));
+    }
+    final (s, b) = await call('GET', '/Patient/p1/_history?_count=2', token: clinician());
+    expect(s, 200, reason: b);
+    final j = jsonDecode(b) as Map<String, dynamic>;
+    final rels = [for (final l in (j['link'] as List? ?? const [])) (l as Map)['relation']];
+    expect(rels, contains('next'), reason: 'total ${j['total']}, entries ${(j['entry'] as List?)?.length}, links $rels');
+  });
+
+  // ---------------------------------------------------------------- C30
+  test('C30 Location on create carries the version (http.html create)', () async {
+    final r = await handler(testRequest('POST', '/Patient', authToken: clinician(), body: jsonEncode({'resourceType': 'Patient'}), headers: {'content-type': 'application/fhir+json'}));
+    expect(r.statusCode, 201);
+    expect(r.headers['location'], matches(RegExp(r'/Patient/[^/]+/_history/1$')), reason: r.headers['location']);
+  });
+
+  // ---------------------------------------------------------------- C31
+  test('C31 PATCH honours If-Match', () async {
+    final (s, b) = await call('PATCH', '/Patient/p1', token: clinician(), body: jsonEncode([{'op': 'replace', 'path': '/name/0/family', 'value': 'Patched'}]), headers: {'content-type': 'application/json-patch+json', 'if-match': 'W/"99"'});
+    expect(s, 412, reason: 'stale If-Match accepted: $s $b');
+  });
+
+  // ---------------------------------------------------------------- C32
+  test('C32 JSON Patch replace of a missing member fails (RFC 6902 4.3)', () async {
+    final (s, b) = await call('PATCH', '/Patient/p1', token: clinician(), body: jsonEncode([{'op': 'replace', 'path': '/gender', 'value': 'female'}]), headers: {'content-type': 'application/json-patch+json'});
+    expect(s, anyOf(400, 409, 422), reason: 'replace on absent /gender succeeded: $s');
+  });
+
+  // ---------------------------------------------------------------- C33
+  test('C33 the self link carries only the parameters the server used', () async {
+    final (s, b) = await call('GET', '/Patient?bogus=1&family=One', token: clinician());
+    expect(s, 200, reason: b);
+    final j = jsonDecode(b) as Map<String, dynamic>;
+    final self = ((j['link'] as List).firstWhere((l) => (l as Map)['relation'] == 'self') as Map)['url'] as String;
+    expect(self, isNot(contains('bogus')), reason: self);
+  });
+
+  // ---------------------------------------------------------------- C34
+  test('C34 SUBSETTED is a meta.tag, not a meta.security label', () async {
+    final (s, b) = await call('GET', '/Patient/p1?_summary=true', token: clinician());
+    expect(s, 200, reason: b);
+    final meta = ((jsonDecode(b) as Map)['meta'] as Map?) ?? const {};
+    final tags = [for (final t in (meta['tag'] as List? ?? const [])) (t as Map)['code']];
+    final sec = [for (final t in (meta['security'] as List? ?? const [])) (t as Map)['code']];
+    expect(tags, contains('SUBSETTED'), reason: 'tag=$tags security=$sec');
+    expect(sec, isNot(contains('SUBSETTED')), reason: 'tag=$tags security=$sec');
+  });
+
+  // ---------------------------------------------------------------- C35
+  test('C35 GET /health is not written to the audit trail', () async {
+    await call('GET', '/health');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final events = await db.getResourcesByType(fhir.R4ResourceType.AuditEvent);
+    expect(events, isEmpty, reason: '${events.length} AuditEvent(s) for a health poll');
+  });
+
+  // ---------------------------------------------------------------- C36
+  test('C36 an unsupported response_type is not redirected to an unregistered redirect_uri', () async {
+    final r = await handler(testRequest('POST', '/auth/authorize', body: 'response_type=token&client_id=evil&redirect_uri=https%3A%2F%2Fevil.example%2Fcb&state=x', headers: {'content-type': 'application/x-www-form-urlencoded'}));
+    expect(r.statusCode, isNot(302), reason: 'Location: ${r.headers['location']}');
+  });
+
+  // ---------------------------------------------------------------- C38
+  test('C38 a deactivated account\'s live access token stops working', () async {
+    final salt = PasswordHasher.generateSalt();
+    final id = await db.createUser(username: 'gone', passwordHash: PasswordHasher.hashPassword('gone-password-12345', salt), salt: salt, scopes: 'user/*.cruds');
+    final tok = generateTestToken(userId: id, username: 'gone', scopes: ['user/*.cruds']);
+    expect((await call('GET', '/Patient/p1', token: tok)).$1, 200);
+    await db.deactivateUser(id);
+    final (s, b) = await call('GET', '/Patient/p1', token: tok);
+    expect(s, 401, reason: 'deactivated user still reads: $s');
+  });
+
+  // ---------------------------------------------------------------- C39
+  test('C39 /auth/revoke does not store arbitrary unauthenticated strings', () async {
+    Future<int> rows() async => (await db.customSelect('SELECT count(*) AS c FROM revoked_tokens').getSingle()).read<int>('c');
+    final before = await rows();
+    for (var i = 0; i < 5; i++) {
+      await handler(testRequest('POST', '/auth/revoke', body: jsonEncode({'token': 'garbage-$i-${'x' * 200}'}), headers: {'content-type': 'application/json', 'x-forwarded-for': '10.0.0.$i'}));
+    }
+    expect(await rows(), before, reason: 'revoked_tokens grew by ${await rows() - before} rows from unauthenticated junk');
+  });
+
+  // ---------------------------------------------------------------- C43
+  test("C43 \$export rejects an unsupported parameter (export.html: SHOULD return an error)", () async {
+    final admin = generateTestToken(scopes: ['system/*.cruds'], role: 'admin', userId: 1);
+    final (s, b) = await call('GET', r'/$export?patient=Patient/p1', token: admin, headers: {'accept': 'application/fhir+json', 'prefer': 'respond-async'});
+    expect(s, isNot(202), reason: 'accepted with an unsupported `patient` parameter: $s');
+  });
+
+  // ---------------------------------------------------------------- C46
+  test("C46 Library/\$evaluate with inline CQL is confined to the token's patient", () async {
+    final body = jsonEncode({'resourceType': 'Parameters', 'parameter': [
+      {'name': 'cql', 'valueString': 'library P version \'1\' using FHIR version \'4.0.1\' context Patient define Name: Patient.name.family'},
+      {'name': 'subject', 'valueString': 'Patient/p2'},
+    ]});
+    final (s, b) = await call('POST', r'/Library/$evaluate', token: p1Token(['patient/*.rs']), body: body);
+    expect(s, 403, reason: "evaluated over p2 for p1's token: $s ${b.substring(0, b.length.clamp(0, 300))}");
+  });
+
+  // ---------------------------------------------------------------- C51
+  test('C51 restoring a backup keeps a backed-up account whose id collides locally', () async {
+    final tmp = await Directory.systemTemp.createTemp('probe-bk');
+    final src = FhirAntDb(NativeDatabase(File('${tmp.path}/src.sqlite')));
+    await src.initialize();
+    final salt = PasswordHasher.generateSalt();
+    await src.createUser(username: 'alice', passwordHash: PasswordHasher.hashPassword('alice-password-123', salt), salt: salt, role: 'admin');
+    final file = await BackupService.createFile(src, 'correct horse battery', '${tmp.path}/bk.sqlite');
+    await src.close();
+    // The local store already has a different account at id 1.
+    await db.createUser(username: 'bob', passwordHash: PasswordHasher.hashPassword('bob-password-12345', salt), salt: salt);
+    final restored = await db.restoreEncrypted(file.path, 'correct horse battery');
+    print('C51 restored $restored');
+    expect(await db.getUserByUsername('alice'), isNotNull, reason: "the backup's admin account was silently dropped");
+    await tmp.delete(recursive: true);
+  });
+
+  // ---------------------------------------------------------------- A2
+  test('A2 Experimentation mode: a stranger registers the first (admin) account that Secure mode then trusts', () async {
+    final dev = FhirAntServer(db, jwtSecret: testJwtSecret, devMode: true);
+    final devHandler = dev.createHandler(dev.createRouter());
+    final r = await devHandler(testRequest('POST', '/auth/register', body: jsonEncode({'username': 'stranger', 'password': 'Stranger-pass-123'}), headers: {'content-type': 'application/json', 'x-forwarded-for': '192.168.1.66'}));
+    final rb = await r.readAsString();
+    print('A2 dev-mode register: ${r.statusCode} $rb');
+    // Now the operator flips to Secure mode: a user exists, so the app shows no admin dialog.
+    final (s, b) = await call('POST', '/auth/login', body: jsonEncode({'username': 'stranger', 'password': 'Stranger-pass-123'}), headers: {'content-type': 'application/json'});
+    final role = s == 200 ? (jsonDecode(b) as Map)['role'] : null;
+    expect(role, isNot('admin'), reason: 'the account registered over the WiFi in Experimentation mode is the admin of Secure mode ($s)');
+  });
+
+  // ---------------------------------------------------------------- C3
+  test('C3 the credential limiter also covers /auth/login/ (trailing slash)', () async {
+    var last = 0;
+    for (var i = 0; i < 12; i++) {
+      final r = await handler(testRequest('POST', '/auth/login/', body: jsonEncode({'username': 'nobody', 'password': 'wrong-password-123'}), headers: {'content-type': 'application/json'}));
+      last = r.statusCode;
+      await r.readAsString();
+    }
+    print('C3 12th /auth/login/ status: $last');
+    expect(last, anyOf(429, 404), reason: 'trailing-slash login path answered $last after 12 attempts (no limiter, and the route exists)');
+  });
+}
