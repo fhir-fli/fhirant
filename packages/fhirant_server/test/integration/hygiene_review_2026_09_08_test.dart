@@ -302,8 +302,10 @@ void main() {
       final finished = await db.finishedExportJobsBefore(
         DateTime.now().toUtc().add(const Duration(hours: 1)),
       );
-      expect(finished.map((j) => j.jobId),
-          contains('11111111-2222-4333-8444-555555555555'));
+      expect(
+        finished.map((j) => j.jobId),
+        contains('11111111-2222-4333-8444-555555555555'),
+      );
     });
 
     test('DELETE on a completed job removes row and files at once', () async {
@@ -322,8 +324,10 @@ void main() {
         token: admin,
       );
       expect(r.statusCode, 202);
-      expect(await db.getExportJob('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'),
-          isNull);
+      expect(
+        await db.getExportJob('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'),
+        isNull,
+      );
       expect(dir.existsSync(), isFalse);
     });
   });

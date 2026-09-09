@@ -124,8 +124,22 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
       final bareRefusal = response.statusCode == 401 &&
           request.headers['authorization'] == null;
       if (_shouldAudit(request) && !bareRefusal) {
-        // Built off the response path, queued, written per tick.
+        // Built off the response path, queued, written per tick. A Bundle
+        // handler declares its entries in the response context and gets one
+        // event per entry after the envelope's own (REVIEW-2026-09-06
+        // finding 15).
         unawaited(_queueAuditEvent(request, response, dbInterface, events));
+        final entries = response.context['audit_entries'];
+        if (entries is List) {
+          unawaited(
+            _queueBundleEntryEvents(
+              request,
+              entries,
+              dbInterface,
+              events,
+            ),
+          );
+        }
       }
 
       return response;
@@ -137,10 +151,12 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
 bool _shouldAudit(Request request) {
   final path = request.url.path;
 
-  // Skip empty path (root), metadata, favicon, and the health poll, which
-  // reads no record and was written as an anonymous access on every poll
-  // (REVIEW-2026-09-08 row 45).
-  if (path.isEmpty ||
+  // Skip the public root (a bare GET /), metadata, favicon, and the health
+  // poll, which reads no record and was written as an anonymous access on
+  // every poll (REVIEW-2026-09-08 row 45). A POST to the root is a Bundle
+  // and is audited; the empty-path skip used to swallow it, so a
+  // transaction left no trail at all (REVIEW-2026-09-06 finding 15).
+  if ((path.isEmpty && request.method != 'POST') ||
       path == 'metadata' ||
       path == 'favicon.ico' ||
       path == 'health' ||
@@ -223,11 +239,15 @@ String _mapOutcome(int statusCode) {
 String? _entityReference(Request request, Response response) {
   final declared = response.context['audit_entity'];
   if (declared is String && declared.isNotEmpty) return declared;
+  return _entityFromPath(request.url.path);
+}
 
-  // Only `[ResourceType]/[id]`: `auth/login`, `admin/unlock/3`,
-  // `Patient/$export` and `ValueSet/$expand` are not references to a record
-  // and used to be recorded as if they were (REVIEW-2026-09-08 row 46).
-  final path = request.url.path;
+/// `[ResourceType]/[id]` from a request path, or null.
+///
+/// Only that shape: `auth/login`, `admin/unlock/3`, `Patient/$export` and
+/// `ValueSet/$expand` are not references to a record and used to be
+/// recorded as if they were (REVIEW-2026-09-08 row 46).
+String? _entityFromPath(String path) {
   final segments = path.split('/');
   if (segments.length >= 2 &&
       fhir.R4ResourceType.fromString(segments[0]) != null &&
@@ -246,6 +266,80 @@ Future<void> _queueAuditEvent(
   FhirAntDb dbInterface,
   AuditQueue queue,
 ) async {
+  // A Bundle request is recorded as the `transaction` or `batch` interaction
+  // it is (restful-interaction has both codes), not as a `create` of
+  // nothing; its entries follow as events of their own.
+  final bundleSubtype = response.context['audit_subtype'];
+  await _queueEvent(
+    request,
+    dbInterface,
+    queue,
+    method: request.method,
+    path: request.url.path,
+    statusCode: response.statusCode,
+    entityRef: _entityReference(request, response),
+    subtype: bundleSubtype is String ? bundleSubtype : null,
+    action: bundleSubtype is String ? 'E' : null,
+  );
+}
+
+/// One event per Bundle entry, as declared by the Bundle handler: each
+/// carries the entry's own method, status, record and subject of care, so
+/// a transaction touching N patients leaves N patients in the trail
+/// (REVIEW-2026-09-06 finding 15).
+Future<void> _queueBundleEntryEvents(
+  Request request,
+  List<dynamic> entries,
+  FhirAntDb dbInterface,
+  AuditQueue queue,
+) async {
+  for (final entry in entries) {
+    if (entry is! Map) continue;
+    final method = entry['method'];
+    final url = entry['url'];
+    final status = entry['status'];
+    final patient = entry['patient'];
+    if (method is! String || url is! String || status is! int) continue;
+    final path = url.split('?').first;
+    final entityRef = _entityFromPath(path);
+    // A type-level GET entry (`Patient?name=x`) is the search interaction;
+    // `_mapSubtype` reads `read` off a GET with no `_search` segment.
+    final isSearch = method == 'GET' &&
+        entityRef == null &&
+        !path.contains('/') &&
+        fhir.R4ResourceType.fromString(path) != null;
+    await _queueEvent(
+      request,
+      dbInterface,
+      queue,
+      method: method,
+      path: path,
+      statusCode: status,
+      entityRef: entityRef,
+      patientRef: patient is String ? patient : null,
+      subtype: isSearch ? 'search' : null,
+      action: isSearch ? 'R' : null,
+    );
+  }
+}
+
+/// Builds one AuditEvent for [request] and queues it. [method], [path] and
+/// [statusCode] are the interaction recorded (the request's own, or one
+/// Bundle entry's); [entityRef] the record it touched; [patientRef] the
+/// subject of care when the caller already knows it (a deleted resource's,
+/// read before the delete), else resolved from the record.
+Future<void> _queueEvent(
+  Request request,
+  FhirAntDb dbInterface,
+  AuditQueue queue, {
+  required String method,
+  required String path,
+  required int statusCode,
+  String? entityRef,
+  String? patientRef,
+  String? subtype,
+  String? action,
+}) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     final username = authUser?['username'] as String? ?? 'anonymous';
@@ -256,22 +350,21 @@ Future<void> _queueAuditEvent(
     // token identifies the actor without inventing Practitioner resources.
     final userId = authUser?['userId'];
 
-    final action = _mapAction(request.method, request.url.path);
-    final subtype = _mapSubtype(request.method, request.url.path);
-    final outcome = _mapOutcome(response.statusCode);
-    final entityRef = _entityReference(request, response);
+    final actionCode = action ?? _mapAction(method, path);
+    final subtypeCode = subtype ?? _mapSubtype(method, path);
+    final outcome = _mapOutcome(statusCode);
+    var subjectRef = patientRef;
 
     // ISO 27789:2021 requires an audit record to identify the subject of care.
     // The resource in the URL is often not that person: reading
     // `Observation/123` is an access to a patient's record, and until the
     // Observation is resolved back to its subject the trail cannot say whose.
-    String? patientRef;
-    if (entityRef != null) {
+    if (subjectRef == null && entityRef != null) {
       final parts = entityRef.split('/');
       if (parts.length == 2) {
         final subject = await dbInterface.subjectOfCare(parts[0], parts[1]);
         if (subject != null) {
-          patientRef = 'Patient/$subject';
+          subjectRef = 'Patient/$subject';
         }
       }
     }
@@ -289,11 +382,11 @@ Future<void> _queueAuditEvent(
       'subtype': [
         {
           'system': 'http://hl7.org/fhir/restful-interaction',
-          'code': subtype,
-          'display': subtype,
+          'code': subtypeCode,
+          'display': subtypeCode,
         },
       ],
-      'action': action,
+      'action': actionCode,
       'recorded': DateTime.now().toUtc().toIso8601String(),
       'outcome': outcome,
       'agent': [
@@ -319,7 +412,7 @@ Future<void> _queueAuditEvent(
           'display': 'FHIRant Server',
         },
       },
-      if (entityRef != null || patientRef != null)
+      if (entityRef != null || subjectRef != null)
         'entity': [
           if (entityRef != null)
             {
@@ -328,9 +421,9 @@ Future<void> _queueAuditEvent(
           // R4 has no `AuditEvent.patient` element; the `patient` search
           // parameter is defined over `agent.who` and `entity.what`, so the
           // subject of care is carried as an entity with the Patient role.
-          if (patientRef != null && patientRef != entityRef)
+          if (subjectRef != null && subjectRef != entityRef)
             {
-              'what': {'reference': patientRef},
+              'what': {'reference': subjectRef},
               'type': {
                 'system':
                     'http://terminology.hl7.org/CodeSystem/audit-entity-type',

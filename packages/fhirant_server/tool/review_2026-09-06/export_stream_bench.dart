@@ -54,7 +54,9 @@ Future<void> main(List<String> args) async {
   final sw = Stopwatch()..start();
   int count;
   if (mode == 'old') {
-    // What export_handler.dart did before 2026-09-08.
+    // What export_handler.dart did before 2026-09-08. The method is kept,
+    // deprecated, for this bench alone.
+    // ignore: deprecated_member_use
     final resources = await db.getResourcesByTypeSince(type);
     final file = File(out);
     final sink = file.openWrite();

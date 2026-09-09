@@ -95,6 +95,10 @@ Future<Response> _processTransaction(
     bundle.entry!.length,
     null,
   );
+  final operationByIndex = List<_BundleOperation?>.filled(
+    bundle.entry!.length,
+    null,
+  );
 
   // A FHIR transaction Bundle is all-or-nothing, so it runs inside a database
   // transaction and a failure rolls the whole thing back.
@@ -126,6 +130,7 @@ Future<Response> _processTransaction(
           );
           operations.add(operation);
           resultByIndex[i] = operation.resultEntry;
+          operationByIndex[i] = operation;
         } catch (e) {
           // Recorded, then rethrown: the throw is what aborts the database
           // transaction, and the record is what builds the response after it
@@ -144,10 +149,21 @@ Future<Response> _processTransaction(
       cause,
       stackTrace,
     );
+    final statusCode = cause is BundleEntryException ? cause.statusCode : 400;
+    // Rolled back: no entry changed anything, and every one is recorded as
+    // attempted and failed, the failing entry's status on all of them.
     return _errorResponse(
       'Transaction failed at entry $index',
       cause is BundleEntryException ? cause.message : 'Internal error',
-      statusCode: cause is BundleEntryException ? cause.statusCode : 400,
+      statusCode: statusCode,
+      context: {
+        'audit_subtype': 'transaction',
+        'audit_entries': _auditEntries(
+          bundle,
+          operationByIndex: List.filled(bundle.entry!.length, null),
+          failedStatus: List.filled(bundle.entry!.length, statusCode),
+        ),
+      },
     );
   }
 
@@ -167,6 +183,14 @@ Future<Response> _processTransaction(
   return Response.ok(
     resultBundle.toJsonString(),
     headers: {'Content-Type': 'application/json'},
+    context: {
+      'audit_subtype': 'transaction',
+      'audit_entries': _auditEntries(
+        bundle,
+        operationByIndex: operationByIndex,
+        failedStatus: List.filled(bundle.entry!.length, null),
+      ),
+    },
   );
 }
 
@@ -182,6 +206,11 @@ Future<Response> _processBatch(
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
   final operations = <_BundleOperation>[];
+  final operationByIndex = List<_BundleOperation?>.filled(
+    bundle.entry!.length,
+    null,
+  );
+  final failedStatus = List<int?>.filled(bundle.entry!.length, null);
   final principal = Principal.of(request);
 
   // A POST's id is assigned here too, so a client-supplied id is ignored as
@@ -193,6 +222,7 @@ Future<Response> _processBatch(
   for (var i = 0; i < bundle.entry!.length; i++) {
     final entry = bundle.entry![i];
     if (entry.request == null) {
+      failedStatus[i] = 400;
       resultEntries.add(
         fhir.BundleEntry(
           response: fhir.BundleResponse(
@@ -225,6 +255,7 @@ Future<Response> _processBatch(
       );
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
+      operationByIndex[i] = operation;
 
       // For batch, update urn map after successful POST
       if (operation.method == fhir.HTTPVerb.pOST &&
@@ -239,6 +270,7 @@ Future<Response> _processBatch(
     } catch (e, stackTrace) {
       FhirantLogging().logError('Batch entry $i failed', e, stackTrace);
       final statusCode = e is BundleEntryException ? e.statusCode : 400;
+      failedStatus[i] = statusCode;
       final diagnostic =
           e is BundleEntryException ? e.message : 'Batch entry $i failed';
       resultEntries.add(
@@ -271,7 +303,54 @@ Future<Response> _processBatch(
   return Response.ok(
     resultBundle.toJsonString(),
     headers: {'Content-Type': 'application/json'},
+    context: {
+      'audit_subtype': 'batch',
+      'audit_entries': _auditEntries(
+        bundle,
+        operationByIndex: operationByIndex,
+        failedStatus: failedStatus,
+      ),
+    },
   );
+}
+
+/// What the audit middleware records for each entry of a Bundle, in the
+/// Bundle's order: the entry's method, the record it touched as
+/// `[Type]/[id]` (a created resource by its new id; a search or a failed
+/// POST by the request url, which names no record), its status, and for a
+/// delete the subject of care resolved before the row went. One AuditEvent
+/// per entry follows: a transaction touching N patients used to be one
+/// `POST /` event with no entity (REVIEW-2026-09-06 finding 15). IHE BALP
+/// (profiles.ihe.net/ITI/BALP/content.html, read 2026-09-09) records a
+/// pattern per RESTful interaction and, for the disclosure pattern, says
+/// "multiple patients would be done as multiple audit entries".
+List<Map<String, Object?>> _auditEntries(
+  fhir.Bundle bundle, {
+  required List<_BundleOperation?> operationByIndex,
+  required List<int?> failedStatus,
+}) {
+  final entries = <Map<String, Object?>>[];
+  for (var i = 0; i < bundle.entry!.length; i++) {
+    final request = bundle.entry![i].request;
+    final op = operationByIndex[i];
+    final method = request?.method.valueString ?? 'POST';
+    var url = request?.url.valueString ?? '';
+    if (op != null && op.resourceId != null) {
+      url = '${op.resourceType}/${op.resourceId}';
+    }
+    final declared = op?.resultEntry.response?.status;
+    final status = failedStatus[i] ??
+        int.tryParse((declared?.valueString ?? '200').split(' ').first) ??
+        200;
+    entries.add({
+      'method': method,
+      'url': url,
+      'status': status,
+      if (op != null && op.subjectBeforeDelete != null)
+        'patient': 'Patient/${op.subjectBeforeDelete}',
+    });
+  }
+  return entries;
 }
 
 /// The processing rank of a method in a transaction: DELETE, then POST,
@@ -478,6 +557,7 @@ Future<_BundleOperation> _processBundleEntry(
   fhir.Resource? previousResource;
   fhir.Resource? createdResource;
   fhir.Resource? deletedResource;
+  String? subjectBeforeDelete;
   String status;
   String? location;
 
@@ -844,6 +924,12 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
       deletedResource = existingResource;
+      // The audit trail names the subject of care; after the delete the
+      // index rows that answer that are gone, so it is read now.
+      subjectBeforeDelete = await dbInterface.subjectOfCare(
+        resourceType,
+        resourceId,
+      );
       await _requireStoredInCompartment(
         _entryPatient(principal, resourceType, 'd'),
         resourceType,
@@ -901,6 +987,7 @@ Future<_BundleOperation> _processBundleEntry(
     createdResource: createdResource,
     deletedResource: deletedResource,
     notifiableResource: method == fhir.HTTPVerb.dELETE ? null : resultResource,
+    subjectBeforeDelete: subjectBeforeDelete,
   );
 }
 
@@ -1070,6 +1157,7 @@ class _BundleOperation {
     this.createdResource,
     this.deletedResource,
     this.notifiableResource,
+    this.subjectBeforeDelete,
   });
   final fhir.HTTPVerb method;
   final fhir.R4ResourceType resourceType;
@@ -1084,6 +1172,10 @@ class _BundleOperation {
   /// R4 subscription.html: "there is no notification when a resource is
   /// deleted", so a delete deliberately leaves this null and nothing is sent.
   final fhir.Resource? notifiableResource;
+
+  /// For a delete, the Patient id the deleted resource belonged to, read
+  /// before the delete so the audit record can still name the subject.
+  final String? subjectBeforeDelete;
 }
 
 /// Exception for bundle entry processing that carries an HTTP status code.
@@ -1100,6 +1192,7 @@ Response _errorResponse(
   String message,
   String details, {
   int statusCode = 500,
+  Map<String, Object>? context,
 }) {
   final operationOutcome = fhir.OperationOutcome(
     issue: [
@@ -1115,6 +1208,7 @@ Response _errorResponse(
     statusCode,
     body: operationOutcome.toJsonString(),
     headers: {'Content-Type': 'application/json'},
+    context: context,
   );
 }
 

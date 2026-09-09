@@ -442,6 +442,10 @@ void main() {
       when(
         () => mockDb.deleteResource(fhir.R4ResourceType.Patient, 'del-123'),
       ).thenAnswer((_) async => true);
+      // The subject of care is read before the delete for the audit trail
+      // (REVIEW-2026-09-06 finding 15).
+      when(() => mockDb.subjectOfCare('Patient', 'del-123'))
+          .thenAnswer((_) async => 'del-123');
 
       final response = await bundleHandler(mockRequest, mockDb);
 
