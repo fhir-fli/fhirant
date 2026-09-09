@@ -16,7 +16,7 @@ void main() {
     final server = await createTestServer();
     testDb = server.db;
     handler = server.handler;
-    authToken = generateTestToken();
+    authToken = await issueTestToken(testDb);
   });
 
   tearDown(() async {

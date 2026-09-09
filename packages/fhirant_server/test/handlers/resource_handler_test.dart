@@ -1792,6 +1792,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
       when(() => mockDb.transaction<int>(any())).thenAnswer(
         (i) => (i.positionalArguments.first as Future<int> Function())(),
       );

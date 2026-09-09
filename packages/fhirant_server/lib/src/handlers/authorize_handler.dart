@@ -59,7 +59,9 @@ Future<Response> authorizeGetHandler(
   final aud = params['aud'] ?? '';
 
   if (responseType != 'code') {
-    return _errorRedirect(
+    return _errorToClient(
+      dbInterface,
+      clientId,
       redirectUri,
       state,
       'unsupported_response_type',
@@ -95,7 +97,14 @@ Future<Response> authorizeGetHandler(
   }
   final pkce = _pkceProblem(codeChallenge, codeChallengeMethod);
   if (pkce != null) {
-    return _errorRedirect(redirectUri, state, 'invalid_request', pkce);
+    return _errorToClient(
+      dbInterface,
+      clientId,
+      redirectUri,
+      state,
+      'invalid_request',
+      pkce,
+    );
   }
 
   // Return the login form
@@ -134,7 +143,9 @@ Future<Response> authorizePostHandler(
     final password = params['password'];
 
     if (responseType != 'code') {
-      return _errorRedirect(
+      return await _errorToClient(
+        dbInterface,
+        clientId,
         redirectUri,
         state,
         'unsupported_response_type',
@@ -197,7 +208,14 @@ Future<Response> authorizePostHandler(
         return form(message);
       case _Invalid(:final error, :final description, :final redirectable):
         if (redirectable) {
-          return _errorRedirect(redirectUri, state, error, description);
+          return await _errorToClient(
+            dbInterface,
+            clientId,
+            redirectUri,
+            state,
+            error,
+            description,
+          );
         }
         return Response(
           400,
@@ -417,6 +435,40 @@ Future<_Outcome> _authorize(
       .replace(queryParameters: redirectParams)
       .toString();
   return _Issued(code, redirectUrl);
+}
+
+/// Sends an authorization error to the client's redirect_uri only when that
+/// redirect_uri is the one registered for [clientId]; otherwise the error
+/// is shown as a page. RFC 6749 §4.1.2.1 (read 2026-09-08): "If the request
+/// fails due to a missing, invalid, or mismatching redirection URI, or if
+/// the client identifier is missing or invalid, the authorization server
+/// SHOULD inform the resource owner of the error and MUST NOT automatically
+/// redirect the user-agent to the invalid redirection URI." An unknown
+/// client's redirect_uri is unvalidated, and an unsupported response_type
+/// used to be redirected there before any pin was checked, an open redirect
+/// (REVIEW-2026-09-08 row 15).
+Future<Response> _errorToClient(
+  FhirAntDb db,
+  String? clientId,
+  String? redirectUri,
+  String state,
+  String error,
+  String description,
+) async {
+  if (clientId != null &&
+      clientId.isNotEmpty &&
+      redirectUri != null &&
+      redirectUri.isNotEmpty) {
+    final pinned = await db.getOAuthClientRedirect(clientId);
+    if (pinned != null && _sameRedirect(pinned, redirectUri)) {
+      return _errorRedirect(redirectUri, state, error, description);
+    }
+  }
+  return Response(
+    400,
+    body: _errorPage('$error: $description'),
+    headers: {'Content-Type': 'text/html'},
+  );
 }
 
 /// Why a PKCE pair is unacceptable, or null when it is fine.

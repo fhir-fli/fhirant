@@ -72,16 +72,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       final state = context.read<ServerState>();
 
-      // Start server in dev mode if not running
-      final wasRunning = state.isRunning;
-      if (!wasRunning) {
-        state
-          ..port = 8080
-          ..devMode = true;
-        await state.startServer();
-        // Give server a moment to bind
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-      }
+      // The load writes to the store directly; it needs no server. It used
+      // to start one in Experimentation mode first, and that setter persists
+      // the mode as the operator's choice, so loading the sample data during
+      // onboarding silently committed the install to authentication off
+      // (REVIEW-2026-09-08 row 13).
 
       // Parse JSON off the main isolate to avoid ANR
       final jsonStr = await rootBundle.loadString('assets/sample_data.json');
@@ -110,11 +105,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final db = state.db;
       await db.saveResources(resources);
       final saved = resources.length;
-
-      // Stop server if we started it
-      if (!wasRunning) {
-        await state.stopServer();
-      }
 
       setState(() {
         _sampleDataResult = 'Loaded $saved resources'

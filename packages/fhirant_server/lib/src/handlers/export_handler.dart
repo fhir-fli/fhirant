@@ -6,6 +6,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_bulk/fhir_r4_bulk.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
@@ -119,6 +120,39 @@ Future<Response> exportKickoffHandler(
       for (final filter in kickoff.typeFilters) filter.toString(),
     ];
 
+    // 3. The caller must be able to read every type the job will write.
+    // The middleware checked the FIRST path segment only, so `user/Group.r`
+    // alone started `Group/[id]/$export` and the worker wrote every
+    // Patient-compartment type to disk (REVIEW-2026-09-08 row 12); the
+    // system-level export is admin/system-scoped in the middleware. A
+    // caller with a patient compartment on any of the types is refused:
+    // the export is not confined to a compartment.
+    final principal = Principal.of(request);
+    if (principal != null && exportLevel != 'system') {
+      final compartmentTypes = <String>{
+        'Patient',
+        ...compartmentDefinitions['Patient']!.keys,
+      };
+      final wanted = kickoff.types.isEmpty
+          ? compartmentTypes
+          : compartmentTypes.intersection(kickoff.types.toSet());
+      final unreadable = principal.unauthorizedTypes(wanted, 'r');
+      if (unreadable.isNotEmpty) {
+        return forbidden(
+          'Insufficient scope to export ${unreadable.join(', ')}; narrow '
+          'the request with _type or obtain a scope covering them.',
+        );
+      }
+      final confined =
+          wanted.where((t) => principal.compartmentFor(t, 'r') != null);
+      if (confined.isNotEmpty) {
+        return forbidden(
+          'A patient-scoped token cannot run a bulk export: the export is '
+          'not confined to the patient compartment.',
+        );
+      }
+    }
+
     // 5. Validate group-level: ensure the Group resource exists
     if (exportLevel == 'group' && groupId != null) {
       final groupResource = await dbInterface.getResource(
@@ -147,6 +181,9 @@ Future<Response> exportKickoffHandler(
       groupId: groupId,
       typeFilters:
           typeFilterParams.isNotEmpty ? jsonEncode(typeFilterParams) : null,
+      // The owner: the status, file and cancel routes are answered to this
+      // account and to system authority, and to nobody else.
+      requestedBy: principal?.userId.toString(),
     );
 
     // 7. Spawn background processing (fire-and-forget)
@@ -182,6 +219,17 @@ Future<Response> exportKickoffHandler(
   }
 }
 
+/// A 403 unless the caller is the account that kicked [job] off or holds
+/// system authority (admin role or a `system/` scope), or null. The three
+/// job routes used to be admin-only, so a clinician who started
+/// `Patient/$export` could never collect it (REVIEW-2026-09-08 row 12).
+Response? _refuseUnlessOwner(Request request, ExportJob job) {
+  final principal = Principal.of(request);
+  if (principal == null || principal.isSystem) return null;
+  if (job.requestedBy == principal.userId.toString()) return null;
+  return forbidden('This export job belongs to another account.');
+}
+
 /// Handler for `GET /$export-poll-status/<jobId>`.
 ///
 /// Returns 202 while in-progress, 200 with manifest when complete,
@@ -197,6 +245,8 @@ Future<Response> exportStatusHandler(
     if (job == null) {
       return _operationOutcome(404, 'Export job not found: $jobId');
     }
+    final refused = _refuseUnlessOwner(request, job);
+    if (refused != null) return refused;
 
     switch (job.status) {
       case 'pending':
@@ -265,6 +315,7 @@ Future<Response> exportStatusHandler(
 /// Serves an NDJSON file from disk.
 Future<Response> exportFileHandler(
   Request request,
+  FhirAntDb dbInterface,
   String exportDir,
   String jobId,
   String fileName,
@@ -277,6 +328,12 @@ Future<Response> exportFileHandler(
     if (fileName.contains('..') || fileName.contains('/')) {
       return _operationOutcome(400, 'Invalid file name');
     }
+    final job = await dbInterface.getExportJob(jobId);
+    if (job == null) {
+      return _operationOutcome(404, 'Export job not found: $jobId');
+    }
+    final refused = _refuseUnlessOwner(request, job);
+    if (refused != null) return refused;
 
     final filePath = '$exportDir/$jobId/$fileName';
     final file = File(filePath);
@@ -320,6 +377,8 @@ Future<Response> exportDeleteHandler(
     if (job == null) {
       return _operationOutcome(404, 'Export job not found: $jobId');
     }
+    final refused = _refuseUnlessOwner(request, job);
+    if (refused != null) return refused;
 
     // Mark as cancelled (the background worker checks this)
     await dbInterface.updateExportJob(jobId, status: 'cancelled');

@@ -19,7 +19,7 @@ import 'test_helpers.dart';
 void main() {
   test('_contained=false is answered, being the default behaviour', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'p-1'.toFhirString));
 
     for (final headers in [
@@ -43,7 +43,7 @@ void main() {
 
   test('_contained=true and both are refused, under any Prefer', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'p-1'.toFhirString));
 
     for (final value in ['true', 'both']) {
@@ -73,7 +73,7 @@ void main() {
 
   test('a value outside true|false|both is refused', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     final response = await server.handler(
       testRequest('GET', '/Patient?_contained=maybe', authToken: token),
@@ -89,7 +89,7 @@ void main() {
 
   test('_containedType is checked, and cannot change a false answer', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'p-1'.toFhirString));
 
     final bad = await server.handler(

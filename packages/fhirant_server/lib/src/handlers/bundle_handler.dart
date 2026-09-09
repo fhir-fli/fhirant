@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -59,6 +61,7 @@ Future<Response> _processTransaction(
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
   final operations = <_BundleOperation>[];
+  final principal = Principal.of(request);
 
   // Build urn:uuid map for cross-reference resolution
   final urnMap = _buildUrnUuidMap(bundle.entry!);
@@ -94,6 +97,7 @@ Future<Response> _processTransaction(
             i,
             urnMap,
             subscriptions,
+            principal,
           );
           operations.add(operation);
           resultEntries.add(operation.resultEntry);
@@ -152,6 +156,7 @@ Future<Response> _processBatch(
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
   final operations = <_BundleOperation>[];
+  final principal = Principal.of(request);
 
   // Build urn:uuid map incrementally for batch
   final urnMap = <String, String>{};
@@ -186,6 +191,7 @@ Future<Response> _processBatch(
         i,
         urnMap,
         subscriptions,
+        principal,
       );
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
@@ -297,6 +303,79 @@ dynamic _resolveValue(dynamic value, Map<String, String> urnMap) {
   return value;
 }
 
+/// Refuses the entry when [principal] may not make the same request alone.
+///
+/// An entry `PUT Patient/p2` is the request `PUT /Patient/p2`: the same
+/// scope check ([authorizeRequest]) and, for a token with a patient
+/// compartment, the same confinement of what it reads, writes and deletes.
+/// Nothing inside a Bundle used to be authorized, so a read-only patient
+/// token rewrote another patient through a transaction, and with the root
+/// path public no token was needed at all (REVIEW-2026-09-08 rows 1, 2).
+void _authorizeEntry(
+  Principal? principal,
+  fhir.HTTPVerb method,
+  String path,
+  int entryIndex,
+) {
+  if (principal == null) return;
+  final refused = authorizeRequest(principal, method.toString(), path);
+  if (refused != null) {
+    throw BundleEntryException(
+      refused.statusCode,
+      'Bundle entry $entryIndex: not authorized for $method $path',
+    );
+  }
+}
+
+/// The compartment [principal] confines [permission] on [resourceType]
+/// to, as a Patient id, or null.
+String? _entryPatient(
+  Principal? principal,
+  String resourceType,
+  String permission,
+) =>
+    principal?.compartmentFor(resourceType, permission)?.id;
+
+/// Throws the entry's 403 unless the stored resource is in the compartment.
+Future<void> _requireStoredInCompartment(
+  String? patientId,
+  String resourceType,
+  String resourceId,
+  FhirAntDb dbInterface,
+  int entryIndex,
+) async {
+  if (patientId == null) return;
+  if (await isInPatientCompartment(
+    resourceType,
+    resourceId,
+    patientId,
+    dbInterface,
+  )) {
+    return;
+  }
+  throw BundleEntryException(
+    403,
+    'Bundle entry $entryIndex: $resourceType/$resourceId is not in the '
+    'patient compartment for Patient/$patientId',
+  );
+}
+
+/// Throws the entry's 403 unless the resource about to be written is in
+/// the compartment.
+Future<void> _requireBodyInCompartment(
+  String? patientId,
+  fhir.Resource resource,
+  int entryIndex,
+) async {
+  if (patientId == null) return;
+  if (await isNewResourceInPatientCompartment(resource, patientId)) return;
+  throw BundleEntryException(
+    403,
+    'Bundle entry $entryIndex: the resource is not in the patient '
+    'compartment for Patient/$patientId',
+  );
+}
+
 Future<_BundleOperation> _processBundleEntry(
   fhir.BundleEntry entry,
   FhirAntDb dbInterface,
@@ -304,6 +383,7 @@ Future<_BundleOperation> _processBundleEntry(
   int entryIndex,
   Map<String, String> urnMap,
   SubscriptionService subscriptions,
+  Principal? principal,
 ) async {
   final req = entry.request!;
   final method = req.method;
@@ -338,6 +418,7 @@ Future<_BundleOperation> _processBundleEntry(
       'Bundle entry $entryIndex: Invalid resource type: $resourceType',
     );
   }
+  _authorizeEntry(principal, method, url.split('?').first, entryIndex);
 
   fhir.Resource? resultResource;
   fhir.Resource? previousResource;
@@ -362,6 +443,13 @@ Future<_BundleOperation> _processBundleEntry(
           'Bundle entry $entryIndex: Resource not found',
         );
       }
+      await _requireStoredInCompartment(
+        _entryPatient(principal, resourceType, 'r'),
+        resourceType,
+        resourceId,
+        dbInterface,
+        entryIndex,
+      );
       status = '200';
 
     case fhir.HTTPVerb.pOST:
@@ -378,6 +466,8 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
+      final createPatient = _entryPatient(principal, resourceType, 'c');
+
       // Conditional create: ifNoneExist
       final ifNoneExist = req.ifNoneExist?.valueString;
       if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
@@ -389,6 +479,9 @@ Future<_BundleOperation> _processBundleEntry(
           existing = await dbInterface.search(
             resourceType: resourceTypeEnum,
             searchParameters: searchMap,
+            compartment: createPatient == null
+                ? null
+                : patientCompartment(createPatient),
           );
         } on UnsupportedSearchModifier catch (e) {
           throw BundleEntryException(
@@ -428,6 +521,11 @@ Future<_BundleOperation> _processBundleEntry(
       final resourceToSave = await _activated(
         fhir.Resource.fromJson(resourceJson).newIdIfNoId(),
         subscriptions,
+      );
+      await _requireBodyInCompartment(
+        createPatient,
+        resourceToSave,
+        entryIndex,
       );
 
       final saved = await dbInterface.saveResource(resourceToSave);
@@ -475,6 +573,18 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
+      final updatePatient = _entryPatient(principal, resourceType, 'u');
+      if (updatePatient != null &&
+          await dbInterface.getResource(resourceTypeEnum, resourceId) != null) {
+        await _requireStoredInCompartment(
+          updatePatient,
+          resourceType,
+          resourceId,
+          dbInterface,
+          entryIndex,
+        );
+      }
+
       // Conditional update: ifMatch
       final ifMatch = req.ifMatch?.valueString;
       if (ifMatch != null && ifMatch.isNotEmpty) {
@@ -503,6 +613,7 @@ Future<_BundleOperation> _processBundleEntry(
       }
       final putResource =
           await _activated(fhir.Resource.fromJson(putJson), subscriptions);
+      await _requireBodyInCompartment(updatePatient, putResource, entryIndex);
 
       final updated = await dbInterface.saveResource(putResource);
       if (updated == null) {
@@ -537,6 +648,14 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
       previousResource = currentResource;
+      final patchPatient = _entryPatient(principal, resourceType, 'u');
+      await _requireStoredInCompartment(
+        patchPatient,
+        resourceType,
+        resourceId,
+        dbInterface,
+        entryIndex,
+      );
 
       // Parse patch document from the entry resource
       List<dynamic> patchOperations;
@@ -588,6 +707,12 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
+      await _requireBodyInCompartment(
+        patchPatient,
+        patchedResource,
+        entryIndex,
+      );
+
       // A patch can change criteria or channel, so the server has to decide
       // again whether it can honour the subscription.
       final patchedToSave = await _activated(patchedResource, subscriptions);
@@ -618,6 +743,13 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
       deletedResource = existingResource;
+      await _requireStoredInCompartment(
+        _entryPatient(principal, resourceType, 'd'),
+        resourceType,
+        resourceId,
+        dbInterface,
+        entryIndex,
+      );
 
       final deleteSuccess =
           await dbInterface.deleteResource(resourceTypeEnum, resourceId);

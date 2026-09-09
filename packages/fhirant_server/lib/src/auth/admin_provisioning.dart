@@ -42,6 +42,13 @@ class AdminSetupResult {
 class AdminProvisioning {
   AdminProvisioning._();
 
+  /// Whether an active account with the admin role exists: the condition
+  /// under which Secure mode has an operator who can log in.
+  static Future<bool> hasActiveAdmin(FhirAntDb db) async {
+    final users = await db.getAllUsers();
+    return users.any((u) => u.active && u.role == 'admin');
+  }
+
   /// Minimum username length (mirrors the HTTP register handler).
   static const minUsernameLength = 3;
 
@@ -68,10 +75,13 @@ class AdminProvisioning {
       return AdminSetupResult(AdminSetupStatus.invalid, message: policyError);
     }
 
-    // Bootstrap only applies to an empty user table. Checking the count (rather
-    // than just this username) keeps "the first account is the admin" true and
-    // prevents a second unauthenticated admin from being created.
-    if (await db.getUserCount() > 0) {
+    // Bootstrap applies while the store has no active administrator. It
+    // used to require an EMPTY user table, and the app's Secure switch
+    // asked the same question, so a store holding only non-admin accounts
+    // (or an account registered over the network in Experimentation mode)
+    // was taken as provisioned and the dialog never shown
+    // (REVIEW-2026-09-08 row 13).
+    if (await hasActiveAdmin(db)) {
       return const AdminSetupResult(AdminSetupStatus.alreadyExists);
     }
 

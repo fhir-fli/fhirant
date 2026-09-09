@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
@@ -45,6 +47,12 @@ Future<Response> resourceHistoryHandler(
         '_since and _at are mutually exclusive; specify only one',
       );
     }
+
+    // The compartment, as a read of the resource applies it: a patient
+    // token read any resource's versions (REVIEW-2026-09-08 row 4).
+    final outside =
+        await _refuseOutsideCompartment(request, resourceType, id, dbInterface);
+    if (outside != null) return outside;
 
     // Get history from database (with optional _since or _at filter)
     final total = await dbInterface.countHistory(
@@ -148,15 +156,24 @@ Future<Response> typeHistoryHandler(
       );
     }
 
-    // The page and the total come from SQL (REVIEW-2026-09-06 finding 36).
-    final total =
-        await dbInterface.countTypeHistory(type, since: since, at: at);
+    // The page and the total come from SQL (REVIEW-2026-09-06 finding 36),
+    // inside the token's compartment when it has one for this type
+    // (REVIEW-2026-09-08 row 4).
+    final compartment =
+        Principal.of(request)?.compartmentFor(resourceType, 'r');
+    final total = await dbInterface.countTypeHistory(
+      type,
+      since: since,
+      at: at,
+      compartment: compartment,
+    );
     final paginatedHistory = await dbInterface.getTypeHistory(
       type,
       since: since,
       at: at,
       count: count,
       offset: offset,
+      compartment: compartment,
     );
 
     // Build base URL
@@ -222,12 +239,32 @@ Future<Response> systemHistoryHandler(
     }
 
     // The page and the total come from SQL (REVIEW-2026-09-06 finding 36).
-    final total = await dbInterface.countSystemHistory(since: since, at: at);
+    // System history names no type, so the middleware checked no scope: a
+    // caller with a patient context is confined to its compartment across
+    // every type, and any other caller needs a read on every type, as the
+    // root data operations do (REVIEW-2026-09-08 row 4).
+    final principal = Principal.of(request);
+    CompartmentScope? compartment;
+    if (principal != null) {
+      compartment = principal.compartmentFor('Patient', 'r');
+      if (compartment == null && !principal.mayReadUnscoped) {
+        return forbidden(
+          'System history returns every resource type, so it requires a '
+          'user- or system-context scope covering all resource types.',
+        );
+      }
+    }
+    final total = await dbInterface.countSystemHistory(
+      since: since,
+      at: at,
+      compartment: compartment,
+    );
     final paginatedHistory = await dbInterface.getSystemHistory(
       since: since,
       at: at,
       count: count,
       offset: offset,
+      compartment: compartment,
     );
 
     // Build base URL
@@ -285,6 +322,10 @@ Future<Response> vreadResourceHandler(
       );
       return _validationErrorResponse('Invalid resource type');
     }
+
+    final outside =
+        await _refuseOutsideCompartment(request, resourceType, id, dbInterface);
+    if (outside != null) return outside;
 
     // One row by its key (REVIEW-2026-09-06 finding 36: every version used
     // to be read to find one).
@@ -347,6 +388,24 @@ Future<Response> vreadResourceHandler(
       'Internal error',
     );
   }
+}
+
+/// A 403 when the caller's read of [resourceType] is confined to a patient
+/// compartment and `[resourceType]/[id]` is not a current member of it, or
+/// null. A resource that no longer exists has no index rows to prove
+/// membership by, so its history is refused to a confined caller.
+Future<Response?> _refuseOutsideCompartment(
+  Request request,
+  String resourceType,
+  String id,
+  FhirAntDb dbInterface,
+) async {
+  final patientId = patientContextFor(request, resourceType, 'r');
+  if (patientId == null) return null;
+  if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
+    return null;
+  }
+  return patientScopeForbiddenResponse(resourceType, id, patientId);
 }
 
 /// Parse a FHIR instant/dateTime string into a [DateTime].

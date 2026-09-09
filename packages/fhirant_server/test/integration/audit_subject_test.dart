@@ -55,7 +55,7 @@ void main() {
 
   test('reading an Observation audits the patient it belongs to', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     await server.db.saveResource(fhir.Patient(id: 'pat-1'.toFhirString));
     await server.db.saveResource(
@@ -83,7 +83,7 @@ void main() {
     // The resource entity already is the subject here, so no second entity is
     // added: a duplicate would make the same access look like two.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'pat-2'.toFhirString));
 
     await server.handler(
@@ -106,7 +106,7 @@ void main() {
     // recording nothing: it would answer "who accessed this person's record"
     // with a false positive, in a record kept for legal purposes.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(
       fhir.Organization(
         id: 'org-1'.toFhirString,
@@ -127,7 +127,7 @@ void main() {
     // authorization gap in F1, that made it the sharpest hole in the server:
     // read any record, leave no trace.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     await server.db.saveResource(fhir.Patient(id: 'pat-fp'.toFhirString));
     await server.db.saveResource(
@@ -165,7 +165,7 @@ void main() {
     // server. Recording it would put a disclosure in the trail that did not
     // happen.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     final response = await server.handler(
       testRequest(
@@ -191,7 +191,7 @@ void main() {
     // A display name is not an identifier. Two clinicians who share a name
     // must not be indistinguishable in a record kept for legal purposes.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'pat-who'.toFhirString));
 
     await server.handler(
@@ -229,7 +229,7 @@ void main() {
     // ATNA and ASTM E2147 both expect it, and it comes from the socket rather
     // than from a header the caller controls.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'pat-3'.toFhirString));
 
     await server.handler(

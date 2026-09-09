@@ -141,7 +141,7 @@ void main() {
     });
 
     test('Readonly user POST /Patient returns 403', () async {
-      final readonlyToken = generateTestToken(role: 'readonly');
+      final readonlyToken = await issueTestToken(testDb, role: 'readonly');
 
       final response = await handler(
         testRequest(

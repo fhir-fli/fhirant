@@ -759,12 +759,19 @@ class FhirAntDb extends FhirDb {
   /// (REVIEW-2026-09-06 finding 36: the whole table was read and parsed per
   /// request and paged in Dart). `_at` is the version current at that
   /// instant per resource; `_since` the versions written after it.
+  ///
+  /// With [compartment], only the versions of resources that are CURRENTLY
+  /// members of it (fhirant REVIEW-2026-09-08 row 4): membership is read
+  /// from the reference index of the current version, so the history of a
+  /// resource that has since been deleted, or moved out of the compartment,
+  /// is not in a compartment-confined view.
   Future<List<HistoryEntry>> getTypeHistory(
     fhir.R4ResourceType resourceType, {
     DateTime? since,
     DateTime? at,
     int? count,
     int? offset,
+    CompartmentScope? compartment,
   }) =>
       _historyPage(
         resourceType: resourceType.toString(),
@@ -772,6 +779,7 @@ class FhirAntDb extends FhirDb {
         at: at,
         count: count,
         offset: offset,
+        compartment: compartment,
       );
 
   /// The total [getTypeHistory] pages over.
@@ -779,25 +787,63 @@ class FhirAntDb extends FhirDb {
     fhir.R4ResourceType resourceType, {
     DateTime? since,
     DateTime? at,
+    CompartmentScope? compartment,
   }) =>
       _historyCount(
         resourceType: resourceType.toString(),
         since: since,
         at: at,
+        compartment: compartment,
       );
 
-  /// Every version of every resource, newest first, one page.
+  /// Every version of every resource, newest first, one page; with
+  /// [compartment] as for [getTypeHistory].
   Future<List<HistoryEntry>> getSystemHistory({
     DateTime? since,
     DateTime? at,
     int? count,
     int? offset,
+    CompartmentScope? compartment,
   }) =>
-      _historyPage(since: since, at: at, count: count, offset: offset);
+      _historyPage(
+        since: since,
+        at: at,
+        count: count,
+        offset: offset,
+        compartment: compartment,
+      );
 
   /// The total [getSystemHistory] pages over.
-  Future<int> countSystemHistory({DateTime? since, DateTime? at}) =>
-      _historyCount(since: since, at: at);
+  Future<int> countSystemHistory({
+    DateTime? since,
+    DateTime? at,
+    CompartmentScope? compartment,
+  }) =>
+      _historyCount(since: since, at: at, compartment: compartment);
+
+  /// The SQL that keeps a history row whose resource is a current member of
+  /// [scope]: the focal resource itself, or a resource one of whose
+  /// compartment parameters (the published CompartmentDefinition, as
+  /// generated into `compartmentDefinitions`) points at it in the
+  /// reference index. The same membership rule the store's search applies
+  /// as one condition; here over `resources_history rh`. Two variables:
+  /// the focal id twice.
+  static String _historyCompartmentSql(CompartmentScope scope) {
+    final byType = compartmentDefinitions[scope.type] ?? const {};
+    String typeClause(MapEntry<String, List<String>> e) {
+      final names = e.value.map((p) => "'$p'").join(', ');
+      return "(r.resource_type = '${e.key}' AND r.search_name IN ($names))";
+    }
+
+    final perType = byType.entries.map(typeClause).toList();
+    final member = perType.isEmpty
+        ? '0'
+        : 'EXISTS (SELECT 1 FROM reference_search_parameters r '
+            'WHERE r.resource_type = rh.resource_type AND r.id = rh.id '
+            "AND r.reference_resource_type = '${scope.type}' "
+            'AND r.reference_id_part = ? AND (${perType.join(' OR ')}))';
+    return "((rh.resource_type = '${scope.type}' AND rh.id = ?) OR $member)";
+  }
 
   /// The rows of type or system history as SQL: `_at` is a join to the
   /// latest `last_updated` per resource at or before that instant, `_since`
@@ -809,28 +855,37 @@ class FhirAntDb extends FhirDb {
     required String? resourceType,
     required DateTime? since,
     required DateTime? at,
+    CompartmentScope? compartment,
   }) {
     final typeWhere = resourceType == null ? '' : 'resource_type = ? AND ';
+    final member =
+        compartment == null ? null : _historyCompartmentSql(compartment);
     if (at != null) {
       return 'SELECT $select FROM resources_history rh INNER JOIN ( '
           'SELECT resource_type, id, MAX(last_updated) AS max_lu '
           'FROM resources_history WHERE ${typeWhere}last_updated <= ? '
           'GROUP BY resource_type, id) sub '
           'ON rh.resource_type = sub.resource_type AND rh.id = sub.id '
-          'AND rh.last_updated = sub.max_lu';
+          'AND rh.last_updated = sub.max_lu'
+          '${member == null ? '' : ' WHERE $member'}';
     }
     final sinceWhere = since == null ? '' : 'last_updated > ? ';
     final where = '$typeWhere$sinceWhere'.trim();
     final cut =
         where.endsWith('AND') ? where.substring(0, where.length - 3) : where;
+    final conditions = [
+      if (cut.trim().isNotEmpty) cut.trim(),
+      if (member != null) member,
+    ];
     return 'SELECT $select FROM resources_history rh'
-        '${cut.trim().isEmpty ? '' : ' WHERE ${cut.trim()}'}';
+        '${conditions.isEmpty ? '' : ' WHERE ${conditions.join(' AND ')}'}';
   }
 
   List<Variable<Object>> _historyVariables({
     required String? resourceType,
     required DateTime? since,
     required DateTime? at,
+    CompartmentScope? compartment,
   }) =>
       [
         if (resourceType != null) Variable.withString(resourceType),
@@ -838,6 +893,10 @@ class FhirAntDb extends FhirDb {
           Variable.withInt(at.millisecondsSinceEpoch)
         else if (since != null)
           Variable.withInt(since.millisecondsSinceEpoch),
+        if (compartment != null) ...[
+          Variable.withString(compartment.id),
+          Variable.withString(compartment.id),
+        ],
       ];
 
   Future<List<HistoryEntry>> _historyPage({
@@ -846,12 +905,14 @@ class FhirAntDb extends FhirDb {
     DateTime? at,
     int? count,
     int? offset,
+    CompartmentScope? compartment,
   }) async {
     var sql = _historySql(
       select: 'rh.*',
       resourceType: resourceType,
       since: since,
       at: at,
+      compartment: compartment,
     );
     sql += ' ORDER BY rh.last_updated DESC, rh.version_id DESC';
     if (count != null) {
@@ -865,8 +926,9 @@ class FhirAntDb extends FhirDb {
         resourceType: resourceType,
         since: since,
         at: at,
+        compartment: compartment,
       ),
-      readsFrom: {resourcesHistory},
+      readsFrom: {resourcesHistory, referenceSearchParameters},
     ).get();
     return [
       for (final row in rows)
@@ -878,6 +940,7 @@ class FhirAntDb extends FhirDb {
     String? resourceType,
     DateTime? since,
     DateTime? at,
+    CompartmentScope? compartment,
   }) async {
     final row = await customSelect(
       _historySql(
@@ -885,13 +948,15 @@ class FhirAntDb extends FhirDb {
         resourceType: resourceType,
         since: since,
         at: at,
+        compartment: compartment,
       ),
       variables: _historyVariables(
         resourceType: resourceType,
         since: since,
         at: at,
+        compartment: compartment,
       ),
-      readsFrom: {resourcesHistory},
+      readsFrom: {resourcesHistory, referenceSearchParameters},
     ).getSingle();
     return row.read<int>('c');
   }

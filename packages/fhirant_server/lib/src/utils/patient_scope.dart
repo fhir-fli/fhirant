@@ -2,23 +2,19 @@ import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_server/src/utils/smart_scopes.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:shelf/shelf.dart';
 
-/// Extracts the patient ID from the request context when the user has
-/// patient-only scopes. Returns null if no patient restriction applies.
-String? extractPatientContext(Request request) {
-  final authUser = request.context['auth_user'] as Map<String, dynamic>?;
-  if (authUser == null) return null;
-
-  final scopes = authUser['scopes'] as List<String>?;
-  if (scopes == null) return null;
-
-  // Only enforce patient filtering if scopes are patient-only context
-  if (!SmartScopeEnforcer.isPatientOnlyContext(scopes)) return null;
-
-  return authUser['patientId'] as String?;
-}
+/// The Patient a request is confined to for [permission] on [resourceType],
+/// or null when nothing confines it: [Principal.compartmentFor], read off
+/// the request. The decision is per type and permission (REVIEW-2026-09-08
+/// row 3); it used to be per token, lifted by any `user/` scope anywhere.
+String? patientContextFor(
+  Request request,
+  String resourceType,
+  String permission,
+) =>
+    Principal.of(request)?.compartmentFor(resourceType, permission)?.id;
 
 /// The compartment a patient-scoped token confines a request to.
 CompartmentScope patientCompartment(String patientId) =>

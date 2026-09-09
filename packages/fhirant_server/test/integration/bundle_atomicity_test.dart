@@ -28,7 +28,7 @@ void main() {
   test('a transaction Bundle that fails part-way leaves nothing behind',
       () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     // Two entries that would succeed, then one the server must refuse: a PUT
     // whose URL names a different id than the resource it carries.
@@ -73,7 +73,7 @@ void main() {
     // The other half of the guarantee: rollback must not be so eager that a
     // good Bundle loses work.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     final bundle = {
       'resourceType': 'Bundle',
@@ -102,7 +102,7 @@ void main() {
     // that happen to share an envelope. Sharing a database transaction for
     // speed must not quietly turn it into all-or-nothing.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
 
     final bundle = {
       'resourceType': 'Bundle',

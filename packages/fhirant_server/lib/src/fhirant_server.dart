@@ -157,7 +157,12 @@ class FhirAntServer {
       )
       ..post(
         '/auth/register',
-        (Request req) => registerHandler(req, dbInterface, _jwtService),
+        (Request req) => registerHandler(
+          req,
+          dbInterface,
+          _jwtService,
+          authenticationEnabled: !devMode,
+        ),
       )
       ..post(
         '/auth/login',
@@ -404,7 +409,7 @@ class FhirAntServer {
       ..get(
         r'/$export-file/<jobId>/<fileName>',
         (Request req, String jobId, String fileName) =>
-            exportFileHandler(req, exportDir, jobId, fileName),
+            exportFileHandler(req, dbInterface, exportDir, jobId, fileName),
       )
       // $document operation on Composition
       ..get(

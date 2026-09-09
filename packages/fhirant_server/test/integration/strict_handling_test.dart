@@ -35,7 +35,7 @@ void main() {
   test('strict handling rejects a parameter the server does not implement',
       () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await seed(server.db);
 
     final response = await server.handler(
@@ -59,7 +59,7 @@ void main() {
 
   test('strict handling accepts _filter, which is implemented', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await seed(server.db);
 
     final response = await server.handler(
@@ -81,7 +81,7 @@ void main() {
     // parameters". Rejecting by default would break clients that send them
     // hopefully.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await seed(server.db);
 
     for (final headers in [
@@ -113,7 +113,7 @@ void main() {
     // ignore half a filter: dropping the condition returns every patient and
     // tells the client its filter ran.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await seed(server.db);
 
     for (final headers in [
@@ -137,7 +137,7 @@ void main() {
     // The rejection must be scoped to what is genuinely unsupported, or
     // strict handling becomes unusable.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await seed(server.db);
 
     final response = await server.handler(

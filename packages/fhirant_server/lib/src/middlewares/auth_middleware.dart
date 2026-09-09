@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
@@ -24,11 +23,26 @@ const _publicPaths = {
   'health',
 };
 
+/// Whether [request] is one of the routes that take no credential.
+///
+/// The root is public for the welcome page only: a bare `GET /`. `POST /`
+/// is the transaction/batch endpoint and `GET /?…` the system search, and
+/// both used to pass here because the path is empty, so a transaction
+/// Bundle and a search of every resource type needed no token at all
+/// (REVIEW-2026-09-08 row 1).
+bool _isPublic(Request request) {
+  final path = request.url.path;
+  if (path.isEmpty) {
+    return request.method == 'GET' && !request.url.hasQuery;
+  }
+  return _publicPaths.contains(path) || _publicPrefixes.any(path.startsWith);
+}
+
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context.
 ///
-/// Public routes (auth/*, metadata, favicon.ico, .well-known/*, root)
-/// pass through without authentication.
+/// Public routes (auth/*, metadata, favicon.ico, .well-known/*, a bare
+/// `GET /`) pass through without authentication.
 Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
   return (Handler innerHandler) {
     return (Request request) async {
@@ -36,10 +50,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
 
       // Public routes: auth not required, but optionally inject auth_user
       // if a valid token is present (needed for e.g. admin registering users).
-      final isPublic = path.isEmpty ||
-          _publicPaths.contains(path) ||
-          _publicPrefixes.any(path.startsWith);
-      if (isPublic) {
+      if (_isPublic(request)) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
           final rawToken = authHeader.substring(7);
@@ -61,19 +72,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // Check for Authorization header
       final authHeader = request.headers['authorization'];
       if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-        return Response(
-          401,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'login',
-                'diagnostics': 'Missing or invalid Authorization header',
-              }
-            ],
-          }),
-        );
+        return unauthorized('Missing or invalid Authorization header');
       }
 
       // Verify token. A refresh token is a valid signature with the wrong
@@ -83,37 +82,34 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       final token = authHeader.substring(7);
       final payload = jwtService.verifyAccessToken(token);
       if (payload == null) {
-        return Response(
-          401,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'login',
-                'diagnostics': 'Token is invalid or expired',
-              }
-            ],
-          }),
-        );
+        return unauthorized('Token is invalid or expired');
       }
 
       // Check if the token has been revoked
       final revoked = await dbInterface.isTokenRevoked(TokenHasher.hash(token));
       if (revoked) {
-        return Response(
-          401,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'login',
-                'diagnostics': 'Token has been revoked',
-              }
-            ],
-          }),
-        );
+        return unauthorized('Token has been revoked');
+      }
+
+      // The account behind the token, re-read on every request: one indexed
+      // read by id. A token used to authenticate for its whole life (8 h;
+      // the refresh token 7 d) after the account was deactivated or locked,
+      // because nothing here looked at the account again
+      // (REVIEW-2026-09-08 row 14). An account cannot be deleted, only
+      // deactivated, so a missing row is a token this store never issued.
+      final rawUserId = payload['userId'];
+      final userId =
+          rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
+      final account = await dbInterface.getUserById(userId);
+      if (account == null) {
+        return unauthorized('The account this token names does not exist');
+      }
+      if (!account.active) {
+        return unauthorized('Account is deactivated');
+      }
+      final lockedUntil = account.lockedUntil;
+      if (lockedUntil != null && lockedUntil.isAfter(DateTime.now())) {
+        return unauthorized('Account is locked');
       }
 
       // Extract scopes from JWT (fall back to role defaults for legacy tokens)
@@ -131,136 +127,26 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // NARROWS access, in which case dropping it leaves the broader scopes
       // standing and the token ends up more powerful than its issuer intended.
       if (!SmartScopeEnforcer.allScopesParse(scopes)) {
-        return Response(
-          403,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'forbidden',
-                'diagnostics': 'Token carries a scope this server does not '
-                    'understand. Scopes must use SMART v2 syntax '
-                    '(context/Resource.cruds).',
-              }
-            ],
-          }),
+        return forbidden(
+          'Token carries a scope this server does not understand. Scopes '
+          'must use SMART v2 syntax (context/Resource.cruds).',
         );
       }
 
-      // Extract patient context from JWT (for patient-level scopes)
-      final patientId = payload['patient'] as String?;
-
-      // Privileged root-level system operations ($backup/$restore/$export…)
-      // carry no resource type, so the resource-scope check below never
-      // covers them. Enforce system-level authorization (admin role, or an
-      // explicit system/ scope) here, or any authenticated user — including
-      // readonly — could dump or overwrite the entire database.
-      //
-      // On a single-operator on-device deployment the sole account is the
-      // bootstrap admin, so this does not impede the intended mobile use.
-      if (SmartScopeEnforcer.isPrivilegedSystemOperation(path)) {
-        final role = payload['role'] as String? ?? 'readonly';
-        if (!SmartScopeEnforcer.isSystemAuthorized(scopes, role)) {
-          return Response(
-            403,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'forbidden',
-                  'diagnostics': 'This operation requires system-level (admin) '
-                      'privilege.',
-                }
-              ],
-            }),
-          );
-        }
-      }
-
-      // Determine the required permission for this request
-      final permission =
-          SmartScopeEnforcer.methodToPermission(request.method, path);
-
-      // Root-level operations name no resource type, so the resource-scope
-      // check below cannot cover them and used to let any authenticated
-      // caller through — including a read-only or patient-scoped one. Since
-      // several of them read arbitrary stored data ($fhirpath fetches any
-      // resource by id), they are gated here instead, deny-by-default: only
-      // the operations that work purely on what the caller posted are exempt.
-      if (SmartScopeEnforcer.isRootDataOperation(path)) {
-        if (!SmartScopeEnforcer.isUnscopedDataAccessAuthorized(
-          scopes,
-          permission ?? 'r',
-        )) {
-          return Response(
-            403,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'forbidden',
-                  'diagnostics': 'This operation can return data the request '
-                      'does not name, so it requires a user- or system-context '
-                      'scope covering all resource types.',
-                }
-              ],
-            }),
-          );
-        }
-      }
-      if (permission != null) {
-        final resourceType = SmartScopeEnforcer.resourceTypeFromPath(path);
-        // Only enforce scopes for resource-targeted requests
-        if (resourceType != null) {
-          if (!SmartScopeEnforcer.isAuthorized(
-            scopes,
-            resourceType,
-            permission,
-          )) {
-            return Response(
-              403,
-              body: jsonEncode({
-                'resourceType': 'OperationOutcome',
-                'issue': [
-                  {
-                    'severity': 'error',
-                    'code': 'forbidden',
-                    'diagnostics':
-                        'Insufficient scope for $permission on $resourceType',
-                  }
-                ],
-              }),
-            );
-          }
-
-          // If patient/ scopes are present but no patient context, reject
-          if (SmartScopeEnforcer.hasPatientScopes(scopes) &&
-              patientId == null) {
-            return Response(
-              403,
-              body: jsonEncode({
-                'resourceType': 'OperationOutcome',
-                'issue': [
-                  {
-                    'severity': 'error',
-                    'code': 'forbidden',
-                    'diagnostics': 'patient/ scopes require a patient context '
-                        '(patient claim in JWT)',
-                  }
-                ],
-              }),
-            );
-          }
-        }
-      }
+      final principal = Principal(
+        userId: userId,
+        username: payload['username'] as String? ?? account.username,
+        role: payload['role'] as String? ?? account.role,
+        scopes: scopes,
+        patientId: payload['patient'] as String?,
+      );
+      final refused = authorizeRequest(principal, request.method, path);
+      if (refused != null) return refused;
 
       // Inject auth_user (with scopes and patient context) into context
       payload['scopes'] = scopes;
-      if (patientId != null) {
-        payload['patientId'] = patientId;
+      if (principal.patientId != null) {
+        payload['patientId'] = principal.patientId;
       }
       final updatedRequest = request.change(context: {'auth_user': payload});
       return innerHandler(updatedRequest);

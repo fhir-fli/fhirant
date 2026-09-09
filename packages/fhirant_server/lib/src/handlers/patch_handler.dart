@@ -43,7 +43,7 @@ Future<Response> patchResourceHandler(
     }
 
     // Patient-level scope enforcement for patch
-    final patchPatientId = extractPatientContext(request);
+    final patchPatientId = patientContextFor(request, resourceType, 'u');
     if (patchPatientId != null) {
       if (!await isInPatientCompartment(
         resourceType,
@@ -104,6 +104,16 @@ Future<Response> patchResourceHandler(
         return _validationErrorResponse(
           'Patch operation cannot change resource ID',
         );
+      }
+
+      // The patched resource must still be in the compartment, as a PUT's
+      // body must (REVIEW-2026-09-08 row 11).
+      if (patchPatientId != null &&
+          !await isNewResourceInPatientCompartment(
+            patchedResource,
+            patchPatientId,
+          )) {
+        return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
       }
 
       // Save the patched resource (creates new version automatically)

@@ -15,7 +15,7 @@ void main() {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
-    token = generateTestToken(role: 'admin', scopes: ['system/*.*']);
+    token = await issueTestToken(db, role: 'admin', scopes: ['system/*.*']);
   });
 
   tearDown(() async {

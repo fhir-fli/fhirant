@@ -27,8 +27,10 @@ Response? _refuseOutsidePatientContext(
   Request request,
   String compartmentType,
   String compartmentId,
+  String resourceType,
+  String permission,
 ) {
-  final patientId = extractPatientContext(request);
+  final patientId = patientContextFor(request, resourceType, permission);
   if (patientId == null) return null;
   if (compartmentType == 'Patient' && compartmentId == patientId) return null;
   return patientScopeForbiddenResponse(
@@ -69,7 +71,13 @@ Future<Response> everythingHandler(
     if (focalType == null) {
       return _operationOutcome(400, 'Invalid resource type: $compartmentType');
     }
-    final outside = _refuseOutsidePatientContext(request, compartmentType, id);
+    final outside = _refuseOutsidePatientContext(
+      request,
+      compartmentType,
+      id,
+      compartmentType,
+      'r',
+    );
     if (outside != null) return outside;
     final focalResource = await dbInterface.getResource(focalType, id);
     if (focalResource == null) {
@@ -292,6 +300,8 @@ Future<Response> compartmentSearchHandler(
       request,
       compartmentType,
       compartmentId,
+      resourceType,
+      's',
     );
     if (outside != null) return outside;
     final scopes = _scopesOf(request);

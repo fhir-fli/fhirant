@@ -158,7 +158,10 @@ void main() {
       expect(smartResponse.statusCode, equals(200));
     });
 
-    test('auth endpoints still work for registration', () async {
+    test('registration is closed while authentication is off', () async {
+      // REVIEW-2026-09-08 row 13: the endpoint is public and the first
+      // registrant is forced to admin, so with registration open anyone on
+      // the network could register the account Secure mode later trusts.
       final response = await handler(
         testRequest(
           'POST',
@@ -171,7 +174,8 @@ void main() {
         ),
       );
 
-      expect(response.statusCode, equals(201));
+      expect(response.statusCode, equals(403));
+      expect(await testDb.getUserCount(), 0);
     });
   });
 
@@ -202,7 +206,7 @@ void main() {
     });
 
     test('accepts authenticated requests', () async {
-      final token = generateTestToken(role: 'admin');
+      final token = await issueTestToken(authDb, role: 'admin');
       final response = await authHandler(
         testRequest(
           'GET',

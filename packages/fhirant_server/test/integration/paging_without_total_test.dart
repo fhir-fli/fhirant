@@ -15,7 +15,7 @@ import 'test_helpers.dart';
 void main() {
   Future<Map<String, dynamic>> page(String query) async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.cruds']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     for (var i = 0; i < 5; i++) {
       await server.db.saveResource(
         fhir.Patient(

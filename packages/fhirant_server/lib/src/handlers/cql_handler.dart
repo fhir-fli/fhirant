@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_cql/fhir_r4_cql.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:shelf/shelf.dart';
 
 /// Library/$evaluate — evaluate a stored CQL Library resource.
@@ -50,6 +51,8 @@ Future<Response> libraryEvaluateHandler(
 
     // Parse request body for evaluation parameters
     final evalParams = await _parseEvaluateParams(request);
+    final refused = _evaluationRefusal(request, evalParams);
+    if (refused != null) return refused;
 
     // Build execution context
     final context = await _buildContext(
@@ -107,6 +110,8 @@ Future<Response> libraryEvaluateByUrlHandler(
     }
 
     final evalParams = _parseParametersResource(bodyJson);
+    final refused = _evaluationRefusal(request, evalParams);
+    if (refused != null) return refused;
 
     // Resolve the Library — by URL, inline resource, or inline CQL/ELM
     CqlLibrary? cqlLibrary;
@@ -208,6 +213,8 @@ Future<Response> cqlHandler(
             'is required',
       );
     }
+    final refused = _evaluationRefusal(request, evalParams);
+    if (refused != null) return refused;
 
     CqlLibrary cqlLibrary;
     try {
@@ -247,6 +254,47 @@ Future<Response> cqlHandler(
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/// Refuses an evaluation the caller may not run, or returns null.
+///
+/// `_buildContext` reads the subject Patient and, absent a `data` Bundle,
+/// searches a dozen types for that patient, so an evaluation is a read of
+/// any patient's record that names it. The route passes the middleware on
+/// `r` for Library alone, which a `patient/*.rs` token holds, and the
+/// handler applied no compartment: a patient-scoped token evaluated
+/// arbitrary CQL over any patient (REVIEW-2026-09-08 row 6). The rule: a
+/// caller whose read of Patient is confined to a compartment may evaluate
+/// over that patient and no other; any other caller needs a user- or
+/// system-context read on every type, as `$cql` and `$fhirpath` already
+/// require at the root.
+Response? _evaluationRefusal(Request request, _EvalParams params) {
+  final principal = Principal.of(request);
+  if (principal == null) return null;
+  final compartment = principal.compartmentFor('Patient', 'r');
+  if (compartment != null) {
+    final subject = params.subject;
+    final own = subject != null &&
+        (subject == 'Patient/${compartment.id}' || subject == compartment.id);
+    if (!own) {
+      return _errorResponse(
+        403,
+        'forbidden',
+        'A patient-scoped token may evaluate over its own patient only '
+            '(subject=Patient/${compartment.id})',
+      );
+    }
+    return null;
+  }
+  if (!principal.mayReadUnscoped) {
+    return _errorResponse(
+      403,
+      'forbidden',
+      "Evaluation reads the subject's whole record, so it requires a "
+          'user- or system-context scope covering all resource types.',
+    );
+  }
+  return null;
+}
 
 /// Parsed evaluation parameters shared across all three endpoints.
 class _EvalParams {

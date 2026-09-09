@@ -26,7 +26,7 @@ void main() {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
-    token = generateTestToken(scopes: ['user/*.cruds']);
+    token = await issueTestToken(db, scopes: ['user/*.cruds']);
     for (final id in ['p1', 'p2']) {
       await db.saveResource(
         fhir.Patient.fromJson({

@@ -271,14 +271,25 @@ void main() {
         r'/$backup',
         r'/$restore',
         r'/$export',
-        r'/$export-poll-status/abc',
-        r'/$export-file/abc/Patient.ndjson',
       ]) {
         expect(
           SmartScopeEnforcer.isPrivilegedSystemOperation(path),
           isTrue,
           reason: path,
         );
+      }
+    });
+
+    test('the export job routes are owner-checked, not admin-only', () {
+      // REVIEW-2026-09-08 row 12: the handler answers the job's owner and
+      // system authority; the middleware no longer demands admin.
+      for (final path in [
+        r'/$export-poll-status/abc',
+        r'/$export-file/abc/Patient.ndjson',
+      ]) {
+        expect(SmartScopeEnforcer.isPrivilegedSystemOperation(path), isFalse);
+        expect(SmartScopeEnforcer.isOwnerCheckedOperation(path), isTrue);
+        expect(SmartScopeEnforcer.isRootDataOperation(path), isTrue);
       }
     });
 

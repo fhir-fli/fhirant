@@ -53,6 +53,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('returns 200 with history bundle', () async {
@@ -423,6 +424,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('returns 200 with type-level history', () async {
@@ -641,6 +643,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('returns 200 with system history', () async {
@@ -865,6 +868,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('returns 200 with specific version', () async {

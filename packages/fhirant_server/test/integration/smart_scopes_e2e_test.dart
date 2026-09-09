@@ -271,7 +271,7 @@ void main() {
   group('Backward compatibility', () {
     test('legacy token without scope claim uses role defaults', () async {
       // Generate a token without scopes (like old tokens)
-      final legacyToken = generateTestToken();
+      final legacyToken = await issueTestToken(db);
 
       // Should still work — clinician defaults to user/*.*
       final response = await handler(
@@ -286,7 +286,7 @@ void main() {
     });
 
     test('legacy readonly token still blocked from writes', () async {
-      final legacyToken = generateTestToken(role: 'readonly');
+      final legacyToken = await issueTestToken(db, role: 'readonly');
 
       final response = await handler(
         testRequest(

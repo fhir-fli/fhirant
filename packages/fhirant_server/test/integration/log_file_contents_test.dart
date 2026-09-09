@@ -34,7 +34,7 @@ void main() {
 
   test('search parameter values do not reach the log file', () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.rs']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.rs']);
 
     await server.handler(
       testRequest(
@@ -68,7 +68,7 @@ void main() {
     // protected. Repeating it here would duplicate protected content into an
     // unprotected place.
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.rs']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.rs']);
 
     await server.handler(
       testRequest('GET', '/Patient/patient-12345', authToken: token),
@@ -84,7 +84,7 @@ void main() {
   test('the file is still plaintext, but no longer carries the identifiers',
       () async {
     final server = await createTestServer();
-    final token = generateTestToken(scopes: ['user/*.rs']);
+    final token = await issueTestToken(server.db, scopes: ['user/*.rs']);
 
     await server.handler(
       testRequest('GET', '/Observation?subject=Patient/abc', authToken: token),

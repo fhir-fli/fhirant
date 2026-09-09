@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
 import 'package:fhirant_server/src/utils/filter_expression.dart';
@@ -116,10 +117,19 @@ Future<Response> systemSearchHandler(
     // apply to _type, because a resource has exactly one type and an AND of
     // two of them matches nothing. So repetitions are unioned here, the same
     // as commas.
+    // Authorization per type (REVIEW-2026-09-08 rows 1 and 5). The
+    // middleware sees no type in `GET /?…` or `POST /_search`, so each type
+    // searched is checked here as `GET /[type]?…` would be: a type named
+    // in `_type` the token may not search is refused; without `_type`, the
+    // search runs over the types the token may search; a type the token's
+    // scopes confine runs inside the patient compartment.
+    final principal = Principal.of(request);
     final typeParam = mergedParams['_type'];
     final List<fhir.R4ResourceType> types;
     if (typeParam == null || typeParam.isEmpty) {
-      types = await dbInterface.getResourceTypes()
+      types = (await dbInterface.getResourceTypes())
+          .where((t) => principal == null || principal.may(t.toString(), 's'))
+          .toList()
         ..sort((a, b) => a.toString().compareTo(b.toString()));
     } else {
       final names = typeParam
@@ -140,7 +150,17 @@ Future<Response> systemSearchHandler(
         resolved.add(type);
       }
       types = resolved;
+      if (principal != null) {
+        final refusedTypes = principal.unauthorizedTypes(names, 's');
+        if (refusedTypes.isNotEmpty) {
+          return forbidden(
+            'Insufficient scope for s on ${refusedTypes.join(', ')}',
+          );
+        }
+      }
     }
+    CompartmentScope? compartmentOf(fhir.R4ResourceType type) =>
+        principal?.compartmentFor(type.toString(), 's');
 
     final searchParamsIn = Map<String, List<String>>.from(mergedParams)
       ..remove('_type');
@@ -235,6 +255,7 @@ Future<Response> systemSearchHandler(
         resourceType: type,
         searchParameters: searchParameters,
         hasParameters: hasParams,
+        compartment: compartmentOf(type),
       );
     }
     final totalCount = counts.values.fold<int>(0, (a, b) => a + b);
@@ -271,6 +292,7 @@ Future<Response> systemSearchHandler(
         count: remaining,
         offset: skip,
         sort: sort,
+        compartment: compartmentOf(type),
       );
       skip = 0;
       remaining -= page.length;
@@ -507,7 +529,7 @@ Future<Response> _searchResources(
     // 3.1.1.2, one SQL condition in the store. A type the compartment does
     // not include comes back empty from the store. This used to fetch every
     // id in the compartment for the type and pass the list back in as `_id`.
-    final patientId = extractPatientContext(request);
+    final patientId = patientContextFor(request, resourceType, 's');
     final compartment =
         patientId == null ? null : patientCompartment(patientId);
 
@@ -710,6 +732,13 @@ Future<Response> _searchResources(
     final includedResources = <fhir.Resource>[];
     final includedResourceIds = <String>{};
     var includesTruncated = false;
+    // An include is a read of another resource, and gets the same answer a
+    // direct read would: a type the token may not read is left out, and a
+    // type confined to the patient compartment yields only its members. An
+    // include used to be neither scope- nor compartment-checked, so
+    // `_include=Observation:has-member` handed a patient another patient's
+    // Observation (REVIEW-2026-09-08 row 10).
+    final principal = Principal.of(request);
     int remaining() => maxIncluded - includedResources.length;
 
     if (include != null && include.isNotEmpty) {
@@ -719,6 +748,7 @@ Future<Response> _searchResources(
         includedResources,
         includedResourceIds,
         dbInterface,
+        principal: principal,
         limit: remaining(),
       );
     }
@@ -740,6 +770,7 @@ Future<Response> _searchResources(
           nextBatch,
           nextBatchIds,
           dbInterface,
+          principal: principal,
           existingIds: includedResourceIds,
           limit: remaining(),
         );
@@ -757,6 +788,7 @@ Future<Response> _searchResources(
         includedResources,
         includedResourceIds,
         dbInterface,
+        principal: principal,
         limit: remaining(),
       );
     }
@@ -778,6 +810,7 @@ Future<Response> _searchResources(
           nextBatch,
           nextBatchIds,
           dbInterface,
+          principal: principal,
           existingIds: includedResourceIds,
           limit: remaining(),
         );
@@ -949,6 +982,7 @@ Future<bool> _processIncludes(
   List<fhir.Resource> includedResources,
   Set<String> includedResourceIds,
   FhirAntDb dbInterface, {
+  Principal? principal,
   Set<String>? existingIds,
   int limit = 1 << 30,
 }) async {
@@ -992,6 +1026,8 @@ Future<bool> _processIncludes(
     for (final refType in wanted.keys.toList()..sort()) {
       final refTypeEnum = fhir.R4ResourceType.fromString(refType);
       if (refTypeEnum == null) continue;
+      if (principal != null && !principal.may(refType, 'r')) continue;
+      final compartment = principal?.compartmentFor(refType, 'r');
       final ids = wanted[refType]!..sort();
       if (added >= limit) {
         truncated = true;
@@ -1005,8 +1041,20 @@ Future<bool> _processIncludes(
         final take =
             ids.sublist(from, (from + (limit - added)).clamp(0, ids.length));
         from += take.length;
-        for (final refResource
-            in await dbInterface.getResources(refTypeEnum, take)) {
+        // Confined to the compartment when the token's read of this type
+        // is: the members among the ids, through the store's compartment
+        // condition, rather than every id.
+        final read = compartment == null
+            ? await dbInterface.getResources(refTypeEnum, take)
+            : await dbInterface.search(
+                resourceType: refTypeEnum,
+                searchParameters: {
+                  '_id': [take.join(',')],
+                },
+                compartment: compartment,
+                count: take.length,
+              );
+        for (final refResource in read) {
           final compositeKey = '$refType/${refResource.id?.valueString}';
           if (includedResourceIds.contains(compositeKey)) continue;
           includedResources.add(refResource);
@@ -1041,6 +1089,7 @@ Future<bool> _processRevIncludes(
   List<fhir.Resource> includedResources,
   Set<String> includedResourceIds,
   FhirAntDb dbInterface, {
+  Principal? principal,
   Set<String>? existingIds,
   int limit = 1 << 30,
 }) async {
@@ -1063,6 +1112,7 @@ Future<bool> _processRevIncludes(
     if (parts.length < 2) continue;
     final revincludeType = fhir.R4ResourceType.fromString(parts[0]);
     if (revincludeType == null) continue;
+    if (principal != null && !principal.may(parts[0], 'r')) continue;
     final revincludeSearchParam = parts[1];
     final targetTypeFilter = parts.length > 2 ? parts[2] : null;
 
@@ -1081,6 +1131,7 @@ Future<bool> _processRevIncludes(
         revincludeSearchParam: [refs.join(',')],
       },
       count: limit - added + 1,
+      compartment: principal?.compartmentFor(parts[0], 'r'),
     );
 
     for (final revResource in revincludeResults) {
@@ -1127,6 +1178,13 @@ Future<Response> postResourceHandler(
       );
     }
 
+    // Patient-level scope enforcement for create: decided first, because
+    // the If-None-Exist search below runs inside the same compartment. It
+    // used to run unconfined, so a patient-scoped token could name another
+    // patient's resource in the header and be answered with it
+    // (REVIEW-2026-09-08 row 8).
+    final createPatientId = patientContextFor(request, resourceType, 'c');
+
     // Conditional create: If-None-Exist header
     final ifNoneExist = request.headers['if-none-exist'];
     if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
@@ -1144,6 +1202,9 @@ Future<Response> postResourceHandler(
             existing = await dbInterface.search(
               resourceType: type,
               searchParameters: searchParams,
+              compartment: createPatientId == null
+                  ? null
+                  : patientCompartment(createPatientId),
             );
           } on UnsupportedValueSetCompose catch (e) {
             // `:in` / `:not-in` against a ValueSet whose compose this store
@@ -1194,8 +1255,6 @@ Future<Response> postResourceHandler(
       }
     }
 
-    // Patient-level scope enforcement for create
-    final createPatientId = extractPatientContext(request);
     if (createPatientId != null) {
       if (!await isNewResourceInPatientCompartment(
         resource,
@@ -1296,14 +1355,24 @@ Future<Response> putResourceHandler(
       );
     }
 
-    // Patient-level scope enforcement for update
-    final updatePatientId = extractPatientContext(request);
+    // Patient-level scope enforcement for update: the stored resource must
+    // be in the compartment, and so must the resource about to replace it.
+    // Only the stored one used to be checked, so a patient could write its
+    // own Observation with another patient as subject and move it out of
+    // the compartment (REVIEW-2026-09-08 row 11).
+    final updatePatientId = patientContextFor(request, resourceType, 'u');
     if (updatePatientId != null) {
       if (!await isInPatientCompartment(
         resourceType,
         id,
         updatePatientId,
         dbInterface,
+      )) {
+        return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
+      }
+      if (!await isNewResourceInPatientCompartment(
+        updatedResource,
+        updatePatientId,
       )) {
         return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
@@ -1392,7 +1461,7 @@ Future<Response> getResourceByIdHandler(
     if (resource != null) {
       // Patient-level scope enforcement: verify resource is in patient
       // compartment
-      final readPatientId = extractPatientContext(request);
+      final readPatientId = patientContextFor(request, resourceType, 'r');
       if (readPatientId != null) {
         if (!await isInPatientCompartment(
           resourceType,
@@ -1592,7 +1661,7 @@ Future<Response> deleteResourceHandler(
     }
 
     // Patient-level scope enforcement for delete
-    final deletePatientId = extractPatientContext(request);
+    final deletePatientId = patientContextFor(request, resourceType, 'd');
     if (deletePatientId != null) {
       if (!await isInPatientCompartment(
         resourceType,
@@ -1681,10 +1750,16 @@ Future<Response> conditionalDeleteHandler(
     // so one URL cannot empty a store or leave it half emptied
     // (REVIEW-2026-09-06 finding 41). One more than the limit is asked for,
     // to know whether the limit was exceeded without counting the whole set.
+    // Inside the token's compartment, if it has one: a patient-scoped
+    // `DELETE /Observation?status=final` used to delete every patient's
+    // (REVIEW-2026-09-08 row 9).
+    final deletePatientId = patientContextFor(request, resourceType, 'd');
     final results = await dbInterface.search(
       resourceType: type,
       searchParameters: searchParams,
       count: kMaxConditionalDeletes + 1,
+      compartment:
+          deletePatientId == null ? null : patientCompartment(deletePatientId),
     );
     if (results.length > kMaxConditionalDeletes) {
       return Response(

@@ -31,6 +31,21 @@ void main() {
     }
   });
 
+  /// A completed job row, as the file handler now looks it up before
+  /// serving (REVIEW-2026-09-08 row 12: files are answered to the owner).
+  void stubJob(String id) {
+    when(() => mockDb.getExportJob(id)).thenAnswer(
+      (_) async => ExportJob(
+        jobId: id,
+        status: 'completed',
+        requestUrl: r'http://localhost/$export',
+        transactionTime: DateTime.now(),
+        createdAt: DateTime.now(),
+        exportLevel: 'system',
+      ),
+    );
+  }
+
   void stubCreateExportJob() {
     when(
       () => mockDb.createExportJob(
@@ -531,9 +546,11 @@ void main() {
   group('exportFileHandler', () {
     test('returns 404 when file does not exist', () async {
       final request = makeRequest(r'/$export-file/x/Patient.ndjson');
+      stubJob(jobId);
 
       final response = await exportFileHandler(
         request,
+        mockDb,
         exportDir,
         jobId,
         'Patient.ndjson',
@@ -547,6 +564,7 @@ void main() {
 
       final response = await exportFileHandler(
         request,
+        mockDb,
         exportDir,
         jobId,
         '../../../etc/passwd',
@@ -560,6 +578,7 @@ void main() {
 
       final response = await exportFileHandler(
         request,
+        mockDb,
         exportDir,
         '..',
         'Patient.ndjson',
@@ -580,8 +599,10 @@ void main() {
       await file.writeAsString('${jsonEncode(patient.toJson())}\n');
 
       final request = makeRequest(r'/$export-file/x/Patient.ndjson');
+      stubJob(jobId);
       final response = await exportFileHandler(
         request,
+        mockDb,
         exportDir,
         jobId,
         'Patient.ndjson',

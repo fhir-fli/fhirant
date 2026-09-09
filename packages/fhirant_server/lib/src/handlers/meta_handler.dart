@@ -14,8 +14,9 @@ Future<Response?> _refuseOutsidePatientCompartment(
   String resourceType,
   String id,
   FhirAntDb dbInterface,
+  String permission,
 ) async {
-  final patientId = extractPatientContext(request);
+  final patientId = patientContextFor(request, resourceType, permission);
   if (patientId == null) return null;
   if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
     return null;
@@ -52,6 +53,7 @@ Future<Response> metaHandler(
       resourceType,
       id,
       dbInterface,
+      'r',
     );
     if (outside != null) return outside;
 
@@ -110,6 +112,7 @@ Future<Response> metaAddHandler(
       resourceType,
       id,
       dbInterface,
+      'u',
     );
     if (outsideAdd != null) return outsideAdd;
 
@@ -189,6 +192,7 @@ Future<Response> metaDeleteHandler(
       resourceType,
       id,
       dbInterface,
+      'u',
     );
     if (outsideDelete != null) return outsideDelete;
 

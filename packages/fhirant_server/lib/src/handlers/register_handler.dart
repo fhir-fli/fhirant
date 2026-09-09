@@ -15,11 +15,29 @@ const _validRoles = {'admin', 'clinician', 'readonly'};
 ///
 /// First-user bootstrap: if no users exist, anyone can register and is forced
 /// to admin role. Otherwise, only admins can register new users.
+///
+/// With [authenticationEnabled] false (Experimentation mode) registration is
+/// refused outright: the endpoint is public, and with no users the first
+/// registrant is forced to admin, so anyone on the network could register
+/// the account Secure mode later trusts as its administrator
+/// (REVIEW-2026-09-08 row 13). The operator provisions accounts through the
+/// app (`AdminProvisioning`) or by starting the server with authentication.
 Future<Response> registerHandler(
   Request request,
   FhirAntDb dbInterface,
-  JwtService jwtService,
-) async {
+  JwtService jwtService, {
+  bool authenticationEnabled = true,
+}) async {
+  if (!authenticationEnabled) {
+    return Response(
+      403,
+      body: jsonEncode({
+        'error': 'Registration is disabled while authentication is off; '
+            'accounts are provisioned by the operator.',
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
   try {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;

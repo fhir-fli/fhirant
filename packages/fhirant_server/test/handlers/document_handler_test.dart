@@ -23,6 +23,7 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(r'http://localhost:8080/Composition/comp1/$document'),
       );

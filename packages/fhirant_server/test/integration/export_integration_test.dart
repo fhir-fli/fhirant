@@ -24,7 +24,7 @@ void main() {
     handler = server.handler;
     // System-level $export requires system-level authorization; the operator
     // running these bulk exports is an admin.
-    token = generateTestToken(role: 'admin', scopes: ['system/*.*']);
+    token = await issueTestToken(db, role: 'admin', scopes: ['system/*.*']);
   });
 
   tearDown(() async {

@@ -98,7 +98,11 @@ void main() {
       expect(response.statusCode, 400);
     });
 
-    test('redirects with error for unsupported response_type', () async {
+    test(
+        'redirects a registered client with error for unsupported '
+        'response_type', () async {
+      when(() => mockDb.getOAuthClientRedirect('my-app'))
+          .thenAnswer((_) async => 'http://app/cb');
       final request = Request(
         'GET',
         Uri.parse(
@@ -112,7 +116,30 @@ void main() {
       expect(location, contains('error=unsupported_response_type'));
     });
 
-    test('redirects with invalid_request when PKCE is missing', () async {
+    test(
+        "an unregistered client's error is shown, never redirected "
+        '(RFC 6749 4.1.2.1)', () async {
+      // REVIEW-2026-09-08 row 15: this used to 302 to any redirect_uri a
+      // new client_id named, an open redirect.
+      when(() => mockDb.getOAuthClientRedirect('new-app'))
+          .thenAnswer((_) async => null);
+      final request = Request(
+        'GET',
+        Uri.parse(
+          'http://localhost:8080/auth/authorize?response_type=token&client_id=new-app&redirect_uri=https://evil.example/cb&state=x',
+        ),
+      );
+
+      final response = await authorizeGetHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      expect(response.headers['location'], isNull);
+    });
+
+    test(
+        'redirects a registered client with invalid_request when PKCE is '
+        'missing', () async {
+      when(() => mockDb.getOAuthClientRedirect('my-app'))
+          .thenAnswer((_) async => 'http://app/cb');
       final request = Request(
         'GET',
         Uri.parse(

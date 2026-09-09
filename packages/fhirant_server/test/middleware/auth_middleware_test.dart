@@ -20,6 +20,20 @@ void main() {
     mockDb = MockFhirAntDb();
     // Default: no tokens are revoked
     when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
+    // The middleware re-reads the account behind every token
+    // (REVIEW-2026-09-08 row 14); these tests are about scopes, so every
+    // token's account is active and unlocked.
+    when(() => mockDb.getUserById(any())).thenAnswer(
+      (i) async => User(
+        id: i.positionalArguments.first as int,
+        username: 'u${i.positionalArguments.first}',
+        passwordHash: 'h',
+        salt: 's',
+        role: 'clinician',
+        active: true,
+        createdAt: DateTime.now(),
+      ),
+    );
     middleware = authMiddleware(jwtService, mockDb);
   });
 

@@ -299,7 +299,7 @@ void main() {
 
   test('finding 9: POST /[type]/_search is a search, open to user/*.rs',
       () async {
-    final token = generateTestToken(scopes: ['user/*.rs']);
+    final token = await issueTestToken(db, scopes: ['user/*.rs']);
     final r = await handler(
       testRequest(
         'POST',
@@ -332,7 +332,8 @@ void main() {
 
     test("a patient-scoped token cannot read another patient's compartment",
         () async {
-      final token = generateTestToken(scopes: ['patient/*.rs'], patientId: 'A');
+      final token =
+          await issueTestToken(db, scopes: ['patient/*.rs'], patientId: 'A');
       for (final path in [
         '/Patient/B/Observation',
         r'/Patient/B/$everything',
@@ -343,7 +344,8 @@ void main() {
     });
 
     test('a patient-scoped token still reads its own compartment', () async {
-      final token = generateTestToken(scopes: ['patient/*.rs'], patientId: 'B');
+      final token =
+          await issueTestToken(db, scopes: ['patient/*.rs'], patientId: 'B');
       for (final path in [
         '/Patient/B/Observation',
         r'/Patient/B/$everything',
@@ -355,7 +357,7 @@ void main() {
 
     test('the compartment search checks the scope on the type it returns',
         () async {
-      final token = generateTestToken(scopes: ['user/Patient.rs']);
+      final token = await issueTestToken(db, scopes: ['user/Patient.rs']);
       final r = await handler(
         testRequest('GET', '/Patient/B/Observation', authToken: token),
       );
@@ -364,7 +366,7 @@ void main() {
 
     test(r'$everything refuses a token that cannot read every type returned',
         () async {
-      final token = generateTestToken(scopes: ['user/Patient.rs']);
+      final token = await issueTestToken(db, scopes: ['user/Patient.rs']);
       final all = await handler(
         testRequest('GET', r'/Patient/B/$everything', authToken: token),
       );
@@ -386,7 +388,7 @@ void main() {
     await db.saveResource(
       fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'm'}),
     );
-    final token = generateTestToken(scopes: ['user/*.rs']);
+    final token = await issueTestToken(db, scopes: ['user/*.rs']);
     final r = await handler(
       testRequest(
         'POST',

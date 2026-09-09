@@ -22,6 +22,20 @@ void main() {
     jwtService = JwtService('test-secret-key');
     mockDb = MockFhirAntDb();
     when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
+    // The middleware re-reads the account behind every token
+    // (REVIEW-2026-09-08 row 14); these tests are about scopes, so every
+    // token's account is active and unlocked.
+    when(() => mockDb.getUserById(any())).thenAnswer(
+      (i) async => User(
+        id: i.positionalArguments.first as int,
+        username: 'u${i.positionalArguments.first}',
+        passwordHash: 'h',
+        salt: 's',
+        role: 'clinician',
+        active: true,
+        createdAt: DateTime.now(),
+      ),
+    );
     middleware = authMiddleware(jwtService, mockDb);
   });
 
@@ -230,12 +244,15 @@ void main() {
   });
 
   group('measured: what the scope check already stops', () {
-    test('a patient-scoped token cannot reach system history', () async {
-      // `_history` needs the search permission, which `.read` does not grant
-      // and `patient/*.rs` grants only within the patient context check.
+    test('system history reaches its handler, which confines it', () async {
+      // `_history` names no resource type, so the middleware has no type to
+      // check a scope against; it used to refuse this by accident, treating
+      // the literal `_history` as a type. The handler applies the
+      // compartment (REVIEW-2026-09-08 row 4; authorization_review_2026_09_08
+      // _test.dart), so the middleware lets the request through.
       expect(
         await reaches('GET', '_history', leastPrivilegedToken()),
-        isFalse,
+        isTrue,
       );
     });
 

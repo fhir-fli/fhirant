@@ -21,7 +21,7 @@ void main() {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
-    token = generateTestToken(scopes: ['user/*.cruds']);
+    token = await issueTestToken(db, scopes: ['user/*.cruds']);
     for (final (id, start, end) in [
       ('e-jan', '2024-01-10T08:00:00Z', '2024-01-12T17:00:00Z'),
       ('e-mar', '2024-03-01T08:00:00Z', '2024-03-01T09:30:00Z'),

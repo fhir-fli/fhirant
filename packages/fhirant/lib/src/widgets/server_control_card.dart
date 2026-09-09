@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant/src/widgets/admin_setup_dialog.dart';
+import 'package:fhirant_server/fhirant_server.dart' show AdminProvisioning;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,19 +30,21 @@ class _ServerControlCardState extends State<ServerControlCard> {
     super.dispose();
   }
 
-  /// Handles the Experimentation/Secure switch. Switching to Secure requires an
-  /// admin account to exist first — otherwise the server would enforce auth
-  /// with no valid credentials, and the first-user bootstrap would let anyone
-  /// claim admin. Prompts to create one when none exists; the switch only
-  /// completes if an admin then exists.
+  /// Handles the Experimentation/Secure switch. Switching to Secure requires
+  /// an active ADMIN account to exist first — otherwise the server would
+  /// enforce auth with no operator who can log in. Prompts to create one when
+  /// none exists; the switch only completes if an admin then exists.
+  ///
+  /// The question is "is there an admin", not "is there any user": a store
+  /// holding only non-admin accounts used to count as provisioned, and the
+  /// dialog was skipped (REVIEW-2026-09-08 row 13).
   Future<void> _onModeChanged(ServerState state, bool experimentation) async {
     if (experimentation) {
       state.devMode = true;
       return;
     }
 
-    final userCount = await state.db.getUserCount();
-    if (userCount == 0) {
+    if (!await AdminProvisioning.hasActiveAdmin(state.db)) {
       if (!mounted) return;
       final created = await showAdminSetupDialog(context, state.db);
       if (created != true) return; // no admin created — stay in Experimentation

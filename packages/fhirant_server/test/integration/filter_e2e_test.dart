@@ -22,7 +22,7 @@ void main() {
     final server = await createTestServer();
     testDb = server.db;
     handler = server.handler;
-    token = generateTestToken(scopes: ['user/*.rs']);
+    token = await issueTestToken(testDb, scopes: ['user/*.rs']);
 
     await testDb.saveResource(
       fhir.Patient.fromJson({

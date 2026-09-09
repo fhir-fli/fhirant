@@ -135,9 +135,21 @@ class SmartScopeEnforcer {
     r'$backup', // full database dump
     r'$restore', // full database overwrite
     r'$export', // system-level bulk dump
-    r'$export-poll-status', // export job status/cancel
-    r'$export-file', // export file download
   };
+
+  /// Root-level operations whose handler authorizes the caller against the
+  /// export job it names (its owner, or system authority): the status,
+  /// cancel and file routes of a bulk export. They used to be admin-only,
+  /// so a clinician who kicked off `Patient/$export` could never collect it
+  /// (REVIEW-2026-09-08 row 12).
+  static const _ownerCheckedOperations = {
+    r'$export-poll-status',
+    r'$export-file',
+  };
+
+  /// Whether [urlPath] is one of [_ownerCheckedOperations].
+  static bool isOwnerCheckedOperation(String urlPath) =>
+      _ownerCheckedOperations.contains(_firstSegment(urlPath));
 
   /// Whether [urlPath] targets a privileged root-level system operation
   /// (see [_privilegedSystemOperations]).

@@ -42,6 +42,7 @@ void main() {
             (invocation.positionalArguments[0] as Future<void> Function())(),
       );
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('processes transaction with POST entry', () async {
@@ -245,6 +246,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('processes valid batch', () async {
@@ -406,6 +408,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('transaction with DELETE entry succeeds', () async {
@@ -537,6 +540,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('transaction PATCH via Binary succeeds', () async {
@@ -699,6 +703,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('POST creates resource, subsequent reference resolved', () async {
@@ -1064,6 +1069,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     // This group used to assert that a failed transaction issued compensating
@@ -1159,6 +1165,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('POST entry response includes etag and lastModified', () async {
@@ -1300,6 +1307,7 @@ void main() {
       mockDb = MockFhirAntDb();
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
+      when(() => mockRequest.context).thenReturn(const <String, Object>{});
     });
 
     test('POST with ifNoneExist returns existing (200)', () async {

@@ -72,7 +72,7 @@ void main() {
       testRequest(
         'GET',
         '/Observation?subject=Patient/p1',
-        authToken: generateTestToken(scopes: ['user/*.cruds']),
+        authToken: await issueTestToken(s.db, scopes: ['user/*.cruds']),
       ),
     );
     expect(response.statusCode, 200);

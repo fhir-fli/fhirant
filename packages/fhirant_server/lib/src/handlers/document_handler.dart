@@ -1,6 +1,8 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for `GET /Composition/<id>/$document`.
@@ -33,16 +35,53 @@ Future<Response> documentHandler(
       );
     }
 
+    // The Composition must be readable as a direct read would be: inside
+    // the caller's compartment when its read of Composition is confined.
+    // The middleware checked `r` on Composition only; the handler applied
+    // no compartment, so a patient token got any patient's document
+    // (REVIEW-2026-09-08 row 7).
+    final principal = Principal.of(request);
+    final compartmentPatient = patientContextFor(request, 'Composition', 'r');
+    if (compartmentPatient != null &&
+        !await isInPatientCompartment(
+          'Composition',
+          id,
+          compartmentPatient,
+          dbInterface,
+        )) {
+      return patientScopeForbiddenResponse(
+        'Composition',
+        id,
+        compartmentPatient,
+      );
+    }
+
     // 2. Collect all references from the Composition
     final references = <String>{};
     _collectCompositionReferences(composition, references);
+
+    // The token must be able to read every type the document will carry:
+    // the same rule as `$everything` (REVIEW-2026-09-06 finding 4). Refusing
+    // names the types rather than handing back a document with holes.
+    if (principal != null) {
+      final unreadable = principal.unauthorizedTypes(
+        references.map((r) => r.split('/').first),
+        'r',
+      );
+      if (unreadable.isNotEmpty) {
+        return forbidden(
+          'Insufficient scope to read ${unreadable.join(', ')}, which this '
+          'document references.',
+        );
+      }
+    }
 
     // 3. Resolve all references to actual resources
     final resolvedResources = <fhir.Resource>[];
     fhir.Resource? subjectResource;
 
     for (final ref in references) {
-      final resolved = _parseAndFetchReference(ref, dbInterface);
+      final resolved = _parseAndFetchReference(ref, dbInterface, principal);
       final resource = await resolved;
       if (resource != null) {
         // Track subject separately so it can be placed second
@@ -181,9 +220,14 @@ void _collectSectionReferences(
 }
 
 /// Parse a FHIR reference string (e.g., "Patient/123") and fetch the resource.
+///
+/// A referenced resource the caller's compartment does not include is
+/// omitted, as an `_include` outside the compartment is: the document is
+/// the caller's view of the record, not the record.
 Future<fhir.Resource?> _parseAndFetchReference(
   String reference,
   FhirAntDb dbInterface,
+  Principal? principal,
 ) async {
   final parts = reference.split('/');
   if (parts.length != 2) return null;
@@ -191,6 +235,16 @@ Future<fhir.Resource?> _parseAndFetchReference(
   final resourceType = fhir.R4ResourceType.fromString(parts[0]);
   if (resourceType == null) return null;
 
+  final compartment = principal?.compartmentFor(parts[0], 'r');
+  if (compartment != null &&
+      !await isInPatientCompartment(
+        parts[0],
+        parts[1],
+        compartment.id,
+        dbInterface,
+      )) {
+    return null;
+  }
   return dbInterface.getResource(resourceType, parts[1]);
 }
 
