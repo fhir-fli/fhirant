@@ -198,11 +198,12 @@ Stream<List<int>> _pieces(Uint8List bytes) async* {
 /// 31 MB profiles-resources file held every StructureDefinition at once
 /// (813 MB RSS measured 2026-09-08 for the whole set).
 ///
-/// Every resource is saved tagged [specTag] and without a first-version
-/// history row (`recordHistory: false`): the load used to write a second
-/// 48 MB copy of the set into `resources_history` (measured 2026-09-08 on
-/// a fresh store: 4,213 history rows for 4,212 resources). A later update
-/// of a specification resource writes history as any save does.
+/// Every resource is saved tagged [specTag]. No first version writes a
+/// history row since fhir_r4_db schema 14 (the current version is stored
+/// once); the load used to write a second 48 MB copy of the set into
+/// `resources_history` (measured 2026-09-08 on a fresh store: 4,213 history
+/// rows for 4,212 resources). A later update of a specification resource
+/// moves the replaced version into history as any save does.
 Future<(int, int)> loadSpecLines(
   FhirAntDb db,
   Stream<String> lines,
@@ -213,7 +214,7 @@ Future<(int, int)> loadSpecLines(
   var chunk = <fhir.Resource>[];
   Future<void> save() async {
     if (chunk.isEmpty) return;
-    await db.saveResources(chunk, recordHistory: false);
+    await db.saveResources(chunk);
     loaded += chunk.length;
     chunk = <fhir.Resource>[];
     // A real event-loop turn, so timers, the UI and other requests run

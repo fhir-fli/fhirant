@@ -205,4 +205,103 @@ void main() {
       );
     });
   });
+  group('schema 23: the current version is stored once', () {
+    late FhirAntDb db;
+
+    setUp(() async {
+      db = FhirAntDb(NativeDatabase.memory());
+      await db.initialize();
+    });
+    tearDown(() => db.close());
+
+    fhir.Patient patient(String id, [String family = 'A']) =>
+        fhir.Patient.fromJson({
+          'resourceType': 'Patient',
+          'id': id,
+          'name': [
+            {'family': family},
+          ],
+        });
+
+    test(
+        'type and system history list every version once, the current '
+        'one from `resources`', () async {
+      await db.saveResource(patient('h1'));
+      await db.saveResource(patient('h1', 'B'));
+      await db.saveResource(patient('h2'));
+      await db.saveResource(
+        fhir.Observation.fromJson({
+          'resourceType': 'Observation',
+          'id': 'o1',
+          'status': 'final',
+          'code': {
+            'coding': [
+              {'system': 'http://loinc.org', 'code': '8480-6'},
+            ],
+          },
+          'subject': {'reference': 'Patient/h2'},
+        }),
+      );
+      await db.deleteResource(fhir.R4ResourceType.Patient, 'h2');
+
+      // The table holds only what a save replaced, plus tombstones.
+      final rows = await db
+          .customSelect(
+            'SELECT id, version_id, deleted FROM resources_history '
+            'ORDER BY id, version_id',
+          )
+          .get();
+      expect(
+        rows
+            .map(
+              (r) => '${r.read<String>('id')}/${r.read<String>('version_id')}'
+                  '${r.read<bool>('deleted') ? '-tombstone' : ''}',
+            )
+            .toList(),
+        ['h1/1', 'h2/1', 'h2/2-tombstone'],
+      );
+
+      // Type history: h1 v2 (current), h1 v1, h2 tombstone, h2 v1.
+      final type = await db.getTypeHistory(fhir.R4ResourceType.Patient);
+      expect(
+        type.map((h) => '${h.id}/${h.versionId}${h.deleted ? '-t' : ''}'),
+        unorderedEquals(['h1/2', 'h1/1', 'h2/2-t', 'h2/1']),
+      );
+      expect(await db.countTypeHistory(fhir.R4ResourceType.Patient), 4);
+      expect(type.first.lastUpdated.isAfter(type.last.lastUpdated), isTrue);
+
+      // System history adds the Observation's current version.
+      expect(await db.countSystemHistory(), 5);
+      final system = await db.getSystemHistory();
+      expect(system.map((h) => h.id), contains('o1'));
+
+      // Paging cuts the same ordered set.
+      final page = await db.getSystemHistory(count: 2, offset: 1);
+      expect(page, hasLength(2));
+      expect(
+        page.map((h) => '${h.id}/${h.versionId}'),
+        system.sublist(1, 3).map((h) => '${h.id}/${h.versionId}'),
+      );
+
+      // `_at` before the update: h1 at version 1, from the history table.
+      final beforeUpdate =
+          (await db.getHistory(fhir.R4ResourceType.Patient, 'h1'))
+              .last
+              .lastUpdated;
+      final at = await db.getTypeHistory(
+        fhir.R4ResourceType.Patient,
+        at: beforeUpdate,
+      );
+      expect(at.map((h) => '${h.id}/${h.versionId}'), ['h1/1']);
+
+      // The compartment: h2's record, from both tables.
+      final inH2 = await db.getSystemHistory(
+        compartment: const CompartmentScope('Patient', 'h2'),
+      );
+      expect(
+        inH2.map((h) => '${h.resourceType}/${h.id}/${h.versionId}'),
+        unorderedEquals(['Patient/h2/2', 'Patient/h2/1', 'Observation/o1/1']),
+      );
+    });
+  });
 }

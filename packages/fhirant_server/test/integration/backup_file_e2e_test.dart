@@ -108,7 +108,6 @@ void main() {
         });
     await db.saveResources(
       [codeSystem('from-spec', spec: true)],
-      recordHistory: false,
     );
     await db.saveResource(codeSystem('ours'));
 

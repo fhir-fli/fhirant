@@ -254,7 +254,6 @@ void main() {
             },
           }),
         ],
-        recordHistory: false,
       );
       await saveResource(
         fhir.CodeSystem.fromJson({

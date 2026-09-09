@@ -66,18 +66,32 @@ void main() {
     expect((vs! as fhir.ValueSet).url?.valueString, 'http://example.org/vs/2');
   });
 
-  test('every loaded resource is tagged spec and has no history row', () async {
+  test('every loaded resource is tagged spec and is stored once', () async {
     await load();
     final cs = await db.getResource(fhir.R4ResourceType.CodeSystem, 'cs7');
     expect(isSpecResource(cs!), isTrue);
     expect(cs.meta!.versionId!.valueString, '1');
-    expect(await db.getHistory(fhir.R4ResourceType.CodeSystem, 'cs7'), isEmpty);
-    // A later save of a specification resource writes history as any save.
-    await db.saveResource(cs);
+    // The history interaction answers the current version; the table
+    // behind it holds no second copy (fhir_r4_db schema 14).
+    Future<int> historyRows() async => (await db
+            .customSelect(
+              "SELECT count(*) AS c FROM resources_history WHERE id = 'cs7'",
+            )
+            .getSingle())
+        .read<int>('c');
     expect(
       await db.getHistory(fhir.R4ResourceType.CodeSystem, 'cs7'),
       hasLength(1),
     );
+    expect(await historyRows(), 0);
+    // A later save of a specification resource moves the replaced version
+    // into history as any save does.
+    await db.saveResource(cs);
+    expect(
+      await db.getHistory(fhir.R4ResourceType.CodeSystem, 'cs7'),
+      hasLength(2),
+    );
+    expect(await historyRows(), 1);
   });
 
   test('a store that already holds CodeSystems is left alone', () async {

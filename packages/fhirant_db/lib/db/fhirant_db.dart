@@ -20,7 +20,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -242,6 +242,13 @@ class FhirAntDb extends FhirDb {
             // (REVIEW-2026-09-08 row 38); the log is a file, and the audit
             // trail is AuditEvent.
             await customStatement('DROP TABLE IF EXISTS logs');
+          }
+          if (from < 23) {
+            // fhir_r4_db schema 14: the current version is stored once, in
+            // `resources`; history keeps superseded versions and tombstones
+            // (REVIEW-2026-09-06 §4.5: 1.07 GB of the 6.21 GB MIMIC store
+            // was the second copy).
+            await moveCurrentVersionsOutOfHistory();
           }
         },
       );
@@ -698,13 +705,10 @@ class FhirAntDb extends FhirDb {
     }
   }
 
-  /// [recordHistory] false writes no history row for a resource's first
-  /// version (the specification load); see [FhirDao.saveResources].
-  Future<bool> saveResources(
-    List<fhir.Resource> resourcesList, {
-    bool recordHistory = true,
-  }) =>
-      fhirDao.saveResources(resourcesList, recordHistory: recordHistory);
+  /// See [FhirDao.saveResources]: a first version is stored once, and a
+  /// stored resource's row moves into history as it is replaced.
+  Future<bool> saveResources(List<fhir.Resource> resourcesList) =>
+      fhirDao.saveResources(resourcesList);
 
   /// The patient this resource is about, or null when it names none.
   ///
@@ -875,11 +879,24 @@ class FhirAntDb extends FhirDb {
     return "((rh.resource_type = '${scope.type}' AND rh.id = ?) OR $member)";
   }
 
+  /// Every version the store holds, as one row set with the history
+  /// table's columns: superseded versions and tombstones from
+  /// `resources_history`, the current versions from `resources` (fhir_r4_db
+  /// schema 14 stores each current version there only). The type and time
+  /// predicates are written inside each half so both
+  /// `(resource_type, last_updated)` indexes serve them; the variables are
+  /// the same in each half ([_historyVariables] repeats them).
+  static String _versionsSql(String where) =>
+      '(SELECT resource_type, id, version_id, resource, last_updated, '
+      'deleted FROM resources_history$where '
+      'UNION ALL '
+      'SELECT resource_type, id, version_id, resource, last_updated, '
+      '0 AS deleted FROM resources$where)';
+
   /// The rows of type or system history as SQL: `_at` is a join to the
   /// latest `last_updated` per resource at or before that instant, `_since`
   /// a range; the page is `LIMIT/OFFSET` on the ordered rows, and the count
-  /// is `count(*)` over the same rows. Both go through
-  /// `(resource_type, last_updated)` on `resources_history`.
+  /// is `count(*)` over the same rows.
   String _historySql({
     required String select,
     required String? resourceType,
@@ -887,47 +904,61 @@ class FhirAntDb extends FhirDb {
     required DateTime? at,
     CompartmentScope? compartment,
   }) {
-    final typeWhere = resourceType == null ? '' : 'resource_type = ? AND ';
     final member =
         compartment == null ? null : _historyCompartmentSql(compartment);
+    final typeCond = resourceType == null ? null : 'resource_type = ?';
     if (at != null) {
-      return 'SELECT $select FROM resources_history rh INNER JOIN ( '
+      final inner = [if (typeCond != null) typeCond, 'last_updated <= ?'];
+      final sub = _versionsSql(' WHERE ${inner.join(' AND ')}');
+      final rh = _versionsSql(typeCond == null ? '' : ' WHERE $typeCond');
+      return 'SELECT $select FROM $rh rh INNER JOIN ( '
           'SELECT resource_type, id, MAX(last_updated) AS max_lu '
-          'FROM resources_history WHERE ${typeWhere}last_updated <= ? '
-          'GROUP BY resource_type, id) sub '
+          'FROM $sub GROUP BY resource_type, id) sub '
           'ON rh.resource_type = sub.resource_type AND rh.id = sub.id '
           'AND rh.last_updated = sub.max_lu'
           '${member == null ? '' : ' WHERE $member'}';
     }
-    final sinceWhere = since == null ? '' : 'last_updated > ? ';
-    final where = '$typeWhere$sinceWhere'.trim();
-    final cut =
-        where.endsWith('AND') ? where.substring(0, where.length - 3) : where;
-    final conditions = [
-      if (cut.trim().isNotEmpty) cut.trim(),
-      if (member != null) member,
+    final inner = [
+      if (typeCond != null) typeCond,
+      if (since != null) 'last_updated > ?',
     ];
-    return 'SELECT $select FROM resources_history rh'
-        '${conditions.isEmpty ? '' : ' WHERE ${conditions.join(' AND ')}'}';
+    final rh =
+        _versionsSql(inner.isEmpty ? '' : ' WHERE ${inner.join(' AND ')}');
+    return 'SELECT $select FROM $rh rh'
+        '${member == null ? '' : ' WHERE $member'}';
   }
 
+  /// The variables of [_historySql], in order: the `_at` form binds the
+  /// outer union's type (twice) then the inner union's type and instant
+  /// (twice); the range form binds type and `_since` twice; then the
+  /// compartment's focal id twice.
   List<Variable<Object>> _historyVariables({
     required String? resourceType,
     required DateTime? since,
     required DateTime? at,
     CompartmentScope? compartment,
-  }) =>
-      [
-        if (resourceType != null) Variable.withString(resourceType),
-        if (at != null)
-          Variable.withInt(at.millisecondsSinceEpoch)
-        else if (since != null)
-          Variable.withInt(since.millisecondsSinceEpoch),
-        if (compartment != null) ...[
-          Variable.withString(compartment.id),
-          Variable.withString(compartment.id),
+  }) {
+    final type =
+        resourceType == null ? null : Variable.withString(resourceType);
+    return [
+      if (at != null) ...[
+        for (var half = 0; half < 2; half++)
+          if (type != null) type,
+        for (var half = 0; half < 2; half++) ...[
+          if (type != null) type,
+          Variable.withInt(at.millisecondsSinceEpoch),
         ],
-      ];
+      ] else
+        for (var half = 0; half < 2; half++) ...[
+          if (type != null) type,
+          if (since != null) Variable.withInt(since.millisecondsSinceEpoch),
+        ],
+      if (compartment != null) ...[
+        Variable.withString(compartment.id),
+        Variable.withString(compartment.id),
+      ],
+    ];
+  }
 
   Future<List<HistoryEntry>> _historyPage({
     String? resourceType,
@@ -958,7 +989,7 @@ class FhirAntDb extends FhirDb {
         at: at,
         compartment: compartment,
       ),
-      readsFrom: {resourcesHistory, referenceSearchParameters},
+      readsFrom: {resources, resourcesHistory, referenceSearchParameters},
     ).get();
     return [
       for (final row in rows)
@@ -986,7 +1017,7 @@ class FhirAntDb extends FhirDb {
         at: at,
         compartment: compartment,
       ),
-      readsFrom: {resourcesHistory, referenceSearchParameters},
+      readsFrom: {resources, resourcesHistory, referenceSearchParameters},
     ).getSingle();
     return row.read<int>('c');
   }
