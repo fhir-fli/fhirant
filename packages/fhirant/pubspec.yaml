@@ -39,6 +39,12 @@ dependencies:
 # section; a clean clone, CI included, resolves the same code from git.
 # Remove this section at the next family release.
 dependency_overrides:
+  # The model-independent store fhir_r4_db binds (fhir_db 0.13.0), from its
+  # repository until it is on pub.dev; remove with this section.
+  fhir_db:
+    git:
+      url: https://github.com/fhir-fli/fhir_db.git
+      ref: main
   fhir_r4:
     git:
       url: https://github.com/fhir-fli/fhir_r4.git

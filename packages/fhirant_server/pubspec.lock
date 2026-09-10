@@ -154,6 +154,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  fhir_db:
+    dependency: "direct overridden"
+    description:
+      path: "/home/grey/dev/fhir/fhir_db"
+      relative: false
+    source: path
+    version: "0.13.0"
   fhir_node:
     dependency: transitive
     description:

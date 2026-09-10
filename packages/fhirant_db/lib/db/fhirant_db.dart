@@ -993,7 +993,7 @@ class FhirAntDb extends FhirDb {
     ).get();
     return [
       for (final row in rows)
-        HistoryEntry.fromRow(resourcesHistory.map(row.data)),
+        HistoryEntry.fromRow(resourcesHistory.map(row.data), r4Model),
     ];
   }
 

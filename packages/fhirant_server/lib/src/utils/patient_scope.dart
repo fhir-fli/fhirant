@@ -101,6 +101,7 @@ Future<bool> isNewResourceInPatientCompartment(
   // The extractor reads meta.lastUpdated; a new resource may have no meta
   // yet, so it is versioned the way the save will version it.
   final indexed = updateSearchParameters(
+    r4Model.indexer,
     resource.meta?.lastUpdated == null
         ? resource.updateVersion(oldMeta: resource.meta)
         : resource,
