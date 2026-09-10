@@ -1,0 +1,13 @@
+label	phase	read_interval_ms	resources	reads	read_p50_ms	read_p95_ms	read_max_ms	export_ms	export_files
+one_isolate	idle	0	100000	300	0.54	0.95	31.05	0	0
+one_isolate	export_alone	0	100000	1	0.00	0.00	0.00	1983	1
+one_isolate	during_export	0	100000	100125	0.14	0.23	4.88	229548	1
+one_isolate	idle_after	0	100000	300	0.13	0.17	0.78	0	0
+one_isolate	idle	20	100000	300	0.68	1.22	60.74	0	0
+one_isolate	export_alone	20	100000	1	0.00	0.00	0.00	2058	1
+one_isolate	during_export	20	100000	75	1.06	1.68	2.51	1977	1
+one_isolate	idle_after	20	100000	300	0.36	0.55	1.54	0	0
+one_isolate	idle	100	100000	300	0.69	1.41	63.44	0	0
+one_isolate	export_alone	100	100000	1	0.00	0.00	0.00	2153	1
+one_isolate	during_export	100	100000	25	1.45	2.47	2.65	2561	1
+one_isolate	idle_after	100	100000	300	0.40	0.56	2.38	0	0
