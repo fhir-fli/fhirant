@@ -677,7 +677,15 @@ Future<_BundleOperation> _processBundleEntry(
         entryIndex,
       );
 
-      final saved = await dbInterface.saveResource(resourceToSave);
+      final fhir.Resource? saved;
+      try {
+        saved = await dbInterface.saveResource(resourceToSave);
+      } on InvalidSearchParameter catch (e) {
+        throw BundleEntryException(
+          400,
+          'Bundle entry $entryIndex: ${e.message}',
+        );
+      }
       if (saved == null) {
         throw BundleEntryException(
           500,
@@ -770,6 +778,11 @@ Future<_BundleOperation> _processBundleEntry(
           412,
           'Bundle entry $entryIndex: version mismatch (ifMatch precondition '
           'failed)',
+        );
+      } on InvalidSearchParameter catch (e) {
+        throw BundleEntryException(
+          400,
+          'Bundle entry $entryIndex: ${e.message}',
         );
       }
       if (updated == null) {

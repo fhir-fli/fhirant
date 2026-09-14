@@ -118,6 +118,7 @@ FHIRant is an on-device FHIR R4 server written in Dart. It runs as a standalone 
 - [x] _include and _revinclude
 - [x] POST-based search (POST /{type}/_search, POST /_search)
 - [x] Compartment search (GET /Patient/123/Observation)
+- [x] Uploaded SearchParameters: an admin POSTs a `SearchParameter` (status active), the store indexes every later save of its base types by evaluating its FHIRPath expression, `POST /$reindex` (async) indexes what was stored before it, the CapabilityStatement lists it; a definition the store cannot index by is a 400
 - [ ] _has (reverse chaining)
 - [ ] _summary, _elements (response shaping)
 - [ ] _contained, _containedType
@@ -283,6 +284,29 @@ Scenario: Include
   Given an Observation referencing Patient/456
   When GET /Observation?_include=Observation:patient is requested
   Then the Bundle contains the Observation and Patient/456
+
+Scenario: Uploaded SearchParameter
+  Given an admin has PUT SearchParameter/us-core-race (base Patient, type token, status active)
+  When a Patient carrying the us-core-race extension is saved
+  And GET /Patient?race=2028-9 is requested
+  Then that Patient is returned and a Patient without the extension is not
+  And GET /metadata lists `race` under Patient with the definition's url
+
+Scenario: Reindex after a late SearchParameter
+  Given a Patient carrying the us-core-race extension was saved before SearchParameter/us-core-race
+  When an admin POSTs /$reindex
+  Then the response is 202 with Content-Location /$reindex-status
+  And once /$reindex-status answers 200, GET /Patient?race=2028-9 returns that Patient
+
+Scenario: A SearchParameter the store cannot index by
+  Given a SearchParameter whose type is composite, or whose expression does not parse
+  When an admin PUTs it
+  Then the response is 400 with an OperationOutcome naming the reason and nothing is stored
+
+Scenario: SearchParameters are an administrator's act
+  Given a clinician with user/*.cruds
+  When they PUT or DELETE a SearchParameter
+  Then the response is 403
 ```
 
 ### Operations

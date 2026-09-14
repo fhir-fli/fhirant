@@ -19,6 +19,7 @@ export 'metadata_handler.dart';
 export 'patch_handler.dart';
 export 'refresh_handler.dart';
 export 'register_handler.dart';
+export 'reindex_handler.dart';
 export 'resource_handler.dart';
 export 'revoke_handler.dart';
 export 'smart_config_handler.dart';

@@ -127,6 +127,9 @@ class FhirAntServer {
   /// stop so no audited request goes unrecorded.
   late final AuditQueue _audit = AuditQueue(dbInterface);
 
+  /// The `\$reindex` job of this process (one at a time).
+  final ReindexJobs reindexJobs = ReindexJobs();
+
   /// The audit queue, for a test that must see its events stored.
   AuditQueue get auditQueue => _audit;
   bool _isRunning = false;
@@ -216,8 +219,11 @@ class FhirAntServer {
       )
       ..get(
         '/metadata',
-        (Request req) =>
-            metadataHandler(req, corsEnabled: corsAllowOrigin != null),
+        (Request req) => metadataHandler(
+          req,
+          corsEnabled: corsAllowOrigin != null,
+          db: dbInterface,
+        ),
       )
       ..get('/.well-known/smart-configuration', smartConfigHandler)
       // Library/$evaluate (must be before generic /<resourceType>/$validate)
@@ -354,6 +360,14 @@ class FhirAntServer {
         (Request req) => subsumesHandler(req, dbInterface),
       )
       // Backup/Restore endpoints
+      ..post(
+        r'/$reindex',
+        (Request req) => reindexKickoffHandler(req, dbInterface, reindexJobs),
+      )
+      ..get(
+        r'/$reindex-status',
+        (Request req) => reindexStatusHandler(req, reindexJobs),
+      )
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(r'/$restore', (Request req) => restoreHandler(req, dbInterface))
       // FHIRPath endpoint - supports GET and POST

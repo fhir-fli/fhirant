@@ -1284,7 +1284,12 @@ Future<Response> postResourceHandler(
     if (resourceWithId is fhir.Subscription) {
       resourceWithId = await subs.activate(resourceWithId);
     }
-    final savedResource = await dbInterface.saveResource(resourceWithId);
+    final fhir.Resource? savedResource;
+    try {
+      savedResource = await dbInterface.saveResource(resourceWithId);
+    } on InvalidSearchParameter catch (e) {
+      return invalidSearchParameter(e);
+    }
     if (savedResource != null) {
       final responseResource = savedResource;
 
@@ -1416,6 +1421,8 @@ Future<Response> putResourceHandler(
             ? 'Resource does not exist (If-Match precondition failed)'
             : 'Version mismatch (If-Match precondition failed)',
       );
+    } on InvalidSearchParameter catch (e) {
+      return invalidSearchParameter(e);
     }
     if (savedResource != null) {
       final responseResource = savedResource;
@@ -1653,6 +1660,19 @@ Future<Response> deleteResourceHandler(
         'Invalid resource type requested: $resourceType',
       );
       return _validationErrorResponse('Invalid resource type');
+    }
+
+    // Deleting a SearchParameter stops the indexing it defined, for every
+    // later write of its base types: system authority, as creating one is
+    // (storeRefusal).
+    final principal = Principal.of(request);
+    if (type == fhir.R4ResourceType.SearchParameter &&
+        principal != null &&
+        !principal.isSystem) {
+      return forbidden(
+        'A SearchParameter changes what this server indexes; deleting one '
+        'requires system-level (admin) privilege.',
+      );
     }
 
     // Check if resource exists before attempting to delete

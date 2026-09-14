@@ -135,6 +135,8 @@ class SmartScopeEnforcer {
     r'$backup', // full database dump
     r'$restore', // full database overwrite
     r'$export', // system-level bulk dump
+    r'$reindex', // full search-index rebuild
+    r'$reindex-status',
   };
 
   /// Root-level operations whose handler authorizes the caller against the

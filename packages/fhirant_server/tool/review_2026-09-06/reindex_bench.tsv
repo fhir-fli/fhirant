@@ -1,0 +1,5 @@
+label	phase	resources	ms	note
+mimic	load	81088	45792	
+mimic	rebuild	81088	17916	
+mimic	saves_during	1	30	mean ms; max 30 ms; errors 0
+mimic	token_rows_after	321504	0	

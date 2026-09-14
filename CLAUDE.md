@@ -124,6 +124,8 @@ Requests pass through middleware in this order:
 | | `GET\|POST /CodeSystem/$lookup` | `lookupHandler` | Code lookup (by params) |
 | | `GET\|POST /ValueSet/<id>/$expand` | `expandHandler` | ValueSet expansion |
 | | `GET\|POST /ValueSet/$expand` | `expandHandler` | ValueSet expansion (by params) |
+| **Reindex** | `POST /$reindex` | `reindexKickoffHandler` | Rebuild the search index (admin; async, 202 + `Content-Location`) |
+| | `GET /$reindex-status` | `reindexStatusHandler` | Poll the rebuild |
 | **Backup/Restore** | `POST /$backup` | `backupHandler` | Full database backup |
 | | `POST /$restore` | `restoreHandler` | Restore from backup |
 | **FHIRPath** | `GET\|POST /$fhirpath` | `fhirPathHandler` | Evaluate FHIRPath expressions |
@@ -178,6 +180,7 @@ All implemented operations:
 - `$document` — Composition-based document Bundle generation
 - `$meta` / `$meta-add` / `$meta-delete` — Meta tag management
 - `$backup` / `$restore` — Full database backup and restore
+- `$reindex` — Rebuild the search index after a SearchParameter is uploaded (admin, asynchronous)
 - `$fhirpath` — Server-side FHIRPath expression evaluation
 - `$cql` — Clinical Quality Language evaluation
 - `Library/$evaluate` — CQL library evaluation
@@ -199,7 +202,8 @@ Drift ORM over SQLite with SQLCipher encryption. The main database class is `Fhi
 2. On search, parameters are routed to the correct table by type detection
 3. AND logic across parameters (set intersection of resource IDs), OR logic within a parameter (comma-separated values)
 4. Reference chaining resolves through intermediate resource lookups
-5. Results are sorted and paginated
+5. An uploaded `SearchParameter` (admin-only; `status: active`) is indexed by evaluating its FHIRPath expression on every later save of its base types (fhir_db `CustomSearchParameters`); `POST /$reindex` indexes what was stored before it; the CapabilityStatement lists it
+6. Results are sorted and paginated
 
 ### Secure Storage (`fhirant_secure_storage`)
 
@@ -221,9 +225,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,276 tests** across 100 test files, all passing (counted 2026-09-09).
+**1,281 tests** across 101 test files, all passing (counted 2026-09-14).
 
-- **Server tests** (1,113 tests, 88 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,118 tests, 89 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

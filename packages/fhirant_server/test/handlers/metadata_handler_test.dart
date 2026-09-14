@@ -15,7 +15,7 @@ void main() {
         'GET',
         Uri.parse('http://localhost:8080/metadata'),
       );
-      final response = metadataHandler(request);
+      final response = await metadataHandler(request);
       final body = await response.readAsString();
 
       // Verify it deserializes as a proper CapabilityStatement
@@ -290,7 +290,7 @@ void main() {
     test('rest carries the capabilitystatement-websocket extension', () async {
       // Without it a client has no way to find the socket a Subscription binds
       // over. HL7's own extension, context CapabilityStatement.rest, value uri.
-      final response = metadataHandler(
+      final response = await metadataHandler(
         Request('GET', Uri.parse('http://localhost:8080/metadata')),
       );
       final body =
@@ -308,7 +308,7 @@ void main() {
 
     test('under https the websocket is wss (REVIEW-2026-09-08 row 31)',
         () async {
-      final response = metadataHandler(
+      final response = await metadataHandler(
         Request('GET', Uri.parse('https://fhir.example.org/metadata')),
       );
       final body =
@@ -323,7 +323,7 @@ void main() {
     });
 
     test('cors is advertised only when configured (row 31)', () async {
-      final response = metadataHandler(
+      final response = await metadataHandler(
         Request('GET', Uri.parse('http://localhost:8080/metadata')),
         corsEnabled: true,
       );

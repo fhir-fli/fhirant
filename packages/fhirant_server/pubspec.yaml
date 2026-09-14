@@ -59,6 +59,12 @@ dependency_overrides:
     git:
       url: https://github.com/fhir-fli/fhir_db.git
       ref: main
+  # fhir_path 0.14.2: resolve() on a literal reference, which uploaded
+  # SearchParameters index by; until it is on pub.dev.
+  fhir_path:
+    git:
+      url: https://github.com/fhir-fli/fhir_path.git
+      ref: main
   fhir_r4:
     git:
       url: https://github.com/fhir-fli/fhir_r4.git

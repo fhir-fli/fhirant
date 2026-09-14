@@ -1,5 +1,10 @@
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhirant_db/fhirant_db.dart' show searchParameterTypes;
+import 'package:fhirant_db/fhirant_db.dart'
+    show
+        CustomSearchParameter,
+        CustomSearchParameters,
+        FhirAntDb,
+        searchParameterTypes;
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/search_param_definitions.dart';
 import 'package:shelf/shelf.dart';
@@ -9,19 +14,36 @@ import 'package:shelf/shelf.dart';
 /// Read from `searchParameterTypes` (generated from search-parameters.json),
 /// so the CapabilityStatement says what the search actually accepts. This
 /// used to be a hand-typed list for a few types.
-List<CapabilityStatementSearchParam> _searchParamsFor(String type) {
+List<CapabilityStatementSearchParam> _searchParamsFor(
+  String type,
+  CustomSearchParameters? custom,
+) {
   final own = searchParameterTypes[type] ?? const {};
   final common = {
     ...?searchParameterTypes['Resource'],
     ...?searchParameterTypes['DomainResource'],
   };
-  final names = <String>{...own.keys, ...common.keys}.toList()..sort();
+  // Uploaded definitions that apply to this type, after the
+  // specification's (fhir_db refuses an upload that redefines one of
+  // those, so the names do not collide).
+  final uploaded = {
+    for (final p in custom?.forType(type) ?? const <CustomSearchParameter>[])
+      p.code: p,
+  };
+  final names = <String>{...own.keys, ...common.keys, ...uploaded.keys}.toList()
+    ..sort();
   return [
     for (final name in names)
-      CapabilityStatementSearchParam(
-        name: name.toFhirString,
-        type: SearchParamType((own[name] ?? common[name]!).type),
-      ),
+      () {
+        final url = uploaded[name]?.url;
+        return CapabilityStatementSearchParam(
+          name: name.toFhirString,
+          definition: url == null ? null : FhirCanonical(url),
+          type: SearchParamType(
+            (own[name] ?? common[name])?.type ?? uploaded[name]!.type,
+          ),
+        );
+      }(),
   ];
 }
 
@@ -61,7 +83,16 @@ Map<String, List<FhirString>> _searchRevIncludes() {
 }
 
 /// Handler for the metadata route — returns a CapabilityStatement.
-Response metadataHandler(Request request, {bool corsEnabled = false}) {
+Future<Response> metadataHandler(
+  Request request, {
+  bool corsEnabled = false,
+  FhirAntDb? db,
+}) async {
+  // The uploaded SearchParameters, so the statement says what the search
+  // accepts (Azure: "The new search parameter appears in the capability
+  // statement of the FHIR service after you POST the search parameter to
+  // the database and reindex your database").
+  final custom = db == null ? null : await db.customSearchParameters;
   try {
     FhirantLogging().logInfo(
       'Fetching metadata request from ${request.requestedUri}',
@@ -218,7 +249,7 @@ Response metadataHandler(Request request, {bool corsEnabled = false}) {
             ),
           ],
           resource: R4ResourceType.typesAsStrings.map((type) {
-            final allParams = _searchParamsFor(type);
+            final allParams = _searchParamsFor(type, custom);
 
             // Per-resource operations
             final operations = <CapabilityStatementOperation>[

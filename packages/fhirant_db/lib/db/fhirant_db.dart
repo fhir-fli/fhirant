@@ -219,7 +219,10 @@ class FhirAntDb extends FhirDb {
             // and re-extracted in the new shape; this one rebuild also
             // serves the 14 and 17 steps.
             await dropLegacyValueIndexes();
-            await rebuildSearchIndex();
+            // Not the uploaded SearchParameters: the store is still opening
+            // (fhir_db.rebuildSearchIndex); a \$reindex after the upgrade adds
+            // their rows.
+            await rebuildSearchIndex(includeUploaded: false);
           }
           if (from < 19) {
             // fhir_r4_db schema 11: open number and quantity bounds are
@@ -698,6 +701,10 @@ class FhirAntDb extends FhirDb {
         mergeTags: mergeTags,
       );
     } on VersionConflict {
+      rethrow;
+    } on InvalidSearchParameter {
+      // A SearchParameter the store cannot index by: the caller's 400, not
+      // a failure of the save.
       rethrow;
     } catch (e) {
       stderr.writeln('Error in saveResource: $e');

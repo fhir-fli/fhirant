@@ -111,7 +111,7 @@ packages:
       path: "/home/grey/dev/fhir/fhir_db"
       relative: false
     source: path
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_node:
     dependency: transitive
     description:
@@ -120,6 +120,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
+  fhir_path:
+    dependency: "direct overridden"
+    description:
+      path: "/home/grey/dev/fhir/fhirpath"
+      relative: false
+    source: path
+    version: "0.14.2"
   fhir_r4:
     dependency: "direct main"
     description:
@@ -133,6 +140,14 @@ packages:
       path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4_db"
       relative: false
     source: path
+    version: "0.12.0"
+  fhir_r4_path:
+    dependency: transitive
+    description:
+      name: fhir_r4_path
+      sha256: a4185b9e9dac92ec5ad14a14fe1a3366d0d9e2eddda5b5c3b7a5cef7c654b18d
+      url: "https://pub.dev"
+    source: hosted
     version: "0.12.0"
   file:
     dependency: transitive
@@ -174,6 +189,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  http:
+    dependency: transitive
+    description:
+      name: http
+      sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -446,6 +469,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  ucum:
+    dependency: transitive
+    description:
+      name: ucum
+      sha256: "4050dc5c4b45fe769ef7e2174b1de055eae3447977024b307ff5e0a3172e3302"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.0"
   uuid:
     dependency: transitive
     description:

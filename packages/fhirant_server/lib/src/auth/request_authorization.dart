@@ -193,7 +193,18 @@ Response? authorizeRequest(
 /// account with `c` on Subscription could register a rest-hook
 /// (REVIEW-2026-09-08 row 18).
 Response? storeRefusal(Principal? principal, fhir.Resource resource) {
-  if (principal == null || resource is! fhir.Subscription) return null;
+  if (principal == null) return null;
+  // A SearchParameter changes what this server indexes on every write of
+  // its base types, and its expression runs inside every one of those
+  // saves; the Azure FHIR service and HAPI treat defining one as an
+  // administrator's act. System authority, like a rest-hook Subscription.
+  if (resource is fhir.SearchParameter && !principal.isSystem) {
+    return forbidden(
+      'A SearchParameter changes what this server indexes; creating or '
+      'changing one requires system-level (admin) privilege.',
+    );
+  }
+  if (resource is! fhir.Subscription) return null;
   final channel = resource.channel.type.valueString;
   if (channel == 'rest-hook' && !principal.isSystem) {
     return forbidden(

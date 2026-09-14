@@ -130,6 +130,8 @@ Future<Response> patchResourceHandler(
           ifMatchVersion:
               FhirHttpHeaders.parseETag(request.headers['if-match']),
         );
+      } on InvalidSearchParameter catch (e) {
+        return invalidSearchParameter(e);
       } on VersionConflict {
         return Response(
           412,
