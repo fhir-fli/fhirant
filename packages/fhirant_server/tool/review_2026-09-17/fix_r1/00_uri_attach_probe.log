@@ -1,0 +1,5 @@
+uriOpen=false -> SqliteException(14): while executing, unable to open database: file:///tmp/uri_probe_SYPESD/bk_false.sqlite?cipher=sqlcipher&legacy=4, unable to open database file (code 14)
+  Causing statement: ATTACH DATABASE 'file:///tmp/uri_probe_SYPESD/bk_false.sqlite?cipher=sqlcipher&legacy=4' AS bk KEY 'pw', parameters: 
+uriOpen=true attach ok; files: [main_false.db, main_true.db, bk_true.sqlite]
+  reopen legacy=4 -> [{x: 1}]
+  reopen legacy=0 -> [{x: 1}]

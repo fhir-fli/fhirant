@@ -44,12 +44,12 @@ void main() {
           .map((r) => (r as fhir.Patient).name!.single.family!.valueString!)
           .toList();
 
+  /// A backup is a store file under the passphrase (SQLCipher 4 format,
+  /// REVIEW-2026-09-17 R1), so it opens the way a store does.
   FhirAntDb openCopy(String path, String passphrase) => FhirAntDb(
         NativeDatabase(
           File(path),
-          setup: (raw) => raw
-            ..execute("PRAGMA cipher = '${FhirAntDb.cipherScheme}'")
-            ..execute("PRAGMA key = '$passphrase'"),
+          setup: (raw) => applyStoreCipher(raw, passphrase),
         ),
       );
 

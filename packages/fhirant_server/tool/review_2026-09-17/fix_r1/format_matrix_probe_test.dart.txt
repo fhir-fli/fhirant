@@ -1,0 +1,38 @@
+import 'dart:io';
+import 'package:sqlite3/sqlite3.dart';
+import 'package:test/test.dart';
+void main() {
+  test('format matrix', () {
+    final dir = Directory.systemTemp.createTempSync('uri_probe_');
+    final out = File('tool/review_2026-09-17/fix_r1/00d_format_matrix_mc.log').openSync(mode: FileMode.write);
+    void log(String s) { out.writeStringSync('$s\n'); out.flushSync(); print(s); }
+    final writers = <String, void Function(Database, String)>{
+      'pragma-default legacy=4 + bare ATTACH KEY': (db, p) { db..execute("PRAGMA cipher='sqlcipher'")..execute('PRAGMA legacy=4')..execute("ATTACH DATABASE '$p' AS bk KEY 'pw'"); },
+      'pragma-default cipher only + bare ATTACH KEY': (db, p) { db..execute("PRAGMA cipher='sqlcipher'")..execute("ATTACH DATABASE '$p' AS bk KEY 'pw'"); },
+      'URI legacy=4': (db, p) { db.execute("ATTACH DATABASE '${Uri.file(p)}?cipher=sqlcipher&legacy=4' AS bk KEY 'pw'"); },
+      'URI legacy=0': (db, p) { db.execute("ATTACH DATABASE '${Uri.file(p)}?cipher=sqlcipher&legacy=0' AS bk KEY 'pw'"); },
+      'keyed main legacy=4 + bare ATTACH KEY': (db, p) { db..execute("PRAGMA cipher='sqlcipher'")..execute('PRAGMA legacy=4')..execute("PRAGMA key='main'")..execute('CREATE TABLE m(x)')..execute("ATTACH DATABASE '$p' AS bk KEY 'pw'"); },
+      'keyed main legacy=4 + URI legacy=0': (db, p) { db..execute("PRAGMA cipher='sqlcipher'")..execute('PRAGMA legacy=4')..execute("PRAGMA key='main'")..execute('CREATE TABLE m(x)')..execute("ATTACH DATABASE '${Uri.file(p)}?cipher=sqlcipher&legacy=0' AS bk KEY 'pw'"); },
+    };
+    var i = 0;
+    for (final w in writers.entries) {
+      i++;
+      final p = '${dir.path}/bk_$i.sqlite';
+      final db = sqlite3.open('${dir.path}/main_$i.db', uri: true);
+      try {
+        w.value(db, p);
+        db..execute('CREATE TABLE bk.t(x)')..execute('INSERT INTO bk.t VALUES (1)')..execute('DETACH DATABASE bk');
+      } catch (e) { log('${w.key}: WRITE FAILED $e'); db.close(); continue; }
+      db.close();
+      final results = <String>[];
+      for (final legacy in [4, 0]) {
+        final r = sqlite3.open(p)..execute("PRAGMA cipher='sqlcipher'")..execute('PRAGMA legacy=$legacy')..execute("PRAGMA key='pw'");
+        try { r.select('SELECT x FROM t'); results.add('legacy=$legacy opens'); } catch (e) { results.add('legacy=$legacy FAILS'); }
+        r.close();
+      }
+      final head = File(p).openSync().readSync(24);
+      log('${w.key}: ${results.join(' | ')} | bytes16-23=${head.sublist(16)}');
+    }
+    out.closeSync();
+  });
+}

@@ -1,0 +1,6 @@
+pragma-default legacy=4 + bare ATTACH KEY: legacy=4 opens | legacy=0 FAILS | bytes16-23=[102, 210, 96, 21, 175, 66, 21, 70]
+pragma-default cipher only + bare ATTACH KEY: legacy=4 FAILS | legacy=0 opens | bytes16-23=[16, 0, 1, 1, 80, 64, 32, 32]
+URI legacy=4: legacy=4 opens | legacy=0 FAILS | bytes16-23=[68, 45, 163, 178, 179, 233, 10, 121]
+URI legacy=0: legacy=4 FAILS | legacy=0 opens | bytes16-23=[16, 0, 1, 1, 80, 64, 32, 32]
+keyed main legacy=4 + bare ATTACH KEY: legacy=4 opens | legacy=0 FAILS | bytes16-23=[246, 171, 16, 92, 111, 104, 23, 166]
+keyed main legacy=4 + URI legacy=0: legacy=4 FAILS | legacy=0 opens | bytes16-23=[16, 0, 1, 1, 80, 64, 32, 32]

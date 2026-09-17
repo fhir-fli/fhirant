@@ -1,0 +1,10 @@
+PRAGMA cipher: prod=[{sqlcipher: sqlcipher}] plain=[{sqlcipher: sqlcipher}]
+PRAGMA legacy: prod=[{4: 4}] plain=[{0: 0}]
+PRAGMA legacy_page_size: prod=[{4096: 4096}] plain=[{4096: 4096}]
+PRAGMA kdf_iter: prod=[{256000: 256000}] plain=[{256000: 256000}]
+PRAGMA hmac_use: prod=[{1: 1}] plain=[{1: 1}]
+PRAGMA plaintext_header_size: prod=[{0: 0}] plain=[{0: 0}]
+PRAGMA page_size: prod=[{page_size: 4096}] plain=[{page_size: 4096}]
+prod.db size=290816 bytes16-23=[51, 95, 185, 87, 70, 202, 148, 173] legacy=4 opens | legacy=0 FAILS | no-legacy-pragma FAILS
+from_prod.sqlite size=131072 bytes16-23=[53, 234, 224, 44, 185, 204, 128, 114] legacy=4 opens | legacy=0 FAILS | no-legacy-pragma FAILS
+from_plain.sqlite size=131072 bytes16-23=[16, 0, 1, 1, 80, 64, 32, 32] legacy=4 FAILS | legacy=0 opens | no-legacy-pragma opens

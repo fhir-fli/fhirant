@@ -1,0 +1,192 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/services/backup_production_store_test.dart
+00:00 +0: the store function sets what the stores have always been opened with
+00:01 +0 -1: the store function sets what the stores have always been opened with [E]
+  Expected: <4>
+    Actual: '4'
+  
+  package:matcher                                       expect
+  test/services/backup_production_store_test.dart 64:5  main.<fn>
+  
+00:01 +0 -1: a production store backs up and restores into a production store
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:36:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:77:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:36:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:86:26)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:05 +0 -2: a production store backs up and restores into a production store [E]
+  BackupDecryptionException: That passphrase does not open this file, or the file is not a FHIRant backup.
+  package:fhirant_server/src/services/backup_service.dart 94:7  BackupService.restoreFile
+  ===== asynchronous gap ===========================
+  test/services/backup_production_store_test.dart 87:20         main.<fn>
+  
+00:05 +0 -2: the backup is one format whatever store wrote it
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:36:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:102:24)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:104:19)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:08 +0 -3: the backup is one format whatever store wrote it [E]
+  SqliteException(26): while preparing statement, file is not a database, file is not a database (code 26)
+    Causing statement: SELECT count(*) AS c FROM resources
+  package:sqlite3/src/implementation/exception.dart 101:3  throwException
+  package:sqlite3/src/implementation/database.dart 378:9   DatabaseImplementation._prepareInternal
+  package:sqlite3/src/implementation/database.dart 449:19  DatabaseImplementation.prepare
+  package:sqlite3/src/ffi/implementation.dart 161:18       FfiDatabaseImplementation.prepare
+  package:sqlite3/src/implementation/database.dart 477:18  DatabaseImplementation.select
+  test/services/backup_production_store_test.dart 121:13   main.<fn>
+  
+00:08 +0 -3: a backup written before this fix by a store with no legacy setting still restores
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:143:17)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:36:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:171:26)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:10 +0 -4: a backup written before this fix by a store with no legacy setting still restores [E]
+  SqliteException(26): while executing, file is not a database, file is not a database (code 26)
+    Causing statement: ATTACH DATABASE '/tmp/fhirant_backup_prod_RHBUTB/old-format.sqlite' AS bk KEY 'correct horse', parameters: 
+  package:sqlite3/src/implementation/exception.dart 101:3         throwException
+  package:sqlite3/src/implementation/database.dart 295:9          DatabaseImplementation.execute
+  package:drift/src/sqlite3/database.dart 151:16                  Sqlite3Delegate.runWithArgsSync
+  package:drift/native.dart 434:30                                _NativeDelegate.runCustom.<fn>
+  dart:async                                                      new Future.sync
+  package:drift/native.dart 434:19                                _NativeDelegate.runCustom
+  package:drift/src/runtime/executor/helpers/engines.dart 120:19  _BaseExecutor.runCustom.<fn>
+  package:drift/src/runtime/executor/helpers/engines.dart 64:20   _BaseExecutor._synchronized
+  package:drift/src/runtime/executor/helpers/engines.dart 116:12  _BaseExecutor.runCustom
+  package:drift/src/runtime/api/connection_user.dart 437:23       DatabaseConnectionUser.customStatement.<fn>
+  package:drift/src/runtime/api/connection_user.dart 172:16       DatabaseConnectionUser.doWhenOpened.<fn>
+  ===== asynchronous gap ===========================
+  package:fhirant_db/db/fhirant_db.dart 536:5                     FhirAntDb.restoreEncrypted
+  ===== asynchronous gap ===========================
+  test/services/backup_production_store_test.dart 172:12          main.<fn>
+  
+00:10 +0 -4: a wrong passphrase is still refused, from a production store
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:36:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/services/backup_production_store_test.dart:179:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:12 +1 -4: Some tests failed.
+
+Failing tests:
+  test/services/backup_production_store_test.dart: a backup written before this fix by a store with no legacy setting still restores
+  test/services/backup_production_store_test.dart: a production store backs up and restores into a production store
+  test/services/backup_production_store_test.dart: the backup is one format whatever store wrote it
+  test/services/backup_production_store_test.dart: the store function sets what the stores have always been opened with
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

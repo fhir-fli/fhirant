@@ -6,7 +6,8 @@ import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
 import 'package:fhirant_db/db/server_types.dart';
-import 'package:sqlite3/sqlite3.dart' show sqlite3;
+import 'package:fhirant_db/db/store_cipher.dart';
+import 'package:sqlite3/sqlite3.dart' show Database, sqlite3;
 
 /// FHIR ANT server database.
 ///
@@ -347,7 +348,7 @@ class FhirAntDb extends FhirDb {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// The cipher scheme every FHIRant database and backup is written with.
-  static const cipherScheme = 'sqlcipher';
+  static const String cipherScheme = storeCipherScheme;
 
   /// Writes every table of this database to [path] as a SQLite file
   /// encrypted under [passphrase], streamed by SQLite: `ATTACH … KEY` then
@@ -396,10 +397,7 @@ class FhirAntDb extends FhirDb {
       throw ArgumentError.value(path, 'path', 'already exists');
     }
     await _requireCipher();
-    await customStatement(
-      "ATTACH DATABASE '${_sqlLiteral(path)}' AS bk "
-      "KEY '${_sqlLiteral(passphrase)}'",
-    );
+    await _attachBackup(path, passphrase, storeCipherLegacy);
     try {
       final objects = await customSelect(
         "SELECT name, sql FROM main.sqlite_master WHERE type = 'table' "
@@ -498,18 +496,38 @@ class FhirAntDb extends FhirDb {
     await _requireCipher();
     // The passphrase and the schema version, read raw: drift stamps its own
     // version on open, so a newer backup would look current by then.
-    final int version;
-    try {
-      final raw = sqlite3.open(path)
-        ..execute("PRAGMA cipher = '$cipherScheme'")
-        ..execute("PRAGMA key = '${_sqlLiteral(passphrase)}'");
+    // The file's `legacy` setting is found by opening it: [copyEncrypted]
+    // writes [storeCipherLegacy], and before REVIEW-2026-09-17 R1 it wrote
+    // whatever the source connection's default was, which was 0 for a store
+    // opened without the setting. Measured 2026-09-17
+    // (tool/review_2026-09-17/fix_r1/00d_format_matrix_mc.log): a file
+    // written under one of the two does not open under the other.
+    int? version;
+    var legacy = storeCipherLegacy;
+    Object? failure;
+    for (final candidate in const [storeCipherLegacy, 0]) {
       try {
-        version = raw.select('PRAGMA user_version').first.values.first! as int;
-      } finally {
-        raw.close();
+        final raw = sqlite3.open(path);
+        try {
+          _configureBackup(raw, passphrase, candidate);
+          version =
+              raw.select('PRAGMA user_version').first.values.first! as int;
+          // `user_version` alone reads as 0 from a file the key does not
+          // open; the schema read is what fails.
+          raw.select('SELECT count(*) FROM sqlite_master');
+          legacy = candidate;
+          failure = null;
+          break;
+        } finally {
+          raw.close();
+        }
+      } catch (e) {
+        version = null;
+        failure ??= e;
       }
-    } catch (e) {
-      throw BackupUnreadable('$e');
+    }
+    if (version == null) {
+      throw BackupUnreadable('$failure');
     }
     if (version > schemaVersion) {
       throw BackupSchemaTooNew(version, schemaVersion);
@@ -519,11 +537,7 @@ class FhirAntDb extends FhirDb {
       final backup = FhirAntDb(
         NativeDatabase(
           File(path),
-          setup: (raw) {
-            raw
-              ..execute("PRAGMA cipher = '$cipherScheme'")
-              ..execute("PRAGMA key = '${_sqlLiteral(passphrase)}'");
-          },
+          setup: (raw) => _configureBackup(raw, passphrase, legacy),
         ),
       );
       try {
@@ -533,10 +547,7 @@ class FhirAntDb extends FhirDb {
       }
     }
 
-    await customStatement(
-      "ATTACH DATABASE '${_sqlLiteral(path)}' AS bk "
-      "KEY '${_sqlLiteral(passphrase)}'",
-    );
+    await _attachBackup(path, passphrase, legacy);
     try {
       final tables = (await customSelect(
         "SELECT name FROM main.sqlite_master WHERE type = 'table' "
@@ -598,6 +609,43 @@ class FhirAntDb extends FhirDb {
       return restored;
     } finally {
       await customStatement('DETACH DATABASE bk');
+    }
+  }
+
+  /// Configures [raw], a connection just opened on a backup file, to read
+  /// it under [passphrase] with the cipher's `legacy` parameter at [legacy].
+  static void _configureBackup(Database raw, String passphrase, int legacy) {
+    raw
+      ..execute("PRAGMA cipher = '$cipherScheme'")
+      ..execute('PRAGMA legacy = $legacy')
+      ..execute("PRAGMA key = '${_sqlLiteral(passphrase)}'");
+  }
+
+  /// Attaches the backup file at [path] as `bk`, under [passphrase], with
+  /// the cipher's `legacy` parameter at [legacy] whatever this connection
+  /// was opened with.
+  ///
+  /// sqlite3mc SQL Pragmas page (read whole 2026-09-17): a cipher PRAGMA
+  /// with no schema name "affects the default values of the encryption
+  /// parameters", and `ATTACH … KEY` takes those defaults. That is how the
+  /// backup of a store opened with `legacy = 4` came out in one format and
+  /// the backup of a store opened without it in another (REVIEW-2026-09-17
+  /// R1). The default is set for the ATTACH and put back after it; the main
+  /// database, already keyed, keeps its own parameters. The documented
+  /// alternative, parameters in a `file:` URI, needs the main connection
+  /// opened with the URI flag, which drift's `NativeDatabase` does not set
+  /// (measured: fix_r1/00_uri_attach_probe.log, "unable to open database").
+  Future<void> _attachBackup(String path, String passphrase, int legacy) async {
+    final before =
+        (await customSelect('PRAGMA legacy').getSingle()).data.values.first;
+    await customStatement('PRAGMA legacy = $legacy');
+    try {
+      await customStatement(
+        "ATTACH DATABASE '${_sqlLiteral(path)}' AS bk "
+        "KEY '${_sqlLiteral(passphrase)}'",
+      );
+    } finally {
+      await customStatement('PRAGMA legacy = $before');
     }
   }
 
