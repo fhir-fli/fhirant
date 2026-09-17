@@ -58,8 +58,11 @@ void main() {
   test('the store function sets what the stores have always been opened with',
       () async {
     final db = await production('main.db');
-    Future<String> pragma(String name) async =>
-        '${(await db.customSelect('PRAGMA $name').getSingle()).data.values.first}';
+    Future<String> pragma(String name) async {
+      final row = await db.customSelect('PRAGMA $name').getSingle();
+      return '${row.data.values.first}';
+    }
+
     expect(await pragma('cipher'), 'sqlcipher');
     expect(await pragma('legacy'), '4');
     await db.close();

@@ -1,0 +1,13 @@
+Analyzing fhir_db...
+
+   info - test/store_test.dart:92:37 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:109:11 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:110:18 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:116:7 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:125:7 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:125:24 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:129:9 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/store_test.dart:136:9 - Unnecessary escape of '''. Try changing the outer quotes to '"'. - avoid_escaping_inner_quotes
+   info - test/store_test.dart:144:10 - Unnecessary escape of '''. Try changing the outer quotes to '"'. - avoid_escaping_inner_quotes
+
+9 issues found.

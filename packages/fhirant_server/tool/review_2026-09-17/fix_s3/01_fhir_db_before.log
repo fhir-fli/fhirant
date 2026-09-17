@@ -1,0 +1,48 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/store_test.dart
+00:00 +0: create stamps meta and assigns an id when there is none
+00:00 +1: server-owned tags a save cannot add one, and keeps the tags beside it
+00:00 +1 -1: server-owned tags a save cannot add one, and keeps the tags beside it [E]
+  Expected: [{'system': 't', 'code': 'other'}]
+    Actual: [{'system': 'urn:server', 'code': 'owned'}, {'system': 't', 'code': 'other'}]
+     Which: at location [0]['system'] is 'urn:server' instead of 't'
+  
+  package:matcher             expect
+  test/store_test.dart 103:7  main.<fn>.<fn>
+  
+00:00 +1 -1: server-owned tags a batch save cannot add one
+00:00 +1 -2: server-owned tags a batch save cannot add one [E]
+  Expected: [{'system': 't', 'code': 'other'}]
+    Actual: [{'system': 'urn:server', 'code': 'owned'}, {'system': 't', 'code': 'other'}]
+     Which: at location [0]['system'] is 'urn:server' instead of 't'
+  
+  package:matcher             expect
+  test/store_test.dart 111:7  main.<fn>.<fn>
+  
+00:00 +1 -2: server-owned tags the server writes one, singly and in a batch
+00:00 +2 -2: server-owned tags a save over a resource that carries one does not keep it: what a client changed is no longer the server's copy
+00:00 +2 -3: server-owned tags a save over a resource that carries one does not keep it: what a client changed is no longer the server's copy [E]
+  Expected: [{'system': 't', 'code': 'other'}]
+    Actual: [{'system': 'urn:server', 'code': 'owned'}, {'system': 't', 'code': 'other'}]
+     Which: at location [0]['system'] is 'urn:server' instead of 't'
+  
+  package:matcher             expect
+  test/store_test.dart 128:7  main.<fn>.<fn>
+  
+00:00 +2 -3: server-owned tags with none declared, every tag is a client's to write
+00:00 +3 -3: update counts the version, merges tags, moves the old row to history
+00:00 +4 -3: ifMatchVersion guards an update and a delete
+00:00 +5 -3: search: token, string (words and :exact), date, reference, quantity, uri, _id, _lastUpdated
+00:00 +6 -3: chained and _has searches, and the compartment
+00:00 +7 -3: a batch save, a bulk count, and the resource types held
+00:00 +8 -3: :in expands a stored ValueSet by compose.include and exclude
+00:00 +9 -3: a contained resource is indexed under #Type and found by chain
+00:00 +10 -3: the schema is at version 14 and the index rebuild runs
+00:00 +11 -3: Some tests failed.
+
+Failing tests:
+  test/store_test.dart: server-owned tags a batch save cannot add one
+  test/store_test.dart: server-owned tags a save cannot add one, and keeps the tags beside it
+  test/store_test.dart: server-owned tags a save over a resource that carries one does not keep it: what a client changed is no longer the server's copy
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

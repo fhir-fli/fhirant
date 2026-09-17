@@ -3,8 +3,7 @@ import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
-import 'package:fhirant_server/fhirant_server.dart'
-    show BackupService, specTagCode, specTagSystem;
+import 'package:fhirant_server/fhirant_server.dart' show BackupService;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -106,8 +105,10 @@ void main() {
             ],
           },
         });
+    // As the specification load saves: only the server writes the tag.
     await db.saveResources(
       [codeSystem('from-spec', spec: true)],
+      asServer: true,
     );
     await db.saveResource(codeSystem('ours'));
 

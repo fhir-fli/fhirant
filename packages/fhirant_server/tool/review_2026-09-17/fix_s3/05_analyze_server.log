@@ -1,0 +1,8 @@
+Analyzing fhirant_server...
+
+   info - test/handlers/restore_over_socket_test.dart:17:20 - Angle brackets will be interpreted as HTML. Try using backticks around the content with angle brackets, or try replacing `<` with `&lt;` and `>` with `&gt;`. - unintended_html_in_doc_comment
+   info - test/integration/export_integration_test.dart:6:8 - The import of 'package:fhirant_server/fhirant_server.dart' is unnecessary because all of the used elements are also provided by the import of 'package:fhirant_db/fhirant_db.dart'. Try removing the import directive. - unnecessary_import
+   info - test/integration/spec_tag_is_server_owned_test.dart:120:12 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+   info - test/services/backup_production_store_test.dart:62:81 - The line length exceeds the 80-character limit. Try breaking the line across multiple lines. - lines_longer_than_80_chars
+
+4 issues found.

@@ -13,8 +13,8 @@ import 'package:test/test.dart';
 /// Every other handler test builds a shelf `Request` in process, whose body
 /// is a `Stream<List<int>>`. Behind `dart:io` the body arrives as a
 /// `Stream<Uint8List>`, and `restoreHandler` piped it into a file sink:
-/// "type '_IOSinkImpl' is not a subtype of type
-/// 'StreamConsumer<Uint8List>'", a 500 before the file was opened. Found
+/// "type `_IOSinkImpl` is not a subtype of type
+/// `StreamConsumer<Uint8List>`", a 500 before the file was opened. Found
 /// 2026-09-17 by backing up one running CLI server and restoring into
 /// another (tool/review_2026-09-17/fix_r1/08_cli_end_to_end.log).
 void main() {

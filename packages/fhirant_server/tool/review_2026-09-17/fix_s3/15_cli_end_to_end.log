@@ -1,0 +1,8 @@
+waited 47s
+PUT Patient/kept on A: 201
+PUT Patient/tagged (spec tag) on A: 201
+tags stored on A: [{'system': 'urn:ward', 'code': 'west'}]
+backup from A: 200 131072 bytes
+{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 2 saved, 0 errors, 2 total entries"}]}
+restore into B: 200
+Patients on B: 2

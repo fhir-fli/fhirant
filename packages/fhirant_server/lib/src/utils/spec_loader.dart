@@ -8,6 +8,10 @@ import 'package:fhir_r4_bulk/fhir_r4_bulk.dart' show NdjsonStream;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 
+// The tag's system and code are declared with the store (fhirant_db
+// spec_tag.dart), which enforces who may write it.
+export 'package:fhirant_db/fhirant_db.dart' show specTagCode, specTagSystem;
+
 /// How many resources go to the store in one transaction while loading.
 ///
 /// Twenty, and an event-loop turn between chunks: the store runs its SQL on
@@ -17,17 +21,6 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 /// with no turn held the loop 1.4 s (files) and 5.4 s (assets) at a stretch;
 /// see the note on [loadSpecLines].
 const _chunkSize = 20;
-
-/// The `meta.tag` every resource of the specification load carries, so the
-/// store can tell a deployment's own data from the 4,212 conformance
-/// resources that ship with the server. A system-level `$export` with no
-/// `_type` and `$backup` leave tagged resources out; REST, a resource's own
-/// `_history` and the dashboard see them as any resource (REVIEW-2026-09-06
-/// §6.1, decided 2026-09-08: the specification stays in `resources`).
-const specTagSystem = 'http://fhirant.fhir-fli.dev/CodeSystem/tags';
-
-/// The code of [specTag].
-const specTagCode = 'spec';
 
 /// The tag itself, as written into `meta.tag`.
 final fhir.Coding specTag = fhir.Coding(
@@ -214,7 +207,8 @@ Future<(int, int)> loadSpecLines(
   var chunk = <fhir.Resource>[];
   Future<void> save() async {
     if (chunk.isEmpty) return;
-    await db.saveResources(chunk);
+    // asServer: the tag is the server's, and this is the one writer of it.
+    await db.saveResources(chunk, asServer: true);
     loaded += chunk.length;
     chunk = <fhir.Resource>[];
     // A real event-loop turn, so timers, the UI and other requests run

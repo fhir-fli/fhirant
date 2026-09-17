@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
 import 'package:fhirant_db/db/server_types.dart';
+import 'package:fhirant_db/db/spec_tag.dart';
 import 'package:fhirant_db/db/store_cipher.dart';
 import 'package:sqlite3/sqlite3.dart' show Database, sqlite3;
 
@@ -18,6 +19,8 @@ class FhirAntDb extends FhirDb {
   FhirAntDb(super.e) {
     // Server uses integer version IDs (1, 2, 3, ...).
     fhirDao.versionIdAsTime = false;
+    // The specification tag is the server's to write (spec_tag.dart).
+    fhirDao.serverOwnedTags = {'$specTagSystem|$specTagCode'};
   }
 
   @override
@@ -741,12 +744,14 @@ class FhirAntDb extends FhirDb {
     fhir.Resource resource, {
     String? ifMatchVersion,
     bool mergeTags = true,
+    bool asServer = false,
   }) async {
     try {
       return await fhirDao.saveResource(
         resource,
         ifMatchVersion: ifMatchVersion,
         mergeTags: mergeTags,
+        asServer: asServer,
       );
     } on VersionConflict {
       rethrow;
@@ -762,8 +767,14 @@ class FhirAntDb extends FhirDb {
 
   /// See [FhirDao.saveResources]: a first version is stored once, and a
   /// stored resource's row moves into history as it is replaced.
-  Future<bool> saveResources(List<fhir.Resource> resourcesList) =>
-      fhirDao.saveResources(resourcesList);
+  ///
+  /// [asServer] is for the server's own writes, the specification load:
+  /// only such a save writes a tag in `FhirDao.serverOwnedTags`.
+  Future<bool> saveResources(
+    List<fhir.Resource> resourcesList, {
+    bool asServer = false,
+  }) =>
+      fhirDao.saveResources(resourcesList, asServer: asServer);
 
   /// The patient this resource is about, or null when it names none.
   ///

@@ -1,0 +1,480 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/date_range_test.dart
+00:00 +0: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +1: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +2: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +3: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +4: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +5: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +6: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +7: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +8: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +9: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +10: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +11: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +12: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +13: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +14: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +15: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +16: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +17: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +18: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +19: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:00 +20: test/hygiene_test.dart: :in refuses a compose with include.filter
+00:00 +21: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:00 +22: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +23: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +24: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +25: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +26: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +27: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:01 +28: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +29: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +30: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +31: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +32: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +33: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +34: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:01 +35: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:01 +36: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:01 +37: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:01 +38: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:01 +39: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:01 +40: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +41: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +42: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +43: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +44: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +45: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +46: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +47: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +48: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +49: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +50: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +51: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +52: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +53: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +54: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +55: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +56: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +57: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +58: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +59: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +60: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +61: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +62: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +63: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +64: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +65: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +66: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +67: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +68: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +69: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +70: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:01 +71: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +72: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +73: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +74: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +75: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +76: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +77: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +78: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +79: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +80: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +81: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +82: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +83: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +84: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +85: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +86: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +87: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +88: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +89: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +90: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +91: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +92: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +93: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +94: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +95: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +96: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +97: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +98: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +99: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +100: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +101: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:02 +102: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +103: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +104: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +105: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +106: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +107: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +108: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +109: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +110: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +111: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +112: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +113: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +114: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +115: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +116: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +117: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +118: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +119: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +120: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +121: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +122: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +123: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +124: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +125: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +126: test/reference_targets_test.dart: more ids than one statement holds
+00:02 +127: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +128: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +129: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +130: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +131: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +132: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +133: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +134: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +135: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +136: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +137: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +138: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +139: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +140: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +141: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +142: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +143: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +144: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +145: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +146: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +147: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +148: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +149: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +150: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +151: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +152: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +153: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +154: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +155: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +156: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +157: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +158: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +159: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +160: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +161: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +162: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +163: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +164: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +165: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +166: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +167: test/reference_targets_test.dart: more ids than one statement holds
+00:03 +168: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +169: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +170: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +171: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +172: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +173: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +174: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +175: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +176: test/reference_targets_test.dart: more ids than one statement holds
+00:04 +177: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +178: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +179: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +180: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +181: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +182: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +183: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +184: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +185: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +186: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +187: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +188: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +189: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +190: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +191: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +192: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +193: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +194: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +195: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +196: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +197: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +198: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +199: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +200: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +201: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +202: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +203: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +204: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +205: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +206: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +207: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +208: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +209: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +210: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +211: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +212: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +213: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +214: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +215: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +216: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +217: test/reference_targets_test.dart: more ids than one statement holds
+00:05 +218: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +219: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +220: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +221: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +222: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +223: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +224: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +225: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +226: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +227: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +228: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +229: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +230: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +231: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +232: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +233: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +234: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +235: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +236: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +237: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +238: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +239: test/reference_targets_test.dart: more ids than one statement holds
+00:06 +240: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:06 +241: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:06 +242: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:06 +243: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +244: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +245: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +246: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +247: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +248: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +249: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +250: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +251: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +252: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +253: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +254: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +255: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +256: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +257: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +258: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +259: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +260: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +261: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +262: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +263: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +264: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +265: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:07 +265: test/review_integrity_test.dart: saveResources (findings 27, 28) is atomic: an indexing failure stores no resource
+Error in saveResources: Bad state: index failed
+00:07 +266: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +267: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +268: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +269: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +270: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +271: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +272: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +273: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +274: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +275: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +276: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +277: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +278: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +279: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +280: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +281: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +282: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +283: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +284: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +285: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +286: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +287: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +288: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +289: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +290: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +291: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +292: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +293: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +294: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +295: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +296: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +297: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +298: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +299: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +300: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:08 +301: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +302: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +303: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +304: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +305: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +306: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +307: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +308: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +309: test/rebuild_paging_test.dart: a rebuild over more than one page indexes every resource
+00:09 +310: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +311: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +312: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +313: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +314: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +315: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +316: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +317: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +318: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +319: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +320: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +321: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +322: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +323: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +324: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +325: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +326: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +327: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +328: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +329: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +330: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +331: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +332: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +333: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +334: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +335: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +336: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +337: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +338: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +339: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +340: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +341: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +341: test/fhir_db_test.dart: (setUpAll)
+Database initialized
+00:09 +341: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:09 +342: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +343: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +344: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +345: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +346: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +347: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +348: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +349: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +350: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +351: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +352: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +353: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +354: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +355: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +356: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +357: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +358: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +359: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +360: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +361: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +362: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +363: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +364: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +365: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +366: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +367: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +367: test/indexing_failure_test.dart: saveResources reports a failed bulk index as false
+Error in saveResources: Bad state: index is broken
+00:10 +368: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +369: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +370: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +371: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +372: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +373: test/schema_migration_test.dart: a version-5 database gains the column without a rebuild
+00:10 +374: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +375: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +376: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +377: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +378: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +379: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +380: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +381: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:10 +382: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +383: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +384: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +385: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +386: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +387: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +388: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +389: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +390: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +391: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +392: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +393: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +394: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +395: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +395: test/fhir_db_test.dart: Encrypted Database: CRUD with cipherSetup()
+WARNING (drift): It looks like you've created the database class FhirDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhir_r4/packages/fhir_r4_db/test/fhir_db_test.dart:255:21)
+#7      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#9      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:11 +396: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +397: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +398: test/planner_statistics_test.dart: a bulk save into an empty database leaves statistics behind
+00:11 +399: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +400: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +401: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +402: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +403: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +404: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +405: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +406: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +407: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +408: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +409: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +410: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +411: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:11 +412: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +413: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +414: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +415: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +416: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +417: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +418: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +419: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +420: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +421: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +422: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +423: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +424: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +425: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +426: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +427: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +428: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:12 +429: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:13 +429: test/fhir_db_test.dart: More Complicated Searching (& Resources)
+Found 10 resources in total of 70 ms
+00:13 +430: test/schema10_test.dart: one parameter: the page shape is chosen by the size probe a broad range pages in id order with an offset
+00:14 +431: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:14 +432: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:14 +433: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:14 +434: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:14 +435: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:14 +436: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:15 +437: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:18 +438: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:19 +439: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:20 +440: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:20 +441: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:22 +442: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:22 +443: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:22 +444: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:23 +445: test/schema_migration_test.dart: a resource saved after the upgrade indexes and is searchable
+00:26 +446: test/schema_migration_test.dart: a version-7 database gains the contained-row partial indexes
+00:28 +447: test/schema_migration_test.dart: a version-8 database has its search index rebuilt
+00:30 +448: test/schema_migration_test.dart: a version-11 database stores its open date bounds as sentinels
+00:31 +449: test/schema_migration_test.dart: a version-10 database stores its open bounds as infinity
+00:32 +450: test/schema_migration_test.dart: a version-9 database loses search_path, its key and the old indexes
+00:34 +451: All tests passed!
