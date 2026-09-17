@@ -32,10 +32,9 @@ class DatabaseService {
       await secureStorage.write(key: _encryptionKeyName, value: encryptionKey);
     }
 
-    // A quote in the key is doubled, as SQL requires, rather than ending
-    // the literal. Computed here, outside the setup closure, where the
-    // null check above has promoted the key.
-    final keyLiteral = encryptionKey.replaceAll("'", "''");
+    // Bound here, outside the setup closure, where the null check above
+    // has promoted the key.
+    final storeKey = encryptionKey;
 
     // Set up DB file in app documents directory
     final docsDir = await getApplicationDocumentsDirectory();
@@ -46,9 +45,9 @@ class DatabaseService {
     final dbFile = File('${dbDir.path}/fhirant.db');
 
     // SQLite is built from the sqlite3mc source (SQLite3 Multiple Ciphers)
-    // via the build hook declared in pubspec.yaml. The cipher/legacy PRAGMAs
-    // select the SQLCipher-v4-compatible scheme so databases created by the
-    // previous sqlcipher_flutter_libs builds keep opening.
+    // via the build hook declared in pubspec.yaml. `applyStoreCipher`
+    // (fhirant_db) is the one place the store's cipher configuration is
+    // written; the CLI opens its store with the same call.
     //
     // The store runs on its own isolate (REVIEW-2026-09-06 §6.1): every SQL
     // statement used to execute on the UI isolate, so a search, a count, an
@@ -61,13 +60,7 @@ class DatabaseService {
     // each row still happens on the caller.
     final nativeDb = NativeDatabase.createInBackground(
       dbFile,
-      setup: (rawDb) {
-        rawDb
-          ..execute("PRAGMA cipher = 'sqlcipher';")
-          ..execute('PRAGMA legacy = 4;')
-          ..execute("PRAGMA key = '$keyLiteral';");
-        rawDb.config.doubleQuotedStringLiterals = false;
-      },
+      setup: (rawDb) => applyStoreCipher(rawDb, storeKey),
     );
 
     _db = FhirAntDb(nativeDb);

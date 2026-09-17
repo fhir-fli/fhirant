@@ -120,15 +120,7 @@ void main(List<String> arguments) async {
   // previous SQLCipher-based builds keep opening.
   final nativeDb = NativeDatabase(
     dbFile,
-    setup: (rawDb) {
-      rawDb
-        ..execute("PRAGMA cipher = 'sqlcipher';")
-        ..execute('PRAGMA legacy = 4;')
-        // The key is a passphrase inside a SQL string literal: a quote in
-        // it is doubled, as SQL requires, rather than ending the literal.
-        ..execute("PRAGMA key = '${encryptionKey.replaceAll("'", "''")}';");
-      rawDb.config.doubleQuotedStringLiterals = false;
-    },
+    setup: (rawDb) => applyStoreCipher(rawDb, encryptionKey),
   );
   final db = FhirAntDb(nativeDb);
 
