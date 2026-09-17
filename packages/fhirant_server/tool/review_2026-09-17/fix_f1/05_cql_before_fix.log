@@ -1,0 +1,49 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/cql_handler_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: $cql handler returns 400 when body is empty
+00:00 +1: $cql handler returns 400 when neither cql nor elm is provided
+00:00 +2: $cql handler returns 400 for invalid JSON body
+00:00 +3: $cql handler evaluates simple CQL literal
+00:00 +4: $cql handler evaluates CQL arithmetic
+00:00 +5: $cql handler evaluates CQL boolean logic
+00:00 +6: $cql handler evaluates CQL list count
+00:00 +7: $cql handler evaluates CQL string operations
+00:00 +8: $cql handler accepts FHIR Parameters resource format
+00:00 +9: $cql handler evaluates with inline data bundle
+00:00 +10: $cql handler loads patient from DB via subject param
+00:00 +11: $cql handler a failed read of the patient record is a 500, not a partial run
+00:00 +11 -1: $cql handler a failed read of the patient record is a 500, not a partial run [E]
+  Expected: <500>
+    Actual: <200>
+  {"resourceType":"Parameters","parameter":[{"name":"Patient","resource":{"resourceType":"Patient","id":"pat-1"}},{"name":"library","valueString":"Instance of 'CqlLibrary'"},{"name":"startTimestamp","valueDateTime":"2026-09-17T13:36:52.410352-04:00"},{"name":"X","valueInteger":1}]}
+  
+  package:matcher                            expect
+  test/handlers/cql_handler_test.dart 256:7  main.<fn>.<fn>
+  
+00:00 +11 -1: $cql handler patientId alias works as subject
+00:00 +12 -1: $cql handler response has correct content type
+00:00 +13 -1: $cql handler handles invalid CQL syntax gracefully
+line 1:0 mismatched input 'this' expecting {<EOF>, 'library', 'using', 'include', 'public', 'private', 'parameter', 'codesystem', 'valueset', 'code', 'concept', 'define', 'context'}
+line 1:22 token recognition error at: '@@'
+line 1:24 token recognition error at: '@ '
+line 1:26 token recognition error at: '!!'
+line 1:28 token recognition error at: '!'
+00:00 +14 -1: $cql handler evaluates CQL date/time operations
+00:00 +15 -1: Library/<id>/$evaluate evaluates a stored Library with CQL content
+00:00 +16 -1: Library/<id>/$evaluate evaluates a stored Library with ELM JSON content
+00:00 +17 -1: Library/<id>/$evaluate returns 404 when Library not found
+00:00 +18 -1: Library/<id>/$evaluate returns 422 when Library has no evaluable content
+00:00 +19 -1: Library/<id>/$evaluate evaluates with subject parameter
+00:00 +20 -1: Library/$evaluate (by URL) evaluates Library found by canonical URL
+00:00 +21 -1: Library/$evaluate (by URL) returns 404 when canonical URL not found
+00:00 +22 -1: Library/$evaluate (by URL) evaluates inline CQL via Library/$evaluate
+00:00 +23 -1: Library/$evaluate (by URL) returns 400 when no library source provided
+00:00 +24 -1: Library/$evaluate (by URL) returns 400 when body is empty
+00:00 +25 -1: (tearDownAll)
+00:00 +25 -1: Some tests failed.
+
+Failing tests:
+  test/handlers/cql_handler_test.dart: $cql handler a failed read of the patient record is a 500, not a partial run
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

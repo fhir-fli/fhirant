@@ -220,6 +220,46 @@ void main() {
           .called(1);
     });
 
+    // The sibling of REVIEW-2026-09-17 F1. `_loadPatientData` caught every
+    // exception "to skip resource types that don't have a patient search
+    // param"; all ten types it reads have one (checked 2026-09-17 against
+    // fhir_generator/fhir_r4/definitions.json/search-parameters.json), so
+    // the catch only ever hid a failed read, and the CQL ran on a partial
+    // record: `exists([Condition])` false because the read threw.
+    test('a failed read of the patient record is a 500, not a partial run',
+        () async {
+      when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'pat-1'))
+          .thenAnswer((_) async => fhir.Patient(id: 'pat-1'.toFhirString));
+      when(
+        () => mockDb.search(
+          resourceType: any(named: 'resourceType'),
+          searchParameters: any(named: 'searchParameters'),
+          hasParameters: any(named: 'hasParameters'),
+          count: any(named: 'count'),
+          offset: any(named: 'offset'),
+          sort: any(named: 'sort'),
+        ),
+      ).thenAnswer((invocation) async {
+        if (invocation.namedArguments[#resourceType] ==
+            fhir.R4ResourceType.Condition) {
+          throw StateError('the read failed');
+        }
+        return <fhir.Resource>[];
+      });
+
+      const cql = "library P version '1.0.0'\ndefine X: 1";
+      final response = await cqlHandler(
+        postJson(r'/$cql', {'cql': cql, 'subject': 'Patient/pat-1'}),
+        mockDb,
+      );
+      final text = await response.readAsString();
+      expect(response.statusCode, 500, reason: text);
+      expect(
+        (jsonDecode(text) as Map<String, dynamic>)['resourceType'],
+        'OperationOutcome',
+      );
+    });
+
     test('patientId alias works as subject', () async {
       when(() => mockDb.getResource(any(), any()))
           .thenAnswer((_) async => null);

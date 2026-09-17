@@ -560,19 +560,19 @@ Future<void> _loadPatientData(
     fhir.R4ResourceType.CarePlan,
   ];
 
+  // A read that throws is thrown on and the request answers 500. It was
+  // caught "to skip resource types that don't have a patient search param";
+  // every type above has one (search-parameters.json, checked 2026-09-17),
+  // so all the catch did was run the CQL on a partial record.
   for (final type in resourceTypes) {
-    try {
-      final results = await dbInterface.search(
-        resourceType: type,
-        searchParameters: {
-          'patient': ['Patient/$patientId'],
-        },
-      );
-      if (results.isNotEmpty) {
-        context[type.name] = results.map((r) => r.toJson()).toList();
-      }
-    } catch (_) {
-      // Skip resource types that don't have a patient search param
+    final results = await dbInterface.search(
+      resourceType: type,
+      searchParameters: {
+        'patient': ['Patient/$patientId'],
+      },
+    );
+    if (results.isNotEmpty) {
+      context[type.name] = results.map((r) => r.toJson()).toList();
     }
   }
 }
