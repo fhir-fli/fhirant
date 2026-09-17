@@ -1,0 +1,7 @@
+Running build hooks...Running build hooks...00:00 +0: loading tool/review_2026-09-17/probes/search_modifier_probe_test.dart
+00:00 +0: modifier and value handling
+Q9a	/Patient?name:text=tex	expected 400	200 total 1
+Q9b	/Observation?subject:type=Patient	expected 400	200 total 0
+Q6	/Patient?name:missing=maybe	expected 400	200 total 1
+Q7	/Observation?subject:identifier=%7C42	expected total 1 (nosys)	200 total 2
+00:00 +1: All tests passed!

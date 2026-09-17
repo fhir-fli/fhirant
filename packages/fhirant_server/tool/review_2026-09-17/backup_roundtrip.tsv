@@ -1,0 +1,7 @@
+BR1	backup written, bytes	131072
+BR2	raw open as restoreEncrypted does (cipher, key; no legacy)	FAILS: SqliteException(26): while selecting from statement, file is not a database, file is not a database (code 26)
+BR3	raw open with legacy = 4 added	opens: user_version=23 resources=1
+BR4	restoreEncrypted into the same production store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.
+BR5	restoreEncrypted into a fresh production store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.
+BR6	the same round trip from a plain in-memory store (what the tests run)	restored 1
+BR7	production backup into a plain store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.

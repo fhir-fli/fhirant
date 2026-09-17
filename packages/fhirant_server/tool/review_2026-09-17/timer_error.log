@@ -1,0 +1,7 @@
+Running build hooks...Running build hooks...tick 1
+tick 2
+Unhandled exception:
+Bad state: database is locked
+#0      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/probes/timer_error_probe.dart:14:7)
+<asynchronous suspension>
+exit=255

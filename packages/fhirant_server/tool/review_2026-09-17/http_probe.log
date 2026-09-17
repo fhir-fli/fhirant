@@ -1,0 +1,100 @@
+Running build hooks...Running build hooks...00:00 +0: loading tool/review_2026-09-17/probes/http_probe_test.dart
+00:00 +0: A7 patient scopes with no patient context, system search
+A7	refused (403) or 0 patients	200 total=2	FINDING
+00:00 +1: A15 HEAD with a token that has no scope on the type
+A15	GET 403, HEAD 403	GET 403, HEAD 200	FINDING
+00:00 +2: A3 five wrong passwords end the live session of the account
+A3	before 200, after 200	before 200, after 401	FINDING
+00:02 +3: A18 login tells an unknown user from a locked or inactive one
+00:02 +3: A7 patient scopes with no patient context, system search
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +3: A15 HEAD with a token that has no scope on the type
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +3: A18 login tells an unknown user from a locked or inactive one
+A18	same status for both	inactive 403, unknown 401	FINDING
+00:02 +4: A20 an unregistered client_id with any redirect_uri gets the code
+A20a	refused: client not registered	302 -> https://evil.example/cb?code=...	FINDING
+A20b	redirect keeps keep=1	dropped	FINDING
+00:03 +5: AU1 a clinician rewrites and deletes the audit trail
+AU1	PUT 403/405, DELETE 403/405	PUT 200, DELETE 204	FINDING
+00:04 +6: H15 SearchParameter delete without system authority
+H15	direct 403, conditional 403, bundle entry 403	direct 403, conditional 204 (read after: 410), bundle entry 204	FINDING
+00:04 +7: P1 a PATCH of a Subscription is never re-activated by the server
+P1	created error, after PATCH error	created error, after PATCH active	FINDING
+00:04 +8: H12 PUT with an id outside the FHIR id grammar
+H12	400	201	FINDING
+00:04 +9: B8 a Bundle GET entry with _has
+B8	REST total 1, entry total 1	REST total 1, entry total 2	FINDING
+00:04 +10: B1 a Bundle entry url with three segments
+B1	a history Bundle, or a refusal	200 Patient	FINDING
+00:04 +11: Q4 the same bad value down the two search paths
+Q4	SQL path 400, general path 400	SQL path 400, general path 400	as-expected
+00:04 +12: T1 validate-code ignores compose.exclude
+T1	expand [b], validate-code a false	expand [b], validate-code a true	FINDING
+00:04 +13: AU1 a clinician rewrites and deletes the audit trail
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +13: T3 a ValueSet over a CodeSystem this server does not hold
+T3	expand refused, validate-code refused, :in refused, :not-in refused	expand 200 total=0, validate-code 200 result=false, :in 200 0, :not-in 200 1	FINDING
+00:04 +14: V1 $validate of an invalid resource
+V1	200 with error issues	400 with error issues	FINDING
+00:04 +15: H15 SearchParameter delete without system authority
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +15: M1 conditional update, which the CapabilityStatement claims
+M1	claimed and 201, or not claimed	claimed=true, PUT /Patient?identifier= 404	FINDING
+00:04 +16: P1 a PATCH of a Subscription is never re-activated by the server
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +16: CN1 an Accept header with a quote in it
+CN1	406 with valid JSON	406 validJson=false	FINDING
+00:04 +17: H12 PUT with an id outside the FHIR id grammar
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +17: JP1 JSON Patch test with members in another order
+JP1	200	200	as-expected
+00:04 +18: B8 a Bundle GET entry with _has
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +18: H8 read outside the compartment against a read of nothing
+H8	same status for both	another patient's 403, absent 404	FINDING
+00:04 +19: B1 a Bundle entry url with three segments
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +19: B4 a 20 MB request body
+B4	413	201	FINDING
+00:09 +20: Q4 the same bad value down the two search paths
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: T1 validate-code ignores compose.exclude
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: T3 a ValueSet over a CodeSystem this server does not hold
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: V1 $validate of an invalid resource
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: M1 conditional update, which the CapabilityStatement claims
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: JP1 JSON Patch test with members in another order
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:09 +20: BK3 a client-written spec tag takes a Patient out of the backup
+00:09 +20: H8 read outside the compartment against a read of nothing
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:10 +20: BK3 a client-written spec tag takes a Patient out of the backup
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/test_helpers.dart:98:14)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/probes/http_probe_test.dart:670:27)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:10 +20: B4 a 20 MB request body
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:10 +20: BK3 a client-written spec tag takes a Patient out of the backup
+BK3	restore 200, 2 patients restored	restore 200, 1 patient(s) restored	FINDING
+00:10 +21: All tests passed!

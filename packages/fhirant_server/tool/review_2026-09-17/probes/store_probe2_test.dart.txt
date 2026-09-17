@@ -1,0 +1,203 @@
+// REVIEW-2026-09-17, second store batch. Appends to store_probe2.tsv as
+// each probe finishes. Nothing asserts.
+//
+// TZ probe: run once with PROBE_PHASE=index TZ=America/New_York and once
+// with PROBE_PHASE=search TZ=Asia/Tokyo, PROBE_DB pointing at the same file.
+// ignore_for_file: avoid_print
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:test/test.dart';
+
+import '../../../test/integration/test_helpers.dart';
+
+final _out = File('tool/review_2026-09-17/store_probe2.tsv')
+    .openSync(mode: FileMode.append);
+
+void record(String id, String what, String observed) {
+  final line = '$id\t$what\t$observed\n';
+  _out
+    ..writeStringSync(line)
+    ..flushSync();
+  print(line.trim());
+}
+
+void main() {
+  final phase = Platform.environment['PROBE_PHASE'] ?? 'all';
+  final tzDb = Platform.environment['PROBE_DB'];
+
+  test('Q10 a date indexed in one zone, searched in another', () async {
+    if (tzDb == null) return;
+    final db = FhirAntDb(NativeDatabase(File(tzDb)));
+    await db.initialize();
+    if (phase == 'index') {
+      await db.saveResource(
+        fhir.Patient(
+          id: fhir.FhirString('tz'),
+          birthDate: fhir.FhirDate.fromString('1990-01-15'),
+        ),
+      );
+    }
+    final n = await db.searchCount(
+      resourceType: fhir.R4ResourceType.Patient,
+      searchParameters: {
+        'birthdate': ['1990-01-15'],
+      },
+    );
+    record(
+      'Q10',
+      'phase=$phase zone=${DateTime.now().timeZoneName} '
+          'offset=${DateTime.now().timeZoneOffset.inHours}h: '
+          'Patient?birthdate=1990-01-15',
+      '$n match(es)',
+    );
+    await db.close();
+  });
+
+  test('F1 search answers during a rebuild, store on its own isolate',
+      () async {
+    if (phase != 'all') return;
+    final dir = await Directory.systemTemp.createTemp('probe-f1-');
+    try {
+      final db = FhirAntDb(
+        NativeDatabase.createInBackground(File('${dir.path}/f1.db')),
+      );
+      await db.initialize();
+      const n = 6000;
+      for (var i = 0; i < n; i += 500) {
+        await db.saveResources([
+          for (var j = i; j < i + 500; j++)
+            fhir.Patient(
+              id: fhir.FhirString('p${j.toString().padLeft(5, '0')}'),
+              gender: fhir.AdministrativeGender.female,
+            ),
+        ]);
+      }
+      Future<int> count() => db.searchCount(
+            resourceType: fhir.R4ResourceType.Patient,
+            searchParameters: {
+              'gender': ['female'],
+            },
+          );
+      final before = await count();
+      final seen = <int>[];
+      var done = false;
+      final sw = Stopwatch()..start();
+      final rebuild = db.rebuildSearchIndex().whenComplete(() => done = true);
+      while (!done) {
+        try {
+          seen.add(await count());
+        } catch (e) {
+          seen.add(-1);
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      await rebuild;
+      final took = sw.elapsedMilliseconds;
+      final after = await count();
+      final distinct = seen.toSet().toList()..sort();
+      record(
+        'F1',
+        'gender=female count before / during / after a rebuild of $n '
+            '($took ms, ${seen.length} polls; -1 = SQL error)',
+        '$before / min ${distinct.first} max ${distinct.last}, '
+            '${distinct.length} distinct answers / $after',
+      );
+      await db.close();
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+  test('WAL what one commit costs under each journal mode, this disk',
+      () async {
+    if (phase != 'all') return;
+    for (final mode in ['delete', 'wal']) {
+      for (final sync in ['FULL', 'NORMAL']) {
+        if (mode == 'delete' && sync == 'NORMAL') continue;
+        final dir = await Directory.systemTemp.createTemp('probe-wal-');
+        try {
+          final db = FhirAntDb(
+            NativeDatabase(
+              File('${dir.path}/w.db'),
+              setup: (raw) => raw
+                ..execute('PRAGMA journal_mode = $mode')
+                ..execute('PRAGMA synchronous = $sync'),
+            ),
+          );
+          await db.initialize();
+          const n = 200;
+          final sw = Stopwatch()..start();
+          for (var i = 0; i < n; i++) {
+            await db.saveResource(
+              fhir.Patient(
+                id: fhir.FhirString('w$i'),
+                gender: fhir.AdministrativeGender.male,
+              ),
+            );
+          }
+          record(
+            'WAL',
+            'journal_mode=$mode synchronous=$sync: $n single saveResource '
+                'commits',
+            '${sw.elapsedMilliseconds} ms total, '
+                '${(sw.elapsedMilliseconds / n).toStringAsFixed(1)} ms each',
+          );
+          await db.close();
+        } finally {
+          await dir.delete(recursive: true);
+        }
+      }
+    }
+  });
+
+  test('C1 how long a client-supplied program holds the server', () async {
+    if (phase != 'all') return;
+    final server = await createTestServer();
+    final admin = await issueTestToken(
+      server.db,
+      username: 'c-admin',
+      role: 'admin',
+      scopes: ['system/*.*'],
+    );
+    await server.db.saveResource(fhir.Patient(id: fhir.FhirString('c1')));
+    for (final size in [200000, 2000000]) {
+      final sw = Stopwatch()..start();
+      // A health poll started alongside, to see when it is answered.
+      var healthMs = -1;
+      final res = Future.sync(
+        () => server.handler(
+        testRequest(
+          'POST',
+          r'/$cql',
+          body: jsonEncode({
+            'cql': 'library P version \'1\'\n'
+                'define Big: Count(expand { Interval[1, $size] })',
+          }),
+          headers: {'content-type': 'application/json'},
+          authToken: admin,
+        ),
+        ),
+      );
+      final health = Future.sync(
+        () => server.handler(testRequest('GET', '/health')),
+      ).then((_) => healthMs = sw.elapsedMilliseconds);
+      final r = await res;
+      final cqlMs = sw.elapsedMilliseconds;
+      await health;
+      final body = await r.readAsString();
+      record(
+        'C1',
+        r'$cql Count(expand { Interval[1, ' '$size] }): status, ms, and when '
+            'a /health sent at the same moment was answered',
+        '${r.statusCode} in $cqlMs ms; /health answered at $healthMs ms; '
+            '${body.substring(0, body.length.clamp(0, 90))}',
+      );
+    }
+    await server.db.close();
+  });
+}

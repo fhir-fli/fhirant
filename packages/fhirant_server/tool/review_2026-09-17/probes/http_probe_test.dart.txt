@@ -1,0 +1,695 @@
+// REVIEW-2026-09-17 probes, through the full middleware pipeline with
+// authentication ON. Each probe states what a correct server does, records
+// what this one does, and appends one line to http_probe.tsv as it finishes.
+// Nothing here asserts: the TSV is the result.
+//
+// Run: dart test tool/review_2026-09-17/probes/http_probe_test.dart
+// ignore_for_file: avoid_print
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/test.dart';
+
+import '../../../test/integration/test_helpers.dart';
+
+final _out = File('tool/review_2026-09-17/http_probe.tsv')
+    .openSync(mode: FileMode.append);
+
+void record(String id, String expected, String observed) {
+  final verdict = expected == observed ? 'as-expected' : 'FINDING';
+  final line = '$id\t$expected\t$observed\t$verdict\n';
+  _out
+    ..writeStringSync(line)
+    ..flushSync();
+  print(line.trim());
+}
+
+void main() {
+  late FhirAntDb db;
+  late Handler handler;
+  late String admin;
+  late String clinician;
+
+  setUp(() async {
+    final server = await createTestServer();
+    db = server.db;
+    handler = server.handler;
+    admin = await issueTestToken(
+      db,
+      username: 'p-admin',
+      role: 'admin',
+      scopes: ['system/*.*'],
+    );
+    clinician = await issueTestToken(
+      db,
+      username: 'p-clin',
+      scopes: ['user/*.cruds'],
+    );
+  });
+  tearDown(() => db.close());
+
+  Future<Response> send(
+    String method,
+    String path, {
+    Object? body,
+    String? token,
+    Map<String, String>? headers,
+    bool anonymous = false,
+  }) async =>
+      handler(
+        testRequest(
+          method,
+          path,
+          body: body == null
+              ? null
+              : body is String
+                  ? body
+                  : jsonEncode(body),
+          headers: {'content-type': 'application/fhir+json', ...?headers},
+          authToken: anonymous ? null : (token ?? admin),
+        ),
+      );
+
+  Future<void> put(Map<String, dynamic> r, {String? token}) async {
+    final res = await send(
+      'PUT',
+      '/${r['resourceType']}/${r['id']}',
+      body: r,
+      token: token,
+    );
+    if (res.statusCode >= 300) {
+      fail('setup PUT failed ${res.statusCode}: ${await res.readAsString()}');
+    }
+  }
+
+  Map<String, dynamic> patient(String id) => {
+        'resourceType': 'Patient',
+        'id': id,
+        'name': [
+          {'family': 'Probe$id'},
+        ],
+        'birthDate': '1990-01-15',
+      };
+  Map<String, dynamic> obs(String id, String patientId) => {
+        'resourceType': 'Observation',
+        'id': id,
+        'status': 'final',
+        'code': {
+          'coding': [
+            {'system': 'http://loinc.org', 'code': '8867-4'},
+          ],
+        },
+        'subject': {'reference': 'Patient/$patientId'},
+      };
+
+  test('A7 patient scopes with no patient context, system search', () async {
+    await put(patient('a'));
+    await put(patient('b'));
+    final token = await issueTestToken(
+      db,
+      username: 'p-noctx',
+      role: 'readonly',
+      scopes: ['patient/*.rs'],
+    );
+    final res = await send('GET', '/?_type=Patient', token: token);
+    final body = await res.readAsString();
+    final total = res.statusCode == 200
+        ? (jsonDecode(body) as Map<String, dynamic>)['total']
+        : null;
+    record(
+      'A7',
+      'refused (403) or 0 patients',
+      res.statusCode == 200 ? '200 total=$total' : '${res.statusCode}',
+    );
+  });
+
+  test('A15 HEAD with a token that has no scope on the type', () async {
+    await put(patient('a'));
+    final token = await issueTestToken(
+      db,
+      username: 'p-obsonly',
+      scopes: ['user/Observation.rs'],
+    );
+    final get = await send('GET', '/Patient/a', token: token);
+    final head = await send('HEAD', '/Patient/a', token: token);
+    record('A15', 'GET 403, HEAD 403', 'GET ${get.statusCode}, HEAD '
+        '${head.statusCode}');
+  });
+
+  test('A3 five wrong passwords end the live session of the account',
+      () async {
+    final reg = await send(
+      'POST',
+      '/auth/register',
+      body: {
+        'username': 'victim',
+        'password': 'correct horse battery',
+        'role': 'clinician',
+      },
+    );
+    final token =
+        (jsonDecode(await reg.readAsString()) as Map<String, dynamic>)['token']
+            as String;
+    final before = await send('GET', '/Patient', token: token);
+    for (var i = 0; i < 5; i++) {
+      await send(
+        'POST',
+        '/auth/login',
+        anonymous: true,
+        body: {'username': 'victim', 'password': 'wrong-wrong-wrong'},
+      );
+    }
+    final after = await send('GET', '/Patient', token: token);
+    record(
+      'A3',
+      'before 200, after 200',
+      'before ${before.statusCode}, after ${after.statusCode}',
+    );
+  });
+
+  test('A18 login tells an unknown user from a locked or inactive one',
+      () async {
+    await send(
+      'POST',
+      '/auth/register',
+      body: {
+        'username': 'known',
+        'password': 'correct horse battery',
+        'role': 'clinician',
+      },
+    );
+    final user = await db.getUserByUsername('known');
+    await db.deactivateUser(user!.id);
+    final inactive = await send(
+      'POST',
+      '/auth/login',
+      anonymous: true,
+      body: {'username': 'known', 'password': 'x' * 12},
+    );
+    final unknown = await send(
+      'POST',
+      '/auth/login',
+      anonymous: true,
+      body: {'username': 'nobody', 'password': 'x' * 12},
+    );
+    record(
+      'A18',
+      'same status for both',
+      'inactive ${inactive.statusCode}, unknown ${unknown.statusCode}',
+    );
+  });
+
+  test('A20 an unregistered client_id with any redirect_uri gets the code',
+      () async {
+    await send(
+      'POST',
+      '/auth/register',
+      body: {
+        'username': 'oauthuser',
+        'password': 'correct horse battery',
+        'role': 'clinician',
+      },
+    );
+    final res = await send(
+      'POST',
+      '/auth/authorize',
+      anonymous: true,
+      headers: {'content-type': 'application/x-www-form-urlencoded'},
+      body: Uri(
+        queryParameters: {
+          'response_type': 'code',
+          'client_id': 'growth-chart',
+          'redirect_uri': 'https://evil.example/cb?keep=1',
+          'scope': 'user/*.rs',
+          'state': 's1',
+          'aud': 'http://localhost:8080',
+          'code_challenge': 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+          'code_challenge_method': 'S256',
+          'username': 'oauthuser',
+          'password': 'correct horse battery',
+        },
+      ).query,
+    );
+    final location = res.headers['location'] ?? '';
+    record(
+      'A20a',
+      'refused: client not registered',
+      '${res.statusCode} -> ${location.split('code=').first}code=...',
+    );
+    record(
+      'A20b',
+      'redirect keeps keep=1',
+      location.contains('keep=1') ? 'kept' : 'dropped',
+    );
+  });
+
+  test('AU1 a clinician rewrites and deletes the audit trail', () async {
+    await put(patient('a'));
+    await send('GET', '/Patient/a', token: clinician);
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final search = await send('GET', '/AuditEvent?_count=1', token: clinician);
+    final bundle =
+        jsonDecode(await search.readAsString()) as Map<String, dynamic>;
+    final entries = (bundle['entry'] as List?) ?? const [];
+    if (entries.isEmpty) {
+      record('AU1', 'an AuditEvent to test with', 'none stored');
+      return;
+    }
+    final event = ((entries.first as Map<String, dynamic>)['resource']
+        as Map<String, dynamic>)
+      ..['outcome'] = '0'
+      ..['agent'] = [
+        {
+          'who': {'display': 'someone else'},
+          'requestor': true,
+        }
+      ];
+    final id = event['id'];
+    final update = await send(
+      'PUT',
+      '/AuditEvent/$id',
+      body: event,
+      token: clinician,
+    );
+    final delete = await send('DELETE', '/AuditEvent/$id', token: clinician);
+    record(
+      'AU1',
+      'PUT 403/405, DELETE 403/405',
+      'PUT ${update.statusCode}, DELETE ${delete.statusCode}',
+    );
+  });
+
+  test('H15 SearchParameter delete without system authority', () async {
+    final sp = {
+      'resourceType': 'SearchParameter',
+      'id': 'probe-sp',
+      'url': 'http://example.org/sp/probe',
+      'name': 'Probe',
+      'status': 'active',
+      'description': 'probe',
+      'code': 'probecode',
+      'base': ['Patient'],
+      'type': 'string',
+      'expression': 'Patient.name.family',
+    };
+    await put(sp);
+    final direct =
+        await send('DELETE', '/SearchParameter/probe-sp', token: clinician);
+    final conditional = await send(
+      'DELETE',
+      '/SearchParameter?code=probecode',
+      token: clinician,
+    );
+    final stillThere = await send('GET', '/SearchParameter/probe-sp');
+    await put(sp);
+    final bundle = await send(
+      'POST',
+      '/',
+      token: clinician,
+      body: {
+        'resourceType': 'Bundle',
+        'type': 'batch',
+        'entry': [
+          {
+            'request': {'method': 'DELETE', 'url': 'SearchParameter/probe-sp'},
+          }
+        ],
+      },
+    );
+    final entryStatus = ((jsonDecode(await bundle.readAsString())
+            as Map<String, dynamic>)['entry'] as List)
+        .first as Map<String, dynamic>;
+    record(
+      'H15',
+      'direct 403, conditional 403, bundle entry 403',
+      'direct ${direct.statusCode}, conditional ${conditional.statusCode} '
+          '(read after: ${stillThere.statusCode}), bundle entry '
+          '${(entryStatus['response'] as Map)['status']}',
+    );
+  });
+
+  test('P1 a PATCH of a Subscription is never re-activated by the server',
+      () async {
+    final created = await send(
+      'POST',
+      '/Subscription',
+      body: {
+        'resourceType': 'Subscription',
+        'status': 'requested',
+        'reason': 'probe',
+        'criteria': 'Observation?status=final',
+        'channel': {'type': 'email', 'endpoint': 'mailto:x@example.org'},
+      },
+    );
+    final stored =
+        jsonDecode(await created.readAsString()) as Map<String, dynamic>;
+    final id = stored['id'];
+    final patched = await send(
+      'PATCH',
+      '/Subscription/$id',
+      headers: {'content-type': 'application/json-patch+json'},
+      body: [
+        {'op': 'replace', 'path': '/status', 'value': 'active'},
+      ],
+    );
+    final after =
+        jsonDecode(await patched.readAsString()) as Map<String, dynamic>;
+    record(
+      'P1',
+      'created error, after PATCH error',
+      'created ${stored['status']}, after PATCH ${after['status']}',
+    );
+  });
+
+  test('H12 PUT with an id outside the FHIR id grammar', () async {
+    final res = await send(
+      'PUT',
+      r'/Patient/a$b_c',
+      body: {'resourceType': 'Patient', 'id': r'a$b_c'},
+    );
+    record('H12', '400', '${res.statusCode}');
+  });
+
+  test('B8 a Bundle GET entry with _has', () async {
+    await put(patient('a'));
+    await put(patient('b'));
+    await put(obs('o1', 'a'));
+    final rest = await send(
+      'GET',
+      '/Patient?_has:Observation:patient:code=8867-4&_summary=count',
+    );
+    final restTotal =
+        (jsonDecode(await rest.readAsString()) as Map<String, dynamic>)['total'];
+    final bundle = await send(
+      'POST',
+      '/',
+      body: {
+        'resourceType': 'Bundle',
+        'type': 'batch',
+        'entry': [
+          {
+            'request': {
+              'method': 'GET',
+              'url': 'Patient?_has:Observation:patient:code=8867-4',
+            },
+          }
+        ],
+      },
+    );
+    final inner = (((jsonDecode(await bundle.readAsString())
+            as Map<String, dynamic>)['entry'] as List)
+        .first as Map<String, dynamic>)['resource'] as Map<String, dynamic>;
+    record('B8', 'REST total 1, entry total 1',
+        'REST total $restTotal, entry total ${inner['total']}');
+  });
+
+  test('B1 a Bundle entry url with three segments', () async {
+    await put(patient('a'));
+    final bundle = await send(
+      'POST',
+      '/',
+      body: {
+        'resourceType': 'Bundle',
+        'type': 'batch',
+        'entry': [
+          {
+            'request': {'method': 'GET', 'url': 'Patient/a/_history'},
+          }
+        ],
+      },
+    );
+    final entry = ((jsonDecode(await bundle.readAsString())
+            as Map<String, dynamic>)['entry'] as List)
+        .first as Map<String, dynamic>;
+    final resource = entry['resource'] as Map<String, dynamic>?;
+    record(
+      'B1',
+      'a history Bundle, or a refusal',
+      '${(entry['response'] as Map)['status']} '
+          '${resource?['resourceType']}',
+    );
+  });
+
+  test('Q4 the same bad value down the two search paths', () async {
+    await put(patient('a'));
+    final sql = await send('GET', '/Patient?birthdate=notadate');
+    final general = await send(
+      'GET',
+      '/Patient?birthdate=notadate&identifier:of-type=a%7Cb%7Cc',
+    );
+    record('Q4', 'SQL path 400, general path 400',
+        'SQL path ${sql.statusCode}, general path ${general.statusCode}');
+  });
+
+  test('T1 validate-code ignores compose.exclude', () async {
+    await put({
+      'resourceType': 'CodeSystem',
+      'id': 'cs1',
+      'url': 'http://example.org/cs1',
+      'status': 'active',
+      'content': 'complete',
+      'concept': [
+        {'code': 'a'},
+        {'code': 'b'},
+      ],
+    });
+    await put({
+      'resourceType': 'ValueSet',
+      'id': 'vs1',
+      'url': 'http://example.org/vs1',
+      'status': 'active',
+      'compose': {
+        'include': [
+          {'system': 'http://example.org/cs1'},
+        ],
+        'exclude': [
+          {
+            'system': 'http://example.org/cs1',
+            'concept': [
+              {'code': 'a'},
+            ],
+          }
+        ],
+      },
+    });
+    final expand = await send('GET', r'/ValueSet/vs1/$expand');
+    final codes = (((jsonDecode(await expand.readAsString())
+                as Map<String, dynamic>)['expansion']
+            as Map<String, dynamic>)['contains'] as List)
+        .map((c) => (c as Map)['code'])
+        .toList();
+    final validate = await send(
+      'GET',
+      r'/ValueSet/vs1/$validate-code?system=http://example.org/cs1&code=a',
+    );
+    final params = (jsonDecode(await validate.readAsString())
+        as Map<String, dynamic>)['parameter'] as List;
+    final result = (params.first as Map)['valueBoolean'];
+    record('T1', 'expand [b], validate-code a false',
+        'expand $codes, validate-code a $result');
+  });
+
+  test('T3 a ValueSet over a CodeSystem this server does not hold', () async {
+    await put({
+      'resourceType': 'ValueSet',
+      'id': 'vs-loinc',
+      'url': 'http://example.org/vs-loinc',
+      'status': 'active',
+      'compose': {
+        'include': [
+          {'system': 'http://loinc.org'},
+        ],
+      },
+    });
+    await put(patient('a'));
+    await put(obs('o1', 'a'));
+    final expand = await send('GET', r'/ValueSet/vs-loinc/$expand');
+    final expansion = (jsonDecode(await expand.readAsString())
+        as Map<String, dynamic>)['expansion'] as Map<String, dynamic>?;
+    final validate = await send(
+      'GET',
+      r'/ValueSet/vs-loinc/$validate-code?system=http://loinc.org&code=8867-4',
+    );
+    final vBody = await validate.readAsString();
+    final inSearch = await send(
+      'GET',
+      '/Observation?code:in=http://example.org/vs-loinc&_summary=count',
+    );
+    final notIn = await send(
+      'GET',
+      '/Observation?code:not-in=http://example.org/vs-loinc&_summary=count',
+    );
+    record(
+      'T3',
+      'expand refused, validate-code refused, :in refused, :not-in refused',
+      'expand ${expand.statusCode} total=${expansion?['total']}, '
+          'validate-code ${validate.statusCode} '
+          '${vBody.contains('"valueBoolean":false') ? 'result=false' : ''}, '
+          ':in ${inSearch.statusCode} '
+          '${(jsonDecode(await inSearch.readAsString()) as Map)['total']}, '
+          ':not-in ${notIn.statusCode} '
+          '${(jsonDecode(await notIn.readAsString()) as Map)['total']}',
+    );
+  });
+
+  test(r'V1 $validate of an invalid resource', () async {
+    final res = await send(
+      'POST',
+      r'/Patient/$validate',
+      body: {'resourceType': 'Patient', 'gender': 'not-a-gender'},
+    );
+    final body = await res.readAsString();
+    record(
+      'V1',
+      '200 with error issues',
+      '${res.statusCode} '
+          '${body.contains('"severity":"error"') ? 'with error issues' : body.substring(0, body.length.clamp(0, 120))}',
+    );
+  });
+
+  test('M1 conditional update, which the CapabilityStatement claims',
+      () async {
+    final res = await send(
+      'PUT',
+      '/Patient?identifier=probe%7C1',
+      body: {
+        'resourceType': 'Patient',
+        'identifier': [
+          {'system': 'probe', 'value': '1'},
+        ],
+      },
+    );
+    final meta = await send('GET', '/metadata');
+    final claims = (await meta.readAsString()).contains('"conditionalUpdate":true');
+    record('M1', 'claimed and 201, or not claimed',
+        'claimed=$claims, PUT /Patient?identifier= ${res.statusCode}');
+  });
+
+  test('CN1 an Accept header with a quote in it', () async {
+    final res = await send(
+      'GET',
+      '/Patient',
+      headers: {'accept': 'text/x"y'},
+    );
+    final body = await res.readAsString();
+    var valid = true;
+    try {
+      jsonDecode(body);
+    } catch (_) {
+      valid = false;
+    }
+    record('CN1', '406 with valid JSON', '${res.statusCode} validJson=$valid');
+  });
+
+  test('JP1 JSON Patch test with members in another order', () async {
+    await put({
+      'resourceType': 'Patient',
+      'id': 'jp',
+      'name': [
+        {'family': 'A', 'use': 'official'},
+      ],
+    });
+    final res = await send(
+      'PATCH',
+      '/Patient/jp',
+      headers: {'content-type': 'application/json-patch+json'},
+      body: [
+        {
+          'op': 'test',
+          'path': '/name/0',
+          'value': {'use': 'official', 'family': 'A'},
+        },
+        {'op': 'replace', 'path': '/name/0/family', 'value': 'B'},
+      ],
+    );
+    record('JP1', '200', '${res.statusCode}');
+  });
+
+  test('H8 read outside the compartment against a read of nothing', () async {
+    await put(patient('a'));
+    await put(patient('b'));
+    await put(obs('ob', 'b'));
+    final token = await issueTestToken(
+      db,
+      username: 'p-pat-a',
+      role: 'readonly',
+      scopes: ['patient/*.rs'],
+      patientId: 'a',
+    );
+    final other = await send('GET', '/Observation/ob', token: token);
+    final none = await send('GET', '/Observation/nope', token: token);
+    record('H8', 'same status for both',
+        "another patient's ${other.statusCode}, absent ${none.statusCode}");
+  });
+
+  test('B4 a 20 MB request body', () async {
+    final res = await send(
+      'POST',
+      '/Patient',
+      body: {
+        'resourceType': 'Patient',
+        'name': [
+          {'family': 'x' * (20 * 1024 * 1024)},
+        ],
+      },
+    );
+    record('B4', '413', '${res.statusCode}');
+  });
+
+  test('BK3 a client-written spec tag takes a Patient out of the backup',
+      () async {
+    await put(patient('kept'));
+    await put({
+      ...patient('tagged'),
+      'meta': {
+        'tag': [
+          {
+            'system': 'http://fhirant.fhir-fli.dev/CodeSystem/tags',
+            'code': 'spec',
+          }
+        ],
+      },
+    }, token: clinician);
+    final dir = await Directory.systemTemp.createTemp('probe-bk3-');
+    try {
+      final res = await send(
+        'POST',
+        r'/$backup',
+        body: {
+          'resourceType': 'Parameters',
+          'parameter': [
+            {'name': 'passphrase', 'valueString': 'a long probe passphrase'},
+            {'name': 'format', 'valueCode': 'bundle'},
+          ],
+        },
+      );
+      final envelope = await res.readAsString();
+      final fresh = await createTestServer();
+      final restore = await fresh.handler(
+        testRequest(
+          'POST',
+          r'/$restore',
+          body: envelope,
+          headers: {'x-backup-passphrase': 'a long probe passphrase'},
+          authToken: await issueTestToken(
+            fresh.db,
+            username: 'r-admin',
+            role: 'admin',
+            scopes: ['system/*.*'],
+          ),
+        ),
+      );
+      final n = await fresh.db.searchCount(
+        resourceType: R4ResourceType.Patient,
+      );
+      await fresh.db.close();
+      record('BK3', 'restore 200, 2 patients restored',
+          'restore ${restore.statusCode}, $n patient(s) restored');
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+}

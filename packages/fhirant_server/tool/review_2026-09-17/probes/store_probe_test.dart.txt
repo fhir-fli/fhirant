@@ -1,0 +1,301 @@
+// REVIEW-2026-09-17 probes below HTTP: the store, the SQLite build, the
+// forecast handler, and timings. Appends one line per probe to
+// store_probe.tsv as it finishes. Nothing here asserts.
+//
+// Run: dart test tool/review_2026-09-17/probes/store_probe_test.dart
+// ignore_for_file: avoid_print
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/handlers/forecast_handler.dart';
+import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:shelf/shelf.dart';
+import 'package:sqlite3/sqlite3.dart' show sqlite3;
+import 'package:test/test.dart';
+
+import '../../../test/integration/test_helpers.dart';
+
+final _out = File('tool/review_2026-09-17/store_probe.tsv')
+    .openSync(mode: FileMode.append);
+
+void record(String id, String what, String observed) {
+  final line = '$id\t$what\t$observed\n';
+  _out
+    ..writeStringSync(line)
+    ..flushSync();
+  print(line.trim());
+}
+
+/// A store whose searches fail, to see what the forecast does with that.
+class _FailingSearchDb extends FhirAntDb {
+  _FailingSearchDb(super.e);
+
+  @override
+  Future<List<fhir.Resource>> search({
+    required fhir.R4ResourceType resourceType,
+    Map<String, List<String>>? searchParameters,
+    List<HasParameter>? hasParameters,
+    int? count,
+    int? offset,
+    List<String>? sort,
+    CompartmentScope? compartment,
+    Set<String>? ids,
+  }) =>
+      throw StateError('the index is unreadable');
+}
+
+void main() {
+  test('F4 the SQLite build and the connection settings', () async {
+    final raw = sqlite3.openInMemory();
+    final options = raw
+        .select('PRAGMA compile_options')
+        .map((r) => r.values.first! as String)
+        .toList();
+    String pragma(String name) =>
+        '${raw.select('PRAGMA $name').map((r) => r.values.first).join(',')}';
+    record(
+      'F4a',
+      'compile options that matter',
+      options
+          .where(
+            (o) =>
+                o.contains('TEMP_STORE') ||
+                o.contains('STAT4') ||
+                o.contains('SECURE_DELETE') ||
+                o.contains('THREADSAFE') ||
+                o.contains('DEFAULT_SYNCHRONOUS') ||
+                o.contains('DEFAULT_WAL'),
+          )
+          .join(' '),
+    );
+    record('F4b', 'version', raw.select('select sqlite_version() v').first['v']
+        .toString());
+    raw.close();
+
+    final dir = await Directory.systemTemp.createTemp('probe-f4-');
+    try {
+      final db = FhirAntDb(NativeDatabase(File('${dir.path}/p.db')));
+      await db.initialize();
+      Future<String> p(String name) async =>
+          (await db.customSelect('PRAGMA $name').get())
+              .map((r) => r.data.values.first)
+              .join(',');
+      record(
+        'F4c',
+        'a file store as FhirAntDb opens it',
+        'journal_mode=${await p('journal_mode')} '
+            'synchronous=${await p('synchronous')} '
+            'temp_store=${await p('temp_store')} '
+            'secure_delete=${await p('secure_delete')} '
+            'foreign_keys=${await p('foreign_keys')} '
+            'busy_timeout=${await p('busy_timeout')}',
+      );
+      await db.close();
+    } finally {
+      await dir.delete(recursive: true);
+    }
+    expect(pragma, isNotNull);
+  });
+
+  test('A21 one password hash, on this desktop', () {
+    final salt = PasswordHasher.generateSalt();
+    final times = <int>[];
+    for (var i = 0; i < 3; i++) {
+      final sw = Stopwatch()..start();
+      PasswordHasher.hashPassword('correct horse battery', salt);
+      times.add(sw.elapsedMilliseconds);
+    }
+    record(
+      'A21',
+      'ms per PBKDF2 (${PasswordHasher.pbkdf2Iterations} iterations), '
+          'synchronous on the server isolate',
+      times.join(' / '),
+    );
+  });
+
+  test('F1 what a search answers while the index is being rebuilt', () async {
+    final db = FhirAntDb(NativeDatabase.memory());
+    await db.initialize();
+    const n = 6000;
+    for (var i = 0; i < n; i += 500) {
+      await db.saveResources([
+        for (var j = i; j < i + 500; j++)
+          fhir.Patient(
+            id: fhir.FhirString('p${j.toString().padLeft(5, '0')}'),
+            gender: fhir.AdministrativeGender.female,
+          ),
+      ]);
+    }
+    final before = await db.searchCount(
+      resourceType: fhir.R4ResourceType.Patient,
+      searchParameters: {
+        'gender': ['female'],
+      },
+    );
+    final seen = <int>[];
+    var done = false;
+    final rebuild = db.rebuildSearchIndex().whenComplete(() => done = true);
+    while (!done) {
+      try {
+        seen.add(
+          await db.searchCount(
+            resourceType: fhir.R4ResourceType.Patient,
+            searchParameters: {
+              'gender': ['female'],
+            },
+          ),
+        );
+      } catch (e) {
+        seen.add(-1);
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    await rebuild;
+    final after = await db.searchCount(
+      resourceType: fhir.R4ResourceType.Patient,
+      searchParameters: {
+        'gender': ['female'],
+      },
+    );
+    final distinct = seen.toSet().toList()..sort();
+    record(
+      'F1',
+      'gender=female count: before / during (distinct answers, -1 = error) '
+          '/ after',
+      '$before / ${distinct.length > 12 ? '${distinct.take(6).join(',')} … '
+          '${distinct.skip(distinct.length - 3).join(',')} '
+          '(${distinct.length} distinct in ${seen.length} polls)' : distinct.join(',')} / $after',
+    );
+    await db.close();
+  });
+
+  test('FC1 the forecast when the immunization history cannot be read',
+      () async {
+    final db = _FailingSearchDb(NativeDatabase.memory());
+    await db.initialize();
+    await db.saveResource(
+      fhir.Patient(
+        id: fhir.FhirString('kid'),
+        birthDate: fhir.FhirDate.fromString('2024-01-01'),
+        gender: fhir.AdministrativeGender.female,
+      ),
+    );
+    final res = await immdsForecastHandler(
+      Request(
+        'POST',
+        Uri.parse(r'http://localhost/$immds-forecast'),
+        body: jsonEncode({'patientId': 'kid'}),
+      ),
+      db,
+    );
+    final body = await res.readAsString();
+    final recs = RegExp('"resourceType":"ImmunizationRecommendation"')
+        .allMatches(body)
+        .length;
+    record(
+      'FC1',
+      'every read of Immunization/Condition/AllergyIntolerance throws; a '
+          'correct server answers 5xx',
+      '${res.statusCode}, $recs ImmunizationRecommendation(s) returned, '
+          '${body.length} bytes',
+    );
+    await db.close();
+  });
+
+  test('D2 restoring a backup over a newer local version', () async {
+    final dir = await Directory.systemTemp.createTemp('probe-d2-');
+    try {
+      NativeDatabase open(String name) => NativeDatabase(
+            File('${dir.path}/$name'),
+            setup: (raw) {
+              raw
+                ..execute("PRAGMA cipher = 'sqlcipher'")
+                ..execute('PRAGMA legacy = 4')
+                ..execute("PRAGMA key = 'probe-key'");
+            },
+          );
+      final db = FhirAntDb(open('main.db'));
+      await db.initialize();
+      fhir.Patient p(String family) => fhir.Patient(
+            id: fhir.FhirString('p1'),
+            name: [fhir.HumanName(family: fhir.FhirString(family))],
+          );
+      await db.saveResource(p('v1-before-backup'));
+      await db.copyEncrypted('${dir.path}/bk.sqlite', 'probe passphrase');
+      await db.saveResource(p('v2-local'));
+      await db.saveResource(p('v3-local'));
+      final historyBefore = [
+        for (final h
+            in await db.getHistory(fhir.R4ResourceType.Patient, 'p1'))
+          '${h.versionId}:${(h.resource! as fhir.Patient).name!.first.family}',
+      ];
+      await db.restoreEncrypted('${dir.path}/bk.sqlite', 'probe passphrase');
+      final current =
+          await db.getResource(fhir.R4ResourceType.Patient, 'p1');
+      await db.saveResource(p('after-restore-1'));
+      await db.saveResource(p('after-restore-2'));
+      final historyAfter = [
+        for (final h
+            in await db.getHistory(fhir.R4ResourceType.Patient, 'p1'))
+          '${h.versionId}:${(h.resource! as fhir.Patient).name!.first.family}',
+      ];
+      record(
+        'D2',
+        'history before restore | current after restore | history after two '
+            'more saves',
+        '${historyBefore.join(' ')} | '
+            '${current!.meta!.versionId}:'
+            '${(current as fhir.Patient).name!.first.family} | '
+            '${historyAfter.join(' ')}',
+      );
+      await db.close();
+    } catch (e) {
+      record('D2', 'probe could not run', '$e');
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+  test('E1 what a finished export leaves on disk', () async {
+    final dir = await Directory.systemTemp.createTemp('probe-e1-');
+    try {
+      final server = await createTestServer(exportDir: dir.path);
+      final admin = await issueTestToken(
+        server.db,
+        username: 'e-admin',
+        role: 'admin',
+        scopes: ['system/*.*'],
+      );
+      await server.db.saveResource(
+        fhir.Patient(
+          id: fhir.FhirString('secret'),
+          name: [fhir.HumanName(family: fhir.FhirString('Faulkenberry'))],
+        ),
+      );
+      final kick = await server.handler(
+        testRequest(
+          'GET',
+          r'/$export?_type=Patient',
+          headers: {'prefer': 'respond-async'},
+          authToken: admin,
+        ),
+      );
+      await Future<void>.delayed(const Duration(seconds: 2));
+      final files = dir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .map((f) => '${f.path.split('/').last} '
+              'plaintext=${f.readAsStringSync().contains('Faulkenberry')}')
+          .toList();
+      record('E1', 'kick-off ${kick.statusCode}; files under the export dir',
+          files.join(', '));
+      await server.db.close();
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+}

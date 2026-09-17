@@ -1,0 +1,49 @@
+Running build hooks...Running build hooks...00:00 +0: loading tool/review_2026-09-17/probes/backup_roundtrip_probe_test.dart
+00:00 +0: backup from a production-configured store, restored
+BR1	backup written, bytes	131072
+BR2	raw open as restoreEncrypted does (cipher, key; no legacy)	FAILS: SqliteException(26): while selecting from statement, file is not a database, file is not a database (code 26)
+BR3	raw open with legacy = 4 added	opens: user_version=23 resources=1
+BR4	restoreEncrypted into the same production store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      production (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/probes/backup_roundtrip_probe_test.dart:24:38)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/probes/backup_roundtrip_probe_test.dart:90:21)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+BR5	restoreEncrypted into a fresh production store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/probes/backup_roundtrip_probe_test.dart:102:21)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+BR6	the same round trip from a plain in-memory store (what the tests run)	restored 1
+BR7	production backup into a plain store	THROWS BackupUnreadable: That passphrase does not open this file, or the file is not a FHIRant backup.
+00:05 +1: All tests passed!

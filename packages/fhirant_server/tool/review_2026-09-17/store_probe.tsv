@@ -1,0 +1,8 @@
+F4a	compile options that matter	DEFAULT_SYNCHRONOUS=2 DEFAULT_WAL_AUTOCHECKPOINT=1000 DEFAULT_WAL_SYNCHRONOUS=2 TEMP_STORE=2 THREADSAFE=1
+F4b	version	3.53.4
+F4c	a file store as FhirAntDb opens it	journal_mode=delete synchronous=2 temp_store=0 secure_delete=0 foreign_keys=0 busy_timeout=0
+A21	ms per PBKDF2 (120000 iterations), synchronous on the server isolate	337 / 294 / 290
+F1	gender=female count: before / during (distinct answers, -1 = error) / after	6000 / 6000 / 6000
+FC1	every read of Immunization/Condition/AllergyIntolerance throws; a correct server answers 5xx	200, 1 ImmunizationRecommendation(s) returned, 56712 bytes
+D2	probe could not run	That passphrase does not open this file, or the file is not a FHIRant backup.
+E1	kick-off 202; files under the export dir	Patient.ndjson plaintext=true

@@ -1,0 +1,8 @@
+F1	gender=female count before / during / after a rebuild of 6000 (2496 ms, 65 polls; -1 = SQL error)	6000 / min -1 max 6000, 14 distinct answers / 6000
+WAL	journal_mode=delete synchronous=FULL: 200 single saveResource commits	4757 ms total, 23.8 ms each
+WAL	journal_mode=wal synchronous=FULL: 200 single saveResource commits	1697 ms total, 8.5 ms each
+WAL	journal_mode=wal synchronous=NORMAL: 200 single saveResource commits	108 ms total, 0.5 ms each
+C1	$cql Count(expand { Interval[1, 200000] }): status, ms, and when a /health sent at the same moment was answered	200 in 187 ms; /health answered at 18 ms; {"resourceType":"Parameters","parameter":[{"name":"library","valueString":"Instance of 'Cq
+C1	$cql Count(expand { Interval[1, 2000000] }): status, ms, and when a /health sent at the same moment was answered	200 in 102 ms; /health answered at 2 ms; {"resourceType":"Parameters","parameter":[{"name":"library","valueString":"Instance of 'Cq
+Q10	phase=index zone=EDT offset=-4h: Patient?birthdate=1990-01-15	1 match(es)
+Q10	phase=search zone=JST offset=9h: Patient?birthdate=1990-01-15	0 match(es)

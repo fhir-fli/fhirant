@@ -1,0 +1,49 @@
+// REVIEW-2026-09-17 C1: what a client-supplied FHIRPath expression can cost
+// the server isolate. Appends to fhirpath_cost.tsv as each size finishes.
+// ignore_for_file: avoid_print
+import 'dart:io';
+
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:test/test.dart';
+
+import '../../../test/integration/test_helpers.dart';
+
+void main() {
+  test('nested select over a ten-element collection', () async {
+    final out = File('tool/review_2026-09-17/fhirpath_cost.tsv')
+        .openSync(mode: FileMode.append);
+    final server = await createTestServer();
+    final admin = await issueTestToken(
+      server.db,
+      username: 'fp-admin',
+      role: 'admin',
+      scopes: ['system/*.*'],
+    );
+    await server.db.saveResource(fhir.Patient(id: fhir.FhirString('fp')));
+    const d = '(0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)';
+    for (final depth in [3, 4, 5, 6]) {
+      var expr = r'$this';
+      for (var i = 0; i < depth; i++) {
+        expr = '$d.select($expr)';
+      }
+      final sw = Stopwatch()..start();
+      final res = await server.handler(
+        testRequest(
+          'GET',
+          '/\$fhirpath?resourceType=Patient&resourceId=fp&expression='
+              '${Uri.encodeQueryComponent('$expr.count()')}',
+          authToken: admin,
+        ),
+      );
+      final line = 'C1\tdepth $depth (10^$depth evaluations), '
+          '${expr.length}-character expression\t${res.statusCode} in '
+          '${sw.elapsedMilliseconds} ms\n';
+      out
+        ..writeStringSync(line)
+        ..flushSync();
+      print(line.trim());
+      if (sw.elapsedMilliseconds > 60000) break;
+    }
+    await server.db.close();
+  }, timeout: const Timeout(Duration(minutes: 10)));
+}

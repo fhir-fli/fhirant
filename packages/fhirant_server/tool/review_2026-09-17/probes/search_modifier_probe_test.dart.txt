@@ -1,0 +1,83 @@
+// REVIEW-2026-09-17 Q6/Q7/Q9: modifiers R4B search.html 3.1.1.4.4 does not
+// give a type, and values it does not define. Appends to
+// search_modifier.tsv as each finishes.
+// ignore_for_file: avoid_print
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:test/test.dart';
+
+import '../../../test/integration/test_helpers.dart';
+
+void main() {
+  test('modifier and value handling', () async {
+    final out = File('tool/review_2026-09-17/search_modifier.tsv')
+        .openSync(mode: FileMode.append);
+    final server = await createTestServer();
+    final admin = await issueTestToken(
+      server.db,
+      username: 'sm-admin',
+      role: 'admin',
+      scopes: ['system/*.*'],
+    );
+    Future<void> put(Map<String, dynamic> r) async {
+      await server.handler(
+        testRequest(
+          'PUT',
+          '/${r['resourceType']}/${r['id']}',
+          body: jsonEncode(r),
+          headers: {'content-type': 'application/fhir+json'},
+          authToken: admin,
+        ),
+      );
+    }
+
+    await put({
+      'resourceType': 'Patient',
+      'id': 'withname',
+      'name': [
+        {'family': 'Texas'},
+      ],
+    });
+    await put({'resourceType': 'Patient', 'id': 'noname'});
+    await put({
+      'resourceType': 'Observation',
+      'id': 'sys',
+      'status': 'final',
+      'code': {'text': 'x'},
+      'subject': {
+        'identifier': {'system': 'urn:mrn', 'value': '42'},
+      },
+    });
+    await put({
+      'resourceType': 'Observation',
+      'id': 'nosys',
+      'status': 'final',
+      'code': {'text': 'x'},
+      'subject': {
+        'identifier': {'value': '42'},
+      },
+    });
+    for (final (id, expected, path) in [
+      ('Q9a', '400', '/Patient?name:text=tex'),
+      ('Q9b', '400', '/Observation?subject:type=Patient'),
+      ('Q6', '400', '/Patient?name:missing=maybe'),
+      ('Q7', 'total 1 (nosys)', '/Observation?subject:identifier=%7C42'),
+    ]) {
+      final res = await server.handler(
+        testRequest('GET', path, authToken: admin),
+      );
+      final body = await res.readAsString();
+      final total = res.statusCode == 200
+          ? (jsonDecode(body) as Map<String, dynamic>)['total']
+          : null;
+      final line = '$id\t$path\texpected $expected\t'
+          '${res.statusCode}${total == null ? '' : ' total $total'}\n';
+      out
+        ..writeStringSync(line)
+        ..flushSync();
+      print(line.trim());
+    }
+    await server.db.close();
+  });
+}

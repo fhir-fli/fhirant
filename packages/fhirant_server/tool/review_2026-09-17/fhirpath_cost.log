@@ -1,0 +1,7 @@
+Running build hooks...Running build hooks...00:00 +0: loading tool/review_2026-09-17/probes/fhirpath_cost_probe_test.dart
+00:00 +0: nested select over a ten-element collection
+C1	depth 3 (10^3 evaluations), 149-character expression	200 in 63 ms
+C1	depth 4 (10^4 evaluations), 197-character expression	200 in 75 ms
+C1	depth 5 (10^5 evaluations), 245-character expression	200 in 120 ms
+C1	depth 6 (10^6 evaluations), 293-character expression	200 in 1002 ms
+00:01 +1: All tests passed!

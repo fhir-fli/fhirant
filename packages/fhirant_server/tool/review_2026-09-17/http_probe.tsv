@@ -1,0 +1,22 @@
+A7	refused (403) or 0 patients	200 total=2	FINDING
+A15	GET 403, HEAD 403	GET 403, HEAD 200	FINDING
+A3	before 200, after 200	before 200, after 401	FINDING
+A18	same status for both	inactive 403, unknown 401	FINDING
+A20a	refused: client not registered	302 -> https://evil.example/cb?code=...	FINDING
+A20b	redirect keeps keep=1	dropped	FINDING
+AU1	PUT 403/405, DELETE 403/405	PUT 200, DELETE 204	FINDING
+H15	direct 403, conditional 403, bundle entry 403	direct 403, conditional 204 (read after: 410), bundle entry 204	FINDING
+P1	created error, after PATCH error	created error, after PATCH active	FINDING
+H12	400	201	FINDING
+B8	REST total 1, entry total 1	REST total 1, entry total 2	FINDING
+B1	a history Bundle, or a refusal	200 Patient	FINDING
+Q4	SQL path 400, general path 400	SQL path 400, general path 400	as-expected
+T1	expand [b], validate-code a false	expand [b], validate-code a true	FINDING
+T3	expand refused, validate-code refused, :in refused, :not-in refused	expand 200 total=0, validate-code 200 result=false, :in 200 0, :not-in 200 1	FINDING
+V1	200 with error issues	400 with error issues	FINDING
+M1	claimed and 201, or not claimed	claimed=true, PUT /Patient?identifier= 404	FINDING
+CN1	406 with valid JSON	406 validJson=false	FINDING
+JP1	200	200	as-expected
+H8	same status for both	another patient's 403, absent 404	FINDING
+B4	413	201	FINDING
+BK3	restore 200, 2 patients restored	restore 200, 1 patient(s) restored	FINDING

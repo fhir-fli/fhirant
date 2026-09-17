@@ -1,0 +1,4 @@
+Q9a	/Patient?name:text=tex	expected 400	200 total 1
+Q9b	/Observation?subject:type=Patient	expected 400	200 total 0
+Q6	/Patient?name:missing=maybe	expected 400	200 total 1
+Q7	/Observation?subject:identifier=%7C42	expected total 1 (nosys)	200 total 2

@@ -1,0 +1,19 @@
+// REVIEW-2026-09-17 S7: what an exception inside an async Timer.periodic
+// callback does to a Dart CLI process (fhirant_server.dart:772 has four
+// awaits with no try/catch). Prints and exits on its own.
+// ignore_for_file: avoid_print
+import 'dart:async';
+
+void main() {
+  var ticks = 0;
+  Timer.periodic(const Duration(milliseconds: 50), (_) async {
+    ticks++;
+    print('tick $ticks');
+    if (ticks == 2) {
+      await Future<void>.delayed(Duration.zero);
+      throw StateError('database is locked');
+    }
+    if (ticks == 5) print('still alive after the throw');
+  });
+  Timer(const Duration(seconds: 1), () => print('one second: process alive'));
+}

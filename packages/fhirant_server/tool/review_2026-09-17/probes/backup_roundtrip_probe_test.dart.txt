@@ -1,0 +1,130 @@
+// REVIEW-2026-09-17: does a backup made by a store opened the way
+// bin/server.dart and the app open it (cipher sqlcipher, legacy 4, key)
+// restore? Appends to backup_roundtrip.tsv as each step finishes.
+// ignore_for_file: avoid_print
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:sqlite3/sqlite3.dart' show sqlite3;
+import 'package:test/test.dart';
+
+final _out = File('tool/review_2026-09-17/backup_roundtrip.tsv')
+    .openSync(mode: FileMode.append);
+
+void record(String id, String what, String observed) {
+  final line = '$id\t$what\t$observed\n';
+  _out
+    ..writeStringSync(line)
+    ..flushSync();
+  print(line.trim());
+}
+
+FhirAntDb production(String path) => FhirAntDb(
+      NativeDatabase(
+        File(path),
+        setup: (raw) {
+          // bin/server.dart:124-130 and database_service.dart:64-70.
+          raw
+            ..execute("PRAGMA cipher = 'sqlcipher';")
+            ..execute('PRAGMA legacy = 4;')
+            ..execute("PRAGMA key = 'the-store-key';");
+          raw.config.doubleQuotedStringLiterals = false;
+        },
+      ),
+    );
+
+String tryRawOpen(String path, String passphrase, {required bool legacy}) {
+  try {
+    final raw = sqlite3.open(path)..execute("PRAGMA cipher = 'sqlcipher'");
+    if (legacy) raw.execute('PRAGMA legacy = 4');
+    raw.execute("PRAGMA key = '$passphrase'");
+    try {
+      final v = raw.select('PRAGMA user_version').first.values.first;
+      final n = raw.select('SELECT count(*) c FROM resources').first['c'];
+      return 'opens: user_version=$v resources=$n';
+    } finally {
+      raw.close();
+    }
+  } catch (e) {
+    return 'FAILS: ${'$e'.split('\n').first}';
+  }
+}
+
+void main() {
+  test('backup from a production-configured store, restored', () async {
+    final dir = await Directory.systemTemp.createTemp('probe-bkrt-');
+    try {
+      final db = production('${dir.path}/main.db');
+      await db.initialize();
+      await db.saveResource(
+        fhir.Patient(
+          id: fhir.FhirString('p1'),
+          name: [fhir.HumanName(family: fhir.FhirString('Alpha'))],
+        ),
+      );
+      final backup = '${dir.path}/bk.sqlite';
+      await db.copyEncrypted(backup, 'probe passphrase');
+      record('BR1', 'backup written, bytes', '${File(backup).lengthSync()}');
+      record(
+        'BR2',
+        'raw open as restoreEncrypted does (cipher, key; no legacy)',
+        tryRawOpen(backup, 'probe passphrase', legacy: false),
+      );
+      record(
+        'BR3',
+        'raw open with legacy = 4 added',
+        tryRawOpen(backup, 'probe passphrase', legacy: true),
+      );
+
+      String outcome;
+      try {
+        final n = await db.restoreEncrypted(backup, 'probe passphrase');
+        outcome = 'restored $n';
+      } catch (e) {
+        outcome = 'THROWS ${e.runtimeType}: $e';
+      }
+      record('BR4', 'restoreEncrypted into the same production store', outcome);
+
+      final fresh = production('${dir.path}/fresh.db');
+      await fresh.initialize();
+      try {
+        final n = await fresh.restoreEncrypted(backup, 'probe passphrase');
+        outcome = 'restored $n';
+      } catch (e) {
+        outcome = 'THROWS ${e.runtimeType}: $e';
+      }
+      record('BR5', 'restoreEncrypted into a fresh production store', outcome);
+      await fresh.close();
+
+      // The direction the existing tests cover: a plain in-memory store.
+      final plain = FhirAntDb(NativeDatabase.memory());
+      await plain.initialize();
+      await plain.saveResource(fhir.Patient(id: fhir.FhirString('p2')));
+      final plainBackup = '${dir.path}/plain-bk.sqlite';
+      await plain.copyEncrypted(plainBackup, 'probe passphrase');
+      try {
+        final n = await plain.restoreEncrypted(plainBackup, 'probe passphrase');
+        outcome = 'restored $n';
+      } catch (e) {
+        outcome = 'THROWS ${e.runtimeType}: $e';
+      }
+      record('BR6', 'the same round trip from a plain in-memory store '
+          '(what the tests run)', outcome);
+      // And the cross case that matters on a replacement device: a backup
+      // from a production store into a store that has never set legacy.
+      try {
+        final n = await plain.restoreEncrypted(backup, 'probe passphrase');
+        outcome = 'restored $n';
+      } catch (e) {
+        outcome = 'THROWS ${e.runtimeType}: $e';
+      }
+      record('BR7', 'production backup into a plain store', outcome);
+      await plain.close();
+      await db.close();
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+}

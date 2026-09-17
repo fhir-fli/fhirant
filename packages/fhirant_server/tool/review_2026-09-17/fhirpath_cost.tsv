@@ -1,0 +1,4 @@
+C1	depth 3 (10^3 evaluations), 149-character expression	200 in 63 ms
+C1	depth 4 (10^4 evaluations), 197-character expression	200 in 75 ms
+C1	depth 5 (10^5 evaluations), 245-character expression	200 in 120 ms
+C1	depth 6 (10^6 evaluations), 293-character expression	200 in 1002 ms
