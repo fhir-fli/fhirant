@@ -238,22 +238,23 @@ Future<Map<String, dynamic>> _buildParametersFromDb(
 }
 
 /// Search for resources belonging to a specific patient.
+///
+/// A read that throws is thrown on, and the request answers 500. It used to
+/// be caught and answered as an empty list (REVIEW-2026-09-17 F1): a failed
+/// Immunization read became "no doses given" and every dose was forecast as
+/// due, a failed Condition or AllergyIntolerance read dropped the
+/// contraindications, and the 200 said nothing of either.
 Future<List<fhir.Resource>> _searchForPatient(
   fhir.R4ResourceType type,
   String patientId,
   FhirAntDb dbInterface,
-) async {
-  try {
-    return await dbInterface.search(
+) =>
+    dbInterface.search(
       resourceType: type,
       searchParameters: {
         'patient': ['Patient/$patientId'],
       },
     );
-  } catch (_) {
-    return [];
-  }
-}
 
 Response _errorResponse(int status, String code, String diagnostics) {
   return Response(

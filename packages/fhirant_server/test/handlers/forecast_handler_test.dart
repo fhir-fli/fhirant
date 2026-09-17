@@ -253,6 +253,65 @@ void main() {
       ).called(1);
     });
 
+    // REVIEW-2026-09-17 F1: a read that throws is not "nothing recorded".
+    // An Immunization read swallowed as [] forecasts every dose as due; a
+    // Condition or AllergyIntolerance read swallowed as [] drops the
+    // contraindications. The answer to a failed read is an error.
+    for (final failing in [
+      fhir.R4ResourceType.Immunization,
+      fhir.R4ResourceType.Condition,
+      fhir.R4ResourceType.AllergyIntolerance,
+    ]) {
+      for (final body in <String, Map<String, dynamic>>{
+        'plain patientId': {'patientId': 'db-pat'},
+        'Parameters patientId': {
+          'resourceType': 'Parameters',
+          'parameter': [
+            {'name': 'patientId', 'valueString': 'db-pat'},
+          ],
+        },
+      }.entries) {
+        test('a failed $failing read is a 500, not a forecast (${body.key})',
+            () async {
+          when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'db-pat'))
+              .thenAnswer(
+            (_) async => fhir.Patient(
+              id: 'db-pat'.toFhirString,
+              birthDate: fhir.FhirDate.fromString('2020-01-01'),
+              gender: fhir.AdministrativeGender.male,
+            ),
+          );
+          when(
+            () => mockDb.search(
+              resourceType: any(named: 'resourceType'),
+              searchParameters: any(named: 'searchParameters'),
+              hasParameters: any(named: 'hasParameters'),
+              count: any(named: 'count'),
+              offset: any(named: 'offset'),
+              sort: any(named: 'sort'),
+            ),
+          ).thenAnswer((invocation) async {
+            if (invocation.namedArguments[#resourceType] == failing) {
+              throw StateError('the read failed');
+            }
+            return <fhir.Resource>[];
+          });
+
+          final response = await immdsForecastHandler(
+            postJson(r'/$immds-forecast', body.value),
+            mockDb,
+          );
+          final text = await response.readAsString();
+          expect(response.statusCode, 500, reason: text);
+          expect(
+            (jsonDecode(text) as Map<String, dynamic>)['resourceType'],
+            'OperationOutcome',
+          );
+          expect(text, isNot(contains('ImmunizationRecommendation')));
+        });
+      }
+    }
+
     test('response has correct content type', () async {
       final params = minimalForecastParams();
       final response = await immdsForecastHandler(

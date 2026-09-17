@@ -1,0 +1,22 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/forecast_handler_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: $immds-forecast (CDC) returns 400 when body is empty
+00:00 +1: $immds-forecast (CDC) returns 400 for invalid JSON
+00:00 +2: $immds-forecast (CDC) returns 400 when no Parameters or patientId
+00:00 +3: $immds-forecast (CDC) evaluates forecast with inline Parameters
+00:00 +4: $immds-forecast (CDC) returns recommendations for unvaccinated infant
+00:00 +5: $immds-forecast (CDC) evaluates forecast with immunization history
+00:00 +6: $immds-forecast (CDC) a patientId the store does not hold is 404, not 500 (REVIEW-2026-09-08 row 32)
+00:00 +7: $immds-forecast (CDC) loads patient data from DB via patientId
+00:00 +8: $immds-forecast (CDC) patientId in Parameters triggers DB lookup
+00:00 +9: $immds-forecast (CDC) a failed Immunization read is a 500, not a forecast (plain patientId)
+00:00 +10: $immds-forecast (CDC) a failed Immunization read is a 500, not a forecast (Parameters patientId)
+00:00 +11: $immds-forecast (CDC) a failed Condition read is a 500, not a forecast (plain patientId)
+00:00 +12: $immds-forecast (CDC) a failed Condition read is a 500, not a forecast (Parameters patientId)
+00:00 +13: $immds-forecast (CDC) a failed AllergyIntolerance read is a 500, not a forecast (plain patientId)
+00:00 +14: $immds-forecast (CDC) a failed AllergyIntolerance read is a 500, not a forecast (Parameters patientId)
+00:00 +15: $immds-forecast (CDC) response has correct content type
+00:00 +16: $immds-forecast-who evaluates WHO forecast with inline Parameters
+00:00 +17: $immds-forecast-who WHO recommendations differ from CDC
+00:00 +18: (tearDownAll)
+00:00 +18: All tests passed!
