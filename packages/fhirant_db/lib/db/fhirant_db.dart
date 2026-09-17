@@ -776,6 +776,33 @@ class FhirAntDb extends FhirDb {
   }) =>
       fhirDao.saveResources(resourcesList, asServer: asServer);
 
+  /// Which of [resourcesList] the store already holds a current version of,
+  /// as `Type/id` keys. One query; a resource with no id is held by nothing.
+  /// The specification load asks before each chunk, so it fills what is
+  /// missing and overwrites nothing (REVIEW-2026-09-17 S3b).
+  Future<Set<String>> heldKeys(List<fhir.Resource> resourcesList) async {
+    final wanted = [
+      for (final r in resourcesList)
+        if (r.id?.valueString != null)
+          (r.resourceType.name, r.id!.valueString!),
+    ];
+    if (wanted.isEmpty) return {};
+    // Row values against the primary key (resource_type, id): a lookup per
+    // pair, not a scan. `type || '/' || id IN (...)` cannot use the key.
+    final rows = await customSelect(
+      "SELECT resource_type || '/' || id AS key FROM resources "
+      'WHERE (resource_type, id) IN '
+      "(VALUES ${List.filled(wanted.length, '(?, ?)').join(', ')})",
+      variables: [
+        for (final (type, id) in wanted) ...[
+          Variable.withString(type),
+          Variable.withString(id),
+        ],
+      ],
+    ).get();
+    return {for (final row in rows) row.read<String>('key')};
+  }
+
   /// The patient this resource is about, or null when it names none.
   ///
   /// Inherited from `FhirDao` since fhir_r4_db 0.9.0. `FhirDb` delegates

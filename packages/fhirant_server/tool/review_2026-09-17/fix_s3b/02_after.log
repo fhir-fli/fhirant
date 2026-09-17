@@ -1,0 +1,8 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/spec_loader_test.dart
+00:00 +0: every parseable line of every .ndjson asset is stored
+00:00 +1: every loaded resource is tagged spec and is stored once
+00:00 +2: a store that already holds CodeSystems is left alone
+00:00 +3: loadSpecLines saves in chunks and counts what failed
+00:00 +4: the load fills what is missing and overwrites nothing a resource a client wrote is left as the client's
+00:00 +5: the load fills what is missing and overwrites nothing a second run over a loaded file writes no second version
+00:00 +6: All tests passed!

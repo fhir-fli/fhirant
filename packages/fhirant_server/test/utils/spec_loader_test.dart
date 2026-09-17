@@ -132,4 +132,59 @@ void main() {
     expect(errors, 1);
     expect(await db.getResourceCount(fhir.R4ResourceType.NamingSystem), 101);
   });
+
+  // REVIEW-2026-09-17 S3b. The load runs whenever the store holds no
+  // CodeSystem: on a first start, and again after a load that was
+  // interrupted before valuesets.ndjson, the last file. The app runs it
+  // unawaited beside a live server. It saved over whatever it found, so a
+  // resource a client had written since (an edit of a StructureDefinition,
+  // a restored backup) became history under the shipped copy, tagged as
+  // the server's again and so left out of the next backup.
+  group('the load fills what is missing and overwrites nothing', () {
+    Map<String, dynamic> definition(String id, String title) => {
+          'resourceType': 'NamingSystem',
+          'id': id,
+          'name': title,
+          'status': 'active',
+          'kind': 'identifier',
+          'date': '2026-01-01',
+          'uniqueId': [
+            {'type': 'uri', 'value': 'http://example.org/ns/$id'},
+          ],
+        };
+
+    Future<fhir.NamingSystem> stored(String id) async =>
+        (await db.getResource(fhir.R4ResourceType.NamingSystem, id))!
+            as fhir.NamingSystem;
+
+    test("a resource a client wrote is left as the client's", () async {
+      await db.saveResource(
+        fhir.Resource.fromJson(definition('a', 'the deployment edit')),
+      );
+      final (loaded, errors) = await loadSpecLines(
+        db,
+        Stream.fromIterable([
+          line(definition('a', 'as shipped')),
+          line(definition('b', 'as shipped')),
+        ]),
+        'namingsystems.ndjson',
+      );
+      expect((loaded, errors), (1, 0));
+      final a = await stored('a');
+      expect(a.name.valueString, 'the deployment edit');
+      expect(a.meta!.versionId!.valueString, '1');
+      expect(isSpecResource(a), isFalse);
+      expect(isSpecResource(await stored('b')), isTrue);
+    });
+
+    test('a second run over a loaded file writes no second version', () async {
+      Stream<String> file() => Stream.fromIterable([
+            line(definition('a', 'as shipped')),
+            line(definition('b', 'as shipped')),
+          ]);
+      expect(await loadSpecLines(db, file(), 'x.ndjson'), (2, 0));
+      expect(await loadSpecLines(db, file(), 'x.ndjson'), (0, 0));
+      expect((await stored('a')).meta!.versionId!.valueString, '1');
+    });
+  });
 }

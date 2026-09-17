@@ -186,7 +186,8 @@ Stream<List<int>> _pieces(Uint8List bytes) async* {
 
 /// Parses [lines] (one resource each) and saves them in transactions of
 /// [_chunkSize], never holding more than one chunk of parsed resources.
-/// Returns how many were saved and how many lines failed to parse. The
+/// Returns how many were saved (a resource the store already holds is left
+/// as it is and not counted) and how many lines failed to parse. The
 /// previous loader parsed a whole file into a list first, which on the
 /// 31 MB profiles-resources file held every StructureDefinition at once
 /// (813 MB RSS measured 2026-09-08 for the whole set).
@@ -206,6 +207,18 @@ Future<(int, int)> loadSpecLines(
   var errors = 0;
   var chunk = <fhir.Resource>[];
   Future<void> save() async {
+    if (chunk.isEmpty) return;
+    // The load fills what is missing and overwrites nothing. It runs again
+    // after an interrupted load, and in the app beside a live server: what
+    // the store holds by then is either already loaded or a client's (an
+    // edit, a restored backup), and saving over a client's put it into
+    // history under the shipped copy, tagged as the server's again
+    // (REVIEW-2026-09-17 S3b).
+    final held = await db.heldKeys(chunk);
+    chunk = [
+      for (final r in chunk)
+        if (!held.contains('${r.resourceType.name}/${r.id?.valueString}')) r,
+    ];
     if (chunk.isEmpty) return;
     // asServer: the tag is the server's, and this is the one writer of it.
     await db.saveResources(chunk, asServer: true);

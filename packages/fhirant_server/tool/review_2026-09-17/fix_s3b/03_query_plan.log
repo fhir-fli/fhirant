@@ -1,0 +1,6 @@
+SELECT 1 FROM resources WHERE (resource_type, id) IN (VALUES ('Patient','a'), ('Patient','b'))
+   SEARCH resources USING COVERING INDEX sqlite_autoindex_resources_1 (resource_type=? AND id=?)
+   LIST SUBQUERY 4
+   SCAN 2-ROW VALUES CLAUSE
+SELECT 1 FROM resources WHERE resource_type || '/' || id IN ('Patient/a','Patient/b')
+   SCAN resources USING COVERING INDEX sqlite_autoindex_resources_1

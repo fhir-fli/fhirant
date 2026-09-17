@@ -1,0 +1,29 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/spec_loader_test.dart
+00:00 +0: every parseable line of every .ndjson asset is stored
+00:00 +1: every loaded resource is tagged spec and is stored once
+00:00 +2: a store that already holds CodeSystems is left alone
+00:00 +3: loadSpecLines saves in chunks and counts what failed
+00:00 +4: the load fills what is missing and overwrites nothing a resource a client wrote is left as the client's
+00:00 +4 -1: the load fills what is missing and overwrites nothing a resource a client wrote is left as the client's [E]
+  Expected: (int, int):<(1, 0)>
+    Actual: (int, int):<(2, 0)>
+  
+  package:matcher                         expect
+  test/utils/spec_loader_test.dart 172:7  main.<fn>.<fn>
+  
+00:00 +4 -1: the load fills what is missing and overwrites nothing a second run over a loaded file writes no second version
+00:00 +4 -2: the load fills what is missing and overwrites nothing a second run over a loaded file writes no second version [E]
+  Expected: (int, int):<(0, 0)>
+    Actual: (int, int):<(2, 0)>
+  
+  package:matcher                         expect
+  test/utils/spec_loader_test.dart 186:7  main.<fn>.<fn>
+  
+00:00 +4 -2: Some tests failed.
+
+Failing tests:
+  test/utils/spec_loader_test.dart: the load fills what is missing and overwrites nothing a resource a client wrote is left as the client's
+  test/utils/spec_loader_test.dart: the load fills what is missing and overwrites nothing a second run over a loaded file writes no second version
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

@@ -1,0 +1,15 @@
+18:12:11.573 Loading FHIR R4 spec canonical resources from /home/grey/dev/fhir/fhirant/packages/fhirant_server/assets/fhir_spec
+18:12:12.191 Loaded 77 resources from conceptmaps.ndjson
+18:12:12.772 Loaded 274 resources from dataelements.ndjson
+18:12:14.052 Loaded 398 resources from extension-definitions.ndjson
+18:12:14.739 Loaded 489 resources from namingsystems.ndjson
+18:12:15.241 Loaded 39 resources from profiles-others.ndjson
+18:12:18.168 Loaded 196 resources from profiles-resources.ndjson
+18:12:18.523 Loaded 64 resources from profiles-types.ndjson
+18:12:22.911 Loaded 1414 resources from search-parameters.ndjson
+18:12:25.966 Loaded 1261 resources from valuesets.ndjson
+18:12:25.992 Spec loading complete: 4213 canonical resources loaded
+SearchParameter held: 1414
+PUT an edit of CodeSystem/administrative-gender on the running server: 200
+second start: "message":"Spec resources already loaded, skipping"
+edit after restart: the deployment edit version 2 tags None
