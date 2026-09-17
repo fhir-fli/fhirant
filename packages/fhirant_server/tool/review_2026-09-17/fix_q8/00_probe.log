@@ -1,0 +1,14 @@
+index row: {resource_type: Observation, search_name: code, token_system: http://loinc.org, token_value: 8867-4}
+index row: {resource_type: Observation, search_name: status, token_system: null, token_value: final}
+index row: {resource_type: Patient, search_name: gender, token_system: null, token_value: female}
+index row: {resource_type: ValueSet, search_name: status, token_system: null, token_value: active}
+index row: {resource_type: ValueSet, search_name: code, token_system: null, token_value: final}
+index row: {resource_type: ValueSet, search_name: status, token_system: null, token_value: active}
+index row: {resource_type: ValueSet, search_name: code, token_system: null, token_value: female}
+Observation {status: [final]} -> 1
+Observation {status: [http://hl7.org/fhir/observation-status|final]} -> 0
+Observation {status:in: [http://x/vs]} -> 0
+Observation {status:not-in: [http://x/vs]} -> 1
+Patient {gender: [http://hl7.org/fhir/administrative-gender|female]} -> 0
+Patient {gender:in: [http://x/vg]} -> 0
+Patient {gender:not-in: [http://x/vg]} -> 1

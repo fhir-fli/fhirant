@@ -1,0 +1,4 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/spec_loader_real_files_test.dart
+00:00 +0: search-parameters.ndjson loads whole, as the server
+00:08 +1: a client's upload is still checked
+00:08 +2: All tests passed!

@@ -1,0 +1,33 @@
+// ignore_for_file: avoid_print
+import 'dart:io';
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_db/fhir_r4_db.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('probe', () async {
+    final out = File('/home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/review_2026-09-17/fix_q8/00_probe.log').openSync(mode: FileMode.write);
+    void log(String s) { out.writeStringSync('$s\n'); out.flushSync(); print(s); }
+    final db = FhirDb(NativeDatabase.memory());
+    final dao = FhirDao(db);
+    Future<void> save(Map<String, dynamic> j) => dao.saveResource(fhir.Resource.fromJson(j));
+    await save({'resourceType': 'Observation', 'id': 'o1', 'status': 'final', 'code': {'coding': [{'system': 'http://loinc.org', 'code': '8867-4'}]}});
+    await save({'resourceType': 'Patient', 'id': 'p1', 'gender': 'female'});
+    await save({'resourceType': 'ValueSet', 'id': 'vs', 'url': 'http://x/vs', 'status': 'active', 'compose': {'include': [{'system': 'http://hl7.org/fhir/observation-status', 'concept': [{'code': 'final'}]}]}});
+    await save({'resourceType': 'ValueSet', 'id': 'vg', 'url': 'http://x/vg', 'status': 'active', 'compose': {'include': [{'system': 'http://hl7.org/fhir/administrative-gender', 'concept': [{'code': 'female'}]}]}});
+    final rows = await db.customSelect("SELECT resource_type, search_name, token_system, token_value FROM token_search_parameters WHERE search_name IN ('status','gender','code')").get();
+    for (final r in rows) { log('index row: ${r.data}'); }
+    Future<void> q(fhir.R4ResourceType t, Map<String, List<String>> p) async {
+      try { final r = await dao.search(resourceType: t, searchParameters: p); log('$t $p -> ${r.length}'); } catch (e) { log('$t $p -> $e'); }
+    }
+    await q(fhir.R4ResourceType.Observation, {'status': ['final']});
+    await q(fhir.R4ResourceType.Observation, {'status': ['http://hl7.org/fhir/observation-status|final']});
+    await q(fhir.R4ResourceType.Observation, {'status:in': ['http://x/vs']});
+    await q(fhir.R4ResourceType.Observation, {'status:not-in': ['http://x/vs']});
+    await q(fhir.R4ResourceType.Patient, {'gender': ['http://hl7.org/fhir/administrative-gender|female']});
+    await q(fhir.R4ResourceType.Patient, {'gender:in': ['http://x/vg']});
+    await q(fhir.R4ResourceType.Patient, {'gender:not-in': ['http://x/vg']});
+    await db.close(); out.closeSync();
+  });
+}

@@ -1,0 +1,24 @@
+up after 99s
+"message":"Loaded 77 resources from conceptmaps.ndjson"
+"message":"Loaded 274 resources from dataelements.ndjson"
+"message":"Loaded 398 resources from extension-definitions.ndjson"
+"message":"Loaded 489 resources from namingsystems.ndjson"
+"message":"Loaded 39 resources from profiles-others.ndjson"
+"message":"Loaded 196 resources from profiles-resources.ndjson"
+"message":"Loaded 64 resources from profiles-types.ndjson"
+"message":"Loaded 1414 resources from search-parameters.ndjson"
+"message":"Loaded 1261 resources from valuesets.ndjson"
+"message":"Spec loading complete: 4213 canonical resources loaded"
+CodeSystem held: 540
+ValueSet held: 721
+StructureDefinition held: 918
+SearchParameter held: 1414
+expand administrative-gender: 200 ValueSet total 4
+expand observation-codes (all LOINC): 422 not-found | ValueSet http://hl7.org/fhir/ValueSet/observation-codes includes all of CodeSystem http://loinc.org and this server does not hold it, so the value set cannot be expanded.
+validate-code LOINC 8867-4 in CodeSystem: 404 not-found | CodeSystem http://loinc.org is not held by this server, so the code cannot be validated
+validate-code gender male: 200 [('result', True), ('display', 'Male')]
+validate-code gender zzz: 200 [('result', False), ('message', 'Code "zzz" not found in ValueSet http://hl7.org/fhir/ValueSet/administrative-gender')]
+Observation?code:in=observation-codes: 400 not-found | ValueSet http://hl7.org/fhir/ValueSet/observation-codes includes all of CodeSystem http://loinc.org and this server does not hold it, so the value set cannot be expanded.
+Observation?code:not-in=observation-codes: 400 not-found | ValueSet http://hl7.org/fhir/ValueSet/observation-codes includes all of CodeSystem http://loinc.org and this server does not hold it, so the value set cannot be expanded.
+Observation?status:in=observation-status: 200 Bundle total 0
+Observation?code=8867-4 (built-in search still works): 200 Bundle total 1
