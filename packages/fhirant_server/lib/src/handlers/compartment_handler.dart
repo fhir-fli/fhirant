@@ -401,6 +401,17 @@ Future<Response> compartmentSearchHandler(
       offset: offset,
       hasMore: hasMore,
     );
+  } on ValueSetRefusal catch (e) {
+    // `:in` / `:not-in` against a ValueSet the store cannot evaluate or
+    // does not hold, as on a type-level search. This was not caught here
+    // at all, so it was a 500.
+    return _operationOutcome(
+      400,
+      e.message,
+      e.issueCode == 'not-found'
+          ? fhir.IssueType.notFound
+          : fhir.IssueType.notSupported,
+    );
   } on UnsupportedSearchModifier catch (e) {
     // R4 3.1.1.4.4: a SHALL, the same as on a type-level search.
     return _operationOutcome(400, e.message, fhir.IssueType.notSupported);

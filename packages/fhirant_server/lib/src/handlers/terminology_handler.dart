@@ -76,9 +76,15 @@ Future<Response> validateCodeHandler(
       final lookupUrl = url ?? effectiveSystem;
       final codeSystem = await _findCodeSystemByUrl(lookupUrl!, dbInterface);
       if (codeSystem == null) {
-        return _validationResult(
-          result: false,
-          message: 'CodeSystem not found: $lookupUrl',
+        // "Not held" is not "not valid" (REVIEW-2026-09-17 T1). R4B
+        // codesystem-operation-validate-code.html, read whole 2026-09-17,
+        // heads its error example, verbatim: "An error like this not
+        // returned if the code is not valid, but when the server is unable
+        // to determine whether the code is valid".
+        return _errorResponse(
+          404,
+          'CodeSystem $lookupUrl is not held by this server, so the code '
+          'cannot be validated',
         );
       }
       return _validateAgainstCodeSystem(
@@ -95,9 +101,10 @@ Future<Response> validateCodeHandler(
       }
       final valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
-        return _validationResult(
-          result: false,
-          message: 'ValueSet not found: $url',
+        return _errorResponse(
+          404,
+          'ValueSet $url is not held by this server, so the code cannot be '
+          'validated',
         );
       }
       return await _validateAgainstValueSet(
@@ -351,16 +358,6 @@ Future<Response> expandHandler(
       }
     }
 
-    // What this server cannot expand is refused, not answered from the
-    // parts it can (REVIEW-2026-09-06 finding 24); an expansion already on
-    // the resource is authoritative and needs none of the compose.
-    if (valueSet.expansion?.contains == null) {
-      final unsupported = unsupportedCompose(valueSet);
-      if (unsupported != null) {
-        return _errorResponse(422, unsupported, code: 'not-supported');
-      }
-    }
-
     // If already has an expansion, optionally filter it
     if (valueSet.expansion?.contains != null &&
         valueSet.expansion!.contains!.isNotEmpty) {
@@ -389,55 +386,24 @@ Future<Response> expandHandler(
       );
     }
 
-    // Expand from compose.include
-    final allContains = <fhir.ValueSetContains>[];
-    if (valueSet.compose?.include != null) {
-      for (final include in valueSet.compose!.include) {
-        final includeSystem = include.system?.valueString;
-
-        if (include.concept != null && include.concept!.isNotEmpty) {
-          // Explicit concept list
-          for (final c in include.concept!) {
-            allContains.add(
-              fhir.ValueSetContains(
-                system:
-                    includeSystem != null ? fhir.FhirUri(includeSystem) : null,
-                code: c.code,
-                display: c.display,
-              ),
-            );
-          }
-        } else if (includeSystem != null) {
-          // Include all codes from the CodeSystem
-          final cs = await _findCodeSystemByUrl(includeSystem, dbInterface);
-          if (cs != null && cs.concept != null) {
-            _flattenConcepts(cs.concept!, includeSystem, allContains);
-          }
-        }
-
-        // Apply filter from include rules (ValueSet.compose.include.filter)
-        // These are CodeSystem-level filters, not the $expand filter param.
-        // For simplicity, we don't apply compose-level filters here —
-        // full filter support requires property-based CodeSystem filtering.
-      }
+    // The compose, expanded by the store: the one implementation, which
+    // `:in`, `:not-in` and `$validate-code` use too, and which refuses what
+    // it cannot evaluate rather than answering from the parts it can
+    // (REVIEW-2026-09-06 finding 24, REVIEW-2026-09-17 T1 and T2).
+    final List<ExpandedCode> codes;
+    try {
+      codes = await dbInterface.fhirDao.expandValueSet(valueSet);
+    } on ValueSetRefusal catch (e) {
+      return _errorResponse(422, e.message, code: e.issueCode);
     }
-
-    // Apply exclude rules
-    if (valueSet.compose?.exclude != null) {
-      for (final exclude in valueSet.compose!.exclude!) {
-        final excludeSystem = exclude.system?.valueString;
-        if (exclude.concept != null) {
-          for (final c in exclude.concept!) {
-            allContains.removeWhere(
-              (entry) =>
-                  entry.code?.valueString == c.code.valueString &&
-                  (excludeSystem == null ||
-                      entry.system?.valueString == excludeSystem),
-            );
-          }
-        }
-      }
-    }
+    final allContains = [
+      for (final c in codes)
+        fhir.ValueSetContains(
+          system: c.system != null ? fhir.FhirUri(c.system) : null,
+          code: fhir.FhirCode(c.code),
+          display: c.display != null ? fhir.FhirString(c.display) : null,
+        ),
+    ];
 
     // Apply $expand filter parameter (text match on display/code)
     var filtered = allContains;
@@ -471,27 +437,6 @@ Future<Response> expandHandler(
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $expand failed', e, stackTrace);
     return _errorResponse(500, 'Internal error');
-  }
-}
-
-/// Flatten a hierarchical CodeSystem concept list into ValueSetContains
-/// entries.
-void _flattenConcepts(
-  List<fhir.CodeSystemConcept> concepts,
-  String system,
-  List<fhir.ValueSetContains> out,
-) {
-  for (final c in concepts) {
-    out.add(
-      fhir.ValueSetContains(
-        system: fhir.FhirUri(system),
-        code: c.code,
-        display: c.display,
-      ),
-    );
-    if (c.concept != null) {
-      _flattenConcepts(c.concept!, system, out);
-    }
   }
 }
 
@@ -624,6 +569,18 @@ Response _validateAgainstCodeSystem(
 
   final concept = _findConcept(codeSystem.concept, code);
   if (concept == null) {
+    // A code missing from a CodeSystem held in part (content other than
+    // complete) is not thereby invalid: the server cannot tell.
+    final content = codeSystem.content.toString();
+    if (content != 'complete') {
+      return _errorResponse(
+        422,
+        'CodeSystem ${csUrl ?? ''} is held with content "$content", not '
+        'the complete code system, so a code it does not list cannot be '
+        'called invalid',
+        code: 'not-supported',
+      );
+    }
     return _validationResult(
       result: false,
       message: 'Code "$code" not found in CodeSystem ${csUrl ?? ''}',
@@ -677,57 +634,27 @@ Future<Response> _validateAgainstValueSet(
     );
   }
 
-  // 2. Check compose.include rules. A compose this server cannot evaluate
-  // is refused rather than answered from the parts it can (REVIEW-2026-09-06
-  // finding 24).
-  final unsupported = unsupportedCompose(valueSet);
-  if (unsupported != null) {
-    return _errorResponse(422, unsupported, code: 'not-supported');
+  // 2. The compose, expanded by the store, as `$expand` and `:in` expand
+  // it. This used to walk the includes itself and return on the first
+  // match, so a code the compose excludes validated true
+  // (REVIEW-2026-09-17 T2).
+  final List<ExpandedCode> codes;
+  try {
+    codes = await dbInterface.fhirDao.expandValueSet(valueSet);
+  } on ValueSetRefusal catch (e) {
+    return _errorResponse(422, e.message, code: e.issueCode);
   }
-  if (valueSet.compose?.include != null) {
-    for (final include in valueSet.compose!.include) {
-      // Check if system matches
-      final includeSystem = include.system?.valueString;
-      if (system != null && includeSystem != null && system != includeSystem) {
-        continue;
-      }
-
-      // Check explicitly listed concepts
-      if (include.concept != null) {
-        for (final c in include.concept!) {
-          if (c.code.valueString == code) {
-            final foundDisplay = c.display?.valueString;
-            if (display != null &&
-                foundDisplay != null &&
-                display != foundDisplay) {
-              return _validationResult(
-                result: true,
-                message: 'Code found but display does not match',
-                display: foundDisplay,
-              );
-            }
-            return _validationResult(result: true, display: foundDisplay);
-          }
-        }
-      }
-
-      // If no explicit concepts and system matches, check the CodeSystem
-      if (include.concept == null && includeSystem != null) {
-        final cs = await _findCodeSystemByUrl(includeSystem, dbInterface);
-        if (cs != null) {
-          final concept = _findConcept(cs.concept, code);
-          if (concept != null) {
-            return _validationResult(
-              result: true,
-              display: concept.display?.valueString,
-            );
-          }
-        }
-      }
+  for (final c in codes) {
+    if (c.code != code) continue;
+    if (system != null && c.system != null && system != c.system) continue;
+    if (display != null && c.display != null && display != c.display) {
+      return _validationResult(
+        result: true,
+        message: 'Code found but display does not match',
+        display: c.display,
+      );
     }
-
-    // Check exclude rules
-    // (If we got here, the code wasn't found in any include rule)
+    return _validationResult(result: true, display: c.display);
   }
 
   return _validationResult(
@@ -1197,38 +1124,4 @@ bool _containsCode(List<fhir.CodeSystemConcept>? concepts, String code) {
     if (_containsCode(concept.concept, code)) return true;
   }
   return false;
-}
-
-/// Why this server cannot evaluate [valueSet]'s compose, or null when it
-/// can: it implements `include.concept` lists, whole-CodeSystem includes and
-/// `exclude.concept` lists. An `include.filter` (a property-based selection
-/// over the CodeSystem), an `include.valueSet` (a nested value set) and the
-/// same two on `exclude` are not implemented; answering as if they were
-/// absent expanded or validated against a different set than the one
-/// defined, silently.
-String? unsupportedCompose(fhir.ValueSet valueSet) {
-  final compose = valueSet.compose;
-  if (compose == null) return null;
-  final url = valueSet.url?.valueString ?? valueSet.id?.valueString ?? '?';
-  for (final include in compose.include) {
-    if (include.filter != null && include.filter!.isNotEmpty) {
-      return 'ValueSet $url uses compose.include.filter, which this server '
-          'does not implement';
-    }
-    if (include.valueSet != null && include.valueSet!.isNotEmpty) {
-      return 'ValueSet $url uses compose.include.valueSet, which this server '
-          'does not implement';
-    }
-  }
-  for (final exclude in compose.exclude ?? const <fhir.ValueSetInclude>[]) {
-    if (exclude.filter != null && exclude.filter!.isNotEmpty) {
-      return 'ValueSet $url uses compose.exclude.filter, which this server '
-          'does not implement';
-    }
-    if (exclude.valueSet != null && exclude.valueSet!.isNotEmpty) {
-      return 'ValueSet $url uses compose.exclude.valueSet, which this server '
-          'does not implement';
-    }
-  }
-  return null;
 }

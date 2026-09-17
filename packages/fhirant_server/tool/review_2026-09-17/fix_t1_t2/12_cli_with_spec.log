@@ -1,0 +1,8 @@
+up after 85s; CodeSystems held: 0
+expand administrative-gender: 404 not-found | ValueSet not found: http://hl7.org/fhir/ValueSet/administrative-gender
+expand observation-codes (all LOINC): 404 not-found | ValueSet not found: http://hl7.org/fhir/ValueSet/observation-codes
+validate-code LOINC 8867-4 in CodeSystem: 404 not-found | CodeSystem http://loinc.org is not held by this server, so the code cannot be validated
+validate-code gender male: 404 not-found | ValueSet http://hl7.org/fhir/ValueSet/administrative-gender is not held by this server, so the code cannot be validated
+validate-code gender nonsense: 404 not-found | ValueSet http://hl7.org/fhir/ValueSet/administrative-gender is not held by this server, so the code cannot be validated
+Observation?code:in=observation-codes: 400 not-found | ValueSet http://hl7.org/fhir/ValueSet/observation-codes is not held by this server, so nothing can be answered against it.
+Observation?code:not-in=observation-codes: 400 not-found | ValueSet http://hl7.org/fhir/ValueSet/observation-codes is not held by this server, so nothing can be answered against it.

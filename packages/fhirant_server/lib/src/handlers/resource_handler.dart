@@ -371,11 +371,11 @@ Future<Response> systemSearchHandler(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
-  } on UnsupportedValueSetCompose catch (e) {
-    // `:in` / `:not-in` against a ValueSet whose compose this store cannot
-    // evaluate (REVIEW-2026-09-06 finding 24): refused, not answered from
-    // the parts it can.
-    return _searchRefusal(e.message, fhir.IssueType.notSupported);
+  } on ValueSetRefusal catch (e) {
+    // `:in` / `:not-in` against a ValueSet this store cannot evaluate, or
+    // does not hold (REVIEW-2026-09-06 finding 24, REVIEW-2026-09-17 T1):
+    // refused, not answered from the parts it can.
+    return _searchRefusal(e.message, _valueSetIssue(e));
   } on UnsupportedSearchModifier catch (e) {
     return _searchRefusal(e.message, fhir.IssueType.notSupported);
   } on InvalidSearchValue catch (e) {
@@ -887,11 +887,11 @@ Future<Response> _searchResources(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
-  } on UnsupportedValueSetCompose catch (e) {
-    // `:in` / `:not-in` against a ValueSet whose compose this store cannot
-    // evaluate (REVIEW-2026-09-06 finding 24): refused, not answered from
-    // the parts it can.
-    return _searchRefusal(e.message, fhir.IssueType.notSupported);
+  } on ValueSetRefusal catch (e) {
+    // `:in` / `:not-in` against a ValueSet this store cannot evaluate, or
+    // does not hold (REVIEW-2026-09-06 finding 24, REVIEW-2026-09-17 T1):
+    // refused, not answered from the parts it can.
+    return _searchRefusal(e.message, _valueSetIssue(e));
   } on UnsupportedSearchModifier catch (e) {
     // R4 3.1.1.4.4 is a SHALL: reject, with a 400 and an OperationOutcome
     // carrying a clear message. Ignoring it would silently change what the
@@ -1207,11 +1207,11 @@ Future<Response> postResourceHandler(
                   ? null
                   : patientCompartment(createPatientId),
             );
-          } on UnsupportedValueSetCompose catch (e) {
-            // `:in` / `:not-in` against a ValueSet whose compose this store
-            // cannot evaluate (REVIEW-2026-09-06 finding 24): refused, not
-            // answered from the parts it can.
-            return _searchRefusal(e.message, fhir.IssueType.notSupported);
+          } on ValueSetRefusal catch (e) {
+            // `:in` / `:not-in` against a ValueSet this store cannot
+            // evaluate or does not hold: refused, not answered from the
+            // parts it can.
+            return _searchRefusal(e.message, _valueSetIssue(e));
           } on UnsupportedSearchModifier catch (e) {
             return _searchRefusal(
               'If-None-Exist: ${e.message}',
@@ -1878,6 +1878,13 @@ Response _emptySearchBundle(
 /// parameter's type (3.1.1.3; `invalid`), and a bare logical id that refers
 /// to more than one resource type (3.1.1.4.12; `invalid`). The store's
 /// message already says what was asked for and what was allowed.
+/// The issue type of a [ValueSetRefusal]: what the store does not hold is
+/// `not-found`, what it does not implement is `not-supported`.
+fhir.IssueType _valueSetIssue(ValueSetRefusal refusal) =>
+    refusal.issueCode == 'not-found'
+        ? fhir.IssueType.notFound
+        : fhir.IssueType.notSupported;
+
 Response _searchRefusal(String message, fhir.IssueType code) {
   FhirantLogging().logInfo('Rejected search ($code)');
   return Response(

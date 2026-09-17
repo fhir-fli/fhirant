@@ -1,0 +1,22 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/terminology_not_held_test.dart
+00:00 +0: T1: a ValueSet that includes all of a CodeSystem not held $expand is an error, not an empty expansion
+00:01 +1: T1: a ValueSet that includes all of a CodeSystem not held ValueSet/$validate-code is an error, not result=false
+00:01 +2: T1: a ValueSet that includes all of a CodeSystem not held :in and :not-in are errors, not nothing and everything
+00:01 +3: :in a ValueSet the server does not hold is an error
+00:01 +3: T1: a ValueSet that includes all of a CodeSystem not held $expand is an error, not an empty expansion
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +4: CodeSystem/$validate-code of a system not held is an error
+00:01 +5: ValueSet/$validate-code of a url not held is an error
+00:01 +6: a CodeSystem held as a fragment a code it lists is valid
+00:01 +7: T1: a ValueSet that includes all of a CodeSystem not held ValueSet/$validate-code is an error, not result=false
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +7: a CodeSystem held as a fragment a code it does not list cannot be called invalid
+00:01 +8: T1: a ValueSet that includes all of a CodeSystem not held :in and :not-in are errors, not nothing and everything
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +8: a CodeSystem held as a fragment a ValueSet including all of it does not $expand
+00:01 +9: T2: compose.exclude $expand and $validate-code agree on the excluded code
+00:01 +10: :in a ValueSet the server does not hold is an error
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +10: CodeSystem/$validate-code of a system not held is an error
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +10: All tests passed!

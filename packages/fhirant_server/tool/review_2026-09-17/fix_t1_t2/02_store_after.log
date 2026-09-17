@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/value_set_not_evaluable_test.dart
+00:00 +0: :in refuses a ValueSet the store does not hold
+00:00 +1: :in refuses an include of a CodeSystem it does not hold
+00:00 +2: :in refuses an include of a CodeSystem held as not-present
+00:00 +3: :in refuses an include of a CodeSystem held as example
+00:00 +4: :in refuses an include of a CodeSystem held as fragment
+00:00 +5: :in refuses an include of a version it does not hold
+00:00 +6: :not-in refuses a ValueSet the store does not hold
+00:00 +7: :not-in refuses an include of a CodeSystem it does not hold
+00:00 +8: :not-in refuses an include of a CodeSystem held as not-present
+00:00 +9: :not-in refuses an include of a CodeSystem held as example
+00:00 +10: :not-in refuses an include of a CodeSystem held as fragment
+00:00 +11: :not-in refuses an include of a version it does not hold
+00:00 +12: every refusal is a ValueSetRefusal with a message and an issue code
+00:00 +13: a complete CodeSystem it holds is expanded, of the version asked for
+00:00 +14: an enumerated include needs no CodeSystem: the list is the answer
+00:00 +15: expandValueSet gives system, code and display, excludes applied
+00:00 +16: All tests passed!

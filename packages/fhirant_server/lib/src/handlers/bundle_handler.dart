@@ -626,6 +626,11 @@ Future<_BundleOperation> _processBundleEntry(
                 ? null
                 : patientCompartment(createPatient),
           );
+        } on ValueSetRefusal catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ifNoneExist: ${e.message}',
+          );
         } on UnsupportedSearchModifier catch (e) {
           throw BundleEntryException(
             400,
@@ -1070,7 +1075,7 @@ Future<fhir.Bundle> _entrySearch(
     throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
   } on AmbiguousReference catch (e) {
     throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
-  } on UnsupportedValueSetCompose catch (e) {
+  } on ValueSetRefusal catch (e) {
     throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
   }
 }

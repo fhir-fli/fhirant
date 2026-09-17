@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/terminology_handler.dart';
@@ -8,6 +9,20 @@ import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 class MockFhirAntDb extends Mock implements FhirAntDb {}
+
+/// A real in-memory store holding [resources]. The value set expansion
+/// lives in the store (fhir_db `expandValueSet`, REVIEW-2026-09-17 T1/T2),
+/// so a test of a compose runs against one; a mocked store has no
+/// expansion to give.
+Future<FhirAntDb> storeWith(List<fhir.Resource> resources) async {
+  final db = FhirAntDb(NativeDatabase.memory());
+  await db.initialize();
+  for (final r in resources) {
+    await db.saveResource(r);
+  }
+  addTearDown(db.close);
+  return db;
+}
 
 void main() {
   setUpAll(() {
@@ -197,15 +212,16 @@ void main() {
         },
       });
 
-      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
-          .thenAnswer((_) async => vs);
-
       final request = makeGetRequest(
         r'ValueSet/vs-1/$validate-code?code=A&system=http://example.com/cs',
       );
 
-      final response =
-          await validateCodeHandler(request, mockDb, 'ValueSet', 'vs-1');
+      final response = await validateCodeHandler(
+        request,
+        await storeWith([vs]),
+        'ValueSet',
+        'vs-1',
+      );
       expect(response.statusCode, 200);
 
       final body = jsonDecode(await response.readAsString()) as Map;
@@ -551,12 +567,10 @@ void main() {
         },
       });
 
-      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
-          .thenAnswer((_) async => vs);
-
       final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
-      final response = await expandHandler(request, mockDb, 'vs-1');
+      final response =
+          await expandHandler(request, await storeWith([vs]), 'vs-1');
       expect(response.statusCode, 200);
 
       final body =
@@ -603,24 +617,10 @@ void main() {
         ],
       });
 
-      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
-          .thenAnswer((_) async => vs);
-      when(
-        () => mockDb.search(
-          resourceType: fhir.R4ResourceType.CodeSystem,
-          searchParameters: {
-            'url': ['http://example.com/cs'],
-          },
-          count: 1,
-          hasParameters: any(named: 'hasParameters'),
-          offset: any(named: 'offset'),
-          sort: any(named: 'sort'),
-        ),
-      ).thenAnswer((_) async => [cs]);
-
       final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
-      final response = await expandHandler(request, mockDb, 'vs-1');
+      final response =
+          await expandHandler(request, await storeWith([vs, cs]), 'vs-1');
       expect(response.statusCode, 200);
 
       final body =
@@ -741,12 +741,10 @@ void main() {
         },
       });
 
-      when(() => mockDb.getResource(fhir.R4ResourceType.ValueSet, 'vs-1'))
-          .thenAnswer((_) async => vs);
-
       final request = makeGetRequest(r'ValueSet/vs-1/$expand');
 
-      final response = await expandHandler(request, mockDb, 'vs-1');
+      final response =
+          await expandHandler(request, await storeWith([vs]), 'vs-1');
       expect(response.statusCode, 200);
 
       final body =
@@ -775,23 +773,10 @@ void main() {
         },
       });
 
-      when(
-        () => mockDb.search(
-          resourceType: fhir.R4ResourceType.ValueSet,
-          searchParameters: {
-            'url': ['http://example.com/vs'],
-          },
-          count: 1,
-          hasParameters: any(named: 'hasParameters'),
-          offset: any(named: 'offset'),
-          sort: any(named: 'sort'),
-        ),
-      ).thenAnswer((_) async => [vs]);
-
       final request =
           makeGetRequest(r'ValueSet/$expand?url=http://example.com/vs');
 
-      final response = await expandHandler(request, mockDb);
+      final response = await expandHandler(request, await storeWith([vs]));
       expect(response.statusCode, 200);
 
       final body =
