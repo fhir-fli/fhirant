@@ -1,0 +1,12 @@
+waited 31s; A alive: yes, B alive: yes
+PUT Patient/e2e on A: 201
+backup from A: 200 131072 bytes
+read Patient/e2e on B before restore: 404
+restore into B, wrong passphrase: 400
+{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"security","diagnostics":"That passphrase does not open this file, or the file is not a FHIRant backup."}]}
+
+restore into B: 200
+{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 1 saved, 0 errors, 1 total entries"}]}
+
+{"resourceType":"Patient","id":"e2e","meta":{"versionId":"1","lastUpdated":"2026-09-17T17:24:19.731386Z"},"name":[{"family":"Roundtrip"}]}
+read Patient/e2e on B after restore: 200

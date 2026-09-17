@@ -1,0 +1,63 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/restore_over_socket_test.dart
+00:00 +0: a backup downloaded from one server restores into another
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.store (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/handlers/restore_over_socket_test.dart:28:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/handlers/restore_over_socket_test.dart:52:20)
+<asynchronous suspension>
+#9      Future._kTrue (dart:async/future.dart:702:3)
+<asynchronous suspension>
+#10     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:12)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:03 +0 -1: a backup downloaded from one server restores into another [E]
+  Expected: <400>
+    Actual: <500>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Restore failed"}]}
+  
+  package:matcher                                   expect
+  test/handlers/restore_over_socket_test.dart 92:5  main.<fn>
+  
+00:03 +0 -1: an empty body is a 400, not a 500
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.store (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/handlers/restore_over_socket_test.dart:28:16)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/handlers/restore_over_socket_test.dart:52:20)
+<asynchronous suspension>
+#9      Future._kTrue (dart:async/future.dart:702:3)
+<asynchronous suspension>
+#10     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:12)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:05 +0 -2: an empty body is a 400, not a 500 [E]
+  Expected: <400>
+    Actual: <500>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Restore failed"}]}
+  
+  package:matcher                                    expect
+  test/handlers/restore_over_socket_test.dart 116:5  main.<fn>
+  
+00:05 +0 -2: Some tests failed.
+
+Failing tests:
+  test/handlers/restore_over_socket_test.dart: a backup downloaded from one server restores into another
+  test/handlers/restore_over_socket_test.dart: an empty body is a 400, not a 500
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

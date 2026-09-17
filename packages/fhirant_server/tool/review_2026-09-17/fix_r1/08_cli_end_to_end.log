@@ -1,0 +1,10 @@
+waited 31s; A alive: yes, B alive: yes
+PUT Patient/e2e on A: 201
+backup from A: 200 131072 bytes
+read Patient/e2e on B before restore: 404
+restore into B, wrong passphrase: 500
+restore into B: 500
+{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Restore failed"}]}
+
+{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Patient/e2e not found"}]}
+read Patient/e2e on B after restore: 404

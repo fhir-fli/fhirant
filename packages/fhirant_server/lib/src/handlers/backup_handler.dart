@@ -107,7 +107,17 @@ Future<Response> restoreHandler(
   try {
     dir = await Directory.systemTemp.createTemp('fhirant-restore-');
     final upload = File('${dir.path}/upload');
-    await request.read().pipe(upload.openWrite());
+    // Not `request.read().pipe(sink)`: behind dart:io the body is a
+    // `Stream<Uint8List>` at run time, `pipe` checks its consumer against
+    // that element type, and an `IOSink` is a `StreamConsumer<List<int>>`:
+    // a TypeError, a 500 on every restore over a socket (measured
+    // 2026-09-17, tool/review_2026-09-17/fix_r1/08_cli_end_to_end.log).
+    final sink = upload.openWrite();
+    try {
+      await sink.addStream(request.read());
+    } finally {
+      await sink.close();
+    }
     if (upload.lengthSync() == 0) {
       return Response(
         400,
