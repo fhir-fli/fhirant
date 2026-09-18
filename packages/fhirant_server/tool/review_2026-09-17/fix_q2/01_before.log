@@ -1,0 +1,59 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/reindex_live_test.dart
+00:00 +0: a search during a rebuild answers from a whole index
+00:04 +0 -1: a search during a rebuild answers from a whole index [E]
+  Expected: Set:[3000]
+    Actual: Set:[3000, 0, 500, 1000, 1500, 2500]
+     Which: larger than expected
+  23 polls
+  
+  package:matcher                   expect
+  test/reindex_live_test.dart 72:5  main.<fn>
+  
+00:04 +0 -1: a save made during the rebuild is indexed after it
+00:06 +0 -2: a save made during the rebuild is indexed after it [E]
+  SqliteException(1): while preparing statement, no such table: string_search_parameters, SQL logic error (code 1)
+    Causing statement: DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;
+  package:sqlite3/src/implementation/exception.dart 101:3         throwException
+  package:sqlite3/src/implementation/database.dart 378:9          DatabaseImplementation._prepareInternal
+  package:sqlite3/src/implementation/database.dart 449:19         DatabaseImplementation.prepare
+  package:sqlite3/src/ffi/implementation.dart 161:18              FfiDatabaseImplementation.prepare
+  package:drift/src/sqlite3/database.dart 131:31                  Sqlite3Delegate.runBatchSync
+  package:drift/native.dart 429:30                                _NativeDelegate.runBatched.<fn>
+  dart:async                                                      new Future.sync
+  package:drift/native.dart 429:19                                _NativeDelegate.runBatched
+  package:drift/src/runtime/executor/helpers/engines.dart 133:19  _BaseExecutor.runBatched.<fn>
+  package:drift/src/runtime/executor/helpers/engines.dart 64:20   _BaseExecutor._synchronized
+  package:drift/src/runtime/executor/helpers/engines.dart 126:12  _BaseExecutor.runBatched
+  package:drift/src/remote/server_impl.dart 194:20                ServerImplementation._runBatched
+  package:drift/src/remote/communication.dart 172:20              DriftCommunication.setRequestHandler.<fn>
+  ===== asynchronous gap ===========================
+  package:drift/src/remote/communication.dart 118:66              DriftCommunication.request
+  package:drift/src/remote/client_impl.dart 87:28                 _BaseExecutor.runBatched
+  package:drift/src/runtime/api/batch.dart 260:21                 Batch._runWith
+  package:drift/src/runtime/api/batch.dart 253:13                 Batch._commit
+  package:fhir_db/src/fhir_dao.dart 3568:5                        FhirDao._updateSearchParameters
+  package:fhir_db/src/fhir_dao.dart 264:7                         FhirDao.saveResource.<fn>
+  package:drift/src/runtime/api/connection_user.dart 519:26       DatabaseConnectionUser.transaction.<fn>.<fn>
+  package:drift/src/runtime/api/connection_user.dart 510:12       DatabaseConnectionUser.transaction
+  package:fhir_db/src/fhir_dao.dart 232:25                        FhirDao.saveResource
+  test/reindex_live_test.dart 82:5                                main.<fn>
+  
+  Channel was closed before receiving a response
+  package:drift/src/remote/communication.dart 118:66         DriftCommunication.request
+  package:drift/src/remote/client_impl.dart 109:28           _BaseExecutor._runRequest
+  package:drift/src/remote/client_impl.dart 130:12           _BaseExecutor.runCustom
+  package:drift/src/utils/lazy_database.dart 87:17           LazyDatabase.runCustom
+  package:drift/src/runtime/api/connection_user.dart 437:23  DatabaseConnectionUser.customStatement.<fn>
+  package:drift/src/runtime/api/connection_user.dart 172:16  DatabaseConnectionUser.doWhenOpened.<fn>
+  ===== asynchronous gap ===========================
+  package:fhir_db/src/fhir_db.dart 513:7                     FhirDb.rebuildSearchIndex
+  
+00:06 +0 -2: the value indexes exist once each after a rebuild
+00:10 +1 -2: Some tests failed.
+
+Failing tests:
+  test/reindex_live_test.dart: a save made during the rebuild is indexed after it
+  test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

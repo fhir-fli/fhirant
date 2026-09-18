@@ -1,0 +1,8 @@
+up after 23s
+loaded 20000 patients in 32.3s
+before: (200, 20000)
+kickoff: 202
+rebuild took 9.3s, 21 polls, answers={(200, 20000): 21}
+longest single poll 2.28s, median 0.242s
+status: 200 {"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Reindexed 40040 resources in 9278 ms, finished 2026-09-18T16:54:08.291003."}]}
+after: (200, 20000)

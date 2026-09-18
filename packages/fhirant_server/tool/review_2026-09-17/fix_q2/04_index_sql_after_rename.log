@@ -1,0 +1,4 @@
+{name: idx_token_search_parameters_rebuild_value_cover, sql: CREATE INDEX idx_token_search_parameters_rebuild_value_cover ON "token_search_parameters"(resource_type, search_name, token_value, id)}
+{name: idx_token_search_parameters_rebuild_system_cover, sql: CREATE INDEX idx_token_search_parameters_rebuild_system_cover ON "token_search_parameters"(resource_type, search_name, token_system, id)}
+{name: idx_token_search_parameters_rebuild_owner, sql: CREATE INDEX idx_token_search_parameters_rebuild_owner ON "token_search_parameters"(resource_type, id)}
+{name: idx_token_search_parameters_rebuild_contained, sql: CREATE INDEX idx_token_search_parameters_rebuild_contained ON "token_search_parameters"(id) WHERE resource_type LIKE '#%'}

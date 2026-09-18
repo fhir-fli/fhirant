@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/reindex_live_test.dart
+00:00 +0: a search during a rebuild answers from a whole index
+00:02 +1: a save made during the rebuild is indexed after it
+00:04 +2: the value indexes exist once each after a rebuild
+00:06 +2 -1: the value indexes exist once each after a rebuild [E]
+  type 'Null' is not a subtype of type 'String' in type cast
+  package:drift/src/runtime/query_builder/statements/select/custom_select.dart 84:44  QueryRow.read
+  test/reindex_live_test.dart 136:25                                                  main.<fn>.<fn>
+  package:matcher                                                                     expect
+  test/reindex_live_test.dart 135:5                                                   main.<fn>
+  
+00:06 +2 -1: Some tests failed.
+
+Failing tests:
+  test/reindex_live_test.dart: the value indexes exist once each after a rebuild
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
