@@ -1,0 +1,8 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/export_file_crypto_test.dart
+00:00 +0: round trip, empty, one frame and several frames
+00:00 +1: the file holds no plaintext
+00:00 +2: a changed byte is refused
+00:00 +3: a file cut short is refused, on and off a frame boundary
+00:00 +4: the wrong key is refused
+00:00 +5: a file that is not one of these is refused
+00:00 +6: All tests passed!

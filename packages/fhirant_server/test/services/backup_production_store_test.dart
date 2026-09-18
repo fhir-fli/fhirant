@@ -1,3 +1,9 @@
+// Five file stores opened with the production cipher, each a PBKDF2 key
+// derivation at SQLCipher's iteration count: 12 s alone here, and once
+// past the 30 s default under the whole suite (2026-09-18).
+@Timeout(Duration(minutes: 2))
+library;
+
 import 'dart:io';
 
 import 'package:drift/native.dart';

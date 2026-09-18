@@ -1,0 +1,61 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/export_at_rest_test.dart
+00:00 +0: test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +1: test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +2: test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +3: test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +4: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +5: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +6: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +7: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +8: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +9: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +10: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +11: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +12: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +13: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +14: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +15: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +16: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +17: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +18: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +19: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +20: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +21: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +22: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +23: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +23 -1: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +23 -1: test/handlers/export_handler_test.dart: exportFileHandler serves NDJSON file when it exists [E]
+  Expected: <200>
+    Actual: <410>
+  
+  package:matcher                               expect
+  test/handlers/export_handler_test.dart 615:7  main.<fn>.<fn>
+  
+00:00 +24 -1: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +25 -1: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +26 -1: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +27 -1: test/utils/export_file_crypto_test.dart: round trip, empty, one frame and several frames
+00:00 +28 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +29 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +30 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +30 -1: test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +31 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +32 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +33 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:00 +34 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+00:01 +35 -1: test/integration/export_scale_test.dart: Expires is the completion time plus the retention
+00:01 +35 -1: test/integration/export_scale_test.dart: the file is the stored JSON, streamed with a Content-Length
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +36 -1: test/integration/export_scale_test.dart: the sweep removes expired jobs and orphan directories, keeps the rest
+00:01 +37 -1: test/integration/export_scale_test.dart: a job left running by the last process is reported failed
+00:01 +38 -1: test/integration/export_scale_test.dart: a type with no rows leaves no file and no output item
+00:01 +38 -1: test/integration/export_scale_test.dart: Expires is the completion time plus the retention
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39 -1: Some tests failed.
+
+Failing tests:
+  test/handlers/export_handler_test.dart: exportFileHandler serves NDJSON file when it exists
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

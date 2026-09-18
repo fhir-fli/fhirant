@@ -80,6 +80,7 @@ class ExportJob {
     this.groupId,
     this.typeFilters,
     this.requestedBy,
+    this.fileKey,
   });
 
   factory ExportJob.fromRow(QueryRow row) {
@@ -99,6 +100,7 @@ class ExportJob {
       groupId: row.readNullable<String>('group_id'),
       typeFilters: row.readNullable<String>('type_filters'),
       requestedBy: row.readNullable<String>('requested_by'),
+      fileKey: row.readNullable<String>('file_key'),
     );
   }
   final String jobId;
@@ -116,6 +118,11 @@ class ExportJob {
   final String? groupId;
   final String? typeFilters;
   final String? requestedBy;
+
+  /// The key the job's files on disk are encrypted under, base64, held
+  /// here inside the encrypted store and nowhere else (fhirant
+  /// REVIEW-2026-09-17 A8). Null for a job written before schema 24.
+  final String? fileKey;
 
   @override
   String toString() =>

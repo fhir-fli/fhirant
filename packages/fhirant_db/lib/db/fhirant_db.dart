@@ -24,7 +24,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -257,6 +257,20 @@ class FhirAntDb extends FhirDb {
             // was the second copy).
             await moveCurrentVersionsOutOfHistory();
           }
+          if (from < 24) {
+            // The key an export job's files are encrypted under
+            // (REVIEW-2026-09-17 A8). Jobs from before have none and their
+            // files were written in the clear; they expire within a day.
+            // An upgrade from before schema 3 created the table whole above,
+            // column included.
+            final columns =
+                await customSelect('PRAGMA table_info(export_jobs)').get();
+            if (!columns.any((c) => c.read<String>('name') == 'file_key')) {
+              await customStatement(
+                'ALTER TABLE export_jobs ADD COLUMN file_key TEXT',
+              );
+            }
+          }
         },
       );
 
@@ -314,7 +328,8 @@ class FhirAntDb extends FhirDb {
         patient_id TEXT,
         group_id TEXT,
         type_filters TEXT,
-        requested_by TEXT
+        requested_by TEXT,
+        file_key TEXT
       )
     ''');
   }
@@ -1618,6 +1633,7 @@ class FhirAntDb extends FhirDb {
     String? groupId,
     String? typeFilters,
     String? requestedBy,
+    String? fileKey,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final txTime = transactionTime.millisecondsSinceEpoch ~/ 1000;
@@ -1626,7 +1642,8 @@ class FhirAntDb extends FhirDb {
     await customStatement(
       'INSERT INTO export_jobs (job_id, status, request_url, transaction_time, '
       'created_at, resource_types, since, export_level, patient_id, group_id, '
-      'type_filters, requested_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'type_filters, requested_by, file_key) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         jobId,
         status,
@@ -1640,6 +1657,7 @@ class FhirAntDb extends FhirDb {
         groupId,
         typeFilters,
         requestedBy,
+        fileKey,
       ],
     );
   }

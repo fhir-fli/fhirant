@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_bulk/fhir_r4_bulk.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
@@ -52,18 +54,51 @@ Map<String, dynamic> _failureOutcome(String? errorJson) {
   };
 }
 
-/// Writes [lines] to an NDJSON file at [filePath] as they arrive
-/// (`NdjsonStream.write`, flushed every 500 lines so the file, not the
-/// heap, holds the output) and returns how many were written.
-Future<int> _writeNdjsonFile(String filePath, Stream<String> lines) async {
+/// Writes [lines] to [filePath] as they arrive, as an NDJSON stream
+/// encrypted under [key] (`ExportFileCrypto`: the files stay on disk until
+/// they expire, and used to stay in the clear, REVIEW-2026-09-17 A8), and
+/// returns how many lines were written. The NDJSON is produced by
+/// `NdjsonStream.write` into a pipe the cipher reads, so the file, not the
+/// heap, holds the output.
+Future<int> _writeNdjsonFile(
+  String filePath,
+  Stream<String> lines,
+  Uint8List key,
+) async {
   final file = File(filePath);
   await file.parent.create(recursive: true);
-  final sink = file.openWrite();
+  final plain = StreamController<List<int>>();
+  final sink = _CountingSink(plain);
+  final out = file.openWrite();
+  final encrypting = ExportFileCrypto.encrypt(plain.stream, out, key);
   try {
-    return await NdjsonStream.write(lines, sink, flush: sink.flush);
+    final count = await NdjsonStream.write(lines, sink);
+    await plain.close();
+    await encrypting;
+    return count;
   } finally {
-    await sink.close();
+    await plain.close();
+    await out.close();
   }
+}
+
+/// A `StringSink` that feeds a byte stream, for `NdjsonStream.write`.
+class _CountingSink implements StringSink {
+  _CountingSink(this._out);
+  final StreamController<List<int>> _out;
+
+  @override
+  void write(Object? object) => _out.add(utf8.encode('$object'));
+
+  @override
+  void writeAll(Iterable<dynamic> objects, [String separator = '']) =>
+      write(objects.join(separator));
+
+  @override
+  void writeCharCode(int charCode) => write(String.fromCharCode(charCode));
+
+  @override
+  void writeln([Object? object = '']) => write('$object\n');
 }
 
 /// Handler for `GET /$export` (system-level), `GET /Patient/$export` (patient-level),
@@ -206,6 +241,9 @@ Future<Response> exportKickoffHandler(
       // The owner: the status, file and cancel routes are answered to this
       // account and to system authority, and to nobody else.
       requestedBy: principal?.userId.toString(),
+      // The key its files on disk are written under, held here inside the
+      // encrypted store and nowhere else.
+      fileKey: base64Encode(ExportFileCrypto.newKey()),
     );
 
     // 7. Spawn background processing (fire-and-forget)
@@ -362,12 +400,52 @@ Future<Response> exportFileHandler(
     if (!file.existsSync()) {
       return _operationOutcome(404, 'Export file not found: $fileName');
     }
+    final fileKey = job.fileKey;
+    if (fileKey == null) {
+      return _operationOutcome(
+        410,
+        'This export was written before its files were encrypted at rest '
+        'and cannot be served; run it again.',
+      );
+    }
 
-    // Streamed from disk with its length: the file used to be read into one
-    // String per download (REVIEW-2026-09-06 finding 34).
-    final length = await file.length();
+    // Streamed from disk and decrypted frame by frame (the file used to be
+    // read into one String per download, REVIEW-2026-09-06 finding 34).
+    // The plaintext's length comes from the frame headers, and the first
+    // frame is checked before the response starts, so a file that is not
+    // the job's is a refusal, not a 200 that stops short; a later frame
+    // that fails ends the body early, which the client sees as a transfer
+    // short of its Content-Length.
+    final key = base64Decode(fileKey);
+    final int length;
+    final List<int>? first;
+    final iterator = StreamIterator(
+      ExportFileCrypto.decrypt(file.openRead(), key),
+    );
+    try {
+      final raf = await file.open();
+      try {
+        length = await ExportFileCrypto.plaintextLength(raf);
+      } finally {
+        await raf.close();
+      }
+      first = await iterator.moveNext() ? iterator.current : null;
+    } on ExportFileCorrupt catch (e) {
+      FhirantLogging().logError('Export file $jobId/$fileName: $e');
+      return _operationOutcome(
+        500,
+        'The export file on disk is not the file the job wrote: $e',
+      );
+    }
+    Stream<List<int>> rest() async* {
+      if (first != null) yield first;
+      while (await iterator.moveNext()) {
+        yield iterator.current;
+      }
+    }
+
     return Response.ok(
-      file.openRead(),
+      rest(),
       headers: {
         'Content-Type': 'application/fhir+ndjson',
         'Content-Length': '$length',
@@ -456,6 +534,8 @@ Future<void> _processExport(
       await _removeJobDir(exportDir, jobId);
       return;
     }
+    // The key this job's files are written under, minted with the job.
+    final fileKey = base64Decode(job.fileKey!);
 
     final baseUrl = _baseUrl(request);
     final since = job.since;
@@ -646,6 +726,7 @@ Future<void> _processExport(
         final count = await _writeNdjsonFile(
           path,
           dbInterface.exportJson(resourceType, since: since, ids: wanted),
+          fileKey,
         );
         if (count == 0) {
           await File(path).delete();
@@ -745,7 +826,7 @@ Future<void> _processExport(
       }
 
       final path = '$exportDir/$jobId/$typeName.ndjson';
-      final count = await _writeNdjsonFile(path, lines);
+      final count = await _writeNdjsonFile(path, lines, fileKey);
       if (count == 0) {
         // Bulk Data v2.0.0 export.html, read 2026-09-08: "If no data are
         // found for a resource, the server SHOULD NOT return an output item

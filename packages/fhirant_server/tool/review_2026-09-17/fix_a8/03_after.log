@@ -1,0 +1,5 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/export_at_rest_test.dart
+00:00 +0: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +1: a file changed on disk is refused, not served in part
+00:00 +2: a file cut short on disk is refused, not served in part
+00:00 +3: All tests passed!

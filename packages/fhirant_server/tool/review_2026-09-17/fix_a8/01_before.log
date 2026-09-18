@@ -1,0 +1,37 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/export_at_rest_test.dart
+00:00 +0: the file on disk holds no plaintext; the download is the NDJSON
+00:00 +0 -1: the file on disk holds no plaintext; the download is the NDJSON [E]
+  Expected: not contains 'Okwonga'
+    Actual: '{"resourceType":"Patient","id":"p1","meta":{"versionId":"1","lastUpdated":"2026-09-18T23:48:28.718140Z"},"name":[{"family":"Okwonga"}]}\n'
+              ''
+  
+  package:matcher                                 expect
+  test/integration/export_at_rest_test.dart 86:5  main.<fn>
+  
+00:00 +0 -1: a file changed on disk is refused, not served in part
+00:00 +0 -2: a file changed on disk is refused, not served in part [E]
+  Expected: not <200>
+    Actual: <200>
+  
+  package:matcher                                  expect
+  test/integration/export_at_rest_test.dart 113:5  main.<fn>
+  
+00:00 +0 -2: a file cut short on disk is refused, not served in part
+00:00 +0 -3: a file cut short on disk is refused, not served in part [E]
+  Expected: not <200>
+    Actual: <200>
+  
+  package:matcher                                  expect
+  test/integration/export_at_rest_test.dart 125:5  main.<fn>
+  
+00:00 +0 -3: the file on disk holds no plaintext; the download is the NDJSON
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +0 -3: Some tests failed.
+
+Failing tests:
+  test/integration/export_at_rest_test.dart: a file changed on disk is refused, not served in part
+  test/integration/export_at_rest_test.dart: a file cut short on disk is refused, not served in part
+  test/integration/export_at_rest_test.dart: the file on disk holds no plaintext; the download is the NDJSON
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

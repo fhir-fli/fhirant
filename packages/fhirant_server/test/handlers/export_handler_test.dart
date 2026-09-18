@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/handlers/export_handler.dart';
+import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -33,6 +34,9 @@ void main() {
 
   /// A completed job row, as the file handler now looks it up before
   /// serving (REVIEW-2026-09-08 row 12: files are answered to the owner).
+  // The key the job's files are written under, as the job holds it.
+  final fileKey = ExportFileCrypto.newKey();
+
   void stubJob(String id) {
     when(() => mockDb.getExportJob(id)).thenAnswer(
       (_) async => ExportJob(
@@ -42,6 +46,7 @@ void main() {
         transactionTime: DateTime.now(),
         createdAt: DateTime.now(),
         exportLevel: 'system',
+        fileKey: base64Encode(fileKey),
       ),
     );
   }
@@ -60,6 +65,7 @@ void main() {
         groupId: any(named: 'groupId'),
         typeFilters: any(named: 'typeFilters'),
         requestedBy: any(named: 'requestedBy'),
+        fileKey: any(named: 'fileKey'),
       ),
     ).thenAnswer((_) async {});
   }
@@ -227,6 +233,7 @@ void main() {
           groupId: any(named: 'groupId'),
           typeFilters: any(named: 'typeFilters'),
           requestedBy: any(named: 'requestedBy'),
+          fileKey: any(named: 'fileKey'),
         ),
       ).thenAnswer((inv) async {
         capturedTypeFilters = inv.namedArguments[#typeFilters] as String?;
@@ -287,6 +294,7 @@ void main() {
           groupId: any(named: 'groupId'),
           typeFilters: any(named: 'typeFilters'),
           requestedBy: any(named: 'requestedBy'),
+          fileKey: any(named: 'fileKey'),
         ),
       ).thenAnswer((inv) async {
         capturedResourceTypes = inv.namedArguments[#resourceTypes] as String?;
@@ -402,6 +410,7 @@ void main() {
           groupId: any(named: 'groupId'),
           typeFilters: any(named: 'typeFilters'),
           requestedBy: any(named: 'requestedBy'),
+          fileKey: any(named: 'fileKey'),
         ),
       ).thenAnswer((inv) async {
         capturedGroupId = inv.namedArguments[#groupId] as String?;
@@ -596,7 +605,15 @@ void main() {
         id: 'p1'.toFhirString,
         name: [fhir.HumanName(family: 'Test'.toFhirString)],
       );
-      await file.writeAsString('${jsonEncode(patient.toJson())}\n');
+      // Written as the job writes it: encrypted under the job's key
+      // (REVIEW-2026-09-17 A8).
+      final out = file.openWrite();
+      await ExportFileCrypto.encrypt(
+        Stream.value(utf8.encode('${jsonEncode(patient.toJson())}\n')),
+        out,
+        fileKey,
+      );
+      await out.close();
 
       final request = makeRequest(r'/$export-file/x/Patient.ndjson');
       stubJob(jobId);
