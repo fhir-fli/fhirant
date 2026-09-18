@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:shelf/shelf.dart';
@@ -87,8 +88,12 @@ Future<Response> metaAddHandler(
   Request request,
   String resourceType,
   String id,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  // A new version of the resource: its subscribers are notified, as after
+  // a PUT (REVIEW-2026-09-17 A7).
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -124,12 +129,14 @@ Future<Response> metaAddHandler(
 
     // Update the resource with new meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, mergedMeta);
-    if (await dbInterface.saveResource(updatedResource) == null) {
+    final saved = await dbInterface.saveResource(updatedResource);
+    if (saved == null) {
       return _errorResponse(
         'Failed to add resource meta',
         'Database operation failed',
       );
     }
+    await subs.onResourceChanged(saved);
 
     // Return the updated meta
     final parameters = fhir.Parameters(
@@ -163,8 +170,10 @@ Future<Response> metaDeleteHandler(
   Request request,
   String resourceType,
   String id,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     final type = fhir.R4ResourceType.fromString(resourceType);
     if (type == null) {
@@ -212,6 +221,7 @@ Future<Response> metaDeleteHandler(
         'Database operation failed',
       );
     }
+    await subs.onResourceChanged(saved);
 
     // Return the updated meta
     final parameters = fhir.Parameters(

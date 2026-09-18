@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
@@ -16,8 +17,15 @@ Future<Response> patchResourceHandler(
   Request request,
   String resourceType,
   String id,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  // Every write goes through the Subscription service, as PUT and POST do:
+  // a Subscription's status is the server's to set, and a change notifies
+  // its subscribers. PATCH took no service, so a client could PATCH a
+  // Subscription the server had set `error` back to `active`, and a PATCH
+  // of any resource notified nobody (REVIEW-2026-09-17 A7).
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
     FhirantLogging().logInfo(
       'Patching resource: $resourceType/{id}',
@@ -123,10 +131,13 @@ Future<Response> patchResourceHandler(
       // "servers SHALL support conditional PATCH, which works exactly the
       // same as specified for update in Concurrency Management". PATCH used
       // to ignore the header (REVIEW-2026-09-08 row 22).
+      final toSave = patchedResource is fhir.Subscription
+          ? await subs.activate(patchedResource)
+          : patchedResource;
       final fhir.Resource? savedResource;
       try {
         savedResource = await dbInterface.saveResource(
-          patchedResource,
+          toSave,
           ifMatchVersion:
               FhirHttpHeaders.parseETag(request.headers['if-match']),
         );
@@ -157,6 +168,7 @@ Future<Response> patchResourceHandler(
           'Database operation failed',
         );
       }
+      await subs.onResourceChanged(savedResource);
 
       final responseResource = savedResource;
 

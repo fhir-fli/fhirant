@@ -1,0 +1,5 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/patch_and_meta_notify_test.dart
+00:00 +0: a PATCH cannot set a Subscription active that the server set error
+00:00 +1: a PATCH notifies a matching subscriber
+00:00 +2: $meta-add and $meta-delete notify a matching subscriber
+00:00 +3: All tests passed!

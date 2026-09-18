@@ -455,13 +455,23 @@ class FhirAntServer {
       )
       ..post(
         r'/<resourceType>/<id>/$meta-add',
-        (Request req, String resourceType, String id) =>
-            metaAddHandler(req, resourceType, id, dbInterface),
+        (Request req, String resourceType, String id) => metaAddHandler(
+          req,
+          resourceType,
+          id,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
       )
       ..post(
         r'/<resourceType>/<id>/$meta-delete',
-        (Request req, String resourceType, String id) =>
-            metaDeleteHandler(req, resourceType, id, dbInterface),
+        (Request req, String resourceType, String id) => metaDeleteHandler(
+          req,
+          resourceType,
+          id,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
       )
       // History endpoints (must come before resource endpoints to match
       // correctly)
@@ -551,8 +561,13 @@ class FhirAntServer {
       )
       ..patch(
         '/<resourceType>/<id>',
-        (Request req, String resourceType, String id) =>
-            patchResourceHandler(req, resourceType, id, dbInterface),
+        (Request req, String resourceType, String id) => patchResourceHandler(
+          req,
+          resourceType,
+          id,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
       )
       ..delete(
         '/<resourceType>/<id>',
