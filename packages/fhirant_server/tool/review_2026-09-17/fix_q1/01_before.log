@@ -1,0 +1,31 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/date_zone_independence_test.dart
+00:00 +0: a zone-less date matches the same under every zone
+00:43 +0 -1: a zone-less date matches the same under every zone [E]
+  Expected: '1'
+    Actual: '0'
+     Which: is different.
+            Expected: 1
+              Actual: 0
+                      ^
+             Differ at offset 0
+  {tz: JST, birthdate-eq: 0, birthdate-day-before: 0, zoneless-eq: 0, zoneless-day: 1, zoned-eq: 1}
+  
+  package:matcher                             expect
+  test/date_zone_independence_test.dart 64:7  main.<fn>
+  
+00:43 +0 -1: the parser puts a zone-less value on the UTC clock
+00:43 +0 -2: the parser puts a zone-less value on the UTC clock [E]
+  Expected: DateTime:<1990-01-15 00:00:00.000Z>
+    Actual: DateTime:<1990-01-15 00:00:00.000>
+  
+  package:matcher                             expect
+  test/date_zone_independence_test.dart 75:5  main.<fn>
+  
+00:43 +0 -2: Some tests failed.
+
+Failing tests:
+  test/date_zone_independence_test.dart: a zone-less date matches the same under every zone
+  test/date_zone_independence_test.dart: the parser puts a zone-less value on the UTC clock
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
