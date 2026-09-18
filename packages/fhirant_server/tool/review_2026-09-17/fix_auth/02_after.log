@@ -1,0 +1,13 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/authorization_table_test.dart
+00:00 +0: A1: patient/ scopes with no patient context fail closed at the root, where the type check never ran
+00:00 +1: A1: patient/ scopes with no patient context fail closed at a type, as before
+00:00 +2: A1: patient/ scopes with no patient context fail closed with a patient context the same scopes work
+00:00 +3: A2: AuditEvent is append-only to everyone but the server clinician cannot PUT, PATCH, DELETE or POST one
+00:00 +4: A2: AuditEvent is append-only to everyone but the server admin cannot PUT, PATCH, DELETE or POST one
+00:00 +5: A2: AuditEvent is append-only to everyone but the server reading it stays as it was
+00:00 +6: A3: a lock blocks password login and nothing else a locked account keeps its live session
+00:00 +7: A5: HEAD is authorized as the GET it stands for HEAD of a type the scope does not cover is refused
+00:00 +8: A5: HEAD is authorized as the GET it stands for HEAD of a covered type answers
+00:00 +9: A6: a SearchParameter goes only by system authority a clinician cannot delete it by any route
+00:00 +10: A6: a SearchParameter goes only by system authority an administrator can
+00:00 +11: All tests passed!

@@ -1,0 +1,67 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/authorization_table_test.dart
+00:00 +0: A1: patient/ scopes with no patient context fail closed at the root, where the type check never ran
+00:00 +0 -1: A1: patient/ scopes with no patient context fail closed at the root, where the type check never ran [E]
+  Expected: <403>
+    Actual: <200>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 126:7  main.<fn>.<fn>
+  
+00:00 +0 -1: A1: patient/ scopes with no patient context fail closed at a type, as before
+00:00 +1 -1: A1: patient/ scopes with no patient context fail closed with a patient context the same scopes work
+00:00 +2 -1: A2: AuditEvent is append-only to everyone but the server clinician cannot PUT, PATCH, DELETE or POST one
+00:00 +2 -2: A2: AuditEvent is append-only to everyone but the server clinician cannot PUT, PATCH, DELETE or POST one [E]
+  Expected: <403>
+    Actual: <200>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 158:9  main.<fn>.<fn>
+  
+00:00 +2 -2: A2: AuditEvent is append-only to everyone but the server admin cannot PUT, PATCH, DELETE or POST one
+00:00 +2 -3: A2: AuditEvent is append-only to everyone but the server admin cannot PUT, PATCH, DELETE or POST one [E]
+  Expected: <403>
+    Actual: <200>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 158:9  main.<fn>.<fn>
+  
+00:00 +2 -3: A2: AuditEvent is append-only to everyone but the server reading it stays as it was
+00:00 +3 -3: A3: a lock blocks password login and nothing else a locked account keeps its live session
+00:00 +3 -4: A3: a lock blocks password login and nothing else a locked account keeps its live session [E]
+  Expected: <200>
+    Actual: <401>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 237:7  main.<fn>.<fn>
+  
+00:00 +3 -4: A5: HEAD is authorized as the GET it stands for HEAD of a type the scope does not cover is refused
+00:00 +3 -5: A5: HEAD is authorized as the GET it stands for HEAD of a type the scope does not cover is refused [E]
+  Expected: <403>
+    Actual: <200>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 253:7  main.<fn>.<fn>
+  
+00:00 +3 -5: A5: HEAD is authorized as the GET it stands for HEAD of a covered type answers
+00:00 +4 -5: A6: a SearchParameter goes only by system authority a clinician cannot delete it by any route
+00:00 +4 -6: A6: a SearchParameter goes only by system authority a clinician cannot delete it by any route [E]
+  Expected: <403>
+    Actual: <204>
+  
+  package:matcher                                       expect
+  test/integration/authorization_table_test.dart 290:7  main.<fn>.<fn>
+  
+00:00 +4 -6: A6: a SearchParameter goes only by system authority an administrator can
+00:00 +4 -6: A1: patient/ scopes with no patient context fail closed at the root, where the type check never ran
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +5 -6: Some tests failed.
+
+Failing tests:
+  test/integration/authorization_table_test.dart: A1: patient/ scopes with no patient context fail closed at the root, where the type check never ran
+  test/integration/authorization_table_test.dart: A2: AuditEvent is append-only to everyone but the server admin cannot PUT, PATCH, DELETE or POST one
+  test/integration/authorization_table_test.dart: A2: AuditEvent is append-only to everyone but the server clinician cannot PUT, PATCH, DELETE or POST one
+  test/integration/authorization_table_test.dart: A3: a lock blocks password login and nothing else a locked account keeps its live session
+  ... and 2 more
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

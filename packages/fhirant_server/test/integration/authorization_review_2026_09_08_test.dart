@@ -603,7 +603,12 @@ void main() {
       final (s, _) = await call('GET', '/Patient/p1', token: tok);
       expect(s, 401);
     });
-    test("a locked account's live token stops working", () async {
+    // Reversed by REVIEW-2026-09-17 A3: a lock is set by five wrong
+    // passwords, which anyone who knows the username can send, so it must
+    // not end the account's sessions (five anonymous attempts every
+    // fifteen minutes kept the only administrator out). Deactivation, an
+    // administrator's act, still does (the test above).
+    test("a locked account's live token keeps working", () async {
       final tok = await issueTestToken(
         db,
         username: 'locked',
@@ -615,7 +620,7 @@ void main() {
         DateTime.now().add(const Duration(minutes: 10)),
       );
       final (s, _) = await call('GET', '/Patient/p1', token: tok);
-      expect(s, 401);
+      expect(s, 200);
     });
   });
 

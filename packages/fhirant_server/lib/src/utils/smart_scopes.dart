@@ -190,6 +190,10 @@ class SmartScopeEnforcer {
     }
 
     switch (httpMethod.toUpperCase()) {
+      // HEAD is the GET without its body (R4B http.html): the same
+      // permission. It had no case, so nothing was checked and the router
+      // served every GET route to it (REVIEW-2026-09-17 A5).
+      case 'HEAD':
       case 'GET':
         // Search (type-level GET) vs read (instance-level GET)
         final segments = path.split('/').where((s) => s.isNotEmpty).toList();

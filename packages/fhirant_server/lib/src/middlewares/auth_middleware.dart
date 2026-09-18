@@ -107,10 +107,11 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (!account.active) {
         return unauthorized('Account is deactivated');
       }
-      final lockedUntil = account.lockedUntil;
-      if (lockedUntil != null && lockedUntil.isAfter(DateTime.now())) {
-        return unauthorized('Account is locked');
-      }
+      // A lock (five wrong passwords) blocks password login; it does not
+      // end sessions. It did: five anonymous wrong passwords against a
+      // known username, repeatable every fifteen minutes, kept that
+      // account's valid token out (REVIEW-2026-09-17 A3). Revoking a
+      // session is `/auth/revoke` or deactivating the account.
 
       // Extract scopes from JWT (fall back to role defaults for legacy tokens)
       final List<String> scopes;

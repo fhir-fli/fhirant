@@ -1662,19 +1662,6 @@ Future<Response> deleteResourceHandler(
       return _validationErrorResponse('Invalid resource type');
     }
 
-    // Deleting a SearchParameter stops the indexing it defined, for every
-    // later write of its base types: system authority, as creating one is
-    // (storeRefusal).
-    final principal = Principal.of(request);
-    if (type == fhir.R4ResourceType.SearchParameter &&
-        principal != null &&
-        !principal.isSystem) {
-      return forbidden(
-        'A SearchParameter changes what this server indexes; deleting one '
-        'requires system-level (admin) privilege.',
-      );
-    }
-
     // Check if resource exists before attempting to delete
     final resource = await dbInterface.getResource(type, id);
     if (resource == null) {

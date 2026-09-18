@@ -140,7 +140,48 @@ Response? authorizeRequest(
     }
   }
 
+  // A patient-context scope with no patient context has nothing to be
+  // confined to: refused before anything else, at the root as at a type.
+  // It used to be refused only on a typed path, so `GET /?_type=Patient`
+  // returned every patient (REVIEW-2026-09-17 A1).
+  if (SmartScopeEnforcer.hasPatientScopes(scopes) &&
+      principal.patientId == null) {
+    return forbidden(
+      'patient/ scopes require a patient context (patient claim in JWT)',
+    );
+  }
+
   final permission = SmartScopeEnforcer.methodToPermission(method, path);
+  final resourceType = SmartScopeEnforcer.resourceTypeFromPath(path);
+
+  // The audit trail records what every caller did; nobody it records may
+  // write it. Every write of an AuditEvent by a client (create, update,
+  // patch, delete, `$meta-add`, `$meta-delete`, conditional or not, REST
+  // or Bundle entry) is refused, the administrator's included: the server
+  // writes its own records straight to the store (REVIEW-2026-09-17 A2).
+  if (resourceType == 'AuditEvent' &&
+      permission != null &&
+      permission != 'r' &&
+      permission != 's') {
+    return forbidden(
+      'AuditEvent is written by this server alone; it cannot be created, '
+      'changed or deleted by a client.',
+    );
+  }
+
+  // Deleting a SearchParameter stops the indexing it defined, for every
+  // later write of its base types: system authority, as creating one is
+  // (storeRefusal). Decided here so the conditional delete and a Bundle
+  // entry answer as the instance delete does; the check used to live in
+  // the instance delete handler alone (REVIEW-2026-09-17 A6).
+  if (resourceType == 'SearchParameter' &&
+      permission == 'd' &&
+      !principal.isSystem) {
+    return forbidden(
+      'A SearchParameter changes what this server indexes; deleting one '
+      'requires system-level (admin) privilege.',
+    );
+  }
 
   // Root-level operations that read stored data the request does not name
   // ($fhirpath, $cql, $immds-forecast): a user- or system-context scope
@@ -161,7 +202,6 @@ Response? authorizeRequest(
   }
 
   if (permission != null) {
-    final resourceType = SmartScopeEnforcer.resourceTypeFromPath(path);
     // Only enforce scopes for resource-targeted requests. `_history` and
     // `_search` at the root name no type; their handlers check each type
     // they touch.
@@ -170,13 +210,6 @@ Response? authorizeRequest(
         resourceType != '_search') {
       if (!principal.may(resourceType, permission)) {
         return forbidden('Insufficient scope for $permission on $resourceType');
-      }
-      // If patient/ scopes are present but no patient context, reject
-      if (SmartScopeEnforcer.hasPatientScopes(scopes) &&
-          principal.patientId == null) {
-        return forbidden(
-          'patient/ scopes require a patient context (patient claim in JWT)',
-        );
       }
     }
   }
