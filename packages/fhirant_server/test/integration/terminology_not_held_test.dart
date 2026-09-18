@@ -323,4 +323,42 @@ void main() {
       expect(b['display'], 'B');
     });
   });
+
+  // REVIEW-2026-09-17 Q8, through the pipeline: a code element's implicit
+  // system (fhir_r4 enums carry their CodeSystem since 0b73e0818).
+  test('status:in and status=<system>|code match a code element', () async {
+    await put(observation('o1', '8867-4'));
+    await put({
+      'resourceType': 'ValueSet',
+      'id': 'final-only',
+      'url': 'http://example.org/ValueSet/final-only',
+      'status': 'active',
+      'compose': {
+        'include': [
+          {
+            'system': 'http://hl7.org/fhir/observation-status',
+            'concept': [
+              {'code': 'final'},
+            ],
+          },
+        ],
+      },
+    });
+    Future<int> total(String query) async {
+      final res = await send('GET', '/Observation?$query');
+      final text = await res.readAsString();
+      expect(res.statusCode, 200, reason: text);
+      return (jsonDecode(text) as Map<String, dynamic>)['total'] as int;
+    }
+
+    const finalOnly = 'http://example.org/ValueSet/final-only';
+    final encoded = Uri.encodeQueryComponent(finalOnly);
+    expect(
+      await total('status=http://hl7.org/fhir/observation-status|final'),
+      1,
+    );
+    expect(await total('status=http://example.org/other|final'), 0);
+    expect(await total('status:in=$encoded'), 1);
+    expect(await total('status:not-in=$encoded'), 0);
+  });
 }

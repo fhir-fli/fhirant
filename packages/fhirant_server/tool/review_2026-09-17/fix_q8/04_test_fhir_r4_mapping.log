@@ -1,0 +1,101 @@
+00:00 +0: loading test/parser_test.dart
+Concept map ID missing # prefix, adding # prefix automatically
+00:00 +0: test/parser_test.dart: test/parser_examples/AllergyIntoleranceExtension-coding-sctdescid-3to4.json
+00:00 +1: test/parser_test.dart: test/parser_examples/AllergyIntoleranceAllergyIntoleranceEnd-Extension-3to4.json
+00:00 +2: test/parser_test.dart: test/parser_examples/step7.json
+00:00 +3: test/parser_test.dart: test/parser_examples/SDOHCC-StructureMapHungerVitalSign.json
+00:00 +4: test/parser_test.dart: test/parser_examples/10320.json
+00:00 +5: test/parser_test.dart: test/parser_examples/MedicationRequestStatusReason-Extension-3to4.json
+00:00 +6: test/parser_test.dart: test/parser_examples/Bundle.json
+00:00 +7: test/parser_test.dart: test/parser_examples/step2.json
+00:00 +8: test/parser_test.dart: test/parser_examples/step4c.json
+00:00 +9: test/parser_test.dart: test/parser_examples/step7b.json
+00:00 +10: test/parser_test.dart: test/parser_examples/memberof.json
+00:00 +11: test/parser_test.dart: test/parser_examples/step6b.json
+00:00 +12: test/parser_test.dart: test/parser_examples/CDAAllergyIntolerance.json
+00:00 +13: test/parser_test.dart: test/parser_examples/stringtocoding.json
+00:00 +14: test/parser_test.dart: test/parser_examples/MedicationRequestPrescriptionType-Extension-3to4.json
+00:00 +15: test/parser_test.dart: test/parser_examples/MedicationStatementLastIssueDate-Extension-3to4.json
+00:00 +16: test/parser_test.dart: test/parser_examples/step10.json
+00:00 +17: test/parser_test.dart: test/parser_examples/step3b.json
+00:00 +18: test/parser_test.dart: test/parser_examples/sourcename.json
+00:00 +19: test/parser_test.dart: test/parser_examples/qr2patgender.json
+00:00 +20: test/parser_test.dart: test/parser_examples/AllergyIntoleranceEvidence-Extension-3to4.json
+00:00 +21: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +22: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +23: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +24: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +25: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +26: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +27: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +28: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +29: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +30: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +31: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +32: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +33: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +34: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +35: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +36: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +37: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +38: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +39: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +40: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +41: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +42: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +43: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +44: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +45: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +46: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +47: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +48: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +49: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +50: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +51: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +52: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +53: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +54: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +55: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +56: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +57: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +58: test/fhir_mapping_test.dart: 1 Test Step 1
+00:00 +59: test/fhir_mapping_test.dart: 2 Test Step 2
+00:00 +60: test/fhir_mapping_test.dart: 3 Test Step 3a Source 3
+00:00 +61: test/fhir_mapping_test.dart: 3 Test Step 3a Source 3min
+00:00 +62: test/fhir_mapping_test.dart: 3 Test Step 3b Source 3
+00:00 +63: test/fhir_mapping_test.dart: 3 Test Step 3b Source 3min
+00:00 +64: test/fhir_mapping_test.dart: 3 Test Step 3c Source 3
+00:00 +65: test/fhir_mapping_test.dart: 3 Test Step 3c Source 3min
+00:00 +66: test/fhir_mapping_test.dart: 4 Test Step 4a Source 4
+00:00 +67: test/fhir_mapping_test.dart: 4 Test Step 4a Source 4b
+00:00 +68: test/fhir_mapping_test.dart: 4 Test Step 4b Source 4
+00:00 +69: test/fhir_mapping_test.dart: 4 Test Step 4b Source 4b
+00:00 +70: test/fhir_mapping_test.dart: 4 Test Step 4b2 Source 4
+00:00 +71: test/fhir_mapping_test.dart: 4 Test Step 4b2 Source 4b
+00:00 +72: test/fhir_mapping_test.dart: 4 Test Step 4b3 Source 4
+00:00 +73: test/fhir_mapping_test.dart: 4 Test Step 4b3 Source 4b
+00:00 +74: test/fhir_mapping_test.dart: 4 Test Step 4c Source 4
+00:00 +75: test/fhir_mapping_test.dart: 4 Test Step 4c Source 4b
+00:00 +76: test/fhir_mapping_test.dart: 5 Test Step 5
+00:00 +77: test/fhir_mapping_test.dart: 5 Test Step 5b
+00:00 +78: test/fhir_mapping_test.dart: 6 Test Step 6a Source 6
+00:00 +79: test/fhir_mapping_test.dart: 6 Test Step 6a Source 6b
+00:00 +80: test/fhir_mapping_test.dart: 6 Test Step 6b Source 6
+00:00 +81: test/fhir_mapping_test.dart: 6 Test Step 6b Source 6b
+00:00 +82: test/fhir_mapping_test.dart: 6 Test Step 6c Source 6
+00:00 +83: test/fhir_mapping_test.dart: 6 Test Step 6c Source 6b
+00:00 +84: test/fhir_mapping_test.dart: 6 Test Step 6d Source 6
+00:00 +85: test/fhir_mapping_test.dart: 6 Test Step 6d Source 6b
+00:00 +86: test/fhir_mapping_test.dart: 7 Test Step 7 Source 7
+00:00 +87: test/fhir_mapping_test.dart: 7 Test Step 7b Source 7
+00:00 +88: test/fhir_mapping_test.dart: 8 Test Step 8 Source 8
+00:00 +89: test/fhir_mapping_test.dart: 9 Test Step 9 Source 9
+00:00 +90: test/fhir_mapping_test.dart: 9 Test Step 9 Source 9b
+00:00 +91: test/fhir_mapping_test.dart: 9 Test Step 9check Source 9
+00:00 +92: test/fhir_mapping_test.dart: 9 Test Step 9check Source 9b
+00:00 +93: test/fhir_mapping_test.dart: Step 11 Step 11 Source 11
+00:00 +94: test/fhir_mapping_test.dart: Step 12 Step 12 Source 12
+00:00 +95: test/fhir_mapping_test.dart: Step 13 Step 13
+00:00 +96: test/fhir_mapping_test.dart: Step 14 Step 14
+00:01 +97: test/fhir_mapping_test.dart: Step 15 Step 15
+00:01 +98: All tests passed!

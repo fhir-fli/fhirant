@@ -1,0 +1,2227 @@
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/allergy_intolerance_criticality.dart b/packages/fhir_r4/lib/src/primitive_types/enums/allergy_intolerance_criticality.dart
+index 1adfcd37d..edcf1c84b 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/allergy_intolerance_criticality.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/allergy_intolerance_criticality.dart
+@@ -108,9 +108,7 @@ class AllergyIntoleranceCriticality extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return AllergyIntoleranceCriticality._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'AllergyIntoleranceCriticality cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_category.dart b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_category.dart
+index bf349e418..6975f21a0 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_category.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_category.dart
+@@ -122,9 +122,7 @@ class BiologicallyDerivedProductCategory extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return BiologicallyDerivedProductCategory._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'BiologicallyDerivedProductCategory cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_status.dart b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_status.dart
+index 7829aa358..26cd6b2d9 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_status.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_status.dart
+@@ -101,9 +101,7 @@ class BiologicallyDerivedProductStatus extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return BiologicallyDerivedProductStatus._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'BiologicallyDerivedProductStatus cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_storage_scale.dart b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_storage_scale.dart
+index 260cb10dd..763239b89 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_storage_scale.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/biologically_derived_product_storage_scale.dart
+@@ -109,9 +109,7 @@ class BiologicallyDerivedProductStorageScale extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return BiologicallyDerivedProductStorageScale._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'BiologicallyDerivedProductStorageScale cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/contract_resource_publication_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/contract_resource_publication_status_codes.dart
+index 6b8660597..a9862d62c 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/contract_resource_publication_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/contract_resource_publication_status_codes.dart
+@@ -193,9 +193,7 @@ class ContractResourcePublicationStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return ContractResourcePublicationStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'ContractResourcePublicationStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_calibration_state.dart b/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_calibration_state.dart
+index 9f603c828..e689f8443 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_calibration_state.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_calibration_state.dart
+@@ -114,9 +114,7 @@ class DeviceMetricCalibrationState extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return DeviceMetricCalibrationState._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'DeviceMetricCalibrationState cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_operational_status.dart b/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_operational_status.dart
+index 22cefc881..5a4345b55 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_operational_status.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/device_metric_operational_status.dart
+@@ -114,9 +114,7 @@ class DeviceMetricOperationalStatus extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return DeviceMetricOperationalStatus._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'DeviceMetricOperationalStatus cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/financial_resource_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/financial_resource_status_codes.dart
+index 104b0c006..95f1fabe8 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/financial_resource_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/financial_resource_status_codes.dart
+@@ -114,9 +114,7 @@ class FinancialResourceStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return FinancialResourceStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'FinancialResourceStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/immunization_evaluation_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/immunization_evaluation_status_codes.dart
+index 00f6ffbc1..6bfe8800a 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/immunization_evaluation_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/immunization_evaluation_status_codes.dart
+@@ -139,9 +139,7 @@ class ImmunizationEvaluationStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return ImmunizationEvaluationStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'ImmunizationEvaluationStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/medication_administration_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/medication_administration_status_codes.dart
+index df1c6eb77..c448fba2e 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/medication_administration_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/medication_administration_status_codes.dart
+@@ -136,9 +136,7 @@ class MedicationAdministrationStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return MedicationAdministrationStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'MedicationAdministrationStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/medication_dispense_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/medication_dispense_status_codes.dart
+index 56e0a2899..591a09ca0 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/medication_dispense_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/medication_dispense_status_codes.dart
+@@ -149,9 +149,7 @@ class MedicationDispenseStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return MedicationDispenseStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'MedicationDispenseStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/medication_knowledge_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/medication_knowledge_status_codes.dart
+index f64844bc6..23266c639 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/medication_knowledge_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/medication_knowledge_status_codes.dart
+@@ -108,9 +108,7 @@ class MedicationKnowledgeStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return MedicationKnowledgeStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'MedicationKnowledgeStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/medication_statement_status_codes.dart b/packages/fhir_r4/lib/src/primitive_types/enums/medication_statement_status_codes.dart
+index 6095287a7..f9608e8b7 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/medication_statement_status_codes.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/medication_statement_status_codes.dart
+@@ -143,9 +143,7 @@ class MedicationStatementStatusCodes extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return MedicationStatementStatusCodes._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'MedicationStatementStatusCodes cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/message_header_response_request.dart b/packages/fhir_r4/lib/src/primitive_types/enums/message_header_response_request.dart
+index bc6564468..6419d4f4f 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/message_header_response_request.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/message_header_response_request.dart
+@@ -115,9 +115,7 @@ class MessageHeaderResponseRequest extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return MessageHeaderResponseRequest._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'MessageHeaderResponseRequest cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/spdxlicense.dart b/packages/fhir_r4/lib/src/primitive_types/enums/spdxlicense.dart
+index e9f2a3ffb..3028a8067 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/spdxlicense.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/spdxlicense.dart
+@@ -3120,7 +3120,7 @@ class SPDXLicense extends FhirCodeEnum {
+     ),
+     version: FhirString._(valueString: '4.3.0'),
+     display: FhirString._(
+-      valueString: 'BSD 2-Clause "Simplified" License',
++      valueString: 'BSD 2-Clause \"Simplified\" License',
+     ),
+   );
+ 
+@@ -3211,7 +3211,7 @@ class SPDXLicense extends FhirCodeEnum {
+     ),
+     version: FhirString._(valueString: '4.3.0'),
+     display: FhirString._(
+-      valueString: 'BSD 3-Clause "New" or "Revised" License',
++      valueString: 'BSD 3-Clause \"New\" or \"Revised\" License',
+     ),
+   );
+ 
+@@ -3237,7 +3237,7 @@ class SPDXLicense extends FhirCodeEnum {
+     ),
+     version: FhirString._(valueString: '4.3.0'),
+     display: FhirString._(
+-      valueString: 'BSD 4-Clause "Original" or "Old" License',
++      valueString: 'BSD 4-Clause \"Original\" or \"Old\" License',
+     ),
+   );
+ 
+diff --git a/packages/fhir_r4/lib/src/primitive_types/enums/subscription_notification_type.dart b/packages/fhir_r4/lib/src/primitive_types/enums/subscription_notification_type.dart
+index 37acd9db1..b83ef409a 100644
+--- a/packages/fhir_r4/lib/src/primitive_types/enums/subscription_notification_type.dart
++++ b/packages/fhir_r4/lib/src/primitive_types/enums/subscription_notification_type.dart
+@@ -121,9 +121,7 @@ class SubscriptionNotificationType extends FhirCodeEnum {
+     final element = elementJson != null ? Element.fromJson(elementJson) : null;
+     if (value == null && element != null) {
+       return SubscriptionNotificationType._(
+-        valueString: null,
+-        element: element,
+-      );
++          valueString: null, element: element);
+     } else if (value == null && element == null) {
+       throw ArgumentError(
+         'SubscriptionNotificationType cannot be constructed from JSON.',
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/account_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/account_status.dart
+index 13ca07146..432f72c9a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/account_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/account_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AccountStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_cardinality_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_cardinality_behavior.dart
+index 72b4921db..9c7f5f19f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_cardinality_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_cardinality_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionCardinalityBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_condition_kind.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_condition_kind.dart
+index ef9c2e439..a52d45092 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_condition_kind.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_condition_kind.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionConditionKind
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_grouping_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_grouping_behavior.dart
+index 4c6ad4ff0..02d9e724c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_grouping_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_grouping_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionGroupingBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_participant_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_participant_type.dart
+index c64365f0e..e8c27e56c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_participant_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_participant_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionParticipantType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_precheck_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_precheck_behavior.dart
+index c8ccac0c9..fc7f2a863 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_precheck_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_precheck_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionPrecheckBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_relationship_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_relationship_type.dart
+index 4c1dd8f23..06a77862f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_relationship_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_relationship_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionRelationshipType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_required_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_required_behavior.dart
+index 3292f3743..708524105 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_required_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_required_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionRequiredBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_selection_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_selection_behavior.dart
+index 72e0ba9a4..bc9fffbd6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_selection_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/action_selection_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ActionSelectionBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_type.dart
+index c447f998b..52866ec13 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AddressType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_use.dart
+index 73ea55b6f..9fd05ccd3 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/address_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AddressUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/administrative_gender.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/administrative_gender.dart
+index 84589ef8d..fa28e60c2 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/administrative_gender.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/administrative_gender.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AdministrativeGender
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/adverse_event_actuality.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/adverse_event_actuality.dart
+index b02483cf6..27fac3ae8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/adverse_event_actuality.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/adverse_event_actuality.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AdverseEventActuality
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/aggregation_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/aggregation_mode.dart
+index 472604f7e..fe4157a68 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/aggregation_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/aggregation_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AggregationMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_category.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_category.dart
+index f0f45bf50..be72bb8eb 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_category.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_category.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AllergyIntoleranceCategory
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_criticality.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_criticality.dart
+index 5ce82b8ea..d2d8a15c5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_criticality.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_criticality.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AllergyIntoleranceCriticality
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_severity.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_severity.dart
+index 2a5c21337..79ebf3ec5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_severity.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_severity.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AllergyIntoleranceSeverity
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_type.dart
+index 5d5e47ca0..30d7d70d0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/allergy_intolerance_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AllergyIntoleranceType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/appointment_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/appointment_status.dart
+index ef50d3871..5866ae252 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/appointment_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/appointment_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AppointmentStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_direction_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_direction_type.dart
+index bd176641d..58f17150d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_direction_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_direction_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AssertionDirectionType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_operator_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_operator_type.dart
+index b85b5c5dc..a5650f410 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_operator_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_operator_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AssertionOperatorType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_response_types.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_response_types.dart
+index 9a8392394..9089a6ce9 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_response_types.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/assertion_response_types.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AssertionResponseTypes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_action.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_action.dart
+index 0e55cb3b8..d19bf922e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_action.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_action.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AuditEventAction
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_agent_network_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_agent_network_type.dart
+index fce1f844b..edb539c86 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_agent_network_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_agent_network_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AuditEventAgentNetworkType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_outcome.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_outcome.dart
+index 35da2d91c..7068ae83f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_outcome.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/audit_event_outcome.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for AuditEventOutcome
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/binding_strength.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/binding_strength.dart
+index bc67c7244..1b2831c10 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/binding_strength.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/binding_strength.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for BindingStrength
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_category.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_category.dart
+index 0f2ad90b6..215b0aa19 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_category.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_category.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for BiologicallyDerivedProductCategory
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_status.dart
+index aaeb947b4..731a83b1c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for BiologicallyDerivedProductStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_storage_scale.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_storage_scale.dart
+index 883794064..798b1e9a7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_storage_scale.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/biologically_derived_product_storage_scale.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for BiologicallyDerivedProductStorageScale
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/bundle_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/bundle_type.dart
+index 629a6bbed..cae6cd8a3 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/bundle_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/bundle_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for BundleType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/capability_statement_kind.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/capability_statement_kind.dart
+index 171413977..b511cb699 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/capability_statement_kind.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/capability_statement_kind.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CapabilityStatementKind
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_kind.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_kind.dart
+index f8ce9259e..c255e5cd8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_kind.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_kind.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CarePlanActivityKind
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_status.dart
+index 072ce3436..da8b03da9 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_activity_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CarePlanActivityStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_intent.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_intent.dart
+index ad7a01ae3..07f495c05 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_intent.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_plan_intent.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CarePlanIntent
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_team_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_team_status.dart
+index fbf46a15e..7650028d0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_team_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/care_team_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CareTeamStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/catalog_entry_relation_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/catalog_entry_relation_type.dart
+index f559b34b8..eac79ac5f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/catalog_entry_relation_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/catalog_entry_relation_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CatalogEntryRelationType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/characteristic_combination.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/characteristic_combination.dart
+index 815feba8b..4ad829153 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/characteristic_combination.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/characteristic_combination.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CharacteristicCombination
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/charge_item_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/charge_item_status.dart
+index 5f4d2f182..aba677b83 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/charge_item_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/charge_item_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ChargeItemStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_impression_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_impression_status.dart
+index f289353c6..f40b21b7e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_impression_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_impression_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ClinicalImpressionStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_use_definition_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_use_definition_type.dart
+index 1a282f44f..c4a4ac9c1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_use_definition_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/clinical_use_definition_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ClinicalUseDefinitionType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_search_support.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_search_support.dart
+index 92b2d52f4..565a03ae0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_search_support.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_search_support.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CodeSearchSupport
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_content_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_content_mode.dart
+index c01b764a2..5449a9fdd 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_content_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_content_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CodeSystemContentMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_hierarchy_meaning.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_hierarchy_meaning.dart
+index 741ccfeeb..011fabf65 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_hierarchy_meaning.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/code_system_hierarchy_meaning.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CodeSystemHierarchyMeaning
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/common_languages.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/common_languages.dart
+index 3bd6a6b22..40d07a2a7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/common_languages.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/common_languages.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CommonLanguages
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/compartment_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/compartment_type.dart
+index d96ce6ce6..5fa0636d1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/compartment_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/compartment_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CompartmentType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_attestation_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_attestation_mode.dart
+index bcd2a7657..a9c825294 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_attestation_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_attestation_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CompositionAttestationMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_status.dart
+index 11b5f17da..b5cf4f65a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/composition_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CompositionStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_equivalence.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_equivalence.dart
+index f47d6f95c..a7a6285a3 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_equivalence.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_equivalence.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConceptMapEquivalence
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_group_unmapped_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_group_unmapped_mode.dart
+index e804fc273..f0f0b5a58 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_group_unmapped_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/concept_map_group_unmapped_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConceptMapGroupUnmappedMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_delete_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_delete_status.dart
+index c6a6f03de..c9de508b1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_delete_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_delete_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConditionalDeleteStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_read_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_read_status.dart
+index 7348d6125..617492ca7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_read_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/conditional_read_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConditionalReadStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_data_meaning.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_data_meaning.dart
+index f3ced05e9..006e042d4 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_data_meaning.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_data_meaning.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConsentDataMeaning
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_provision_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_provision_type.dart
+index b88f9ae3e..118efc6f6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_provision_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_provision_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConsentProvisionType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_state.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_state.dart
+index c06f3146d..524104bbe 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_state.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/consent_state.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConsentState
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/constraint_severity.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/constraint_severity.dart
+index 97bc2f899..7c36dc00a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/constraint_severity.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/constraint_severity.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ConstraintSeverity
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_system.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_system.dart
+index 211f9cc2d..7a62c5cea 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_system.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_system.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ContactPointSystem
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_use.dart
+index 14b1d0efb..badb6aa4a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contact_point_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ContactPointUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_publication_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_publication_status_codes.dart
+index 77ebba297..81169ee43 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_publication_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_publication_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ContractResourcePublicationStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_status_codes.dart
+index 40c105cc1..80e77eb05 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contract_resource_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ContractResourceStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contributor_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contributor_type.dart
+index 12541f1c4..94096f405 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contributor_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/contributor_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ContributorType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/criteria_not_exists_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/criteria_not_exists_behavior.dart
+index d2be9d4de..ef8250b1d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/criteria_not_exists_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/criteria_not_exists_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for CriteriaNotExistsBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/days_of_week.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/days_of_week.dart
+index 2d3c8ed26..f5e720ef1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/days_of_week.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/days_of_week.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DaysOfWeek
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/detected_issue_severity.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/detected_issue_severity.dart
+index 3910a095e..95d0e1005 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/detected_issue_severity.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/detected_issue_severity.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DetectedIssueSeverity
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_state.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_state.dart
+index 7de2043b7..9fd69f26a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_state.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_state.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceMetricCalibrationState
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_type.dart
+index 87049c819..b1e36dd3b 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_calibration_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceMetricCalibrationType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_category.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_category.dart
+index c4afef118..3fc3847f8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_category.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_category.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceMetricCategory
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_color.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_color.dart
+index 00d61d3eb..22df179a2 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_color.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_color.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceMetricColor
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_operational_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_operational_status.dart
+index d6e0fae9b..d81616569 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_operational_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_metric_operational_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceMetricOperationalStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_name_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_name_type.dart
+index 7a865adb2..1aab9cb79 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_name_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_name_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceNameType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_use_statement_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_use_statement_status.dart
+index 87d9fc5c1..2d64b5920 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_use_statement_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/device_use_statement_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DeviceUseStatementStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/diagnostic_report_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/diagnostic_report_status.dart
+index 5f050d0d5..9ef3764f0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/diagnostic_report_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/diagnostic_report_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DiagnosticReportStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/discriminator_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/discriminator_type.dart
+index 5b6602306..a0465c534 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/discriminator_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/discriminator_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DiscriminatorType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_mode.dart
+index 1c6001581..5fee5dc30 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DocumentMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_reference_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_reference_status.dart
+index bd176ef35..c6656ba27 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_reference_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_reference_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DocumentReferenceStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_relationship_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_relationship_type.dart
+index 402d0c30e..de7006626 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_relationship_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/document_relationship_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for DocumentRelationshipType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_request_purpose.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_request_purpose.dart
+index e453fc6c5..93fe64401 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_request_purpose.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_request_purpose.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EligibilityRequestPurpose
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_response_purpose.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_response_purpose.dart
+index 6945ac2da..b1ff376af 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_response_purpose.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/eligibility_response_purpose.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EligibilityResponsePurpose
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/enable_when_behavior.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/enable_when_behavior.dart
+index 677268160..512f81eec 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/enable_when_behavior.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/enable_when_behavior.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EnableWhenBehavior
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_location_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_location_status.dart
+index bdbbdc846..0ea450667 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_location_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_location_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EncounterLocationStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_status.dart
+index 880193821..797fe2bcd 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/encounter_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EncounterStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/endpoint_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/endpoint_status.dart
+index b728c86ce..630de5cae 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/endpoint_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/endpoint_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EndpointStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/episode_of_care_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/episode_of_care_status.dart
+index 82f27fd02..857db473d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/episode_of_care_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/episode_of_care_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EpisodeOfCareStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_capability_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_capability_mode.dart
+index f5efdb184..35816105d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_capability_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_capability_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EventCapabilityMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_status.dart
+index 2e769c77a..7c396d1f8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EventStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_timing.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_timing.dart
+index 4b599c43e..faafc0882 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_timing.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/event_timing.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EventTiming
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/evidence_variable_handling.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/evidence_variable_handling.dart
+index 7d99ec8a2..fd72a9601 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/evidence_variable_handling.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/evidence_variable_handling.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for EvidenceVariableHandling
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/example_scenario_actor_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/example_scenario_actor_type.dart
+index bfa9a98bc..5112dd2e4 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/example_scenario_actor_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/example_scenario_actor_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ExampleScenarioActorType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/explanation_of_benefit_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/explanation_of_benefit_status.dart
+index 28cee81b0..4a8eb5a5f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/explanation_of_benefit_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/explanation_of_benefit_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ExplanationOfBenefitStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/expression_language.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/expression_language.dart
+index b72ec8f91..01b1114eb 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/expression_language.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/expression_language.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ExpressionLanguage
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/extension_context_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/extension_context_type.dart
+index 48f848683..21baae210 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/extension_context_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/extension_context_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ExtensionContextType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/family_history_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/family_history_status.dart
+index 21cb87e9b..0eb4c59a7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/family_history_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/family_history_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FamilyHistoryStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirall_types.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirall_types.dart
+index eecc9f5c7..43e85f33c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirall_types.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirall_types.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FHIRAllTypes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirdevice_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirdevice_status.dart
+index b7e43513d..50a43845c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirdevice_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirdevice_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FHIRDeviceStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirsubstance_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirsubstance_status.dart
+index f0639a878..50fde27af 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirsubstance_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirsubstance_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FHIRSubstanceStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirversion.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirversion.dart
+index 22442a579..f96e22414 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirversion.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/fhirversion.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FHIRVersion
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/filter_operator.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/filter_operator.dart
+index e4328f0cd..8b912ee8a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/filter_operator.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/filter_operator.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FilterOperator
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/financial_resource_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/financial_resource_status_codes.dart
+index dff0ff003..4fe53bc78 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/financial_resource_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/financial_resource_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FinancialResourceStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/flag_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/flag_status.dart
+index 26cfbb227..2b1d8867e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/flag_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/flag_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for FlagStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/goal_lifecycle_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/goal_lifecycle_status.dart
+index cdb25b3bf..2c5f5cc85 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/goal_lifecycle_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/goal_lifecycle_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GoalLifecycleStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_rule.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_rule.dart
+index 1aac20595..808346e78 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_rule.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_rule.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GraphCompartmentRule
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_use.dart
+index fcca74b16..3ff3db182 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/graph_compartment_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GraphCompartmentUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_measure.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_measure.dart
+index f02cfa3a9..00a300dc6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_measure.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_measure.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GroupMeasure
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_type.dart
+index 5f3829862..5dfebd72f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/group_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GroupType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guidance_response_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guidance_response_status.dart
+index 6ad269972..3d2fc2a48 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guidance_response_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guidance_response_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GuidanceResponseStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_page_generation.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_page_generation.dart
+index 16abfc550..dc88a5550 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_page_generation.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_page_generation.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GuidePageGeneration
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_parameter_code.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_parameter_code.dart
+index a96e9eecd..5d01876d5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_parameter_code.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/guide_parameter_code.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for GuideParameterCode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/httpverb.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/httpverb.dart
+index f0f00a65f..cf35c5de1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/httpverb.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/httpverb.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for HTTPVerb
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identifier_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identifier_use.dart
+index 020c351eb..dfe224d1e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identifier_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identifier_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for IdentifierUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identity_assurance_level.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identity_assurance_level.dart
+index 382ba1e59..2598b9596 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identity_assurance_level.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/identity_assurance_level.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for IdentityAssuranceLevel
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/imaging_study_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/imaging_study_status.dart
+index 0012c32c1..0dd1ca423 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/imaging_study_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/imaging_study_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ImagingStudyStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_evaluation_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_evaluation_status_codes.dart
+index 99bfe5259..f29b7aba6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_evaluation_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_evaluation_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ImmunizationEvaluationStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_status_codes.dart
+index 04516bc1c..520e9d401 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/immunization_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ImmunizationStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/ingredient_manufacturer_role.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/ingredient_manufacturer_role.dart
+index fe5882b36..803da9164 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/ingredient_manufacturer_role.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/ingredient_manufacturer_role.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for IngredientManufacturerRole
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/interaction_trigger.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/interaction_trigger.dart
+index 0ab0bbc9b..ad1bccdb5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/interaction_trigger.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/interaction_trigger.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for InteractionTrigger
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_price_component_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_price_component_type.dart
+index e9536bb02..51e2b0854 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_price_component_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_price_component_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for InvoicePriceComponentType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_status.dart
+index a318a671f..39d04317d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/invoice_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for InvoiceStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_severity.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_severity.dart
+index f29862f8c..b6d725431 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_severity.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_severity.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for IssueSeverity
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_type.dart
+index 05f140f26..15f22a49c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/issue_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for IssueType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/link_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/link_type.dart
+index dbc9d4c7e..718ff0754 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/link_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/link_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for LinkType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/linkage_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/linkage_type.dart
+index b0524f357..cf65381e5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/linkage_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/linkage_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for LinkageType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_mode.dart
+index 4c9011712..d3ed9896d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ListMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_status.dart
+index 366e301f3..f590f9ee4 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/list_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ListStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_mode.dart
+index 943ebbd0f..dfd45c406 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for LocationMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_status.dart
+index 23caa8df5..798dd4bc7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/location_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for LocationStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_status.dart
+index 89e5bc603..781a16175 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MeasureReportStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_type.dart
+index af253d4a0..720464ba4 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/measure_report_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MeasureReportType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_administration_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_administration_status_codes.dart
+index 70f3e3d38..a3846de85 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_administration_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_administration_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationAdministrationStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_dispense_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_dispense_status_codes.dart
+index dd80d13b9..b6f7c3cff 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_dispense_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_dispense_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationDispenseStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_knowledge_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_knowledge_status_codes.dart
+index aede38eae..cd934f789 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_knowledge_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_knowledge_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationKnowledgeStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_intent.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_intent.dart
+index a8e37ac3c..65f6d3946 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_intent.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_intent.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationRequestIntent
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_status.dart
+index 84ff30ff6..b194b7a8e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_request_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationRequestStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_statement_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_statement_status_codes.dart
+index 350a389a9..67de47929 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_statement_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_statement_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationStatementStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_status_codes.dart
+index 6d44c61f0..41885dc7d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/medication_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MedicationStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_header_response_request.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_header_response_request.dart
+index 63b884740..9349b713b 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_header_response_request.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_header_response_request.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MessageHeaderResponseRequest
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_significance_category.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_significance_category.dart
+index 99037b8ca..81bb3f887 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_significance_category.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/message_significance_category.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for MessageSignificanceCategory
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/name_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/name_use.dart
+index b1cc096ba..7ded3b0e8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/name_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/name_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NameUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_identifier_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_identifier_type.dart
+index ff6154dd4..7897e2d9d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_identifier_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_identifier_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NamingSystemIdentifierType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_type.dart
+index 74b7ee153..46bdd7023 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/naming_system_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NamingSystemType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/narrative_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/narrative_status.dart
+index 3f3db2105..4d831c54a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/narrative_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/narrative_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NarrativeStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/note_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/note_type.dart
+index fe1671ce5..8cdb40af7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/note_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/note_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NoteType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/nutrition_product_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/nutrition_product_status.dart
+index d325447ae..16c11cb05 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/nutrition_product_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/nutrition_product_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for NutritionProductStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_data_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_data_type.dart
+index f986fa204..e52611d7f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_data_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_data_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ObservationDataType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_range_category.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_range_category.dart
+index 8d2dcaa7e..187bcc8da 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_range_category.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_range_category.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ObservationRangeCategory
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_status.dart
+index 65fe0a8d0..2cf9c5a6c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/observation_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ObservationStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_kind.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_kind.dart
+index c925199e3..36e9b9488 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_kind.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_kind.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for OperationKind
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_parameter_use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_parameter_use.dart
+index d81b1c15b..6ce62f846 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_parameter_use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/operation_parameter_use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for OperationParameterUse
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/orientation_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/orientation_type.dart
+index b6cdf57a5..4d895e13c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/orientation_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/orientation_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for OrientationType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participant_required.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participant_required.dart
+index 5c0dc2a0e..036d3de93 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participant_required.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participant_required.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ParticipantRequired
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participation_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participation_status.dart
+index 9702dff16..51df8113c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participation_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/participation_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ParticipationStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_representation.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_representation.dart
+index a1ea210e7..e47573608 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_representation.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_representation.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for PropertyRepresentation
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_type_enum.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_type_enum.dart
+index 30b49ef35..f812e010c 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_type_enum.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/property_type_enum.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for PropertyTypeEnum
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/provenance_entity_role.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/provenance_entity_role.dart
+index 5ede06a2d..db19a1642 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/provenance_entity_role.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/provenance_entity_role.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ProvenanceEntityRole
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/publication_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/publication_status.dart
+index 6e8b4dbc3..732c49cd3 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/publication_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/publication_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for PublicationStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quality_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quality_type.dart
+index e8ee4e6be..31994ea95 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quality_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quality_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for QualityType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quantity_comparator.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quantity_comparator.dart
+index 80783d1ac..5eaa4f418 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quantity_comparator.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/quantity_comparator.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for QuantityComparator
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_operator.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_operator.dart
+index 77c3b5cc7..a523e0357 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_operator.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_operator.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for QuestionnaireItemOperator
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_type.dart
+index 157356599..b299e6f65 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_item_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for QuestionnaireItemType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_response_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_response_status.dart
+index 2f246596e..5558d2e86 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_response_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/questionnaire_response_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for QuestionnaireResponseStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_handling_policy.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_handling_policy.dart
+index 70e21e53c..bf7606e0b 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_handling_policy.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_handling_policy.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ReferenceHandlingPolicy
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_version_rules.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_version_rules.dart
+index 98444fad2..950299f09 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_version_rules.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/reference_version_rules.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ReferenceVersionRules
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/related_artifact_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/related_artifact_type.dart
+index 3a659cb8c..14a9ba170 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/related_artifact_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/related_artifact_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RelatedArtifactType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/remittance_outcome.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/remittance_outcome.dart
+index daa51ad87..5de474e7a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/remittance_outcome.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/remittance_outcome.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RemittanceOutcome
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/report_relationship_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/report_relationship_type.dart
+index 232b9adb6..5af2ad02d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/report_relationship_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/report_relationship_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ReportRelationshipType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/repository_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/repository_type.dart
+index 6f04c0bc9..b850a3ee6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/repository_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/repository_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RepositoryType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_intent.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_intent.dart
+index 9b39ba14b..5949250c0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_intent.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_intent.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RequestIntent
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_priority.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_priority.dart
+index c4d351029..48c9a12fa 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_priority.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_priority.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RequestPriority
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_resource_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_resource_type.dart
+index 9e5679d08..57a5de335 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_resource_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_resource_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RequestResourceType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_status.dart
+index 9d8b7ddc0..3c2eed484 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/request_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RequestStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_element_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_element_type.dart
+index c4ca35371..621a39cff 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_element_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_element_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ResearchElementType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_study_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_study_status.dart
+index fe07bccf6..b4ec9dfe6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_study_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_study_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ResearchStudyStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_subject_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_subject_status.dart
+index 342ae7129..1aaa80d89 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_subject_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/research_subject_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ResearchSubjectStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/resource_version_policy.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/resource_version_policy.dart
+index e1b996251..c40ffc433 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/resource_version_policy.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/resource_version_policy.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ResourceVersionPolicy
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/response_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/response_type.dart
+index 3e1a49a13..fd43e6ec7 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/response_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/response_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for ResponseType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/restful_capability_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/restful_capability_mode.dart
+index 4af0d0818..03532b6eb 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/restful_capability_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/restful_capability_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for RestfulCapabilityMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_comparator.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_comparator.dart
+index ac80ff884..ef945a6cc 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_comparator.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_comparator.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SearchComparator
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_entry_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_entry_mode.dart
+index 6723134e8..1982651b9 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_entry_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_entry_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SearchEntryMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_modifier_code.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_modifier_code.dart
+index e2abfb0be..1dc4923b5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_modifier_code.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_modifier_code.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SearchModifierCode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_param_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_param_type.dart
+index 16e14f78d..f62b390b6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_param_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/search_param_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SearchParamType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sequence_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sequence_type.dart
+index da6d9617b..c60193b90 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sequence_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sequence_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SequenceType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slicing_rules.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slicing_rules.dart
+index 34cf9f237..630f6b036 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slicing_rules.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slicing_rules.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SlicingRules
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slot_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slot_status.dart
+index 5a0a002ff..ab1a3e4ce 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slot_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/slot_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SlotStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sort_direction.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sort_direction.dart
+index e89e62c91..57a97af34 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sort_direction.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/sort_direction.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SortDirection
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/spdxlicense.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/spdxlicense.dart
+index be083ad2c..687420c6f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/spdxlicense.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/spdxlicense.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SPDXLicense
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_contained_preference.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_contained_preference.dart
+index d51cc8d6e..602bbfde6 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_contained_preference.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_contained_preference.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SpecimenContainedPreference
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_status.dart
+index 0f76c7980..ef3e6055f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/specimen_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SpecimenStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/status.dart
+index 9510e1148..13ceff21a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for Status
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/strand_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/strand_type.dart
+index ad3693355..f646020ee 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/strand_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/strand_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StrandType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_definition_kind.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_definition_kind.dart
+index 9f08b2e72..2185e3609 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_definition_kind.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_definition_kind.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureDefinitionKind
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_context_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_context_type.dart
+index f19643629..8b52223a5 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_context_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_context_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapContextType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_group_type_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_group_type_mode.dart
+index e917edd47..592f8df47 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_group_type_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_group_type_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapGroupTypeMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_input_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_input_mode.dart
+index e8fb3976e..95b18d7df 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_input_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_input_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapInputMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_model_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_model_mode.dart
+index 7c0429c40..84ebfbfab 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_model_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_model_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapModelMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_source_list_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_source_list_mode.dart
+index 858b2f493..061caf6ea 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_source_list_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_source_list_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapSourceListMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_target_list_mode.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_target_list_mode.dart
+index 9098fde7b..0f2741d43 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_target_list_mode.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_target_list_mode.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapTargetListMode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_transform.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_transform.dart
+index 882702d3b..15cea5435 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_transform.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/structure_map_transform.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for StructureMapTransform
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_channel_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_channel_type.dart
+index 584617570..84e89b1bd 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_channel_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_channel_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SubscriptionChannelType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_notification_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_notification_type.dart
+index 4ef58c35c..587e3104d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_notification_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_notification_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SubscriptionNotificationType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_search_modifier.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_search_modifier.dart
+index 744a4eaaf..830c935dd 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_search_modifier.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_search_modifier.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SubscriptionSearchModifier
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_status_codes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_status_codes.dart
+index 6aa6d0161..8de12df46 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_status_codes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/subscription_status_codes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SubscriptionStatusCodes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_delivery_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_delivery_status.dart
+index 90aef373e..8124f4d88 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_delivery_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_delivery_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SupplyDeliveryStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_request_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_request_status.dart
+index e9aa384ad..26f20eecd 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_request_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/supply_request_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SupplyRequestStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/system_restful_interaction.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/system_restful_interaction.dart
+index c2bb25f74..ffec863a1 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/system_restful_interaction.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/system_restful_interaction.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for SystemRestfulInteraction
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_intent.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_intent.dart
+index 7a8b8d9f1..c26d1a5f0 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_intent.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_intent.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TaskIntent
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_status.dart
+index fddac93ec..07ded3fab 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/task_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TaskStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_action_result.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_action_result.dart
+index ca887c219..a97581e3d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_action_result.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_action_result.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TestReportActionResult
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_participant_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_participant_type.dart
+index 2fb375ff2..33254ce2f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_participant_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_participant_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TestReportParticipantType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_result.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_result.dart
+index 8aaf0cbf0..0335a10d8 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_result.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_result.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TestReportResult
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_status.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_status.dart
+index 5bbf543a8..bc37584ae 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_status.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_report_status.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TestReportStatus
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_script_request_method_code.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_script_request_method_code.dart
+index b8730b89b..150c66b61 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_script_request_method_code.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/test_script_request_method_code.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TestScriptRequestMethodCode
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/trigger_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/trigger_type.dart
+index aa4d95492..651c88282 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/trigger_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/trigger_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TriggerType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_derivation_rule.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_derivation_rule.dart
+index bb6eb2a66..22b18df7a 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_derivation_rule.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_derivation_rule.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TypeDerivationRule
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_restful_interaction.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_restful_interaction.dart
+index 305504b69..b1de2482e 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_restful_interaction.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/type_restful_interaction.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for TypeRestfulInteraction
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/udientry_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/udientry_type.dart
+index 6264c7392..ffe6df88d 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/udientry_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/udientry_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for UDIEntryType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/units_of_time.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/units_of_time.dart
+index 9a31b06fb..c4fb9bf95 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/units_of_time.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/units_of_time.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for UnitsOfTime
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/use.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/use.dart
+index e5393466a..048b7bf46 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/use.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/use.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for Use
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/variable_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/variable_type.dart
+index 361102956..f2d889f11 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/variable_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/variable_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for VariableType
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_base.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_base.dart
+index 25301935a..ddecd5b27 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_base.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_base.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for VisionBase
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_eyes.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_eyes.dart
+index 372e2bf1b..970dc47b2 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_eyes.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/vision_eyes.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for VisionEyes
+diff --git a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/xpath_usage_type.dart b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/xpath_usage_type.dart
+index 18d284fcd..464201a5f 100644
+--- a/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/xpath_usage_type.dart
++++ b/packages/fhir_r4_mapping/lib/src/builders/primitive_types/enums/xpath_usage_type.dart
+@@ -1,3 +1,4 @@
++// ignore_for_file: unused_element_parameter, non_constant_identifier_names
+ part of '../primitive_types.dart';
+ 
+ /// Actual enum for XPathUsageType

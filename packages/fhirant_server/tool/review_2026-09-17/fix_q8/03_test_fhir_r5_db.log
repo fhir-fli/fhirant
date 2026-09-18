@@ -1,0 +1,504 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/value_set_not_evaluable_test.dart
+00:00 +0: test/value_set_not_evaluable_test.dart: :in refuses a ValueSet the store does not hold
+00:00 +1: test/value_set_not_evaluable_test.dart: :in refuses an include of a CodeSystem it does not hold
+00:00 +2: test/value_set_not_evaluable_test.dart: :in refuses an include of a CodeSystem held as not-present
+00:00 +3: test/value_set_not_evaluable_test.dart: :in refuses an include of a CodeSystem held as example
+00:00 +4: test/value_set_not_evaluable_test.dart: :in refuses an include of a CodeSystem held as fragment
+00:00 +5: test/value_set_not_evaluable_test.dart: :in refuses an include of a version it does not hold
+00:00 +6: test/value_set_not_evaluable_test.dart: :not-in refuses a ValueSet the store does not hold
+00:00 +7: test/value_set_not_evaluable_test.dart: :not-in refuses an include of a CodeSystem it does not hold
+00:00 +8: test/value_set_not_evaluable_test.dart: :not-in refuses an include of a CodeSystem held as not-present
+00:00 +9: test/value_set_not_evaluable_test.dart: :not-in refuses an include of a CodeSystem held as example
+00:00 +10: test/value_set_not_evaluable_test.dart: :not-in refuses an include of a CodeSystem held as fragment
+00:00 +11: test/value_set_not_evaluable_test.dart: :not-in refuses an include of a version it does not hold
+00:00 +12: test/value_set_not_evaluable_test.dart: every refusal is a ValueSetRefusal with a message and an issue code
+00:00 +13: test/value_set_not_evaluable_test.dart: a complete CodeSystem it holds is expanded, of the version asked for
+00:00 +14: test/value_set_not_evaluable_test.dart: an enumerated include needs no CodeSystem: the list is the answer
+00:00 +15: test/value_set_not_evaluable_test.dart: expandValueSet gives system, code and display, excludes applied
+00:00 +16: test/value_set_not_evaluable_test.dart: a code element carries its implicit system system|code matches, and the wrong system does not
+00:00 +17: test/value_set_not_evaluable_test.dart: a code element carries its implicit system :in and :not-in match it
+00:01 +18: test/date_range_test.dart: open bounds are stored as the sentinels, never NULL
+00:01 +19: test/date_range_test.dart: every prefix at every value answers what the NULL-OR form answered
+00:02 +20: test/date_range_test.dart: the worked example of 3.1.1.4.7 still holds
+00:02 +21: test/hygiene_test.dart: :in refuses a compose with include.filter
+00:03 +22: test/hygiene_test.dart: :in honours exclude.concept
+00:03 +23: test/hygiene_test.dart: an unknown parameter is ignored on the general path
+00:03 +24: test/hygiene_test.dart: a value ending in ":missing" is a value
+00:04 +25: test/reference_targets_test.dart: follows the search parameter, not the element name
+00:05 +26: test/reference_targets_test.dart: the wildcard takes every reference parameter
+00:05 +27: test/reference_targets_test.dart: a target type narrows a parameter with several target types
+00:05 +28: test/reference_targets_test.dart: several sources at once, deduplicated
+00:05 +29: test/reference_targets_test.dart: an identifier-only reference has no target
+00:05 +30: test/reference_targets_test.dart: an absolute reference to another server is not ours once the base is known
+00:05 +31: test/reference_targets_test.dart: a parameter that is not a reference, or unknown, finds nothing
+00:05 +32: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +33: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +34: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +35: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +36: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +37: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +38: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +39: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +40: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +41: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +42: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +43: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +44: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +45: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +46: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +47: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +48: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +49: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +50: test/reference_targets_test.dart: more ids than one statement holds
+00:07 +51: test/reference_targets_test.dart: more ids than one statement holds
+00:08 +52: test/search_compartment_test.dart: every parameter the definition names puts a resource in
+00:09 +53: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +54: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +55: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +56: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +57: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +58: test/custom_search_parameter_test.dart: a saved SearchParameter indexes every later save by its expression
+00:09 +59: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:09 +60: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:09 +61: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:09 +62: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:09 +63: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:09 +64: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +65: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +66: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +67: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +68: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +69: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +70: test/search_and_or_test.dart: a known positive, so an empty result below means the join
+00:10 +71: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +72: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +73: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +74: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +75: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +76: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +77: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +78: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +79: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:10 +80: test/search_paged_in_sql_test.dart: one token parameter pages in SQL and pages stably
+00:11 +81: test/history_layout_test.dart: a create stores the resource once and history still answers it
+00:11 +82: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:11 +83: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:11 +84: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +85: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +86: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +87: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +88: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +89: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +90: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +91: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +92: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +93: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +94: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +95: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +96: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +97: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +98: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +99: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +100: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +101: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +102: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +103: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +104: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +105: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +106: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +107: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +108: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +109: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +110: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +111: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +112: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +113: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +114: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +115: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +116: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +117: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +118: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +119: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +120: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +121: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +122: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +123: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +124: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +125: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +126: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +127: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +128: test/search_syntax_test.dart: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:12 +129: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +130: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +131: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +132: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +133: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +134: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +135: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +136: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +137: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +138: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +139: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +140: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +141: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +142: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +143: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +144: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +145: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +146: test/history_layout_test.dart: _since and _at apply across both tables
+00:12 +147: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +148: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +149: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +150: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +151: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +152: test/history_layout_test.dart: _since and _at apply across both tables
+00:13 +153: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +154: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +155: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +156: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +157: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +158: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +159: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +160: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +161: test/save_path_plan_test.dart: the resource's own rows are deleted through the primary key
+00:13 +162: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +163: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +164: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +165: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +166: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +167: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +168: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +169: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +170: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +171: test/search_date_range_test.dart: the section's examples, dateTime targets eq2013-01-14
+00:13 +172: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +173: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +174: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +175: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +176: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +177: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +178: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +179: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +180: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +181: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +182: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:14 +183: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +184: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +185: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +186: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +187: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +188: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +189: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +190: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +191: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +192: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +193: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +194: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +195: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:15 +196: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +197: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +198: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +199: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +200: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +201: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +202: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +203: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +204: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:16 +205: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +206: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +207: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +208: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +209: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +210: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +211: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +212: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +213: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +214: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +215: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +216: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +217: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +218: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +219: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +220: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:17 +221: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +222: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +223: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +224: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +225: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +226: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +227: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +228: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +229: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +230: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +231: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +232: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +233: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +234: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +235: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +236: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +237: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +238: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +239: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +240: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +241: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +242: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +243: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +244: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +245: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +246: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +247: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +248: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +249: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +250: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +251: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +252: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +253: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +254: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +255: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +256: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +257: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +258: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +259: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +260: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +261: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +262: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:18 +263: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +264: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +265: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +266: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +267: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +268: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +269: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +270: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +271: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:19 +272: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +273: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +274: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +275: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +276: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +277: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +278: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +279: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +280: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +281: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +282: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +283: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +284: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +284: test/review_integrity_test.dart: saveResources (findings 27, 28) is atomic: an indexing failure stores no resource
+Error in saveResources: Bad state: index failed
+00:20 +285: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +286: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +287: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +288: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +289: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:20 +290: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +291: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +292: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +293: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +294: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +295: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +296: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +297: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +298: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:21 +299: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +300: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +301: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +302: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +303: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +304: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +305: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +306: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +307: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +308: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +309: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +310: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +311: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +312: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +313: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +314: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +315: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +316: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +317: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +318: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +319: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +320: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +321: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +322: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +323: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +324: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +325: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +326: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +327: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +328: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +329: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +330: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +331: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:22 +332: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +333: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +334: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +335: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +336: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +337: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +338: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +339: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +340: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +341: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +342: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +343: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +344: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +345: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +346: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +347: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +348: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +349: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +350: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +351: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +352: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +353: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +354: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +355: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +356: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +357: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +358: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +359: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +360: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +361: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +362: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +363: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +364: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +365: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +366: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +367: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +368: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +369: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +370: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +371: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +372: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +373: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +374: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +375: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +376: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +377: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +378: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +379: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +380: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +381: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +382: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:23 +383: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:24 +384: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:24 +385: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:24 +386: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +387: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +388: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +389: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +390: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +391: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +392: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +393: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +394: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +395: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +396: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +397: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +398: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +399: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +400: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +401: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +402: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +403: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +404: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +405: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +406: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +407: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +408: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +409: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +410: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +411: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +412: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +413: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +414: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +415: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:25 +416: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:26 +417: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:26 +418: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:26 +419: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:26 +420: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:30 +421: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:30 +422: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:30 +423: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +424: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +425: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +426: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +426: test/fhir_db_test.dart: (setUpAll)
+Database initialized
+00:31 +426: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +427: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +428: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +429: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:31 +430: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +431: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +432: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +433: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +434: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +434: test/indexing_failure_test.dart: saveResources reports a failed bulk index as false
+Error in saveResources: Bad state: index is broken
+00:32 +435: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +436: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +437: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +438: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +439: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +440: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +441: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +442: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +443: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +444: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +445: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +446: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +447: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +448: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +449: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +450: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +450: test/fhir_db_test.dart: Encrypted Database: CRUD with cipherSetup()
+WARNING (drift): It looks like you've created the database class FhirDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r5_db/src/fhir_db.dart:14:21)
+#6      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhir_r5/packages/fhir_r5_db/test/fhir_db_test.dart:255:21)
+#7      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#9      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:32 +451: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +452: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:32 +453: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:33 +454: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:34 +455: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:35 +456: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:35 +457: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:35 +457: test/fhir_db_test.dart: More Complicated Searching (& Resources)
+Found 10 resources in total of 45 ms
+00:35 +458: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:37 +459: test/schema_migration_test.dart: an existing schema-4 database opens, and its index is rebuilt
+00:37 +460: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:38 +461: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:46 +462: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:47 +463: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:47 +464: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:47 +465: test/schema_migration_test.dart: a version-6 database (published 0.12.0) has its whole index rebuilt
+00:49 +466: test/schema_migration_test.dart: the value indexes exist after a fresh create and after an upgrade
+00:52 +467: test/schema_migration_test.dart: the planner has statistics once the database is open
+00:53 +468: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:57 +469: test/schema_migration_test.dart: a resource saved after the upgrade indexes and is searchable
+01:00 +470: test/schema_migration_test.dart: a version-7 database gains the contained-row partial indexes
+01:03 +471: test/schema_migration_test.dart: a version-8 database has its search index rebuilt
+01:07 +472: test/schema_migration_test.dart: a version-11 database stores its open date bounds as sentinels
+01:10 +473: test/schema_migration_test.dart: a version-10 database stores its open bounds as infinity
+01:13 +474: test/schema_migration_test.dart: a version-9 database loses search_path, its key and the old indexes
+01:19 +475: All tests passed!

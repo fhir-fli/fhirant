@@ -1,0 +1,13 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/terminology_not_held_test.dart
+00:00 +0: T1: a ValueSet that includes all of a CodeSystem not held $expand is an error, not an empty expansion
+00:00 +1: T1: a ValueSet that includes all of a CodeSystem not held ValueSet/$validate-code is an error, not result=false
+00:00 +2: T1: a ValueSet that includes all of a CodeSystem not held :in and :not-in are errors, not nothing and everything
+00:00 +3: :in a ValueSet the server does not hold is an error
+00:00 +4: CodeSystem/$validate-code of a system not held is an error
+00:00 +5: ValueSet/$validate-code of a url not held is an error
+00:00 +6: a CodeSystem held as a fragment a code it lists is valid
+00:00 +7: a CodeSystem held as a fragment a code it does not list cannot be called invalid
+00:00 +8: a CodeSystem held as a fragment a ValueSet including all of it does not $expand
+00:00 +9: T2: compose.exclude $expand and $validate-code agree on the excluded code
+00:00 +10: status:in and status=<system>|code match a code element
+00:00 +11: All tests passed!
