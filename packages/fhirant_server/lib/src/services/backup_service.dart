@@ -108,17 +108,34 @@ class BackupService {
     return RegExp(r'^\s*\{\s*"fhirantBackup"\s*:').hasMatch(head);
   }
 
-  /// Whether the file's first non-blank byte is `{`: a Bundle or an
-  /// envelope rather than an encrypted database.
+  /// Whether the file is JSON, a Bundle or an envelope, rather than an
+  /// encrypted database: its first 64 bytes are UTF-8 and open an object
+  /// with a quoted key, `{ "`.
+  ///
+  /// This used to look at the first non-blank byte alone. An encrypted
+  /// backup starts with SQLCipher's random 16-byte salt, so one backup in
+  /// 256 began with `{`, was read as a UTF-8 string and failed with a
+  /// FileSystemException instead of the wrong-passphrase answer (seen once
+  /// in a suite run, 2026-09-18, `tool/review_2026-09-17/fix_q6/`). Random
+  /// bytes that are also valid UTF-8 and spell `{"` are not a chance worth
+  /// naming.
   static Future<bool> isJsonFile(String path) async {
     final file = File(path);
     if (!file.existsSync() || file.lengthSync() == 0) return false;
-    final head = await file.openRead(0, 64).first;
-    for (final b in head) {
-      if (b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D) continue;
-      return b == 0x7B;
+    final bytes = await file.openRead(0, 64).first;
+    // A multi-byte character cut by the 64-byte window is not malformed
+    // UTF-8, so up to three trailing bytes may be dropped before deciding.
+    String? head;
+    for (var drop = 0; drop <= 3 && drop < bytes.length; drop++) {
+      try {
+        head = utf8.decode(bytes.sublist(0, bytes.length - drop));
+        break;
+      } on FormatException {
+        continue;
+      }
     }
-    return false;
+    if (head == null) return false;
+    return RegExp(r'^\s*\{\s*"').hasMatch(head);
   }
 
   /// Every stored resource as a collection Bundle, unencrypted.

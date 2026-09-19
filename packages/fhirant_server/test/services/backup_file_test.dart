@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -202,6 +203,32 @@ void main() {
       db.restoreEncrypted(file.path, 'correct horse'),
       throwsA(isA<BackupSchemaTooNew>()),
     );
+  });
+
+  test('an encrypted backup that happens to start with "{" is not JSON',
+      () async {
+    // SQLCipher's file begins with a random 16-byte salt, so one backup in
+    // 256 starts with 0x7B. The detector looked at that byte alone and the
+    // restore then read the file as UTF-8 and threw a FileSystemException
+    // instead of the wrong-passphrase answer (seen once in a suite run,
+    // 2026-09-18). Built here deterministically: `{` and then bytes no
+    // UTF-8 text contains.
+    final file = File('${dir.path}/unlucky.sqlite')
+      ..writeAsBytesSync([0x7B, ...List.filled(4095, 0xFF)]);
+    expect(await BackupService.isJsonFile(file.path), isFalse);
+    await expectLater(
+      BackupService.restoreFile(db, file.path, passphrase: 'wrong'),
+      throwsA(isA<BackupDecryptionException>()),
+    );
+  });
+
+  test('a JSON file with a character cut by the 64-byte window is JSON',
+      () async {
+    // 62 ASCII bytes, then a two-byte character straddling byte 64.
+    const json = '{"resourceType":"Bundle","type":"collection","id":"éééééé"}';
+    final file = File('${dir.path}/cut.json')..writeAsStringSync(json);
+    expect(utf8.encode(json).length, greaterThan(64));
+    expect(await BackupService.isJsonFile(file.path), isTrue);
   });
 
   test(
