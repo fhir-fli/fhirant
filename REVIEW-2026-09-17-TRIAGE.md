@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 12 OPEN
+# REVIEW-2026-09-17 triage: 9 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -16,13 +16,10 @@ goes to `REVIEW_DECISIONS.md`.
 | 3 | `50e06d3` A14 | Password change, deactivate, role and scopes routes; any change ends older sessions | Feature. Without it a leaked password is fixed only in the database | Six routes, schema 25 | Keep |
 | 4 | `23b2b78` A16.1 | PKCE verifier accepts S256 only | The authorize endpoint already refused `plain`, so the path was unreachable | Removes code | Keep |
 | 5 | `6c986cb` A16.4 | `X-Frame-Options`, CSP, `nosniff` on the login and error pages | OWASP recommendation; no framing attack shown | One header map | Keep |
-| 6 | `1587d54` A16.5 | A reused refresh token logs the account out everywhere | RFC 9700 is best practice; the old behaviour met RFC 6749 | **A client whose refresh response is lost on a bad network retries with the old token and is logged out.** Matters for field use | Your call; this is the one with a clinical-workflow cost |
 | 7 | `63c1f7c` A16.6 | `bind` needs a FHIR id, a stored Subscription, and at most 16 per socket | `/ws` already needs a token; pings carry no payload. 16 is my number | A DB read per bind | Revert |
 | 8 | `1c14577` A16.7 | Backup iteration count capped at 10× what the server writes | Measured: a crafted file stalls the server about 80 minutes. But `$restore` is admin-only | A future 10× increase must move the cap | Keep |
-| 9 | `8d378b7` A16.9 | Failed logins recorded as AuditEvents with the name tried | **Reverses the 2026-09-07 choice** (`d99bfe5`) not to record unauthenticated 401s, made to bound unauthenticated writes. Now bounded by the login rate limit | Up to 10 events per minute per address | Your call |
-| 10 | `8a9e761` A16.11 | AuditEvents deleted after six years by default | **Unverified.** The six years is 45 CFR 164.316(b)(2)(i), whose text covers "documentation required by paragraph (b)(1)"; whether that includes audit-log entries is my reading. Nothing is deleted before 2032 | A default that deletes records | Revert to no deletion unless configured, unless you know the retention rule |
 | 11 | `2a68322` S4 | `--dev-mode` no longer allows the public key; new `--allow-public-key` | Design choice; nothing failed | The dev command needs two flags | Keep |
-| 12 | `0f313b0` S6 | `--config` now read (YAML); `http` pinned | The flag was dead. Deleting it was the smaller fix | A YAML dependency and a config loader | Your call: keep the loader or delete the flag |
+| 12 | `0f313b0` S6 | `--config` now read (YAML); `http` pinned | The flag was dead. Deleting it was the smaller fix. No outside source bears on it | A YAML dependency and a config loader | Keep: it is built and tested, and deleting it now is more change |
 
 ## Reproduced defects (no ruling needed)
 
@@ -40,5 +37,15 @@ Each had the old behaviour observed wrong against an outside source.
 - `2c28392` S5: the old health check marked every container unhealthy.
 - `0f313b0` S6, the port half: `--port abc` crashed with a stack trace, exit 255.
 - `d57f4dc` S8: clean builds took whatever the dependency branches held that minute.
+- `1587d54` A16.5: a reused refresh token was answered 401 and nothing else. RFC 9700 §4.14.2 (verbatim): "Authorization servers MUST utilize one of these methods to detect refresh token replay by malicious actors for public clients"; fhirant authenticates no client, so every client is public. The RFC names the cost itself: "at the cost of forcing the legitimate client to obtain a fresh authorization grant".
+
+## Settled by a source (no ruling needed)
+
+- `8d378b7` A16.9, failed logins audited: **kept.** 45 CFR 164.308(a)(5)(ii)(C) (law.cornell.edu, verbatim): "Log-in monitoring (Addressable). Procedures for monitoring log-in attempts and reporting discrepancies." The 2026-09-07 exclusion was a session's choice, not a ruling, and its reason (unbounded unauthenticated writes) is now bounded by the login rate limit.
+- `8a9e761` A16.11, audit retention: **default changed to no deletion.** No source sets a retention period for audit records: NIST SP 800-66r2 §5.3.2 (Audit Controls, read whole) leaves it to "the regulated entity's risk assessment", and §164.316(b)(2)(i) covers "documentation required by paragraph (b)(1)". The HHS January 2017 audit-controls newsletter and OCR audit protocol refused automated access (HTTP 403) and were not read. Retention runs only when a deployment sets `--audit-retention-days`.
+
+## New finding, reproduced, not yet fixed
+
+- Every AuditEvent carries `type` `110112` Query, a failed login included. The R4B value set `audit-event-type` has `110114` User Authentication for that event.
 
 Documentation only: `b952dc4` S7.

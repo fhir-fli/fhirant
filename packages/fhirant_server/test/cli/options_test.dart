@@ -1,5 +1,4 @@
 import 'package:fhirant_server/src/cli/options.dart';
-import 'package:fhirant_server/src/fhirant_server.dart' show kAuditRetention;
 import 'package:test/test.dart';
 
 /// REVIEW-2026-09-17 S6: `--config` was declared and never read, and
@@ -20,7 +19,7 @@ void main() {
     expect(o.devMode, isFalse);
     expect(o.specPath, '/app/fhir_spec');
     expect(o.baseUrl, isNull);
-    expect(o.auditRetention, kAuditRetention);
+    expect(o.auditRetention, isNull, reason: 'no retention unless set');
   });
 
   test('the config file sets what the command line did not', () {

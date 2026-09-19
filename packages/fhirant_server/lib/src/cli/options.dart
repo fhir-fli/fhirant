@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:fhirant_server/src/fhirant_server.dart' show kAuditRetention;
 import 'package:yaml/yaml.dart';
 
 /// A usage error: what the person who typed the command needs to read.
@@ -45,7 +44,7 @@ class ServerOptions {
   final bool devMode;
   final String specPath;
   final String? baseUrl;
-  final Duration auditRetention;
+  final Duration? auditRetention;
 
   /// Whether a store may be opened under a key this repository publishes
   /// ([publicKeys]). Its own switch, independent of [devMode]
@@ -89,9 +88,9 @@ class ServerOptions {
     )
     ..addOption(
       'audit-retention-days',
-      defaultsTo: '${kAuditRetention.inDays}',
       help: 'How many days AuditEvents are kept before the hourly sweep '
-          'removes them (default six years, 45 CFR 164.316(b)(2)(i)).',
+          'removes them. Unset (the default): none are removed; the '
+          'retention period is the policy of the deployment.',
     )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
@@ -193,9 +192,11 @@ class ServerOptions {
       allowPublicKey: flag('allow-public-key'),
       specPath: requiredString('spec-path'),
       baseUrl: optionalString('base-url'),
-      auditRetention: Duration(
-        days: integer('audit-retention-days', min: 1, max: 36500),
-      ),
+      auditRetention: pick('audit-retention-days') == null
+          ? null
+          : Duration(
+              days: integer('audit-retention-days', min: 1, max: 36500),
+            ),
     );
   }
 

@@ -13,4 +13,10 @@ before it is built.
 
 ## Rulings
 
-None yet.
+None from Grey yet.
+
+## Settled by a source (2026-09-19)
+
+- A16.5 refresh-token reuse ends the grant: required, RFC 9700 §4.14.2 MUST for public clients.
+- A16.9 failed logins audited: kept, 45 CFR 164.308(a)(5)(ii)(C) log-in monitoring.
+- A16.11 audit retention: no deletion by default; a deployment sets its own period (NIST SP 800-66r2 §5.3.2).

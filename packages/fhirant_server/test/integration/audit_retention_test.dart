@@ -6,12 +6,9 @@ import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:test/test.dart';
 
 /// REVIEW-2026-09-17 A16: AuditEvents had no retention; every read wrote
-/// one and nothing removed any. The hourly sweep now purges those older
-/// than [FhirAntServer.auditRetention], with their history and index rows.
-/// Default six years: 45 CFR 164.316(b)(2)(i) (verbatim) "Retain the
-/// documentation required by paragraph (b)(1) of this section for 6 years
-/// from the date of its creation or the date when it last was in effect,
-/// whichever is later."
+/// one and nothing removed any. The hourly sweep purges those older than
+/// [FhirAntServer.auditRetention] when a deployment sets one, with their
+/// history and index rows; unset, it deletes nothing.
 void main() {
   late FhirAntDb db;
 
@@ -81,11 +78,12 @@ void main() {
     expect(await rowsIn('resources', 'recent'), 1);
   });
 
-  test('the default retention is six years and nothing recent is touched',
-      () async {
-    expect(kAuditRetention.inDays, 6 * 365 + 2);
-    await db.saveResources([event('recent')]);
-    await age('recent', const Duration(days: 5 * 365));
+  test('with no retention configured, the sweep deletes nothing', () async {
+    // No source sets a retention period for audit records (see
+    // FhirAntServer.auditRetention), so the default removes none, however
+    // old.
+    await db.saveResources([event('ancient')]);
+    await age('ancient', const Duration(days: 20 * 365));
     await FhirAntServer(db, jwtSecret: 'test-secret').hourlyCleanup();
     final left = await db.search(resourceType: fhir.R4ResourceType.AuditEvent);
     expect(left, hasLength(1));
