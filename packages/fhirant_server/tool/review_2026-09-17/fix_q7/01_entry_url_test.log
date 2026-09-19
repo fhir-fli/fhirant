@@ -1,0 +1,3 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/bundle_entry_url_test.dart
+00:00 +0: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +1: All tests passed!

@@ -551,6 +551,25 @@ Future<_BundleOperation> _processBundleEntry(
     );
   }
 
+  // What this server processes inside a Bundle: `[type]` and `[type]/[id]`,
+  // either with a query. A third segment (`Patient/a/_history`,
+  // `Patient/a/$everything`) or a second one that is not an id
+  // (`Patient/$validate`, `Patient/_history`) used to be processed as the
+  // first two segments, so `GET Patient/a/_history` in a batch answered
+  // the Patient (REVIEW-2026-09-17 Q7). It is refused as unsupported now.
+  // An id is R4B datatypes.html `id`, verbatim: "Regex:
+  // [A-Za-z0-9\-\.]{1,64}".
+  if (urlParts.length > 2 ||
+      (urlParts.length == 2 && !_fhirIdGrammar.hasMatch(urlParts[1]))) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: "$url" is not an interaction this server '
+      'processes inside a Bundle. It processes [type] and [type]/[id], '
+      'either with a query; history, operations and compartment searches '
+      'are not supported as entries.',
+    );
+  }
+
   final resourceType = urlParts[0];
   final resourceId = urlParts.length > 1 ? urlParts[1] : null;
   final resourceTypeEnum = fhir.R4ResourceType.fromString(resourceType);
@@ -1019,6 +1038,9 @@ Future<_BundleOperation> _processBundleEntry(
     subjectBeforeDelete: subjectBeforeDelete,
   );
 }
+
+/// R4B datatypes.html `id`, verbatim: "Regex: [A-Za-z0-9\-\.]{1,64}".
+final RegExp _fhirIdGrammar = RegExp(r'^[A-Za-z0-9\-\.]{1,64}$');
 
 /// A type-level GET inside a Bundle: the same search the REST path runs
 /// ([typeSearch]), answered as a searchset Bundle inside the entry. The
