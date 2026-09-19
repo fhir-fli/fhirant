@@ -17,6 +17,7 @@ before it is built.
 - 2026-09-19, Q8 (`88f7cf6`, fhir_db `8401ad9`) `_contained=true|both`: **revert, for now**. The spec defines it without requiring it and nothing we build uses it; refused with a true message. To be built out later.
 - 2026-09-19, A14 (`50e06d3`) account management and the token-generation counter: **keep**. Feature; the counter also carries the RFC 9700 refresh-reuse and RFC 6749 code-reuse revocations.
 - 2026-09-19, A16.1 (`23b2b78`) PKCE verifier accepts S256 only: **keep**. Removes an unreachable `plain` branch that contradicted the authorize check (RFC 7636 §7.2).
+- 2026-09-19, A16.4 (`6c986cb`) frame, CSP, nosniff and no-store headers on the login and error pages: **keep**. OWASP recommendation; nothing we build frames the page.
 
 ## Settled by a source (2026-09-19)
 
