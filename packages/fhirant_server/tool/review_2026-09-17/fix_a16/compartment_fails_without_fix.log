@@ -1,0 +1,29 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/search_compartment_test.dart
+00:00 +0: every parameter the definition names puts a resource in
+00:00 +1: a resource pointing at another patient, or at none, is out
+00:00 +2: an absolute reference to a same-named patient on another server is out once the base is known
+00:00 +2 -1: an absolute reference to a same-named patient on another server is out once the base is known [E]
+  Expected: not contains 'o-abs-other'
+    Actual: ['o-abs-other', 'o-abs-ours', 'o-both', 'o-performer', 'o-subject']
+  
+  package:matcher                          expect
+  test/search_compartment_test.dart 160:5  main.<fn>
+  
+00:00 +2 -1: the compartment ANDs with the query
+00:00 +3 -1: a comma, which takes the general path, is still scoped
+00:00 +4 -1: the focal type: the focal resource and any linked to it
+00:00 +5 -1: another compartment, another parameter
+00:00 +6 -1: a type the compartment does not include is empty, and counts 0
+00:00 +7 -1: searchCount is scoped, with and without a query
+00:00 +8 -1: pages and sorts inside the compartment
+00:00 +9 -1: compartmentMembers lists every type, the focal resource included
+00:00 +10 -1: compartmentMembers honours types and since
+00:00 +11 -1: compartmentTypeMembers: every member of the type across all patients
+00:00 +12 -1: an empty compartment: the focal resource does not exist
+00:00 +13 -1: Some tests failed.
+
+Failing tests:
+  test/search_compartment_test.dart: an absolute reference to a same-named patient on another server is out once the base is known
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

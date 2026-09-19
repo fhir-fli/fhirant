@@ -1,0 +1,16 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/search_compartment_test.dart
+00:00 +0: every parameter the definition names puts a resource in
+00:00 +1: a resource pointing at another patient, or at none, is out
+00:00 +2: an absolute reference to a same-named patient on another server is out once the base is known
+00:00 +3: the compartment ANDs with the query
+00:00 +4: a comma, which takes the general path, is still scoped
+00:00 +5: the focal type: the focal resource and any linked to it
+00:00 +6: another compartment, another parameter
+00:00 +7: a type the compartment does not include is empty, and counts 0
+00:00 +8: searchCount is scoped, with and without a query
+00:00 +9: pages and sorts inside the compartment
+00:00 +10: compartmentMembers lists every type, the focal resource included
+00:00 +11: compartmentMembers honours types and since
+00:00 +12: compartmentTypeMembers: every member of the type across all patients
+00:00 +13: an empty compartment: the focal resource does not exist
+00:00 +14: All tests passed!
