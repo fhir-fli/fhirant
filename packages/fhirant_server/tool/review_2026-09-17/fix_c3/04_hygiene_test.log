@@ -1,0 +1,95 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/hygiene_review_2026_09_08_test.dart
+00:00 +0: row 18: a rest-hook Subscription is system-level a clinician with user/*.cruds is refused with an OperationOutcome
+00:00 +1: row 18: a rest-hook Subscription is system-level the same clinician may create a websocket Subscription
+00:00 +2: row 18: a rest-hook Subscription is system-level an admin with system/*.* may create the rest-hook
+00:00 +3: row 18: a rest-hook Subscription is system-level a PUT that turns a websocket Subscription into a rest-hook is refused for the clinician
+00:00 +4: row 20: smart-configuration names no registration_endpoint
+00:00 +5: row 31: the CapabilityStatement says what is configured cors is false when no origin is configured
+00:00 +6: row 31: the CapabilityStatement says what is configured the fhirpath operation is this server's own definition, not a canonical R4B does not publish
+00:00 +7: row 32: a parameter that does not parse is 400, not ignored $everything _since
+00:00 +8: row 32: a parameter that does not parse is 400, not ignored history /Patient/p32/_history?_since=yesterday
+00:00 +9: row 32: a parameter that does not parse is 400, not ignored history /Patient/_history?_at=yesterday
+00:00 +10: row 32: a parameter that does not parse is 400, not ignored history /_history?_since=yesterday
+00:00 +11: row 32: a parameter that does not parse is 400, not ignored history with a parseable _since still answers
+00:00 +12: row 32: a parameter that does not parse is 400, not ignored $fhirpath with an expression that does not parse
+00:00 +13: row 32: a parameter that does not parse is 400, not ignored $cql with CQL that does not translate
+00:00 +13: row 18: a rest-hook Subscription is system-level the same clinician may create a websocket Subscription
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+line 1:13 no viable alternative at input '((('
+00:00 +14: row 18: a rest-hook Subscription is system-level an admin with system/*.* may create the rest-hook
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +14: row 18: a rest-hook Subscription is system-level a PUT that turns a websocket Subscription into a rest-hook is refused for the clinician
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +14: row 39: cancelling a running export leaves the row to the worker DELETE on an in_progress job: 202, row kept as cancelled
+00:00 +15: row 39: cancelling a running export leaves the row to the worker DELETE on a completed job removes row and files at once
+00:00 +16: row 40: patient-level export writes compartment members an Observation with no patient is not written
+00:00 +17: row 40: patient-level export writes compartment members with _type the same membership applies
+00:00 +17: row 32: a parameter that does not parse is 400, not ignored $everything _since
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +17: row 32: a parameter that does not parse is 400, not ignored history /Patient/p32/_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +17: row 32: a parameter that does not parse is 400, not ignored history /Patient/_history?_at=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +17: row 32: a parameter that does not parse is 400, not ignored history /_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +17: row 32: a parameter that does not parse is 400, not ignored history with a parseable _since still answers
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +18: row 40: patient-level export writes compartment members a _typeFilter narrows within the members
+00:00 +18: row 32: a parameter that does not parse is 400, not ignored $fhirpath with an expression that does not parse
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +18: row 32: a parameter that does not parse is 400, not ignored $cql with CQL that does not translate
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +19: row 40: patient-level export writes compartment members the system-level export still writes every Observation
+00:00 +19: row 40: patient-level export writes compartment members an Observation with no patient is not written
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +20: row 43: $everything pages, read per type, cover the compartment once
+00:01 +21: rows 45 and 46: what the audit trail records GET /health is not audited; a read after it is
+00:01 +21: row 40: patient-level export writes compartment members with _type the same membership applies
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +21: row 40: patient-level export writes compartment members a _typeFilter narrows within the members
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +21: row 40: patient-level export writes compartment members the system-level export still writes every Observation
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +21: row 43: $everything pages, read per type, cover the compartment once
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +22: rows 45 and 46: what the audit trail records POST _search is action R / search, an operation is E / execute
+00:01 +23: rows 45 and 46: what the audit trail records auth/login is not turned into a resource reference
+00:01 +24: row 47: an escaping exception and the request log a handler that throws answers a 500 OperationOutcome
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:590:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:01 +25: row 47: an escaping exception and the request log the request-log entry carries the redacted path
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:606:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:01 +26: All tests passed!

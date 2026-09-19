@@ -1,0 +1,33 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/metadata_definitions_test.dart
+00:00 +0: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +1: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +2: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +3: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +4: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +5: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +6: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +7: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +8: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +9: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +10: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +11: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +12: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +13: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +14: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +15: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +16: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +17: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +18: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +19: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +20: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +21: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +22: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +23: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +24: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +25: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +26: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +27: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:03 +28: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:03 +29: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:08 +30: test/handlers/metadata_definitions_test.dart: the three compartments R4B defines no operation for cite this server
+00:15 +31: All tests passed!

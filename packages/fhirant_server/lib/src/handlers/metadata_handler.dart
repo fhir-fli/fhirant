@@ -215,7 +215,10 @@ Future<Response> metadataHandler(
               // meta-add/meta-delete/validate), and the CapabilityStatement
               // used to cite that non-existent canonical (row 31).
               definition: FhirCanonical(
-                'http://fhirant.fhir-fli.dev/OperationDefinition/fhirpath',
+                // Published by this server: assets/fhir_spec/
+                // fhirant-operations.ndjson, loaded with the specification
+                // (REVIEW-2026-09-17 C3; the old canonical was held nowhere).
+                'http://fhirfli.dev/fhirant/OperationDefinition/fhirpath',
               ),
             ),
             CapabilityStatementOperation(
@@ -278,12 +281,23 @@ Future<Response> metadataHandler(
                   'http://hl7.org/fhir/OperationDefinition/Resource-validate',
                 ),
               ),
-              // $everything on compartment types
+              // $everything on every compartment type. R4B publishes an
+              // OperationDefinition for Patient and Encounter (and Group,
+              // MedicinalProductDefinition, which are not compartments);
+              // for Practitioner, RelatedPerson and Device this server
+              // cites its own, shipped in assets/fhir_spec/
+              // fhirant-operations.ndjson and loaded with the specification.
+              // It used to cite `$type-everything` under hl7.org for all
+              // five, three of which do not exist (REVIEW-2026-09-17 C3).
               if (SearchParamDefinitions.everythingTypes.contains(type))
                 CapabilityStatementOperation(
                   name: 'everything'.toFhirString,
                   definition: FhirCanonical(
-                    'http://hl7.org/fhir/OperationDefinition/$type-everything',
+                    const {'Patient', 'Encounter'}.contains(type)
+                        ? 'http://hl7.org/fhir/OperationDefinition/'
+                            '$type-everything'
+                        : 'http://fhirfli.dev/fhirant/OperationDefinition/'
+                            '$type-everything',
                   ),
                 ),
               // $export on Patient and Group

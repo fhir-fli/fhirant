@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,380 tests** across 116 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
+**1,382 tests** across 117 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,218 | 104 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,220 | 105 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -41,6 +41,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/handlers/history_handler_test.dart` | History endpoints |
 | `test/handlers/compartment_handler_test.dart` | Compartment search |
 | `test/handlers/metadata_handler_test.dart` | CapabilityStatement |
+| `test/handlers/metadata_definitions_test.dart` | REVIEW-2026-09-17 C3: every `operation.definition` the CapabilityStatement cites is an OperationDefinition the server holds after the shipped specification loads; the three compartments R4B defines no operation for cite this server's own (2) |
 | `test/handlers/health_handler_test.dart` | Health check |
 | `test/handlers/validate_handler_test.dart` | $validate |
 | `test/handlers/terminology_handler_test.dart` | $validate-code, $lookup, $expand |

@@ -191,7 +191,10 @@ void main() {
       );
       expect(
         fhirpath['definition'],
-        'http://fhirant.fhir-fli.dev/OperationDefinition/fhirpath',
+        // Published by the server itself since REVIEW-2026-09-17 C3
+        // (assets/fhir_spec/fhirant-operations.ndjson); the old host
+        // published nothing.
+        'http://fhirfli.dev/fhirant/OperationDefinition/fhirpath',
       );
     });
   });

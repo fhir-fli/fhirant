@@ -17,7 +17,11 @@ void main() {
       ..sort();
     expect(spec, contains('assets/fhir_spec/profiles-resources.ndjson'));
     expect(spec, contains('assets/fhir_spec/valuesets.ndjson'));
-    expect(spec, hasLength(9));
+    // The nine R4B files, plus this server's own OperationDefinitions and
+    // the Bulk Data export definition (REVIEW-2026-09-17 C3).
+    expect(spec, contains('assets/fhir_spec/fhirant-operations.ndjson'));
+    expect(spec, contains('assets/fhir_spec/bulkdata-operations.ndjson'));
+    expect(spec, hasLength(11));
     final text = await rootBundle
         .loadString('assets/fhir_spec/search-parameters.ndjson');
     expect(text, startsWith('{"resourceType":"SearchParameter"'));
