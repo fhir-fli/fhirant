@@ -41,7 +41,10 @@ void main() {
     }
   });
 
-  test('_contained=true and both are refused, under any Prefer', () async {
+  test('_contained=true and both are answered, under any Prefer', () async {
+    // They were refused as "not indexed" until REVIEW-2026-09-17 Q8; the
+    // contained cases themselves are in contained_search_test.dart. Here
+    // nothing is contained: `true` finds nothing, `both` finds the patient.
     final server = await createTestServer();
     final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'p-1'.toFhirString));
@@ -60,13 +63,10 @@ void main() {
             headers: headers,
           ),
         );
-        expect(response.statusCode, 400, reason: '$value with $headers');
-        final outcome =
+        expect(response.statusCode, 200, reason: '$value with $headers');
+        final bundle =
             jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-        expect(
-          ((outcome['issue'] as List).first as Map)['diagnostics'],
-          contains('does not index'),
-        );
+        expect(bundle['total'], value == 'true' ? 0 : 1);
       }
     }
   });
@@ -113,10 +113,13 @@ void main() {
     expect(fine.statusCode, 200);
   });
 
-  test('a contained resource is not stored or indexed', () async {
-    // The measurement the refusal rests on, kept as a test so it cannot
-    // quietly change: if contained resources ever are indexed, this fails and
-    // _contained=true becomes answerable.
+  test('a contained resource is not a normal match, and is a contained one',
+      () async {
+    // R4B search.html 3.1.1.5.5, read whole 2026-09-19, verbatim: "By
+    // default, search results only include resources that are not
+    // contained in other resources." The contained index (fhir_db schema 7)
+    // files it under `#Patient`, where searchContainedIds finds it
+    // (REVIEW-2026-09-17 Q8).
     final server = await createTestServer();
     await server.db.saveResource(
       fhir.Observation.fromJson({
@@ -142,5 +145,14 @@ void main() {
       searchParameters: const {},
     );
     expect(patients, isEmpty);
+    expect(
+      await server.db.searchContainedIds(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'family': ['Containedsson'],
+        },
+      ),
+      {'Observation/obs-1#inner'},
+    );
   });
 }

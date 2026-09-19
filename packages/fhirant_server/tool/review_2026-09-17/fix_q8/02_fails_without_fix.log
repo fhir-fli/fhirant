@@ -1,0 +1,71 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/contained_search_test.dart
+00:00 +0: by default the contained Medication is not a match
+00:00 +1: _contained=true returns the container, once, as a match
+00:00 +1 -1: _contained=true returns the container, once, as a match [E]
+  Expected: <200>
+    Actual: <400>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_contained=true is not supported: this server does not index resources held in another resource's contained element, so it cannot search them. _contained=false, the default, is supported."}]}
+  
+  package:matcher                                     expect
+  test/integration/contained_search_test.dart 91:5    main.search
+  ===== asynchronous gap ===========================
+  test/integration/contained_search_test.dart 105:15  main.<fn>
+  
+00:00 +1 -1: _containedType=contained returns the contained resource itself
+00:00 +1 -2: _containedType=contained returns the contained resource itself [E]
+  Expected: <200>
+    Actual: <400>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_contained=true is not supported: this server does not index resources held in another resource's contained element, so it cannot search them. _contained=false, the default, is supported."}]}
+  
+  package:matcher                                     expect
+  test/integration/contained_search_test.dart 91:5    main.search
+  ===== asynchronous gap ===========================
+  test/integration/contained_search_test.dart 116:15  main.<fn>
+  
+00:00 +1 -2: _contained=both returns the normal match and then the container
+00:00 +1 -3: _contained=both returns the normal match and then the container [E]
+  Expected: <200>
+    Actual: <400>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_contained=both is not supported: this server does not index resources held in another resource's contained element, so it cannot search them. _contained=false, the default, is supported."}]}
+  
+  package:matcher                                     expect
+  test/integration/contained_search_test.dart 91:5    main.search
+  ===== asynchronous gap ===========================
+  test/integration/contained_search_test.dart 127:15  main.<fn>
+  
+00:00 +1 -3: the page and its links are cut from the combined set
+00:00 +1 -4: the page and its links are cut from the combined set [E]
+  Expected: <200>
+    Actual: <400>
+  {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_contained=both is not supported: this server does not index resources held in another resource's contained element, so it cannot search them. _contained=false, the default, is supported."}]}
+  
+  package:matcher                                     expect
+  test/integration/contained_search_test.dart 91:5    main.search
+  ===== asynchronous gap ===========================
+  test/integration/contained_search_test.dart 136:19  main.<fn>
+  
+00:00 +1 -4: what cannot be applied to the combined set is refused
+00:00 +1 -5: what cannot be applied to the combined set is refused [E]
+  Expected: 'not-supported'
+    Actual: 'processing'
+     Which: is different.
+            Expected: not-suppor ...
+              Actual: processing ...
+                      ^
+             Differ at offset 0
+  &_sort=_id
+  
+  package:matcher                                    expect
+  test/integration/contained_search_test.dart 157:7  main.<fn>
+  
+00:00 +1 -5: Some tests failed.
+
+Failing tests:
+  test/integration/contained_search_test.dart: _contained=both returns the normal match and then the container
+  test/integration/contained_search_test.dart: _contained=true returns the container, once, as a match
+  test/integration/contained_search_test.dart: _containedType=contained returns the contained resource itself
+  test/integration/contained_search_test.dart: the page and its links are cut from the combined set
+  test/integration/contained_search_test.dart: what cannot be applied to the combined set is refused
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

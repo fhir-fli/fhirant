@@ -110,12 +110,10 @@ class SearchParameterParser {
     // that both be reported when the client sends Prefer: handling=strict.
     // Answering 200 with the unfiltered set would tell a client that asked to
     // be warned that its filter had been applied.
-    // `_contained=false` is the spec's default and is what this server does,
-    // so it is answered rather than reported. `true` and `both` ask for
-    // resources inside other resources' `contained` element, which is neither
-    // stored nor indexed here (measured 2026-09-02: saving an Observation with
-    // a contained Patient stores the Observation only), so those are refused
-    // in the handler, under any Prefer header.
+    // `_contained` and `_containedType` are answered by the type search
+    // (REVIEW-2026-09-17 Q8): the store has indexed contained resources
+    // under `#Type` since fhir_db schema 7, and `true` / `both` are served
+    // from that index. Nothing is recognised-but-unsupported today.
     const unsupportedParams = <String>{};
 
     // Common _-prefixed search parameters that are valid across all

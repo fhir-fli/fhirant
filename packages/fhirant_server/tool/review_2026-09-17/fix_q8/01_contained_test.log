@@ -1,0 +1,8 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/contained_search_test.dart
+00:00 +0: by default the contained Medication is not a match
+00:00 +1: _contained=true returns the container, once, as a match
+00:00 +2: _containedType=contained returns the contained resource itself
+00:00 +3: _contained=both returns the normal match and then the container
+00:00 +4: the page and its links are cut from the combined set
+00:00 +5: what cannot be applied to the combined set is refused
+00:00 +6: All tests passed!
