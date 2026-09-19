@@ -109,16 +109,17 @@ class BackupService {
   }
 
   /// Whether the file is JSON, a Bundle or an envelope, rather than an
-  /// encrypted database: its first 64 bytes are UTF-8 and open an object
-  /// with a quoted key, `{ "`.
+  /// encrypted database: its first 64 bytes are UTF-8 text whose first
+  /// non-blank character is `{`.
   ///
   /// This used to look at the first non-blank byte alone. An encrypted
   /// backup starts with SQLCipher's random 16-byte salt, so one backup in
   /// 256 began with `{`, was read as a UTF-8 string and failed with a
   /// FileSystemException instead of the wrong-passphrase answer (seen once
-  /// in a suite run, 2026-09-18, `tool/review_2026-09-17/fix_q6/`). Random
-  /// bytes that are also valid UTF-8 and spell `{"` are not a chance worth
-  /// naming.
+  /// in a suite run, 2026-09-18, `tool/review_2026-09-17/fix_q6/`). Sixty
+  /// four random bytes that are also valid UTF-8 are not a chance worth
+  /// naming. Malformed JSON (`{not-json`) is still JSON here, so it is
+  /// reported as invalid JSON and not as a backup missing its passphrase.
   static Future<bool> isJsonFile(String path) async {
     final file = File(path);
     if (!file.existsSync() || file.lengthSync() == 0) return false;
@@ -135,7 +136,7 @@ class BackupService {
       }
     }
     if (head == null) return false;
-    return RegExp(r'^\s*\{\s*"').hasMatch(head);
+    return RegExp(r'^\s*\{').hasMatch(head);
   }
 
   /// Every stored resource as a collection Bundle, unencrypted.
