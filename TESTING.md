@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,452 tests** across 131 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,455 tests** across 132 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,290 | 119 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,293 | 120 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -58,12 +58,13 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/handlers/search_refusal_test.dart` | The store's three refusals reach the client as 400 OperationOutcomes, at every entry point |
 | `test/handlers/search_links_test.dart` | Self and paging links carry the parameters used; `_query` refused; `_count=0` |
 
-### fhirant_server — Middleware Tests (4 files)
+### fhirant_server — Middleware Tests (5 files)
 
 | File | Description |
 |------|-------------|
 | `test/middleware/auth_middleware_test.dart` | JWT validation, scope enforcement |
 | `test/middleware/audit_middleware_test.dart` | AuditEvent creation |
+| `test/middleware/audit_queue_test.dart` | REVIEW-2026-09-17 A16: a batch the store refuses (false) or throws on is an error in the log file; a written batch logs nothing (3) |
 | `test/middleware/cors_middleware_test.dart` | CORS headers |
 | `test/middleware/content_negotiation_test.dart` | Accept/Content-Type handling |
 

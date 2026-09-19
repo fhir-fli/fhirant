@@ -92,7 +92,16 @@ class AuditQueue {
 
   Future<void> _write(List<fhir.Resource> batch) async {
     try {
-      await db.saveResources(batch);
+      // saveResources answers false for a batch the store refused without
+      // throwing; that answer was ignored and the events were lost with
+      // no line in the log (REVIEW-2026-09-17 A16).
+      final written = await db.saveResources(batch);
+      if (!written) {
+        FhirantLogging().logError(
+          'Audit write of ${batch.length} event(s) failed: the store '
+          'refused the batch',
+        );
+      }
     } catch (e, stack) {
       // The events are already built; a failed write is logged with what it
       // held rather than lost silently. Never thrown into the timer.

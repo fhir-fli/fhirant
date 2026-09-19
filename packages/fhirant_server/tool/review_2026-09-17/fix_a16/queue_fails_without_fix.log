@@ -1,0 +1,22 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/middleware/audit_queue_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: a batch the store refuses (false) is an error in the log
+00:00 +0 -1: a batch the store refuses (false) is an error in the log [E]
+  Expected: contains 'Audit write of 1 event(s) failed'
+    Actual: ''
+     Which: does not contain 'Audit write of 1 event(s) failed'
+  
+  package:matcher                             expect
+  test/middleware/audit_queue_test.dart 63:5  main.<fn>
+  
+00:00 +0 -1: a batch the store writes (true) logs nothing
+00:00 +1 -1: a batch the store throws on is an error in the log, and the queue survives
+{"timestamp":"2026-09-19T01:40:52.461220","level":"SEVERE","message":"Audit write of 1 event(s) failed","error":"Bad state: locked","stackTrace":"#0      When.thenThrow.<anonymous closure> (package:mocktail/src/mocktail.dart:249:7)\n#1      Mock.noSuchMethod (package:mocktail/src/mocktail.dart:131:37)\n#2      MockFhirAntDb.saveResources (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/middleware/audit_queue_test.dart:10:7)\n#3      AuditQueue._write (package:fhirant_server/src/middlewares/audit_middleware.dart:95:16)\n#4      AuditQueue._flush (package:fhirant_server/src/middlewares/audit_middleware.dart:84:19)\n#5      AuditQueue.drain (package:fhirant_server/src/middlewares/audit_middleware.dart:71:13)\n#6      main.logAfter (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/middleware/audit_queue_test.dart:53:14)\n#7      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/middleware/audit_queue_test.dart:79:23)\n#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)\n<asynchronous suspension>\n#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)\n<asynchronous suspension>\n#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)\n<asynchronous suspension>\n"}
+00:00 +2 -1: (tearDownAll)
+00:00 +2 -1: Some tests failed.
+
+Failing tests:
+  test/middleware/audit_queue_test.dart: a batch the store refuses (false) is an error in the log
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
