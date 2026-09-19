@@ -5,6 +5,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -70,6 +71,7 @@ Future<Response> changePasswordHandler(
     FhirantLogging().logInfo('Password changed for user ${user.id}');
     return Response.ok(
       jsonEncode(_tokenPair(jwtService, await _fresh(dbInterface, user.id))),
+      headers: jsonNoStoreHeaders,
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Password change failed', e, stackTrace);

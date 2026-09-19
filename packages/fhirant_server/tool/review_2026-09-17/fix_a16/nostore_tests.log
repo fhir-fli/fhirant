@@ -1,0 +1,9 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/no_store_test.dart
+00:00 +0: the first registration (tokens in the body)
+00:00 +1: login
+00:00 +2: the refresh grant
+00:00 +3: the authorization code grant and the JSON authorize response
+00:01 +4: the JSON authorize response (the code in the body)
+00:01 +5: the form authorize redirect (the code in Location)
+00:01 +6: a password change (a fresh token pair)
+00:02 +7: All tests passed!

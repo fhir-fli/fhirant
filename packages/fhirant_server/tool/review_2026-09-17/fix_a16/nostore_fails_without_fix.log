@@ -1,0 +1,82 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/no_store_test.dart
+00:00 +0: the first registration (tokens in the body)
+00:00 +0 -1: the first registration (tokens in the body) [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                           expect
+  test/integration/no_store_test.dart 63:5  main.expectNoStore
+  test/integration/no_store_test.dart 73:5  main.<fn>
+  
+00:00 +0 -1: login
+00:00 +0 -2: login [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                           expect
+  test/integration/no_store_test.dart 63:5  main.expectNoStore
+  test/integration/no_store_test.dart 83:5  main.<fn>
+  
+00:00 +0 -2: the refresh grant
+00:00 +0 -3: the refresh grant [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                           expect
+  test/integration/no_store_test.dart 63:5  main.expectNoStore
+  test/integration/no_store_test.dart 99:5  main.<fn>
+  
+00:00 +0 -3: the authorization code grant and the JSON authorize response
+00:01 +0 -4: the authorization code grant and the JSON authorize response [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                            expect
+  test/integration/no_store_test.dart 63:5   main.expectNoStore
+  test/integration/no_store_test.dart 121:5  main.<fn>
+  
+00:01 +0 -4: the JSON authorize response (the code in the body)
+00:01 +0 -5: the JSON authorize response (the code in the body) [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                            expect
+  test/integration/no_store_test.dart 63:5   main.expectNoStore
+  test/integration/no_store_test.dart 144:5  main.<fn>
+  
+00:01 +0 -5: the form authorize redirect (the code in Location)
+00:01 +0 -6: the form authorize redirect (the code in Location) [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                            expect
+  test/integration/no_store_test.dart 63:5   main.expectNoStore
+  test/integration/no_store_test.dart 159:5  main.<fn>
+  
+00:01 +0 -6: a password change (a fresh token pair)
+00:02 +0 -7: a password change (a fresh token pair) [E]
+  Expected: 'no-store'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                            expect
+  test/integration/no_store_test.dart 63:5   main.expectNoStore
+  test/integration/no_store_test.dart 185:5  main.<fn>
+  
+00:02 +0 -7: Some tests failed.
+
+Failing tests:
+  test/integration/no_store_test.dart: a password change (a fresh token pair)
+  test/integration/no_store_test.dart: login
+  test/integration/no_store_test.dart: the JSON authorize response (the code in the body)
+  test/integration/no_store_test.dart: the authorization code grant and the JSON authorize response
+  ... and 3 more
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

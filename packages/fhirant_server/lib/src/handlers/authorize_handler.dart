@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
+import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
@@ -217,7 +218,8 @@ Future<Response> authorizePostHandler(
     );
     switch (outcome) {
       case _Issued(redirectUrl: final url):
-        return Response(302, headers: {'Location': url});
+        // The code travels in Location (RFC 6749 5.1, utils/no_store.dart).
+        return Response(302, headers: {'Location': url, ...noStoreHeaders});
       case _Denied(description: final message):
         return form(message);
       case _Invalid(:final error, :final description, :final redirectable):
@@ -327,7 +329,7 @@ Future<Response> authorizeJsonHandler(
             'state': state,
             'redirect_uri': url,
           }),
-          headers: {'Content-Type': 'application/json'},
+          headers: jsonNoStoreHeaders,
         );
       case _Denied(:final status, :final description):
         return error(status, 'access_denied', description);

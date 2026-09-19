@@ -5,6 +5,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/token_bound.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/pkce.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
@@ -250,7 +251,7 @@ Future<Response> _handleAuthorizationCodeGrant(
       'role': user.role,
       if (patientId != null) 'patient': patientId,
     }),
-    headers: {'Content-Type': 'application/json'},
+    headers: jsonNoStoreHeaders,
   );
 }
 
@@ -416,7 +417,7 @@ Future<Response> _handleRefreshTokenGrant(
       'scopes': scopes,
       if (patientId != null) 'patient': patientId,
     }),
-    headers: {'Content-Type': 'application/json'},
+    headers: jsonNoStoreHeaders,
   );
 }
 

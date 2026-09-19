@@ -5,6 +5,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -225,6 +226,7 @@ Future<Response> registerHandler(
         'scopes': effectiveScopes,
         if (patientId != null) 'patient': patientId,
       }),
+      headers: jsonNoStoreHeaders,
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Registration failed', e, stackTrace);
