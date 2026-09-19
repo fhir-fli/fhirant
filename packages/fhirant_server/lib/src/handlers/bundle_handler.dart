@@ -4,6 +4,8 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/handlers/resource_handler.dart'
+    show SearchRefused, typeSearch;
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
@@ -58,6 +60,9 @@ Future<Response> _processTransaction(
   FhirantLogging().logInfo(
     'Processing Transaction Bundle with ${bundle.entry!.length} entries',
   );
+  // The caller's `Prefer: handling` applies to every search entry as it
+  // would to the same search sent on its own.
+  final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
   final baseUrl =
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final operations = <_BundleOperation>[];
@@ -126,6 +131,7 @@ Future<Response> _processTransaction(
             urnMap,
             subscriptions,
             principal,
+            handling: handling,
             assignedId: assignedIds[i],
           );
           operations.add(operation);
@@ -202,6 +208,7 @@ Future<Response> _processBatch(
 ) async {
   FhirantLogging()
       .logInfo('Processing Batch Bundle with ${bundle.entry!.length} entries');
+  final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
   final baseUrl =
       '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
   final resultEntries = <fhir.BundleEntry>[];
@@ -251,6 +258,7 @@ Future<Response> _processBatch(
         urnMap,
         subscriptions,
         principal,
+        handling: handling,
         assignedId: assignedIds[i],
       );
       operations.add(operation);
@@ -509,6 +517,7 @@ Future<_BundleOperation> _processBundleEntry(
   Map<String, String> urnMap,
   SubscriptionService subscriptions,
   Principal? principal, {
+  required String handling,
   String? assignedId,
 }) async {
   final req = entry.request!;
@@ -570,8 +579,10 @@ Future<_BundleOperation> _processBundleEntry(
         resultResource = await _entrySearch(
           dbInterface,
           resourceTypeEnum,
-          query,
+          url,
           baseUrl,
+          handling,
+          principal,
           principal?.compartmentFor(resourceType, 's'),
           entryIndex,
         );
@@ -1009,66 +1020,41 @@ Future<_BundleOperation> _processBundleEntry(
   );
 }
 
-/// A type-level GET inside a Bundle: the search, answered as a searchset
-/// Bundle with `total` and the page's match entries. The page is `_count`
-/// (default 20) and `_offset`; `_sort` is applied; a parameter the store
-/// has no definition for is ignored, as on the REST path under lenient
-/// handling. Inside [compartment] when the caller's search of the type is
+/// A type-level GET inside a Bundle: the same search the REST path runs
+/// ([typeSearch]), answered as a searchset Bundle inside the entry. The
+/// entry's URL under the base is what its links are built from; the
+/// caller's `Prefer: handling` and principal apply to it as to a REST
+/// search, inside [compartment] when the caller's search of the type is
 /// confined.
+///
+/// This used to be a second search of its own that knew `searchParams`,
+/// `_count`, `_offset` and `_sort` and nothing else: `_has`, `_include`,
+/// `_revinclude`, `_summary`, `_elements`, `_filter` and `_total` were
+/// dropped, so `Patient?_has:Observation:patient:code=x` inside a batch
+/// answered every patient (fhirant REVIEW-2026-09-17 Q6).
 Future<fhir.Bundle> _entrySearch(
   FhirAntDb dbInterface,
   fhir.R4ResourceType type,
-  Map<String, List<String>> query,
+  String entryUrl,
   String baseUrl,
+  String handling,
+  Principal? principal,
   CompartmentScope? compartment,
   int entryIndex,
 ) async {
-  final parsed = SearchParameterParser.parseQueryParameters(query);
-  final invalid = parsed['invalidParams'] as List<String>?;
-  if (invalid != null) {
-    throw BundleEntryException(
-      400,
-      'Bundle entry $entryIndex: ${invalid.join('; ')}',
-    );
-  }
-  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
-  final count = parsed['count'] as int? ?? 20;
-  final offset = parsed['offset'] as int? ?? 0;
-  final sort = parsed['sort'] as List<String>?;
+  final requestedUri = Uri.parse('$baseUrl/$entryUrl');
   try {
-    final total = await dbInterface.searchCount(
-      resourceType: type,
-      searchParameters: searchParams,
+    return await typeSearch(
+      dbInterface,
+      type,
+      requestedUri.queryParametersAll,
+      requestedUri: requestedUri,
+      handling: handling,
+      principal: principal,
       compartment: compartment,
     );
-    final page = count == 0
-        ? const <fhir.Resource>[]
-        : await dbInterface.search(
-            resourceType: type,
-            searchParameters: searchParams,
-            count: count,
-            offset: offset,
-            sort: sort,
-            compartment: compartment,
-          );
-    return fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      total: fhir.FhirUnsignedInt(total),
-      entry: page.isEmpty
-          ? null
-          : [
-              for (final r in page)
-                fhir.BundleEntry(
-                  resource: r,
-                  fullUrl: fhir.FhirUri(
-                    '$baseUrl/${r.resourceTypeString}/${r.id?.valueString}',
-                  ),
-                  search: const fhir.BundleSearch(
-                    mode: fhir.SearchEntryMode.match,
-                  ),
-                ),
-            ],
-    );
+  } on SearchRefused catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
   } on UnsupportedSearchModifier catch (e) {
     throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
   } on InvalidSearchValue catch (e) {

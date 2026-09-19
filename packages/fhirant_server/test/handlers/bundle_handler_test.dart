@@ -43,6 +43,9 @@ void main() {
       );
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('processes transaction with POST entry', () async {
@@ -247,6 +250,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('processes valid batch', () async {
@@ -409,6 +415,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('transaction with DELETE entry succeeds', () async {
@@ -545,6 +554,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('transaction PATCH via Binary succeeds', () async {
@@ -708,6 +720,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('POST creates resource, subsequent reference resolved', () async {
@@ -1089,6 +1104,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     // This group used to assert that a failed transaction issued compensating
@@ -1185,6 +1203,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('POST entry response includes etag and lastModified', () async {
@@ -1327,6 +1348,9 @@ void main() {
       _stubTransaction(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
+      // The caller's `Prefer: handling` is read once per Bundle for its
+      // search entries (REVIEW-2026-09-17 Q6).
+      when(() => mockRequest.headers).thenReturn(const <String, String>{});
     });
 
     test('POST with ifNoneExist returns existing (200)', () async {

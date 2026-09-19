@@ -1,0 +1,16 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/services/backup_file_test.dart
+00:00 +0: an encrypted backup that happens to start with "{" is not JSON
+00:00 +0 -1: an encrypted backup that happens to start with "{" is not JSON [E]
+  Expected: false
+    Actual: <true>
+  
+  package:matcher                            expect
+  test/services/backup_file_test.dart 218:5  main.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/services/backup_file_test.dart: an encrypted backup that happens to start with "{" is not JSON
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

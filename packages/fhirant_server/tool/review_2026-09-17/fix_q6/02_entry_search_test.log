@@ -1,0 +1,44 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/bundle_entry_search_test.dart
+00:00 +0: a batch entry search answers exactly what the REST search answers
+00:00 +0 -1: a batch entry search answers exactly what the REST search answers [E]
+  Expected: '200'
+    Actual: '400'
+     Which: is different.
+            Expected: 200
+              Actual: 400
+                      ^
+             Differ at offset 0
+  {"response":{"status":"400","outcome":{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Bundle entry 5: \"eq\" on a string parameter is not supported. It means the whole value, compared case-insensitively; this server offers starts-with (sw) and :exact, and neither is that comparison."}]}}}
+  
+  package:matcher                                        expect
+  test/integration/bundle_entry_search_test.dart 120:11  main.entrySets.<fn>
+  test/integration/bundle_entry_search_test.dart 126:10  main.entrySets
+  ===== asynchronous gap ===========================
+  test/integration/bundle_entry_search_test.dart 168:18  main.<fn>
+  
+00:00 +0 -1: the answers are the ones the parameters ask for
+00:00 +0 -2: the answers are the ones the parameters ask for [E]
+  Expected: '200'
+    Actual: '400'
+     Which: is different.
+            Expected: 200
+              Actual: 400
+                      ^
+             Differ at offset 0
+  {"response":{"status":"400","outcome":{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Bundle entry 5: \"eq\" on a string parameter is not supported. It means the whole value, compared case-insensitively; this server offers starts-with (sw) and :exact, and neither is that comparison."}]}}}
+  
+  package:matcher                                        expect
+  test/integration/bundle_entry_search_test.dart 120:11  main.entrySets.<fn>
+  test/integration/bundle_entry_search_test.dart 126:10  main.entrySets
+  ===== asynchronous gap ===========================
+  test/integration/bundle_entry_search_test.dart 179:18  main.<fn>
+  
+00:00 +0 -2: Prefer: handling=strict reaches the entry
+00:00 +1 -2: Some tests failed.
+
+Failing tests:
+  test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+  test/integration/bundle_entry_search_test.dart: the answers are the ones the parameters ask for
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

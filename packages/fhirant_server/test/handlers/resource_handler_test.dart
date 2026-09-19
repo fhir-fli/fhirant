@@ -1058,11 +1058,12 @@ void main() {
     });
 
     test('_include + _summary=text returns 400', () async {
-      when(() => mockRequest.url).thenReturn(
-        Uri.parse(
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text',
-        ),
-      );
+      const url =
+          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text';
+      when(() => mockRequest.url).thenReturn(Uri.parse(url));
+      // The search takes the requested URI up front now (its links are
+      // built from it), before it refuses this combination.
+      when(() => mockRequest.requestedUri).thenReturn(Uri.parse(url));
 
       final response = await getResourcesHandler(
         mockRequest,

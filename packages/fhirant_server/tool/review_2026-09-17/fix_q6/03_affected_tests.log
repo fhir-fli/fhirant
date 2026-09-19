@@ -1,0 +1,72 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/bundle_handler_test.dart
+00:00 +0: test/handlers/bundle_handler_test.dart: (setUpAll)
+00:00 +0: test/handlers/bundle_handler_test.dart: bundleHandler - transaction processes transaction with POST entry
+00:00 +1: test/handlers/bundle_handler_test.dart: bundleHandler - transaction processes transaction with GET entry
+00:00 +2: test/handlers/bundle_handler_test.dart: bundleHandler - transaction returns 400 for entry missing request
+00:00 +3: test/handlers/bundle_handler_test.dart: bundleHandler - transaction returns 400 for invalid resource type in entry
+00:00 +4: test/handlers/bundle_handler_test.dart: bundleHandler - transaction returns 400 for non-transaction/batch bundle type
+00:00 +5: test/handlers/bundle_handler_test.dart: bundleHandler - transaction returns 400 for empty bundle entries
+00:00 +6: test/handlers/bundle_handler_test.dart: bundleHandler - batch processes valid batch
+00:00 +7: test/handlers/bundle_handler_test.dart: bundleHandler - batch batch continues after individual entry failure
+00:00 +8: test/handlers/bundle_handler_test.dart: bundleHandler - batch batch handles missing request gracefully
+00:00 +9: test/handlers/bundle_handler_test.dart: bundleHandler - DELETE transaction with DELETE entry succeeds
+00:00 +10: test/handlers/bundle_handler_test.dart: bundleHandler - DELETE transaction DELETE non-existent returns 404
+00:00 +11: test/handlers/resource_handler_test.dart: (setUpAll)
+00:00 +12: test/handlers/resource_handler_test.dart: (setUpAll)
+00:00 +12: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +13: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +14: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +15: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +16: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +17: test/handlers/bundle_handler_test.dart: bundleHandler - urn:uuid resolution multiple urn:uuid references all resolved
+00:00 +18: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +19: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +20: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +21: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +22: test/handlers/bundle_handler_test.dart: bundleHandler - transaction rollback the transaction is what carries the writes
+00:00 +23: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 400 when resource type is invalid
+00:00 +24: test/handlers/bundle_handler_test.dart: bundleHandler - response enrichment POST entry response includes etag and lastModified
+00:00 +25: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +26: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +27: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +28: test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations PUT with ifMatch version mismatch fails transaction
+00:00 +29: test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations PUT with ifMatch version mismatch fails transaction
+00:00 +30: test/handlers/resource_handler_test.dart: deleteResourceHandler If-Match matching allows delete
+00:00 +31: test/handlers/resource_handler_test.dart: deleteResourceHandler If-Match non-matching returns 412
+00:00 +32: test/handlers/resource_handler_test.dart: deleteResourceHandler no If-Match header allows delete normally
+00:00 +33: test/handlers/resource_handler_test.dart: deleteResourceHandler patient scope denies delete of resource outside compartment
+00:00 +34: test/handlers/resource_handler_test.dart: deleteResourceHandler patient scope allows delete of own Patient resource
+00:00 +35: test/handlers/resource_handler_test.dart: getResourcesHandler uses pagination when no search parameters provided
+00:00 +36: test/handlers/resource_handler_test.dart: getResourcesHandler uses search when search parameters are provided
+00:00 +37: test/handlers/resource_handler_test.dart: getResourcesHandler returns 400 for invalid resource type
+00:00 +38: test/handlers/resource_handler_test.dart: getResourcesHandler handles default count and offset values
+00:00 +39: test/handlers/resource_handler_test.dart: getResourcesHandler pagination links include next when more results exist
+00:00 +40: test/handlers/resource_handler_test.dart: getResourcesHandler _include adds referenced resources to bundle with correct search.mode and fullUrl
+00:00 +41: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude adds referencing resources to bundle with search.mode
+00:00 +42: test/handlers/resource_handler_test.dart: getResourcesHandler _include with wildcard (*) extracts all references
+00:00 +43: test/handlers/resource_handler_test.dart: getResourcesHandler _include:iterate resolves transitive references
+00:00 +44: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude:iterate resolves transitive reverse references
+00:00 +45: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +46: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +47: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +48: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +49: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +50: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +51: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +52: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +53: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +54: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +55: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +56: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +57: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +58: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +59: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +60: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +61: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +62: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +63: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +64: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +65: test/integration/bundle_entry_search_test.dart: a batch entry search answers exactly what the REST search answers
+00:00 +66: test/integration/bundle_entry_search_test.dart: the answers are the ones the parameters ask for
+00:00 +67: test/integration/bundle_entry_search_test.dart: Prefer: handling=strict reaches the entry
+00:00 +68: All tests passed!

@@ -399,494 +399,35 @@ Future<Response> _searchResources(
   FhirAntDb dbInterface,
   Map<String, List<String>> queryParams,
 ) async {
+  final type = fhir.R4ResourceType.fromString(resourceType);
+  if (type == null) {
+    FhirantLogging().logWarning(
+      'Invalid resource type requested: $resourceType',
+    );
+    return _validationErrorResponse('Invalid resource type');
+  }
+  // Patient-level scope enforcement: the whole search runs inside the
+  // patient's compartment, as the compartment context of R4B search.html
+  // 3.1.1.2, one SQL condition in the store. A type the compartment does
+  // not include comes back empty from the store. This used to fetch every
+  // id in the compartment for the type and pass the list back in as `_id`.
+  final patientId = patientContextFor(request, resourceType, 's');
   try {
-    FhirantLogging().logInfo(
-      'Fetching resources of type: $resourceType',
-    );
-
-    // Parse query parameters into search params and pagination params
-    final parsed = SearchParameterParser.parseQueryParameters(queryParams);
-    final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
-    final include = parsed['include'] as List<String>?;
-    final revinclude = parsed['revinclude'] as List<String>?;
-    final includeIterate = parsed['includeIterate'] as List<String>?;
-    final revincludeIterate = parsed['revincludeIterate'] as List<String>?;
-
-    final hasParams = parsed['has'] as List<HasParameter>?;
-    final count = parsed['count'] as int? ?? 20;
-    final offset = parsed['offset'] as int? ?? 0;
-    final sort = parsed['sort'] as List<String>?;
-    final summary = parsed['summary'] as String?;
-    final elements = parsed['elements'] as List<String>?;
-    final total = parsed['total'] as String?;
-    final unknownParams = parsed['unknownParams'] as List<String>?;
-    final invalidParams = parsed['invalidParams'] as List<String>?;
-    if (invalidParams != null) {
-      return _searchRefusal(invalidParams.join('; '), fhir.IssueType.invalid);
-    }
-    final filter = parsed['filter'] as String?;
-    final contained = parsed['contained'] as String?;
-    final containedType = parsed['containedType'] as String?;
-    final namedQuery = parsed['query'] as String?;
-
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      FhirantLogging().logWarning(
-        'Invalid resource type requested: $resourceType',
-      );
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    // R4 3.1.1.7: "Servers processing search requests SHALL refuse to process
-    // a search request if they do not recognize the _query parameter value."
-    // This server defines no named queries, so every value is unrecognised.
-    if (namedQuery != null) {
-      return _searchRefusal(
-        'This server defines no named queries; _query=$namedQuery is not '
-        'recognised.',
-        fhir.IssueType.notSupported,
-      );
-    }
-
-    // R4 3.1.1.6: the self link carries "the parameters that were actually
-    // used", so what was used is decided once, here, and every link is built
-    // from it. A parameter the store has no definition for is ignored under
-    // lenient handling (3.1.1.3) and refused under strict, whether or not it
-    // starts with `_`: the old check only saw `_`-prefixed unknowns, so a
-    // strict client sending `?gendr=male` was answered 200 with every
-    // patient.
-    final links = SearchLinks.decide(resourceType, queryParams);
-    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
-    final refused = <String>[...?unknownParams, ...links.ignored];
-    if (handling == 'strict' && refused.isNotEmpty) {
-      return _validationErrorResponse(
-        // "Unsupported" rather than "unrecognized": the spec treats a
-        // parameter the server does not know and one it knows but does not
-        // implement the same way here, and _filter is the second kind.
-        'Unsupported search parameter(s): ${refused.join(', ')}',
-      );
-    }
-
-    // _contained: "Whether to return resources contained in other resources in
-    // the search matches — true | false | both (false is default)".
-    //
-    // The default is what this server does, so `false` and an absent parameter
-    // are answered normally. `true` and `both` are refused rather than
-    // silently answered with container matches only: a contained resource is
-    // not stored or indexed here, so the search cannot see one, and returning
-    // the containers would tell the client its search covered them.
-    if (contained != null) {
-      const allowed = {'true', 'false', 'both'};
-      if (!allowed.contains(contained)) {
-        return _validationErrorResponse(
-          '_contained must be true, false or both; got "$contained"',
-        );
-      }
-      if (contained != 'false') {
-        return _validationErrorResponse(
-          '_contained=$contained is not supported: this server does not index '
-          "resources held in another resource's contained element, so it "
-          'cannot search them. _contained=false, the default, is supported.',
-        );
-      }
-    }
-    if (containedType != null) {
-      const allowed = {'container', 'contained'};
-      if (!allowed.contains(containedType)) {
-        return _validationErrorResponse(
-          '_containedType must be container or contained; got '
-          '"$containedType"',
-        );
-      }
-      // With _contained=false nothing contained is returned, so this cannot
-      // change the answer and is not an error on its own.
-    }
-
-    // _summary and _elements are mutually exclusive (per FHIR spec)
-    if (summary != null &&
-        summary != 'false' &&
-        elements != null &&
-        elements.isNotEmpty) {
-      return _validationErrorResponse(
-        '_summary and _elements are mutually exclusive; specify only one',
-      );
-    }
-
-    // Reject _include/_revinclude combined with _summary=text (per FHIR spec)
-    final hasIncludes = (include != null && include.isNotEmpty) ||
-        (revinclude != null && revinclude.isNotEmpty) ||
-        (includeIterate != null && includeIterate.isNotEmpty) ||
-        (revincludeIterate != null && revincludeIterate.isNotEmpty);
-    if (hasIncludes && summary == 'text') {
-      return _validationErrorResponse(
-        '_include/_revinclude cannot be combined with _summary=text',
-      );
-    }
-
-    final hasHasParams = hasParams != null && hasParams.isNotEmpty;
-
-    // Patient-level scope enforcement: the whole search runs inside the
-    // patient's compartment, as the compartment context of R4B search.html
-    // 3.1.1.2, one SQL condition in the store. A type the compartment does
-    // not include comes back empty from the store. This used to fetch every
-    // id in the compartment for the type and pass the list back in as `_id`.
-    final patientId = patientContextFor(request, resourceType, 's');
-    final compartment =
-        patientId == null ? null : patientCompartment(patientId);
-
-    // _filter is evaluated into a set of ids, handed to the store as its own
-    // set (`ids:`) and ANDed there with every other parameter, which is what
-    // R4 3.1.1.4 says of parameters that appear together; the filter itself
-    // runs through the same index rather than a second engine beside it. A
-    // client's `_id` stays a parameter and ANDs in the store too. The ids
-    // used to be joined into one comma-separated `_id` value: the string,
-    // its re-parse and the existence check cost 14 of the 19.8 s of
-    // `_filter=status eq final` over 813k Observations (REVIEW-2026-09-06
-    // row 38). Evaluated before the count-only branch below, which used to
-    // run first and count without the filter.
-    Set<String>? filterIds;
-    if (filter != null && filter.trim().isNotEmpty) {
-      try {
-        filterIds = await FilterEvaluator(dbInterface, type)
-            .evaluate(parseFilter(filter));
-      } on FilterParseException catch (e) {
-        return _validationErrorResponse('Invalid _filter: $e');
-      } on FilterNotSupported catch (e) {
-        // R4 3.1.1.4.4 asks for "a clear error message" rather than a result
-        // set that means something the client did not ask for.
-        return _validationErrorResponse(e.message);
-      }
-      if (filterIds.isEmpty) {
-        return _emptySearchBundle(request, total, links);
-      }
-    }
-
-    // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
-    // _count has the value 0, this shall be treated the same as
-    // _summary=count: the server returns a bundle that reports the total
-    // number of resources that match in Bundle.total, but with no entries,
-    // and no prev/next/last links". The DAO reads a count of 0 as "no page",
-    // so without this branch `_count=0` returned every match.
-    if (summary == 'count' || count == 0) {
-      int totalCount;
-      if ((searchParams != null && searchParams.isNotEmpty) ||
-          hasHasParams ||
-          compartment != null ||
-          filterIds != null) {
-        totalCount = await dbInterface.searchCount(
-          resourceType: type,
-          searchParameters: searchParams,
-          hasParameters: hasParams,
-          compartment: compartment,
-          ids: filterIds,
-        );
-      } else {
-        totalCount = await dbInterface.getResourceCount(type);
-      }
-      final bundle = fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        total: fhir.FhirUnsignedInt(totalCount),
-        link: [links.self(request.requestedUri)],
-      );
-      return Response.ok(
-        bundle.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-
-    final effectiveSearchParams = searchParams;
-
-    // Use search if search parameters, _has params, or _sort are provided
-    final List<fhir.Resource> resources;
-    final hasSearchParams =
-        effectiveSearchParams != null && effectiveSearchParams.isNotEmpty;
-    final hasSort = sort != null && sort.isNotEmpty;
-    // One row past the page is fetched and dropped. Its presence is what says
-    // a `next` link is due, and it costs one extra row rather than a count:
-    // with `_total=none` — the thing that makes a page fast on a large
-    // database — the next link used to vanish, because it was derived from
-    // `offset + count < total` and there was no total. R4 search.html asks
-    // for no total to page; the link is what pages.
-    final probeCount = count > 0 ? count + 1 : count;
-    final List<fhir.Resource> fetched;
-    if (hasSearchParams ||
-        hasHasParams ||
-        hasSort ||
-        compartment != null ||
-        filterIds != null) {
-      // Use search functionality
-      fetched = await dbInterface.search(
-        resourceType: type,
-        searchParameters: effectiveSearchParams,
-        hasParameters: hasParams,
-        count: probeCount,
-        offset: offset,
-        sort: sort,
-        compartment: compartment,
-        ids: filterIds,
-      );
-    } else {
-      // Fall back to simple pagination if no search parameters
-      fetched = await dbInterface.getResourcesWithPagination(
-        resourceType: type,
-        count: probeCount,
-        offset: offset,
-      );
-    }
-    final hasMore = count > 0 && fetched.length > count;
-    resources = hasMore ? fetched.sublist(0, count) : fetched;
-
-    final baseUrl = request.requestedUri.hasPort
-        ? '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}'
-        : '${request.requestedUri.scheme}://${request.requestedUri.host}';
-
-    // Get total count (respects _total parameter)
-    // _total=none: skip count entirely, _total=estimate: use same as accurate
-    int? totalCount;
-    if (total != 'none') {
-      if (hasSearchParams ||
-          hasHasParams ||
-          compartment != null ||
-          filterIds != null) {
-        totalCount = await dbInterface.searchCount(
-          resourceType: type,
-          searchParameters: effectiveSearchParams,
-          hasParameters: hasParams,
-          compartment: compartment,
-          ids: filterIds,
-        );
-      } else {
-        totalCount = await dbInterface.getResourceCount(type);
-      }
-    }
-
-    // R4 3.1.1.5.3 and 3.1.1.6: every link is built from the parameters
-    // actually used, with only `_offset` changed. `first` and `self` are
-    // always present; `previous` when there is a page before this one;
-    // `next` from the probe row, so it survives `_total=none`; `last` when
-    // the total is known.
-    final requested = request.requestedUri;
-    final bundleLinks = <fhir.BundleLink>[
-      links.self(requested),
-    ];
-    if (count > 0) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('first'),
-          url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
-        ),
-      );
-      if (offset > 0) {
-        final prevOffset = (offset - count).clamp(0, offset);
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('previous'),
-            url: fhir.FhirUri(
-              links.url(requested, offset: prevOffset).toString(),
-            ),
-          ),
-        );
-      }
-      if (hasMore) {
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('next'),
-            url: fhir.FhirUri(
-              links.url(requested, offset: offset + count).toString(),
-            ),
-          ),
-        );
-      }
-      if (totalCount != null && totalCount > 0) {
-        final lastOffset = ((totalCount - 1) ~/ count) * count;
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('last'),
-            url: fhir.FhirUri(
-              links.url(requested, offset: lastOffset).toString(),
-            ),
-          ),
-        );
-      }
-    }
-
-    // Handle empty results
-    if (resources.isEmpty) {
-      final bundle = fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
-        link: [links.self(requested)],
-      );
-
-      FhirantLogging().logInfo(
-        'Successfully fetched 0 resources of type: $resourceType',
-      );
-      return Response.ok(
-        bundle.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-
-    // Process _include and _revinclude parameters. The page carries at most
-    // [maxIncluded] included resources; past that, the rest are left out and
-    // an OperationOutcome entry says so (see [_includeBudgetOutcome]).
-    final includedResources = <fhir.Resource>[];
-    final includedResourceIds = <String>{};
-    var includesTruncated = false;
-    // An include is a read of another resource, and gets the same answer a
-    // direct read would: a type the token may not read is left out, and a
-    // type confined to the patient compartment yields only its members. An
-    // include used to be neither scope- nor compartment-checked, so
-    // `_include=Observation:has-member` handed a patient another patient's
-    // Observation (REVIEW-2026-09-08 row 10).
-    final principal = Principal.of(request);
-    int remaining() => maxIncluded - includedResources.length;
-
-    if (include != null && include.isNotEmpty) {
-      includesTruncated |= await _processIncludes(
-        include,
-        resources,
-        includedResources,
-        includedResourceIds,
-        dbInterface,
-        principal: principal,
-        limit: remaining(),
-      );
-    }
-
-    // _include:iterate — iteratively resolve references from newly
-    // included resources
-    if (includeIterate != null && includeIterate.isNotEmpty) {
-      var newlyIncluded = List<fhir.Resource>.from(includedResources);
-      for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
-        if (remaining() <= 0) {
-          includesTruncated = true;
-          break;
-        }
-        final nextBatch = <fhir.Resource>[];
-        final nextBatchIds = <String>{};
-        includesTruncated |= await _processIncludes(
-          includeIterate,
-          newlyIncluded,
-          nextBatch,
-          nextBatchIds,
-          dbInterface,
-          principal: principal,
-          existingIds: includedResourceIds,
-          limit: remaining(),
-        );
-        if (nextBatch.isEmpty) break;
-        includedResources.addAll(nextBatch);
-        includedResourceIds.addAll(nextBatchIds);
-        newlyIncluded = nextBatch;
-      }
-    }
-
-    if (revinclude != null && revinclude.isNotEmpty) {
-      includesTruncated |= await _processRevIncludes(
-        revinclude,
-        resources,
-        includedResources,
-        includedResourceIds,
-        dbInterface,
-        principal: principal,
-        limit: remaining(),
-      );
-    }
-
-    // _revinclude:iterate — iteratively find resources referencing newly
-    // included
-    if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
-      var newlyIncluded = List<fhir.Resource>.from(includedResources);
-      for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
-        if (remaining() <= 0) {
-          includesTruncated = true;
-          break;
-        }
-        final nextBatch = <fhir.Resource>[];
-        final nextBatchIds = <String>{};
-        includesTruncated |= await _processRevIncludes(
-          revincludeIterate,
-          newlyIncluded,
-          nextBatch,
-          nextBatchIds,
-          dbInterface,
-          principal: principal,
-          existingIds: includedResourceIds,
-          limit: remaining(),
-        );
-        if (nextBatch.isEmpty) break;
-        includedResources.addAll(nextBatch);
-        includedResourceIds.addAll(nextBatchIds);
-        newlyIncluded = nextBatch;
-      }
-    }
-
-    // Apply response shaping (_summary / _elements) to each resource
-    fhir.Resource shapeResource(fhir.Resource resource) {
-      if (summary != null && summary != 'false') {
-        final json =
-            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-        final shaped = FhirResponseShaper.shapeSummary(json, summary);
-        return fhir.Resource.fromJson(shaped);
-      } else if (elements != null && elements.isNotEmpty) {
-        final json =
-            jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-        final shaped = FhirResponseShaper.shapeElements(json, elements);
-        return fhir.Resource.fromJson(shaped);
-      }
-      return resource;
-    }
-
-    // Build match entries (from search results)
-    final matchEntries = resources.map((resource) {
-      final shaped = shapeResource(resource);
-      final resourceId = shaped.id?.toString() ?? '';
-      final resType = shaped.resourceTypeString;
-      final fullUrl = resourceId.isNotEmpty
-          ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
-          : null;
-      return fhir.BundleEntry(
-        resource: shaped,
-        fullUrl: fullUrl,
-        search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-      );
-    }).toList();
-
-    // Build include entries (from _include/_revinclude results)
-    final includeEntries = includedResources.map((resource) {
-      final shaped = shapeResource(resource);
-      final resourceId = shaped.id?.toString() ?? '';
-      final resType = shaped.resourceTypeString;
-      final fullUrl = resourceId.isNotEmpty
-          ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
-          : null;
-      return fhir.BundleEntry(
-        resource: shaped,
-        fullUrl: fullUrl,
-        search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.include),
-      );
-    }).toList();
-
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      entry: [
-        ...matchEntries,
-        ...includeEntries,
-        if (includesTruncated) _includeBudgetOutcome(),
-      ],
-      total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
-      link: bundleLinks,
-    );
-
-    FhirantLogging().logInfo(
-      'Successfully fetched ${resources.length} '
-      'resources of type: $resourceType',
+    final bundle = await typeSearch(
+      dbInterface,
+      type,
+      queryParams,
+      requestedUri: request.requestedUri,
+      handling: FhirHttpHeaders.parsePreferHandling(request.headers),
+      principal: Principal.of(request),
+      compartment: patientId == null ? null : patientCompartment(patientId),
     );
     return Response.ok(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
     );
+  } on SearchRefused catch (e) {
+    return _searchRefusal(e.message, e.code);
   } on ValueSetRefusal catch (e) {
     // `:in` / `:not-in` against a ValueSet this store cannot evaluate, or
     // does not hold (REVIEW-2026-09-06 finding 24, REVIEW-2026-09-17 T1):
@@ -916,6 +457,518 @@ Future<Response> _searchResources(
     );
     return _errorResponse('Failed to fetch resources', 'Internal error');
   }
+}
+
+/// The type-level search, `GET [base]/[type]?[parameters]`: the searchset
+/// Bundle for [queryParams] on [type], with `_has`, `_include`,
+/// `_revinclude`, `_summary`, `_elements`, `_filter`, `_total`, the page
+/// and its links, or a [SearchRefused] for a query the server will not
+/// answer (issue code and message as the REST path has always sent them).
+///
+/// ONE search. The REST handler wraps the Bundle in a Response and a
+/// `SearchRefused` in a 400; a type-level GET entry of a batch or
+/// transaction Bundle wraps them in an entry. The entry used to run a second,
+/// reduced search that knew `searchParams`, `_count`, `_offset` and `_sort`
+/// and nothing else, so `Patient?_has:...` inside a batch answered every
+/// patient (fhirant REVIEW-2026-09-17 Q6).
+///
+/// [requestedUri] is what the links are built from (the REST request's
+/// URI; for an entry, the entry's URL under the base). [handling] is the
+/// `Prefer: handling=` value in force. Includes are authorised against
+/// [principal], and the whole search runs inside [compartment] when the
+/// caller's search of the type is confined.
+Future<fhir.Bundle> typeSearch(
+  FhirAntDb dbInterface,
+  fhir.R4ResourceType type,
+  Map<String, List<String>> queryParams, {
+  required Uri requestedUri,
+  required String handling,
+  Principal? principal,
+  CompartmentScope? compartment,
+}) async {
+  final resourceType = type.toString();
+  FhirantLogging().logInfo('Fetching resources of type: $resourceType');
+
+  // Parse query parameters into search params and pagination params
+  final parsed = SearchParameterParser.parseQueryParameters(queryParams);
+  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  final include = parsed['include'] as List<String>?;
+  final revinclude = parsed['revinclude'] as List<String>?;
+  final includeIterate = parsed['includeIterate'] as List<String>?;
+  final revincludeIterate = parsed['revincludeIterate'] as List<String>?;
+
+  final hasParams = parsed['has'] as List<HasParameter>?;
+  final count = parsed['count'] as int? ?? 20;
+  final offset = parsed['offset'] as int? ?? 0;
+  final sort = parsed['sort'] as List<String>?;
+  final summary = parsed['summary'] as String?;
+  final elements = parsed['elements'] as List<String>?;
+  final total = parsed['total'] as String?;
+  final unknownParams = parsed['unknownParams'] as List<String>?;
+  final invalidParams = parsed['invalidParams'] as List<String>?;
+  if (invalidParams != null) {
+    throw SearchRefused(fhir.IssueType.invalid, invalidParams.join('; '));
+  }
+  final filter = parsed['filter'] as String?;
+  final contained = parsed['contained'] as String?;
+  final containedType = parsed['containedType'] as String?;
+  final namedQuery = parsed['query'] as String?;
+
+  // R4 3.1.1.7: "Servers processing search requests SHALL refuse to process
+  // a search request if they do not recognize the _query parameter value."
+  // This server defines no named queries, so every value is unrecognised.
+  if (namedQuery != null) {
+    throw SearchRefused(
+      fhir.IssueType.notSupported,
+      'This server defines no named queries; _query=$namedQuery is not '
+      'recognised.',
+    );
+  }
+
+  // R4 3.1.1.6: the self link carries "the parameters that were actually
+  // used", so what was used is decided once, here, and every link is built
+  // from it. A parameter the store has no definition for is ignored under
+  // lenient handling (3.1.1.3) and refused under strict, whether or not it
+  // starts with `_`: the old check only saw `_`-prefixed unknowns, so a
+  // strict client sending `?gendr=male` was answered 200 with every
+  // patient.
+  final links = SearchLinks.decide(resourceType, queryParams);
+  final refused = <String>[...?unknownParams, ...links.ignored];
+  if (handling == 'strict' && refused.isNotEmpty) {
+    throw SearchRefused(
+      fhir.IssueType.processing,
+      // "Unsupported" rather than "unrecognized": the spec treats a
+      // parameter the server does not know and one it knows but does not
+      // implement the same way here, and _filter is the second kind.
+      'Unsupported search parameter(s): ${refused.join(', ')}',
+    );
+  }
+
+  // _contained: "Whether to return resources contained in other resources in
+  // the search matches — true | false | both (false is default)".
+  //
+  // The default is what this server does, so `false` and an absent parameter
+  // are answered normally. `true` and `both` are refused rather than
+  // silently answered with container matches only: a contained resource is
+  // not stored or indexed here, so the search cannot see one, and returning
+  // the containers would tell the client its search covered them.
+  if (contained != null) {
+    const allowed = {'true', 'false', 'both'};
+    if (!allowed.contains(contained)) {
+      throw SearchRefused(
+        fhir.IssueType.processing,
+        '_contained must be true, false or both; got "$contained"',
+      );
+    }
+    if (contained != 'false') {
+      throw SearchRefused(
+        fhir.IssueType.processing,
+        '_contained=$contained is not supported: this server does not index '
+        "resources held in another resource's contained element, so it "
+        'cannot search them. _contained=false, the default, is supported.',
+      );
+    }
+  }
+  if (containedType != null) {
+    const allowed = {'container', 'contained'};
+    if (!allowed.contains(containedType)) {
+      throw SearchRefused(
+        fhir.IssueType.processing,
+        '_containedType must be container or contained; got '
+        '"$containedType"',
+      );
+    }
+    // With _contained=false nothing contained is returned, so this cannot
+    // change the answer and is not an error on its own.
+  }
+
+  // _summary and _elements are mutually exclusive (per FHIR spec)
+  if (summary != null &&
+      summary != 'false' &&
+      elements != null &&
+      elements.isNotEmpty) {
+    throw const SearchRefused(
+      fhir.IssueType.processing,
+      '_summary and _elements are mutually exclusive; specify only one',
+    );
+  }
+
+  // Reject _include/_revinclude combined with _summary=text (per FHIR spec)
+  final hasIncludes = (include != null && include.isNotEmpty) ||
+      (revinclude != null && revinclude.isNotEmpty) ||
+      (includeIterate != null && includeIterate.isNotEmpty) ||
+      (revincludeIterate != null && revincludeIterate.isNotEmpty);
+  if (hasIncludes && summary == 'text') {
+    throw const SearchRefused(
+      fhir.IssueType.processing,
+      '_include/_revinclude cannot be combined with _summary=text',
+    );
+  }
+
+  final hasHasParams = hasParams != null && hasParams.isNotEmpty;
+
+  // _filter is evaluated into a set of ids, handed to the store as its own
+  // set (`ids:`) and ANDed there with every other parameter, which is what
+  // R4 3.1.1.4 says of parameters that appear together; the filter itself
+  // runs through the same index rather than a second engine beside it. A
+  // client's `_id` stays a parameter and ANDs in the store too. The ids
+  // used to be joined into one comma-separated `_id` value: the string,
+  // its re-parse and the existence check cost 14 of the 19.8 s of
+  // `_filter=status eq final` over 813k Observations (REVIEW-2026-09-06
+  // row 38). Evaluated before the count-only branch below, which used to
+  // run first and count without the filter.
+  Set<String>? filterIds;
+  if (filter != null && filter.trim().isNotEmpty) {
+    try {
+      filterIds = await FilterEvaluator(dbInterface, type)
+          .evaluate(parseFilter(filter));
+    } on FilterParseException catch (e) {
+      throw SearchRefused(fhir.IssueType.processing, 'Invalid _filter: $e');
+    } on FilterNotSupported catch (e) {
+      // R4 3.1.1.4.4 asks for "a clear error message" rather than a result
+      // set that means something the client did not ask for.
+      throw SearchRefused(fhir.IssueType.processing, e.message);
+    }
+    if (filterIds.isEmpty) {
+      return fhir.Bundle(
+        type: fhir.BundleType.searchset,
+        total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
+        link: [links.self(requestedUri)],
+      );
+    }
+  }
+
+  // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
+  // _count has the value 0, this shall be treated the same as
+  // _summary=count: the server returns a bundle that reports the total
+  // number of resources that match in Bundle.total, but with no entries,
+  // and no prev/next/last links". The DAO reads a count of 0 as "no page",
+  // so without this branch `_count=0` returned every match.
+  if (summary == 'count' || count == 0) {
+    int totalCount;
+    if ((searchParams != null && searchParams.isNotEmpty) ||
+        hasHasParams ||
+        compartment != null ||
+        filterIds != null) {
+      totalCount = await dbInterface.searchCount(
+        resourceType: type,
+        searchParameters: searchParams,
+        hasParameters: hasParams,
+        compartment: compartment,
+        ids: filterIds,
+      );
+    } else {
+      totalCount = await dbInterface.getResourceCount(type);
+    }
+    final bundle = fhir.Bundle(
+      type: fhir.BundleType.searchset,
+      total: fhir.FhirUnsignedInt(totalCount),
+      link: [links.self(requestedUri)],
+    );
+    return bundle;
+  }
+
+  final effectiveSearchParams = searchParams;
+
+  // Use search if search parameters, _has params, or _sort are provided
+  final List<fhir.Resource> resources;
+  final hasSearchParams =
+      effectiveSearchParams != null && effectiveSearchParams.isNotEmpty;
+  final hasSort = sort != null && sort.isNotEmpty;
+  // One row past the page is fetched and dropped. Its presence is what says
+  // a `next` link is due, and it costs one extra row rather than a count:
+  // with `_total=none` — the thing that makes a page fast on a large
+  // database — the next link used to vanish, because it was derived from
+  // `offset + count < total` and there was no total. R4 search.html asks
+  // for no total to page; the link is what pages.
+  final probeCount = count > 0 ? count + 1 : count;
+  final List<fhir.Resource> fetched;
+  if (hasSearchParams ||
+      hasHasParams ||
+      hasSort ||
+      compartment != null ||
+      filterIds != null) {
+    // Use search functionality
+    fetched = await dbInterface.search(
+      resourceType: type,
+      searchParameters: effectiveSearchParams,
+      hasParameters: hasParams,
+      count: probeCount,
+      offset: offset,
+      sort: sort,
+      compartment: compartment,
+      ids: filterIds,
+    );
+  } else {
+    // Fall back to simple pagination if no search parameters
+    fetched = await dbInterface.getResourcesWithPagination(
+      resourceType: type,
+      count: probeCount,
+      offset: offset,
+    );
+  }
+  final hasMore = count > 0 && fetched.length > count;
+  resources = hasMore ? fetched.sublist(0, count) : fetched;
+
+  final baseUrl = requestedUri.hasPort
+      ? '${requestedUri.scheme}://${requestedUri.host}:${requestedUri.port}'
+      : '${requestedUri.scheme}://${requestedUri.host}';
+
+  // Get total count (respects _total parameter)
+  // _total=none: skip count entirely, _total=estimate: use same as accurate
+  int? totalCount;
+  if (total != 'none') {
+    if (hasSearchParams ||
+        hasHasParams ||
+        compartment != null ||
+        filterIds != null) {
+      totalCount = await dbInterface.searchCount(
+        resourceType: type,
+        searchParameters: effectiveSearchParams,
+        hasParameters: hasParams,
+        compartment: compartment,
+        ids: filterIds,
+      );
+    } else {
+      totalCount = await dbInterface.getResourceCount(type);
+    }
+  }
+
+  // R4 3.1.1.5.3 and 3.1.1.6: every link is built from the parameters
+  // actually used, with only `_offset` changed. `first` and `self` are
+  // always present; `previous` when there is a page before this one;
+  // `next` from the probe row, so it survives `_total=none`; `last` when
+  // the total is known.
+  final requested = requestedUri;
+  final bundleLinks = <fhir.BundleLink>[
+    links.self(requested),
+  ];
+  if (count > 0) {
+    bundleLinks.add(
+      fhir.BundleLink(
+        relation: fhir.FhirString('first'),
+        url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
+      ),
+    );
+    if (offset > 0) {
+      final prevOffset = (offset - count).clamp(0, offset);
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('previous'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: prevOffset).toString(),
+          ),
+        ),
+      );
+    }
+    if (hasMore) {
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('next'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: offset + count).toString(),
+          ),
+        ),
+      );
+    }
+    if (totalCount != null && totalCount > 0) {
+      final lastOffset = ((totalCount - 1) ~/ count) * count;
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('last'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: lastOffset).toString(),
+          ),
+        ),
+      );
+    }
+  }
+
+  // Handle empty results
+  if (resources.isEmpty) {
+    final bundle = fhir.Bundle(
+      type: fhir.BundleType.searchset,
+      total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
+      link: [links.self(requested)],
+    );
+
+    FhirantLogging().logInfo(
+      'Successfully fetched 0 resources of type: $resourceType',
+    );
+    return bundle;
+  }
+
+  // Process _include and _revinclude parameters. The page carries at most
+  // [maxIncluded] included resources; past that, the rest are left out and
+  // an OperationOutcome entry says so (see [_includeBudgetOutcome]).
+  final includedResources = <fhir.Resource>[];
+  final includedResourceIds = <String>{};
+  var includesTruncated = false;
+  // An include is a read of another resource, and gets the same answer a
+  // direct read would: a type the token may not read is left out, and a
+  // type confined to the patient compartment yields only its members. An
+  // include used to be neither scope- nor compartment-checked, so
+  // `_include=Observation:has-member` handed a patient another patient's
+  // Observation (REVIEW-2026-09-08 row 10).
+  int remaining() => maxIncluded - includedResources.length;
+
+  if (include != null && include.isNotEmpty) {
+    includesTruncated |= await _processIncludes(
+      include,
+      resources,
+      includedResources,
+      includedResourceIds,
+      dbInterface,
+      principal: principal,
+      limit: remaining(),
+    );
+  }
+
+  // _include:iterate — iteratively resolve references from newly
+  // included resources
+  if (includeIterate != null && includeIterate.isNotEmpty) {
+    var newlyIncluded = List<fhir.Resource>.from(includedResources);
+    for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+      if (remaining() <= 0) {
+        includesTruncated = true;
+        break;
+      }
+      final nextBatch = <fhir.Resource>[];
+      final nextBatchIds = <String>{};
+      includesTruncated |= await _processIncludes(
+        includeIterate,
+        newlyIncluded,
+        nextBatch,
+        nextBatchIds,
+        dbInterface,
+        principal: principal,
+        existingIds: includedResourceIds,
+        limit: remaining(),
+      );
+      if (nextBatch.isEmpty) break;
+      includedResources.addAll(nextBatch);
+      includedResourceIds.addAll(nextBatchIds);
+      newlyIncluded = nextBatch;
+    }
+  }
+
+  if (revinclude != null && revinclude.isNotEmpty) {
+    includesTruncated |= await _processRevIncludes(
+      revinclude,
+      resources,
+      includedResources,
+      includedResourceIds,
+      dbInterface,
+      principal: principal,
+      limit: remaining(),
+    );
+  }
+
+  // _revinclude:iterate — iteratively find resources referencing newly
+  // included
+  if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
+    var newlyIncluded = List<fhir.Resource>.from(includedResources);
+    for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
+      if (remaining() <= 0) {
+        includesTruncated = true;
+        break;
+      }
+      final nextBatch = <fhir.Resource>[];
+      final nextBatchIds = <String>{};
+      includesTruncated |= await _processRevIncludes(
+        revincludeIterate,
+        newlyIncluded,
+        nextBatch,
+        nextBatchIds,
+        dbInterface,
+        principal: principal,
+        existingIds: includedResourceIds,
+        limit: remaining(),
+      );
+      if (nextBatch.isEmpty) break;
+      includedResources.addAll(nextBatch);
+      includedResourceIds.addAll(nextBatchIds);
+      newlyIncluded = nextBatch;
+    }
+  }
+
+  // Apply response shaping (_summary / _elements) to each resource
+  fhir.Resource shapeResource(fhir.Resource resource) {
+    if (summary != null && summary != 'false') {
+      final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+      final shaped = FhirResponseShaper.shapeSummary(json, summary);
+      return fhir.Resource.fromJson(shaped);
+    } else if (elements != null && elements.isNotEmpty) {
+      final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+      final shaped = FhirResponseShaper.shapeElements(json, elements);
+      return fhir.Resource.fromJson(shaped);
+    }
+    return resource;
+  }
+
+  // Build match entries (from search results)
+  final matchEntries = resources.map((resource) {
+    final shaped = shapeResource(resource);
+    final resourceId = shaped.id?.toString() ?? '';
+    final resType = shaped.resourceTypeString;
+    final fullUrl = resourceId.isNotEmpty
+        ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+        : null;
+    return fhir.BundleEntry(
+      resource: shaped,
+      fullUrl: fullUrl,
+      search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
+    );
+  }).toList();
+
+  // Build include entries (from _include/_revinclude results)
+  final includeEntries = includedResources.map((resource) {
+    final shaped = shapeResource(resource);
+    final resourceId = shaped.id?.toString() ?? '';
+    final resType = shaped.resourceTypeString;
+    final fullUrl = resourceId.isNotEmpty
+        ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
+        : null;
+    return fhir.BundleEntry(
+      resource: shaped,
+      fullUrl: fullUrl,
+      search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.include),
+    );
+  }).toList();
+
+  final bundle = fhir.Bundle(
+    type: fhir.BundleType.searchset,
+    entry: [
+      ...matchEntries,
+      ...includeEntries,
+      if (includesTruncated) _includeBudgetOutcome(),
+    ],
+    total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
+    link: bundleLinks,
+  );
+
+  FhirantLogging().logInfo(
+    'Successfully fetched ${resources.length} '
+    'resources of type: $resourceType',
+  );
+  return bundle;
+}
+
+/// A type-level search the server will not answer: the OperationOutcome
+/// issue [code] and [message] the REST path sends with its 400, so a
+/// Bundle entry can send the same.
+class SearchRefused implements Exception {
+  /// Creates the refusal.
+  const SearchRefused(this.code, this.message);
+
+  /// The OperationOutcome issue code.
+  final fhir.IssueType code;
+
+  /// What was refused and why.
+  final String message;
+
+  @override
+  String toString() => 'SearchRefused($code): $message';
 }
 
 /// The most included resources one page carries, across `_include`,
@@ -1840,22 +1893,6 @@ Future<Response> conditionalDeleteHandler(
 
 /// Helper method to extract references from a resource JSON
 /// Returns an empty searchset Bundle response.
-Response _emptySearchBundle(
-  Request request,
-  String? total,
-  SearchLinks links,
-) {
-  final bundle = fhir.Bundle(
-    type: fhir.BundleType.searchset,
-    total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
-    link: [links.self(request.requestedUri)],
-  );
-  return Response.ok(
-    bundle.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
 /// A 400 with an OperationOutcome for a search the store refused.
 ///
 /// Three refusals come out of fhir_r4_db and each names its rule: an

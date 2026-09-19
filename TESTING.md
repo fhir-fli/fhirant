@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,363 tests** across 113 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
+**1,368 tests** across 114 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,201 | 101 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,206 | 102 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -84,7 +84,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/services/subscription_service_test.dart` | Criteria through the REST search, server-decided status, rest-hook delivery, failure policy, `end`; delivery from the queue after the write, deadline, order, back-pressure (30) |
 | `test/services/websocket_subscriptions_test.dart` | `bind`/`ping` protocol and a websocket Subscription end to end (10) |
 | `test/services/backup_service_test.dart` | Bundle-envelope backup and restore (10) |
-| `test/services/backup_file_test.dart` | Encrypted SQLite backup file: create, restore, JSON detection (7) |
+| `test/services/backup_file_test.dart` | Encrypted SQLite backup file: create, restore, JSON detection, including a backup whose random salt starts with `{` and a JSON file cut mid-character (9) |
 | `test/services/hourly_cleanup_test.dart` | REVIEW-2026-09-17 S2: a cleanup step that throws is contained, the later steps still run, nothing reaches the timer's zone (2) |
 
 ### fhirant_server — Integration Tests (13 files)
@@ -115,6 +115,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/scale_review_test.dart` | REVIEW-2026-09-06 §5 at the HTTP surface: `_count` refused below zero and capped at 500 with the client's value in the self link, `$everything` paged before hydrating with links, conditional delete bounded at 100 and transactional (7) |
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
+| `test/integration/bundle_entry_search_test.dart` | REVIEW-2026-09-17 Q6: eight search URLs (`_has`, `_include`, `_revinclude`, `_summary=count`, `_elements`, `_filter`, `_total=none`, plain) as batch entries and as REST requests must agree; `Prefer: handling=strict` reaches the entry (3) |
 | `test/integration/program_sandbox_test.dart` | REVIEW-2026-09-17 A9: `$fhirpath`, `$cql` and `$transform` past the deadline are 422 `too-costly` and the server answers the next request; `runProgram` value, kill at deadline, program error; `runHostedProgram` host answers, host failure, `HostResourceCache` round trip (11) |
 
 ### fhirant_db — Unit Tests (6 files)
