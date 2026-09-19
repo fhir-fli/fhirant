@@ -34,6 +34,7 @@ class ServerOptions {
     required this.specPath,
     required this.baseUrl,
     required this.auditRetention,
+    this.allowPublicKey = false,
   });
 
   final int port;
@@ -45,6 +46,12 @@ class ServerOptions {
   final String specPath;
   final String? baseUrl;
   final Duration auditRetention;
+
+  /// Whether a store may be opened under a key this repository publishes
+  /// ([publicKeys]). Its own switch, independent of [devMode]
+  /// (REVIEW-2026-09-17 S4: `--dev-mode` both turned authentication off and
+  /// accepted the public key, so either choice forced the other).
+  final bool allowPublicKey;
 
   /// The parser, shared by the binary (for `--help`) and [resolve].
   static ArgParser parser() => ArgParser()
@@ -61,7 +68,13 @@ class ServerOptions {
     ..addOption('key-path', help: 'Path to HTTPS private key file')
     ..addFlag(
       'dev-mode',
-      help: 'Disable authentication (for testing only)',
+      help: 'Disable authentication (for testing only). Does not change the '
+          'encryption key rule; see --allow-public-key.',
+    )
+    ..addFlag(
+      'allow-public-key',
+      help: 'Open the store under the publicly known default key when '
+          'FHIRANT_ENCRYPTION_KEY is unset (throwaway databases only)',
     )
     ..addOption(
       'spec-path',
@@ -91,6 +104,7 @@ class ServerOptions {
     'cert-path',
     'key-path',
     'dev-mode',
+    'allow-public-key',
     'spec-path',
     'base-url',
     'audit-retention-days',
@@ -176,6 +190,7 @@ class ServerOptions {
       certPath: optionalString('cert-path'),
       keyPath: optionalString('key-path'),
       devMode: flag('dev-mode'),
+      allowPublicKey: flag('allow-public-key'),
       specPath: requiredString('spec-path'),
       baseUrl: optionalString('base-url'),
       auditRetention: Duration(
@@ -185,4 +200,27 @@ class ServerOptions {
   }
 
   static String _readFile(String path) => File(path).readAsStringSync();
+}
+
+/// Keys that are public because they are written in this repository: the
+/// in-code fallback in bin/server.dart and the placeholder
+/// docker-compose.yml once carried. A database encrypted under either is
+/// encrypted under nothing.
+const Set<String> publicKeys = {
+  'default-development-key',
+  'change-me-in-production',
+};
+
+/// Why the server must not open a store under [encryptionKey], or null.
+/// Decided by [allowPublicKey] alone, never by whether authentication is
+/// on (REVIEW-2026-09-17 S4).
+String? encryptionKeyRefusal(
+  String encryptionKey, {
+  required bool allowPublicKey,
+}) {
+  if (!publicKeys.contains(encryptionKey) || allowPublicKey) return null;
+  return 'Refusing to start: FHIRANT_ENCRYPTION_KEY is not set (or is a '
+      'key published in this repository), so the database would be '
+      'encrypted under a publicly known key. Set FHIRANT_ENCRYPTION_KEY, or '
+      'pass --allow-public-key for a throwaway database.';
 }

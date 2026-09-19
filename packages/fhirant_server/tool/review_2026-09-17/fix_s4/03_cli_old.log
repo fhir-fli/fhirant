@@ -1,0 +1,16 @@
+## old: --dev-mode, no key (killed once serving)
+Running build hooks...Running build hooks...{"timestamp":"2026-09-19T13:22:32.649660","level":"INFO","message":"FHIRANT_JWT_SECRET not set; using a generated secret persisted at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/c/.jwt_secret. Set the env var for multi-instance deployments.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:32.654795","level":"WARNING","message":"Dev mode: using the default (publicly-known) encryption key. Set FHIRANT_ENCRYPTION_KEY for any real deployment.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:32.654881","level":"INFO","message":"Initializing database at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/c","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.328575","level":"INFO","message":"Database initialized successfully","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.336870","level":"WARNING","message":"Spec directory not found at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/none, skipping","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.337365","level":"WARNING","message":"Dev mode enabled — authentication is disabled. Do not use in production.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.354425","level":"INFO","message":"Server started at http://0.0.0.0:18193","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.354577","level":"WARNING","message":"WARNING: Dev mode enabled — authentication is disabled","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.354626","level":"INFO","message":"HTTP server running on port 18193","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.354661","level":"INFO","message":"Server running. Press Ctrl+C to stop.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.625189","level":"INFO","message":"Fetching resources of type: Patient","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.630787","level":"INFO","message":"Successfully fetched 0 resources of type: Patient","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:22:33.653187","level":"INFO","message":"GET /Patient - 200 (37ms) from 127.0.0.1","error":null,"stackTrace":null}
+GET /Patient without a token: 200
+exit=137

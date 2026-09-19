@@ -113,4 +113,51 @@ audit-retention-days: 30
       throwsA(isA<CliUsageException>()),
     );
   });
+
+  group('the encryption key rule is independent of authentication (S4)', () {
+    // REVIEW-2026-09-17 S4: --dev-mode both switched authentication off
+    // and accepted the public default key.
+    test('--dev-mode alone does not allow the public key', () {
+      final o = resolve(['--dev-mode']);
+      expect(o.devMode, isTrue);
+      expect(o.allowPublicKey, isFalse);
+      expect(
+        encryptionKeyRefusal(
+          'default-development-key',
+          allowPublicKey: o.allowPublicKey,
+        ),
+        contains('Refusing to start'),
+      );
+    });
+
+    test('--allow-public-key alone leaves authentication on', () {
+      final o = resolve(['--allow-public-key']);
+      expect(o.devMode, isFalse);
+      expect(
+        encryptionKeyRefusal(
+          'default-development-key',
+          allowPublicKey: o.allowPublicKey,
+        ),
+        isNull,
+      );
+    });
+
+    test('every published key is refused; a real key never is', () {
+      for (final k in publicKeys) {
+        expect(encryptionKeyRefusal(k, allowPublicKey: false), isNotNull);
+      }
+      expect(
+        encryptionKeyRefusal('a-real-secret', allowPublicKey: false),
+        isNull,
+      );
+    });
+
+    test('the config file can carry it', () {
+      final o = resolve(
+        ['--config', 'c.yaml'],
+        config: 'allow-public-key: true\n',
+      );
+      expect(o.allowPublicKey, isTrue);
+    });
+  });
 }

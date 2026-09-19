@@ -1,0 +1,14 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/cli/options_test.dart
+00:00 +0: defaults
+00:00 +1: the config file sets what the command line did not
+00:00 +2: the command line wins over the config file
+00:00 +3: an empty config file configures nothing
+00:00 +4: a config key the CLI does not know is a usage error
+00:00 +5: a config file that is not a map, or not YAML, is a usage error
+00:00 +6: a port that is not a number, or out of range, is a usage error
+00:00 +7: a retention that is not a positive day count is a usage error
+00:00 +8: the encryption key rule is independent of authentication (S4) --dev-mode alone does not allow the public key
+00:00 +9: the encryption key rule is independent of authentication (S4) --allow-public-key alone leaves authentication on
+00:00 +10: the encryption key rule is independent of authentication (S4) every published key is refused; a real key never is
+00:00 +11: the encryption key rule is independent of authentication (S4) the config file can carry it
+00:00 +12: All tests passed!

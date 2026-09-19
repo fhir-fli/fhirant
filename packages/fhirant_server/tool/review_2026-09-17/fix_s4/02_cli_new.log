@@ -1,0 +1,16 @@
+## new: --dev-mode, no key
+Running build hooks...Running build hooks...{"timestamp":"2026-09-19T13:21:25.071445","level":"INFO","message":"FHIRANT_JWT_SECRET not set; using a generated secret persisted at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/a/.jwt_secret. Set the env var for multi-instance deployments.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:25.077069","level":"SEVERE","message":"Refusing to start: FHIRANT_ENCRYPTION_KEY is not set (or is a key published in this repository), so the database would be encrypted under a publicly known key. Set FHIRANT_ENCRYPTION_KEY, or pass --allow-public-key for a throwaway database.","error":null,"stackTrace":null}
+exit=1
+## new: --allow-public-key, no key (killed once serving)
+Running build hooks...Running build hooks...{"timestamp":"2026-09-19T13:21:47.515044","level":"INFO","message":"FHIRANT_JWT_SECRET not set; using a generated secret persisted at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/b/.jwt_secret. Set the env var for multi-instance deployments.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:47.520673","level":"WARNING","message":"Using the publicly known default encryption key (--allow-public-key). Set FHIRANT_ENCRYPTION_KEY for any real deployment.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:47.520757","level":"INFO","message":"Initializing database at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/b","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.155516","level":"INFO","message":"Database initialized successfully","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.166231","level":"WARNING","message":"Spec directory not found at /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/none, skipping","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.280918","level":"WARNING","message":"No accounts yet. The first POST /auth/register creates the administrator and must carry this one-time token in the X-Bootstrap-Token header (or the bootstrap_token body field):\n5ljN5Br4KO9SxFIbCczHhpxVYQvoh8Pxcxlj-h4-WZM=\nIt is also in /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s4.AFnN/b/.bootstrap_token (owner-readable). To seed the administrator without it, set FHIRANT_ADMIN_USERNAME and FHIRANT_ADMIN_PASSWORD and restart.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.298021","level":"INFO","message":"Server started at http://0.0.0.0:18192","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.298391","level":"INFO","message":"HTTP server running on port 18192","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:48.298438","level":"INFO","message":"Server running. Press Ctrl+C to stop.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:21:49.276879","level":"INFO","message":"GET /Patient - 401 (4ms) from 127.0.0.1","error":null,"stackTrace":null}
+GET /Patient without a token: 401

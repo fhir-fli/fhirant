@@ -50,10 +50,6 @@ void main(List<String> arguments) async {
   final dbPath = options.dbPath;
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
-  // Keys that are public because they are written in this repository: the
-  // in-code fallback above and the placeholder docker-compose.yml once
-  // carried. A database encrypted under either is encrypted under nothing.
-  const publicKeys = {'default-development-key', 'change-me-in-production'};
 
   // Resolve the JWT signing secret. Preference: FHIRANT_JWT_SECRET (set this
   // for cloud/multi-instance deployments where instances share a secret and
@@ -74,20 +70,20 @@ void main(List<String> arguments) async {
 
   final devMode = options.devMode;
 
-  // The default encryption key is public; a real deployment must set its own.
-  // Refuse to start on the default key unless explicitly in dev mode, so a
-  // production database is never written under a known key by accident.
+  // The key rule stands on its own: --dev-mode turns authentication off
+  // and nothing else; opening a store under a public key takes
+  // --allow-public-key (REVIEW-2026-09-17 S4).
+  final keyRefusal = encryptionKeyRefusal(
+    encryptionKey,
+    allowPublicKey: options.allowPublicKey,
+  );
+  if (keyRefusal != null) {
+    logger.logError(keyRefusal);
+    exit(1);
+  }
   if (publicKeys.contains(encryptionKey)) {
-    if (!devMode) {
-      logger.logError(
-        'Refusing to start: FHIRANT_ENCRYPTION_KEY is not set, so the database '
-        'would be encrypted with a publicly-known default key. Set '
-        'FHIRANT_ENCRYPTION_KEY, or pass --dev-mode for local testing.',
-      );
-      exit(1);
-    }
     logger.logWarning(
-      'Dev mode: using the default (publicly-known) encryption key. '
+      'Using the publicly known default encryption key (--allow-public-key). '
       'Set FHIRANT_ENCRYPTION_KEY for any real deployment.',
     );
   }
