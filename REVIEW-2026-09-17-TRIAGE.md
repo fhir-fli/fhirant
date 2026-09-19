@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 6 OPEN
+# REVIEW-2026-09-17 triage: 5 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -11,7 +11,6 @@ goes to `REVIEW_DECISIONS.md`.
 
 | # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
 |---|---|---|---|---|---|
-| 4 | `23b2b78` A16.1 | PKCE verifier accepts S256 only | The authorize endpoint already refused `plain`, so the path was unreachable | Removes code | Keep |
 | 5 | `6c986cb` A16.4 | `X-Frame-Options`, CSP, `nosniff` on the login and error pages | OWASP recommendation; no framing attack shown | One header map | Keep |
 | 7 | `63c1f7c` A16.6 | `bind` needs a FHIR id, a stored Subscription, and at most 16 per socket | `/ws` already needs a token; pings carry no payload. 16 is my number | A DB read per bind | Revert |
 | 8 | `1c14577` A16.7 | Backup iteration count capped at 10× what the server writes | Measured: a crafted file stalls the server about 80 minutes. But `$restore` is admin-only | A future 10× increase must move the cap | Keep |
