@@ -5,7 +5,11 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart'
-    show SearchRefused, typeSearch;
+    show
+        ConditionalUpdateRefused,
+        SearchRefused,
+        resolveConditionalUpdate,
+        typeSearch;
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
@@ -571,7 +575,8 @@ Future<_BundleOperation> _processBundleEntry(
   }
 
   final resourceType = urlParts[0];
-  final resourceId = urlParts.length > 1 ? urlParts[1] : null;
+  // A conditional PUT (no id, a query) settles on an id below.
+  var resourceId = urlParts.length > 1 ? urlParts[1] : null;
   final resourceTypeEnum = fhir.R4ResourceType.fromString(resourceType);
   if (resourceTypeEnum == null) {
     throw BundleEntryException(
@@ -741,39 +746,92 @@ Future<_BundleOperation> _processBundleEntry(
       }
 
     case fhir.HTTPVerb.pUT:
-      if (resourceId == null) {
-        throw BundleEntryException(
-          400,
-          'Bundle entry $entryIndex: PUT requires resource ID',
-        );
-      }
-      if (entry.resource == null) {
+      var bodyResource = entry.resource;
+      if (bodyResource == null) {
         throw BundleEntryException(
           400,
           'Bundle entry $entryIndex: PUT requires resource',
         );
       }
-      if (entry.resource!.resourceTypeString != resourceType) {
+      if (bodyResource.resourceTypeString != resourceType) {
         throw BundleEntryException(
           400,
           'Bundle entry $entryIndex: Resource type mismatch',
         );
       }
-      final resourceIdFromBody = entry.resource!.id?.toString() ?? '';
-      if (resourceIdFromBody != resourceId) {
+      final updatePatient = _entryPatient(principal, resourceType, 'u');
+      var putId = resourceId;
+      if (putId == null) {
+        // A type-level PUT with a query is the conditional update
+        // (REVIEW-2026-09-17 C2), resolved as `PUT /[type]?…` is; the
+        // write that follows is the entry's ordinary PUT of the resolved
+        // id, or a create under a new one.
+        if (query.isEmpty) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: PUT requires a resource id, or search '
+            'criteria for a conditional update',
+          );
+        }
+        try {
+          putId = await resolveConditionalUpdate(
+            dbInterface,
+            resourceTypeEnum,
+            query,
+            bodyResource.id?.valueString,
+            compartment: principal?.compartmentFor(resourceType, 'u'),
+          );
+        } on ConditionalUpdateRefused catch (e) {
+          throw BundleEntryException(
+            e.status,
+            'Bundle entry $entryIndex: ${e.message}',
+          );
+        } on UnsupportedSearchModifier catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ${e.message}',
+          );
+        } on InvalidSearchValue catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ${e.message}',
+          );
+        } on AmbiguousReference catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ${e.message}',
+          );
+        } on ValueSetRefusal catch (e) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $entryIndex: ${e.message}',
+          );
+        }
+        if (putId == null) {
+          bodyResource = bodyResource.newId();
+          putId = bodyResource.id!.valueString!;
+        } else if (bodyResource.id?.valueString != putId) {
+          bodyResource = fhir.Resource.fromJson({
+            ...bodyResource.toJson(),
+            'id': putId,
+          });
+        }
+      }
+      final resourceIdFromBody = bodyResource.id?.toString() ?? '';
+      if (resourceIdFromBody != putId) {
         throw BundleEntryException(
           400,
           'Bundle entry $entryIndex: Resource ID mismatch',
         );
       }
+      resourceId = putId;
 
-      final updatePatient = _entryPatient(principal, resourceType, 'u');
       if (updatePatient != null &&
-          await dbInterface.getResource(resourceTypeEnum, resourceId) != null) {
+          await dbInterface.getResource(resourceTypeEnum, putId) != null) {
         await _requireStoredInCompartment(
           updatePatient,
           resourceType,
-          resourceId,
+          putId,
           dbInterface,
           entryIndex,
         );
@@ -790,7 +848,7 @@ Future<_BundleOperation> _processBundleEntry(
           await dbInterface.getResource(resourceTypeEnum, resourceId);
 
       // Resolve urn:uuid references in the resource
-      var putJson = entry.resource!.toJson();
+      var putJson = bodyResource.toJson();
       if (urnMap.isNotEmpty) {
         putJson = _resolveUrnReferences(putJson, urnMap);
       }

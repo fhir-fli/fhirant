@@ -155,6 +155,7 @@ Requests pass through middleware in this order:
 | | `GET /<type>` | `getResourcesHandler` | Search resources |
 | | `POST /<type>` | `postResourceHandler` | Create resource |
 | | `GET /<type>/<id>` | `getResourceByIdHandler` | Read resource |
+| | `PUT /<type>?<criteria>` | `conditionalUpdateHandler` | Conditional update (R4B http.html 3.1.0.4.3; also as a Bundle entry) |
 | | `PUT /<type>/<id>` | `putResourceHandler` | Update resource |
 | | `PATCH /<type>/<id>` | `patchResourceHandler` | JSON Patch |
 | | `DELETE /<type>/<id>` | `deleteResourceHandler` | Delete resource |
@@ -229,9 +230,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,370 tests** across 115 test files, all passing (counted 2026-09-14; server recounted 2026-09-18).
+**1,380 tests** across 116 test files, all passing (counted 2026-09-14; server recounted 2026-09-18).
 
-- **Server tests** (1,208 tests, 103 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,218 tests, 104 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

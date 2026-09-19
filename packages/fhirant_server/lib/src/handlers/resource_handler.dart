@@ -1782,6 +1782,177 @@ Future<Response> deleteResourceHandler(
   }
 }
 
+/// The target of a conditional update, `PUT [base]/[type]?[search
+/// parameters]`, from the matches of the criteria inside [compartment].
+/// R4B http.html 3.1.0.4.3, section read whole 2026-09-18, the five rows
+/// verbatim:
+///
+/// - "No matches, no id provided: The server creates the resource" → null;
+///   the caller assigns the id.
+/// - "No matches, id provided: The server treats the interaction as an
+///   Update as Create interaction" → [bodyId].
+/// - "One Match, no resource id provided OR (resource id provided and it
+///   matches the found resource): The server performs the update against
+///   the matching resource" → the match's id.
+/// - "One Match, resource id provided but does not match resource found:
+///   The server returns a 400 Bad Request error".
+/// - "Multiple matches: The server returns a 412 Precondition Failed
+///   error".
+///
+/// Criteria that name no search parameter are refused with a 400: a PUT
+/// to the type with nothing to match is an update of nothing. The page
+/// also says "If an id is provided, the server SHALL ignore it"; the rows
+/// above, which use the id, are the behaviour this follows, and a provided
+/// id never chooses the target over the criteria. Both the REST route and
+/// a Bundle entry resolve through this; the store's own refusals (an
+/// unsupported modifier, an invalid value) propagate for the caller to
+/// answer as it answers a search.
+Future<String?> resolveConditionalUpdate(
+  FhirAntDb dbInterface,
+  fhir.R4ResourceType type,
+  Map<String, List<String>> query,
+  String? bodyId, {
+  CompartmentScope? compartment,
+}) async {
+  final parsed = SearchParameterParser.parseQueryParameters(query);
+  final invalid = parsed['invalidParams'] as List<String>?;
+  if (invalid != null) {
+    throw ConditionalUpdateRefused(400, invalid.join('; '));
+  }
+  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  if (searchParams == null || searchParams.isEmpty) {
+    throw const ConditionalUpdateRefused(
+      400,
+      'A conditional update needs at least one search parameter: '
+      'PUT [base]/[type]?[search parameters]',
+    );
+  }
+  final matches = await dbInterface.search(
+    resourceType: type,
+    searchParameters: searchParams,
+    count: 2,
+    compartment: compartment,
+  );
+  if (matches.length > 1) {
+    throw const ConditionalUpdateRefused(
+      412,
+      'The criteria match more than one resource; a conditional update '
+      'needs criteria that select one',
+    );
+  }
+  final id = bodyId == null || bodyId.isEmpty ? null : bodyId;
+  if (matches.isEmpty) return id;
+  final found = matches.single.id!.valueString!;
+  if (id != null && id != found) {
+    throw ConditionalUpdateRefused(
+      400,
+      'The resource carries id "$id" but the criteria match "$found"',
+    );
+  }
+  return found;
+}
+
+/// A conditional update the server will not perform: the HTTP [status]
+/// (400 or 412) and the message.
+class ConditionalUpdateRefused implements Exception {
+  /// Creates the refusal.
+  const ConditionalUpdateRefused(this.status, this.message);
+
+  /// 400 for a bad request, 412 for criteria matching more than one.
+  final int status;
+
+  /// What was refused and why.
+  final String message;
+
+  @override
+  String toString() => 'ConditionalUpdateRefused($status): $message';
+}
+
+/// Handler for the conditional update, `PUT /[type]?[search parameters]`
+/// (REVIEW-2026-09-17 C2: the CapabilityStatement claimed it and the route
+/// did not exist). The target is resolved by [resolveConditionalUpdate];
+/// the write is then `PUT /[type]/[id]` with every rule of that route
+/// (If-Match, compartments, store refusals, Subscription activation, 200
+/// or 201) through [putResourceHandler].
+Future<Response> conditionalUpdateHandler(
+  Request request,
+  String resourceType,
+  FhirAntDb dbInterface, {
+  SubscriptionService? subscriptions,
+}) async {
+  final type = fhir.R4ResourceType.fromString(resourceType);
+  if (type == null) {
+    return _validationErrorResponse('Invalid resource type');
+  }
+  final body = await request.readAsString();
+  final fhir.Resource resource;
+  try {
+    resource = fhir.Resource.fromJsonString(body);
+  } catch (e) {
+    return _validationErrorResponse('Invalid resource: $e');
+  }
+  if (resource.resourceTypeString != resourceType) {
+    return _validationErrorResponse(
+      'Resource type in URL does not match resource type in body',
+    );
+  }
+  final patientId = patientContextFor(request, resourceType, 'u');
+  final String? target;
+  try {
+    target = await resolveConditionalUpdate(
+      dbInterface,
+      type,
+      request.url.queryParametersAll,
+      resource.id?.valueString,
+      compartment: patientId == null ? null : patientCompartment(patientId),
+    );
+  } on ConditionalUpdateRefused catch (e) {
+    return _refusal(
+      e.status,
+      e.status == 412 ? fhir.IssueType.multipleMatches : fhir.IssueType.invalid,
+      e.message,
+    );
+  } on ValueSetRefusal catch (e) {
+    return _searchRefusal(e.message, _valueSetIssue(e));
+  } on UnsupportedSearchModifier catch (e) {
+    return _searchRefusal(e.message, fhir.IssueType.notSupported);
+  } on InvalidSearchValue catch (e) {
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
+  } on AmbiguousReference catch (e) {
+    return _searchRefusal(e.message, fhir.IssueType.invalid);
+  }
+  final fhir.Resource withId;
+  if (target == null) {
+    withId = resource.newId();
+  } else if (resource.id?.valueString == target) {
+    withId = resource;
+  } else {
+    withId = fhir.Resource.fromJson({...resource.toJson(), 'id': target});
+  }
+  return putResourceHandler(
+    request.change(body: withId.toJsonString()),
+    resourceType,
+    withId.id!.valueString!,
+    dbInterface,
+    subscriptions: subscriptions,
+  );
+}
+
+/// An OperationOutcome with one error issue, at [status].
+Response _refusal(int status, fhir.IssueType code, String message) => Response(
+      status,
+      body: fhir.OperationOutcome(
+        issue: [
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.error,
+            code: code,
+            diagnostics: message.toFhirString,
+          ),
+        ],
+      ).toJsonString(),
+      headers: {'Content-Type': 'application/json'},
+    );
+
 /// Handler for conditional delete by search (DELETE /`<resourceType>`?params)
 ///
 /// Supports both single and multiple deletion:

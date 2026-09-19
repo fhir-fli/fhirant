@@ -1,0 +1,12 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/conditional_update_test.dart
+00:00 +0: no matches, no id: the server creates the resource
+00:00 +1: no matches, id provided: update as create under that id
+00:00 +2: one match, no id: the match is updated
+00:00 +3: one match, the same id: the match is updated
+00:00 +4: one match, a different id: 400
+00:00 +5: multiple matches: 412
+00:00 +6: no criteria: 400
+00:00 +7: the criteria are searched as a search is
+00:00 +8: inside a transaction, the same rows
+00:00 +9: a patient-scoped token matches only inside its compartment
+00:00 +10: All tests passed!

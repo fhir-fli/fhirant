@@ -587,6 +587,16 @@ class FhirAntServer {
         (Request req, String resourceType, String id) =>
             getResourceByIdHandler(req, resourceType, id, dbInterface),
       )
+      // Conditional update, PUT /<type>?criteria (REVIEW-2026-09-17 C2)
+      ..put(
+        '/<resourceType>',
+        (Request req, String resourceType) => conditionalUpdateHandler(
+          req,
+          resourceType,
+          dbInterface,
+          subscriptions: subscriptions,
+        ),
+      )
       ..put(
         '/<resourceType>/<id>',
         (Request req, String resourceType, String id) => putResourceHandler(
