@@ -19,28 +19,33 @@ dependencies:
 # through the gitignored pubspec_overrides.yaml, which replaces this whole
 # section; a clean clone, CI included, resolves the same code from git.
 # Remove this section at the next family release.
+# Each git override is pinned to a COMMIT, not a branch: a branch made
+# every clean build (the image, CI) take whatever the branch held that
+# minute, and the lock cannot pin it while a local pubspec_overrides.yaml
+# writes this machine's paths into it (REVIEW-2026-09-17 S8). Move a pin
+# on purpose, in its own commit.
 dependency_overrides:
   # The model-independent store fhir_r4_db binds (fhir_db 0.13.0), from its
   # repository until it is on pub.dev; remove with this section.
   fhir_db:
     git:
       url: https://github.com/fhir-fli/fhir_db.git
-      ref: main
+      ref: de0d3b838c4513b5086c223413cb62831ddbe736  # main on 2026-09-19
   # fhir_path 0.14.2: resolve() on a literal reference, which uploaded
   # SearchParameters index by; until it is on pub.dev.
   fhir_path:
     git:
       url: https://github.com/fhir-fli/fhir_path.git
-      ref: main
+      ref: d9b201eb15e1c3385765085667d4d8987fcf6a4f  # main on 2026-09-19
   fhir_r4:
     git:
       url: https://github.com/fhir-fli/fhir_r4.git
-      ref: dev
+      ref: 1e7ddbf07535dfe566f265a886ff517093371150  # dev on 2026-09-19
       path: packages/fhir_r4
   fhir_r4_db:
     git:
       url: https://github.com/fhir-fli/fhir_r4.git
-      ref: dev
+      ref: 1e7ddbf07535dfe566f265a886ff517093371150  # dev on 2026-09-19
       path: packages/fhir_r4_db
 
 dev_dependencies:

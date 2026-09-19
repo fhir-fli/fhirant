@@ -36,3 +36,14 @@ coverage/
 # to live in packages/fhirant_server/assets/; it is in the history and must
 # be treated as compromised.
 *.pem
+
+# Lock files of the regular (library) packages and of the root aggregation
+# pubspec are not tracked. dart-lang/site-www, tools/pub/private-files.md
+# (read 2026-09-19): "For regular packages, don't commit the pubspec.lock
+# file." The two applications, packages/fhirant and packages/fhirant_server,
+# keep theirs ("For application packages, we recommend that you commit the
+# pubspec.lock file."). REVIEW-2026-09-17 S8.
+/pubspec.lock
+packages/fhirant_db/pubspec.lock
+packages/fhirant_logging/pubspec.lock
+packages/fhirant_secure_storage/pubspec.lock

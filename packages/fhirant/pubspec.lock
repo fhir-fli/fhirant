@@ -208,7 +208,7 @@ packages:
       path: "/home/grey/dev/fhir/fhir_db"
       relative: false
     source: path
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_node:
     dependency: transitive
     description:
@@ -218,13 +218,12 @@ packages:
     source: hosted
     version: "0.6.0"
   fhir_path:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: fhir_path
-      sha256: a0ab383b17ea93fd396ecbf0b34c7049832e9ac18cd20e6b8ac8de8f7352f02c
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.14.1"
+      path: "/home/grey/dev/fhir/fhirpath"
+      relative: false
+    source: path
+    version: "0.14.2"
   fhir_r4:
     dependency: "direct main"
     description:

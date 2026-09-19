@@ -1,0 +1,97 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 103.0.0 (108.0.0 available)
+  analyzer 13.3.0 (14.4.0 available)
+  archive 4.2.0 (4.3.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_assets 2.0.0 (2.1.0 available)
+  dbus 0.7.15 (0.8.0 available)
+  drift 2.34.3 (2.35.0 available)
+! fhir_db 0.14.0 from path /home/grey/dev/fhir/fhir_db (overridden in ./pubspec_overrides.yaml)
+! fhir_path 0.14.2 from path /home/grey/dev/fhir/fhirpath (overridden in ./pubspec_overrides.yaml)
+! fhir_r4 0.12.0 from path /home/grey/dev/fhir/fhir_r4/packages/fhir_r4 (overridden in ./pubspec_overrides.yaml)
+! fhir_r4_bulk 0.12.0 from path /home/grey/dev/fhir/fhir_r4/packages/fhir_r4_bulk (overridden in ./pubspec_overrides.yaml)
+! fhir_r4_db 0.12.0 from path /home/grey/dev/fhir/fhir_r4/packages/fhir_r4_db (overridden in ./pubspec_overrides.yaml)
+  file_picker 8.3.7 (13.1.0 available)
+  flutter_foreground_task 8.17.0 (11.0.3 available)
+  flutter_secure_storage 10.3.1 (11.2.0 available)
+  flutter_secure_storage_darwin 0.3.2 (0.4.3 available)
+  flutter_secure_storage_linux 3.0.2 (3.0.3 available)
+  flutter_secure_storage_platform_interface 2.0.3 (2.1.1 available)
+  flutter_secure_storage_windows 4.1.0 (4.2.2 available)
+  glob 2.1.3 (2.2.0 available)
+  io 1.0.5 (1.1.0 available)
+  jni_flutter 1.0.2 (1.0.3 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  mime 2.0.0 (2.1.0 available)
+  native_toolchain_c 0.19.4 (0.19.5 available)
+  network_info_plus 6.1.4 (8.2.1 available)
+  network_info_plus_platform_interface 2.0.2 (3.1.0 available)
+  package_config 2.2.0 (3.0.0 available)
+  platform 3.1.6 (3.2.0 available)
+  pool 1.5.2 (1.5.3 available)
+  process 5.0.5 (5.0.6 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  qr 3.0.2 (4.0.0 available)
+  riverpod 3.4.2 (3.4.3 available)
+  riverpod_annotation 4.0.6 (4.0.7 available)
+  share_plus 10.1.4 (13.3.0 available)
+  share_plus_platform_interface 5.0.2 (7.2.0 available)
+  shared_preferences_android 2.4.27 (2.4.28 available)
+  shared_preferences_foundation 2.5.6 (2.5.7 available)
+  sqlite3 3.5.2 (3.6.0 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  test 1.31.1 (1.32.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  test_core 0.6.18 (0.6.20 available)
+  url_launcher_android 6.3.32 (6.3.33 available)
+  url_launcher_ios 6.4.1 (6.4.2 available)
+  url_launcher_linux 3.2.2 (3.2.3 available)
+  url_launcher_macos 3.2.5 (3.2.6 available)
+  url_launcher_windows 3.1.5 (3.1.6 available)
+  very_good_analysis 10.3.0 (11.0.0 available)
+  webdriver 3.1.0 (3.2.0 available)
+  win32 5.15.0 (6.4.0 available)
+  xml 6.6.1 (7.0.1 available)
+  xml2json 6.2.7 (6.2.9 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+50 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart
+00:00 +0: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a small phone
+00:00 +1: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture a fresh install follows the ship default
+00:00 +2: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +3: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +4: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +5: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +6: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +7: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +8: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +9: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +10: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +11: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +12: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +13: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +14: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +15: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +16: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +17: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +18: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +19: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: request log is empty before the server starts
+00:00 +20: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +21: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +22: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +23: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +24: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +25: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +26: /home/grey/dev/fhir/fhirant/packages/fhirant/test/spec_assets_test.dart: the spec NDJSON files are in the asset bundle
+00:01 +27: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a small phone while stopped
+00:02 +28: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a small phone while running
+00:02 +29: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a phone while stopped
+00:02 +30: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a phone while running
+00:02 +31: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a tablet while stopped
+00:02 +32: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a tablet while running
+00:02 +33: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: a long request path does not overflow the log card
+00:03 +34: All tests passed!
+exit=0
