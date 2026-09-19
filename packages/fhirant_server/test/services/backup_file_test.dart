@@ -188,6 +188,50 @@ void main() {
     await target.close();
   });
 
+  test('a restore over a newer local version is a new version, history kept',
+      () async {
+    // REVIEW-2026-09-17 D1. The restore used to INSERT OR REPLACE: a local
+    // v3 became the backup's v1, v3 was never moved to history, and the
+    // next saves (v2, v3 again) upserted history over the local rows.
+    await db.saveResource(patient('p1', 'Alpha'));
+    final file = await BackupService.createFile(
+      db,
+      'correct horse',
+      '${dir.path}/backup.sqlite',
+    );
+
+    final target = FhirAntDb(NativeDatabase.memory());
+    await target.initialize();
+    await target.saveResource(patient('p1', 'Local one'));
+    await target.saveResource(patient('p1', 'Local two'));
+    await target.saveResource(patient('p1', 'Local three'));
+
+    expect(await target.restoreEncrypted(file.path, 'correct horse'), 1);
+
+    final current = await target.getResource(fhir.R4ResourceType.Patient, 'p1');
+    expect(
+      (current! as fhir.Patient).name!.single.family!.valueString,
+      'Alpha',
+      reason: 'the backup wins on the resource',
+    );
+    expect(current.meta!.versionId!.valueString, '4');
+    expect(
+      (await target.getResourceHistory(fhir.R4ResourceType.Patient, 'p1'))
+          .map((r) => r.meta!.versionId!.valueString),
+      ['4', '3', '2', '1'],
+      reason: 'nothing local is lost',
+    );
+    // And the next save counts on, over nothing.
+    final next = await target.saveResource(patient('p1', 'After'));
+    expect(next!.meta!.versionId!.valueString, '5');
+    expect(
+      (await target.getResourceHistory(fhir.R4ResourceType.Patient, 'p1'))
+          .map((r) => r.meta!.versionId!.valueString),
+      ['5', '4', '3', '2', '1'],
+    );
+    await target.close();
+  });
+
   test('a backup from a newer schema is refused before anything is read',
       () async {
     await db.saveResource(patient('p1', 'Alpha'));

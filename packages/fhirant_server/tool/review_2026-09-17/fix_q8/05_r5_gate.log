@@ -202,3 +202,318 @@ Running build hooks...Running build hooks...00:00 +0: loading test/value_set_not
 00:04 +195: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
 00:04 +196: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
 00:04 +197: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +198: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +199: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +200: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +201: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +202: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +203: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +204: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +205: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +206: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +207: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +208: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +209: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +210: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +211: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +212: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +213: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +214: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +215: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +216: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +217: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +218: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +219: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +220: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +221: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +222: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +223: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +224: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +225: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +226: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +227: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +228: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +229: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +230: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +231: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +232: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +233: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +234: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +235: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +236: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +237: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +238: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +239: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +240: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +241: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +242: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +243: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +244: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +245: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +246: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +247: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +248: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +249: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +250: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +251: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +252: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:04 +253: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +254: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +255: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +256: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +257: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +258: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +259: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +260: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +261: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +262: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +263: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +264: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +265: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +266: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +267: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +268: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +269: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +270: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +270: test/date_zone_independence_test.dart: a zone-less date matches the same under every zone
+  Skip: starts a second dart process; run with --run-skipped -t zone
+00:05 +270 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +271 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +272 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +273 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +274 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +275 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +276 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +277 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +278 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +279 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +280 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +281 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +281 ~1: test/review_integrity_test.dart: saveResources (findings 27, 28) is atomic: an indexing failure stores no resource
+Error in saveResources: Bad state: index failed
+00:05 +282 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +283 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +284 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +285 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +286 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +287 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +288 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +289 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +290 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +291 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +292 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +293 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +294 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +295 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:05 +296 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +297 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +298 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +299 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +300 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +301 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +302 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +303 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +304 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +305 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +306 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +307 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +308 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +309 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +310 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +311 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +312 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +313 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +314 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +315 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +316 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +317 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +318 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +319 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +320 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +321 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +322 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +323 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +324 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +325 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +326 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +327 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +328 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +329 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +330 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +331 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +332 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +333 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +334 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +335 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +336 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +337 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +338 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +339 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +340 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +341 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +342 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +343 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +344 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +345 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +346 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +347 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +348 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +349 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +350 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +351 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +352 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +353 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +354 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +355 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +356 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +357 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +358 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +359 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +360 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +361 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +362 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +363 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +364 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +365 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +366 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +367 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +368 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +369 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +370 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +371 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +372 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +373 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +374 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +375 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +376 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +377 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:06 +378 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +379 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +380 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +381 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +382 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +383 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +384 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +385 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +386 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +387 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +388 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +389 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +390 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +390 ~1: test/fhir_db_test.dart: (setUpAll)
+Database initialized
+00:07 +390 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +391 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +392 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +393 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +394 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +395 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +396 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +397 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +398 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +399 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +400 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +401 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +402 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +403 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +404 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +405 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +406 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +407 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +408 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +409 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +410 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +411 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +412 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +413 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +414 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +415 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +416 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +417 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +418 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +419 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +419 ~1: test/indexing_failure_test.dart: saveResources reports a failed bulk index as false
+Error in saveResources: Bad state: index is broken
+00:07 +420 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +421 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +422 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +423 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +424 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +425 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +426 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +427 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +428 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +429 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +430 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +431 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +432 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +433 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +434 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +435 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +436 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +437 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +438 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +439 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +440 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +440 ~1: test/fhir_db_test.dart: Encrypted Database: CRUD with cipherSetup()
+WARNING (drift): It looks like you've created the database class FhirDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r5_db/src/fhir_db.dart:14:21)
+#6      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhir_r5/packages/fhir_r5_db/test/fhir_db_test.dart:255:21)
+#7      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#9      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:07 +441 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:07 +442 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +443 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +444 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +445 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +446 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +447 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +448 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +449 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +450 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +451 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +452 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +453 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +454 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +455 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +456 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +457 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +458 ~1: test/reindex_live_test.dart: a search during a rebuild answers from a whole index
+00:08 +459 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:09 +460 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:10 +461 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:10 +462 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:10 +463 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:10 +463 ~1: test/fhir_db_test.dart: More Complicated Searching (& Resources)
+Found 10 resources in total of 22 ms
+00:10 +464 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:10 +465 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:12 +466 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:13 +467 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:15 +468 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:16 +469 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:19 +470 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:21 +471 ~1: test/planner_statistics_test.dart: opening a database with data but no statistics analyses it
+00:21 +472 ~1: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:21 +473 ~1: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:21 +474 ~1: test/schema_migration_test.dart: after upgrading, two parameters can share one path
+00:24 +475 ~1: test/schema_migration_test.dart: a resource saved after the upgrade indexes and is searchable
+00:26 +476 ~1: test/schema_migration_test.dart: a version-7 database gains the contained-row partial indexes
+00:28 +477 ~1: test/schema_migration_test.dart: a version-8 database has its search index rebuilt
+00:29 +478 ~1: test/schema_migration_test.dart: a version-11 database stores its open date bounds as sentinels
+00:31 +479 ~1: test/schema_migration_test.dart: a version-10 database stores its open bounds as infinity
+00:33 +480 ~1: test/schema_migration_test.dart: a version-9 database loses search_path, its key and the old indexes
+00:34 +481 ~1: All tests passed!
+test exit=0

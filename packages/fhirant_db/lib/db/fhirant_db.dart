@@ -600,8 +600,33 @@ class FhirAntDb extends FhirDb {
             'INSERT INTO main."$table" SELECT * FROM bk."$table"',
           );
         }
+        // A resource this store already holds is restored THROUGH the
+        // ordinary write: a new version whose content is the backup's, the
+        // local current version moved to history, later saves counting on
+        // from there. `INSERT OR REPLACE` used to overwrite a local v3 with
+        // the backup's v1 (v3 gone, not in history), and the next saves,
+        // counted v2 and v3 again, then upserted history by
+        // (type, id, version) over the local rows (fhirant
+        // REVIEW-2026-09-17 D1). The backup's index rows for these ids,
+        // copied above, are replaced by the write's own extraction; its
+        // history rows are added below where their versions are free.
+        final held = await customSelect(
+          'SELECT resource FROM bk.resources WHERE (resource_type, id) IN '
+          '(SELECT resource_type, id FROM main.resources)',
+        ).get();
+        for (final row in held) {
+          final restored =
+              fhir.Resource.fromJsonString(row.read<String>('resource'));
+          final saved = await saveResource(restored);
+          if (saved == null) {
+            throw StateError(
+              'Restore of ${restored.resourceTypeString}/${restored.id} '
+              'failed; nothing was restored',
+            );
+          }
+        }
         await customStatement(
-          'INSERT OR REPLACE INTO main.resources SELECT * FROM bk.resources',
+          'INSERT OR IGNORE INTO main.resources SELECT * FROM bk.resources',
         );
         if (backupTables.contains('users')) {
           await _mergeUsers();
