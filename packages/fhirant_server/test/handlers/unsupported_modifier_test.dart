@@ -91,6 +91,13 @@ void main() {
     expect(response.statusCode, equals(400));
   });
 
+  // REVIEW-2026-09-17 Q4: R4B 3.1.1.4.4 (read whole 2026-09-18) gives
+  // `:missing` the values true and false. `maybe` was read as false: 200.
+  test(':missing with a value that is not true or false is 400', () async {
+    expect((await search('gender:missing=maybe')).statusCode, equals(400));
+    expect((await search('gender:missing=false')).statusCode, equals(200));
+  });
+
   test('an unknown parameter is ignored, not rejected', () async {
     // The spec's asymmetry: SHOULD ignore an unknown parameter, SHALL reject
     // an unsupported modifier.

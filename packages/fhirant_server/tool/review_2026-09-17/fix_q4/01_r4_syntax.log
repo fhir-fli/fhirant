@@ -1,0 +1,48 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/search_syntax_test.dart
+00:00 +0: the modifier goes on the parameter NAME plain string search works, so a zero below is the modifier
+00:00 +1: the modifier goes on the parameter NAME :exact matches the whole value, not a prefix of it
+00:00 +2: the modifier goes on the parameter NAME :contains matches anywhere in the field
+00:00 +3: the modifier goes on the parameter NAME :missing finds resources with and without the element
+00:00 +4: the modifier goes on the parameter NAME the invented value:modifier form is NOT honoured
+00:00 +5: an unsupported modifier is rejected, not ignored a modifier from another type is refused
+00:00 +6: an unsupported modifier is rejected, not ignored an invented modifier is refused
+00:00 +7: an unsupported modifier is rejected, not ignored the message names the parameter, its type, and what is allowed
+00:00 +8: an unsupported modifier is rejected, not ignored a modifier the type DOES allow is not refused
+00:00 +9: an unsupported modifier is rejected, not ignored a reference takes a resource type as its modifier
+00:00 +10: an unsupported modifier is rejected, not ignored :missing takes true or false and nothing else
+00:00 +10 -1: an unsupported modifier is rejected, not ignored :missing takes true or false and nothing else [E]
+  Expected: throws <Instance of 'InvalidSearchValue'>
+    Actual: <Instance of 'Future<List<String>>'>
+     Which: emitted ['p1', 'p2']
+  
+  test/search_syntax_test.dart 188:7  main.<fn>.<fn>
+  
+00:00 +10 -1: an unsupported modifier is rejected, not ignored :text on a string parameter is refused
+00:00 +11 -1: an unsupported modifier is rejected, not ignored the literal word "type" is not a reference modifier
+00:00 +12 -1: an unsupported modifier is rejected, not ignored an unknown PARAMETER is not rejected on this basis
+00:00 +13 -1: a colon inside a VALUE is data, not syntax the whole name matches
+00:00 +14 -1: a colon inside a VALUE is data, not syntax a different wing does not match
+00:00 +15 -1: the prefix goes on the VALUE, for ordered types plain date search works, so a zero below is the prefix
+00:00 +16 -1: the prefix goes on the VALUE, for ordered types eq, gt, lt, ge, le all select correctly
+00:00 +17 -1: the prefix goes on the VALUE, for ordered types sa and eb select correctly
+00:00 +18 -1: string search is normalized by case and combining characters case, which already worked
+00:00 +19 -1: string search is normalized by case and combining characters an accented stored value is found by an unaccented query
+00:00 +20 -1: string search is normalized by case and combining characters an unaccented stored value is found by an accented query
+00:00 +21 -1: string search is normalized by case and combining characters a prefix search folds too
+00:00 +22 -1: string search is normalized by case and combining characters :exact respects casing, because it is exact
+00:00 +23 -1: string search is normalized by case and combining characters :exact respects accents too
+00:00 +24 -1: reference and uri modifiers a plain reference search works, so a zero below is the modifier
+00:00 +25 -1: reference and uri modifiers subject:Patient=p1 has the same effect as subject=Patient/p1
+00:00 +26 -1: reference and uri modifiers a resource-type modifier that does not match finds nothing
+00:00 +27 -1: reference and uri modifiers :identifier tests the reference, not the referenced resource
+00:00 +28 -1: reference and uri modifiers :identifier with the wrong system finds nothing
+00:00 +29 -1: reference and uri modifiers uri :below left-matches the stored value
+00:00 +30 -1: reference and uri modifiers uri :above matches a stored value that is a prefix of the query
+00:00 +31 -1: reference and uri modifiers a plain uri search is still exact
+00:00 +32 -1: Some tests failed.
+
+Failing tests:
+  test/search_syntax_test.dart: an unsupported modifier is rejected, not ignored :missing takes true or false and nothing else
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

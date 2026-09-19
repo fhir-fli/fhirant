@@ -1,0 +1,46 @@
+Formatted 36 files (0 changed) in 0.21 seconds.
+Formatted 36 files (0 changed) in 0.20 seconds.
+format exit=0
+Analyzing fhir_db...
+No issues found!
+analyze exit=0
+Running build hooks...Running build hooks...00:00 +0: loading test/store_test.dart
+00:00 +0: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +1: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +2: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +3: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +4: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +5: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +6: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +7: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +8: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +9: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +10: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +11: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +12: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +13: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +14: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +15: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +16: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +17: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +18: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +19: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +20: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +21: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +22: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +23: test/store_test.dart: create stamps meta and assigns an id when there is none
+00:00 +24: test/store_test.dart: server-owned tags a save cannot add one, and keeps the tags beside it
+00:00 +25: test/store_test.dart: server-owned tags a batch save cannot add one
+00:00 +26: test/store_test.dart: server-owned tags the server writes one, singly and in a batch
+00:00 +27: test/store_test.dart: server-owned tags a save over a resource that carries one does not keep it: what a client changed is no longer the server's copy
+00:00 +28: test/store_test.dart: server-owned tags with none declared, every tag is a client's to write
+00:00 +29: test/store_test.dart: update counts the version, merges tags, moves the old row to history
+00:00 +30: test/store_test.dart: ifMatchVersion guards an update and a delete
+00:00 +31: test/store_test.dart: search: token, string (words and :exact), date, reference, quantity, uri, _id, _lastUpdated
+00:00 +32: test/store_test.dart: chained and _has searches, and the compartment
+00:00 +33: test/store_test.dart: a batch save, a bulk count, and the resource types held
+00:00 +34: test/store_test.dart: :in expands a stored ValueSet by compose.include and exclude
+00:00 +35: test/store_test.dart: a contained resource is indexed under #Type and found by chain
+00:00 +36: test/store_test.dart: the schema is at version 14 and the index rebuild runs
+00:00 +37: All tests passed!
+test exit=0
