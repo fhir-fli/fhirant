@@ -13,7 +13,7 @@ before it is built.
 
 ## Rulings
 
-None from Grey yet.
+- 2026-09-19, Q9 (`633d686`) conditional create reads at most 2 rows; `$export` type filter reads ids: **keep**. Unmeasured, but same answers with less reading, and reverting would be a change with no benefit.
 
 ## Settled by a source (2026-09-19)
 

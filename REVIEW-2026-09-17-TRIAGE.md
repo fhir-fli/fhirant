@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 9 OPEN
+# REVIEW-2026-09-17 triage: 8 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -11,7 +11,6 @@ goes to `REVIEW_DECISIONS.md`.
 
 | # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
 |---|---|---|---|---|---|
-| 1 | `633d686` Q9 | Conditional create reads 2 rows, not all; `$export` type filter reads ids | None measured. Fewer rows read by construction | Small | Keep |
 | 2 | `88f7cf6` Q8 | `_contained=true\|both` supported | The old refusal was conformant; only its message ("does not index contained resources") was false | Adds a second paging path and three refusals to the type search | Revert to the refusal with a true message, unless you want the feature |
 | 3 | `50e06d3` A14 | Password change, deactivate, role and scopes routes; any change ends older sessions | Feature. Without it a leaked password is fixed only in the database | Six routes, schema 25 | Keep |
 | 4 | `23b2b78` A16.1 | PKCE verifier accepts S256 only | The authorize endpoint already refused `plain`, so the path was unreachable | Removes code | Keep |
