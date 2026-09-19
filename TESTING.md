@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,448 tests** across 130 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,449 tests** across 130 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,286 | 118 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,287 | 118 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -77,6 +77,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/password_policy_test.dart` | Password strength rules |
 | `test/utils/json_patch_test.dart` | RFC 6902 arrays: `-` appends, add inserts and shifts, replace overwrites, move to `-` (6) |
 | `test/utils/spec_loader_test.dart` | The specification loaded from an asset bundle in chunks, once (3) |
+| `test/utils/backup_crypto_test.dart` | The passphrase envelope: round trip, nothing leaks, wrong passphrase and tampering refused, an iteration count above `maxKdfIterations` refused before deriving (REVIEW-2026-09-17 A16) (18) |
 | `test/utils/pkce_test.dart` | REVIEW-2026-09-17 A16: S256 verifies RFC 7636 appendix B's pair; `plain` and unknown methods never verify (3) |
 
 ### fhirant_server — Auth Tests (2 files)

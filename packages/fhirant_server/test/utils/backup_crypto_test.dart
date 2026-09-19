@@ -140,6 +140,30 @@ void main() {
       );
     });
 
+    test('an iteration count above the ceiling is refused before deriving', () {
+      // REVIEW-2026-09-17 A16: the count is read from the file with no
+      // ceiling; 2^31 iterations is about 80 minutes of the server's
+      // isolate (tool/review_2026-09-17/fix_a16/kdf_cost.tsv). The refusal
+      // must come at once, not after the derivation.
+      final envelope =
+          jsonDecode(BackupCrypto.encrypt(bundle, passphrase)) as Map;
+      (envelope['kdf'] as Map)['iterations'] = 1 << 31;
+      final sw = Stopwatch()..start();
+      expect(
+        () => BackupCrypto.decrypt(jsonEncode(envelope), passphrase),
+        throwsA(
+          isA<BackupDecryptionException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('above'),
+          ),
+        ),
+      );
+      expect(sw.elapsedMilliseconds, lessThan(1000));
+      // The ceiling itself is honoured: ten times what the server writes.
+      expect(BackupCrypto.maxKdfIterations, BackupCrypto.kdfIterations * 10);
+    });
+
     test('an unknown format version is refused', () {
       final envelope =
           jsonDecode(BackupCrypto.encrypt(bundle, passphrase)) as Map;

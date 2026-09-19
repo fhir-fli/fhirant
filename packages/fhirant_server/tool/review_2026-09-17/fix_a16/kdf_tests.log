@@ -1,0 +1,39 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/backup_crypto_test.dart
+00:00 +0: test/utils/backup_crypto_test.dart: round trip what goes in comes back out
+00:01 +1: test/handlers/backup_handler_test.dart: backupHandler returns a collection Bundle with resources
+00:01 +2: test/utils/backup_crypto_test.dart: round trip survives non-ASCII content
+00:02 +3: test/handlers/backup_handler_test.dart: backupHandler returns empty Bundle when DB has no resources
+00:02 +4: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +5: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +6: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +7: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +8: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +9: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +10: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +11: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +12: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +13: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +14: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +15: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:02 +16: test/utils/backup_crypto_test.dart: round trip survives an empty bundle
+00:03 +17: test/handlers/backup_handler_test.dart: the backup leaves the device encrypted the wrong passphrase cannot open it
+00:03 +18: test/handlers/backup_handler_test.dart: the backup leaves the device encrypted the wrong passphrase cannot open it
+00:04 +19: test/utils/backup_crypto_test.dart: the envelope leaks nothing the passphrase does not appear in the envelope
+00:04 +20: test/handlers/backup_handler_test.dart: restore accepts what backup produced an encrypted backup round-trips with its passphrase
+00:04 +21: test/handlers/backup_handler_test.dart: restore accepts what backup produced an encrypted backup round-trips with its passphrase
+00:05 +22: test/utils/backup_crypto_test.dart: the envelope leaks nothing is self-describing, so a future format is recognised not misread
+00:05 +23: test/handlers/backup_handler_test.dart: restore accepts what backup produced an encrypted backup without the passphrase is refused
+00:05 +24: test/utils/backup_crypto_test.dart: a wrong passphrase fails loudly a different passphrase does not decrypt
+00:06 +25: test/handlers/backup_handler_test.dart: restore accepts what backup produced an encrypted backup with the wrong passphrase is refused
+00:06 +26: test/utils/backup_crypto_test.dart: a wrong passphrase fails loudly a one-character difference does not decrypt
+00:06 +27: test/utils/backup_crypto_test.dart: a wrong passphrase fails loudly a one-character difference does not decrypt
+00:07 +28: test/utils/backup_crypto_test.dart: a wrong passphrase fails loudly an empty passphrase is refused at encryption
+00:07 +29: test/utils/backup_crypto_test.dart: tampering is detected a flipped ciphertext byte fails the authentication tag
+00:08 +30: test/utils/backup_crypto_test.dart: tampering is detected a substituted salt fails
+00:09 +31: test/utils/backup_crypto_test.dart: tampering is detected a lowered iteration count still has to authenticate
+00:09 +32: test/utils/backup_crypto_test.dart: tampering is detected an iteration count above the ceiling is refused before deriving
+00:10 +33: test/utils/backup_crypto_test.dart: tampering is detected an unknown format version is refused
+00:10 +34: test/utils/backup_crypto_test.dart: tampering is detected a plain Bundle is not mistaken for an envelope
+00:11 +35: test/utils/backup_crypto_test.dart: each export stands alone the same input twice produces different bytes
+00:12 +36: test/utils/backup_crypto_test.dart: each export stands alone salt and nonce are fresh per export, never reused
+00:22 +37: All tests passed!

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:meta/meta.dart';
 import 'package:pointycastle/export.dart';
 
 /// Passphrase-based encryption for database exports.
@@ -39,6 +40,16 @@ class BackupCrypto {
   /// restore, and the file it protects may sit on removable media for a long
   /// time where an attacker can guess against it at leisure.
   static const int kdfIterations = 210000;
+
+  /// The largest iteration count a restore will honour. The count is read
+  /// from the file, so a crafted envelope could name any number and hold
+  /// the server's isolate in the derivation (REVIEW-2026-09-17 A16).
+  /// Measured 2026-09-19 (tool/review_2026-09-17/fix_a16/kdf_cost.tsv):
+  /// 0.48 s at [kdfIterations], 4.7 s at ten times it, linear, so 2^31
+  /// would be about 80 minutes. Ten times what this server writes leaves
+  /// room for a future increase of [kdfIterations] while bounding the cost
+  /// of a file at a few seconds.
+  static const int maxKdfIterations = kdfIterations * 10;
 
   static const int _keyLengthBytes = 32; // AES-256
   static const int _saltLengthBytes = 16;
@@ -123,6 +134,12 @@ class BackupCrypto {
     if (iterations is! int || iterations < 1) {
       throw const BackupDecryptionException('Malformed KDF iteration count');
     }
+    if (iterations > maxKdfIterations) {
+      throw BackupDecryptionException(
+        'KDF iteration count $iterations is above the $maxKdfIterations '
+        'this server will derive',
+      );
+    }
 
     final Uint8List salt;
     final Uint8List iv;
@@ -181,6 +198,12 @@ class BackupCrypto {
   }
 
   /// PBKDF2-HMAC-SHA256, matching the construction in [PasswordHasher].
+  /// [_deriveKey] with a fixed salt, for measuring its cost
+  /// (tool/review_2026-09-17/fix_a16/kdf_cost.dart).
+  @visibleForTesting
+  static Uint8List deriveKeyForMeasurement(String passphrase, int rounds) =>
+      _deriveKey(passphrase, Uint8List(_saltLengthBytes), rounds);
+
   static Uint8List _deriveKey(String passphrase, Uint8List salt, int rounds) {
     final hmac = Hmac(sha256, utf8.encode(passphrase));
     final out = BytesBuilder();
