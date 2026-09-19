@@ -1184,22 +1184,6 @@ class FhirAntDb extends FhirDb {
   ) =>
       fhirDao.getResources(resourceType, ids);
 
-  /// The matching CONTAINED resources' composite ids,
-  /// `[containerType]/[containerId]#[containedId]`; see
-  /// `FhirDao.searchContainedIds` (REVIEW-2026-09-17 Q8).
-  Future<Set<String>> searchContainedIds({
-    required fhir.R4ResourceType resourceType,
-    Map<String, List<String>>? searchParameters,
-    List<HasParameter>? hasParameters,
-    CompartmentScope? compartment,
-  }) =>
-      fhirDao.searchContainedIds(
-        resourceType: resourceType,
-        searchParameters: searchParameters,
-        hasParameters: hasParameters,
-        compartment: compartment,
-      );
-
   /// The matching ids and nothing else read; see `FhirDao.searchIds`.
   Future<Set<String>> searchIds({
     required fhir.R4ResourceType resourceType,

@@ -12,10 +12,11 @@ import 'test_helpers.dart';
 /// > _containedType — If returning contained resources, whether to return the
 /// > contained or container resources. container | contained
 ///
-/// Measured 2026-09-02: saving an Observation carrying a contained Patient
-/// stores the Observation and nothing else, and the contained Patient is not
-/// indexed. So `false` is answered, and `true`/`both` are refused rather than
-/// answered with container matches that would say the search covered them.
+/// `false` is answered. `true` and `both` are not supported and are refused
+/// rather than ignored: ignoring would answer a search for contained
+/// resources with the ordinary ones. The store does index contained
+/// resources (under `#Type`, reached by chaining); no search answers from
+/// them. Support was built and reverted on 2026-09-19 (REVIEW_DECISIONS.md).
 void main() {
   test('_contained=false is answered, being the default behaviour', () async {
     final server = await createTestServer();
@@ -41,10 +42,7 @@ void main() {
     }
   });
 
-  test('_contained=true and both are answered, under any Prefer', () async {
-    // They were refused as "not indexed" until REVIEW-2026-09-17 Q8; the
-    // contained cases themselves are in contained_search_test.dart. Here
-    // nothing is contained: `true` finds nothing, `both` finds the patient.
+  test('_contained=true and both are refused, under any Prefer', () async {
     final server = await createTestServer();
     final token = await issueTestToken(server.db, scopes: ['user/*.cruds']);
     await server.db.saveResource(fhir.Patient(id: 'p-1'.toFhirString));
@@ -63,10 +61,13 @@ void main() {
             headers: headers,
           ),
         );
-        expect(response.statusCode, 200, reason: '$value with $headers');
-        final bundle =
+        expect(response.statusCode, 400, reason: '$value with $headers');
+        final outcome =
             jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-        expect(bundle['total'], value == 'true' ? 0 : 1);
+        expect(
+          ((outcome['issue'] as List).first as Map)['diagnostics'],
+          contains('is not supported'),
+        );
       }
     }
   });
@@ -113,13 +114,10 @@ void main() {
     expect(fine.statusCode, 200);
   });
 
-  test('a contained resource is not a normal match, and is a contained one',
+  test('a contained resource is indexed, but is not an ordinary match',
       () async {
-    // R4B search.html 3.1.1.5.5, read whole 2026-09-19, verbatim: "By
-    // default, search results only include resources that are not
-    // contained in other resources." The contained index (fhir_db schema 7)
-    // files it under `#Patient`, where searchContainedIds finds it
-    // (REVIEW-2026-09-17 Q8).
+    // The ordinary search (_contained=false, the default) must not return a
+    // contained resource; the index holds it under `#Patient`.
     final server = await createTestServer();
     await server.db.saveResource(
       fhir.Observation.fromJson({
@@ -145,14 +143,13 @@ void main() {
       searchParameters: const {},
     );
     expect(patients, isEmpty);
-    expect(
-      await server.db.searchContainedIds(
-        resourceType: fhir.R4ResourceType.Patient,
-        searchParameters: {
-          'family': ['Containedsson'],
-        },
-      ),
-      {'Observation/obs-1#inner'},
-    );
+
+    final contained = await server.db
+        .customSelect(
+          'SELECT count(*) AS n FROM string_search_parameters '
+          "WHERE resource_type = '#Patient'",
+        )
+        .getSingle();
+    expect(contained.read<int>('n'), greaterThan(0), reason: 'indexed');
   });
 }

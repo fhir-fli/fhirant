@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,469 tests** across 134 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,463 tests** across 133 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,307 | 122 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,301 | 121 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -142,7 +142,6 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/bootstrap_token_test.dart` | REVIEW-2026-09-17 A15: with a bootstrap token issued, `/auth/status` says so, the first registration without it or with a wrong one is 403, the header or the body field creates the administrator, afterwards the token opens nothing, and a server with no token leaves the first registration open (7) |
 | `test/integration/account_management_test.dart` | REVIEW-2026-09-17 A14: own password change (wrong current 401, policy 400, old access and refresh tokens 401 after, new pair works), admin reset, deactivate/activate, role and scopes changes each end the old sessions, list carries no secrets, last-admin guard 409, non-admin 403, unknown id 404, a token behind the account's generation 401 (10) |
 | `test/integration/login_answers_alike_test.dart` | REVIEW-2026-09-17 A12: a wrong password, an unknown account, a deactivated one and a locked one get the same 401 and body from `/auth/login` and `/auth/authorize`; the right password still logs in (3) |
-| `test/integration/contained_search_test.dart` | REVIEW-2026-09-17 Q8: `_contained=true` returns the container once, `_containedType=contained` the contained resource with its `#` fullUrl, `both` the normal match then the container; paged and counted over the combined set; `_sort`, includes and `_filter` refused with it (6) |
 | `test/integration/translate_test.dart` | REVIEW-2026-09-17 C7: `$translate` returns every target across matching groups as `match` parts with equivalence, concept, product and source; `result` false for an unmatched target or an unknown code (3) |
 | `test/integration/put_id_grammar_test.dart` | REVIEW-2026-09-17 C5: `PUT /[type]/[id]` refuses an id outside R4B's `id` regex and creates under one inside it (2) |
 | `test/integration/conditional_update_test.dart` | REVIEW-2026-09-17 C2: `PUT /[type]?criteria` by the five rows of R4B http.html 3.1.0.4.3 (create, update-as-create, update the match, 400 on a different id, 412 on several), no criteria 400, criteria searched as a search, inside a transaction, inside a patient compartment (10) |

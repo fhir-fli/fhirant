@@ -546,20 +546,29 @@ Future<fhir.Bundle> typeSearch(
   }
 
   // _contained: "Whether to return resources contained in other resources in
-  // the search matches — true | false | both (false is default)". R4B
-  // search.html 3.1.1.5.5, read whole 2026-09-19: "true: return only
-  // contained resources", "both: return both contained and non-contained
-  // (normal) resources"; `_containedType` "container (default): Return the
-  // container resources", "contained: return only the contained resource".
-  // `true` and `both` were refused as "not indexed"; the store has indexed
-  // contained resources under `#Type` since fhir_db schema 7
-  // (REVIEW-2026-09-17 Q8). Answered by [_containedSearch] below.
+  // the search matches — true | false | both (false is default)".
+  //
+  // The default is what this server does, so `false` and an absent parameter
+  // are answered normally. `true` and `both` are not supported: the store
+  // indexes contained resources (under `#Type`, reached by chaining), but no
+  // search answers from those rows. They are refused rather than ignored,
+  // because ignoring would answer a search for contained resources with the
+  // ordinary ones. R4B search.html 3.1.1.5.5 defines the parameter without
+  // requiring it. Support was built and reverted on 2026-09-19 (nothing we
+  // build uses it; REVIEW_DECISIONS.md).
   if (contained != null) {
     const allowed = {'true', 'false', 'both'};
     if (!allowed.contains(contained)) {
       throw SearchRefused(
         fhir.IssueType.processing,
         '_contained must be true, false or both; got "$contained"',
+      );
+    }
+    if (contained != 'false') {
+      throw SearchRefused(
+        fhir.IssueType.processing,
+        '_contained=$contained is not supported by this server. '
+        '_contained=false, the default, is.',
       );
     }
   }
@@ -574,30 +583,6 @@ Future<fhir.Bundle> typeSearch(
     }
     // With _contained=false nothing contained is returned, so this cannot
     // change the answer and is not an error on its own.
-  }
-  final wantsContained = contained == 'true' || contained == 'both';
-  if (wantsContained) {
-    // The contained set and the normal set are two id sets the store keeps
-    // apart; the page is cut from their union in Dart, which is where
-    // `_sort`, `_filter` and the includes would have to be re-done. They
-    // are refused with `_contained` rather than answered as if applied.
-    final withContained = <String>[
-      if (sort != null && sort.isNotEmpty) '_sort',
-      if (filter != null && filter.trim().isNotEmpty) '_filter',
-      if (include != null && include.isNotEmpty) '_include',
-      if (includeIterate != null && includeIterate.isNotEmpty)
-        '_include:iterate',
-      if (revinclude != null && revinclude.isNotEmpty) '_revinclude',
-      if (revincludeIterate != null && revincludeIterate.isNotEmpty)
-        '_revinclude:iterate',
-    ];
-    if (withContained.isNotEmpty) {
-      throw SearchRefused(
-        fhir.IssueType.notSupported,
-        '${withContained.join(', ')} is not supported together with '
-        '_contained=$contained on this server',
-      );
-    }
   }
 
   // _summary and _elements are mutually exclusive (per FHIR spec)
@@ -654,25 +639,6 @@ Future<fhir.Bundle> typeSearch(
         link: [links.self(requestedUri)],
       );
     }
-  }
-
-  if (wantsContained) {
-    return _containedSearch(
-      dbInterface,
-      type,
-      searchParams,
-      hasParams,
-      compartment: compartment,
-      both: contained == 'both',
-      containerWanted: containedType != 'contained',
-      count: count,
-      offset: offset,
-      total: total,
-      summary: summary,
-      elements: elements,
-      links: links,
-      requestedUri: requestedUri,
-    );
   }
 
   // _summary=count returns the total and no entries. R4B 3.1.1.5.3: "if
@@ -777,14 +743,49 @@ Future<fhir.Bundle> typeSearch(
   // `next` from the probe row, so it survives `_total=none`; `last` when
   // the total is known.
   final requested = requestedUri;
-  final bundleLinks = _pageLinks(
-    links,
-    requested,
-    count: count,
-    offset: offset,
-    hasMore: hasMore,
-    totalCount: totalCount,
-  );
+  final bundleLinks = <fhir.BundleLink>[
+    links.self(requested),
+  ];
+  if (count > 0) {
+    bundleLinks.add(
+      fhir.BundleLink(
+        relation: fhir.FhirString('first'),
+        url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
+      ),
+    );
+    if (offset > 0) {
+      final prevOffset = (offset - count).clamp(0, offset);
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('previous'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: prevOffset).toString(),
+          ),
+        ),
+      );
+    }
+    if (hasMore) {
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('next'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: offset + count).toString(),
+          ),
+        ),
+      );
+    }
+    if (totalCount != null && totalCount > 0) {
+      final lastOffset = ((totalCount - 1) ~/ count) * count;
+      bundleLinks.add(
+        fhir.BundleLink(
+          relation: fhir.FhirString('last'),
+          url: fhir.FhirUri(
+            links.url(requested, offset: lastOffset).toString(),
+          ),
+        ),
+      );
+    }
+  }
 
   // Handle empty results
   if (resources.isEmpty) {
@@ -895,8 +896,18 @@ Future<fhir.Bundle> typeSearch(
   }
 
   // Apply response shaping (_summary / _elements) to each resource
-  fhir.Resource shapeResource(fhir.Resource resource) =>
-      _shaped(resource, summary, elements);
+  fhir.Resource shapeResource(fhir.Resource resource) {
+    if (summary != null && summary != 'false') {
+      final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+      final shaped = FhirResponseShaper.shapeSummary(json, summary);
+      return fhir.Resource.fromJson(shaped);
+    } else if (elements != null && elements.isNotEmpty) {
+      final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
+      final shaped = FhirResponseShaper.shapeElements(json, elements);
+      return fhir.Resource.fromJson(shaped);
+    }
+    return resource;
+  }
 
   // Build match entries (from search results)
   final matchEntries = resources.map((resource) {
@@ -1947,210 +1958,6 @@ Future<Response> conditionalUpdateHandler(
     withId.id!.valueString!,
     dbInterface,
     subscriptions: subscriptions,
-  );
-}
-
-/// The page's links. R4 3.1.1.5.3 and 3.1.1.6: every link is built from
-/// the parameters actually used, with only `_offset` changed. `first` and
-/// `self` are always present; `previous` when there is a page before this
-/// one; `next` from [hasMore] (the probe row, so it survives
-/// `_total=none`); `last` when the total is known.
-List<fhir.BundleLink> _pageLinks(
-  SearchLinks links,
-  Uri requested, {
-  required int count,
-  required int offset,
-  required bool hasMore,
-  required int? totalCount,
-}) {
-  final bundleLinks = <fhir.BundleLink>[links.self(requested)];
-  if (count <= 0) return bundleLinks;
-  bundleLinks.add(
-    fhir.BundleLink(
-      relation: fhir.FhirString('first'),
-      url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
-    ),
-  );
-  if (offset > 0) {
-    final prevOffset = (offset - count).clamp(0, offset);
-    bundleLinks.add(
-      fhir.BundleLink(
-        relation: fhir.FhirString('previous'),
-        url: fhir.FhirUri(links.url(requested, offset: prevOffset).toString()),
-      ),
-    );
-  }
-  if (hasMore) {
-    bundleLinks.add(
-      fhir.BundleLink(
-        relation: fhir.FhirString('next'),
-        url: fhir.FhirUri(
-          links.url(requested, offset: offset + count).toString(),
-        ),
-      ),
-    );
-  }
-  if (totalCount != null && totalCount > 0) {
-    final lastOffset = ((totalCount - 1) ~/ count) * count;
-    bundleLinks.add(
-      fhir.BundleLink(
-        relation: fhir.FhirString('last'),
-        url: fhir.FhirUri(links.url(requested, offset: lastOffset).toString()),
-      ),
-    );
-  }
-  return bundleLinks;
-}
-
-/// [resource] under `_summary` or `_elements`, or itself.
-fhir.Resource _shaped(
-  fhir.Resource resource,
-  String? summary,
-  List<String>? elements,
-) {
-  if (summary != null && summary != 'false') {
-    final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-    return fhir.Resource.fromJson(
-      FhirResponseShaper.shapeSummary(json, summary),
-    );
-  }
-  if (elements != null && elements.isNotEmpty) {
-    final json = jsonDecode(resource.toJsonString()) as Map<String, dynamic>;
-    return fhir.Resource.fromJson(
-      FhirResponseShaper.shapeElements(json, elements),
-    );
-  }
-  return resource;
-}
-
-/// The search with `_contained=true` or `both` (R4B search.html 3.1.1.5.5,
-/// read whole 2026-09-19; REVIEW-2026-09-17 Q8).
-///
-/// The store keeps two id sets: the normal matches (`searchIds`) and the
-/// contained ones (`searchContainedIds`, composite ids
-/// `[containerType]/[containerId]#[containedId]`). The page is cut, in id
-/// order, from the contained set alone (`true`) or the normal set followed
-/// by the contained set (`both`). A contained match is answered as its
-/// container ("container (default): Return the container resources"; the
-/// container once, however many of its contained resources matched) or as
-/// the contained resource itself ("contained: return only the contained
-/// resource"), with the fullUrl the page shows for that case,
-/// `[base]/[containerType]/[containerId]#[containedId]`. Every entry is
-/// `search.mode=match`, which the page has the server "SHALL populate".
-Future<fhir.Bundle> _containedSearch(
-  FhirAntDb dbInterface,
-  fhir.R4ResourceType type,
-  Map<String, List<String>>? searchParams,
-  List<HasParameter>? hasParams, {
-  required CompartmentScope? compartment,
-  required bool both,
-  required bool containerWanted,
-  required int count,
-  required int offset,
-  required String? total,
-  required String? summary,
-  required List<String>? elements,
-  required SearchLinks links,
-  required Uri requestedUri,
-}) async {
-  final normal = both
-      ? ((await dbInterface.searchIds(
-          resourceType: type,
-          searchParameters: searchParams,
-          hasParameters: hasParams,
-          compartment: compartment,
-        ))
-          .toList()
-        ..sort())
-      : const <String>[];
-  final containedIds = (await dbInterface.searchContainedIds(
-    resourceType: type,
-    searchParameters: searchParams,
-    hasParameters: hasParams,
-    compartment: compartment,
-  ))
-      .toList()
-    ..sort();
-  final ordered = [...normal, ...containedIds];
-  final totalCount = total == 'none' ? null : ordered.length;
-
-  if (summary == 'count' || count == 0) {
-    return fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      total: fhir.FhirUnsignedInt(ordered.length),
-      link: [links.self(requestedUri)],
-    );
-  }
-
-  final page = ordered.skip(offset).take(count).toList();
-  final hasMore = offset + count < ordered.length;
-  final baseUrl = requestedUri.hasPort
-      ? '${requestedUri.scheme}://${requestedUri.host}:${requestedUri.port}'
-      : '${requestedUri.scheme}://${requestedUri.host}';
-
-  final entries = <fhir.BundleEntry>[];
-  final containersShown = <String>{};
-  for (final id in page) {
-    final hash = id.indexOf('#');
-    if (hash < 0) {
-      final resource = await dbInterface.getResource(type, id);
-      if (resource == null) continue;
-      entries.add(
-        fhir.BundleEntry(
-          resource: _shaped(resource, summary, elements),
-          fullUrl: fhir.FhirUri('$baseUrl/$type/$id'),
-          search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-        ),
-      );
-      continue;
-    }
-    final containerRef = id.substring(0, hash);
-    final containedId = id.substring(hash + 1);
-    final slash = containerRef.indexOf('/');
-    final containerType =
-        fhir.R4ResourceType.fromString(containerRef.substring(0, slash));
-    final containerId = containerRef.substring(slash + 1);
-    if (containerType == null) continue;
-    final container = await dbInterface.getResource(containerType, containerId);
-    if (container == null) continue;
-    if (containerWanted) {
-      if (!containersShown.add(containerRef)) continue;
-      entries.add(
-        fhir.BundleEntry(
-          resource: _shaped(container, summary, elements),
-          fullUrl: fhir.FhirUri('$baseUrl/$containerRef'),
-          search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-        ),
-      );
-      continue;
-    }
-    final inner = container is fhir.DomainResource
-        ? container.contained
-            ?.where((r) => r.id?.valueString == containedId)
-            .firstOrNull
-        : null;
-    if (inner == null) continue;
-    entries.add(
-      fhir.BundleEntry(
-        resource: _shaped(inner, summary, elements),
-        fullUrl: fhir.FhirUri('$baseUrl/$containerRef#$containedId'),
-        search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-      ),
-    );
-  }
-
-  return fhir.Bundle(
-    type: fhir.BundleType.searchset,
-    total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
-    link: _pageLinks(
-      links,
-      requestedUri,
-      count: count,
-      offset: offset,
-      hasMore: hasMore,
-      totalCount: totalCount,
-    ),
-    entry: entries.isEmpty ? null : entries,
   );
 }
 
