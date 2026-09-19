@@ -120,9 +120,14 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
       // A request that presented no credential and was refused for that is
       // not an access attempt by anyone the trail could name; recording it
       // gave any unauthenticated caller an unbounded write into the
-      // database. A refused TOKEN is still recorded.
+      // database. A refused TOKEN is still recorded. So is a refused LOGIN
+      // (the handler puts the claimed name in the response context): the
+      // trail can name whose account was tried, and the credential
+      // endpoints are rate limited, so the write is bounded
+      // (REVIEW-2026-09-17 A16: failed logins used to leave no record).
       final bareRefusal = response.statusCode == 401 &&
-          request.headers['authorization'] == null;
+          request.headers['authorization'] == null &&
+          response.context['attempted_username'] == null;
       if (_shouldAudit(request) && !bareRefusal) {
         // Built off the response path, queued, written per tick. A Bundle
         // handler declares its entries in the response context and gets one
@@ -270,6 +275,7 @@ Future<void> _queueAuditEvent(
   // it is (restful-interaction has both codes), not as a `create` of
   // nothing; its entries follow as events of their own.
   final bundleSubtype = response.context['audit_subtype'];
+  final attempted = response.context['attempted_username'];
   await _queueEvent(
     request,
     dbInterface,
@@ -280,6 +286,7 @@ Future<void> _queueAuditEvent(
     entityRef: _entityReference(request, response),
     subtype: bundleSubtype is String ? bundleSubtype : null,
     action: bundleSubtype is String ? 'E' : null,
+    attemptedUsername: attempted is String ? attempted : null,
   );
 }
 
@@ -339,10 +346,16 @@ Future<void> _queueEvent(
   String? patientRef,
   String? subtype,
   String? action,
+  String? attemptedUsername,
 }) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
-    final username = authUser?['username'] as String? ?? 'anonymous';
+    // A refused login names the account that was tried. It goes in
+    // agent.name (R4B AuditEvent.agent.name, profiles-resources.json:
+    // "Human-meaningful name for the agent") and in who.display, with no
+    // identifier: nothing was proven about who typed it.
+    final username =
+        authUser?['username'] as String? ?? attemptedUsername ?? 'anonymous';
     // ISO 27789 requires the audit record to identify the user. A display
     // name does not: two clinicians who share a name are indistinguishable in
     // a record kept for legal purposes. FHIR lets a Reference identify by
@@ -399,6 +412,8 @@ Future<void> _queueEvent(
               },
             'display': username,
           },
+          if (attemptedUsername != null && authUser == null)
+            'name': attemptedUsername,
           'requestor': true,
           if (clientIp != null)
             'network': {

@@ -1,0 +1,28 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/failed_login_audit_test.dart
+00:00 +0: a wrong password is recorded with the name that was tried
+00:02 +0 -1: a wrong password is recorded with the name that was tried [E]
+  Expected: an object with length of <1>
+    Actual: []
+     Which: has length of <0>
+  
+  package:matcher                                     expect
+  test/integration/failed_login_audit_test.dart 70:5  main.<fn>
+  
+00:02 +0 -1: an unknown account is recorded with the name that was tried
+00:04 +0 -2: an unknown account is recorded with the name that was tried [E]
+  Expected: an object with length of <1>
+    Actual: []
+     Which: has length of <0>
+  
+  package:matcher                                     expect
+  test/integration/failed_login_audit_test.dart 81:5  main.<fn>
+  
+00:04 +0 -2: a bare unauthenticated read is still not recorded
+00:05 +1 -2: Some tests failed.
+
+Failing tests:
+  test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+  test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

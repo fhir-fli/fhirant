@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,449 tests** across 130 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,452 tests** across 131 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,287 | 118 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,290 | 119 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -130,6 +130,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/no_store_test.dart` | REVIEW-2026-09-17 A16: `Cache-Control: no-store` and `Pragma: no-cache` on login, first registration, both token grants, the password change, the JSON authorize response and the code redirect (RFC 6749 §5.1) (7) |
 | `test/integration/login_page_headers_test.dart` | REVIEW-2026-09-17 A16: the login form, the form after a wrong password, and an authorization error page carry `X-Frame-Options: DENY`, the CSP with `frame-ancestors 'none'` and `form-action 'self'`, `nosniff` and `no-store` (3) |
 | `test/integration/refresh_reuse_test.dart` | REVIEW-2026-09-17 A16: a rotated-away refresh token presented again ends the active refresh token and the access token with it (RFC 9700 §4.14.2); a forged token in the revoked table ends nothing (2) |
+| `test/integration/failed_login_audit_test.dart` | REVIEW-2026-09-17 A16: a refused login is an AuditEvent naming the account that was tried (`agent.name`, `who.display`, no identifier, outcome 4); a bare unauthenticated read is still not recorded (3) |
 | `test/integration/bootstrap_token_test.dart` | REVIEW-2026-09-17 A15: with a bootstrap token issued, `/auth/status` says so, the first registration without it or with a wrong one is 403, the header or the body field creates the administrator, afterwards the token opens nothing, and a server with no token leaves the first registration open (7) |
 | `test/integration/account_management_test.dart` | REVIEW-2026-09-17 A14: own password change (wrong current 401, policy 400, old access and refresh tokens 401 after, new pair works), admin reset, deactivate/activate, role and scopes changes each end the old sessions, list carries no secrets, last-admin guard 409, non-admin 403, unknown id 404, a token behind the account's generation 401 (10) |
 | `test/integration/login_answers_alike_test.dart` | REVIEW-2026-09-17 A12: a wrong password, an unknown account, a deactivated one and a locked one get the same 401 and body from `/auth/login` and `/auth/authorize`; the right password still logs in (3) |

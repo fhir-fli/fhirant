@@ -1,0 +1,62 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/failed_login_audit_test.dart
+00:00 +0: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +1: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +2: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +3: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +4: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +5: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +6: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +7: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +8: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +9: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +10: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +11: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +12: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +13: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +14: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +15: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +16: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +17: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +18: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +19: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +20: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +21: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +22: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +23: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +24: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +25: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +26: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +27: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +28: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +29: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +30: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +31: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +32: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +33: test/integration/failed_login_audit_test.dart: a wrong password is recorded with the name that was tried
+00:00 +34: test/handlers/authorize_handler_test.dart: authorizeJsonHandler a deactivated user is refused as a wrong password is
+00:00 +35: test/handlers/auth_handler_test.dart: loginHandler valid login returns JWT
+00:01 +36: test/handlers/auth_handler_test.dart: loginHandler valid login returns JWT
+00:01 +37: test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+00:01 +38: test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+00:01 +39: test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+00:01 +40: test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+00:01 +41: test/integration/failed_login_audit_test.dart: an unknown account is recorded with the name that was tried
+00:01 +42: test/handlers/authorize_handler_test.dart: authorizeJsonHandler the scope stored is the request intersected with the account
+00:01 +43: test/handlers/auth_handler_test.dart: loginHandler deactivated user returns 403
+00:01 +44: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:01 +45: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:01 +46: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:02 +47: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:02 +48: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:02 +49: test/integration/failed_login_audit_test.dart: a bare unauthenticated read is still not recorded
+00:02 +50: test/handlers/authorize_handler_test.dart: authorizePostHandler (form-encoded) returns 302 redirect with code for valid form submission
+00:02 +51: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +52: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +53: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +54: test/handlers/authorize_handler_test.dart: a locked account is told so on the form, and failures count
+00:02 +55: test/handlers/auth_handler_test.dart: loginHandler account locked after max failed attempts
+00:02 +56: test/handlers/auth_handler_test.dart: loginHandler successful login resets failed count
+00:03 +57: test/handlers/auth_handler_test.dart: unlockAccountHandler non-admin returns 403
+00:03 +58: test/handlers/auth_handler_test.dart: unlockAccountHandler unknown user returns 404
+00:03 +59: test/handlers/auth_handler_test.dart: unlockAccountHandler admin can unlock account
+00:03 +60: All tests passed!

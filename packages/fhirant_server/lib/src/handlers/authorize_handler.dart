@@ -222,7 +222,8 @@ Future<Response> authorizePostHandler(
         // The code travels in Location (RFC 6749 5.1, utils/no_store.dart).
         return Response(302, headers: {'Location': url, ...noStoreHeaders});
       case _Denied(description: final message):
-        return form(message);
+        // The claimed name goes to the audit trail (A16).
+        return form(message).change(context: {'attempted_username': username});
       case _Invalid(:final error, :final description, :final redirectable):
         if (redirectable) {
           return await _errorToClient(
@@ -333,7 +334,8 @@ Future<Response> authorizeJsonHandler(
           headers: jsonNoStoreHeaders,
         );
       case _Denied(:final status, :final description):
-        return error(status, 'access_denied', description);
+        return error(status, 'access_denied', description)
+            .change(context: {'attempted_username': username});
       case _Invalid(error: final code, :final description):
         return error(400, code, description);
     }

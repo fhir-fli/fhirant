@@ -54,9 +54,13 @@ Future<Response> loginHandler(
       case CredentialInvalid():
       case CredentialInactive():
       case CredentialLocked():
+        // The name the caller claimed, for the audit trail: a refused
+        // login is recorded with it (audit_middleware.dart;
+        // REVIEW-2026-09-17 A16). Nothing else reads the context.
         return Response(
           401,
           body: jsonEncode({'error': 'Invalid username or password'}),
+          context: {'attempted_username': username},
         );
     }
 
