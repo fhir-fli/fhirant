@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,383 tests** across 117 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
+**1,385 tests** across 118 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-18) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,221 | 105 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,223 | 106 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -116,6 +116,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/scale_review_test.dart` | REVIEW-2026-09-06 §5 at the HTTP surface: `_count` refused below zero and capped at 500 with the client's value in the self link, `$everything` paged before hydrating with links, conditional delete bounded at 100 and transactional (7) |
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
+| `test/integration/put_id_grammar_test.dart` | REVIEW-2026-09-17 C5: `PUT /[type]/[id]` refuses an id outside R4B's `id` regex and creates under one inside it (2) |
 | `test/integration/conditional_update_test.dart` | REVIEW-2026-09-17 C2: `PUT /[type]?criteria` by the five rows of R4B http.html 3.1.0.4.3 (create, update-as-create, update the match, 400 on a different id, 412 on several), no criteria 400, criteria searched as a search, inside a transaction, inside a patient compartment (10) |
 | `test/integration/bundle_entry_url_test.dart` | REVIEW-2026-09-17 Q7: an entry URL with a third segment or a non-id second segment (`_history`, `$everything`, `$validate`) is a 400 on that entry, not the first two segments (1) |
 | `test/integration/bundle_entry_search_test.dart` | REVIEW-2026-09-17 Q6: eight search URLs (`_has`, `_include`, `_revinclude`, `_summary=count`, `_elements`, `_filter`, `_total=none`, plain) as batch entries and as REST requests must agree; `Prefer: handling=strict` reaches the entry (3) |

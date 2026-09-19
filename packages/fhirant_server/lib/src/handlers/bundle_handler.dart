@@ -11,6 +11,7 @@ import 'package:fhirant_server/src/handlers/resource_handler.dart'
         resolveConditionalUpdate,
         typeSearch;
 import 'package:fhirant_server/src/services/subscription_service.dart';
+import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
@@ -563,8 +564,7 @@ Future<_BundleOperation> _processBundleEntry(
   // the Patient (REVIEW-2026-09-17 Q7). It is refused as unsupported now.
   // An id is R4B datatypes.html `id`, verbatim: "Regex:
   // [A-Za-z0-9\-\.]{1,64}".
-  if (urlParts.length > 2 ||
-      (urlParts.length == 2 && !_fhirIdGrammar.hasMatch(urlParts[1]))) {
+  if (urlParts.length > 2 || (urlParts.length == 2 && !isFhirId(urlParts[1]))) {
     throw BundleEntryException(
       400,
       'Bundle entry $entryIndex: "$url" is not an interaction this server '
@@ -1096,9 +1096,6 @@ Future<_BundleOperation> _processBundleEntry(
     subjectBeforeDelete: subjectBeforeDelete,
   );
 }
-
-/// R4B datatypes.html `id`, verbatim: "Regex: [A-Za-z0-9\-\.]{1,64}".
-final RegExp _fhirIdGrammar = RegExp(r'^[A-Za-z0-9\-\.]{1,64}$');
 
 /// A type-level GET inside a Bundle: the same search the REST path runs
 /// ([typeSearch]), answered as a searchset Bundle inside the entry. The

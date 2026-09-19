@@ -1,0 +1,57 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/put_id_grammar_test.dart
+00:00 +0: test/integration/put_id_grammar_test.dart: an id outside the grammar is refused
+00:00 +1: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +2: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +3: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +4: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +5: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +6: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +7: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +8: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +9: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +10: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +11: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +12: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +13: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +14: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +15: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +16: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +17: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +18: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +19: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +20: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +21: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +22: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +23: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +24: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +25: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +25: test/integration/put_id_grammar_test.dart: an id outside the grammar is refused
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:00 +26: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +27: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +28: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +29: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +30: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +31: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +32: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +33: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +34: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +35: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +36: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +37: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +38: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +39: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +40: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +41: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +42: test/integration/bundle_entry_url_test.dart: a URL that is not [type] or [type]/[id] is refused, not truncated
+00:00 +43: test/integration/conditional_update_test.dart: no matches, no id: the server creates the resource
+00:00 +44: test/integration/conditional_update_test.dart: no matches, id provided: update as create under that id
+00:00 +45: test/integration/conditional_update_test.dart: one match, no id: the match is updated
+00:00 +46: test/integration/conditional_update_test.dart: one match, the same id: the match is updated
+00:00 +47: test/integration/conditional_update_test.dart: one match, a different id: 400
+00:00 +48: test/integration/conditional_update_test.dart: multiple matches: 412
+00:00 +49: test/integration/conditional_update_test.dart: no criteria: 400
+00:00 +50: test/integration/conditional_update_test.dart: the criteria are searched as a search is
+00:00 +51: test/integration/conditional_update_test.dart: inside a transaction, the same rows
+00:00 +52: test/integration/conditional_update_test.dart: a patient-scoped token matches only inside its compartment
+00:01 +53: All tests passed!

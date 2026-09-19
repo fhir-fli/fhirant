@@ -6,6 +6,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
+import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
 import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
@@ -1419,6 +1420,15 @@ Future<Response> putResourceHandler(
       );
       return _validationErrorResponse(
         'Resource ID in URL does not match resource ID in body',
+      );
+    }
+    // A client-supplied id must be an `id` (fhir_id.dart). `PUT
+    // /Patient/a$b_c` was a 201, and the id then sat in every URL the
+    // server built from it (REVIEW-2026-09-17 C5).
+    if (!isFhirId(id)) {
+      return _validationErrorResponse(
+        '"$id" is not a FHIR id: letters, digits, "-" and ".", 1 to 64 '
+        'characters',
       );
     }
 
