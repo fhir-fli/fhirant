@@ -17,11 +17,11 @@ Handler websocketHandler(WebSocketSubscriptions registry) {
   return webSocketHandler((webSocket, _) {
     final sink = webSocket.sink;
     webSocket.stream.listen(
-      (message) {
+      (message) async {
         if (message is! String) {
           return;
         }
-        final reply = registry.handleMessage(message, sink);
+        final reply = await registry.handleMessage(message, sink);
         if (reply != null) {
           sink.add(reply);
           FhirantLogging().logInfo('Websocket $reply');

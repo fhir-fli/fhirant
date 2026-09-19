@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
@@ -170,7 +171,13 @@ class FhirAntServer {
     // One service for the life of the router, so rest-hook delivery reuses a
     // single HTTP client rather than building one per write, and so every
     // bound websocket is visible to every write.
-    final websockets = WebSocketSubscriptions();
+    // A bind is acknowledged only for a Subscription the store holds
+    // (services/websocket_subscriptions.dart; REVIEW-2026-09-17 A16).
+    final websockets = WebSocketSubscriptions(
+      exists: (id) async =>
+          await dbInterface.getResource(R4ResourceType.Subscription, id) !=
+          null,
+    );
     final subscriptions =
         SubscriptionService(dbInterface, websockets: websockets);
     _subscriptions = subscriptions;

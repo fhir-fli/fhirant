@@ -1,0 +1,46 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/services/websocket_subscriptions_test.dart
+00:00 +0: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives bind :id is answered with bound :id
+00:00 +1: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives bind without the colon works too
+00:00 +2: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives anything that is not bind is ignored, not answered
+00:00 +3: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives an id outside the FHIR id grammar is not acknowledged
+00:00 +4: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives a socket may bind maxBindsPerSocket ids, and the same id again
+00:00 +5: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives with an existence check, an unknown id is not acknowledged
+00:00 +6: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives ping goes to every socket bound to that subscription
+00:00 +7: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives ping to a subscription nobody bound is not an error
+00:00 +8: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives a socket that throws is dropped and the others still get the ping
+00:00 +9: test/services/websocket_subscriptions_test.dart: the handshake is exactly what the spec gives release drops a socket from every subscription it bound
+00:00 +10: test/services/websocket_subscriptions_test.dart: a websocket Subscription end to end activates with no endpoint, because the client dials in
+00:00 +11: test/services/websocket_subscriptions_test.dart: a websocket Subscription end to end a matching write pings the bound socket
+00:00 +12: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries a bare resource type matches every instance of it
+00:00 +13: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries a bare resource type matches every instance of it
+00:00 +14: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries a bare resource type matches every instance of it
+00:00 +15: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries a token search matches only the resources the REST search would
+00:00 +16: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries a resource of a different type never matches
+00:00 +17: test/services/subscription_service_test.dart: criteria are search strings interpreted like REST queries an unparseable criteria matches nothing rather than everything
+00:00 +18: test/services/subscription_service_test.dart: the server decides the status, per the lifecycle requested becomes active once the server can process it
+00:00 +19: test/services/subscription_service_test.dart: the server decides the status, per the lifecycle an unusable criteria becomes error, with the reason recorded
+00:00 +20: test/services/subscription_service_test.dart: the server decides the status, per the lifecycle an unsupported channel is refused, not silently accepted
+00:00 +21: test/services/subscription_service_test.dart: the server decides the status, per the lifecycle a rest-hook with no endpoint is refused
+00:00 +22: test/services/subscription_service_test.dart: the server decides the status, per the lifecycle end in the past turns the subscription off
+00:00 +23: test/services/subscription_service_test.dart: rest-hook delivery an empty payload POSTs an empty body to the endpoint
+00:00 +24: test/services/subscription_service_test.dart: rest-hook delivery a payload PUTs the resource under the endpoint as a service base
+00:00 +25: test/services/subscription_service_test.dart: rest-hook delivery channel.header is sent, split on the first colon only
+00:00 +26: test/services/subscription_service_test.dart: rest-hook delivery a resource that does not match is not delivered
+00:00 +27: test/services/subscription_service_test.dart: rest-hook delivery a subscription that is not active is not delivered to
+00:00 +28: test/services/subscription_service_test.dart: a failing subscriber does not break the write a non-2xx response records the error on the subscription
+00:00 +29: test/services/subscription_service_test.dart: a failing subscriber does not break the write a subscriber that throws does not throw out of onResourceChanged
+00:00 +30: test/services/subscription_service_test.dart: a failing subscriber does not break the write a recovered subscriber returns to active
+00:00 +31: test/services/subscription_service_test.dart: retry and giving up are fhirant policy, not spec rules a failure short of the threshold stays in error and keeps trying
+00:00 +32: test/services/subscription_service_test.dart: retry and giving up are fhirant policy, not spec rules consecutive failures switch it off and delivery stops
+00:00 +33: test/services/subscription_service_test.dart: retry and giving up are fhirant policy, not spec rules the threshold is configurable, because the spec sets no number
+00:00 +34: test/services/subscription_service_test.dart: retry and giving up are fhirant policy, not spec rules a success resets the count, so failures spread over time never add up
+00:00 +35: test/services/subscription_service_test.dart: retry and giving up are fhirant policy, not spec rules the count lives in an extension under our own namespace
+00:00 +36: test/services/subscription_service_test.dart: delivery happens after the write, from a queue (finding 37) onResourceChanged returns before a slow subscriber answers
+00:01 +37: test/services/subscription_service_test.dart: delivery happens after the write, from a queue (finding 37) a subscriber that never answers is a failure after the deadline, and the worker moves on
+00:01 +38: test/services/subscription_service_test.dart: delivery happens after the write, from a queue (finding 37) one subscription sees changes in the order they were written
+00:01 +39: test/services/subscription_service_test.dart: delivery happens after the write, from a queue (finding 37) the queue is bounded: a write past the bound waits for the worker, nothing is dropped
+00:01 +40: test/services/subscription_service_test.dart: Subscription.end is the time to turn it off delivery already stops at end, before the sweep exists
+00:01 +41: test/services/subscription_service_test.dart: Subscription.end is the time to turn it off the sweep switches an expired subscription off with no write
+00:01 +42: test/services/subscription_service_test.dart: Subscription.end is the time to turn it off a subscription with no end, or one still in the future, is left
+00:01 +43: test/services/subscription_service_test.dart: Subscription.end is the time to turn it off one already off is not swept again
+00:01 +44: All tests passed!
