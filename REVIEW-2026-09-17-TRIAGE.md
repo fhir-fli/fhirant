@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 7 OPEN
+# REVIEW-2026-09-17 triage: 6 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -11,7 +11,6 @@ goes to `REVIEW_DECISIONS.md`.
 
 | # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
 |---|---|---|---|---|---|
-| 3 | `50e06d3` A14 | Password change, deactivate, role and scopes routes; any change ends older sessions | Feature. Without it a leaked password is fixed only in the database | Six routes, schema 25 | Keep |
 | 4 | `23b2b78` A16.1 | PKCE verifier accepts S256 only | The authorize endpoint already refused `plain`, so the path was unreachable | Removes code | Keep |
 | 5 | `6c986cb` A16.4 | `X-Frame-Options`, CSP, `nosniff` on the login and error pages | OWASP recommendation; no framing attack shown | One header map | Keep |
 | 7 | `63c1f7c` A16.6 | `bind` needs a FHIR id, a stored Subscription, and at most 16 per socket | `/ws` already needs a token; pings carry no payload. 16 is my number | A DB read per bind | Revert |
