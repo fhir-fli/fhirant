@@ -1,0 +1,121 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/metadata_handler_test.dart
+00:00 +0: test/handlers/metadata_handler_test.dart: metadataHandler deserializes as valid CapabilityStatement
+00:00 +1: test/handlers/metadata_handler_test.dart: metadataHandler software and implementation present
+00:00 +2: test/handlers/metadata_handler_test.dart: metadataHandler patchFormat includes application/json-patch+json
+00:00 +3: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +4: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +5: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +6: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +7: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +8: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +9: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +10: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +11: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +12: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +13: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +14: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +15: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +16: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +17: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +18: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +19: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +20: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +21: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +22: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +23: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +24: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +25: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +26: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +27: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +28: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:00 +29: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +30: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +31: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +32: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +33: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +33: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level the same clinician may create a websocket Subscription
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +34: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +35: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +35: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level an admin with system/*.* may create the rest-hook
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+line 1:13 no viable alternative at input '((('
+00:01 +36: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +36: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level a PUT that turns a websocket Subscription into a rest-hook is refused for the clinician
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +37: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +38: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +38: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $everything _since
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +39: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /Patient/p32/_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /Patient/_history?_at=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history with a parseable _since still answers
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +39: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $fhirpath with an expression that does not parse
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +40: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +40: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $cql with CQL that does not translate
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +41: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +41: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members an Observation with no patient is not written
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +42: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +43: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:01 +43: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +43: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members a _typeFilter narrows within the members
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +43: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members the system-level export still writes every Observation
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +43: test/integration/hygiene_review_2026_09_08_test.dart: row 43: $everything pages, read per type, cover the compartment once
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +44: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:02 +45: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:02 +46: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:02 +46: test/integration/hygiene_review_2026_09_08_test.dart: row 47: an escaping exception and the request log a handler that throws answers a 500 OperationOutcome
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:590:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:02 +47: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:02 +47: test/integration/hygiene_review_2026_09_08_test.dart: row 47: an escaping exception and the request log the request-log entry carries the redacted path
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:606:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:02 +48: test/handlers/metadata_definitions_test.dart: every cited operation definition is held by the server
+00:08 +49: test/handlers/metadata_definitions_test.dart: the three compartments R4B defines no operation for cite this server
+00:15 +50: All tests passed!

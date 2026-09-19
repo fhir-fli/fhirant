@@ -178,10 +178,11 @@ Future<Response> metadataHandler(
                     url: 'token'.toFhirString,
                     valueUri: FhirUri('$host/auth/token'),
                   ),
-                  FhirExtension(
-                    url: 'register'.toFhirString,
-                    valueUri: FhirUri('$host/auth/register'),
-                  ),
+                  // No `register`: in oauth-uris that is the dynamic CLIENT
+                  // registration endpoint, and /auth/register creates user
+                  // accounts. Removed from .well-known/smart-configuration
+                  // on 2026-09-08 (row 20) for that reason; it stayed here
+                  // (REVIEW-2026-09-17 C4).
                 ],
               ),
             ],

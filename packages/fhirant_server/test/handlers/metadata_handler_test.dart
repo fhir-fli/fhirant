@@ -159,6 +159,22 @@ void main() {
       expect(obs.searchParam!.length, greaterThan(4));
     });
 
+    test('oauth-uris names authorize and token, and no register', () {
+      // REVIEW-2026-09-17 C4. In oauth-uris `register` is the dynamic
+      // client registration endpoint; /auth/register creates user accounts
+      // and was removed from .well-known/smart-configuration on 2026-09-08
+      // for that reason. It stayed advertised here.
+      final oauth = rest.security!.extension_!.singleWhere(
+        (e) =>
+            e.url.valueString ==
+            'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris',
+      );
+      expect(
+        oauth.extension_!.map((e) => e.url.valueString).toSet(),
+        {'authorize', 'token'},
+      );
+    });
+
     test(r'$everything on Patient but not on Observation', () {
       final patient =
           rest.resource!.firstWhere((r) => r.type.valueString == 'Patient');
