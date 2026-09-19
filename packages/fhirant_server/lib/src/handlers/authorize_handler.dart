@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
+import 'package:fhirant_server/src/utils/html_page.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
@@ -74,7 +75,7 @@ Future<Response> authorizeGetHandler(
     return Response(
       400,
       body: _errorPage('Missing required parameter: client_id'),
-      headers: {'Content-Type': 'text/html'},
+      headers: htmlPageHeaders,
     );
   }
 
@@ -82,7 +83,7 @@ Future<Response> authorizeGetHandler(
     return Response(
       400,
       body: _errorPage('Missing required parameter: redirect_uri'),
-      headers: {'Content-Type': 'text/html'},
+      headers: htmlPageHeaders,
     );
   }
 
@@ -93,7 +94,7 @@ Future<Response> authorizeGetHandler(
     return Response(
       400,
       body: _errorPage(pinned),
-      headers: {'Content-Type': 'text/html'},
+      headers: htmlPageHeaders,
     );
   }
   final problem = _requestProblem(request, state, aud) ??
@@ -120,7 +121,7 @@ Future<Response> authorizeGetHandler(
       codeChallengeMethod: codeChallengeMethod,
       aud: aud,
     ),
-    headers: {'Content-Type': 'text/html; charset=utf-8'},
+    headers: htmlPageHeaders,
   );
 }
 
@@ -160,7 +161,7 @@ Future<Response> authorizePostHandler(
       return Response(
         400,
         body: _errorPage('Missing client_id'),
-        headers: {'Content-Type': 'text/html'},
+        headers: htmlPageHeaders,
       );
     }
 
@@ -168,7 +169,7 @@ Future<Response> authorizePostHandler(
       return Response(
         400,
         body: _errorPage('Missing redirect_uri'),
-        headers: {'Content-Type': 'text/html'},
+        headers: htmlPageHeaders,
       );
     }
 
@@ -183,7 +184,7 @@ Future<Response> authorizePostHandler(
             aud: aud,
             errorMessage: error,
           ),
-          headers: {'Content-Type': 'text/html; charset=utf-8'},
+          headers: htmlPageHeaders,
         );
 
     final problem = _requestProblem(request, state, aud);
@@ -236,7 +237,7 @@ Future<Response> authorizePostHandler(
         return Response(
           400,
           body: _errorPage(description),
-          headers: {'Content-Type': 'text/html'},
+          headers: htmlPageHeaders,
         );
     }
   } catch (e, stackTrace) {
@@ -244,7 +245,7 @@ Future<Response> authorizePostHandler(
     return Response(
       400,
       body: _errorPage('Authorization failed'),
-      headers: {'Content-Type': 'text/html'},
+      headers: htmlPageHeaders,
     );
   }
 }
@@ -485,7 +486,7 @@ Future<Response> _errorToClient(
   return Response(
     400,
     body: _errorPage('$error: $description'),
-    headers: {'Content-Type': 'text/html'},
+    headers: htmlPageHeaders,
   );
 }
 
@@ -638,7 +639,7 @@ Response _errorRedirect(
     return Response(
       400,
       body: _errorPage(description),
-      headers: {'Content-Type': 'text/html'},
+      headers: htmlPageHeaders,
     );
   }
   final params = {

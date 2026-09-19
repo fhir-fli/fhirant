@@ -1,0 +1,28 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/login_page_headers_test.dart
+00:00 +0: test/integration/login_page_headers_test.dart: the login form
+00:00 +1: test/handlers/authorize_handler_test.dart: authorizeGetHandler returns 400 when client_id missing
+00:00 +2: test/handlers/authorize_handler_test.dart: authorizeGetHandler returns 400 when client_id missing
+00:00 +3: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +4: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +5: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +6: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +7: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +8: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +9: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +10: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +11: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +12: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +13: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +14: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +15: test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+00:00 +16: test/handlers/authorize_handler_test.dart: authorizeJsonHandler returns 401 for invalid credentials
+00:00 +17: test/handlers/authorize_handler_test.dart: authorizeJsonHandler a deactivated user is refused as a wrong password is
+00:00 +18: test/handlers/authorize_handler_test.dart: authorizeJsonHandler returns authorization code for valid request
+00:00 +19: test/handlers/authorize_handler_test.dart: authorizeJsonHandler the scope stored is the request intersected with the account
+00:01 +20: test/handlers/authorize_handler_test.dart: authorizeJsonHandler a request wholly outside the grant is invalid_scope
+00:01 +21: test/handlers/authorize_handler_test.dart: authorizeJsonHandler stores PKCE challenge
+00:01 +22: test/handlers/authorize_handler_test.dart: authorizePostHandler (form-encoded) returns 302 redirect with code for valid form submission
+00:01 +23: test/handlers/authorize_handler_test.dart: authorizePostHandler (form-encoded) returns login form with error for bad credentials
+00:02 +24: test/handlers/authorize_handler_test.dart: authorizePostHandler (form-encoded) returns login form when credentials missing
+00:02 +25: test/handlers/authorize_handler_test.dart: a locked account is told so on the form, and failures count
+00:02 +26: All tests passed!

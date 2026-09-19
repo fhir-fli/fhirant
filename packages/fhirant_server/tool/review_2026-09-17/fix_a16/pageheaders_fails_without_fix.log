@@ -1,0 +1,40 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/login_page_headers_test.dart
+00:00 +0: the login form
+00:00 +0 -1: the login form [E]
+  Expected: 'DENY'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                                     expect
+  test/integration/login_page_headers_test.dart 33:5  main.expectPageHeaders
+  test/integration/login_page_headers_test.dart 51:5  main.<fn>
+  
+00:00 +0 -1: an authorization error page
+00:00 +0 -2: an authorization error page [E]
+  Expected: 'DENY'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                                     expect
+  test/integration/login_page_headers_test.dart 33:5  main.expectPageHeaders
+  test/integration/login_page_headers_test.dart 57:5  main.<fn>
+  
+00:00 +0 -2: the form shown again after a wrong password
+00:00 +0 -3: the form shown again after a wrong password [E]
+  Expected: 'DENY'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                                     expect
+  test/integration/login_page_headers_test.dart 33:5  main.expectPageHeaders
+  test/integration/login_page_headers_test.dart 70:5  main.<fn>
+  
+00:00 +0 -3: Some tests failed.
+
+Failing tests:
+  test/integration/login_page_headers_test.dart: an authorization error page
+  test/integration/login_page_headers_test.dart: the form shown again after a wrong password
+  test/integration/login_page_headers_test.dart: the login form
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
