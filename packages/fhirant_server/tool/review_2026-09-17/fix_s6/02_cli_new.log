@@ -1,0 +1,60 @@
+## 02_cli_new: --port abc
+Running build hooks...Running build hooks...port must be an integer from 1 to 65535, got "abc"
+
+Usage:
+-p, --port                    Server port
+                              (defaults to "8080")
+    --db-path                 Database file path
+                              (defaults to "data/db")
+-c, --config                  Path to a YAML config file whose keys are these option names; the command line overrides it
+    --[no-]https              Enable HTTPS
+    --cert-path               Path to HTTPS certificate file
+    --key-path                Path to HTTPS private key file
+    --[no-]dev-mode           Disable authentication (for testing only)
+    --spec-path               Path to FHIR spec NDJSON files
+                              (defaults to "/app/fhir_spec")
+    --base-url                The URL clients reach this server by (e.g. https://host:8080). Lets a search tell an absolute reference to this server from one to another server (R4B search 3.1.1.4.12). Optional.
+    --audit-retention-days    How many days AuditEvents are kept before the hourly sweep removes them (default six years, 45 CFR 164.316(b)(2)(i)).
+                              (defaults to "2192")
+-h, --help                    Show usage
+exit=1
+## 02_cli_new: --config /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s6.8pa1/bad.yaml
+Running build hooks...Running build hooks...port must be an integer from 1 to 65535, got "70000"
+
+Usage:
+-p, --port                    Server port
+                              (defaults to "8080")
+    --db-path                 Database file path
+                              (defaults to "data/db")
+-c, --config                  Path to a YAML config file whose keys are these option names; the command line overrides it
+    --[no-]https              Enable HTTPS
+    --cert-path               Path to HTTPS certificate file
+    --key-path                Path to HTTPS private key file
+    --[no-]dev-mode           Disable authentication (for testing only)
+    --spec-path               Path to FHIR spec NDJSON files
+                              (defaults to "/app/fhir_spec")
+    --base-url                The URL clients reach this server by (e.g. https://host:8080). Lets a search tell an absolute reference to this server from one to another server (R4B search 3.1.1.4.12). Optional.
+    --audit-retention-days    How many days AuditEvents are kept before the hourly sweep removes them (default six years, 45 CFR 164.316(b)(2)(i)).
+                              (defaults to "2192")
+-h, --help                    Show usage
+exit=1
+## 02_cli_new: --config /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s6.8pa1/typo.yaml
+Running build hooks...Running build hooks...Config file /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s6.8pa1/typo.yaml: unknown option "prot" (known: port, db-path, https, cert-path, key-path, dev-mode, spec-path, base-url, audit-retention-days)
+
+Usage:
+-p, --port                    Server port
+                              (defaults to "8080")
+    --db-path                 Database file path
+                              (defaults to "data/db")
+-c, --config                  Path to a YAML config file whose keys are these option names; the command line overrides it
+    --[no-]https              Enable HTTPS
+    --cert-path               Path to HTTPS certificate file
+    --key-path                Path to HTTPS private key file
+    --[no-]dev-mode           Disable authentication (for testing only)
+    --spec-path               Path to FHIR spec NDJSON files
+                              (defaults to "/app/fhir_spec")
+    --base-url                The URL clients reach this server by (e.g. https://host:8080). Lets a search tell an absolute reference to this server from one to another server (R4B search 3.1.1.4.12). Optional.
+    --audit-retention-days    How many days AuditEvents are kept before the hourly sweep removes them (default six years, 45 CFR 164.316(b)(2)(i)).
+                              (defaults to "2192")
+-h, --help                    Show usage
+exit=1

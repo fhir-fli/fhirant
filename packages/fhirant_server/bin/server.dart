@@ -1,11 +1,11 @@
 // bin/server.dart
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
+import 'package:fhirant_server/src/cli/options.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
@@ -21,54 +21,33 @@ void main(List<String> arguments) async {
     // directory uninvited.
     ..initialize(logFilePath: null);
 
-  final parser = ArgParser()
-    ..addOption('port', abbr: 'p', defaultsTo: '8080', help: 'Server port')
-    ..addOption('db-path', defaultsTo: 'data/db', help: 'Database file path')
-    ..addOption('config', abbr: 'c', help: 'Path to config file (YAML)')
-    ..addFlag('https', help: 'Enable HTTPS')
-    ..addOption('cert-path', help: 'Path to HTTPS certificate file')
-    ..addOption('key-path', help: 'Path to HTTPS private key file')
-    ..addFlag(
-      'dev-mode',
-      help: 'Disable authentication (for testing only)',
-    )
-    ..addOption(
-      'spec-path',
-      defaultsTo: '/app/fhir_spec',
-      help: 'Path to FHIR spec NDJSON files',
-    )
-    ..addOption(
-      'base-url',
-      help: 'The URL clients reach this server by (e.g. https://host:8080). '
-          'Lets a search tell an absolute reference to this server from one '
-          'to another server (R4B search 3.1.1.4.12). Optional.',
-    )
-    ..addOption(
-      'audit-retention-days',
-      defaultsTo: '${kAuditRetention.inDays}',
-      help: 'How many days AuditEvents are kept before the hourly sweep '
-          'removes them (default six years, 45 CFR 164.316(b)(2)(i)).',
-    )
-    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
+  final parser = ServerOptions.parser();
 
-  ArgResults args;
+  final ServerOptions options;
   try {
-    args = parser.parse(arguments);
+    final args = parser.parse(arguments);
     if (args['help'] as bool) {
       // Usage goes to stdout as plain text, not through the JSON logger.
       stdout.writeln('FHIR ANT Server\n\nUsage:\n${parser.usage}');
       exit(0);
     }
+    // The command line over the --config file over the defaults; a bad
+    // port or an unknown config key is a usage error, not a crash
+    // (REVIEW-2026-09-17 S6).
+    options = ServerOptions.resolve(args);
   } on FormatException catch (e) {
     // Straight to stderr, not through the logger: a usage error is for the
     // person who typed the command, and it must survive whatever logging is
     // or is not configured.
     stderr.writeln('$e\n\nUsage:\n${parser.usage}');
     exit(1);
+  } on CliUsageException catch (e) {
+    stderr.writeln('$e\n\nUsage:\n${parser.usage}');
+    exit(1);
   }
 
-  final port = int.parse(args['port'] as String);
-  final dbPath = args['db-path'] as String;
+  final port = options.port;
+  final dbPath = options.dbPath;
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
   // Keys that are public because they are written in this repository: the
@@ -93,7 +72,7 @@ void main(List<String> arguments) async {
     );
   }
 
-  final devMode = args['dev-mode'] as bool;
+  final devMode = options.devMode;
 
   // The default encryption key is public; a real deployment must set its own.
   // Refuse to start on the default key unless explicitly in dev mode, so a
@@ -141,7 +120,7 @@ void main(List<String> arguments) async {
 
   // Load FHIR spec terminology resources on first boot
   try {
-    await loadSpecResources(db, args['spec-path'] as String);
+    await loadSpecResources(db, options.specPath);
   } catch (e, stackTrace) {
     logger
       ..logWarning('Failed to load spec resources: $e')
@@ -194,11 +173,9 @@ void main(List<String> arguments) async {
     jwtSecret: jwtSecret,
     devMode: devMode,
     maxRequests: devMode ? 1000 : 600,
-    baseUrl: args['base-url'] as String?,
+    baseUrl: options.baseUrl,
     bootstrapToken: bootstrapToken,
-    auditRetention: Duration(
-      days: int.parse(args['audit-retention-days'] as String),
-    ),
+    auditRetention: options.auditRetention,
   );
 
   if (devMode) {
@@ -209,9 +186,9 @@ void main(List<String> arguments) async {
   }
 
   try {
-    if (args['https'] as bool) {
-      final certPath = args['cert-path'] as String?;
-      final keyPath = args['key-path'] as String?;
+    if (options.https) {
+      final certPath = options.certPath;
+      final keyPath = options.keyPath;
 
       if (certPath == null ||
           keyPath == null ||

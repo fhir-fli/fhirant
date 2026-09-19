@@ -240,9 +240,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,457 tests** across 133 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,465 tests** across 134 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
 
-- **Server tests** (1,295 tests, 121 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,303 tests, 122 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
@@ -258,7 +258,7 @@ Tests use `flutter_test` + `mocktail`. `FhirAntDb` is mocked in server handler t
 --port, -p          Server port (default: 8080)
 --db-path           Database path (default: data/db)
 --sqlcipher-path    Custom SQLCipher library path
---config, -c        YAML configuration file
+--config, -c        YAML file whose keys are these option names; the command line overrides it
 --https             Enable HTTPS
 --cert-path         HTTPS certificate path
 --key-path          HTTPS private key path

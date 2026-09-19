@@ -1,0 +1,18 @@
+## old: --port abc
+Running build hooks...Running build hooks...Unhandled exception:
+FormatException: Invalid radix-10 number (at character 1)
+abc
+^
+
+#0      int._handleFormatError (dart:core-patch/integers_patch.dart:150:5)
+#1      int._parseRadix (dart:core-patch/integers_patch.dart:179:14)
+#2      int._parse (dart:core-patch/integers_patch.dart:121:12)
+#3      int.parse (dart:core-patch/integers_patch.dart:81:12)
+#4      main (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/bin/server.dart:70:20)
+#5      _delayEntrypointInvocation.<anonymous closure> (dart:isolate-patch/isolate_patch.dart:311:33)
+#6      _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:192:12)
+exit=255
+## old: --config /tmp/claude-1000/-home-grey-dev-fhir/681edabb-5699-4c90-8310-67cfbb2ebcbe/scratchpad/s6.8pa1/typo.yaml
+Running build hooks...Running build hooks...{"timestamp":"2026-09-19T13:07:37.516374","level":"INFO","message":"FHIRANT_JWT_SECRET not set; using a generated secret persisted at data/db/.jwt_secret. Set the env var for multi-instance deployments.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T13:07:37.522086","level":"SEVERE","message":"Refusing to start: FHIRANT_ENCRYPTION_KEY is not set, so the database would be encrypted with a publicly-known default key. Set FHIRANT_ENCRYPTION_KEY, or pass --dev-mode for local testing.","error":null,"stackTrace":null}
+exit=1
