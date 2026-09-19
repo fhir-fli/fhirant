@@ -1,0 +1,200 @@
+=== Building Docker image ===
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/dart:stable
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 1.15kB done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [build 1/8] FROM docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05
+#5 resolve docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05
+#5 resolve docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05 0.0s done
+#5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 24.67kB done
+#4 DONE 0.0s
+
+#6 [build 6/8] COPY packages/fhirant_server/ /app/packages/fhirant_server/
+#6 CACHED
+
+#7 [stage-1 3/5] COPY --from=build /app/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
+#7 CACHED
+
+#8 [build 2/8] RUN apt-get update && apt-get install -y --no-install-recommends clang git &&     rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [build 5/8] COPY packages/fhirant_db/ /app/packages/fhirant_db/
+#9 CACHED
+
+#10 [build 3/8] WORKDIR /app
+#10 CACHED
+
+#11 [build 4/8] COPY packages/fhirant_logging/ /app/packages/fhirant_logging/
+#11 CACHED
+
+#12 [stage-1 4/5] COPY --from=build /app/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
+#12 CACHED
+
+#13 [build 7/8] RUN cd /app/packages/fhirant_server && dart pub get
+#13 CACHED
+
+#14 [build 8/8] RUN cd /app/packages/fhirant_server &&     dart build cli -o /app/out
+#14 CACHED
+
+#15 [stage-1 2/5] COPY --from=build /app/out/bundle/ /app/
+#15 CACHED
+
+#16 [stage-1 5/5] RUN mkdir -p /data && chown -R 1000:1000 /app /data
+#16 CACHED
+
+#17 exporting to image
+#17 exporting layers done
+#17 exporting manifest sha256:08ff7a3259519e43e2cfa3363c193e8f56ec8ef5e2d32a2a200792b46c925db3 0.0s done
+#17 exporting config sha256:e6e0ba12d6e97b19f531b24b37344c63555278f1f5bb75331a60fc2260daaddb
+#17 exporting config sha256:e6e0ba12d6e97b19f531b24b37344c63555278f1f5bb75331a60fc2260daaddb 0.0s done
+#17 exporting attestation manifest sha256:537eea1d926046a4b485bc61149294c7ee4290c4be859397f072820afa4b8beb 0.0s done
+#17 exporting manifest list sha256:90af40234045129bc38e3059e62e20ebaf043f07473695a181823a5ca7cd0669
+#17 exporting manifest list sha256:90af40234045129bc38e3059e62e20ebaf043f07473695a181823a5ca7cd0669 0.0s done
+#17 naming to docker.io/library/fhirant-test:latest done
+#17 unpacking to docker.io/library/fhirant-test:latest 0.0s done
+#17 DONE 0.2s
+
+=== Starting container ===
+37fe437c12555c0c2e7c78992bd9df496f3470a57896f27710caf6a491b89db3
+=== Waiting for server to be ready ===
+  Server ready after 14s
+
+=== Test: Docker health check ===
+  FAIL: container health is 'unhealthy'
+  FAIL: the health check read /health, not --help (expected body to contain '"status"')
+
+=== Test: GET /metadata ===
+  PASS: GET /metadata returns 200 (HTTP 200)
+  PASS: Response is a CapabilityStatement
+
+=== Test: Unauthenticated access ===
+  PASS: GET /Patient without auth returns 401 (HTTP 401)
+
+=== Test: GET /auth/status (before registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is true before registration
+  PASS: the first registration needs the bootstrap token
+
+=== Test: Register first user ===
+  PASS: POST /auth/register without the bootstrap token is 403 (HTTP 403)
+  PASS: bootstrap token found in the container log
+  PASS: POST /auth/register with the bootstrap token returns 201 (HTTP 201)
+  PASS: First user gets admin role
+  PASS: Register returns a JWT token
+  PASS: Register returns a refresh token
+
+=== Test: GET /auth/status (after registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is false after registration
+
+=== Test: Login ===
+  PASS: POST /auth/login returns 200 (HTTP 200)
+  PASS: Login returned a JWT token
+
+=== Test: Create Patient ===
+  PASS: POST /Patient returns 201 (HTTP 201)
+  PASS: Response contains Patient resourceType
+  PASS: Patient created with ID 3fa078cf-4246-4b7a-9801-64070761f1ea
+
+=== Test: Read Patient ===
+  PASS: GET /Patient/3fa078cf-4246-4b7a-9801-64070761f1ea returns 200 (HTTP 200)
+  PASS: Read returns same patient
+  PASS: Patient has correct family name
+
+=== Test: Search Patient ===
+  PASS: GET /Patient?name=Docker returns 200 (HTTP 200)
+  PASS: Search returns a Bundle
+  PASS: Bundle contains our patient
+
+=== Test: Update Patient ===
+  PASS: PUT /Patient returns 200 (HTTP 200)
+  PASS: Updated patient has new given name
+
+=== Test: Patient history ===
+  PASS: GET /Patient/<id>/_history returns 200 (HTTP 200)
+  PASS: History returns a Bundle
+
+=== Test: Delete Patient ===
+  PASS: DELETE /Patient returns 204 (HTTP 204)
+
+=== Test: Read deleted Patient ===
+  PASS: GET deleted patient returns 410 (HTTP 410)
+
+=== Test: Administrator seeded from FHIRANT_ADMIN_USERNAME/PASSWORD ===
+  PASS: seeded server has its first user
+  PASS: registration on the seeded server needs an administrator (HTTP 403)
+  PASS: the seeded administrator logs in (HTTP 200)
+  PASS: with the admin role
+
+===============================
+  Results: 35 passed, 2 failed
+===============================
+
+=== Container logs ===
+{"timestamp":"2026-09-19T17:13:11.137680","level":"INFO","message":"Initializing database at /data","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:11.718834","level":"INFO","message":"Database initialized successfully","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:11.719223","level":"INFO","message":"Loading FHIR R4 spec canonical resources from /app/fhir_spec","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:11.739836","level":"INFO","message":"Loaded 1 resources from bulkdata-operations.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:11.851313","level":"INFO","message":"Loaded 77 resources from conceptmaps.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:12.200478","level":"INFO","message":"Loaded 274 resources from dataelements.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:13.119444","level":"INFO","message":"Loaded 398 resources from extension-definitions.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:13.131217","level":"INFO","message":"Loaded 4 resources from fhirant-operations.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:13.612098","level":"INFO","message":"Loaded 489 resources from namingsystems.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:14.033397","level":"INFO","message":"Loaded 39 resources from profiles-others.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:16.988020","level":"INFO","message":"Loaded 196 resources from profiles-resources.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:17.284217","level":"INFO","message":"Loaded 64 resources from profiles-types.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:21.053001","level":"INFO","message":"Loaded 1414 resources from search-parameters.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.696273","level":"INFO","message":"Loaded 1261 resources from valuesets.ndjson","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.708758","level":"WARNING","message":"1 resources failed to parse","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.708860","level":"INFO","message":"Spec loading complete: 4218 canonical resources loaded","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.722924","level":"WARNING","message":"No accounts yet. The first POST /auth/register creates the administrator and must carry this one-time token in the X-Bootstrap-Token header (or the bootstrap_token body field):\nvTNq80eHRdFdz2_XTDm5uYynjT8g54eeB5ctRsjrsLI=\nIt is also in /data/.bootstrap_token (owner-readable). To seed the administrator without it, set FHIRANT_ADMIN_USERNAME and FHIRANT_ADMIN_PASSWORD and restart.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.723730","level":"INFO","message":"Server started at http://0.0.0.0:8080","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.723752","level":"INFO","message":"HTTP server running on port 8080","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.723763","level":"INFO","message":"Server running. Press Ctrl+C to stop.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:23.724089","level":"SEVERE","message":"Export reconciliation failed","error":"FileSystemException: Exists failed, path = 'data/export' (OS Error: Permission denied, errno = 13)","stackTrace":"#0      _Directory.existsSync (dart:io/directory_impl.dart:97)\n#1      sweepExpiredExports (package:fhirant_server/src/handlers/export_handler.dart:905)\n<asynchronous suspension>\n#2      FhirAntServer._reconcileExports (package:fhirant_server/src/fhirant_server.dart:989)\n<asynchronous suspension>\n"}
+{"timestamp":"2026-09-19T17:13:24.246421","level":"INFO","message":"Fetching metadata request from http://localhost:18080/metadata","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:24.251216","level":"INFO","message":"Metadata response generated successfully","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:13:24.262767","level":"INFO","message":"GET /metadata - 200 (16ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.459981","level":"INFO","message":"Fetching metadata request from http://localhost:18080/metadata","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.465444","level":"INFO","message":"Metadata response generated successfully","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.479679","level":"INFO","message":"GET /metadata - 200 (19ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.533637","level":"INFO","message":"GET /Patient - 401 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.542758","level":"INFO","message":"GET /auth/status - 200 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.555219","level":"INFO","message":"POST /auth/register - 403 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.721817","level":"INFO","message":"POST /auth/register - 201 (142ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.735444","level":"INFO","message":"GET /auth/status - 200 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.863188","level":"INFO","message":"POST /auth/login - 200 (119ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.885521","level":"INFO","message":"Resource of type Patient saved successfully with ID: {id}","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.885701","level":"INFO","message":"POST /Patient - 201 (9ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.899367","level":"INFO","message":"Resource of type Patient with ID: {id} found.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.899465","level":"INFO","message":"GET /Patient/{id} - 200 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.912025","level":"INFO","message":"Fetching resources of type: Patient","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.912430","level":"INFO","message":"Successfully fetched 1 resources of type: Patient","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.912582","level":"INFO","message":"GET /Patient?name=[redacted] - 200 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.934045","level":"INFO","message":"Resource of type Patient updated successfully with ID: {id}","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.934133","level":"INFO","message":"PUT /Patient/{id} - 200 (10ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.944451","level":"INFO","message":"Fetching history for resource: Patient/{id}","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.944772","level":"INFO","message":"Successfully fetched 2 history entries for resource: Patient/{id}","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.944859","level":"INFO","message":"GET /Patient/{id}/_history - 200 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.963891","level":"INFO","message":"Resource of type Patient with ID: {id} deleted successfully.","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.963955","level":"INFO","message":"DELETE /Patient/{id} - 204 (8ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.969849","level":"WARNING","message":"Resource Patient/{id} was deleted (410 Gone).","error":null,"stackTrace":null}
+{"timestamp":"2026-09-19T17:14:31.969933","level":"INFO","message":"GET /Patient/{id} - 410 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+
+=== Cleaning up ===
+exit=1

@@ -92,6 +92,28 @@ if [ "$READY" = false ]; then
 fi
 echo ""
 
+# --- Test 0: Docker's own health check (REVIEW-2026-09-17 S5) ---
+# The image's HEALTHCHECK asks the running server's /health. It used to run
+# `server --help`, which says nothing about the server. The first check runs
+# one interval (30 s) after start; allow two.
+echo "=== Test: Docker health check ==="
+HEALTH="starting"
+for i in $(seq 1 75); do
+  HEALTH=$(docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME")
+  [ "$HEALTH" = "starting" ] || break
+  sleep 1
+done
+if [ "$HEALTH" = "healthy" ]; then
+  echo "  PASS: container reports healthy"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: container health is '$HEALTH'"
+  FAIL=$((FAIL + 1))
+fi
+PROBE=$(docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' "$CONTAINER_NAME")
+assert_contains "the health check read /health, not --help" '"status"' "$PROBE"
+echo ""
+
 # --- Test 1: GET /metadata (no auth required) ---
 echo "=== Test: GET /metadata ==="
 RESPONSE=$(curl -s -w "\n%{http_code}" -H "X-Forwarded-For: $TEST_IP" "$BASE/metadata")

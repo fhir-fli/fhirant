@@ -1,0 +1,188 @@
+=== Building Docker image ===
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.66kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/dart:stable
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 1.15kB done
+#3 DONE 0.0s
+
+#4 [build 1/8] FROM docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05
+#4 resolve docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 350.87kB 0.0s done
+#5 DONE 0.0s
+
+#6 [build 3/8] WORKDIR /app
+#6 CACHED
+
+#7 [build 2/8] RUN apt-get update && apt-get install -y --no-install-recommends clang git &&     rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [build 4/8] COPY packages/fhirant_logging/ /app/packages/fhirant_logging/
+#8 CACHED
+
+#9 [build 5/8] COPY packages/fhirant_db/ /app/packages/fhirant_db/
+#9 DONE 0.1s
+
+#10 [build 6/8] COPY packages/fhirant_server/ /app/packages/fhirant_server/
+#10 DONE 0.2s
+
+#11 [build 7/8] RUN cd /app/packages/fhirant_server && dart pub get
+#11 0.242 Resolving dependencies...
+#11 15.46 Downloading packages...
+#11 18.39   _fe_analyzer_shared 105.0.0 (108.0.0 available)
+#11 18.39   analyzer 14.1.0 (14.4.0 available)
+#11 18.39   archive 4.2.0 (4.3.0 available)
+#11 18.39   clock 1.1.2 (1.1.3 available)
+#11 18.39   code_assets 2.0.0 (2.1.0 available)
+#11 18.39   drift 2.34.3 (2.35.0 available)
+#11 18.39 ! fhir_db 0.14.0 from git https://github.com/fhir-fli/fhir_db.git at de0d3b (overridden)
+#11 18.39 ! fhir_path 0.14.2 from git https://github.com/fhir-fli/fhir_path.git at d9b201 (overridden)
+#11 18.39 ! fhir_r4 0.12.0 from git https://github.com/fhir-fli/fhir_r4.git at 1e7ddb in packages/fhir_r4 (overridden)
+#11 18.39 ! fhir_r4_bulk 0.12.0 from git https://github.com/fhir-fli/fhir_r4.git at 1e7ddb in packages/fhir_r4_bulk (overridden)
+#11 18.39 ! fhir_r4_db 0.12.0 from git https://github.com/fhir-fli/fhir_r4.git at 1e7ddb in packages/fhir_r4_db (overridden)
+#11 18.39   glob 2.1.3 (2.2.0 available)
+#11 18.39   io 1.0.5 (1.1.0 available)
+#11 18.39   mime 2.0.0 (2.1.0 available)
+#11 18.39   native_toolchain_c 0.19.4 (0.19.5 available)
+#11 18.39   platform 3.1.6 (3.2.0 available)
+#11 18.39   pool 1.5.2 (1.5.3 available)
+#11 18.39   process 5.0.5 (5.0.6 available)
+#11 18.39   pub_semver 2.2.0 (2.2.1 available)
+#11 18.39   riverpod 3.4.2 (3.4.3 available)
+#11 18.39   riverpod_annotation 4.0.6 (4.0.7 available)
+#11 18.39   sqlite3 3.5.2 (3.6.0 available)
+#11 18.39   stack_trace 1.12.1 (1.12.2 available)
+#11 18.39   test 1.31.2 (1.32.0 available)
+#11 18.39   test_api 0.7.13 (0.7.14 available)
+#11 18.39   test_core 0.6.19 (0.6.20 available)
+#11 18.39   very_good_analysis 10.3.0 (11.0.0 available)
+#11 18.39   xml 6.6.1 (7.0.1 available)
+#11 18.39   xml2json 6.2.7 (6.2.9 available)
+#11 18.39   yaml 3.1.3 (3.1.4 available)
+#11 18.39 Got dependencies!
+#11 18.39 25 packages have newer versions incompatible with dependency constraints.
+#11 18.39 Try `dart pub outdated` for more information.
+#11 DONE 18.9s
+
+#12 [build 8/8] RUN cd /app/packages/fhirant_server &&     dart build cli -o /app/out
+#12 0.360 Running build hooks...Running build hooks...Running link hooks...Running link hooks...Copying 1 build assets:
+#12 46.46 package:sqlite3/src/ffi/libsqlite3.g.dart
+#12 126.4 Generated: /app/out/bundle/bin/server
+#12 DONE 126.5s
+
+#4 [build 1/8] FROM docker.io/library/dart:stable@sha256:2d74fb22d7f8dba07862754953f5ebc50f3ac35a7b7ce18b6dd5629056c80f05
+#4 CACHED
+
+#13 [stage-1 2/5] COPY --from=build /app/out/bundle/ /app/
+#13 DONE 0.1s
+
+#14 [stage-1 3/5] COPY --from=build /app/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
+#14 DONE 0.1s
+
+#15 [stage-1 4/5] COPY --from=build /app/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
+#15 DONE 0.1s
+
+#16 [stage-1 5/5] RUN mkdir -p /data && chown -R 1000:1000 /app /data
+#16 DONE 0.5s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 2.6s done
+#17 exporting manifest sha256:58e887c8348da112c1b9684def9053aa1b6f089f1d5d76f5572667462f9e7c25 0.0s done
+#17 exporting config sha256:f1f5d8a8215baf086d0546f910bba989a041c0f07adc47852fb9208d3e534a9b 0.0s done
+#17 exporting attestation manifest sha256:36b84a961cda61221ea225c967cdcfe98dafe903ffb3d3e922467bab78e03a62
+#17 exporting attestation manifest sha256:36b84a961cda61221ea225c967cdcfe98dafe903ffb3d3e922467bab78e03a62 0.1s done
+#17 exporting manifest list sha256:ad5d39b53b86d8e4ef3cfd93d4777c85c069be96025deee39df3b52a8df80708 0.0s done
+#17 naming to docker.io/library/fhirant-test:latest
+#17 naming to docker.io/library/fhirant-test:latest done
+#17 unpacking to docker.io/library/fhirant-test:latest
+#17 unpacking to docker.io/library/fhirant-test:latest 0.6s done
+#17 DONE 3.4s
+
+=== Starting container ===
+704c2c369ee2c05e2207f69410a32d129b9e07ae1e6b8535c5cef3c38bcf5498
+=== Waiting for server to be ready ===
+  Server ready after 14s
+
+=== Test: Docker health check ===
+  PASS: container reports healthy
+  PASS: the health check read /health, not --help
+
+=== Test: GET /metadata ===
+  PASS: GET /metadata returns 200 (HTTP 200)
+  PASS: Response is a CapabilityStatement
+
+=== Test: Unauthenticated access ===
+  PASS: GET /Patient without auth returns 401 (HTTP 401)
+
+=== Test: GET /auth/status (before registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is true before registration
+  PASS: the first registration needs the bootstrap token
+
+=== Test: Register first user ===
+  PASS: POST /auth/register without the bootstrap token is 403 (HTTP 403)
+  PASS: bootstrap token found in the container log
+  PASS: POST /auth/register with the bootstrap token returns 201 (HTTP 201)
+  PASS: First user gets admin role
+  PASS: Register returns a JWT token
+  PASS: Register returns a refresh token
+
+=== Test: GET /auth/status (after registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is false after registration
+
+=== Test: Login ===
+  PASS: POST /auth/login returns 200 (HTTP 200)
+  PASS: Login returned a JWT token
+
+=== Test: Create Patient ===
+  PASS: POST /Patient returns 201 (HTTP 201)
+  PASS: Response contains Patient resourceType
+  PASS: Patient created with ID f1ddf624-0cff-4792-a787-3583c857ded8
+
+=== Test: Read Patient ===
+  PASS: GET /Patient/f1ddf624-0cff-4792-a787-3583c857ded8 returns 200 (HTTP 200)
+  PASS: Read returns same patient
+  PASS: Patient has correct family name
+
+=== Test: Search Patient ===
+  PASS: GET /Patient?name=Docker returns 200 (HTTP 200)
+  PASS: Search returns a Bundle
+  PASS: Bundle contains our patient
+
+=== Test: Update Patient ===
+  PASS: PUT /Patient returns 200 (HTTP 200)
+  PASS: Updated patient has new given name
+
+=== Test: Patient history ===
+  PASS: GET /Patient/<id>/_history returns 200 (HTTP 200)
+  PASS: History returns a Bundle
+
+=== Test: Delete Patient ===
+  PASS: DELETE /Patient returns 204 (HTTP 204)
+
+=== Test: Read deleted Patient ===
+  PASS: GET deleted patient returns 410 (HTTP 410)
+
+=== Test: Administrator seeded from FHIRANT_ADMIN_USERNAME/PASSWORD ===
+  PASS: seeded server has its first user
+  PASS: registration on the seeded server needs an administrator (HTTP 403)
+  PASS: the seeded administrator logs in (HTTP 200)
+  PASS: with the admin role
+
+===============================
+  Results: 37 passed, 0 failed
+===============================
+
+=== Cleaning up ===
+exit=0

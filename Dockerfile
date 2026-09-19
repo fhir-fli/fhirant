@@ -45,7 +45,16 @@ USER 1000:1000
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD \
-  ["/app/bin/server", "--help"] || exit 1
+# Asks the RUNNING server, over HTTP, at the public /health route. It ran
+# `server --help`, which starts a second binary and asks nothing of this
+# one, and put `|| exit 1` after a JSON array, which Docker then reads in
+# shell form (REVIEW-2026-09-17 S5). The Dockerfile reference (buildkit
+# frontend/dockerfile/docs/reference.md, HEALTHCHECK, read whole
+# 2026-09-19, verbatim): "0: success - the container is healthy and ready
+# for use", "1: unhealthy - the container isn't working correctly", "2:
+# reserved - don't use this exit code"; hence `|| exit 1`, since curl's
+# own failures are 7, 22, 28 and so on.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+  CMD curl -fsS http://localhost:8080/health || exit 1
 
 CMD ["/app/bin/server", "--port", "8080", "--db-path", "/data"]
