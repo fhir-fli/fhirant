@@ -1,0 +1,32 @@
+# What must not reach the image build (REVIEW-2026-09-17 S1).
+#
+# Without this file the whole checkout was the build context: 11 GB measured
+# on 2026-09-18, of which the Flutter app's build output was 9.3 GB, and the
+# build FAILED from a working checkout because the gitignored
+# pubspec_overrides.yaml (absolute paths under one developer's home) and
+# .dart_tool were copied in, so `pub get` looked for /home/grey/dev/fhir/...
+# inside the container. A clean clone built; a developer's tree did not, and
+# CI never built the image, so nobody ran test_docker.sh.
+
+# Local pub state and overrides: pub get in the image resolves from
+# pubspec.yaml and pubspec.lock alone.
+**/.dart_tool
+**/pubspec_overrides.yaml
+**/.packages
+
+# Build output, coverage, IDE files.
+**/build
+**/coverage
+**/.idea
+**/*.iml
+.git
+
+# Runtime state the server creates, and TLS material, never image content.
+**/data
+**/*.pem
+
+# Packages the Dockerfile does not copy (the Flutter app and its plugins),
+# and the review evidence under tool/.
+packages/fhirant
+packages/fhirant_secure_storage
+packages/fhirant_server/tool/review_*

@@ -1,0 +1,131 @@
+=== Building Docker image ===
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/dart:stable
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 1.15kB done
+#3 DONE 0.0s
+
+#4 [build 1/8] FROM docker.io/library/dart:stable@sha256:c5a068047d0db9dca63f9fd07ed2b15ec84236a04e62475e994b5793ac762f09
+#4 resolve docker.io/library/dart:stable@sha256:c5a068047d0db9dca63f9fd07ed2b15ec84236a04e62475e994b5793ac762f09 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 22.02kB done
+#5 DONE 0.0s
+
+#6 [stage-1 2/5] COPY --from=build /app/out/bundle/ /app/
+#6 CACHED
+
+#7 [stage-1 3/5] COPY --from=build /app/packages/fhirant_server/assets/fhir_spec/ /app/fhir_spec/
+#7 CACHED
+
+#8 [build 4/8] COPY packages/fhirant_logging/ /app/packages/fhirant_logging/
+#8 CACHED
+
+#9 [build 5/8] COPY packages/fhirant_db/ /app/packages/fhirant_db/
+#9 CACHED
+
+#10 [build 6/8] COPY packages/fhirant_server/ /app/packages/fhirant_server/
+#10 CACHED
+
+#11 [build 7/8] RUN cd /app/packages/fhirant_server && dart pub get
+#11 CACHED
+
+#12 [stage-1 4/5] COPY --from=build /app/packages/fhirant_server/assets/terminology_fixtures/ /app/terminology_fixtures/
+#12 CACHED
+
+#13 [build 8/8] RUN cd /app/packages/fhirant_server &&     dart build cli -o /app/out
+#13 CACHED
+
+#14 [build 2/8] RUN apt-get update && apt-get install -y --no-install-recommends clang git &&     rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [build 3/8] WORKDIR /app
+#15 CACHED
+
+#16 [stage-1 5/5] RUN mkdir -p /data && chown -R 1000:1000 /app /data
+#16 CACHED
+
+#17 exporting to image
+#17 exporting layers done
+#17 exporting manifest sha256:ba4f9534766453e9e11fe42ce6141348684f384d5849463352a25849e6517996 done
+#17 exporting config sha256:838ba1d68ad7cc1b2e10092d95d08ba63a4ff037d5ece73c25bf4b720363f377 done
+#17 exporting attestation manifest sha256:7e26e729b37f7ab2755fad9d791257c075c234ed6087ba45a4c592082660ac1b 0.0s done
+#17 exporting manifest list sha256:bdb5a4075727096cd8a5bd363aec3d6b0a15703d48a6086305c4aad71e6574b9
+#17 exporting manifest list sha256:bdb5a4075727096cd8a5bd363aec3d6b0a15703d48a6086305c4aad71e6574b9 0.0s done
+#17 naming to docker.io/library/fhirant-test:latest done
+#17 unpacking to docker.io/library/fhirant-test:latest 0.0s done
+#17 DONE 0.2s
+
+=== Starting container ===
+d6352142de43688ccde0e11d013c5a566a880fe0cebe5ae3df873442a74db975
+=== Waiting for server to be ready ===
+  Server ready after 16s
+
+=== Test: GET /metadata ===
+  PASS: GET /metadata returns 200 (HTTP 200)
+  PASS: Response is a CapabilityStatement
+
+=== Test: Unauthenticated access ===
+  PASS: GET /Patient without auth returns 401 (HTTP 401)
+
+=== Test: GET /auth/status (before registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is true before registration
+
+=== Test: Register first user ===
+  PASS: POST /auth/register returns 201 (HTTP 201)
+  PASS: First user gets admin role
+  PASS: Register returns a JWT token
+  PASS: Register returns a refresh token
+
+=== Test: GET /auth/status (after registration) ===
+  PASS: GET /auth/status returns 200 (HTTP 200)
+  PASS: firstUser is false after registration
+
+=== Test: Login ===
+  PASS: POST /auth/login returns 200 (HTTP 200)
+  PASS: Login returned a JWT token
+
+=== Test: Create Patient ===
+  PASS: POST /Patient returns 201 (HTTP 201)
+  PASS: Response contains Patient resourceType
+  PASS: Patient created with ID 9adf019f-66b5-4a9a-9c96-514e4384eaf4
+
+=== Test: Read Patient ===
+  PASS: GET /Patient/9adf019f-66b5-4a9a-9c96-514e4384eaf4 returns 200 (HTTP 200)
+  PASS: Read returns same patient
+  PASS: Patient has correct family name
+
+=== Test: Search Patient ===
+  PASS: GET /Patient?name=Docker returns 200 (HTTP 200)
+  PASS: Search returns a Bundle
+  PASS: Bundle contains our patient
+
+=== Test: Update Patient ===
+  PASS: PUT /Patient returns 200 (HTTP 200)
+  PASS: Updated patient has new given name
+
+=== Test: Patient history ===
+  PASS: GET /Patient/<id>/_history returns 200 (HTTP 200)
+  PASS: History returns a Bundle
+
+=== Test: Delete Patient ===
+  PASS: DELETE /Patient returns 204 (HTTP 204)
+
+=== Test: Read deleted Patient ===
+  PASS: GET deleted patient returns 410 (HTTP 410)
+
+===============================
+  Results: 28 passed, 0 failed
+===============================
+
+=== Cleaning up ===
+exit=0

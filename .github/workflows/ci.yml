@@ -82,6 +82,21 @@ jobs:
           fi
           echo "All packages passed"
 
+  # The image is built and smoke-tested on every push. It was built by
+  # nobody: a working checkout could not build (no .dockerignore, so the
+  # gitignored pubspec_overrides.yaml with one machine's absolute paths went
+  # into the context) and test_docker.sh had no caller (REVIEW-2026-09-17
+  # S1). The script builds the image, starts a container, and drives the
+  # bootstrap, login and a Patient CRUD cycle through it over HTTP.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image and smoke-test the container
+        run: ./test_docker.sh
+
   # Coverage is its own job, it does NOT gate anything, and it runs WEEKLY or
   # on demand rather than on every push. That is a measured choice, made on
   # this machine on 2026-08-30:
