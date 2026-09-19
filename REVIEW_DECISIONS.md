@@ -18,6 +18,7 @@ before it is built.
 - 2026-09-19, A14 (`50e06d3`) account management and the token-generation counter: **keep**. Feature; the counter also carries the RFC 9700 refresh-reuse and RFC 6749 code-reuse revocations.
 - 2026-09-19, A16.1 (`23b2b78`) PKCE verifier accepts S256 only: **keep**. Removes an unreachable `plain` branch that contradicted the authorize check (RFC 7636 §7.2).
 - 2026-09-19, A16.4 (`6c986cb`) frame, CSP, nosniff and no-store headers on the login and error pages: **keep**. OWASP recommendation; nothing we build frames the page.
+- 2026-09-19, A16.6 (`63c1f7c`) websocket bind limits: **revert**. Guarded nothing observed; missed the only exposure (binding another user's Subscription, no ownership check). That exposure is not ruled on.
 
 ## Settled by a source (2026-09-19)
 

@@ -52,66 +52,31 @@ void main() {
       sink = RecordingSink();
     });
 
-    test('bind :id is answered with bound :id', () async {
-      expect(
-        await registry.handleMessage('bind :s1', sink),
-        equals('bound s1'),
-      );
+    test('bind :id is answered with bound :id', () {
+      expect(registry.handleMessage('bind :s1', sink), equals('bound s1'));
       expect(registry.socketsFor('s1'), equals(1));
     });
 
-    test('bind without the colon works too', () async {
+    test('bind without the colon works too', () {
       // The spec writes the placeholder as ":id"; real clients send the bare
       // id. Accept both rather than fail a client over punctuation.
-      expect(await registry.handleMessage('bind s1', sink), equals('bound s1'));
+      expect(registry.handleMessage('bind s1', sink), equals('bound s1'));
       expect(registry.socketsFor('s1'), equals(1));
     });
 
-    test('anything that is not bind is ignored, not answered', () async {
+    test('anything that is not bind is ignored, not answered', () {
       // Answering an unknown message could leave a client believing it bound.
-      expect(await registry.handleMessage('hello', sink), isNull);
-      expect(await registry.handleMessage('bind', sink), isNull);
-      expect(await registry.handleMessage('bind  ', sink), isNull);
+      expect(registry.handleMessage('hello', sink), isNull);
+      expect(registry.handleMessage('bind', sink), isNull);
+      expect(registry.handleMessage('bind  ', sink), isNull);
       expect(registry.boundIds, isEmpty);
     });
 
-    test('an id outside the FHIR id grammar is not acknowledged', () async {
-      // REVIEW-2026-09-17 A16: any string used to bind.
-      expect(await registry.handleMessage('bind :not an id', sink), isNull);
-      expect(await registry.handleMessage('bind :a/b', sink), isNull);
-      expect(await registry.handleMessage('bind :${'x' * 65}', sink), isNull);
-      expect(registry.boundIds, isEmpty);
-    });
-
-    test('a socket may bind maxBindsPerSocket ids, and the same id again',
-        () async {
-      final small = WebSocketSubscriptions(maxBindsPerSocket: 2);
-      expect(await small.handleMessage('bind :s1', sink), equals('bound s1'));
-      expect(await small.handleMessage('bind :s2', sink), equals('bound s2'));
-      expect(await small.handleMessage('bind :s3', sink), isNull);
-      expect(await small.handleMessage('bind :s1', sink), equals('bound s1'));
-      expect(small.bindsOf(sink), equals(2));
-      // Another socket has its own allowance.
-      final other = RecordingSink();
-      expect(await small.handleMessage('bind :s3', other), equals('bound s3'));
-    });
-
-    test('with an existence check, an unknown id is not acknowledged',
-        () async {
-      final checked = WebSocketSubscriptions(exists: (id) async => id == 'yes');
-      expect(await checked.handleMessage('bind :no', sink), isNull);
-      expect(checked.boundIds, isEmpty);
-      expect(
-        await checked.handleMessage('bind :yes', sink),
-        equals('bound yes'),
-      );
-      expect(checked.socketsFor('yes'), equals(1));
-    });
-
-    test('ping goes to every socket bound to that subscription', () async {
+    test('ping goes to every socket bound to that subscription', () {
       final second = RecordingSink();
-      await registry.handleMessage('bind :s1', sink);
-      await registry.handleMessage('bind :s1', second);
+      registry
+        ..handleMessage('bind :s1', sink)
+        ..handleMessage('bind :s1', second);
 
       expect(registry.ping('s1'), equals(2));
       expect(sink.written, equals(['ping s1']));
@@ -123,19 +88,21 @@ void main() {
     });
 
     test('a socket that throws is dropped and the others still get the ping',
-        () async {
+        () {
       final broken = RecordingSink()..throwOnAdd = true;
-      await registry.handleMessage('bind :s1', broken);
-      await registry.handleMessage('bind :s1', sink);
+      registry
+        ..handleMessage('bind :s1', broken)
+        ..handleMessage('bind :s1', sink);
 
       expect(registry.ping('s1'), equals(1));
       expect(sink.written, equals(['ping s1']));
       expect(registry.socketsFor('s1'), equals(1));
     });
 
-    test('release drops a socket from every subscription it bound', () async {
-      await registry.handleMessage('bind :s1', sink);
-      await registry.handleMessage('bind :s2', sink);
+    test('release drops a socket from every subscription it bound', () {
+      registry
+        ..handleMessage('bind :s1', sink)
+        ..handleMessage('bind :s2', sink);
       expect(registry.boundIds, containsAll(['s1', 's2']));
 
       registry.release(sink);
@@ -153,11 +120,7 @@ void main() {
 
     setUp(() {
       db = FhirAntDb(NativeDatabase.memory());
-      // As the server wires it: a bind needs a stored Subscription.
-      registry = WebSocketSubscriptions(
-        exists: (id) async =>
-            await db.getResource(fhir.R4ResourceType.Subscription, id) != null,
-      );
+      registry = WebSocketSubscriptions();
       sink = RecordingSink();
       service = SubscriptionService(db, websockets: registry);
     });
@@ -181,7 +144,7 @@ void main() {
 
     test('a matching write pings the bound socket', () async {
       await db.saveResource(websocketSubscription(status: 'active'));
-      expect(await registry.handleMessage('bind :ws1', sink), 'bound ws1');
+      registry.handleMessage('bind :ws1', sink);
 
       final observation = fhir.Observation.fromJson({
         'resourceType': 'Observation',
@@ -198,15 +161,6 @@ void main() {
       await service.drain();
 
       expect(sink.written, equals(['ping ws1']));
-    });
-
-    test('a bind to a Subscription the store does not hold is not acknowledged',
-        () async {
-      // REVIEW-2026-09-17 A16: the registry never asked the store.
-      expect(await registry.handleMessage('bind :ws1', sink), isNull);
-      expect(registry.boundIds, isEmpty);
-      await db.saveResource(websocketSubscription(status: 'active'));
-      expect(await registry.handleMessage('bind :ws1', sink), 'bound ws1');
     });
 
     test('nothing is bound: the write succeeds and nothing is marked in error',

@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 4 OPEN
+# REVIEW-2026-09-17 triage: 3 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -11,7 +11,6 @@ goes to `REVIEW_DECISIONS.md`.
 
 | # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
 |---|---|---|---|---|---|
-| 7 | `63c1f7c` A16.6 | `bind` needs a FHIR id, a stored Subscription, and at most 16 per socket | `/ws` already needs a token; pings carry no payload. 16 is my number | A DB read per bind | Revert |
 | 8 | `1c14577` A16.7 | Backup iteration count capped at 10× what the server writes | Measured: a crafted file stalls the server about 80 minutes. But `$restore` is admin-only | A future 10× increase must move the cap | Keep |
 | 11 | `2a68322` S4 | `--dev-mode` no longer allows the public key; new `--allow-public-key` | Design choice; nothing failed | The dev command needs two flags | Keep |
 | 12 | `0f313b0` S6 | `--config` now read (YAML); `http` pinned | The flag was dead. Deleting it was the smaller fix. No outside source bears on it | A YAML dependency and a config loader | Keep: it is built and tested, and deleting it now is more change |

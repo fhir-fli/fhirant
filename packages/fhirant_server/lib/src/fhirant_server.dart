@@ -184,13 +184,7 @@ class FhirAntServer {
     // One service for the life of the router, so rest-hook delivery reuses a
     // single HTTP client rather than building one per write, and so every
     // bound websocket is visible to every write.
-    // A bind is acknowledged only for a Subscription the store holds
-    // (services/websocket_subscriptions.dart; REVIEW-2026-09-17 A16).
-    final websockets = WebSocketSubscriptions(
-      exists: (id) async =>
-          await dbInterface.getResource(R4ResourceType.Subscription, id) !=
-          null,
-    );
+    final websockets = WebSocketSubscriptions();
     final subscriptions =
         SubscriptionService(dbInterface, websockets: websockets);
     _subscriptions = subscriptions;
