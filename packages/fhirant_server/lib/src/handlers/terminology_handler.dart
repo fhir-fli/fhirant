@@ -887,75 +887,90 @@ Future<Response> translateHandler(
       return _errorResponse(404, 'ConceptMap not found');
     }
 
-    // Search through groups for a matching source code
-    if (conceptMap.group != null) {
-      for (final group in conceptMap.group!) {
-        // Check if the group's source system matches
-        final groupSource = group.source?.valueString;
-        if (effectiveSystem != null &&
-            groupSource != null &&
-            effectiveSystem != groupSource) {
-          continue;
-        }
-
-        for (final element in group.element) {
-          if (element.code?.valueString == effectiveCode) {
-            // Found the source code — return the first target
-            if (element.target != null && element.target!.isNotEmpty) {
-              final t = element.target!.first;
-              final matchParams = <fhir.ParametersParameter>[
+    // Every target of every element for the code, across the groups whose
+    // source system matches. OperationDefinition ConceptMap-translate
+    // (bundled profiles-resources.ndjson, verbatim): `match` is 0..*, "Note
+    // that there may be multiple matches of equal or differing equivalence,
+    // and the matches may include equivalence values that mean that there
+    // is no match"; `result` is "True if the concept could be translated
+    // successfully. The value can only be true if at least one returned
+    // match has an equivalence which is not unmatched or disjoint". This
+    // used to answer with the first target alone (REVIEW-2026-09-17 C7).
+    final matches = <fhir.ParametersParameter>[];
+    var translated = false;
+    for (final group in conceptMap.group ?? const <fhir.ConceptMapGroup>[]) {
+      final groupSource = group.source?.valueString;
+      if (effectiveSystem != null &&
+          groupSource != null &&
+          effectiveSystem != groupSource) {
+        continue;
+      }
+      for (final element in group.element) {
+        if (element.code?.valueString != effectiveCode) continue;
+        for (final t in element.target ?? const <fhir.ConceptMapTarget>[]) {
+          final equivalence = t.equivalence.valueString ?? 'equivalent';
+          if (equivalence != 'unmatched' && equivalence != 'disjoint') {
+            translated = true;
+          }
+          matches.add(
+            fhir.ParametersParameter(
+              name: fhir.FhirString('match'),
+              part_: [
                 fhir.ParametersParameter(
                   name: fhir.FhirString('equivalence'),
-                  valueCode:
-                      fhir.FhirCode(t.equivalence.valueString ?? 'equivalent'),
+                  valueCode: fhir.FhirCode(equivalence),
                 ),
-                fhir.ParametersParameter(
-                  name: fhir.FhirString('concept'),
-                  valueCoding: fhir.Coding(
-                    system: group.target,
-                    code: t.code,
-                    display: t.display,
-                  ),
-                ),
-              ];
-
-              final result = fhir.Parameters(
-                parameter: [
+                if (t.code != null)
                   fhir.ParametersParameter(
-                    name: fhir.FhirString('result'),
-                    valueBoolean: fhir.FhirBoolean(true),
+                    name: fhir.FhirString('concept'),
+                    valueCoding: fhir.Coding(
+                      system: group.target,
+                      code: t.code,
+                      display: t.display,
+                    ),
                   ),
+                for (final p in t.product ?? const <fhir.ConceptMapDependsOn>[])
                   fhir.ParametersParameter(
-                    name: fhir.FhirString('match'),
-                    part_: matchParams,
+                    name: fhir.FhirString('product'),
+                    part_: [
+                      fhir.ParametersParameter(
+                        name: fhir.FhirString('element'),
+                        valueUri: p.property,
+                      ),
+                      fhir.ParametersParameter(
+                        name: fhir.FhirString('concept'),
+                        valueCoding: fhir.Coding(
+                          system: p.system,
+                          code: p.value.valueString?.toFhirCode,
+                          display: p.display,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              );
-
-              FhirantLogging().logInfo(
-                r'ConceptMap $translate: matched',
-              );
-              return Response.ok(
-                result.toJsonString(),
-                headers: {'Content-Type': 'application/json'},
-              );
-            }
-          }
+                if (conceptMap.url?.valueString case final String source)
+                  fhir.ParametersParameter(
+                    name: fhir.FhirString('source'),
+                    valueUri: fhir.FhirUri(source),
+                  ),
+              ],
+            ),
+          );
         }
       }
     }
 
-    // No match found
     final result = fhir.Parameters(
       parameter: [
         fhir.ParametersParameter(
           name: fhir.FhirString('result'),
-          valueBoolean: fhir.FhirBoolean(false),
+          valueBoolean: fhir.FhirBoolean(translated),
         ),
+        ...matches,
       ],
     );
-
-    FhirantLogging().logInfo(r'ConceptMap $translate: no match');
+    FhirantLogging().logInfo(
+      r'ConceptMap $translate: ' '${matches.length} match(es)',
+    );
     return Response.ok(
       result.toJsonString(),
       headers: {'Content-Type': 'application/json'},
