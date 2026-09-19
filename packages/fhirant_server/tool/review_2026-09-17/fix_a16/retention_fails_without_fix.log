@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/audit_retention_test.dart
+00:00 +0: the sweep removes events past the retention, rows, history and index
+00:00 +0 -1: the sweep removes events past the retention, rows, history and index [E]
+  Expected: ['recent']
+    Actual: MappedListIterable<Resource, String?>:['old', 'recent']
+     Which: at location [0] is 'old' instead of 'recent'
+  
+  package:matcher                                  expect
+  test/integration/audit_retention_test.dart 77:5  main.<fn>
+  
+00:00 +0 -1: the default retention is six years and nothing recent is touched
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  test/integration/audit_retention_test.dart: the sweep removes events past the retention, rows, history and index
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

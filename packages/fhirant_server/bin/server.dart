@@ -43,6 +43,12 @@ void main(List<String> arguments) async {
           'Lets a search tell an absolute reference to this server from one '
           'to another server (R4B search 3.1.1.4.12). Optional.',
     )
+    ..addOption(
+      'audit-retention-days',
+      defaultsTo: '${kAuditRetention.inDays}',
+      help: 'How many days AuditEvents are kept before the hourly sweep '
+          'removes them (default six years, 45 CFR 164.316(b)(2)(i)).',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   ArgResults args;
@@ -190,6 +196,9 @@ void main(List<String> arguments) async {
     maxRequests: devMode ? 1000 : 600,
     baseUrl: args['base-url'] as String?,
     bootstrapToken: bootstrapToken,
+    auditRetention: Duration(
+      days: int.parse(args['audit-retention-days'] as String),
+    ),
   );
 
   if (devMode) {

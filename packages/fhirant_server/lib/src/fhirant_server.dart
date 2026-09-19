@@ -41,6 +41,14 @@ class RequestLogEntry {
   final String clientIp;
 }
 
+/// How long AuditEvents are kept by default: six years. 45 CFR 164.316
+/// (b)(2)(i) (law.cornell.edu, read 2026-09-19, verbatim): "Time limit
+/// (Required). Retain the documentation required by paragraph (b)(1) of
+/// this section for 6 years from the date of its creation or the date when
+/// it last was in effect, whichever is later." Six years of 365 days plus
+/// two leap days. The CLI's --audit-retention-days sets it.
+const kAuditRetention = Duration(days: 6 * 365 + 2);
+
 /// Core server functionality without platform-specific dependencies
 class FhirAntServer {
   FhirAntServer(
@@ -57,6 +65,7 @@ class FhirAntServer {
     this.maxRequestBody = kMaxRequestBody,
     this.programDeadline = kProgramDeadline,
     this.bootstrapToken,
+    this.auditRetention = kAuditRetention,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -136,6 +145,11 @@ class FhirAntServer {
   /// The CLI issues one at start and prints it; null (the app, tests) leaves
   /// the first registration open, as before.
   final String? bootstrapToken;
+
+  /// How long an AuditEvent is kept; older ones are removed by the hourly
+  /// sweep, with their history and index rows (REVIEW-2026-09-17 A16:
+  /// every read wrote one and nothing removed any). See [kAuditRetention].
+  final Duration auditRetention;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -929,6 +943,23 @@ class FhirAntServer {
       // and a client reading the resource on a quiet server is told
       // `active` about a subscription that is finished.
       ('expired subscriptions', () async => _subscriptions?.sweepExpired()),
+      // AuditEvents past the retention, with their history and index rows.
+      (
+        'audit events past retention',
+        () async {
+          final removed =
+              await dbInterface.fhirDao.purgeResourcesLastUpdatedBefore(
+            R4ResourceType.AuditEvent,
+            DateTime.now().toUtc().subtract(auditRetention),
+          );
+          if (removed > 0) {
+            FhirantLogging().logInfo(
+              'Removed $removed AuditEvent(s) older than '
+              '${auditRetention.inDays} days',
+            );
+          }
+        }
+      ),
     ];
     for (final (name, step) in steps) {
       try {

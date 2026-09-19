@@ -1,0 +1,4 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/purge_test.dart
+00:00 +0: removes the old resource, its history and its index rows
+00:00 +1: nothing old: nothing removed
+00:00 +2: All tests passed!
