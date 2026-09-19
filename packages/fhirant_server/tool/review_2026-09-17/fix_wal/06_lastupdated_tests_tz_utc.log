@@ -1,0 +1,11 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/unit/search_test.dart
+00:00 +0: Sorting and pagination search with sort by _lastUpdated ascending
+00:00 +1: _lastUpdated search exact date match finds resources saved today
+00:00 +2: _lastUpdated search :gt modifier finds resources after a date
+00:00 +3: _lastUpdated search :lt modifier finds resources before a date
+00:00 +4: _lastUpdated search :ge modifier finds resources on or after date
+00:00 +5: _lastUpdated search :gt with future date returns empty
+00:00 +6: _lastUpdated extended modifiers :le with tomorrow finds all
+00:00 +7: _lastUpdated extended modifiers :sa with yesterday finds all
+00:00 +8: _lastUpdated extended modifiers :eb with tomorrow finds all
+00:00 +9: All tests passed!

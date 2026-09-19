@@ -1,0 +1,2 @@
+store	journal_mode	synchronous	200 commits ms	ms each
+applyStoreCipher	wal	2	1585	7.9

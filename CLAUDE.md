@@ -263,6 +263,7 @@ Packages use `flutter_lints`. The parent monorepo uses `very_good_analysis` — 
 ## Key Design Decisions
 
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
+- **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
 - **Version ID = timestamp** — resources auto-versioned on save with `updateVersion(versionIdAsTime: true)`
 - **IDs auto-generated** if missing via `newIdIfNoId()`
 - **Search parameter extraction is generated code** — `search_parameters.dart` is produced from FHIR SearchParameter definitions, do not edit by hand

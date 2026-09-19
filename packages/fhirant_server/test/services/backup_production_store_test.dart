@@ -71,6 +71,10 @@ void main() {
 
     expect(await pragma('cipher'), 'sqlcipher');
     expect(await pragma('legacy'), '4');
+    // REVIEW-2026-09-17, SQLite configuration: WAL with FULL. Measured
+    // there at 8.5 ms per commit against 23.8 ms with a rollback journal.
+    expect(await pragma('journal_mode'), 'wal');
+    expect(await pragma('synchronous'), '2');
     await db.close();
     // Encrypted: the file does not open without the key.
     final raw = sqlite3.open('${dir.path}/main.db');
@@ -105,6 +109,30 @@ void main() {
     expect(await source.restoreEncrypted(file.path, 'correct horse'), 2);
     await source.close();
     await target.close();
+  });
+
+  test('a backup written from a WAL store is one plain file, not WAL',
+      () async {
+    // `PRAGMA journal_mode` with no schema name applies to every attached
+    // database; the store sets `main.journal_mode`, so the backup, which is
+    // ATTACHed to the same connection, keeps the rollback journal and
+    // leaves no -wal sidecar to stream.
+    final source = await production('source.db');
+    await source.saveResource(patient('p1', 'Alpha'));
+    final file = await BackupService.createFile(
+      source,
+      'correct horse',
+      '${dir.path}/backup.sqlite',
+    );
+    await source.close();
+    expect(File('${file.path}-wal').existsSync(), isFalse);
+    final raw = sqlite3.open(file.path)
+      ..execute("PRAGMA cipher = 'sqlcipher'")
+      ..execute('PRAGMA legacy = 4')
+      ..execute("PRAGMA key = 'correct horse'");
+    expect(raw.select('PRAGMA journal_mode').first.values.first, 'delete');
+    expect(raw.select('SELECT count(*) FROM resources').first.values.first, 1);
+    raw.close();
   });
 
   test('the backup is one format whatever store wrote it', () async {

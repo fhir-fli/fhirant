@@ -1,0 +1,57 @@
+// What one commit costs through applyStoreCipher, the function the CLI and
+// the app open their stores with, after it sets WAL + FULL. Same shape as
+// store_probe2's WAL case (200 single saveResource commits). Run from
+// packages/fhirant_server:
+//   cp tool/review_2026-09-17/fix_wal/commit_cost_probe.dart.txt test/zz_commit_cost_probe_test.dart
+//   dart test test/zz_commit_cost_probe_test.dart; rm test/zz_commit_cost_probe_test.dart
+@Timeout(Duration(minutes: 3))
+library;
+
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('commit cost through applyStoreCipher', () async {
+    final out = File('tool/review_2026-09-17/fix_wal/commit_cost.tsv')
+        .openSync(mode: FileMode.write);
+    out.writeStringSync('store\tjournal_mode\tsynchronous\t200 commits ms\tms each\n');
+    out.flushSync();
+    final dir = await Directory.systemTemp.createTemp('probe-wal-');
+    try {
+      final db = FhirAntDb(
+        NativeDatabase(
+          File('${dir.path}/w.db'),
+          setup: (raw) => applyStoreCipher(raw, 'the-store-key'),
+        ),
+      );
+      await db.initialize();
+      final mode = (await db.customSelect('PRAGMA journal_mode').getSingle())
+          .data.values.first;
+      final sync = (await db.customSelect('PRAGMA synchronous').getSingle())
+          .data.values.first;
+      const n = 200;
+      final sw = Stopwatch()..start();
+      for (var i = 0; i < n; i++) {
+        await db.saveResource(
+          fhir.Patient(
+            id: fhir.FhirString('w$i'),
+            gender: fhir.AdministrativeGender.male,
+          ),
+        );
+      }
+      final ms = sw.elapsedMilliseconds;
+      out.writeStringSync(
+        'applyStoreCipher\t$mode\t$sync\t$ms\t${(ms / n).toStringAsFixed(1)}\n',
+      );
+      out.flushSync();
+      await db.close();
+    } finally {
+      out.closeSync();
+      await dir.delete(recursive: true);
+    }
+  });
+}

@@ -1,0 +1,3 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/zz_commit_cost_probe_test.dart
+00:00 +0: commit cost through applyStoreCipher
+00:02 +1: All tests passed!
