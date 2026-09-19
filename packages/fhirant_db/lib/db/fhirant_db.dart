@@ -24,7 +24,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -271,6 +271,26 @@ class FhirAntDb extends FhirDb {
               );
             }
           }
+          if (from < 25) {
+            // The account's token generation: every token carries the
+            // generation it was issued under, and one from an earlier
+            // generation is refused. Bumped on a password, role, scope or
+            // activation change so that every session from before it ends
+            // (OWASP Session Management Cheat Sheet, "Renew the Session ID
+            // After Any Privilege Level Change"; fhirant REVIEW-2026-09-17
+            // A14). A counter, not an instant: a token issued in the same
+            // second as the change would be on the wrong side of a
+            // timestamp. A fresh store creates the column above.
+            final columns =
+                await customSelect('PRAGMA table_info(users)').get();
+            if (!columns
+                .any((c) => c.read<String>('name') == 'token_generation')) {
+              await customStatement(
+                'ALTER TABLE users ADD COLUMN token_generation INTEGER NOT '
+                'NULL DEFAULT 0',
+              );
+            }
+          }
         },
       );
 
@@ -292,7 +312,8 @@ class FhirAntDb extends FhirDb {
         scopes TEXT,
         failed_login_count INTEGER NOT NULL DEFAULT 0,
         locked_until INTEGER,
-        patient_id TEXT
+        patient_id TEXT,
+        token_generation INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -1530,6 +1551,42 @@ class FhirAntDb extends FhirDb {
     await customStatement(
       'UPDATE users SET patient_id = ? WHERE id = ?',
       [patientId, id],
+    );
+  }
+
+  /// Ends every session the account has: its token generation moves on,
+  /// and a token issued under an earlier one (`User.tokenGeneration`, the
+  /// JWT's `gen` claim) is refused. Called on a password, role, scope or
+  /// activation change (REVIEW-2026-09-17 A14).
+  Future<void> bumpTokenGeneration(int id) async {
+    await customStatement(
+      'UPDATE users SET token_generation = token_generation + 1 WHERE id = ?',
+      [id],
+    );
+  }
+
+  /// Reactivates an account [deactivateUser] switched off.
+  Future<void> activateUser(int id) async {
+    await customStatement(
+      'UPDATE users SET active = 1 WHERE id = ?',
+      [id],
+    );
+  }
+
+  /// Changes the account's role; the caller validates the value.
+  Future<void> updateUserRole(int id, String role) async {
+    await customStatement(
+      'UPDATE users SET role = ? WHERE id = ?',
+      [role, id],
+    );
+  }
+
+  /// Changes the account's scopes, as a JSON array text, or null for the
+  /// role's defaults; the caller validates the values.
+  Future<void> updateUserScopes(int id, String? scopesJson) async {
+    await customStatement(
+      'UPDATE users SET scopes = ? WHERE id = ?',
+      [scopesJson, id],
     );
   }
 

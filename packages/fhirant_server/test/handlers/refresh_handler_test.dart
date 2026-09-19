@@ -101,6 +101,7 @@ void main() {
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
@@ -164,6 +165,7 @@ void main() {
       when(() => mockUser.username).thenReturn('inactive');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(false);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.patientId).thenReturn(null);
 
       when(() => mockDb.getUserByUsername('inactive'))
@@ -195,6 +197,7 @@ void main() {
       when(() => mockUser.username).thenReturn('patientuser');
       when(() => mockUser.role).thenReturn('readonly');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes)
           .thenReturn('["patient/Patient.r","patient/Observation.r"]');
       when(() => mockUser.patientId).thenReturn('pat-123');
@@ -231,6 +234,7 @@ void main() {
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
@@ -262,6 +266,7 @@ void main() {
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
@@ -523,6 +528,7 @@ void main() {
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
@@ -587,6 +593,7 @@ void main() {
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 

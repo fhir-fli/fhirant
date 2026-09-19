@@ -265,6 +265,7 @@ void main() {
       when(() => mockUser.username).thenReturn(username);
       when(() => mockUser.role).thenReturn(role);
       when(() => mockUser.active).thenReturn(active);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.salt).thenReturn(salt);
       when(() => mockUser.passwordHash).thenReturn(hash);
       when(() => mockUser.scopes).thenReturn(scopes);

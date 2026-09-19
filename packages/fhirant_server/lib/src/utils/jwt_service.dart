@@ -28,6 +28,7 @@ class JwtService {
     required String role,
     List<String>? scopes,
     String? patientId,
+    int generation = 0,
   }) {
     final jwt = JWT({
       'userId': userId,
@@ -35,6 +36,8 @@ class JwtService {
       'role': role,
       if (scopes != null) 'scope': scopes.join(' '),
       if (patientId != null) 'patient': patientId,
+      // The account's token generation at issue (auth/token_bound.dart).
+      'gen': generation,
     });
     return jwt.sign(
       SecretKey(_secret),
@@ -52,6 +55,7 @@ class JwtService {
     required String role,
     List<String>? scopes,
     String? patientId,
+    int generation = 0,
   }) {
     final jwt = JWT({
       'userId': userId,
@@ -60,6 +64,7 @@ class JwtService {
       'token_type': 'refresh',
       if (scopes != null) 'scope': scopes.join(' '),
       if (patientId != null) 'patient': patientId,
+      'gen': generation,
     });
     return jwt.sign(
       SecretKey(_secret),

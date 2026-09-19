@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/token_bound.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/pkce.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -223,6 +224,7 @@ Future<Response> _handleAuthorizationCodeGrant(
     role: user.role,
     scopes: scopes,
     patientId: patientId,
+    generation: user.tokenGeneration,
   );
 
   final refreshToken = jwtService.generateRefreshToken(
@@ -231,6 +233,7 @@ Future<Response> _handleAuthorizationCodeGrant(
     role: user.role,
     scopes: scopes,
     patientId: patientId,
+    generation: user.tokenGeneration,
   );
 
   return Response.ok(
@@ -321,6 +324,18 @@ Future<Response> _handleRefreshTokenGrant(
       }),
     );
   }
+  // A refresh token from before the account's password, role, scopes or
+  // activation last changed is over too (token_bound.dart;
+  // REVIEW-2026-09-17 A14).
+  if (tokenPredatesAccount(payload, user)) {
+    return Response(
+      401,
+      body: jsonEncode({
+        'error': 'invalid_grant',
+        'error_description': 'Refresh token predates a change to the account',
+      }),
+    );
+  }
 
   // The refresh token's scopes, narrowed to what the account holds NOW, so
   // an administrator's downgrade takes effect at the next refresh rather
@@ -348,6 +363,7 @@ Future<Response> _handleRefreshTokenGrant(
     role: user.role,
     scopes: scopes,
     patientId: patientId,
+    generation: user.tokenGeneration,
   );
 
   // Generate new refresh token (rotation)
@@ -357,6 +373,7 @@ Future<Response> _handleRefreshTokenGrant(
     role: user.role,
     scopes: scopes,
     patientId: patientId,
+    generation: user.tokenGeneration,
   );
 
   // Revoke the old refresh token (rotation revocation)

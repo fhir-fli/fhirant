@@ -209,6 +209,13 @@ class FhirAntServer {
         }
         return authorizePostHandler(req, dbInterface);
       })
+      // The caller's own password (REVIEW-2026-09-17 A14). Under auth/,
+      // so the middleware injects auth_user without requiring it; the
+      // handler requires it.
+      ..post(
+        '/auth/password',
+        (Request req) => changePasswordHandler(req, dbInterface, _jwtService),
+      )
       // Admin routes (protected by auth middleware — not under auth/ prefix)
       ..post('/admin/unlock/<userId>', (Request req, String userId) {
         final id = int.tryParse(userId);
@@ -216,6 +223,46 @@ class FhirAntServer {
           return Response(400, body: '{"error": "Invalid user ID"}');
         }
         return unlockAccountHandler(req, id, dbInterface);
+      })
+      // Account management (REVIEW-2026-09-17 A14)
+      ..get(
+        '/admin/users',
+        (Request req) => listUsersHandler(req, dbInterface),
+      )
+      ..post('/admin/users/<userId>/password', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return resetPasswordHandler(req, id, dbInterface);
+      })
+      ..post('/admin/users/<userId>/deactivate', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return setActiveHandler(req, id, dbInterface, active: false);
+      })
+      ..post('/admin/users/<userId>/activate', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return setActiveHandler(req, id, dbInterface, active: true);
+      })
+      ..put('/admin/users/<userId>/role', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return setRoleHandler(req, id, dbInterface);
+      })
+      ..put('/admin/users/<userId>/scopes', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return setScopesHandler(req, id, dbInterface);
       })
       // Public routes
       // R4B search.html 3.1.1.2: "All resource types: GET [base]?parameter(s)".

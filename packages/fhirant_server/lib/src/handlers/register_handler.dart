@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
@@ -9,7 +10,8 @@ import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Valid user roles.
-const _validRoles = {'admin', 'clinician', 'readonly'};
+// The one list, shared with the role change (account_rules.dart).
+const Set<String> _validRoles = validRoles;
 
 /// Handler for user registration.
 ///

@@ -77,6 +77,7 @@ Future<Response> loginHandler(
       role: user.role,
       scopes: effectiveScopes,
       patientId: patientId,
+      generation: user.tokenGeneration,
     );
 
     // Generate refresh token
@@ -86,6 +87,7 @@ Future<Response> loginHandler(
       role: user.role,
       scopes: effectiveScopes,
       patientId: patientId,
+      generation: user.tokenGeneration,
     );
 
     return Response.ok(

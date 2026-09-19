@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/account_management_test.dart
+00:00 +0: the caller changes its own password and the old sessions end, the new one works
+00:01 +1: the caller changes its own password needs the current password, and a new one within the policy
+00:01 +1: the caller changes its own password and the old sessions end, the new one works
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +2: an administrator resets a password, and the old sessions end
+00:02 +3: an administrator deactivates and reactivates an account
+00:02 +3: an administrator resets a password, and the old sessions end
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +4: an administrator changes a role, and the old sessions end
+00:03 +4: an administrator deactivates and reactivates an account
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +5: an administrator changes scopes, and the old sessions end
+00:03 +6: an administrator lists accounts without their secrets
+00:03 +7: an administrator cannot deactivate or demote the last active administrator
+00:03 +8: an administrator is required: a clinician gets 403, an unknown id 404
+00:04 +9: a token with no generation claim is one from before the change
+00:04 +10: All tests passed!

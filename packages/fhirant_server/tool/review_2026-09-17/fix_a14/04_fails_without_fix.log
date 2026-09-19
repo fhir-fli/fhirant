@@ -1,0 +1,113 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/account_management_test.dart
+00:00 +0: the caller changes its own password and the old sessions end, the new one works
+00:00 +0 -1: the caller changes its own password and the old sessions end, the new one works [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                         jsonDecode
+  test/integration/account_management_test.dart 77:44  main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 99:29  main.<fn>.<fn>
+  
+00:00 +0 -1: the caller changes its own password needs the current password, and a new one within the policy
+00:00 +0 -2: the caller changes its own password needs the current password, and a new one within the policy [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 127:26  main.<fn>.<fn>
+  
+00:00 +0 -2: an administrator resets a password, and the old sessions end
+00:01 +0 -3: an administrator resets a password, and the old sessions end [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 150:22  main.<fn>.<fn>
+  
+00:01 +0 -3: an administrator deactivates and reactivates an account
+00:01 +0 -4: an administrator deactivates and reactivates an account [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 165:25  main.<fn>.<fn>
+  
+00:01 +0 -4: an administrator changes a role, and the old sessions end
+00:01 +0 -5: an administrator changes a role, and the old sessions end [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 187:25  main.<fn>.<fn>
+  
+00:01 +0 -5: an administrator changes scopes, and the old sessions end
+00:01 +0 -6: an administrator changes scopes, and the old sessions end [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 210:25  main.<fn>.<fn>
+  
+00:01 +0 -6: an administrator lists accounts without their secrets
+00:02 +0 -7: an administrator lists accounts without their secrets [E]
+  Expected: <200>
+    Actual: <400>
+  
+  package:matcher                                      expect
+  test/integration/account_management_test.dart 236:7  main.<fn>.<fn>
+  
+00:02 +0 -7: an administrator cannot deactivate or demote the last active administrator
+00:02 +0 -8: an administrator cannot deactivate or demote the last active administrator [E]
+  FormatException: Unexpected character (at character 1)
+  Route not found
+  ^
+  
+  dart:convert                                          jsonDecode
+  test/integration/account_management_test.dart 77:44   main.send
+  ===== asynchronous gap ===========================
+  test/integration/account_management_test.dart 249:23  main.<fn>.<fn>
+  
+00:02 +0 -8: an administrator is required: a clinician gets 403, an unknown id 404
+00:02 +0 -9: an administrator is required: a clinician gets 403, an unknown id 404 [E]
+  Expected: <403>
+    Actual: <400>
+  
+  package:matcher                                      expect
+  test/integration/account_management_test.dart 268:7  main.<fn>.<fn>
+  
+00:02 +0 -9: a token with no generation claim is one from before the change
+00:02 +0 -10: a token with no generation claim is one from before the change [E]
+  Expected: <401>
+    Actual: <200>
+  
+  package:matcher                                      expect
+  test/integration/account_management_test.dart 298:5  main.<fn>
+  
+00:02 +0 -10: Some tests failed.
+
+Failing tests:
+  test/integration/account_management_test.dart: a token with no generation claim is one from before the change
+  test/integration/account_management_test.dart: an administrator cannot deactivate or demote the last active administrator
+  test/integration/account_management_test.dart: an administrator changes a role, and the old sessions end
+  test/integration/account_management_test.dart: an administrator changes scopes, and the old sessions end
+  ... and 6 more
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

@@ -22,6 +22,7 @@ class User {
     this.failedLoginCount = 0,
     this.lockedUntil,
     this.patientId,
+    this.tokenGeneration = 0,
   });
 
   factory User.fromRow(QueryRow row) {
@@ -38,6 +39,7 @@ class User {
       failedLoginCount: row.read<int>('failed_login_count'),
       lockedUntil: row.readNullable<DateTime>('locked_until'),
       patientId: row.readNullable<String>('patient_id'),
+      tokenGeneration: row.readNullable<int>('token_generation') ?? 0,
     );
   }
   final int id;
@@ -56,6 +58,12 @@ class User {
   /// patient-facing account. The server puts it in the token's `patient`
   /// claim; patient/ scopes are confined to this compartment.
   final String? patientId;
+
+  /// The account's token generation. Every token carries the generation it
+  /// was issued under (`gen`); one from an earlier generation is refused.
+  /// Bumped on a password, role, scope or activation change so that every
+  /// session from before it ends (REVIEW-2026-09-17 A14).
+  final int tokenGeneration;
 
   @override
   String toString() =>

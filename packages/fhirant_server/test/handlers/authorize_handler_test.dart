@@ -35,6 +35,7 @@ MockUser activeUser(
   when(() => mockUser.salt).thenReturn(salt);
   when(() => mockUser.passwordHash).thenReturn(hash);
   when(() => mockUser.active).thenReturn(true);
+  when(() => mockUser.tokenGeneration).thenReturn(0);
   when(() => mockUser.role).thenReturn(role);
   when(() => mockUser.scopes).thenReturn(null);
   when(() => mockUser.failedLoginCount).thenReturn(0);
@@ -342,6 +343,7 @@ void main() {
     test('a deactivated user is refused as a wrong password is', () async {
       final mockUser = activeUser('inactive', 'validpass');
       when(() => mockUser.active).thenReturn(false);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
 
       when(() => mockDb.getUserByUsername('inactive'))
           .thenAnswer((_) async => mockUser);

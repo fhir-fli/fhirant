@@ -106,7 +106,13 @@ Requests pass through middleware in this order:
 | | `POST /auth/logout` | `logoutHandler` | Log out |
 | | `GET /auth/authorize` | `authorizeGetHandler` | OAuth authorize (GET) |
 | | `POST /auth/authorize` | `authorizePostHandler` / `authorizeJsonHandler` | OAuth authorize (POST) |
+| | `POST /auth/password` | `changePasswordHandler` | The caller changes its own password (current password checked; returns a fresh token pair) |
 | **Admin** | `POST /admin/unlock/<userId>` | `unlockAccountHandler` | Unlock locked account |
+| | `GET /admin/users` | `listUsersHandler` | Every account, without secrets |
+| | `POST /admin/users/<userId>/password` | `resetPasswordHandler` | Set a new password for an account |
+| | `POST /admin/users/<userId>/deactivate` · `/activate` | `setActiveHandler` | Switch an account off or on (the last active admin cannot be switched off: 409) |
+| | `PUT /admin/users/<userId>/role` | `setRoleHandler` | Change the role (the last active admin cannot be demoted: 409) |
+| | `PUT /admin/users/<userId>/scopes` | `setScopesHandler` | Change the granted scopes (array, or null for the role's defaults) |
 | **Public** | `GET /` | `baseHandler` | Server info |
 | | `GET /favicon.ico` | `favicoHandler` | Favicon |
 | | `GET /health` | `healthHandler` | Health check + uptime |
@@ -171,6 +177,7 @@ Requests pass through middleware in this order:
 - **Account lockout**: 5 failed attempts → 15-minute lockout of password login, counted by one credential check shared by login and both authorize handlers (`lib/src/auth/credential_check.dart`); a lock does not end live sessions (deactivation does). A wrong password, an unknown account, a deactivated one and a locked one all answer 401 "Invalid username or password", with the hash computed first (OWASP Authentication Cheat Sheet, "Authentication Responses"; REVIEW-2026-09-17 A12)
 - **One authorization table**: `authorizeRequest` (`lib/src/auth/request_authorization.dart`) decides every REST request and every Bundle entry: scopes, patient context (fails closed at the root too), HEAD as GET, AuditEvent append-only to clients, SearchParameter delete by system authority
 - **Token revocation**: explicit revoke + hourly cleanup of expired tokens
+- **A change to an account ends its earlier sessions**: a password change or reset, deactivation, a role change or a scopes change moves `users.token_generation` on; every access and refresh token carries the generation it was issued under (claim `gen`), and the auth middleware and the refresh grant refuse one that is behind the account's (`lib/src/auth/token_bound.dart`; OWASP Session Management Cheat Sheet, "Renew the Session ID After Any Privilege Level Change"; REVIEW-2026-09-17 A14)
 - **Dev mode**: `devMode: true` bypasses auth, injects synthetic admin user
 - **User roles**: admin, clinician, readonly
 
@@ -200,7 +207,7 @@ A client's program (`$fhirpath`, `$cql`, `Library/$evaluate`, `$transform`) runs
 
 Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
 
-**Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, `users` (with `patient_id`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
+**Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, `users` (with `patient_id` and `token_generation`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
 
 **Search flow:**
 1. On resource save, `search_parameters.dart` extracts all searchable values and indexes them into the appropriate tables
@@ -230,9 +237,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,402 tests** across 122 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,412 tests** across 123 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
 
-- **Server tests** (1,240 tests, 110 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,250 tests, 111 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

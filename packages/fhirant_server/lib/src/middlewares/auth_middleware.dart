@@ -1,5 +1,6 @@
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/token_bound.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/token_hasher.dart';
@@ -106,6 +107,12 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       }
       if (!account.active) {
         return unauthorized('Account is deactivated');
+      }
+      // A token from before the account's password, role, scopes or
+      // activation last changed is over (token_bound.dart; REVIEW-2026-09-17
+      // A14).
+      if (tokenPredatesAccount(payload, account)) {
+        return unauthorized('Token predates a change to the account');
       }
       // A lock (five wrong passwords) blocks password login; it does not
       // end sessions. It did: five anonymous wrong passwords against a
