@@ -978,11 +978,17 @@ void main() {
 
   // ── _lastUpdated search ────────────────────────────────────────────────
 
+  // The dates below are built in UTC: a search date with no zone is read on
+  // the UTC clock (fhir_db, REVIEW-2026-09-17 Q1), and `meta.lastUpdated`
+  // is stamped there too. Built from the local clock, "today" and
+  // "tomorrow" were a day behind between 20:00 and midnight EDT and three
+  // of these tests failed only in those hours (2026-09-18, 22:59 EDT:
+  // 6 of 9 locally, 9 of 9 under TZ=UTC).
   group('_lastUpdated search', () {
     test('exact date match finds resources saved today', () async {
       await seedAll();
 
-      final today = DateTime.now();
+      final today = DateTime.now().toUtc();
       final todayStr =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-'
           '${today.day.toString().padLeft(2, '0')}';
@@ -1001,7 +1007,8 @@ void main() {
       await seedAll();
 
       // All resources were saved just now, so yesterday should match all
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yesterday =
+          DateTime.now().toUtc().subtract(const Duration(days: 1));
       final yesterdayStr =
           '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-'
           '${yesterday.day.toString().padLeft(2, '0')}';
@@ -1020,7 +1027,7 @@ void main() {
       await seedAll();
 
       // Tomorrow should match all resources saved today
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrow = DateTime.now().toUtc().add(const Duration(days: 1));
       final tomorrowStr =
           '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
           '${tomorrow.day.toString().padLeft(2, '0')}';
@@ -1038,7 +1045,7 @@ void main() {
     test(':ge modifier finds resources on or after date', () async {
       await seedAll();
 
-      final today = DateTime.now();
+      final today = DateTime.now().toUtc();
       final todayStr =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-'
           '${today.day.toString().padLeft(2, '0')}';
@@ -1056,7 +1063,7 @@ void main() {
     test(':gt with future date returns empty', () async {
       await seedAll();
 
-      final future = DateTime.now().add(const Duration(days: 365));
+      final future = DateTime.now().toUtc().add(const Duration(days: 365));
       final futureStr =
           '${future.year}-${future.month.toString().padLeft(2, '0')}-'
           '${future.day.toString().padLeft(2, '0')}';
@@ -1664,7 +1671,7 @@ void main() {
     test(':le with tomorrow finds all', () async {
       await seedAll();
 
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrow = DateTime.now().toUtc().add(const Duration(days: 1));
       final tomorrowStr =
           '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
           '${tomorrow.day.toString().padLeft(2, '0')}';
@@ -1682,7 +1689,8 @@ void main() {
     test(':sa with yesterday finds all', () async {
       await seedAll();
 
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yesterday =
+          DateTime.now().toUtc().subtract(const Duration(days: 1));
       final yesterdayStr =
           '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-'
           '${yesterday.day.toString().padLeft(2, '0')}';
@@ -1700,7 +1708,7 @@ void main() {
     test(':eb with tomorrow finds all', () async {
       await seedAll();
 
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final tomorrow = DateTime.now().toUtc().add(const Duration(days: 1));
       final tomorrowStr =
           '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-'
           '${tomorrow.day.toString().padLeft(2, '0')}';
