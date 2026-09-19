@@ -16,6 +16,7 @@ import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
@@ -824,23 +825,42 @@ class FhirAntServer {
     // in progress when the last process ended will never finish; say so
     // rather than answering 202 for ever. Then clear what has expired.
     unawaited(_reconcileExports(atStart: true));
-    _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) async {
-      await dbInterface.cleanupRevokedTokens();
+    _cleanupTimer =
+        Timer.periodic(const Duration(hours: 1), (_) => hourlyCleanup());
+  }
+
+  /// The hourly sweep. Every step runs on its own: one that throws is
+  /// logged and the rest still run, and nothing reaches the timer. The
+  /// steps used to be awaited straight in the `Timer.periodic` callback,
+  /// where one "database is locked" was an unhandled exception and the CLI
+  /// exited 255 (REVIEW-2026-09-17 S2, `tool/review_2026-09-17/timer_error.log`).
+  @visibleForTesting
+  Future<void> hourlyCleanup() async {
+    final steps = <(String, Future<void> Function())>[
+      ('revoked tokens', dbInterface.cleanupRevokedTokens),
       // Used and expired authorization codes. The method existed and
       // nothing called it, so the table grew by a row per authorize for
       // ever (REVIEW-2026-09-08 row 38).
-      await dbInterface.cleanupAuthorizationCodes();
-      await _reconcileExports();
+      ('authorization codes', dbInterface.cleanupAuthorizationCodes),
+      ('exports', _reconcileExports),
       // Planner statistics for tables that have grown 10-fold since they
       // were last analysed (PRAGMA optimize); a no-op otherwise.
-      await dbInterface.optimizeStatistics();
-      // R4 calls Subscription.end "the time for the server to turn the
-      // subscription off". Delivery already honours it, but without a sweep
-      // the STORED status stays `active` until some unrelated write triggers
-      // an evaluation, and a client reading the resource on a quiet server is
-      // told `active` about a subscription that is finished.
-      await _subscriptions?.sweepExpired();
-    });
+      ('planner statistics', dbInterface.optimizeStatistics),
+      // Subscription.end's definition in R4 profiles-resources.json,
+      // verbatim: "The time for the server to turn the subscription off."
+      // Delivery already honours it, but without a sweep the STORED status
+      // stays `active` until some unrelated write triggers an evaluation,
+      // and a client reading the resource on a quiet server is told
+      // `active` about a subscription that is finished.
+      ('expired subscriptions', () async => _subscriptions?.sweepExpired()),
+    ];
+    for (final (name, step) in steps) {
+      try {
+        await step();
+      } catch (e, st) {
+        FhirantLogging().logError('Hourly cleanup of $name failed', e, st);
+      }
+    }
   }
 
   /// Fails the export jobs no process is running (at start) and sweeps the

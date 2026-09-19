@@ -1,0 +1,4 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/services/hourly_cleanup_test.dart
+00:00 +0: a step that throws is contained and the later steps still run
+00:00 +1: every step throwing still completes
+00:00 +2: All tests passed!
