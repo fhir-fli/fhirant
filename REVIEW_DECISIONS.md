@@ -19,6 +19,7 @@ before it is built.
 - 2026-09-19, A16.1 (`23b2b78`) PKCE verifier accepts S256 only: **keep**. Removes an unreachable `plain` branch that contradicted the authorize check (RFC 7636 §7.2).
 - 2026-09-19, A16.4 (`6c986cb`) frame, CSP, nosniff and no-store headers on the login and error pages: **keep**. OWASP recommendation; nothing we build frames the page.
 - 2026-09-19, A16.6 (`63c1f7c`) websocket bind limits: **revert**. Guarded nothing observed; missed the only exposure (binding another user's Subscription, no ownership check). That exposure is not ruled on.
+- 2026-09-19, A16.7 (`1c14577`) backup iteration ceiling at 10× what fhirant writes: **keep**. Measured: a crafted file would hold the server isolate about 80 minutes; the ceiling costs one comparison.
 
 ## Settled by a source (2026-09-19)
 
