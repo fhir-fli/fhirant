@@ -507,7 +507,8 @@ void main() {
         mockDb,
       );
 
-      expect(response.statusCode, equals(403));
+      // As absent (REVIEW-2026-09-17 A13).
+      expect(response.statusCode, equals(404));
     });
 
     test('patient scope allows Observation in compartment', () async {
@@ -609,7 +610,8 @@ void main() {
         mockDb,
       );
 
-      expect(response.statusCode, equals(403));
+      // As absent (REVIEW-2026-09-17 A13).
+      expect(response.statusCode, equals(404));
     });
 
     test('_summary=true returns isSummary fields for Patient', () async {

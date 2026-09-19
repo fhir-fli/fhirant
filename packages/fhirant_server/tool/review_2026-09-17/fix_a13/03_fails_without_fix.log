@@ -1,0 +1,52 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/read_outside_compartment_test.dart
+00:00 +0: a read of another patient's resource is byte-identical to absent
+00:00 +0 -1: a read of another patient's resource is byte-identical to absent [E]
+  Expected: <404>
+    Actual: <403>
+  read
+  
+  package:matcher                                            expect
+  test/integration/read_outside_compartment_test.dart 120:7  main.<fn>
+  
+00:00 +0 -1: a batch GET entry answers as absent too
+00:00 +0 -2: a batch GET entry answers as absent too [E]
+  Expected: {
+              'status': '404',
+              'outcome': {
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'exception',
+                    'diagnostics': 'Bundle entry 0: Resource not found'
+                  }
+                ]
+              }
+            }
+    Actual: {
+              'status': '403',
+              'outcome': {
+                'resourceType': 'OperationOutcome',
+                'issue': [
+                  {
+                    'severity': 'error',
+                    'code': 'exception',
+                    'diagnostics': 'Bundle entry 0: Observation/o2 is not in the patient compartment for Patient/p1'
+                  }
+                ]
+              }
+            }
+     Which: at location ['status'] is '403' instead of '404'
+  
+  package:matcher                                            expect
+  test/integration/read_outside_compartment_test.dart 152:5  main.<fn>
+  
+00:00 +0 -2: a write on another patient's resource is still refused, not absent
+00:00 +1 -2: Some tests failed.
+
+Failing tests:
+  test/integration/read_outside_compartment_test.dart: a batch GET entry answers as absent too
+  test/integration/read_outside_compartment_test.dart: a read of another patient's resource is byte-identical to absent
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

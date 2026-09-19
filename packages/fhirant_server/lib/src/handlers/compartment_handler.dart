@@ -33,11 +33,9 @@ Response? _refuseOutsidePatientContext(
   final patientId = patientContextFor(request, resourceType, permission);
   if (patientId == null) return null;
   if (compartmentType == 'Patient' && compartmentId == patientId) return null;
-  return patientScopeForbiddenResponse(
-    compartmentType,
-    compartmentId,
-    patientId,
-  );
+  // As absent: the same answer the focal resource's absence gives below
+  // (REVIEW-2026-09-17 A13; R4B security.html's 404).
+  return _operationOutcome(404, '$compartmentType/$compartmentId not found');
 }
 
 /// The compartments this server answers `$everything` and compartment

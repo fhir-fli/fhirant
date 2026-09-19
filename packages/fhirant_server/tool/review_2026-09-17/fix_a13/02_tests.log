@@ -1,0 +1,5 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/read_outside_compartment_test.dart
+00:00 +0: a read of another patient's resource is byte-identical to absent
+00:00 +1: a batch GET entry answers as absent too
+00:00 +2: a write on another patient's resource is still refused, not absent
+00:00 +3: All tests passed!

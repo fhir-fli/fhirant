@@ -23,7 +23,11 @@ Future<Response?> _refuseOutsidePatientCompartment(
   if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
     return null;
   }
-  return patientScopeForbiddenResponse(resourceType, id, patientId);
+  // `$meta` is a read and answers as absent; `$meta-add` and `$meta-delete`
+  // are writes and refuse (REVIEW-2026-09-17 A13).
+  return permission == 'r'
+      ? patientScopeNotFoundResponse(resourceType, id)
+      : patientScopeForbiddenResponse(resourceType, id, patientId);
 }
 
 /// Handler for $meta operation: GET /{resourceType}/{id}/$meta

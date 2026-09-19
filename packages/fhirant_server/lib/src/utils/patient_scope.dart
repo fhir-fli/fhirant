@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// The Patient a request is confined to for [permission] on [resourceType],
@@ -51,7 +52,22 @@ Future<bool> isInPatientCompartment(
   return count > 0;
 }
 
-/// Returns a 403 response for patient scope violations.
+/// The answer to a READ of a resource outside the caller's patient
+/// compartment: the route's ordinary 404, byte for byte, so the caller
+/// cannot tell what it may not see from what does not exist.
+///
+/// R4B security.html, "Access Denied Response Handling" (read 2026-09-19,
+/// verbatim): "Return a 404 'Not Found' - This also protects from data
+/// leakage as it is indistinguishable from a query against a resource that
+/// doesn't exist." A patient token used to get 403 for another patient's
+/// resource, 404 for an absent one and 410 for a deleted one
+/// (REVIEW-2026-09-17 A13). Writes keep [patientScopeForbiddenResponse]:
+/// a PUT, PATCH or DELETE of another patient's resource is a refusal of
+/// the act, and answering "not found" to a PUT would mean create.
+Response patientScopeNotFoundResponse(String resourceType, String id) =>
+    notFoundOutcome('$resourceType/$id');
+
+/// Returns a 403 response for a WRITE outside the patient compartment.
 Response patientScopeForbiddenResponse(
   String resourceType,
   String id,

@@ -1546,7 +1546,8 @@ Future<Response> getResourceByIdHandler(
           readPatientId,
           dbInterface,
         )) {
-          return patientScopeForbiddenResponse(resourceType, id, readPatientId);
+          // As absent (REVIEW-2026-09-17 A13; R4B security.html's 404).
+          return patientScopeNotFoundResponse(resourceType, id);
         }
       }
 
@@ -1626,6 +1627,12 @@ Future<Response> getResourceByIdHandler(
     } else {
       // Check if resource was previously deleted (has history but no current)
       if (await dbInterface.countHistory(type, id) > 0) {
+        // A deleted resource has no compartment rows to check against, so a
+        // confined caller cannot be told it was ever there: absent
+        // (REVIEW-2026-09-17 A13).
+        if (patientContextFor(request, resourceType, 'r') != null) {
+          return patientScopeNotFoundResponse(resourceType, id);
+        }
         FhirantLogging().logWarning(
           'Resource $resourceType/{id} was deleted (410 Gone).',
         );

@@ -346,7 +346,8 @@ void main() {
         r'/Patient/B/$everything',
       ]) {
         final r = await handler(testRequest('GET', path, authToken: token));
-        expect(r.statusCode, 403, reason: path);
+        // As absent (REVIEW-2026-09-17 A13).
+        expect(r.statusCode, 404, reason: path);
       }
     });
 

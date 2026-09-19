@@ -141,7 +141,9 @@ void main() {
         patientId: 'p1',
       );
       expect(await status('GET', '/Patient/p1', token: withContext), 200);
-      expect(await status('GET', '/Patient/p2', token: withContext), 403);
+      // Another patient's resource is answered as absent (REVIEW-2026-09-17
+      // A13).
+      expect(await status('GET', '/Patient/p2', token: withContext), 404);
     });
   });
 

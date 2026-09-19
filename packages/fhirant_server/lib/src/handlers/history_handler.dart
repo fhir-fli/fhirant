@@ -424,7 +424,8 @@ Future<Response?> _refuseOutsideCompartment(
   if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
     return null;
   }
-  return patientScopeForbiddenResponse(resourceType, id, patientId);
+  // As absent: a read (REVIEW-2026-09-17 A13).
+  return patientScopeNotFoundResponse(resourceType, id);
 }
 
 /// A `_since` or `_at` that was given and did not parse: R4B 3.1.1.3, a

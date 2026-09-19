@@ -474,14 +474,19 @@ String? _entryPatient(
 ) =>
     principal?.compartmentFor(resourceType, permission)?.id;
 
-/// Throws the entry's 403 unless the stored resource is in the compartment.
+/// Throws unless the stored resource is in the compartment: for a [read],
+/// the entry's ordinary 404, byte for byte (REVIEW-2026-09-17 A13; R4B
+/// security.html "Access Denied Response Handling", read 2026-09-19,
+/// verbatim: a 404 "is indistinguishable from a query against a resource
+/// that doesn't exist"); for a write, the entry's 403.
 Future<void> _requireStoredInCompartment(
   String? patientId,
   String resourceType,
   String resourceId,
   FhirAntDb dbInterface,
-  int entryIndex,
-) async {
+  int entryIndex, {
+  bool read = false,
+}) async {
   if (patientId == null) return;
   if (await isInPatientCompartment(
     resourceType,
@@ -490,6 +495,12 @@ Future<void> _requireStoredInCompartment(
     dbInterface,
   )) {
     return;
+  }
+  if (read) {
+    throw BundleEntryException(
+      404,
+      'Bundle entry $entryIndex: Resource not found',
+    );
   }
   throw BundleEntryException(
     403,
@@ -627,6 +638,7 @@ Future<_BundleOperation> _processBundleEntry(
         resourceId,
         dbInterface,
         entryIndex,
+        read: true,
       );
       status = '200';
 

@@ -49,11 +49,9 @@ Future<Response> documentHandler(
           compartmentPatient,
           dbInterface,
         )) {
-      return patientScopeForbiddenResponse(
-        'Composition',
-        id,
-        compartmentPatient,
-      );
+      // As absent, the same answer as the line above (REVIEW-2026-09-17
+      // A13).
+      return _operationOutcome(404, 'Composition/$id not found');
     }
 
     // 2. Collect all references from the Composition

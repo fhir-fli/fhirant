@@ -251,7 +251,8 @@ void main() {
         r'/Composition/c2/$document',
         token: await p1Token(['patient/*.rs']),
       );
-      expect(s, 403, reason: b);
+      // As absent (REVIEW-2026-09-17 A13).
+      expect(s, 404, reason: b);
     });
     test('needs read on every type the document carries', () async {
       final tok = await issueTestToken(
@@ -459,7 +460,9 @@ void main() {
       expect(s, 200, reason: b);
       final entries = (jsonDecode(b) as Map)['entry'] as List;
       expect(((entries[0] as Map)['response'] as Map)['status'], '200');
-      expect(((entries[1] as Map)['response'] as Map)['status'], '403');
+      // A read entry outside the compartment is answered as absent
+      // (REVIEW-2026-09-17 A13).
+      expect(((entries[1] as Map)['response'] as Map)['status'], '404');
     });
     test('a transaction POST outside the compartment is rolled back', () async {
       final (s, b) = await call(
@@ -492,7 +495,8 @@ void main() {
         '/Observation/o2/_history',
         token: await p1Token(['patient/*.rs']),
       );
-      expect(s, 403, reason: b);
+      // As absent (REVIEW-2026-09-17 A13).
+      expect(s, 404, reason: b);
     });
     test("vread of another patient's resource is refused", () async {
       final (s, b) = await call(
@@ -500,7 +504,7 @@ void main() {
         '/Observation/o2/_history/1',
         token: await p1Token(['patient/*.rs']),
       );
-      expect(s, 403, reason: b);
+      expect(s, 404, reason: b);
     });
     test('type history is confined to the compartment', () async {
       final (s, b) = await call(
