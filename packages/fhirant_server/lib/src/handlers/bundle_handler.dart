@@ -654,9 +654,11 @@ Future<_BundleOperation> _processBundleEntry(
         final searchMap = Uri(query: ifNoneExist).queryParametersAll;
         final List<fhir.Resource> existing;
         try {
+          // Two rows settle it, as on the REST path (REVIEW-2026-09-17 Q9).
           existing = await dbInterface.search(
             resourceType: resourceTypeEnum,
             searchParameters: searchMap,
+            count: 2,
             compartment: createPatient == null
                 ? null
                 : patientCompartment(createPatient),

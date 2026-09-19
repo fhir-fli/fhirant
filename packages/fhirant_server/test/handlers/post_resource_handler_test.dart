@@ -374,6 +374,8 @@ void main() {
           searchParameters: {
             'identifier': ['new'],
           },
+          // Two rows settle a conditional create (REVIEW-2026-09-17 Q9).
+          count: 2,
         ),
       ).thenAnswer((_) async => []);
       when(
@@ -424,6 +426,7 @@ void main() {
           searchParameters: {
             'identifier': ['existing'],
           },
+          count: 2,
         ),
       ).thenAnswer((_) async => [existingPatient]);
 
@@ -475,6 +478,7 @@ void main() {
           searchParameters: {
             'name': ['Smith'],
           },
+          count: 2,
         ),
       ).thenAnswer((_) async => [p1, p2]);
 

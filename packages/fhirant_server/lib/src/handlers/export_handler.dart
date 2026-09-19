@@ -706,14 +706,15 @@ Future<void> _processExport(
             // queryParametersAll: a repeated parameter is an AND (R4
             // 3.1.1.4.17) and splitQueryString keeps only the last value.
             final searchMap = Uri(query: queryString).queryParametersAll;
-            final results = await dbInterface.search(
-              resourceType: resourceType,
-              searchParameters: searchMap,
+            // Ids only: the resources themselves are streamed below, and
+            // hydrating every match here read the whole filtered set twice
+            // (REVIEW-2026-09-17 Q9).
+            filterIds.addAll(
+              await dbInterface.searchIds(
+                resourceType: resourceType,
+                searchParameters: searchMap,
+              ),
             );
-            for (final r in results) {
-              final rid = r.id?.toString() ?? '';
-              if (rid.isNotEmpty) filterIds.add(rid);
-            }
           }
         }
 
@@ -801,14 +802,13 @@ Future<void> _processExport(
         for (final filter in matchingFilters) {
           final queryString = filter.substring(filter.indexOf('?') + 1);
           final searchMap = Uri(query: queryString).queryParametersAll;
-          final results = await dbInterface.search(
-            resourceType: resourceType,
-            searchParameters: searchMap,
+          // Ids only (REVIEW-2026-09-17 Q9); the rows are streamed below.
+          ids.addAll(
+            await dbInterface.searchIds(
+              resourceType: resourceType,
+              searchParameters: searchMap,
+            ),
           );
-          for (final r in results) {
-            final id = r.id?.toString() ?? '';
-            if (id.isNotEmpty) ids.add(id);
-          }
         }
         lines = dbInterface.exportJson(
           resourceType,

@@ -1,0 +1,17 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/post_resource_handler_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: postResourceHandler returns 201 when resource created successfully
+00:00 +1: postResourceHandler returns 400 when resource type in body mismatches URL
+00:00 +2: postResourceHandler returns 500 when database save fails
+00:00 +3: postResourceHandler returns 400 when body is invalid JSON
+00:00 +4: postResourceHandler returns ETag header on successful create
+00:00 +5: postResourceHandler returns Last-Modified header on successful create
+00:00 +6: postResourceHandler Prefer: return=minimal returns 201 with no body
+00:00 +7: postResourceHandler Prefer: return=OperationOutcome returns 201 with OO
+00:00 +8: postResourceHandler default Prefer returns full resource (representation)
+00:00 +9: postResourceHandler If-None-Exist with no match creates normally
+00:00 +10: postResourceHandler If-None-Exist with single match returns existing
+00:00 +11: postResourceHandler If-None-Exist with multiple matches returns 412
+00:00 +12: postResourceHandler If-None-Exist with empty value proceeds normally
+00:00 +13: (tearDownAll)
+00:00 +13: All tests passed!

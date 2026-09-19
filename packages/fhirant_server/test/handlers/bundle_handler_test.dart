@@ -1402,6 +1402,9 @@ void main() {
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Patient,
           searchParameters: any(named: 'searchParameters'),
+          // Two rows settle a conditional create (REVIEW-2026-09-17 Q9);
+          // the stub pins that no more are asked for.
+          count: 2,
         ),
       ).thenAnswer((_) async => [existingPatient]);
 

@@ -1254,9 +1254,13 @@ Future<Response> postResourceHandler(
         if (searchParams.isNotEmpty) {
           final List<fhir.Resource> existing;
           try {
+            // Two rows settle it: none creates, one is returned, two or
+            // more is a 412. Without a count every match was hydrated to
+            // learn which (REVIEW-2026-09-17 Q9).
             existing = await dbInterface.search(
               resourceType: type,
               searchParameters: searchParams,
+              count: 2,
               compartment: createPatientId == null
                   ? null
                   : patientCompartment(createPatientId),

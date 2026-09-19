@@ -1,0 +1,29 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/bundle_handler_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: bundleHandler - transaction processes transaction with POST entry
+00:00 +1: bundleHandler - transaction processes transaction with GET entry
+00:00 +2: bundleHandler - transaction returns 400 for entry missing request
+00:00 +3: bundleHandler - transaction returns 400 for invalid resource type in entry
+00:00 +4: bundleHandler - transaction returns 400 for non-transaction/batch bundle type
+00:00 +5: bundleHandler - transaction returns 400 for empty bundle entries
+00:00 +6: bundleHandler - batch processes valid batch
+00:00 +7: bundleHandler - batch batch continues after individual entry failure
+00:00 +8: bundleHandler - batch batch handles missing request gracefully
+00:00 +9: bundleHandler - DELETE transaction with DELETE entry succeeds
+00:00 +10: bundleHandler - DELETE transaction DELETE non-existent returns 404
+00:00 +11: bundleHandler - DELETE batch DELETE failure does not block other entries
+00:00 +12: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +13: bundleHandler - PATCH transaction PATCH non-existent returns 404
+00:00 +14: bundleHandler - PATCH PATCH that changes resource type fails
+00:00 +15: bundleHandler - urn:uuid resolution POST creates resource, subsequent reference resolved
+00:00 +16: bundleHandler - urn:uuid resolution multiple urn:uuid references all resolved
+00:00 +17: bundleHandler - urn:uuid resolution unresolvable urn:uuid in batch does not fail entire batch
+00:00 +18: bundleHandler - urn:uuid resolution urn:uuid in GET URL resolved to actual resourceType/id
+00:00 +19: bundleHandler - transaction rollback a failed transaction issues no compensating writes
+00:00 +20: bundleHandler - transaction rollback the transaction is what carries the writes
+00:00 +21: bundleHandler - response enrichment POST entry response includes etag and lastModified
+00:00 +22: bundleHandler - response enrichment PUT entry response includes updated etag
+00:00 +23: bundleHandler - conditional operations POST with ifNoneExist returns existing (200)
+00:00 +24: bundleHandler - conditional operations PUT with ifMatch version mismatch fails transaction
+00:00 +25: (tearDownAll)
+00:00 +25: All tests passed!

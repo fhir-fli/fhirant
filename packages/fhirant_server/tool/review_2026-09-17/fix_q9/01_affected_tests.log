@@ -1,0 +1,273 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/bundle_handler_test.dart
+00:00 +0: test/handlers/bundle_handler_test.dart: (setUpAll)
+00:00 +0: test/handlers/bundle_handler_test.dart: bundleHandler - transaction processes transaction with POST entry
+00:00 +1: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +2: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +3: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +4: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +5: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 204 when resource is successfully deleted
+00:00 +6: test/handlers/bundle_handler_test.dart: bundleHandler - transaction returns 400 for empty bundle entries
+00:00 +7: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +8: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +9: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 404 when resource does not exist
+00:00 +10: test/handlers/bundle_handler_test.dart: bundleHandler - batch batch handles missing request gracefully
+00:00 +11: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 400 when resource type is invalid
+00:00 +12: test/handlers/bundle_handler_test.dart: bundleHandler - DELETE transaction with DELETE entry succeeds
+00:00 +13: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +14: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +15: test/handlers/resource_handler_test.dart: deleteResourceHandler returns 500 when database delete fails
+00:00 +16: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +17: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +18: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +19: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH via Binary succeeds
+00:00 +20: test/handlers/resource_handler_test.dart: deleteResourceHandler no If-Match header allows delete normally
+00:00 +21: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH transaction PATCH non-existent returns 404
+00:00 +22: test/handlers/resource_handler_test.dart: deleteResourceHandler patient scope denies delete of resource outside compartment
+00:00 +23: test/handlers/bundle_handler_test.dart: bundleHandler - PATCH PATCH that changes resource type fails
+00:00 +24: test/handlers/resource_handler_test.dart: deleteResourceHandler patient scope allows delete of own Patient resource
+00:00 +25: test/handlers/bundle_handler_test.dart: bundleHandler - urn:uuid resolution POST creates resource, subsequent reference resolved
+00:00 +26: test/handlers/resource_handler_test.dart: getResourcesHandler uses pagination when no search parameters provided
+00:00 +27: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +28: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +29: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +30: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +31: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +32: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +33: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +34: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +35: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +36: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +37: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 when Prefer: respond-async header is missing
+00:00 +38: test/handlers/bundle_handler_test.dart: bundleHandler - response enrichment POST entry response includes etag and lastModified
+00:00 +39: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude adds referencing resources to bundle with search.mode
+00:00 +40: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude adds referencing resources to bundle with search.mode
+00:00 +41: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude adds referencing resources to bundle with search.mode
+00:00 +42: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude adds referencing resources to bundle with search.mode
+00:00 +43: test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations POST with ifNoneExist returns existing (200)
+00:00 +43 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 202 with Content-Location on valid kick-off
+00:00 +44 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 202 with Content-Location on valid kick-off
+00:00 +45 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 202 with Content-Location on valid kick-off
+00:00 +45 -1: test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations POST with ifNoneExist returns existing (200) [E]
+  Expected: <200>
+    Actual: <400>
+  
+  package:matcher                                expect
+  test/handlers/bundle_handler_test.dart 1410:7  main.<fn>.<fn>
+  
+00:00 +46 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _revinclude:iterate resolves transitive reverse references
+00:00 +47 -1: test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations PUT with ifMatch version mismatch fails transaction
+00:00 +48 -1: test/handlers/export_handler_test.dart: exportKickoffHandler accepts valid _outputFormat
+00:00 +49 -1: test/handlers/export_handler_test.dart: exportKickoffHandler accepts valid _outputFormat
+00:00 +50 -1: test/handlers/resource_handler_test.dart: getResourcesHandler malformed _revinclude without search param is ignored
+00:00 +51 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 for invalid _typeFilter format
+00:00 +52 -1: test/handlers/resource_handler_test.dart: getResourcesHandler sort parameter forwarded to search
+00:00 +53 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 for invalid resource type in _typeFilter
+00:00 +54 -1: test/handlers/export_handler_test.dart: exportKickoffHandler returns 400 for invalid resource type in _typeFilter
+00:00 +55 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +56 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +57 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +58 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +59 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +60 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +61 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +62 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +63 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +64 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +65 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +66 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +67 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +68 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +69 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +70 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=text returns only narrative fields
+00:00 +71 -1: test/handlers/export_handler_test.dart: exportFileHandler serves NDJSON file when it exists
+00:00 +72 -1: test/handlers/export_handler_test.dart: exportFileHandler serves NDJSON file when it exists
+00:00 +73 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _elements returns subset plus SUBSETTED tag
+00:00 +74 -1: test/handlers/export_handler_test.dart: exportDeleteHandler returns 404 for unknown job
+00:00 +75 -1: test/handlers/resource_handler_test.dart: getResourcesHandler _summary=false returns full resource
+00:00 +76 -1: test/handlers/export_handler_test.dart: exportDeleteHandler cancels job and returns 202
+00:00 +77 -1: test/handlers/export_handler_test.dart: exportDeleteHandler cancels job and returns 202
+00:00 +78 -1: test/handlers/resource_handler_test.dart: getResourcesHandler search bundle includes self link
+00:00 +79 -1: test/handlers/export_handler_test.dart: exportDeleteHandler cleans up export files on delete
+00:00 +80 -1: test/handlers/resource_handler_test.dart: getResourcesHandler empty search bundle includes self link
+00:00 +81 -1: test/handlers/resource_handler_test.dart: getResourcesHandler patient scope restricts Patient search to own ID
+00:00 +82 -1: test/handlers/resource_handler_test.dart: getResourcesHandler patient scope returns empty for non-compartment resource type
+00:00 +83 -1: test/handlers/resource_handler_test.dart: getResourcesHandler patient scope restricts Observation search to compartment
+00:00 +84 -1: test/handlers/resource_handler_test.dart: getResourcesHandler no patient scope does not restrict search
+00:00 +85 -1: test/handlers/resource_handler_test.dart: conditionalDeleteHandler returns 400 when no search params provided
+00:00 +86 -1: test/handlers/resource_handler_test.dart: conditionalDeleteHandler returns 204 when single match found
+00:00 +87 -1: test/handlers/resource_handler_test.dart: conditionalDeleteHandler returns 204 when multiple matches found (deletes all)
+00:00 +88 -1: test/handlers/resource_handler_test.dart: conditionalDeleteHandler returns 200 when no matches found
+00:00 +89 -1: test/handlers/resource_handler_test.dart: conditionalDeleteHandler returns 400 for invalid resource type
+00:00 +90 -1: test/handlers/resource_handler_test.dart: (tearDownAll)
+00:00 +90 -1: test/integration/export_integration_test.dart: System-level $export full workflow: kick off -> poll -> download
+00:00 +91 -1: test/integration/export_integration_test.dart: System-level $export full workflow: kick off -> poll -> download
+00:01 +92 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level the same clinician may create a websocket Subscription
+00:01 +93 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +94 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +95 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +96 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +96 -1: test/integration/export_integration_test.dart: System-level $export full workflow: kick off -> poll -> download
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +97 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +98 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +99 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+00:01 +100 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +101 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +102 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +103 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +104 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +104 -1: test/integration/export_integration_test.dart: System-level $export with _type filter
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +105 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +106 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +107 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +108 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +108 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level the same clinician may create a websocket Subscription
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +109 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +109 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level an admin with system/*.* may create the rest-hook
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +110 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +111 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +112 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +113 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +114 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+00:01 +115 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+line 1:13 no viable alternative at input '((('
+00:01 +116 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $cql with CQL that does not translate
+00:01 +117 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 24: Bundle entries with a query a batch GET with a search URL is answered with a searchset
+00:01 +117 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 18: a rest-hook Subscription is system-level a PUT that turns a websocket Subscription into a rest-hook is refused for the clinician
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +118 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 24: Bundle entries with a query a batch GET with a search URL is answered with a searchset
+00:01 +119 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +120 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +120 -1: test/integration/export_integration_test.dart: System-level $export leaves the specification load out unless _type names its type
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +121 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +122 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +123 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +123 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id POST /Patient with id p2 creates a new Patient, p2 untouched
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +124 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +125 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +125 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $everything _since
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +125 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /Patient/p32/_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +126 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+00:01 +127 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 25: history paging links a history page carries self, first, next and last
+00:01 +127 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 21: create ignores a client-supplied id a Bundle POST entry with an id is a create, not an update
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +128 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +128 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /Patient/_history?_at=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +128 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 26: Location carries the version POST
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +129 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +129 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history /_history?_since=yesterday
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +129 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 26: Location carries the version a transaction POST entry
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +130 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +130 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored history with a parseable _since still answers
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +131 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +131 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $fhirpath with an expression that does not parse
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +131 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 22: If-Match PATCH honours a stale If-Match with 412
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +132 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +132 -1: test/integration/wrong_answers_review_2026_09_08_test.dart: row 22: If-Match PATCH with the current If-Match succeeds
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +133 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+00:01 +134 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:01 +134 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 32: a parameter that does not parse is 400, not ignored $cql with CQL that does not translate
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +134 -1: test/integration/export_integration_test.dart: System-level $export a repeated _type is the same list as a comma-delimited one
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +135 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:01 +135 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members an Observation with no patient is not written
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +136 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:01 +137 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:01 +137 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members with _type the same membership applies
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +137 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members a _typeFilter narrows within the members
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +137 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 40: patient-level export writes compartment members the system-level export still writes every Observation
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +137 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 43: $everything pages, read per type, cover the compartment once
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +138 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:02 +139 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:02 +140 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:02 +140 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 47: an escaping exception and the request log a handler that throws answers a 500 OperationOutcome
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:590:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:02 +141 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:02 +141 -1: test/integration/hygiene_review_2026_09_08_test.dart: row 47: an escaping exception and the request log the request-log entry carries the redacted path
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/hygiene_review_2026_09_08_test.dart:606:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:02 +142 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+00:03 +143 -1: test/integration/export_integration_test.dart: Patient-level $export exports only patient-compartment resource types
+00:03 +144 -1: test/integration/export_integration_test.dart: Group-level $export full workflow: create Group + members -> export -> verify NDJSON
+00:03 +144 -1: test/integration/export_integration_test.dart: System-level $export with _since filter
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +144 -1: test/integration/export_integration_test.dart: Patient-level $export exports only patient-compartment resource types
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +145 -1: test/integration/export_integration_test.dart: Group-level $export with _type filter restricts exported types
+00:04 +146 -1: test/integration/export_integration_test.dart: Group-level $export Group with no patient members returns empty export
+00:04 +146 -1: test/integration/export_integration_test.dart: Group-level $export full workflow: create Group + members -> export -> verify NDJSON
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +147 -1: test/integration/export_integration_test.dart: _typeFilter filters resources by search criteria
+00:04 +147 -1: test/integration/export_integration_test.dart: Group-level $export with _type filter restricts exported types
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +148 -1: test/integration/export_integration_test.dart: _typeFilter _typeFilter for type not in _type is ignored
+00:04 +148 -1: test/integration/export_integration_test.dart: Group-level $export Group with no patient members returns empty export
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +149 -1: test/integration/export_integration_test.dart: _typeFilter _typeFilter combined with _since
+00:04 +149 -1: test/integration/export_integration_test.dart: _typeFilter filters resources by search criteria
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +149 -1: test/integration/export_integration_test.dart: _typeFilter _typeFilter for type not in _type is ignored
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:06 +150 -1: test/integration/export_integration_test.dart: Cancel export DELETE cancels and cleans up
+00:06 +151 -1: test/integration/export_integration_test.dart: Validation rejects request without Prefer: respond-async
+00:06 +152 -1: Some tests failed.
+
+Failing tests:
+  test/handlers/bundle_handler_test.dart: bundleHandler - conditional operations POST with ifNoneExist returns existing (200)
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
