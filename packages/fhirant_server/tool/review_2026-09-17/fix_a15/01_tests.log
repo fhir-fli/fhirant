@@ -1,0 +1,36 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/auth/bootstrap_test.dart
+00:00 +0: test/auth/bootstrap_test.dart: seedAdminFromEnvironment does nothing when neither variable is set
+00:00 +1: test/auth/bootstrap_test.dart: seedAdminFromEnvironment creates the administrator when both are set
+00:00 +2: test/integration/bootstrap_token_test.dart: the status says a token is required, until an account exists
+00:00 +3: test/integration/bootstrap_token_test.dart: the status says a token is required, until an account exists
+00:00 +4: test/integration/bootstrap_token_test.dart: the status says a token is required, until an account exists
+00:00 +5: test/auth/bootstrap_test.dart: seedAdminFromEnvironment is a bootstrap, not a reset: an existing administrator stands
+00:00 +6: test/auth/bootstrap_test.dart: seedAdminFromEnvironment is a bootstrap, not a reset: an existing administrator stands
+00:00 +7: test/auth/bootstrap_test.dart: seedAdminFromEnvironment is a bootstrap, not a reset: an existing administrator stands
+00:00 +8: test/integration/bootstrap_token_test.dart: the token in the header creates the administrator
+00:00 +9: test/integration/bootstrap_token_test.dart: the token in the header creates the administrator
+00:00 +10: test/auth/bootstrap_test.dart: issueBootstrapToken issues nothing once an account exists, and removes the file
+00:00 +11: test/auth/bootstrap_test.dart: issueBootstrapToken issues nothing once an account exists, and removes the file
+00:00 +12: test/integration/bootstrap_token_test.dart: once an account exists the token opens nothing: registration needs an administrator
+00:00 +13: test/integration/bootstrap_token_test.dart: once an account exists the token opens nothing: registration needs an administrator
+00:01 +14: test/integration/bootstrap_token_test.dart: a server with no bootstrap token leaves the first registration open, as the app relies on
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/test_helpers.dart:99:14)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/bootstrap_token_test.dart:139:24)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:01 +15: All tests passed!

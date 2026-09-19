@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
+import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
@@ -24,11 +25,19 @@ const Set<String> _validRoles = validRoles;
 /// the account Secure mode later trusts as its administrator
 /// (REVIEW-2026-09-08 row 13). The operator provisions accounts through the
 /// app (`AdminProvisioning`) or by starting the server with authentication.
+///
+/// With a [bootstrapToken] (the CLI issues one at start when the store has
+/// no account; `auth/bootstrap.dart`) the first registration must present
+/// it, in the `X-Bootstrap-Token` header or the `bootstrap_token` body
+/// field. Without it, the first `POST /auth/register` from anyone on the
+/// network became the administrator (REVIEW-2026-09-17 A15). The app passes
+/// none: it provisions its administrator locally before serving.
 Future<Response> registerHandler(
   Request request,
   FhirAntDb dbInterface,
   JwtService jwtService, {
   bool authenticationEnabled = true,
+  String? bootstrapToken,
 }) async {
   if (!authenticationEnabled) {
     return Response(
@@ -84,7 +93,23 @@ Future<Response> registerHandler(
     // Determine the effective role
     String effectiveRole;
     if (userCount == 0) {
-      // First-user bootstrap — force admin, no auth required
+      // First-user bootstrap — force admin; no account can authenticate
+      // yet, so the proof is the bootstrap token when the server has one.
+      if (bootstrapToken != null) {
+        final presented = request.headers[bootstrapTokenHeader] ??
+            body['bootstrap_token'] as String?;
+        if (presented == null ||
+            !bootstrapTokenMatches(presented, bootstrapToken)) {
+          return Response(
+            403,
+            body: jsonEncode({
+              'error': 'The first registration must carry the bootstrap '
+                  'token the server printed at start '
+                  '(header X-Bootstrap-Token or body bootstrap_token)',
+            }),
+          );
+        }
+      }
       effectiveRole = 'admin';
     } else {
       // Require admin auth

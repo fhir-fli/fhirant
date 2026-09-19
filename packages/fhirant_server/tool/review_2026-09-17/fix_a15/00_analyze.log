@@ -1,0 +1,5 @@
+Analyzing fhirant_server...
+
+   info - test/auth/bootstrap_test.dart:10:8 - The import of 'package:fhirant_server/src/utils/password_hasher.dart' is unnecessary because all of the used elements are also provided by the import of 'package:fhirant_server/fhirant_server.dart'. Try removing the import directive. - unnecessary_import
+
+1 issue found.

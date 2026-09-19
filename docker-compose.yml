@@ -21,6 +21,14 @@ services:
     environment:
       - FHIRANT_ENCRYPTION_KEY=${FHIRANT_ENCRYPTION_KEY:?set FHIRANT_ENCRYPTION_KEY to a strong secret}
       - FHIRANT_JWT_SECRET=${FHIRANT_JWT_SECRET:?set FHIRANT_JWT_SECRET to a strong secret}
+      # The first administrator. Set both to seed it at start (the password
+      # policy applies; the server refuses to start on a password outside
+      # it). Leave both unset and the server logs a one-time bootstrap
+      # token instead, which the first POST /auth/register must carry in
+      # the X-Bootstrap-Token header; it is also written to
+      # /data/.bootstrap_token in the volume.
+      # - FHIRANT_ADMIN_USERNAME=${FHIRANT_ADMIN_USERNAME}
+      # - FHIRANT_ADMIN_PASSWORD=${FHIRANT_ADMIN_PASSWORD}
 
 volumes:
   fhirant-data:

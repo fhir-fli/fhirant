@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
@@ -142,6 +143,45 @@ void main(List<String> arguments) async {
     // Non-fatal — server can still operate without spec resources
   }
 
+  // The first administrator (REVIEW-2026-09-17 A15; auth/bootstrap.dart):
+  // seeded from FHIRANT_ADMIN_USERNAME / FHIRANT_ADMIN_PASSWORD when set,
+  // otherwise the first registration must carry a one-time token issued
+  // here, logged, and written owner-only beside the database. In dev mode
+  // registration is refused anyway (accounts are the operator's), so
+  // neither applies.
+  String? bootstrapToken;
+  if (!devMode) {
+    switch (await seedAdminFromEnvironment(db, Platform.environment)) {
+      case SeedCreated(username: final u):
+        logger.logInfo('Administrator "$u" created from the environment');
+      case SeedAlreadyProvisioned():
+        logger.logInfo(
+          'FHIRANT_ADMIN_USERNAME set but an administrator exists; ignored',
+        );
+      case SeedRefused(message: final m):
+        logger.logError('Refusing to start: $m');
+        await db.close();
+        exit(1);
+      case SeedNotConfigured():
+        break;
+    }
+    bootstrapToken = await issueBootstrapToken(
+      db,
+      persistPath: '$dbPath/.bootstrap_token',
+    );
+    if (bootstrapToken != null) {
+      logger.logWarning(
+        'No accounts yet. The first POST /auth/register creates the '
+        'administrator and must carry this one-time token in the '
+        'X-Bootstrap-Token header (or the bootstrap_token body field):\n'
+        '$bootstrapToken\n'
+        'It is also in $dbPath/.bootstrap_token (owner-readable). To seed '
+        'the administrator without it, set FHIRANT_ADMIN_USERNAME and '
+        'FHIRANT_ADMIN_PASSWORD and restart.',
+      );
+    }
+  }
+
   // Create and start server
   final server = FhirAntServer(
     db,
@@ -149,6 +189,7 @@ void main(List<String> arguments) async {
     devMode: devMode,
     maxRequests: devMode ? 1000 : 600,
     baseUrl: args['base-url'] as String?,
+    bootstrapToken: bootstrapToken,
   );
 
   if (devMode) {

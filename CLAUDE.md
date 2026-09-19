@@ -99,7 +99,8 @@ Requests pass through middleware in this order:
 
 | Domain | Route Pattern | Handler | Purpose |
 |--------|---|---|---|
-| **Auth** | `POST /auth/register` | `registerHandler` | Create user account |
+| **Auth** | `GET /auth/status` | `authStatusHandler` | `firstUser`, and whether the first registration needs the bootstrap token |
+| | `POST /auth/register` | `registerHandler` | Create user account (the first one, with no account in the store, must carry the CLI's bootstrap token; after that, admin only) |
 | | `POST /auth/login` | `loginHandler` | Authenticate, get JWT |
 | | `POST /auth/token` | `refreshHandler` | Refresh access token |
 | | `POST /auth/revoke` | `revokeHandler` | Revoke refresh token |
@@ -178,6 +179,7 @@ Requests pass through middleware in this order:
 - **One authorization table**: `authorizeRequest` (`lib/src/auth/request_authorization.dart`) decides every REST request and every Bundle entry: scopes, patient context (fails closed at the root too), HEAD as GET, AuditEvent append-only to clients, SearchParameter delete by system authority
 - **Token revocation**: explicit revoke + hourly cleanup of expired tokens
 - **A change to an account ends its earlier sessions**: a password change or reset, deactivation, a role change or a scopes change moves `users.token_generation` on; every access and refresh token carries the generation it was issued under (claim `gen`), and the auth middleware and the refresh grant refuse one that is behind the account's (`lib/src/auth/token_bound.dart`; OWASP Session Management Cheat Sheet, "Renew the Session ID After Any Privilege Level Change"; REVIEW-2026-09-17 A14)
+- **First administrator of a headless server** (`lib/src/auth/bootstrap.dart`; REVIEW-2026-09-17 A15): `FHIRANT_ADMIN_USERNAME` + `FHIRANT_ADMIN_PASSWORD` seed it at start through `AdminProvisioning` (policy applies; one variable without the other or a weak password refuses to start; an existing administrator is left alone). Without them, and with no account in the store, the CLI generates a one-time token at every start, logs it, writes it owner-only to `<db-path>/.bootstrap_token`, and the first `POST /auth/register` must carry it (`X-Bootstrap-Token` header or `bootstrap_token` body field) or is 403. The app passes no token: it provisions locally before serving
 - **Dev mode**: `devMode: true` bypasses auth, injects synthetic admin user
 - **User roles**: admin, clinician, readonly
 
@@ -237,9 +239,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,412 tests** across 123 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,427 tests** across 125 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
 
-- **Server tests** (1,250 tests, 111 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,265 tests, 113 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
@@ -262,7 +264,7 @@ Tests use `flutter_test` + `mocktail`. `FhirAntDb` is mocked in server handler t
 --dev-mode          Enable dev mode (no authentication)
 ```
 
-Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption key.
+Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption key; `FHIRANT_JWT_SECRET` the token signing secret (else one is generated and persisted beside the database); `FHIRANT_ADMIN_USERNAME` + `FHIRANT_ADMIN_PASSWORD` seed the first administrator (else the CLI prints a one-time bootstrap token the first registration must carry).
 
 ## Code Style
 

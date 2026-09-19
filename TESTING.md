@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,412 tests** across 123 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,427 tests** across 125 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,250 | 111 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,265 | 113 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -78,6 +78,13 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/utils/json_patch_test.dart` | RFC 6902 arrays: `-` appends, add inserts and shifts, replace overwrites, move to `-` (6) |
 | `test/utils/spec_loader_test.dart` | The specification loaded from an asset bundle in chunks, once (3) |
 
+### fhirant_server — Auth Tests (2 files)
+
+| File | What it covers |
+|------|----------------|
+| `test/auth/admin_provisioning_test.dart` | The app's local first-administrator provisioning: created once, refused when one exists, username and password validated (6) |
+| `test/auth/bootstrap_test.dart` | REVIEW-2026-09-17 A15: `FHIRANT_ADMIN_USERNAME`/`PASSWORD` seed the administrator (both or neither, policy applies, an existing administrator stands); a bootstrap token is issued fresh at every start and written owner-only while the store has no account, and removed once one exists; constant-time match (8) |
+
 ### fhirant_server — Service Tests (5 files)
 
 | File | Description |
@@ -117,6 +124,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/base_url_test.dart` | `FhirAntServer.baseUrl` reaches the store; absolute references under it match |
 | `test/integration/encounter_date_e2e_test.dart` | A Period-valued date parameter through the REST path |
 | `test/integration/read_outside_compartment_test.dart` | REVIEW-2026-09-17 A13: for a patient token, a read, vread, history, `$meta`, `$document`, `$everything`, compartment search and Bundle GET entry of another patient's resource (or a deleted one) is the route's absent answer, id for id; writes stay 403 (3) |
+| `test/integration/bootstrap_token_test.dart` | REVIEW-2026-09-17 A15: with a bootstrap token issued, `/auth/status` says so, the first registration without it or with a wrong one is 403, the header or the body field creates the administrator, afterwards the token opens nothing, and a server with no token leaves the first registration open (7) |
 | `test/integration/account_management_test.dart` | REVIEW-2026-09-17 A14: own password change (wrong current 401, policy 400, old access and refresh tokens 401 after, new pair works), admin reset, deactivate/activate, role and scopes changes each end the old sessions, list carries no secrets, last-admin guard 409, non-admin 403, unknown id 404, a token behind the account's generation 401 (10) |
 | `test/integration/login_answers_alike_test.dart` | REVIEW-2026-09-17 A12: a wrong password, an unknown account, a deactivated one and a locked one get the same 401 and body from `/auth/login` and `/auth/authorize`; the right password still logs in (3) |
 | `test/integration/contained_search_test.dart` | REVIEW-2026-09-17 Q8: `_contained=true` returns the container once, `_containedType=contained` the contained resource with its `#` fullUrl, `both` the normal match then the container; paged and counted over the combined set; `_sort`, includes and `_filter` refused with it (6) |

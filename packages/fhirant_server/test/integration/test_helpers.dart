@@ -94,6 +94,7 @@ String generateTestToken({
 Future<({FhirAntDb db, Handler handler})> createTestServer({
   String? exportDir,
   bool devMode = false,
+  String? bootstrapToken,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
@@ -102,6 +103,7 @@ Future<({FhirAntDb db, Handler handler})> createTestServer({
     jwtSecret: testJwtSecret,
     exportDir: exportDir,
     devMode: devMode,
+    bootstrapToken: bootstrapToken,
   );
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler);

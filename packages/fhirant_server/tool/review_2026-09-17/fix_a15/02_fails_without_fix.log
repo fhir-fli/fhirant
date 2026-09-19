@@ -1,0 +1,58 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/bootstrap_token_test.dart
+00:00 +0: the status says a token is required, until an account exists
+00:00 +0 -1: the status says a token is required, until an account exists [E]
+  Expected: {'firstUser': true, 'bootstrapTokenRequired': true}
+    Actual: {'firstUser': true, 'bootstrapTokenRequired': false}
+     Which: at location ['bootstrapTokenRequired'] is <false> instead of <true>
+  
+  package:matcher                                  expect
+  test/integration/bootstrap_token_test.dart 69:5  main.<fn>
+  
+00:00 +0 -1: the first registration without the token is refused
+00:00 +0 -2: the first registration without the token is refused [E]
+  Expected: <403>
+    Actual: <201>
+  
+  package:matcher                                  expect
+  test/integration/bootstrap_token_test.dart 79:5  main.<fn>
+  
+00:00 +0 -2: a wrong token is refused
+00:00 +0 -3: a wrong token is refused [E]
+  Expected: <403>
+    Actual: <201>
+  
+  package:matcher                                  expect
+  test/integration/bootstrap_token_test.dart 89:5  main.<fn>
+  
+00:00 +0 -3: the token in the header creates the administrator
+00:00 +1 -3: the token in the body works too
+00:00 +2 -3: once an account exists the token opens nothing: registration needs an administrator
+00:01 +3 -3: a server with no bootstrap token leaves the first registration open, as the app relies on
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/test_helpers.dart:99:14)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/bootstrap_token_test.dart:139:24)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:01 +4 -3: Some tests failed.
+
+Failing tests:
+  test/integration/bootstrap_token_test.dart: a wrong token is refused
+  test/integration/bootstrap_token_test.dart: the first registration without the token is refused
+  test/integration/bootstrap_token_test.dart: the status says a token is required, until an account exists
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

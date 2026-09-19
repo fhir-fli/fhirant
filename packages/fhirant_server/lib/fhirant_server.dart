@@ -1,4 +1,5 @@
 export 'src/auth/admin_provisioning.dart';
+export 'src/auth/bootstrap.dart';
 export 'src/fhirant_server.dart';
 export 'src/handlers/handlers.dart';
 export 'src/middlewares/middlewares.dart';

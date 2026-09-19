@@ -55,6 +55,7 @@ class FhirAntServer {
     this.exportRetention = kExportRetention,
     this.maxRequestBody = kMaxRequestBody,
     this.programDeadline = kProgramDeadline,
+    this.bootstrapToken,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -128,6 +129,12 @@ class FhirAntServer {
   /// may run in its worker isolate before it is killed and the request is
   /// answered 422 `too-costly` (REVIEW-2026-09-17 A9).
   final Duration programDeadline;
+
+  /// The one-time token the first `POST /auth/register` must carry while
+  /// the store has no account (REVIEW-2026-09-17 A15; `auth/bootstrap.dart`).
+  /// The CLI issues one at start and prints it; null (the app, tests) leaves
+  /// the first registration open, as before.
+  final String? bootstrapToken;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -171,7 +178,11 @@ class FhirAntServer {
       // Auth routes
       ..get(
         '/auth/status',
-        (Request req) => authStatusHandler(req, dbInterface),
+        (Request req) => authStatusHandler(
+          req,
+          dbInterface,
+          bootstrapToken: bootstrapToken,
+        ),
       )
       ..post(
         '/auth/register',
@@ -180,6 +191,7 @@ class FhirAntServer {
           dbInterface,
           _jwtService,
           authenticationEnabled: !devMode,
+          bootstrapToken: bootstrapToken,
         ),
       )
       ..post(

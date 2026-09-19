@@ -54,7 +54,7 @@ class JwtSecret {
     final secret = generate();
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(secret, flush: true);
-    _restrictToOwner(file);
+    restrictToOwner(file);
     return secret;
   }
 
@@ -62,7 +62,7 @@ class JwtSecret {
   /// No-op on platforms without `chmod` (e.g. Windows), where filesystem
   /// ACLs govern access instead. Non-fatal on failure — the secret is still
   /// random and local either way.
-  static void _restrictToOwner(File file) {
+  static void restrictToOwner(File file) {
     if (Platform.isLinux || Platform.isMacOS) {
       try {
         Process.runSync('chmod', ['600', file.path]);
