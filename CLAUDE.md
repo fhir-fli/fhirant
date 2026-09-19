@@ -88,11 +88,12 @@ Requests pass through middleware in this order:
 2. **Logging** — logs method, path shape, status, duration, client IP; emits to `requestLog` stream
 3. **CORS** — cross-origin headers only when an origin is configured
 4. **Rate limiting (general)** — before auth and audit, so a flood is counted before it costs anything (default 600 per 60 s per address)
-5. **Content Negotiation** — validates Accept/Content-Type headers
-6. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register` only (default 10 per 60 s)
-7. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
-8. **Audit** — writes AuditEvent resources to DB; a request that presented no credential and got 401 is not recorded
-9. **Router** — dispatches to handler
+5. **Body limit** — a body over `maxRequestBody` (default 16 MiB) is 413 before it is read; `$restore` streams to disk and is exempt
+6. **Content Negotiation** — validates Accept/Content-Type headers
+7. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register` only (default 10 per 60 s)
+8. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
+9. **Audit** — writes AuditEvent resources to DB; a request that presented no credential and got 401 is not recorded
+10. **Router** — dispatches to handler
 
 #### Route Table
 
@@ -226,9 +227,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,343 tests** across 110 test files, all passing (counted 2026-09-14; server recounted 2026-09-17).
+**1,347 tests** across 111 test files, all passing (counted 2026-09-14; server recounted 2026-09-17).
 
-- **Server tests** (1,180 tests, 98 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,184 tests, 99 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

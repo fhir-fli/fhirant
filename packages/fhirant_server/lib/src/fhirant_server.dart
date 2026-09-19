@@ -8,6 +8,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
+import 'package:fhirant_server/src/middlewares/body_limit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
@@ -50,6 +51,7 @@ class FhirAntServer {
     this.corsAllowOrigin,
     String? baseUrl,
     this.exportRetention = kExportRetention,
+    this.maxRequestBody = kMaxRequestBody,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -114,6 +116,10 @@ class FhirAntServer {
   /// to publish no cross-origin policy. See [CorsConfig.allowOrigin].
   final String? corsAllowOrigin;
   final Duration rateLimitDuration;
+
+  /// The largest request body accepted, in bytes; a larger one is 413
+  /// (REVIEW-2026-09-17 A10). `$restore` is not capped: it streams to disk.
+  final int maxRequestBody;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -611,6 +617,9 @@ class FhirAntServer {
           corsMiddleware(config: CorsConfig(allowOrigin: corsAllowOrigin)),
         )
         .addMiddleware(generalLimiter.rateLimiter())
+        // Before authentication and the audit: an oversized body is refused
+        // before it costs anything, as a flood is.
+        .addMiddleware(bodyLimitMiddleware(maxRequestBody))
         .addMiddleware(contentNegotiationMiddleware())
         .addMiddleware(_onPaths(_credentialPaths, authLimiter.rateLimiter()));
 
