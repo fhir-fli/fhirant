@@ -15,6 +15,7 @@ import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
+import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_rate_limiter/shelf_rate_limiter.dart';
@@ -52,6 +53,7 @@ class FhirAntServer {
     String? baseUrl,
     this.exportRetention = kExportRetention,
     this.maxRequestBody = kMaxRequestBody,
+    this.programDeadline = kProgramDeadline,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -120,6 +122,11 @@ class FhirAntServer {
   /// The largest request body accepted, in bytes; a larger one is 413
   /// (REVIEW-2026-09-17 A10). `$restore` is not capped: it streams to disk.
   final int maxRequestBody;
+
+  /// How long a client's program (`$fhirpath`, `$cql`, `Library/$evaluate`)
+  /// may run in its worker isolate before it is killed and the request is
+  /// answered 422 `too-costly` (REVIEW-2026-09-17 A9).
+  final Duration programDeadline;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -235,12 +242,20 @@ class FhirAntServer {
       // Library/$evaluate (must be before generic /<resourceType>/$validate)
       ..post(
         r'/Library/<id>/$evaluate',
-        (Request req, String id) =>
-            libraryEvaluateHandler(req, id, dbInterface),
+        (Request req, String id) => libraryEvaluateHandler(
+          req,
+          id,
+          dbInterface,
+          deadline: programDeadline,
+        ),
       )
       ..post(
         r'/Library/$evaluate',
-        (Request req) => libraryEvaluateByUrlHandler(req, dbInterface),
+        (Request req) => libraryEvaluateByUrlHandler(
+          req,
+          dbInterface,
+          deadline: programDeadline,
+        ),
       )
       // Validation endpoints
       ..all(
@@ -377,10 +392,22 @@ class FhirAntServer {
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(r'/$restore', (Request req) => restoreHandler(req, dbInterface))
       // FHIRPath endpoint - supports GET and POST
-      ..get(r'/$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
-      ..post(r'/$fhirpath', (Request req) => fhirPathHandler(req, dbInterface))
+      ..get(
+        r'/$fhirpath',
+        (Request req) =>
+            fhirPathHandler(req, dbInterface, deadline: programDeadline),
+      )
+      ..post(
+        r'/$fhirpath',
+        (Request req) =>
+            fhirPathHandler(req, dbInterface, deadline: programDeadline),
+      )
       // CQL endpoint (convenience)
-      ..post(r'/$cql', (Request req) => cqlHandler(req, dbInterface))
+      ..post(
+        r'/$cql',
+        (Request req) =>
+            cqlHandler(req, dbInterface, deadline: programDeadline),
+      )
       // Immunization forecasting (Cicada)
       ..post(
         r'/$immds-forecast',
@@ -394,7 +421,11 @@ class FhirAntServer {
       // connects here, sends `bind :id`, and the server answers `bound :id`.
       ..get('/ws', websocketHandler(websockets))
       // Mapping/Transform endpoint
-      ..post(r'/$transform', (Request req) => mappingHandler(req, dbInterface))
+      ..post(
+        r'/$transform',
+        (Request req) =>
+            mappingHandler(req, dbInterface, deadline: programDeadline),
+      )
       // Bulk Data Export endpoints
       ..get(
         r'/$export',

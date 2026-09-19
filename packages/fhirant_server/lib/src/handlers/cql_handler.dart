@@ -5,6 +5,7 @@ import 'package:fhir_r4_cql/fhir_r4_cql.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:shelf/shelf.dart';
 
 /// Library/$evaluate — evaluate a stored CQL Library resource.
@@ -21,8 +22,9 @@ import 'package:shelf/shelf.dart';
 Future<Response> libraryEvaluateHandler(
   Request request,
   String libraryId,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  Duration deadline = kProgramDeadline,
+}) async {
   try {
     FhirantLogging().logInfo('Library/${'evaluate'}: loading Library/{id}');
 
@@ -59,14 +61,14 @@ Future<Response> libraryEvaluateHandler(
       dbInterface,
     );
 
-    // Execute
-    final result = await cqlLibrary.execute(context);
+    final answer = await _executeSandboxed(cqlLibrary, context, deadline);
+    if (answer.refusal != null) return answer.refusal!;
 
     FhirantLogging()
         .logInfo('Library/{id}/${'evaluate'} completed successfully');
 
     return Response.ok(
-      jsonEncode(_buildParametersResponse(result)),
+      answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
   } catch (e, stackTrace) {
@@ -91,8 +93,9 @@ Future<Response> libraryEvaluateHandler(
 /// - `data` (Bundle resource): Additional data
 Future<Response> libraryEvaluateByUrlHandler(
   Request request,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  Duration deadline = kProgramDeadline,
+}) async {
   try {
     FhirantLogging().logInfo('Library/${'evaluate'} (by URL/inline)');
 
@@ -159,12 +162,13 @@ Future<Response> libraryEvaluateByUrlHandler(
     }
 
     final context = await _buildContext(evalParams, dbInterface);
-    final result = await cqlLibrary.execute(context);
+    final answer = await _executeSandboxed(cqlLibrary, context, deadline);
+    if (answer.refusal != null) return answer.refusal!;
 
     FhirantLogging().logInfo('Library/${'evaluate'} (by URL/inline) completed');
 
     return Response.ok(
-      jsonEncode(_buildParametersResponse(result)),
+      answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
   } catch (e, stackTrace) {
@@ -188,8 +192,9 @@ Future<Response> libraryEvaluateByUrlHandler(
 /// - `parameters` (Parameters): Input parameters
 Future<Response> cqlHandler(
   Request request,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  Duration deadline = kProgramDeadline,
+}) async {
   try {
     FhirantLogging().logInfo(r'Received $cql request');
 
@@ -237,12 +242,13 @@ Future<Response> cqlHandler(
     }
 
     final context = await _buildContext(evalParams, dbInterface);
-    final result = await cqlLibrary.execute(context);
+    final answer = await _executeSandboxed(cqlLibrary, context, deadline);
+    if (answer.refusal != null) return answer.refusal!;
 
     FhirantLogging().logInfo('CQL expression evaluated successfully');
 
     return Response.ok(
-      jsonEncode(_buildParametersResponse(result)),
+      answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
   } catch (e, stackTrace) {
@@ -456,6 +462,36 @@ String? _base64Decode(String encoded) {
     return utf8.decode(base64Decode(encoded));
   } catch (_) {
     return null;
+  }
+}
+
+/// Executes [library] over [context] in a worker isolate under [deadline]
+/// (REVIEW-2026-09-17 A9), and returns the Parameters body, or the
+/// refusal: 422 `too-costly` at the deadline, 400 for a program that threw.
+/// The library crosses as its ELM JSON and comes back as the response text;
+/// nothing else of this isolate is visible to the program.
+Future<({String? body, Response? refusal})> _executeSandboxed(
+  CqlLibrary library,
+  Map<String, dynamic> context,
+  Duration deadline,
+) async {
+  final elm = library.toJson();
+  try {
+    final body = await runProgram(
+      () async {
+        final result = await CqlLibrary.fromJson(elm).execute(context);
+        return jsonEncode(_buildParametersResponse(result));
+      },
+      deadline: deadline,
+    );
+    return (body: body, refusal: null);
+  } on ProgramTimeout catch (e) {
+    return (body: null, refusal: _errorResponse(422, 'too-costly', '$e'));
+  } on ProgramFailed catch (e) {
+    return (
+      body: null,
+      refusal: _errorResponse(400, 'invalid', 'The CQL failed: ${e.error}'),
+    );
   }
 }
 

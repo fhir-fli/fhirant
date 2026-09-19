@@ -3,6 +3,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:shelf/shelf.dart';
 
 /// Shared FHIRPath engine — created once (creation is async and non-trivial)
@@ -15,8 +16,9 @@ Future<FHIRPathEngine> get _fhirPathEngine =>
 /// FHIRPath Handler - Evaluate FHIRPath expressions against resources
 Future<Response> fhirPathHandler(
   Request request,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  Duration deadline = kProgramDeadline,
+}) async {
   try {
     FhirantLogging().logInfo('Received FHIRPath request');
 
@@ -135,9 +137,8 @@ Future<Response> fhirPathHandler(
     // is the client's error (400), not the server's (it used to be a 500;
     // REVIEW-2026-09-08 row 32).
     final engine = await _fhirPathEngine;
-    final ExpressionNode parsed;
     try {
-      parsed = engine.parse(expression);
+      engine.parse(expression);
     } catch (e) {
       return Response(
         400,
@@ -154,11 +155,41 @@ Future<Response> fhirPathHandler(
         headers: {'Content-Type': 'application/fhir+json'},
       );
     }
-    final result =
-        (await engine.evaluate(resource, parsed)).cast<fhir.FhirBase>();
-
-    // Convert result to JSON
-    final resultJson = result.map((e) => e.toJson()).toList();
+    // Evaluated in a worker isolate under the deadline (REVIEW-2026-09-17
+    // A9): the worker parses again from the text, builds its own engine,
+    // and hands back JSON.
+    final resourceJson = resource.toJson();
+    final List<Object?> resultJson;
+    try {
+      resultJson = await runProgram(
+        () async {
+          final worker = await FHIRPathEngine.create(WorkerContext());
+          final results = await worker.evaluate(
+            fhir.Resource.fromJson(resourceJson),
+            worker.parse(expression),
+          );
+          return [for (final e in results) (e as fhir.FhirBase).toJson()];
+        },
+        deadline: deadline,
+      );
+    } on ProgramTimeout catch (e) {
+      return _tooCostly('$e');
+    } on ProgramFailed catch (e) {
+      return Response(
+        400,
+        body: jsonEncode({
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'invalid',
+              'diagnostics': 'The FHIRPath expression failed: ${e.error}',
+            }
+          ],
+        }),
+        headers: {'Content-Type': 'application/fhir+json'},
+      );
+    }
 
     FhirantLogging().logInfo(
       'FHIRPath expression evaluated successfully',
@@ -189,3 +220,19 @@ Future<Response> fhirPathHandler(
     );
   }
 }
+
+/// 422 `too-costly`: the program was stopped at its deadline.
+Response _tooCostly(String diagnostics) => Response(
+      422,
+      body: jsonEncode({
+        'resourceType': 'OperationOutcome',
+        'issue': [
+          {
+            'severity': 'error',
+            'code': 'too-costly',
+            'diagnostics': diagnostics,
+          }
+        ],
+      }),
+      headers: {'Content-Type': 'application/fhir+json'},
+    );

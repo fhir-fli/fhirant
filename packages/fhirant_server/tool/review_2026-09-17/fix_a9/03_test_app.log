@@ -1,0 +1,36 @@
+00:00 +0: loading /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart
+00:00 +0: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a small phone
+00:00 +1: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +2: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a phone
+00:00 +3: /home/grey/dev/fhir/fhirant/packages/fhirant/test/backup_card_test.dart: lays out on a tablet
+00:00 +4: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture a fresh install follows the ship default
+00:00 +5: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture an operator choice overrides the ship default and is persisted
+00:00 +6: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture a persisted choice is loaded over the ship default
+00:00 +7: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture the posture cannot be flipped while the server is running
+00:00 +8: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: auth posture the posture in force is the one handed to the server
+00:00 +9: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: port defaults to 8080
+00:00 +10: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: port is settable while stopped and is the port the server binds
+00:00 +11: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: port cannot be changed while running
+00:00 +12: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop a successful start reports running and clears any prior error
+00:00 +13: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop a failing start reports the error rather than running
+00:00 +14: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop a start after a failure is allowed
+00:00 +15: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop starting an already-running server is a no-op
+00:00 +16: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop stopping a stopped server is a no-op
+00:00 +17: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop a stop returns to stopped
+00:00 +18: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: start and stop a database that cannot be reached does not stop the server running
+00:00 +19: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: serverUrl is null while the server is not running
+00:00 +20: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: serverUrl a start does not wait on the address lookup
+00:00 +21: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: request log is empty before the server starts
+00:00 +22: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: request log shows the newest request first
+00:00 +23: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: request log keeps at most 200 entries, dropping the oldest
+00:00 +24: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: request log stops collecting once the server is stopped
+00:00 +25: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: resourceCounts is unmodifiable
+00:00 +26: /home/grey/dev/fhir/fhirant/packages/fhirant/test/server_state_test.dart: listeners are notified when the status changes
+00:01 +27: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a small phone while stopped
+00:01 +28: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a small phone while running
+00:02 +29: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a phone while stopped
+00:02 +30: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a phone while running
+00:02 +31: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a tablet while stopped
+00:02 +32: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: the dashboard lays out on a tablet while running
+00:02 +33: /home/grey/dev/fhir/fhirant/packages/fhirant/test/dashboard_smoke_test.dart: a long request path does not overflow the log card
+00:02 +34: All tests passed!

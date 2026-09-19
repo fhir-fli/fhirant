@@ -1,0 +1,4 @@
+window	cpu_ticks_in_500ms
+idle, no worker	1
+worker spinning	50
+after kill(immediate)	0

@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...ERR ArgumentError: Invalid argument(s): Illegal argument in isolate message: object is unsendable - Library:'package:sqlite3/src/ffi/bindings.dart' Class: FfiDatabase (see restrictions listed at `SendPort.send()` documentation for more information)
+ <- database in Instance of 'FfiDatabaseImplementation' (from package:sqlite3/src/ffi/implementation.dart)
+ <- _database in Instance of '_NativeDelegate' (from package:drift/native.dart)
+ <- delegate in Instance of 'NativeDatabase' (from package:drift/native.dart)
+ <- executor in Instance of 'DatabaseConnection' (from package:drift/src/runtime/api/runtime_api.dart)
+ <- connection in Instance of 'FhirDao<Resource, R4ResourceType>' (from package:fhir_db/src/fhir_dao.dart)
+ <- fhirDao in Instance of 'FhirAntDb' (from package:fhirant_db/db/fhirant_db.dart)
+ <- db in Instance of 'DbResourceCache' (from package:fhirant_server/src/utils/db_resource_cache.dart)
+ <- Context num_variables: 3 <- Closure: (SendPort) => Future<Map<String, dynamic>?> (from file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/a9_probe.dart)
+ <- Record (Closure: (SendPort) => Future<Map<String, dynamic>?>, SendPort, SendPort) (from dart:core)
+
+#0      Isolate._spawnFunction (dart:isolate-patch/isolate_patch.dart:430:4)
+#1      Isolate.spawn (dart:isolate-patch/isolate_patch.dart:399:7)
+#2      _run (package:fhirant_server/src/utils/program_sandbox.dart:86:33)
+#3      runHostedProgram (package:fhirant_server/src/utils/program_sandbox.dart:48:5)
+#4      main (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/a9_probe.dart:45:23)
+<asynchronous suspension>
+

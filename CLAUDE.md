@@ -193,6 +193,8 @@ All implemented operations:
 - `$lookup` — CodeSystem code lookup
 - `$expand` — ValueSet expansion
 
+A client's program (`$fhirpath`, `$cql`, `Library/$evaluate`, `$transform`) runs in a fresh worker isolate under `FhirAntServer.programDeadline` (default 10 s) via `utils/program_sandbox.dart`; past the deadline the isolate is killed and the request is 422 `too-costly`. The worker may capture only port-sendable values, and must be built in a function whose scope holds no database (a closure carries its whole scope's context). `$transform`'s worker resolves canonicals through `HostResourceCache`, which asks the server's isolate.
+
 ### Database Layer (`fhirant_db`)
 
 Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
@@ -227,9 +229,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,347 tests** across 111 test files, all passing (counted 2026-09-14; server recounted 2026-09-17).
+**1,358 tests** across 112 test files, all passing (counted 2026-09-14; server recounted 2026-09-18).
 
-- **Server tests** (1,184 tests, 99 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,195 tests, 100 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

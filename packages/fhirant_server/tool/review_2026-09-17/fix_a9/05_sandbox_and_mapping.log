@@ -1,0 +1,44 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/program_sandbox_test.dart
+00:00 +0: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +1: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +2: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +3: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +4: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +5: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +6: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +7: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +8: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +9: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +10: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +11: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +12: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+00:00 +13: test/handlers/mapping_handler_test.dart: $transform takes the StructureMap-transform Parameters (row 30) source names a stored map by url; content is transformed
+00:00 +14: test/handlers/mapping_handler_test.dart: $transform takes the StructureMap-transform Parameters (row 30) source names a stored map by url; content is transformed
+00:00 +15: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:00 +16: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:00 +17: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:00 +18: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:00 +19: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:01 +20: test/handlers/mapping_target_test.dart: a resolved profile still gives its base type
+00:01 +21: test/integration/program_sandbox_test.dart: $cql runs under the deadline too
+00:01 +21: test/integration/program_sandbox_test.dart: a program past the deadline is refused, and the server goes on
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +21: test/integration/program_sandbox_test.dart: a program within the deadline answers as before
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +21: test/integration/program_sandbox_test.dart: an expression that does not parse is still a 400
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +22: test/integration/program_sandbox_test.dart: $cql runs under the deadline too
+00:01 +23: test/integration/program_sandbox_test.dart: $cql runs under the deadline too
+00:01 +24: test/integration/program_sandbox_test.dart: $cql runs under the deadline too
+00:01 +25: test/integration/program_sandbox_test.dart: $transform runs under the deadline too
+00:01 +25: test/integration/program_sandbox_test.dart: $cql runs under the deadline too
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +26: test/integration/program_sandbox_test.dart: runHostedProgram the host answers the program from this isolate
+00:01 +27: test/integration/program_sandbox_test.dart: runHostedProgram a host that throws is the server's failure, not the program's
+00:01 +28: test/integration/program_sandbox_test.dart: runHostedProgram a HostResourceCache resolves a stored canonical through the host
+00:01 +29: test/integration/program_sandbox_test.dart: runProgram returns the program's value
+00:01 +30: test/integration/program_sandbox_test.dart: runProgram kills the worker at the deadline
+00:02 +30: test/integration/program_sandbox_test.dart: $transform runs under the deadline too
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +31: test/integration/program_sandbox_test.dart: runProgram a program's own error comes back as ProgramFailed
+00:02 +32: All tests passed!

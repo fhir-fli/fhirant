@@ -1,0 +1,52 @@
+// Does Isolate.kill(priority: Isolate.immediate) stop a worker that is in a
+// tight synchronous loop, or only abandon its future? Measured by the
+// process's own CPU time (/proc/self/stat utime+stime, 100 ticks/s) over
+// 500 ms windows before and after the kill. Run from packages/fhirant_server:
+//   cp tool/review_2026-09-17/fix_a9/kill_cpu_probe.dart.txt tool/kill_cpu_probe.dart
+//   dart run tool/kill_cpu_probe.dart; rm tool/kill_cpu_probe.dart
+import 'dart:io';
+import 'dart:isolate';
+
+int cpuTicks() {
+  final stat = File('/proc/self/stat').readAsStringSync();
+  final fields = stat.substring(stat.lastIndexOf(')') + 2).split(' ');
+  // After the comm field: field 14 = utime is index 11, 15 = stime index 12.
+  return int.parse(fields[11]) + int.parse(fields[12]);
+}
+
+void spin(SendPort _) {
+  var x = 0;
+  while (true) {
+    x++;
+  }
+}
+
+Future<void> main() async {
+  final out = File('tool/review_2026-09-17/fix_a9/kill_cpu.tsv')
+      .openSync(mode: FileMode.write);
+  void log(String s) {
+    out.writeStringSync('$s\n');
+    out.flushSync();
+    stdout.writeln(s);
+  }
+
+  log('window\tcpu_ticks_in_500ms');
+  final idle0 = cpuTicks();
+  await Future<void>.delayed(const Duration(milliseconds: 500));
+  log('idle, no worker\t${cpuTicks() - idle0}');
+
+  final port = ReceivePort();
+  final isolate = await Isolate.spawn(spin, port.sendPort);
+  await Future<void>.delayed(const Duration(milliseconds: 200));
+  final busy0 = cpuTicks();
+  await Future<void>.delayed(const Duration(milliseconds: 500));
+  log('worker spinning\t${cpuTicks() - busy0}');
+
+  isolate.kill(priority: Isolate.immediate);
+  port.close();
+  await Future<void>.delayed(const Duration(milliseconds: 200));
+  final after0 = cpuTicks();
+  await Future<void>.delayed(const Duration(milliseconds: 500));
+  log('after kill(immediate)\t${cpuTicks() - after0}');
+  out.closeSync();
+}

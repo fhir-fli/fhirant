@@ -1,14 +1,22 @@
 import 'dart:convert';
+import 'dart:isolate';
+
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_mapping/fhir_r4_mapping.dart';
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
+import 'package:fhirant_server/src/utils/host_resource_cache.dart';
+import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:shelf/shelf.dart';
 
 /// FHIR Mapping Handler - Transform resources using StructureMap
-Future<Response> mappingHandler(Request request, FhirAntDb db) async {
+Future<Response> mappingHandler(
+  Request request,
+  FhirAntDb db, {
+  Duration deadline = kProgramDeadline,
+}) async {
   try {
     FhirantLogging().logInfo('Received mapping/transform request');
 
@@ -219,11 +227,10 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
       );
     }
 
-    ResourceBuilder targetBuilder;
+    // Proved buildable here so the refusal is specific; the worker builds
+    // its own copy.
     try {
-      targetBuilder = resourceFromJson(<String, dynamic>{
-        'resourceType': targetType,
-      });
+      resourceFromJson(<String, dynamic>{'resourceType': targetType});
     } catch (e) {
       return Response(
         400,
@@ -245,19 +252,25 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
       );
     }
 
-    // Convert Resource to builder for mapping engine
-    // Resources have a toBuilder() method that returns FhirBaseBuilder
-    final sourceBuilder = source.toBuilder;
+    // The map is the client's program: it runs in a worker isolate under
+    // the deadline (REVIEW-2026-09-17 A9). Map and source cross as JSON;
+    // the canonicals the engine resolves while it runs are served from
+    // `cache` on this isolate through a HostResourceCache.
+    final Map<String, dynamic>? resultJson;
+    try {
+      resultJson = await runHostedProgram(
+        _transformProgram(structureMap.toJson(), source.toJson(), targetType),
+        deadline: deadline,
+        host: (request) => serveResourceCache(cache, request),
+      );
+    } on ProgramTimeout catch (e) {
+      return _outcome(422, 'too-costly', '$e');
+    }
+    // A ProgramFailed (the engine threw) falls through to the catch below
+    // and is a 500, as it was on this isolate: the engine reports a failed
+    // transform by returning an OperationOutcome, so a throw is its defect.
 
-    // Execute mapping
-    final transformed = await fhirMappingEngine(
-      sourceBuilder,
-      structureMap,
-      cache,
-      targetBuilder,
-    );
-
-    if (transformed == null) {
+    if (resultJson == null) {
       return Response(
         500,
         body: jsonEncode({
@@ -280,7 +293,6 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
     // fails when the builder is built, and arrives here. Returning that as 200
     // tells the client the transform succeeded and hands it a resource of the
     // wrong type.
-    final resultJson = transformed.toJson();
     if (resultJson['resourceType'] == 'OperationOutcome' &&
         targetType != 'OperationOutcome') {
       FhirantLogging().logError(
@@ -320,6 +332,26 @@ Future<Response> mappingHandler(Request request, FhirAntDb db) async {
     );
   }
 }
+
+/// The worker's side of `$transform`. Built here, in a scope holding only
+/// JSON and a type name, because a closure carries its whole scope's
+/// context into the isolate: written inline beside the `host` lambda it
+/// carried the database and the spawn refused it ("object is unsendable",
+/// `tool/review_2026-09-17/fix_a9/06_probe_error.log`).
+Future<Map<String, dynamic>?> Function(SendPort) _transformProgram(
+  Map<String, dynamic> mapJson,
+  Map<String, dynamic> sourceJson,
+  String targetType,
+) =>
+    (host) async {
+      final transformed = await fhirMappingEngine(
+        fhir.Resource.fromJson(sourceJson).toBuilder,
+        fhir.StructureMap.fromJson(mapJson),
+        HostResourceCache(host),
+        resourceFromJson(<String, dynamic>{'resourceType': targetType}),
+      );
+      return transformed?.toJson();
+    };
 
 /// The resource type a [StructureMap] produces.
 ///

@@ -1,0 +1,64 @@
+// What a worker isolate costs, for A9: spawn, engine creation inside it,
+// and one round trip. Run: dart run tool/review_2026-09-17/fix_a9/isolate_cost_bench.dart
+import 'dart:async';
+import 'dart:io';
+import 'dart:isolate';
+
+import 'package:fhir_r4/fhir_r4.dart';
+import 'package:fhir_r4_path/fhir_r4_path.dart';
+
+Future<void> worker(SendPort toMain) async {
+  final port = ReceivePort();
+  toMain.send(port.sendPort);
+  final engine = await FHIRPathEngine.create(WorkerContext());
+  toMain.send('ready');
+  await for (final message in port) {
+    final (SendPort reply, String expression, Map<String, dynamic> json) =
+        message as (SendPort, String, Map<String, dynamic>);
+    final resource = Resource.fromJson(json);
+    final result = await engine.evaluate(resource, engine.parse(expression));
+    reply.send(result.map((e) => (e as FhirBase).toJson()).toList());
+  }
+}
+
+Future<void> main() async {
+  final out = File('tool/review_2026-09-17/fix_a9/isolate_cost.tsv')
+      .openSync(mode: FileMode.write);
+  void log(String s) {
+    out.writeStringSync('$s\n');
+    out.flushSync();
+    stdout.writeln(s);
+  }
+
+  log('step\tms');
+  for (var run = 0; run < 3; run++) {
+    final sw = Stopwatch()..start();
+    final fromWorker = ReceivePort();
+    final iterator = StreamIterator(fromWorker);
+    final isolate = await Isolate.spawn(worker, fromWorker.sendPort);
+    await iterator.moveNext();
+    final toWorker = iterator.current as SendPort;
+    final spawned = sw.elapsedMilliseconds;
+    await iterator.moveNext(); // 'ready'
+    final ready = sw.elapsedMilliseconds;
+    log('run $run spawn\t$spawned');
+    log('run $run engine ready in worker\t${ready - spawned}');
+    for (var i = 0; i < 3; i++) {
+      final reply = ReceivePort();
+      final t = Stopwatch()..start();
+      toWorker.send((reply.sendPort, 'name.family', {'resourceType': 'Patient', 'id': 'p', 'name': [{'family': 'Okello'}]}));
+      await reply.first;
+      log('run $run round trip $i\t${t.elapsedMilliseconds}');
+      reply.close();
+    }
+    isolate.kill(priority: Isolate.immediate);
+    fromWorker.close();
+  }
+  final t = Stopwatch()..start();
+  final engine = await FHIRPathEngine.create(WorkerContext());
+  log('engine create on main\t${t.elapsedMilliseconds}');
+  final t2 = Stopwatch()..start();
+  await engine.evaluate(Patient(id: 'p'.toFhirString), engine.parse('id'));
+  log('evaluate on main\t${t2.elapsedMilliseconds}');
+  out.closeSync();
+}
