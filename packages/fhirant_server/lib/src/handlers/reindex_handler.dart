@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -150,12 +151,11 @@ Response reindexStatusHandler(Request request, ReindexJobs jobs) {
   );
 }
 
+/// By the JSON encoder; this escaped by hand (REVIEW-2026-09-17 C6).
 String _outcome(String severity, String code, String diagnostics) =>
-    '{"resourceType":"OperationOutcome","issue":[{"severity":"$severity",'
-    '"code":"$code","diagnostics":${_json(diagnostics)}}]}';
-
-String _json(String s) {
-  final escaped =
-      s.replaceAll(r'\', r'\\').replaceAll('"', r'\"').replaceAll('\n', r'\n');
-  return '"$escaped"';
-}
+    jsonEncode({
+      'resourceType': 'OperationOutcome',
+      'issue': [
+        {'severity': severity, 'code': code, 'diagnostics': diagnostics},
+      ],
+    });

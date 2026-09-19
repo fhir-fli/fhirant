@@ -1,0 +1,9 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/middleware/content_negotiation_test.dart
+00:00 +0: contentNegotiationMiddleware rewrites Content-Type to application/fhir+json
+00:00 +1: contentNegotiationMiddleware Accept: application/fhir+json passes through
+00:00 +2: contentNegotiationMiddleware Accept: application/xml returns 406
+00:00 +3: contentNegotiationMiddleware Accept: application/fhir+xml returns 406
+00:00 +4: contentNegotiationMiddleware a 406 body is valid JSON whatever the Accept header holds
+00:00 +5: contentNegotiationMiddleware _format=json overrides Accept header
+00:00 +6: contentNegotiationMiddleware non-JSON responses not rewritten
+00:00 +7: All tests passed!

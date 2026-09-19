@@ -86,6 +86,27 @@ void main() {
       expect(response.statusCode, equals(406));
     });
 
+    test('a 406 body is valid JSON whatever the Accept header holds', () async {
+      // REVIEW-2026-09-17 C6: the body interpolated the header into a
+      // hand-written JSON string, so a quote in it made the body invalid.
+      final handler = wrapHandler();
+      final request = Request(
+        'GET',
+        Uri.parse('http://localhost:8080/Patient'),
+        headers: {'accept': r'text/plain; q="1\"2"'},
+      );
+
+      final response = await handler(request);
+
+      expect(response.statusCode, equals(406));
+      final json =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      expect(
+        (json['issue'] as List).first['diagnostics'],
+        contains(r'q="1\"2"'),
+      );
+    });
+
     test('_format=json overrides Accept header', () async {
       final handler = wrapHandler();
       final request = Request(

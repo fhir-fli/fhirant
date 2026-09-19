@@ -1,0 +1,17 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/middleware/content_negotiation_test.dart
+00:00 +0: contentNegotiationMiddleware a 406 body is valid JSON whatever the Accept header holds
+00:00 +0 -1: contentNegotiationMiddleware a 406 body is valid JSON whatever the Accept header holds [E]
+  FormatException: Unexpected character (at character 138)
+  ..."not-supported","diagnostics":"Unsupported format: text/plain; q="1\"2""}]}
+                                                                       ^
+  
+  dart:convert                                          jsonDecode
+  test/middleware/content_negotiation_test.dart 103:11  main.<fn>.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/middleware/content_negotiation_test.dart: contentNegotiationMiddleware a 406 body is valid JSON whatever the Accept header holds
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

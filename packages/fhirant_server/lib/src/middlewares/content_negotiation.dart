@@ -1,4 +1,27 @@
+import 'dart:convert';
+
 import 'package:shelf/shelf.dart';
+
+/// 406 with an OperationOutcome. Built by the JSON encoder: the body used
+/// to be a hand-written string with the Accept header interpolated
+/// unescaped, so a quote in the header made the body invalid JSON
+/// (REVIEW-2026-09-17 C6).
+Response _notAcceptable(String diagnostics) => Response(
+      406,
+      body: jsonEncode({
+        'resourceType': 'OperationOutcome',
+        'issue': [
+          {
+            'severity': 'error',
+            'code': 'not-supported',
+            'diagnostics': diagnostics,
+          },
+        ],
+      }),
+      headers: {
+        'Content-Type': 'application/fhir+json; charset=utf-8; fhirVersion=4.3',
+      },
+    );
 
 /// Middleware that handles FHIR content negotiation.
 ///
@@ -29,26 +52,11 @@ Middleware contentNegotiationMiddleware() {
 
       if (!isSupported && !types.contains('*/*') && requestedType.isNotEmpty) {
         if (requestedType.contains('xml')) {
-          return Response(
-            406,
-            body:
-                '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"XML format is not supported. Use application/fhir+json."}]}',
-            headers: {
-              'Content-Type':
-                  'application/fhir+json; charset=utf-8; fhirVersion=4.3',
-            },
+          return _notAcceptable(
+            'XML format is not supported. Use application/fhir+json.',
           );
         }
-        return Response(
-          406,
-          body: '{"resourceType":"OperationOutcome","issue":[{"severity":'
-              '"error","code":"not-supported","diagnostics":'
-              '"Unsupported format: $requestedType"}]}',
-          headers: {
-            'Content-Type':
-                'application/fhir+json; charset=utf-8; fhirVersion=4.3',
-          },
-        );
+        return _notAcceptable('Unsupported format: $requestedType');
       }
 
       final response = await innerHandler(request);
