@@ -142,22 +142,42 @@ Future<Response> validateHandler(
       rethrow;
     }
 
+    // The engine reports a base type it cannot resolve as an error ISSUE
+    // rather than an exception (fhir_validation_engine.dart, read
+    // 2026-09-18: "No StructureDefinition found for resourceType: X"). That
+    // is validation not performed, the 4xx case below, and not a verdict on
+    // the resource.
+    final notPerformed = validationResults.results.where(
+      (r) => r.diagnostics.startsWith('No StructureDefinition found for'),
+    );
+    if (notPerformed.isNotEmpty) {
+      return _outcome(
+        422,
+        'not-supported',
+        'Validation could not be performed: ${notPerformed.first.diagnostics}. '
+            'Load the specification, or POST the StructureDefinition, first.',
+      );
+    }
+
     final operationOutcome = validationResults.toOperationOutcome();
 
+    // OperationDefinition Resource-validate, `comment` (bundled
+    // profiles-resources.ndjson, verbatim): "This operation returns a 200
+    // OK whether or not the resource is valid. A 4xx or 5xx error means
+    // that the validation itself could not be performed, and it is unknown
+    // whether the resource is valid or not." An invalid resource used to
+    // be a 400 (REVIEW-2026-09-17 C1), which told the client the
+    // validation had not run. The verdict is the OperationOutcome's issues.
     if (validationResults.hasErrors) {
       final errorCount = validationResults.results
           .where((r) => r.severity == Severity.error)
           .length;
-      FhirantLogging().logWarning(
-        'FHIR validation failed with $errorCount errors',
+      FhirantLogging().logInfo(
+        'FHIR validation found $errorCount error(s)',
       );
-      return Response(
-        400,
-        body: operationOutcome.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
+    } else {
+      FhirantLogging().logInfo('FHIR validation passed');
     }
-    FhirantLogging().logInfo('FHIR validation passed');
     return Response.ok(
       operationOutcome.toJsonString(),
       headers: {'Content-Type': 'application/json'},

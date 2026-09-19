@@ -198,8 +198,10 @@ Future<void> main() async {
   test('without the base definition, the engine says so', () async {
     // Kept deliberately: this is what every $validate call used to return,
     // and it is the honest answer when the specification has not been loaded.
+    // A 4xx, because the validation could not be performed (REVIEW-2026-09-17
+    // C1): 422 not-supported, as for any other canonical the store lacks.
     final response = await validateHandler(post(patient), db, 'Patient');
-    expect(response.statusCode, 400);
+    expect(response.statusCode, 422);
     final outcome =
         jsonDecode(await response.readAsString()) as Map<String, dynamic>;
     expect(
@@ -232,6 +234,33 @@ Future<void> main() async {
     expect(
       diagnostics,
       isNot(contains(contains('No StructureDefinition found'))),
+    );
+  });
+
+  test('an invalid resource is a 200 whose OperationOutcome says so', () async {
+    // OperationDefinition Resource-validate, `comment` (bundled
+    // profiles-resources.ndjson, verbatim): "This operation returns a 200 OK
+    // whether or not the resource is valid. A 4xx or 5xx error means that
+    // the validation itself could not be performed". An invalid resource
+    // was a 400 (REVIEW-2026-09-17 C1).
+    await db.saveResource(_packagedPatientDefinition());
+    for (final valueSet in _packagedValueSets()) {
+      await db.saveResource(valueSet);
+    }
+    final response = await validateHandler(
+      post('{"resourceType":"Patient","id":"p1","gender":"not-a-gender"}'),
+      db,
+      'Patient',
+    );
+    expect(response.statusCode, 200);
+    final outcome =
+        jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+    expect(outcome['resourceType'], 'OperationOutcome');
+    expect(
+      (outcome['issue'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map((i) => i['severity']),
+      contains('error'),
     );
   });
 

@@ -1,0 +1,17 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/validate_handler_test.dart
+00:00 +0: test/handlers/validate_handler_test.dart: validateHandler returns 400 with OperationOutcome for empty body
+00:00 +1: test/handlers/validate_handler_test.dart: validateHandler returns 400 with OperationOutcome for invalid JSON
+00:00 +2: test/handlers/validate_handler_test.dart: validateHandler returns 400 when resource type in body mismatches URL
+00:00 +3: test/handlers/validate_handler_test.dart: validateHandler accepts valid resource without type constraint
+00:00 +4: test/handlers/validate_profile_test.dart: a nominated profile the server does not hold is refused
+00:00 +5: test/handlers/validate_profile_test.dart: a nominated profile the server holds is used
+00:00 +6: test/handlers/validate_profile_test.dart: the version after | is matched
+00:00 +7: test/handlers/validate_profile_test.dart: a Parameters body carries the resource and the profile
+00:00 +8: test/handlers/validate_profile_test.dart: a Parameters body naming an unheld profile is refused
+00:00 +9: test/handlers/validate_profile_test.dart: a Parameters body with no resource is refused
+00:00 +10: test/handlers/validate_profile_test.dart: the base type is resolved from this server, then a binding is not
+00:00 +11: test/handlers/validate_profile_test.dart: without the base definition, the engine says so
+00:00 +12: test/handlers/validate_profile_test.dart: with the value sets loaded too, validation completes
+00:01 +13: test/handlers/validate_profile_test.dart: an invalid resource is a 200 whose OperationOutcome says so
+00:01 +14: test/handlers/validate_profile_test.dart: the resource type in the body must still match the path
+00:01 +15: All tests passed!

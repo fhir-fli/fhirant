@@ -1,0 +1,16 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/handlers/validate_profile_test.dart
+00:00 +0: an invalid resource is a 200 whose OperationOutcome says so
+00:00 +0 -1: an invalid resource is a 200 whose OperationOutcome says so [E]
+  Expected: <200>
+    Actual: <400>
+  
+  package:matcher                                 expect
+  test/handlers/validate_profile_test.dart 255:5  main.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/handlers/validate_profile_test.dart: an invalid resource is a 200 whose OperationOutcome says so
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
