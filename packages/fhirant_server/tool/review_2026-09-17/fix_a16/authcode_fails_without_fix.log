@@ -1,0 +1,28 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/authorization_code_single_use_test.dart
+00:00 +0: two exchanges of one code at once: exactly one gets tokens
+00:00 +0 -1: two exchanges of one code at once: exactly one gets tokens [E]
+  Expected: [200, 400]
+    Actual: [200, 200]
+     Which: at location [1] is <200> instead of <400>
+  [(200, {access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiY29kZS11c2VyIiwicm9sZSI6ImNsaW5pY2lhbiIsInNjb3BlIjoidXNlci8qLnJzIiwiZ2VuIjowLCJpYXQiOjE3ODk3OTQ1NzMsImV4cCI6MTc4OTgyMzM3M30.mmKK6TlPyMQ37zcf9Z-WX4a6eQwAbItHxyEF8aSqbNk, token_type: Bearer, refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiY29kZS11c2VyIiwicm9sZSI6ImNsaW5pY2lhbiIsInRva2VuX3R5cGUiOiJyZWZyZXNoIiwic2NvcGUiOiJ1c2VyLyoucnMiLCJnZW4iOjAsImlhdCI6MTc4OTc5NDU3MywiZXhwIjoxNzkwMzk5MzczfQ.VjeKxuuhMOTNJes1oKuBSrn_lUassFrF2pdKX3tV1v0, scope: user/*.rs, username: code-user, role: clinician}), (200, {access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiY29kZS11c2VyIiwicm9sZSI6ImNsaW5pY2lhbiIsInNjb3BlIjoidXNlci8qLnJzIiwiZ2VuIjowLCJpYXQiOjE3ODk3OTQ1NzMsImV4cCI6MTc4OTgyMzM3M30.mmKK6TlPyMQ37zcf9Z-WX4a6eQwAbItHxyEF8aSqbNk, token_type: Bearer, refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiY29kZS11c2VyIiwicm9sZSI6ImNsaW5pY2lhbiIsInRva2VuX3R5cGUiOiJyZWZyZXNoIiwic2NvcGUiOiJ1c2VyLyoucnMiLCJnZW4iOjAsImlhdCI6MTc4OTc5NDU3MywiZXhwIjoxNzkwMzk5MzczfQ.VjeKxuuhMOTNJes1oKuBSrn_lUassFrF2pdKX3tV1v0, scope: user/*.rs, username: code-user, role: clinician})]
+  
+  package:matcher                                                expect
+  test/integration/authorization_code_single_use_test.dart 76:5  main.<fn>
+  
+00:00 +0 -1: a second use is denied and ends the tokens from the first
+00:00 +0 -2: a second use is denied and ends the tokens from the first [E]
+  Expected: <401>
+    Actual: <200>
+  revoked on reuse
+  
+  package:matcher                                                expect
+  test/integration/authorization_code_single_use_test.dart 89:5  main.<fn>
+  
+00:00 +0 -2: Some tests failed.
+
+Failing tests:
+  test/integration/authorization_code_single_use_test.dart: a second use is denied and ends the tokens from the first
+  test/integration/authorization_code_single_use_test.dart: two exchanges of one code at once: exactly one gets tokens
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

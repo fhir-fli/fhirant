@@ -1673,6 +1673,20 @@ class FhirAntDb extends FhirDb {
     );
   }
 
+  /// Marks [code] used and says whether this call was the one that did:
+  /// one statement, so two concurrent exchanges of the same code cannot
+  /// both succeed (the check and the mark used to be two statements;
+  /// fhirant REVIEW-2026-09-17 A16). False when the code was already used
+  /// or does not exist.
+  Future<bool> consumeAuthorizationCode(String code) async {
+    final changed = await customUpdate(
+      'UPDATE authorization_codes SET used = 1 WHERE code = ? AND used = 0',
+      variables: [Variable.withString(code)],
+      updateKind: UpdateKind.update,
+    );
+    return changed == 1;
+  }
+
   /// Delete expired or used authorization codes (cleanup).
   Future<void> cleanupAuthorizationCodes() async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;

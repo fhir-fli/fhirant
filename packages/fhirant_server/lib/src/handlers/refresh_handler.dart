@@ -106,15 +106,14 @@ Future<Response> _handleAuthorizationCodeGrant(
     );
   }
 
-  // Check if already used
+  // RFC 6749 §4.1.2 (read 2026-09-19, verbatim): "If an authorization code
+  // is used more than once, the authorization server MUST deny the request
+  // and SHOULD revoke (when possible) all tokens previously issued based on
+  // that authorization code." The tokens issued on the first exchange
+  // carry the account's token generation; moving it on ends them
+  // (auth/token_bound.dart). REVIEW-2026-09-17 A16.
   if (authCode.used) {
-    return Response(
-      400,
-      body: jsonEncode({
-        'error': 'invalid_grant',
-        'error_description': 'Authorization code has already been used',
-      }),
-    );
+    return _codeReused(dbInterface, authCode);
   }
 
   // Check expiration
@@ -178,8 +177,13 @@ Future<Response> _handleAuthorizationCodeGrant(
     }
   }
 
-  // Mark code as used
-  await dbInterface.markAuthorizationCodeUsed(code);
+  // Consume the code in one statement. The check above and this mark used
+  // to be two statements, so two exchanges of the same code arriving
+  // together both passed the check and both got tokens (A16). The one that
+  // loses the race is the reuse.
+  if (!await dbInterface.consumeAuthorizationCode(code)) {
+    return _codeReused(dbInterface, authCode);
+  }
 
   // Look up the user
   final user = await dbInterface.getUserById(authCode.userId);
@@ -247,6 +251,27 @@ Future<Response> _handleAuthorizationCodeGrant(
       if (patientId != null) 'patient': patientId,
     }),
     headers: {'Content-Type': 'application/json'},
+  );
+}
+
+/// A second use of an authorization code: denied, and every token the
+/// account holds is ended, since the ones issued on the first use cannot
+/// be told apart from the rest (RFC 6749 §4.1.2, above).
+Future<Response> _codeReused(
+  FhirAntDb dbInterface,
+  AuthorizationCode authCode,
+) async {
+  await dbInterface.bumpTokenGeneration(authCode.userId);
+  FhirantLogging().logWarning(
+    'Authorization code reused for user ${authCode.userId}; '
+    'its sessions are ended',
+  );
+  return Response(
+    400,
+    body: jsonEncode({
+      'error': 'invalid_grant',
+      'error_description': 'Authorization code has already been used',
+    }),
   );
 }
 

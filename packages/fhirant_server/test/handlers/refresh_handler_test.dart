@@ -372,9 +372,11 @@ void main() {
       expect(body['error_description'], contains('not found'));
     });
 
-    test('returns 400 when code already used', () async {
+    test('returns 400 when code already used, and ends the sessions', () async {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(true);
+      when(() => mockCode.userId).thenReturn(7);
+      when(() => mockDb.bumpTokenGeneration(7)).thenAnswer((_) async {});
 
       when(() => mockDb.getAuthorizationCode('used-code'))
           .thenAnswer((_) async => mockCode);
@@ -390,6 +392,8 @@ void main() {
 
       final body = jsonDecode(await response.readAsString()) as Map;
       expect(body['error_description'], contains('already been used'));
+      // RFC 6749 4.1.2: tokens previously issued on the code are revoked.
+      verify(() => mockDb.bumpTokenGeneration(7)).called(1);
     });
 
     test('returns 400 when code expired', () async {
@@ -520,8 +524,8 @@ void main() {
 
       when(() => mockDb.getAuthorizationCode('valid-code'))
           .thenAnswer((_) async => mockCode);
-      when(() => mockDb.markAuthorizationCodeUsed('valid-code'))
-          .thenAnswer((_) async {});
+      when(() => mockDb.consumeAuthorizationCode('valid-code'))
+          .thenAnswer((_) async => true);
 
       final mockUser = MockUser();
       when(() => mockUser.id).thenReturn(1);
@@ -585,8 +589,8 @@ void main() {
 
       when(() => mockDb.getAuthorizationCode('pkce-valid'))
           .thenAnswer((_) async => mockCode);
-      when(() => mockDb.markAuthorizationCodeUsed('pkce-valid'))
-          .thenAnswer((_) async {});
+      when(() => mockDb.consumeAuthorizationCode('pkce-valid'))
+          .thenAnswer((_) async => true);
 
       final mockUser = MockUser();
       when(() => mockUser.id).thenReturn(1);
