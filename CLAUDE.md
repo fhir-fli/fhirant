@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on the published packages (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql`, `cql`) from pub.dev at ^0.7.0 (cql ^0.6.3); the only path dependencies are the internal `fhirant_*` packages and sibling repo `cicada`.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.12.0, `cql` ^0.6.3); until the family's next release `fhir_r4`, `fhir_r4_bulk`, `fhir_r4_db`, `fhir_db` and `fhir_path` are git `dependency_overrides` in `fhirant_server/pubspec.yaml`, and a local checkout overrides those with the gitignored `pubspec_overrides.yaml`. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency.
 
 ## Package Structure
 
@@ -36,17 +36,22 @@ fhirant/
 # Install dependencies (no melos — each package resolves on its own)
 for p in packages/*/; do (cd "$p" && flutter pub get); done
 
-# Run the server (dev mode — no auth required)
-dart run packages/fhirant_server/bin/server.dart --port 8080 --db-path data/db
+# Run the server with authentication (FHIRANT_ENCRYPTION_KEY required; the
+# first administrator comes from FHIRANT_ADMIN_USERNAME/PASSWORD or the
+# one-time bootstrap token the server logs)
+FHIRANT_ENCRYPTION_KEY=... dart run packages/fhirant_server/bin/server.dart --port 8080 --db-path data/db
 
-# Run all server tests
-cd packages/fhirant_server && flutter test
+# Run the server in dev mode (no authentication, public default key allowed)
+dart run packages/fhirant_server/bin/server.dart --dev-mode --port 8080 --db-path data/db
+
+# Run all server tests (pure Dart: `dart test`, not `flutter test`)
+cd packages/fhirant_server && dart test
 
 # Run all database tests
-cd packages/fhirant_db && flutter test
+cd packages/fhirant_db && dart test
 
 # Run a specific test file
-cd packages/fhirant_server && flutter test test/utils/search_parser_test.dart
+cd packages/fhirant_server && dart test test/utils/search_parser_test.dart
 
 # Analyze a package
 dart analyze packages/fhirant_server
@@ -54,8 +59,8 @@ dart analyze packages/fhirant_server
 # Format a package
 dart format packages/fhirant_server
 
-# Regenerate Drift database code (after changing table definitions)
-cd packages/fhirant_db && dart run build_runner build --delete-conflicting-outputs
+# There is no Drift code generation in fhirant_db: its tables are the
+# fhir_db core's plus hand-written customStatement DDL (fhirant_db.dart).
 ```
 
 ## Critical File Access Rules
@@ -72,7 +77,7 @@ cd packages/fhirant_db && dart run build_runner build --delete-conflicting-outpu
 **Safe to read:**
 - `lib/src/**/*.dart` source files in any package
 - `test/**_test.dart` test files
-- `pubspec.yaml`, `melos.yaml`, `analysis_options.yaml`
+- `pubspec.yaml`, `analysis_options.yaml`
 
 ## Architecture
 
@@ -210,7 +215,7 @@ A client's program (`$fhirpath`, `$cql`, `Library/$evaluate`, `$transform`) runs
 
 Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
 
-**Tables:** `resources` (current versions), `resources_history` (all versions), `logs`, `users` (with `patient_id` and `token_generation`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
+**Tables:** `resources` (current versions), `resources_history` (all versions), `users` (with `patient_id` and `token_generation`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
 
 **Search flow:**
 1. On resource save, `search_parameters.dart` extracts all searchable values and indexes them into the appropriate tables
@@ -230,7 +235,7 @@ Singleton `FhirantLogging()` that writes JSON-formatted logs to console and opti
 
 ### Mobile App (`packages/fhirant/`)
 
-Flutter app wrapping the server for on-device use. Published on Google Play Store.
+Flutter app wrapping the server for on-device use. Not published: v1.0.0 is built for direct APK release.
 
 - **Dashboard UI**: Material 3 with server control, network info (QR code), resource counts, live request log
 - **Resource Browser**: JSON/YAML toggle, clickable FHIR references with navigation stack
@@ -250,19 +255,20 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 See **TESTING.md** for full inventory by file.
 
-Tests use `flutter_test` + `mocktail`. `FhirAntDb` is mocked in server handler tests. Database tests require sqlite3 native library.
+Server and db tests use `package:test` + `mocktail`; the app uses `flutter_test`. `FhirAntDb` is mocked in server handler tests. Database tests require sqlite3 native library.
 
 ## Server CLI Options
 
 ```
 --port, -p          Server port (default: 8080)
 --db-path           Database path (default: data/db)
---sqlcipher-path    Custom SQLCipher library path
 --config, -c        YAML file whose keys are these option names; the command line overrides it
 --https             Enable HTTPS
 --cert-path         HTTPS certificate path
 --key-path          HTTPS private key path
 --dev-mode          Enable dev mode (no authentication)
+--spec-path         FHIR spec NDJSON directory (default /app/fhir_spec)
+--base-url          The URL clients reach this server by
 --audit-retention-days  Days AuditEvents are kept (default 2192, six years)
 ```
 
@@ -270,13 +276,13 @@ Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption k
 
 ## Code Style
 
-Packages use `flutter_lints`. The parent monorepo uses `very_good_analysis` — see the parent `fhir/CLAUDE.md` for those customizations.
+Every package uses `very_good_analysis` through the repo's root `analysis_options.yaml`.
 
 ## Key Design Decisions
 
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
 - **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
-- **Version ID = timestamp** — resources auto-versioned on save with `updateVersion(versionIdAsTime: true)`
+- **Version ID = a counter** — `fhirDao.versionIdAsTime = false` (fhirant_db.dart), so each save's version id is the previous one plus one
 - **IDs auto-generated** if missing via `newIdIfNoId()`
 - **Search parameter extraction is generated code** — `search_parameters.dart` is produced from FHIR SearchParameter definitions, do not edit by hand
 - **All FHIR resource types** are valid URL path segments and map to `R4ResourceType` enum values
