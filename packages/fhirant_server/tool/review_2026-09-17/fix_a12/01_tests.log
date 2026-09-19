@@ -1,0 +1,127 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/login_answers_alike_test.dart
+00:00 +0: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +1: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +2: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +3: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +4: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +5: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +6: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +7: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +8: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +9: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +10: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +11: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +12: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +13: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +14: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +15: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +16: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +17: test/integration/login_answers_alike_test.dart: the right password on an active account logs in
+00:00 +18: test/handlers/authorize_handler_test.dart: authorizeJsonHandler returns 401 for invalid credentials
+00:00 +19: test/handlers/auth_handler_test.dart: registerHandler admin can register new user
+00:00 +20: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +21: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +22: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +23: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +24: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +25: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:00 +26: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:01 +27: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:01 +28: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:01 +29: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+00:01 +30: test/integration/login_answers_alike_test.dart: wrong password, unknown, deactivated and locked answer alike
+00:01 +31: test/handlers/login_rehash_test.dart: a current PBKDF2 hash is left unchanged on login
+00:01 +32: test/handlers/auth_handler_test.dart: loginHandler wrong password returns 401
+00:01 +33: test/handlers/authorize_handler_test.dart: authorizeJsonHandler the scope stored is the request intersected with the account
+00:01 +34: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a request wholly outside the grant is refused as invalid_scope
+00:01 +34: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a readonly account asking for system/*.* gets user/*.rs
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +35: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a request wholly outside the grant is refused as invalid_scope
+00:01 +36: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a request wholly outside the grant is refused as invalid_scope
+00:01 +37: test/integration/login_answers_alike_test.dart: the authorize form answers alike too
+00:01 +38: test/integration/login_answers_alike_test.dart: the authorize form answers alike too
+00:02 +39: test/integration/login_answers_alike_test.dart: the authorize form answers alike too
+00:02 +39: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a request wholly outside the grant is refused as invalid_scope
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +40: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a refresh narrows to what the account holds now
+00:02 +41: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a refresh narrows to what the account holds now
+00:02 +42: test/handlers/auth_handler_test.dart: loginHandler expired lockout auto-unlocks and allows login
+00:02 +43: test/handlers/authorize_handler_test.dart: authorizePostHandler (form-encoded) returns 302 redirect with code for valid form submission
+00:02 +44: test/integration/authorization_review_test.dart: finding 8: standard SMART scopes openid fhirUser launch/patient beside a resource scope yield a usable token
+00:02 +44: test/integration/authorization_review_test.dart: finding 1: the OAuth grant is the request intersected with the account a refresh narrows to what the account holds now
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +45: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +46: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +47: test/handlers/auth_handler_test.dart: loginHandler failed login increments counter
+00:02 +48: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin an authorize request without S256 PKCE is refused
+00:02 +49: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin an authorize request without S256 PKCE is refused
+00:02 +50: test/handlers/auth_handler_test.dart: loginHandler account locked after max failed attempts
+00:02 +51: test/handlers/authorize_handler_test.dart: a locked account is told so on the form, and failures count
+00:03 +52: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a client_id keeps the redirect_uri it first authorized with
+00:03 +53: test/handlers/auth_handler_test.dart: loginHandler successful login resets failed count
+00:03 +54: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a loopback redirect may change its port
+00:03 +55: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a loopback redirect may change its port
+00:03 +56: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a loopback redirect may change its port
+00:03 +57: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a loopback redirect may change its port
+00:03 +58: test/integration/authorization_review_test.dart: finding 2: a refresh token is not accepted as a Bearer access token
+00:03 +59: test/integration/authorization_review_test.dart: finding 9: POST /[type]/_search is a search, open to user/*.rs
+00:03 +60: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes a patient-scoped token cannot read another patient's compartment
+00:03 +61: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes a patient-scoped token still reads its own compartment
+00:03 +62: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes the compartment search checks the scope on the type it returns
+00:03 +63: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes $everything refuses a token that cannot read every type returned
+00:03 +64: test/integration/authorization_review_test.dart: finding 5: $meta-add is a write, refused to user/*.rs
+00:03 +65: test/integration/authorization_review_test.dart: finding 6: the patient context is the account's, not the caller's
+00:03 +65: test/integration/authorization_review_test.dart: finding 10: PKCE and the redirect pin a loopback redirect may change its port
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +65: test/integration/authorization_review_test.dart: finding 9: POST /[type]/_search is a search, open to user/*.rs
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +65: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes a patient-scoped token cannot read another patient's compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +65: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes a patient-scoped token still reads its own compartment
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +65: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes the compartment search checks the scope on the type it returns
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +65: test/integration/authorization_review_test.dart: findings 3 and 4: compartment routes $everything refuses a token that cannot read every type returned
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +66: test/integration/authorization_review_test.dart: finding 7: failed OAuth authorize attempts count toward lockout
+00:04 +66: test/integration/authorization_review_test.dart: finding 6: the patient context is the account's, not the caller's
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +67: test/integration/authorization_review_test.dart: finding 11: the rate limiter runs before authentication and audit an unauthenticated flood is throttled and leaves no AuditEvents
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/authorization_review_test.dart:489:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:05 +68: test/integration/authorization_review_test.dart: finding 11: the rate limiter runs before authentication and audit the credential endpoints have their own, tighter bucket
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///home/grey/dev/fhir/fhirant/packages/fhirant_server/test/integration/authorization_review_test.dart:513:21)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:05 +69: All tests passed!

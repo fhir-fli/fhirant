@@ -477,7 +477,9 @@ void main() {
         body: jsonEncode({'username': 'admin1', 'password': 'admin1pass12345'}),
       ),
     );
-    expect(login.statusCode, 423);
+    // The lock holds; the answer is the wrong-password answer
+    // (REVIEW-2026-09-17 A12).
+    expect(login.statusCode, 401);
   });
 
   group('finding 11: the rate limiter runs before authentication and audit',

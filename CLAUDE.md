@@ -168,7 +168,7 @@ Requests pass through middleware in this order:
 - **Patient context** comes from the account (`users.patient_id`, admin-set at `/auth/register` with `patient`), never from the request
 - **JWT tokens**: HS256, 8-hour access tokens, 7-day refresh tokens
 - **SMART on FHIR scopes**: `patient/*.read`, `user/Observation.write`, `system/*.*`, etc.
-- **Account lockout**: 5 failed attempts → 15-minute lockout of password login, counted by one credential check shared by login and both authorize handlers (`lib/src/auth/credential_check.dart`); a lock does not end live sessions (deactivation does)
+- **Account lockout**: 5 failed attempts → 15-minute lockout of password login, counted by one credential check shared by login and both authorize handlers (`lib/src/auth/credential_check.dart`); a lock does not end live sessions (deactivation does). A wrong password, an unknown account, a deactivated one and a locked one all answer 401 "Invalid username or password", with the hash computed first (OWASP Authentication Cheat Sheet, "Authentication Responses"; REVIEW-2026-09-17 A12)
 - **One authorization table**: `authorizeRequest` (`lib/src/auth/request_authorization.dart`) decides every REST request and every Bundle entry: scopes, patient context (fails closed at the root too), HEAD as GET, AuditEvent append-only to clients, SearchParameter delete by system authority
 - **Token revocation**: explicit revoke + hourly cleanup of expired tokens
 - **Dev mode**: `devMode: true` bypasses auth, injects synthetic admin user
@@ -230,9 +230,9 @@ Flutter app wrapping the server for on-device use. Published on Google Play Stor
 
 ## Testing
 
-**1,396 tests** across 120 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,399 tests** across 121 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
 
-- **Server tests** (1,234 tests, 108 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,237 tests, 109 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

@@ -40,25 +40,22 @@ Future<Response> loginHandler(
     switch (await checkCredentials(dbInterface, username, password)) {
       case CredentialOk(user: final u):
         user = u;
+      // One answer for a wrong password, an unknown account, a deactivated
+      // one and a locked one. OWASP Authentication Cheat Sheet
+      // ("Authentication Responses" and "Error Codes and URLs", raw
+      // markdown read 2026-09-19): a generic message "regardless of
+      // whether: The user ID or password was incorrect. The account does
+      // not exist. The account is locked or disabled", and the same HTTP
+      // code, since a differing code "may differ which can leak
+      // information about whether the account is valid or not". This
+      // answered 403 deactivated and 423 locked (REVIEW-2026-09-17 A12).
+      // The lock still holds; the caller is not told of it.
       case CredentialInvalid():
+      case CredentialInactive():
+      case CredentialLocked():
         return Response(
           401,
           body: jsonEncode({'error': 'Invalid username or password'}),
-        );
-      case CredentialInactive():
-        return Response(
-          403,
-          body: jsonEncode({'error': 'Account is deactivated'}),
-        );
-      case CredentialLocked(minutesRemaining: final minutes, :final justLocked):
-        return Response(
-          423,
-          body: jsonEncode({
-            'error': justLocked
-                ? 'Account locked due to too many failed attempts. '
-                    'Try again in $minutes minutes.'
-                : 'Account is locked. Try again in $minutes minute(s).',
-          }),
         );
     }
 

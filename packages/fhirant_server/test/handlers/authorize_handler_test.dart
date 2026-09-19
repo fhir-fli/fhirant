@@ -339,7 +339,7 @@ void main() {
       expect(body['error'], 'access_denied');
     });
 
-    test('returns 403 for deactivated user', () async {
+    test('a deactivated user is refused as a wrong password is', () async {
       final mockUser = activeUser('inactive', 'validpass');
       when(() => mockUser.active).thenReturn(false);
 
@@ -358,7 +358,8 @@ void main() {
       });
 
       final response = await authorizeJsonHandler(request, mockDb);
-      expect(response.statusCode, 403);
+      // REVIEW-2026-09-17 A12: one answer for every failure.
+      expect(response.statusCode, 401);
     });
 
     test('returns authorization code for valid request', () async {
@@ -616,7 +617,9 @@ void main() {
       ),
       mockDb,
     );
-    expect(response.statusCode, 423);
+    // Locked, and the answer says only what a wrong password says
+    // (REVIEW-2026-09-17 A12).
+    expect(response.statusCode, 401);
     verify(() => mockDb.incrementFailedLogins(1)).called(1);
     verify(() => mockDb.lockAccount(1, any())).called(1);
   });

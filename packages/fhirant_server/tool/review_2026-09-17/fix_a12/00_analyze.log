@@ -1,0 +1,5 @@
+Analyzing fhirant_server...
+
+   info - test/integration/login_answers_alike_test.dart:38:64 - Missing a required trailing comma. Try adding a trailing comma. - require_trailing_commas
+
+1 issue found.

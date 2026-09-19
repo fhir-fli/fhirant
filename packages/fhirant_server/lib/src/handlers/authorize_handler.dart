@@ -398,15 +398,12 @@ Future<_Outcome> _authorize(
   switch (await checkCredentials(db, username, password)) {
     case CredentialOk(user: final u):
       user = u;
+    // One answer for every failure, as at /auth/login (OWASP Authentication
+    // Cheat Sheet, "Authentication Responses"; REVIEW-2026-09-17 A12).
     case CredentialInvalid():
-      return const _Denied(401, 'Invalid username or password');
     case CredentialInactive():
-      return const _Denied(403, 'Account is deactivated');
-    case CredentialLocked(minutesRemaining: final minutes):
-      return _Denied(
-        423,
-        'Account is locked. Try again in $minutes minute(s).',
-      );
+    case CredentialLocked():
+      return const _Denied(401, 'Invalid username or password');
   }
 
   final held = user.scopes != null && user.scopes!.isNotEmpty

@@ -69,6 +69,21 @@ Future<CredentialResult> checkCredentials(
     return const CredentialInvalid();
   }
 
+  // The hash is computed before the account's state is looked at, so a
+  // deactivated or locked account costs the same time as a wrong password.
+  // OWASP Authentication Cheat Sheet (raw markdown read 2026-09-19,
+  // "Authentication Responses", verbatim): "an application must respond
+  // with a generic error message regardless of whether: The user ID or
+  // password was incorrect. The account does not exist. The account is
+  // locked or disabled." A deactivated account used to answer before the
+  // hash (REVIEW-2026-09-17 A12). The distinct results below are for the
+  // caller's audit trail; every caller answers them alike.
+  final verified = await PasswordHasher.verifyPassword(
+    password,
+    user.salt,
+    user.passwordHash,
+  );
+
   if (!user.active) return const CredentialInactive();
 
   final lockedUntil = user.lockedUntil;
@@ -84,11 +99,6 @@ Future<CredentialResult> checkCredentials(
     await db.resetFailedLogins(user.id);
   }
 
-  final verified = await PasswordHasher.verifyPassword(
-    password,
-    user.salt,
-    user.passwordHash,
-  );
   if (!verified) {
     final failures = await db.incrementFailedLogins(user.id);
     if (failures >= maxFailedAttempts) {

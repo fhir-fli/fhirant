@@ -1,0 +1,29 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/login_answers_alike_test.dart
+00:00 +0: the right password on an active account logs in
+00:00 +1: wrong password, unknown, deactivated and locked answer alike
+00:00 +1 -1: wrong password, unknown, deactivated and locked answer alike [E]
+  Expected: <401>
+    Actual: <403>
+  deactivated
+  
+  package:matcher                                       expect
+  test/integration/login_answers_alike_test.dart 112:7  main.<fn>
+  
+00:00 +1 -1: the authorize form answers alike too
+00:01 +1 -2: the authorize form answers alike too [E]
+  Expected: an object with length of <1>
+    Actual: Set:[401, 403, 423]
+     Which: has length of <3>
+  {wrong password: (401, {"error":"access_denied","error_description":"Invalid username or password"}), unknown account: (401, {"error":"access_denied","error_description":"Invalid username or password"}), deactivated: (403, {"error":"access_denied","error_description":"Account is deactivated"}), locked: (423, {"error":"access_denied","error_description":"Account is locked. Try again in 15 minute(s)."})}
+  
+  package:matcher                                       expect
+  test/integration/login_answers_alike_test.dart 130:5  main.<fn>
+  
+00:01 +1 -2: Some tests failed.
+
+Failing tests:
+  test/integration/login_answers_alike_test.dart: the authorize form answers alike too
+  test/integration/login_answers_alike_test.dart: wrong password, unknown, deactivated and locked answer alike
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

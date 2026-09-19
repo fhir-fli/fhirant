@@ -359,7 +359,9 @@ void main() {
 
       final response = await loginHandler(request, mockDb, jwtService);
 
-      expect(response.statusCode, equals(403));
+      // A deactivated account answers as a wrong password does
+      // (REVIEW-2026-09-17 A12, OWASP "Authentication Responses").
+      expect(response.statusCode, equals(401));
     });
 
     test('missing login fields returns 400', () async {
@@ -393,9 +395,11 @@ void main() {
 
       final response = await loginHandler(request, mockDb, jwtService);
 
-      expect(response.statusCode, equals(423));
+      // The lock holds, and the caller is not told of it (REVIEW-2026-09-17
+      // A12): the answer is the wrong-password answer.
+      expect(response.statusCode, equals(401));
       final body = jsonDecode(await response.readAsString());
-      expect(body['error'], contains('locked'));
+      expect(body['error'], 'Invalid username or password');
     });
 
     test('expired lockout auto-unlocks and allows login', () async {
@@ -468,7 +472,7 @@ void main() {
 
       final response = await loginHandler(request, mockDb, jwtService);
 
-      expect(response.statusCode, equals(423));
+      expect(response.statusCode, equals(401));
       verify(() => mockDb.lockAccount(1, any())).called(1);
     });
 
