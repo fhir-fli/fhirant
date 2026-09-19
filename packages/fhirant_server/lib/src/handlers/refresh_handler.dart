@@ -293,18 +293,6 @@ Future<Response> _handleRefreshTokenGrant(
     );
   }
 
-  // Check if the refresh token has been revoked
-  final refreshHash = TokenHasher.hash(refreshToken);
-  if (await dbInterface.isTokenRevoked(refreshHash)) {
-    return Response(
-      401,
-      body: jsonEncode({
-        'error': 'invalid_grant',
-        'error_description': 'Refresh token has been revoked',
-      }),
-    );
-  }
-
   // Verify the refresh token
   final payload = jwtService.verifyRefreshToken(refreshToken);
   if (payload == null) {
@@ -347,6 +335,36 @@ Future<Response> _handleRefreshTokenGrant(
       body: jsonEncode({
         'error': 'invalid_grant',
         'error_description': 'Account is deactivated',
+      }),
+    );
+  }
+
+  // A refresh token that was rotated away (or revoked) and is presented
+  // again. RFC 9700 §4.14.2, refresh token rotation (read 2026-09-19,
+  // verbatim): "If a refresh token is compromised and subsequently used by
+  // both the attacker and the legitimate client, one of them will present
+  // an invalidated refresh token, which will inform the authorization
+  // server of the breach. The authorization server cannot determine which
+  // party submitted the invalid refresh token, but it will revoke the
+  // active refresh token. This stops the attack at the cost of forcing
+  // the legitimate client to obtain a fresh authorization grant." Moving
+  // the account's token generation on ends the active refresh token and
+  // every access token with it (auth/token_bound.dart). Checked after the
+  // signature and the account, so only a token this server issued for a
+  // live account can end its sessions (REVIEW-2026-09-17 A16: reuse used
+  // to be answered 401 and nothing else).
+  final refreshHash = TokenHasher.hash(refreshToken);
+  if (await dbInterface.isTokenRevoked(refreshHash)) {
+    await dbInterface.bumpTokenGeneration(user.id);
+    FhirantLogging().logWarning(
+      'Revoked refresh token presented for user ${user.id}; '
+      'its sessions are ended',
+    );
+    return Response(
+      401,
+      body: jsonEncode({
+        'error': 'invalid_grant',
+        'error_description': 'Refresh token has been revoked',
       }),
     );
   }

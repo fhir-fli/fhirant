@@ -1,0 +1,25 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/refresh_reuse_test.dart
+00:00 +0: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +1: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +2: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +3: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +4: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +5: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +6: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +7: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +8: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +9: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +10: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +11: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +12: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +13: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +14: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +15: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +16: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +17: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +18: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +19: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +20: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +21: test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+00:00 +22: test/integration/refresh_reuse_test.dart: a forged token that happens to be in the revoked table cannot end a grant: the signature is checked first
+00:00 +23: All tests passed!

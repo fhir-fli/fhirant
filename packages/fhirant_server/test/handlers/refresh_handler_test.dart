@@ -296,6 +296,15 @@ void main() {
       final refreshHash = TokenHasher.hash(refreshToken);
       when(() => mockDb.isTokenRevoked(refreshHash))
           .thenAnswer((_) async => true);
+      final mockUser = MockUser();
+      when(() => mockUser.id).thenReturn(1);
+      when(() => mockUser.username).thenReturn('testuser');
+      when(() => mockUser.role).thenReturn('admin');
+      when(() => mockUser.active).thenReturn(true);
+      when(() => mockUser.tokenGeneration).thenReturn(0);
+      when(() => mockDb.getUserByUsername('testuser'))
+          .thenAnswer((_) async => mockUser);
+      when(() => mockDb.bumpTokenGeneration(1)).thenAnswer((_) async {});
 
       final request = makeRequest({
         'grant_type': 'refresh_token',
@@ -308,6 +317,8 @@ void main() {
       final body = jsonDecode(await response.readAsString()) as Map;
       expect(body['error'], 'invalid_grant');
       expect(body['error_description'], contains('revoked'));
+      // RFC 9700 4.14.2: a reused refresh token ends the grant.
+      verify(() => mockDb.bumpTokenGeneration(1)).called(1);
     });
   });
 

@@ -1,0 +1,17 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/refresh_reuse_test.dart
+00:00 +0: a rotated-away refresh token presented again ends the whole grant
+00:00 +0 -1: a rotated-away refresh token presented again ends the whole grant [E]
+  Expected: <401>
+    Actual: <200>
+  
+  package:matcher                                expect
+  test/integration/refresh_reuse_test.dart 96:5  main.<fn>
+  
+00:00 +0 -1: a forged token that happens to be in the revoked table cannot end a grant: the signature is checked first
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  test/integration/refresh_reuse_test.dart: a rotated-away refresh token presented again ends the whole grant
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
