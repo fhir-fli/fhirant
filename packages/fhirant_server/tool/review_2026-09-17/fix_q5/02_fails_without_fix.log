@@ -1,0 +1,17 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/search_syntax_test.dart
+00:00 +0: reference and uri modifiers :identifier=|value matches only an identifier with no system
+00:00 +0 -1: reference and uri modifiers :identifier=|value matches only an identifier with no system [E]
+  Expected: ['obs-ref-nosystem']
+    Actual: ['obs-ref', 'obs-ref-nosystem']
+     Which: at location [0] is 'obs-ref' instead of 'obs-ref-nosystem'
+  
+  package:matcher                     expect
+  test/search_syntax_test.dart 465:7  main.<fn>.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/search_syntax_test.dart: reference and uri modifiers :identifier=|value matches only an identifier with no system
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
