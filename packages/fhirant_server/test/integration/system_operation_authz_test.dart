@@ -252,6 +252,22 @@ void main() {
         ),
       );
       expect(narrowed.statusCode, 202, reason: await narrowed.readAsString());
+      // The job writes into the export directory after this returns; let it
+      // finish before tearDown deletes the directory under it (a
+      // "directory not empty" race, seen once 2026-09-18).
+      final jobId = narrowed.headers['content-location']!.split('/').last;
+      final deadline = DateTime.now().add(const Duration(seconds: 20));
+      while (DateTime.now().isBefore(deadline)) {
+        final status = await handler(
+          testRequest(
+            'GET',
+            '/\$export-poll-status/$jobId',
+            authToken: groupOnly,
+          ),
+        );
+        if (status.statusCode != 202) break;
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
     });
   });
 }

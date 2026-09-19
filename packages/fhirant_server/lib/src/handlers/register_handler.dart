@@ -159,7 +159,7 @@ Future<Response> registerHandler(
 
     // Hash password and create user
     final salt = PasswordHasher.generateSalt();
-    final hash = PasswordHasher.hashPassword(password, salt);
+    final hash = await PasswordHasher.hashPassword(password, salt);
 
     final userId = await dbInterface.createUser(
       username: username,

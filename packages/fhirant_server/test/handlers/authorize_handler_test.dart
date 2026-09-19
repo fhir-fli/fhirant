@@ -28,7 +28,7 @@ MockUser activeUser(
   String role = 'clinician',
 }) {
   final salt = PasswordHasher.generateSalt();
-  final hash = PasswordHasher.hashPassword(password, salt);
+  final hash = PasswordHasher.hashPasswordSync(password, salt);
   final mockUser = MockUser();
   when(() => mockUser.id).thenReturn(1);
   when(() => mockUser.username).thenReturn(username);

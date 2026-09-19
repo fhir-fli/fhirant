@@ -1,0 +1,62 @@
+// KDF cost on this machine, for A11: what one login would cost.
+// Run: dart run tool/review_2026-09-17/fix_a11/kdf_bench.dart
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:fhirant_server/src/utils/password_hasher.dart';
+import 'package:pointycastle/export.dart';
+
+void main() {
+  final out = File('tool/review_2026-09-17/fix_a11/kdf_bench.tsv')
+      .openSync(mode: FileMode.write);
+  void log(String s) {
+    out.writeStringSync('$s\n');
+    out.flushSync();
+    stdout.writeln(s);
+  }
+
+  log('kdf\tms_per_hash (median of 3)');
+  final salt = Uint8List.fromList(List<int>.generate(16, (i) => i));
+  final pw = utf8.encode('correct horse battery staple');
+  int median(List<int> xs) => (xs..sort())[xs.length ~/ 2];
+
+  int time(void Function() f) {
+    final sw = Stopwatch()..start();
+    f();
+    return sw.elapsedMilliseconds;
+  }
+
+  log('current hand-written PBKDF2 120k\t${median([
+        for (var i = 0; i < 3; i++)
+          time(() => PasswordHasher.hashPassword('correct horse battery staple', 'salt'))
+      ])}');
+  for (final iters in [120000, 600000]) {
+    log('pointycastle PBKDF2-HMAC-SHA256 $iters\t${median([
+          for (var i = 0; i < 3; i++)
+            time(() {
+              final kdf = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+                ..init(Pbkdf2Parameters(salt, iters, 32));
+              kdf.process(Uint8List.fromList(pw));
+            })
+        ])}');
+  }
+  for (final (m, t, p) in [(19456, 2, 1), (7168, 5, 1), (65536, 3, 4)]) {
+    log('pointycastle Argon2id m=${m}KiB t=$t p=$p\t${median([
+          for (var i = 0; i < 3; i++)
+            time(() {
+              final gen = Argon2BytesGenerator()
+                ..init(Argon2Parameters(
+                  Argon2Parameters.ARGON2_id,
+                  salt,
+                  desiredKeyLength: 32,
+                  iterations: t,
+                  memory: m,
+                  lanes: p,
+                ));
+              gen.process(Uint8List.fromList(pw));
+            })
+        ])}');
+  }
+  out.closeSync();
+}

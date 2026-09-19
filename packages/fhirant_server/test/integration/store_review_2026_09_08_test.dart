@@ -92,13 +92,15 @@ void main() {
       final salt = PasswordHasher.generateSalt();
       await src.createUser(
         username: 'alice',
-        passwordHash: PasswordHasher.hashPassword('alice-password-123', salt),
+        passwordHash:
+            await PasswordHasher.hashPassword('alice-password-123', salt),
         salt: salt,
         role: 'admin',
       );
       await src.createUser(
         username: 'admin',
-        passwordHash: PasswordHasher.hashPassword('other-password-123', salt),
+        passwordHash:
+            await PasswordHasher.hashPassword('other-password-123', salt),
         salt: salt,
       );
       await src.saveResource(fhir.Patient(id: 'from-backup'.toFhirString));

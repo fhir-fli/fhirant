@@ -649,7 +649,8 @@ void main() {
       final salt = PasswordHasher.generateSalt();
       await db.createUser(
         username: 'nurse',
-        passwordHash: PasswordHasher.hashPassword('nurse-password-123', salt),
+        passwordHash:
+            await PasswordHasher.hashPassword('nurse-password-123', salt),
         salt: salt,
       );
       expect(await AdminProvisioning.hasActiveAdmin(db), isFalse);

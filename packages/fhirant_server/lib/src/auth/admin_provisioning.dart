@@ -86,7 +86,7 @@ class AdminProvisioning {
     }
 
     final salt = PasswordHasher.generateSalt();
-    final hash = PasswordHasher.hashPassword(password, salt);
+    final hash = await PasswordHasher.hashPassword(password, salt);
     final scopes = jsonEncode(SmartScopeEnforcer.defaultScopesForRole('admin'));
 
     final id = await db.createUser(

@@ -65,7 +65,7 @@ Future<CredentialResult> checkCredentials(
 ) async {
   final user = await db.getUserByUsername(username);
   if (user == null) {
-    PasswordHasher.hashPassword(password, _decoySalt);
+    await PasswordHasher.hashPassword(password, _decoySalt);
     return const CredentialInvalid();
   }
 
@@ -84,7 +84,12 @@ Future<CredentialResult> checkCredentials(
     await db.resetFailedLogins(user.id);
   }
 
-  if (!PasswordHasher.verifyPassword(password, user.salt, user.passwordHash)) {
+  final verified = await PasswordHasher.verifyPassword(
+    password,
+    user.salt,
+    user.passwordHash,
+  );
+  if (!verified) {
     final failures = await db.incrementFailedLogins(user.id);
     if (failures >= maxFailedAttempts) {
       await db.lockAccount(user.id, DateTime.now().add(lockoutDuration));
@@ -108,7 +113,7 @@ Future<CredentialResult> checkCredentials(
     final salt = PasswordHasher.generateSalt();
     await db.updatePassword(
       user.id,
-      PasswordHasher.hashPassword(password, salt),
+      await PasswordHasher.hashPassword(password, salt),
       salt,
     );
   }

@@ -35,7 +35,7 @@ void main() {
         body: jsonEncode({'username': username, 'password': password}),
       );
 
-  test('a legacy-hashed account is rehashed to PBKDF2 on successful login',
+  test('a legacy-hashed account is rehashed to the current KDF on login',
       () async {
     const username = 'operator';
     const password = 'OldButValidPassword1';
@@ -56,14 +56,19 @@ void main() {
         await loginHandler(loginRequest(username, password), db, jwt);
     expect(response.statusCode, 200);
 
-    // The stored hash is now the current PBKDF2 format and no longer flagged.
+    // The stored hash is now the current format (Argon2id since
+    // REVIEW-2026-09-17 A11) and no longer flagged.
     final after = await db.getUserByUsername(username);
-    expect(after!.passwordHash, startsWith(r'pbkdf2$'));
+    expect(after!.passwordHash, startsWith(r'argon2id$'));
     expect(PasswordHasher.needsRehash(after.passwordHash), isFalse);
 
     // And the upgraded hash still verifies the same password.
     expect(
-      PasswordHasher.verifyPassword(password, after.salt, after.passwordHash),
+      await PasswordHasher.verifyPassword(
+        password,
+        after.salt,
+        after.passwordHash,
+      ),
       isTrue,
     );
   });
@@ -75,7 +80,7 @@ void main() {
 
     await db.createUser(
       username: username,
-      passwordHash: PasswordHasher.hashPassword(password, salt),
+      passwordHash: await PasswordHasher.hashPassword(password, salt),
       salt: salt,
       role: 'admin',
     );

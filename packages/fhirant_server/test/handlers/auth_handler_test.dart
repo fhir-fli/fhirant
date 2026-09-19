@@ -259,7 +259,7 @@ void main() {
       DateTime? lockedUntil,
     }) {
       final salt = PasswordHasher.generateSalt();
-      final hash = PasswordHasher.hashPassword(password, salt);
+      final hash = PasswordHasher.hashPasswordSync(password, salt);
       final mockUser = MockUser();
       when(() => mockUser.id).thenReturn(id);
       when(() => mockUser.username).thenReturn(username);

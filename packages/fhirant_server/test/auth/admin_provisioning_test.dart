@@ -50,7 +50,7 @@ void main() {
       expect(user.salt, isNotEmpty);
       // The stored hash verifies against the original password.
       expect(
-        PasswordHasher.verifyPassword(
+        await PasswordHasher.verifyPassword(
           goodPassword,
           user.salt,
           user.passwordHash,

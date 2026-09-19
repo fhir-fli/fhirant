@@ -1,0 +1,7 @@
+kdf	ms_per_hash (median of 3)
+current hand-written PBKDF2 120k	277
+pointycastle PBKDF2-HMAC-SHA256 120000	366
+pointycastle PBKDF2-HMAC-SHA256 600000	1816
+pointycastle Argon2id m=19456KiB t=2 p=1	150
+pointycastle Argon2id m=7168KiB t=5 p=1	117
+pointycastle Argon2id m=65536KiB t=3 p=4	721

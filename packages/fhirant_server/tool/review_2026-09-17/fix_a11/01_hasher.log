@@ -1,0 +1,14 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/password_hasher_test.dart
+00:00 +0: PasswordHasher hash + verify roundtrip succeeds
+00:00 +1: PasswordHasher wrong password fails verification
+00:00 +2: PasswordHasher new hashes are Argon2id at OWASP's minimum, self-describing
+00:00 +3: PasswordHasher the salt changes the derived hash
+00:00 +4: PasswordHasher the hash is computed off the calling isolate
+00:01 +5: PasswordHasher older formats still verify (backward compatibility) a correct password verifies against a legacy HMAC hash
+00:01 +6: PasswordHasher older formats still verify (backward compatibility) a wrong password fails against a legacy HMAC hash
+00:01 +7: PasswordHasher older formats still verify (backward compatibility) a PBKDF2 hash written by the previous hasher verifies
+00:01 +8: PasswordHasher needsRehash flags a legacy HMAC hash
+00:01 +9: PasswordHasher needsRehash flags a PBKDF2 hash, at any iteration count
+00:01 +10: PasswordHasher needsRehash flags Argon2id below the current parameters
+00:01 +11: PasswordHasher needsRehash does not flag a current hash
+00:01 +12: All tests passed!
