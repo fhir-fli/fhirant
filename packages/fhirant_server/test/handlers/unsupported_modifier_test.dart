@@ -71,6 +71,26 @@ void main() {
     expect((await search('family:missing=false')).statusCode, equals(200));
   });
 
+  // REVIEW-2026-09-17 Q3: R4B 3.1.1.4.4 (read whole 2026-09-18) gives string
+  // `:exact` and `:contains` only, and a reference `:[type]`, a placeholder
+  // for a resource type. `name:text` was answered as a starts-with match and
+  // `subject:type=Patient` as an empty Bundle.
+  test(':text on a string parameter is 400', () async {
+    expect((await search('name:text=Faulk')).statusCode, equals(400));
+  });
+
+  test('the literal word "type" on a reference is 400', () async {
+    final response = await getResourcesHandler(
+      Request(
+        'GET',
+        Uri.parse('http://localhost:8080/Observation?subject:type=Patient'),
+      ),
+      'Observation',
+      db,
+    );
+    expect(response.statusCode, equals(400));
+  });
+
   test('an unknown parameter is ignored, not rejected', () async {
     // The spec's asymmetry: SHOULD ignore an unknown parameter, SHALL reject
     // an unsupported modifier.
