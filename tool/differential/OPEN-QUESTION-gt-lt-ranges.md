@@ -39,6 +39,9 @@ What we have found:
 - Microsoft's server widens by half a unit of the last decimal place, which
   is neither reading exactly.
 
+Suites re-run after reverting the change, unchanged: fhir_db 37, the R4
+binding 484, R5 481, R6 479.
+
 Which reading is intended for number and quantity? If it is A, is the
 difference between `gt` and `ge` at a value equal to the search value the
 intended distinction?
