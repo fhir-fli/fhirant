@@ -4,8 +4,7 @@ All twelve items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. What remains below is the record of the day's 24
 commits. Do not re-raise a ruled item without new evidence.
 
-Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
-classified yet.
+Scope: the 24 fhirant commits of 2026-09-19 and the 26 of 2026-09-18.
 
 
 ## Reproduced defects (no ruling needed)
@@ -36,3 +35,28 @@ Each had the old behaviour observed wrong against an outside source.
 - Every AuditEvent carries `type` `110112` Query, a failed login included. The R4B value set `audit-event-type` has `110114` User Authentication for that event.
 
 Documentation only: `b952dc4` S7.
+
+## 2026-09-18: 26 commits, nothing to rule
+
+Classified 2026-09-20 against the same bar. Every one fixed behaviour that
+had been reproduced wrong, or was measured:
+
+- Probe-confirmed in the review before any fix: A1, A2, A3, A5, A6 (one
+  commit, `c30c724`), A7, A8, A9, A10, S1, S2, Q1, Q2, Q3, Q4, Q5, Q6, Q7,
+  C1, C2, C3, C5, C6, and the second Q8 (a code element's implicit system:
+  `status=<system>|final` matched nothing).
+- A11, password hashing: measured at 290-337 ms of PBKDF2 on the server
+  isolate, against the OWASP Password Storage Cheat Sheet.
+- C4, `oauth-uris` advertising `register`: read, not probed. The extension's
+  `register` is OAuth 2.0 dynamic client registration (RFC 7591); fhirant's
+  `/auth/register` creates user accounts, so the advertisement pointed
+  clients at the wrong thing.
+- `17c5641` WAL with `synchronous=FULL`: measured, 7.9 ms per commit against
+  23.8 with a rollback journal. `NORMAL` is settled and not revisited.
+- `0a47b75` and `fa6df52`: reproduced (a backup whose random salt starts with
+  `{`, 1 in 256; then malformed JSON). Both repaired a detector this same
+  day's work had introduced, which is churn, not review noise.
+- `2a54291`: test-only, after Q1 moved dates to the UTC clock.
+
+So the drift is dated: it began on 2026-09-19, in the review's own "Smaller,
+BY READING" bucket (A16) and the S items.
