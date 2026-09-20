@@ -43,7 +43,18 @@ HAPI_IMAGE = 'hapiproject/hapi:latest'
 
 # A search whose answers differ for a reason we have named. Each entry is
 # case name -> the reason. Nothing goes here without one.
-KNOWN_DIFFERENCES: dict[str, str] = {}
+KNOWN_DIFFERENCES: dict[str, str] = {
+    # One spec sentence, two defensible readings, and fhir_db uses each in a
+    # different place: the numeric path takes "the range above the search
+    # value" as above the VALUE (a stored 70 matches gt70, documented with
+    # the same quote in search_paged_in_sql_test.dart), the date path takes
+    # it as above the value's RANGE (it does not). HAPI answers the second
+    # for both. Open with HL7: OPEN-QUESTION-gt-lt-ranges.md. Nothing is
+    # changed until that comes back.
+    'quantity-gt-unit': 'gt/lt range reading, open with HL7',
+    'quantity-gt-boundary': 'gt/lt range reading, open with HL7',
+    'quantity-lt-boundary': 'gt/lt range reading, open with HL7',
+}
 
 
 def log(message: str) -> None:
@@ -287,6 +298,26 @@ CASES: list[tuple[str, str]] = [
     ('and-two-params', 'Patient?gender=female&birthdate=1999-06-15'),
     ('or-comma', 'Patient?gender=female,male'),
     ('type-all', 'Observation'),
+    # Boundaries. A search value's implicit range is what the prefixes
+    # compare against (R4B 3.1.1.4.5), so a target equal to the value is the
+    # case that tells `gt` from `ge`. do20 is exactly 70 kg; dp1 was born
+    # 1980-01-01.
+    ('quantity-gt-boundary', 'Observation?value-quantity=gt70'),
+    ('quantity-ge-boundary', 'Observation?value-quantity=ge70'),
+    ('quantity-lt-boundary', 'Observation?value-quantity=lt70'),
+    ('quantity-le-boundary', 'Observation?value-quantity=le70'),
+    ('quantity-eq-boundary', 'Observation?value-quantity=70'),
+    ('quantity-ne-boundary', 'Observation?value-quantity=ne70'),
+    ('quantity-decimal', 'Observation?value-quantity=gt69.5'),
+    ('date-gt-boundary', 'Patient?birthdate=gt1980-01-01'),
+    ('date-ge-boundary', 'Patient?birthdate=ge1980-01-01'),
+    ('date-lt-boundary', 'Patient?birthdate=lt1980-01-01'),
+    ('date-le-boundary', 'Patient?birthdate=le1980-01-01'),
+    ('date-ne-boundary', 'Patient?birthdate=ne1980-01-01'),
+    ('datetime-gt-boundary', 'Observation?date=gt2026-03-01T13:30:00Z'),
+    ('datetime-ge-boundary', 'Observation?date=ge2026-03-01T13:30:00Z'),
+    ('datetime-sa', 'Observation?date=sa2026-03-01'),
+    ('datetime-eb', 'Observation?date=eb2026-03-01'),
 ]
 
 
@@ -302,12 +333,34 @@ def ids_of(bundle: dict | None) -> list[str]:
     return out
 
 
+def pinned(query: str) -> str:
+    """The query with an order and a page big enough for every fixture.
+
+    Unsorted order is not specified, and neither is the order of rows that
+    tie on the sort key, so two servers may return different pages of the
+    same answer. Every case is asked with `_sort=_id` (appended after the
+    case's own sort key, where it has one) and `_count=100`, which is more
+    than the 50 fixtures. The first run compared pages instead and called
+    four agreements differences.
+    """
+    if '_summary=count' in query or '_count=0' in query:
+        return query
+    joiner = '&' if '?' in query else '?'
+    # A case that sets its own _count keeps it: a second _count made one
+    # server read 5 and the other 100 (page-five, first pinned run).
+    page = '' if '_count=' in query else f'{joiner}_count=100'
+    if '_sort=' in query:
+        return re.sub(r'(_sort=[^&]*)', r'\1,_id', query) + page
+    return f'{query}{joiner}_sort=_id{page}'
+
+
 def compare(name: str, query: str) -> tuple[str, str]:
     """Returns (verdict, detail)."""
+    asked = pinned(query)
     a_status, a_body, a_text = request(
-        'GET', f'http://localhost:{FHIRANT_PORT}/{query}')
+        'GET', f'http://localhost:{FHIRANT_PORT}/{asked}')
     b_status, b_body, b_text = request(
-        'GET', f'http://localhost:{HAPI_PORT}/fhir/{query}')
+        'GET', f'http://localhost:{HAPI_PORT}/fhir/{asked}')
 
     a_ids, b_ids = ids_of(a_body), ids_of(b_body)
     a_total = (a_body or {}).get('total')
@@ -330,8 +383,11 @@ def compare(name: str, query: str) -> tuple[str, str]:
     # _sort cases compare order; the rest compare sets.
     ordered = '_sort' in query
     same = (a_ids == b_ids) if ordered else (sorted(a_ids) == sorted(b_ids))
-    if same and a_total == b_total:
-        return 'match', f'{len(a_ids)} entries, total {a_total}'
+    # HAPI omits `total` on a paged result, so it is compared only when both
+    # sent one.
+    totals_agree = a_total is None or b_total is None or a_total == b_total
+    if same and totals_agree:
+        return 'match', f'{len(a_ids)} entries, total {a_total}/{b_total}'
     (OUT / f'{name}.json').write_text(
         json.dumps(
             {

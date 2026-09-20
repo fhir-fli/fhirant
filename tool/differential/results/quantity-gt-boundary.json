@@ -1,0 +1,32 @@
+{
+  "query": "Observation?value-quantity=gt70",
+  "fhirant": {
+    "total": 10,
+    "ids": [
+      "Observation/do20",
+      "Observation/do21",
+      "Observation/do22",
+      "Observation/do23",
+      "Observation/do24",
+      "Observation/do25",
+      "Observation/do26",
+      "Observation/do27",
+      "Observation/do28",
+      "Observation/do29"
+    ]
+  },
+  "hapi": {
+    "total": 9,
+    "ids": [
+      "Observation/do21",
+      "Observation/do22",
+      "Observation/do23",
+      "Observation/do24",
+      "Observation/do25",
+      "Observation/do26",
+      "Observation/do27",
+      "Observation/do28",
+      "Observation/do29"
+    ]
+  }
+}

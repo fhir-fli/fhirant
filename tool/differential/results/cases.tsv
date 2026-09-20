@@ -1,45 +1,61 @@
 case	verdict	detail	query
-string-default	match	8 entries, total 8	Patient?family=Smith
-string-exact	match	4 entries, total 4	Patient?family:exact=Smith
-string-contains	match	4 entries, total 4	Patient?family:contains=ell
-string-case	match	8 entries, total 8	Patient?family=smith
-string-accent	match	4 entries, total 4	Patient?given=grey
-token-system-code	match	8 entries, total 8	Observation?code=http://loinc.org|29463-7
-token-code-only	match	8 entries, total 8	Observation?code=29463-7
-token-system-any	differ	total 23 vs None; only fhirant ['Observation/do26', 'Observation/do28', 'Observation/do29']; only hapi ['Observation/do6', 'Observation/do8', 'Observation/do9']	Observation?code=http://loinc.org|
-token-not	differ	total 22 vs None; only fhirant ['Observation/do27', 'Observation/do29']; only hapi ['Observation/do7', 'Observation/do9']	Observation?code:not=http://loinc.org|29463-7
-token-boolean	match	16 entries, total 16	Patient?active=true
-token-gender	match	5 entries, total 5	Patient?gender=female
-token-identifier	match	1 entries, total 1	Patient?identifier=http://example.org/mrn|mrn-4
-token-identifier-value	match	1 entries, total 1	Patient?identifier=mrn-4
-token-identifier-no-system	match	1 entries, total 1	Patient?identifier=|bare-0
-date-eq	match	4 entries, total 4	Patient?birthdate=1980-01-01
-date-gt	match	8 entries, total 8	Patient?birthdate=gt2000-01-01
-date-le	match	8 entries, total 8	Patient?birthdate=le1980-01-01
-date-year	match	4 entries, total 4	Patient?birthdate=1999
-date-range-two	match	12 entries, total 12	Patient?birthdate=ge1980-01-01&birthdate=le2010-12-31
-datetime-ge	match	12 entries, total 12	Observation?date=ge2026-06-01
-datetime-eq-day	match	6 entries, total 6	Observation?date=2026-03-01
-quantity-eq	match	1 entries, total 1	Observation?value-quantity=60
+string-default	match	8 entries, total 8/8	Patient?family=Smith
+string-exact	match	4 entries, total 4/4	Patient?family:exact=Smith
+string-contains	match	4 entries, total 4/4	Patient?family:contains=ell
+string-case	match	8 entries, total 8/8	Patient?family=smith
+string-accent	match	4 entries, total 4/4	Patient?given=grey
+token-system-code	match	8 entries, total 8/8	Observation?code=http://loinc.org|29463-7
+token-code-only	match	8 entries, total 8/8	Observation?code=29463-7
+token-system-any	match	23 entries, total 23/23	Observation?code=http://loinc.org|
+token-not	match	22 entries, total 22/22	Observation?code:not=http://loinc.org|29463-7
+token-boolean	match	16 entries, total 16/16	Patient?active=true
+token-gender	match	5 entries, total 5/5	Patient?gender=female
+token-identifier	match	1 entries, total 1/1	Patient?identifier=http://example.org/mrn|mrn-4
+token-identifier-value	match	1 entries, total 1/1	Patient?identifier=mrn-4
+token-identifier-no-system	match	1 entries, total 1/1	Patient?identifier=|bare-0
+date-eq	match	4 entries, total 4/4	Patient?birthdate=1980-01-01
+date-gt	match	8 entries, total 8/8	Patient?birthdate=gt2000-01-01
+date-le	match	8 entries, total 8/8	Patient?birthdate=le1980-01-01
+date-year	match	4 entries, total 4/4	Patient?birthdate=1999
+date-range-two	match	12 entries, total 12/12	Patient?birthdate=ge1980-01-01&birthdate=le2010-12-31
+datetime-ge	match	12 entries, total 12/12	Observation?date=ge2026-06-01
+datetime-eq-day	match	6 entries, total 6/6	Observation?date=2026-03-01
+quantity-eq	match	1 entries, total 1/1	Observation?value-quantity=60
 quantity-gt-unit	differ	total 10 vs 9; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=gt70|http://unitsofmeasure.org|kg
-reference-literal	match	2 entries, total 2	Observation?subject=Patient/dp3
-reference-type	match	2 entries, total 2	Observation?subject:Patient=dp3
-reference-bare-id	match	2 entries, total 2	Observation?subject=dp3
-chain-family	match	12 entries, total 12	Observation?subject.family=Smith
-chain-gender	match	8 entries, total 8	Observation?patient.gender=male
-has	match	5 entries, total 5	Patient?_has:Observation:subject:code=http://loinc.org|8302-2
-missing-true	match	0 entries, total 0	Patient?birthdate:missing=true
-missing-false	match	20 entries, total 20	Patient?birthdate:missing=false
-id-search	match	1 entries, total 1	Patient?_id=dp7
-count-zero	match	0 entries, total 20	Patient?_count=0
-sort-family	differ	total 20 vs 20; only fhirant []; only hapi []	Patient?_sort=family
-sort-family-desc	differ	total 20 vs 20; only fhirant []; only hapi []	Patient?_sort=-family
-sort-birthdate	differ	total 20 vs 20; only fhirant []; only hapi []	Patient?_sort=birthdate
-page-five	differ	total 20 vs None; only fhirant []; only hapi []	Patient?_count=5&_sort=_id
-include-subject	match	13 entries, total 8	Observation?code=http://loinc.org|8302-2&_include=Observation:subject
-revinclude	match	3 entries, total 1	Patient?_id=dp3&_revinclude=Observation:subject
-summary-count	match	0 entries, total 20	Patient?_summary=count
-total-accurate	match	20 entries, total 20	Patient?_total=accurate
-and-two-params	match	1 entries, total 1	Patient?gender=female&birthdate=1999-06-15
-or-comma	match	10 entries, total 10	Patient?gender=female,male
-type-all	differ	total 30 vs None; only fhirant ['Observation/do20', 'Observation/do21', 'Observation/do22', 'Observation/do23', 'Observation/do24', 'Observation/do25']; only hapi ['Observation/do0', 'Observation/do1', 'Observation/do2', 'Observation/do3', 'Observation/do4', 'Observation/do5']	Observation
+reference-literal	match	2 entries, total 2/2	Observation?subject=Patient/dp3
+reference-type	match	2 entries, total 2/2	Observation?subject:Patient=dp3
+reference-bare-id	match	2 entries, total 2/2	Observation?subject=dp3
+chain-family	match	12 entries, total 12/12	Observation?subject.family=Smith
+chain-gender	match	8 entries, total 8/8	Observation?patient.gender=male
+has	match	5 entries, total 5/5	Patient?_has:Observation:subject:code=http://loinc.org|8302-2
+missing-true	match	0 entries, total 0/0	Patient?birthdate:missing=true
+missing-false	match	20 entries, total 20/20	Patient?birthdate:missing=false
+id-search	match	1 entries, total 1/1	Patient?_id=dp7
+count-zero	match	0 entries, total 20/20	Patient?_count=0
+sort-family	match	20 entries, total 20/20	Patient?_sort=family
+sort-family-desc	match	20 entries, total 20/20	Patient?_sort=-family
+sort-birthdate	match	20 entries, total 20/20	Patient?_sort=birthdate
+page-five	differ	total 20 vs None; only fhirant ['Patient/dp13', 'Patient/dp14', 'Patient/dp15', 'Patient/dp16', 'Patient/dp17', 'Patient/dp18']; only hapi []	Patient?_count=5&_sort=_id
+include-subject	match	13 entries, total 8/8	Observation?code=http://loinc.org|8302-2&_include=Observation:subject
+revinclude	match	3 entries, total 1/1	Patient?_id=dp3&_revinclude=Observation:subject
+summary-count	match	0 entries, total 20/20	Patient?_summary=count
+total-accurate	match	20 entries, total 20/20	Patient?_total=accurate
+and-two-params	match	1 entries, total 1/1	Patient?gender=female&birthdate=1999-06-15
+or-comma	match	10 entries, total 10/10	Patient?gender=female,male
+type-all	match	30 entries, total 30/30	Observation
+quantity-gt-boundary	differ	total 10 vs 9; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=gt70
+quantity-ge-boundary	match	10 entries, total 10/10	Observation?value-quantity=ge70
+quantity-lt-boundary	differ	total 21 vs 20; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=lt70
+quantity-le-boundary	match	21 entries, total 21/21	Observation?value-quantity=le70
+quantity-eq-boundary	match	1 entries, total 1/1	Observation?value-quantity=70
+quantity-ne-boundary	match	29 entries, total 29/29	Observation?value-quantity=ne70
+quantity-decimal	match	10 entries, total 10/10	Observation?value-quantity=gt69.5
+date-gt-boundary	match	12 entries, total 12/12	Patient?birthdate=gt1980-01-01
+date-ge-boundary	match	16 entries, total 16/16	Patient?birthdate=ge1980-01-01
+date-lt-boundary	match	4 entries, total 4/4	Patient?birthdate=lt1980-01-01
+date-le-boundary	match	8 entries, total 8/8	Patient?birthdate=le1980-01-01
+date-ne-boundary	match	16 entries, total 16/16	Patient?birthdate=ne1980-01-01
+datetime-gt-boundary	match	12 entries, total 12/12	Observation?date=gt2026-03-01T13:30:00Z
+datetime-ge-boundary	match	18 entries, total 18/18	Observation?date=ge2026-03-01T13:30:00Z
+datetime-sa	match	12 entries, total 12/12	Observation?date=sa2026-03-01
+datetime-eb	match	12 entries, total 12/12	Observation?date=eb2026-03-01
