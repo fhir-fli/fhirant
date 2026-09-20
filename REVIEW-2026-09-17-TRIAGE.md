@@ -1,8 +1,23 @@
-# REVIEW-2026-09-17 triage: NOTHING IS OPEN
+# REVIEW-2026-09-17 triage: 7 OPEN (all structural, nothing built)
 
-All twelve items were ruled on 2026-09-19; the rulings are in
-`REVIEW_DECISIONS.md`. What remains below is the record of the day's 24
-commits. Do not re-raise a ruled item without new evidence.
+The twelve behaviour items were ruled on 2026-09-19; the rulings are in
+`REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
+
+Open below: the seven structural items (§7 of the review), classified
+2026-09-20. **None is a reproduced defect**, so none has been built. Each is
+a refactor whose benefit is fewer future bugs and whose cost is churn in
+working code. Rule: **do**, **defer** or **drop**.
+
+| # | Item | Evidence | If done | My recommendation |
+|---|---|---|---|---|
+| ST1 | 22 copied response helpers and 28 hand-built OperationOutcome maps across the handlers | They already disagree: some answer `application/json`, some `application/fhir+json`, some no content type; some build the FHIR class, some a Map. No wrong answer reproduced | One shared builder; touches every handler | Defer. Fold each into the shared builder only when a handler is edited for another reason |
+| ST2 | Authorization checked in three layers: middleware, then each handler in its own words | The strongest evidence in the review: A5 (HEAD), A6 (SearchParameter delete) and A7 (PATCH) were each "one path forgot". All three are fixed | A per-route table declaring permission, returned type and compartment confinement | Do, after the search oracle. It is the one refactor with reproduced bugs behind it |
+| ST3 | `parseQueryParameters` returns `Map<String, dynamic>`, read back with 14 casts at 5 call sites | None. A cast could throw, but no case found | A class | Defer |
+| ST4 | Two search engines (review §4) | None reproduced. This is the code the search findings keep landing in | Merge to one path | Defer until the HAPI differential test exists; that test is the safety net for it |
+| ST5 | `fhirant_secure_storage` half dead: six methods with no caller; the app uses `FlutterSecureStorage` directly under different key names | Dead code, verified by search | Delete the unused methods, or move the app onto them | Do. Deleting unused key-handling code removes a way to store a key in the wrong place |
+| ST6 | Three hand-written PBKDF2 loops (`password_hasher.dart`, `backup_crypto.dart`, `fhir_db/cipher_from_key.dart`) | None. All three are tested and produce correct keys | One shared implementation | Defer. Rewriting working crypto to share code is the riskiest item here |
+| ST7 | Errors swallowed at the store boundary: `saveResource` catches everything and returns null; `saveResources` returns false | One real instance, already fixed: audit writes vanished with no log line (A16.10). The handler still answers "Database operation failed" with the cause gone | Store errors carry their cause to the handler and the log | Do. It is the one that makes future defects findable |
+
 
 Scope: the 24 fhirant commits of 2026-09-19 and the 26 of 2026-09-18.
 
