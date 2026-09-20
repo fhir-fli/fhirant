@@ -21,6 +21,7 @@ before it is built.
 - 2026-09-19, A16.6 (`63c1f7c`) websocket bind limits: **revert**. Guarded nothing observed; missed the only exposure (binding another user's Subscription, no ownership check). That exposure is not ruled on.
 - 2026-09-19, A16.7 (`1c14577`) backup iteration ceiling at 10× what fhirant writes: **keep**. Measured: a crafted file would hold the server isolate about 80 minutes; the ceiling costs one comparison.
 - 2026-09-19, S4 (`2a68322`) `--dev-mode` split from the public key: **keep, with `--dev-mode` implying `--allow-public-key`**. The driver at this stage is testers stress-testing use, not security, so a test server takes one flag; authentication on still needs the explicit flag.
+- 2026-09-19, S6 (`0f313b0`) the `--config` YAML loader: **keep**. The flag was advertised in `--help` and silently ignored; it is built and tested, and deleting it now is more change. Keys are the long option names; the command line overrides the file; secrets stay in environment variables.
 
 ## Settled by a source (2026-09-19)
 

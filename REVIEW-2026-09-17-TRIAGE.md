@@ -1,17 +1,12 @@
-# REVIEW-2026-09-17 triage: 1 OPEN
+# REVIEW-2026-09-17 triage: NOTHING IS OPEN
+
+All twelve items were ruled on 2026-09-19; the rulings are in
+`REVIEW_DECISIONS.md`. What remains below is the record of the day's 24
+commits. Do not re-raise a ruled item without new evidence.
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
 
-Each item below changed behaviour **without** a reproduced defect against an
-outside source (spec MUST, RFC, measurement, observed failure). Rule on each:
-**keep** or **revert**. Revert is `git revert <commit>` plus the doc lines;
-each is one commit. When an item is ruled, it is deleted here and the ruling
-goes to `REVIEW_DECISIONS.md`.
-
-| # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
-|---|---|---|---|---|---|
-| 12 | `0f313b0` S6 | `--config` now read (YAML); `http` pinned | The flag was dead. Deleting it was the smaller fix. No outside source bears on it | A YAML dependency and a config loader | Keep: it is built and tested, and deleting it now is more change |
 
 ## Reproduced defects (no ruling needed)
 
