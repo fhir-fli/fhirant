@@ -1,0 +1,53 @@
+{
+  "query": "Observation",
+  "fhirant": {
+    "total": 30,
+    "ids": [
+      "Observation/do29",
+      "Observation/do28",
+      "Observation/do27",
+      "Observation/do26",
+      "Observation/do25",
+      "Observation/do24",
+      "Observation/do23",
+      "Observation/do22",
+      "Observation/do21",
+      "Observation/do20",
+      "Observation/do19",
+      "Observation/do18",
+      "Observation/do17",
+      "Observation/do16",
+      "Observation/do15",
+      "Observation/do14",
+      "Observation/do13",
+      "Observation/do12",
+      "Observation/do11",
+      "Observation/do10"
+    ]
+  },
+  "hapi": {
+    "total": null,
+    "ids": [
+      "Observation/do0",
+      "Observation/do1",
+      "Observation/do2",
+      "Observation/do3",
+      "Observation/do4",
+      "Observation/do5",
+      "Observation/do6",
+      "Observation/do7",
+      "Observation/do8",
+      "Observation/do9",
+      "Observation/do10",
+      "Observation/do11",
+      "Observation/do12",
+      "Observation/do13",
+      "Observation/do14",
+      "Observation/do15",
+      "Observation/do16",
+      "Observation/do17",
+      "Observation/do18",
+      "Observation/do19"
+    ]
+  }
+}

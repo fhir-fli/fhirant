@@ -1,0 +1,53 @@
+{
+  "query": "Observation?code:not=http://loinc.org|29463-7",
+  "fhirant": {
+    "total": 22,
+    "ids": [
+      "Observation/do1",
+      "Observation/do10",
+      "Observation/do11",
+      "Observation/do13",
+      "Observation/do14",
+      "Observation/do15",
+      "Observation/do17",
+      "Observation/do18",
+      "Observation/do19",
+      "Observation/do2",
+      "Observation/do21",
+      "Observation/do22",
+      "Observation/do23",
+      "Observation/do25",
+      "Observation/do26",
+      "Observation/do27",
+      "Observation/do29",
+      "Observation/do3",
+      "Observation/do5",
+      "Observation/do6"
+    ]
+  },
+  "hapi": {
+    "total": null,
+    "ids": [
+      "Observation/do1",
+      "Observation/do2",
+      "Observation/do3",
+      "Observation/do5",
+      "Observation/do6",
+      "Observation/do7",
+      "Observation/do9",
+      "Observation/do10",
+      "Observation/do11",
+      "Observation/do13",
+      "Observation/do14",
+      "Observation/do15",
+      "Observation/do17",
+      "Observation/do18",
+      "Observation/do19",
+      "Observation/do21",
+      "Observation/do22",
+      "Observation/do23",
+      "Observation/do25",
+      "Observation/do26"
+    ]
+  }
+}

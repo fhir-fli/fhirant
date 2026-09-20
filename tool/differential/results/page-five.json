@@ -1,0 +1,23 @@
+{
+  "query": "Patient?_count=5&_sort=_id",
+  "fhirant": {
+    "total": 20,
+    "ids": [
+      "Patient/dp0",
+      "Patient/dp1",
+      "Patient/dp10",
+      "Patient/dp11",
+      "Patient/dp12"
+    ]
+  },
+  "hapi": {
+    "total": null,
+    "ids": [
+      "Patient/dp0",
+      "Patient/dp1",
+      "Patient/dp10",
+      "Patient/dp11",
+      "Patient/dp12"
+    ]
+  }
+}
