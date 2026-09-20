@@ -41,9 +41,9 @@ for p in packages/*/; do (cd "$p" && flutter pub get); done
 # one-time bootstrap token the server logs)
 FHIRANT_ENCRYPTION_KEY=... dart run packages/fhirant_server/bin/server.dart --port 8080 --db-path data/db
 
-# Run the server in dev mode (no authentication) on a throwaway store under
-# the public default key; each flag is one choice (REVIEW-2026-09-17 S4)
-dart run packages/fhirant_server/bin/server.dart --dev-mode --allow-public-key --port 8080 --db-path data/db
+# Run the server in dev mode: no authentication, and the public default key
+# is allowed (--dev-mode implies --allow-public-key)
+dart run packages/fhirant_server/bin/server.dart --dev-mode --port 8080 --db-path data/db
 
 # Run all server tests (pure Dart: `dart test`, not `flutter test`)
 cd packages/fhirant_server && dart test
@@ -246,9 +246,9 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 
 ## Testing
 
-**1,459 tests** across 133 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,460 tests** across 133 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
 
-- **Server tests** (1,297 tests, 121 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,298 tests, 121 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
@@ -267,8 +267,9 @@ Server and db tests use `package:test` + `mocktail`; the app uses `flutter_test`
 --https             Enable HTTPS
 --cert-path         HTTPS certificate path
 --key-path          HTTPS private key path
---dev-mode          Disable authentication (nothing else)
---allow-public-key  Open the store under the public default key (throwaway databases)
+--dev-mode          Disable authentication; implies --allow-public-key
+--allow-public-key  Open the store under the public default key (throwaway
+                    databases); alone, it keeps authentication on
 --spec-path         FHIR spec NDJSON directory (default /app/fhir_spec)
 --base-url          The URL clients reach this server by
 --audit-retention-days  Days AuditEvents are kept (unset: none are removed)

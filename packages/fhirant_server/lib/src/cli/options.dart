@@ -47,9 +47,15 @@ class ServerOptions {
   final Duration? auditRetention;
 
   /// Whether a store may be opened under a key this repository publishes
-  /// ([publicKeys]). Its own switch, independent of [devMode]
-  /// (REVIEW-2026-09-17 S4: `--dev-mode` both turned authentication off and
-  /// accepted the public key, so either choice forced the other).
+  /// ([publicKeys]). Its own switch, so authentication ON over a throwaway
+  /// store is available (REVIEW-2026-09-17 S4: the two used to be one
+  /// flag, so either choice forced the other).
+  ///
+  /// [devMode] implies it: a server with authentication off is a test
+  /// server, the public key protects nothing there, and testers should not
+  /// need two flags (Grey's ruling, 2026-09-19). The implication runs only
+  /// in that direction, so it cannot loosen a server that has
+  /// authentication on.
   final bool allowPublicKey;
 
   /// The parser, shared by the binary (for `--help`) and [resolve].
@@ -67,13 +73,14 @@ class ServerOptions {
     ..addOption('key-path', help: 'Path to HTTPS private key file')
     ..addFlag(
       'dev-mode',
-      help: 'Disable authentication (for testing only). Does not change the '
-          'encryption key rule; see --allow-public-key.',
+      help: 'Disable authentication (for testing only). Implies '
+          '--allow-public-key.',
     )
     ..addFlag(
       'allow-public-key',
       help: 'Open the store under the publicly known default key when '
-          'FHIRANT_ENCRYPTION_KEY is unset (throwaway databases only)',
+          'FHIRANT_ENCRYPTION_KEY is unset (throwaway databases only). '
+          'Implied by --dev-mode; set it alone to keep authentication on.',
     )
     ..addOption(
       'spec-path',
@@ -189,7 +196,7 @@ class ServerOptions {
       certPath: optionalString('cert-path'),
       keyPath: optionalString('key-path'),
       devMode: flag('dev-mode'),
-      allowPublicKey: flag('allow-public-key'),
+      allowPublicKey: flag('allow-public-key') || flag('dev-mode'),
       specPath: requiredString('spec-path'),
       baseUrl: optionalString('base-url'),
       auditRetention: pick('audit-retention-days') == null

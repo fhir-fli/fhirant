@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 2 OPEN
+# REVIEW-2026-09-17 triage: 1 OPEN
 
 Scope: the 24 fhirant commits of 2026-09-19. The 27 of 2026-09-18 are not
 classified yet.
@@ -11,7 +11,6 @@ goes to `REVIEW_DECISIONS.md`.
 
 | # | Commit | What changed | Evidence it was needed | Cost of keeping | My recommendation |
 |---|---|---|---|---|---|
-| 11 | `2a68322` S4 | `--dev-mode` no longer allows the public key; new `--allow-public-key` | Design choice; nothing failed | The dev command needs two flags | Keep |
 | 12 | `0f313b0` S6 | `--config` now read (YAML); `http` pinned | The flag was dead. Deleting it was the smaller fix. No outside source bears on it | A YAML dependency and a config loader | Keep: it is built and tested, and deleting it now is more change |
 
 ## Reproduced defects (no ruling needed)

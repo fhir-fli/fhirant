@@ -116,9 +116,23 @@ audit-retention-days: 30
   group('the encryption key rule is independent of authentication (S4)', () {
     // REVIEW-2026-09-17 S4: --dev-mode both switched authentication off
     // and accepted the public default key.
-    test('--dev-mode alone does not allow the public key', () {
+    test('--dev-mode implies the public key: one flag for a test server', () {
+      // Grey's ruling 2026-09-19: a server with authentication off is a
+      // test server, so testers do not need a second flag.
       final o = resolve(['--dev-mode']);
       expect(o.devMode, isTrue);
+      expect(o.allowPublicKey, isTrue);
+      expect(
+        encryptionKeyRefusal(
+          'default-development-key',
+          allowPublicKey: o.allowPublicKey,
+        ),
+        isNull,
+      );
+    });
+
+    test('with authentication on, the public key needs its own flag', () {
+      final o = resolve([]);
       expect(o.allowPublicKey, isFalse);
       expect(
         encryptionKeyRefusal(
