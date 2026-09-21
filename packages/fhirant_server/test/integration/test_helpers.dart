@@ -89,6 +89,22 @@ String generateTestToken({
   );
 }
 
+/// An account for a test to ACT ON, distinct from any account it
+/// authenticates with. Returns its id.
+///
+/// A test that aims an admin route at the account it is signed in as can
+/// deactivate or demote itself mid-run, after which every request is
+/// refused and the test measures the refusal instead of the route. That
+/// happened: `every_route_is_audited_test.dart` mapped `<userId>` to 1,
+/// its own admin, and 60 routes looked unaudited.
+Future<int> createTargetUser(
+  FhirAntDb db, {
+  String username = 'target-user',
+}) async {
+  await issueTestToken(db, username: username, scopes: ['user/*.rs']);
+  return (await db.getUserByUsername(username))!.id;
+}
+
 /// Creates a fresh in-memory DB and full-pipeline handler for integration
 /// tests.
 Future<({FhirAntDb db, Handler handler})> createTestServer({

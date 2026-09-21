@@ -49,8 +49,9 @@ void main() {
 
   /// The id the admin routes act on: a second account, never the caller's.
   /// With `<userId>` mapped to 1 this loop deactivated its own admin at
-  /// route 5, every later request was refused by the auth middleware, and
-  /// the count froze: 60 routes looked unaudited.
+  /// route 5, every later request was refused by the auth middleware (which
+  /// runs before the audit middleware, so a refusal leaves no record), and
+  /// the count froze: 60 routes looked unaudited. That was the whole cause.
   late int targetUserId;
 
   String concrete(String path) => path
@@ -81,8 +82,7 @@ void main() {
       scopes: ['system/*.*'],
     );
     await db.saveResource(fhir.Patient(id: 'p1'.toFhirString));
-    await issueTestToken(db, username: 'target-user', scopes: ['user/*.rs']);
-    targetUserId = (await db.getUserByUsername('target-user'))!.id;
+    targetUserId = await createTargetUser(db);
   });
 
   tearDown(() async {
@@ -90,9 +90,11 @@ void main() {
     await exportDir.delete(recursive: true);
   });
 
-  /// COUNT(*), not a search: `search` returns a PAGE, so counting its
-  /// length stopped at 20 and made every route after the twentieth look
-  /// unaudited when this test was first run.
+  /// COUNT(*) straight off the table, so the number does not depend on any
+  /// search behaviour. (An earlier version of this comment blamed paging
+  /// for a frozen count; that was wrong: `search()` with no `count` returns
+  /// every row, measured 2026-09-21 at 45 of 45. The count froze because
+  /// the loop deactivated its own account; see [targetUserId].)
   Future<int> auditCount() async => (await db
           .customSelect(
             'SELECT count(*) AS n FROM resources WHERE resource_type = '
