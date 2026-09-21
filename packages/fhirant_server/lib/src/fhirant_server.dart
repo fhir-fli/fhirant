@@ -738,6 +738,13 @@ class FhirAntServer {
         .addMiddleware(contentNegotiationMiddleware())
         .addMiddleware(_onPaths(_credentialPaths, authLimiter.rateLimiter()));
 
+    // The audit step runs OUTSIDE the auth check, so a request the check
+    // refuses is still recorded; inside it, a refused token, a deactivated
+    // account and a missing scope left no record (measured 2026-09-21: 0
+    // records each, 1 for the allowed control). The auth check names who it
+    // established on the response (auditAgentKey).
+    pipeline =
+        pipeline.addMiddleware(auditMiddleware(dbInterface, queue: _audit));
     if (devMode) {
       pipeline = pipeline.addMiddleware(_devModeMiddleware());
     } else {
@@ -746,7 +753,6 @@ class FhirAntServer {
     }
 
     return pipeline
-        .addMiddleware(auditMiddleware(dbInterface, queue: _audit))
         .addMiddleware(_uncaughtErrorMiddleware())
         .addHandler(router.call);
   }
@@ -997,7 +1003,7 @@ class FhirAntServer {
   /// downstream middleware (audit, scope enforcement) still functions.
   Middleware _devModeMiddleware() {
     return (Handler innerHandler) {
-      return (Request request) {
+      return (Request request) async {
         final devUser = <String, dynamic>{
           'sub': 'dev-mode',
           'username': 'dev-mode',
@@ -1005,7 +1011,8 @@ class FhirAntServer {
           'scopes': ['system/*.*'],
         };
         final updatedRequest = request.change(context: {'auth_user': devUser});
-        return innerHandler(updatedRequest);
+        return (await innerHandler(updatedRequest))
+            .change(context: {auditAgentKey: devUser});
       };
     };
   }

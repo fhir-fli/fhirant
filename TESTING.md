@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,465 tests** across 136 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-19) by
+**1,472 tests** across 137 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-21) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,303 | 124 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,310 | 125 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -142,6 +142,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/every_route_is_guarded_test.dart` | Every route the server registers, read from its own registrations (89, of which 51 are operations): none answers without a token, and none returns data to a token whose scopes cover nothing it serves (3) |
 | `test/integration/every_route_is_audited_test.dart` | Every registered route that touches the record leaves an AuditEvent, called with an admin token; the six public routes are skipped with their reasons (1) |
 | `test/integration/every_route_fails_with_an_outcome_test.dart` | Every registered FHIR route, sent a request that cannot succeed, fails with an OperationOutcome (R4B http.html SHOULD); an unmatched path's plain-text 404 is permitted and not covered (1) |
+| `test/integration/refusals_are_audited_test.dart` | A refused request is still audited: a garbled token (as anonymous), a deactivated account, a token older than an account change, and a valid token without the scope each leave one failure record naming whoever the token proved; no credential leaves none; allowed and dev-mode requests are controls (7) |
 | `test/integration/bootstrap_token_test.dart` | REVIEW-2026-09-17 A15: with a bootstrap token issued, `/auth/status` says so, the first registration without it or with a wrong one is 403, the header or the body field creates the administrator, afterwards the token opens nothing, and a server with no token leaves the first registration open (7) |
 | `test/integration/account_management_test.dart` | REVIEW-2026-09-17 A14: own password change (wrong current 401, policy 400, old access and refresh tokens 401 after, new pair works), admin reset, deactivate/activate, role and scopes changes each end the old sessions, list carries no secrets, last-admin guard 409, non-admin 403, unknown id 404, a token behind the account's generation 401 (10) |
 | `test/integration/login_answers_alike_test.dart` | REVIEW-2026-09-17 A12: a wrong password, an unknown account, a deactivated one and a locked one get the same 401 and body from `/auth/login` and `/auth/authorize`; the right password still logs in (3) |

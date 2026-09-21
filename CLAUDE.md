@@ -97,8 +97,8 @@ Requests pass through middleware in this order:
 5. **Body limit** — a body over `maxRequestBody` (default 16 MiB) is 413 before it is read; `$restore` streams to disk and is exempt
 6. **Content Negotiation** — validates Accept/Content-Type headers
 7. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register` only (default 10 per 60 s)
-8. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
-9. **Audit** — writes AuditEvent resources to DB; a request that presented no credential and got 401 is not recorded
+8. **Audit** — writes AuditEvent resources to DB; outside the auth check so a refused token, deactivated account or missing scope is recorded, with the agent the auth check names on the response (`audit_agent`); a request that presented no credential and got 401 is not recorded
+9. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
 10. **Router** — dispatches to handler
 
 #### Route Table
@@ -246,9 +246,9 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 
 ## Testing
 
-**1,465 tests** across 136 test files, all passing (counted 2026-09-14; server recounted 2026-09-19).
+**1,472 tests** across 137 test files, all passing (counted 2026-09-14; server recounted 2026-09-21).
 
-- **Server tests** (1,303 tests, 124 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,310 tests, 125 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

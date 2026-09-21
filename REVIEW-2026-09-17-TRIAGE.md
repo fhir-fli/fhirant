@@ -1,9 +1,5 @@
 # REVIEW-2026-09-17 triage: 8 OPEN (seven structural, one from the differential run)
 
-One reproduced defect found 2026-09-21 and NOT yet fixed, listed with the
-reproduced set below: a request carrying a token the server refuses leaves
-no audit record, though the middleware's comment says it does.
-
 The twelve behaviour items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
 
@@ -29,16 +25,13 @@ Scope: the 24 fhirant commits of 2026-09-19 and the 26 of 2026-09-18.
 
 ## Reproduced defects (no ruling needed)
 
-- **Open, not fixed.** A request with a token the server refuses (invalid,
-  expired, deactivated account, or behind the account's token generation)
-  leaves no audit record: measured 2026-09-21, `GET /Patient` with a
-  malformed bearer token answers 401 and the trail gains nothing. The audit
-  middleware is added after the auth middleware, so it runs INSIDE it and
-  never sees a refusal from auth; `audit_middleware.dart` says "A refused
-  TOKEN is still recorded", which the pipeline makes impossible. A refused
-  LOGIN is recorded because `/auth/` is public and reaches the audit
-  middleware. The fix is an ordering change plus carrying the principal out
-  on the response, so it is not a one-liner.
+- **Fixed 2026-09-21.** A request with a token the server refuses leaves an
+  audit record. Measured before: a garbled token, a deactivated account and
+  a valid token without the scope each answered 401 or 403 and left 0
+  records; the allowed request left 1. The audit step now runs outside the
+  auth check, which names who it established on the response. After: 7 of 7
+  in `refusals_are_audited_test.dart`, which failed 4 of 7 before. A request
+  with no credential is still not recorded, as ruled.
 
 Each had the old behaviour observed wrong against an outside source.
 

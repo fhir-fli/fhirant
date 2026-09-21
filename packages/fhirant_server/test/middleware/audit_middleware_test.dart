@@ -39,6 +39,7 @@ void main() {
         statusCode,
         body: body,
         headers: {'content-type': 'application/json'},
+        context: context ?? const {},
       );
     }
 
@@ -175,13 +176,16 @@ void main() {
     });
 
     test('auth user captured in agent (username from context)', () async {
-      final handler = wrapHandler();
+      // The auth middleware runs inside this one and names the user on the
+      // RESPONSE, so that a request it refuses is recorded too.
+      final handler = wrapHandler(
+        context: {
+          'audit_agent': {'username': 'dr_smith', 'role': 'admin'},
+        },
+      );
       final request = Request(
         'GET',
         Uri.parse('http://localhost:8080/Patient'),
-        context: {
-          'auth_user': {'username': 'dr_smith', 'role': 'admin'},
-        },
       );
 
       await handler(request);

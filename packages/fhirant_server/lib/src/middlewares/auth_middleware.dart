@@ -39,8 +39,23 @@ bool _isPublic(Request request) {
   return _publicPaths.contains(path) || _publicPrefixes.any(path.startsWith);
 }
 
+/// Response-context key naming who the auth check established, read by the
+/// audit middleware, which runs OUTSIDE this one so that it sees refusals
+/// too (a refused token, a deactivated account and a missing scope used to
+/// leave no audit record; measured 2026-09-21, 0 records each).
+///
+/// `userId` is present only when the server's own signature on the token
+/// was verified; a garbled token proves nothing and names no one.
+const auditAgentKey = 'audit_agent';
+
+/// [response] carrying [agent] for the audit trail.
+Response _withAgent(Response response, Map<String, dynamic> agent) =>
+    response.change(context: {auditAgentKey: agent});
+
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
-/// and injects auth_user into the request context.
+/// and injects auth_user into the request context. Every response it
+/// returns or passes on carries, under [auditAgentKey], whoever the token
+/// proved to be, refused or not.
 ///
 /// Public routes (auth/*, metadata, favicon.ico, .well-known/*, a bare
 /// `GET /`) pass through without authentication.
@@ -63,7 +78,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
             if (!revoked) {
               final updatedRequest =
                   request.change(context: {'auth_user': payload});
-              return innerHandler(updatedRequest);
+              return _withAgent(await innerHandler(updatedRequest), payload);
             }
           }
         }
@@ -85,11 +100,20 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (payload == null) {
         return unauthorized('Token is invalid or expired');
       }
+      // From here the server's signature is verified, so the token's
+      // account id is the server's own statement of who was issued it.
+      final rawUserId = payload['userId'];
+      final userId =
+          rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
+      final claimed = <String, dynamic>{
+        'userId': userId,
+        'username': payload['username'],
+      };
 
       // Check if the token has been revoked
       final revoked = await dbInterface.isTokenRevoked(TokenHasher.hash(token));
       if (revoked) {
-        return unauthorized('Token has been revoked');
+        return _withAgent(unauthorized('Token has been revoked'), claimed);
       }
 
       // The account behind the token, re-read on every request: one indexed
@@ -98,21 +122,28 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // because nothing here looked at the account again
       // (REVIEW-2026-09-08 row 14). An account cannot be deleted, only
       // deactivated, so a missing row is a token this store never issued.
-      final rawUserId = payload['userId'];
-      final userId =
-          rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
       final account = await dbInterface.getUserById(userId);
       if (account == null) {
-        return unauthorized('The account this token names does not exist');
+        return _withAgent(
+          unauthorized('The account this token names does not exist'),
+          claimed,
+        );
       }
+      final known = <String, dynamic>{
+        'userId': userId,
+        'username': account.username,
+      };
       if (!account.active) {
-        return unauthorized('Account is deactivated');
+        return _withAgent(unauthorized('Account is deactivated'), known);
       }
       // A token from before the account's password, role, scopes or
       // activation last changed is over (token_bound.dart; REVIEW-2026-09-17
       // A14).
       if (tokenPredatesAccount(payload, account)) {
-        return unauthorized('Token predates a change to the account');
+        return _withAgent(
+          unauthorized('Token predates a change to the account'),
+          known,
+        );
       }
       // A lock (five wrong passwords) blocks password login; it does not
       // end sessions. It did: five anonymous wrong passwords against a
@@ -135,9 +166,12 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // NARROWS access, in which case dropping it leaves the broader scopes
       // standing and the token ends up more powerful than its issuer intended.
       if (!SmartScopeEnforcer.allScopesParse(scopes)) {
-        return forbidden(
-          'Token carries a scope this server does not understand. Scopes '
-          'must use SMART v2 syntax (context/Resource.cruds).',
+        return _withAgent(
+          forbidden(
+            'Token carries a scope this server does not understand. Scopes '
+            'must use SMART v2 syntax (context/Resource.cruds).',
+          ),
+          known,
         );
       }
 
@@ -149,7 +183,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         patientId: payload['patient'] as String?,
       );
       final refused = authorizeRequest(principal, request.method, path);
-      if (refused != null) return refused;
+      if (refused != null) return _withAgent(refused, known);
 
       // Inject auth_user (with scopes and patient context) into context
       payload['scopes'] = scopes;
@@ -157,7 +191,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         payload['patientId'] = principal.patientId;
       }
       final updatedRequest = request.change(context: {'auth_user': payload});
-      return innerHandler(updatedRequest);
+      return _withAgent(await innerHandler(updatedRequest), payload);
     };
   };
 }

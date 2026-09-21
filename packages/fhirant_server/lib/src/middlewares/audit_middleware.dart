@@ -116,10 +116,12 @@ class AuditQueue {
 
 /// Middleware that creates FHIR AuditEvent resources for auditable requests.
 ///
-/// Place after auth middleware so that `auth_user` context is available.
-/// The event is built after the response is decided and handed to [queue],
-/// which writes events in one transaction per tick; the response never
-/// waits for the store. A caller that passes no [queue] gets one of its own.
+/// Place BEFORE (outside) the auth middleware, so that a request it refuses
+/// is still recorded. Who made the request is read from the response
+/// context under `audit_agent`, which the auth middleware sets. The event
+/// is built after the response is decided and handed to [queue], which
+/// writes events in one transaction per tick; the response never waits for
+/// the store. A caller that passes no [queue] gets one of its own.
 Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
   final events = queue ?? AuditQueue(dbInterface);
   return (Handler innerHandler) {
@@ -129,7 +131,8 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
       // A request that presented no credential and was refused for that is
       // not an access attempt by anyone the trail could name; recording it
       // gave any unauthenticated caller an unbounded write into the
-      // database. A refused TOKEN is still recorded. So is a refused LOGIN
+      // database. A refused TOKEN is still recorded (this middleware runs
+      // outside the auth check, so it sees the refusal). So is a refused LOGIN
       // (the handler puts the claimed name in the response context): the
       // trail can name whose account was tried, and the credential
       // endpoints are rate limited, so the write is bounded
@@ -148,6 +151,7 @@ Middleware auditMiddleware(FhirAntDb dbInterface, {AuditQueue? queue}) {
           unawaited(
             _queueBundleEntryEvents(
               request,
+              response,
               entries,
               dbInterface,
               events,
@@ -273,6 +277,13 @@ String? _entityFromPath(String path) {
   return null;
 }
 
+/// Who the auth check established for this request, as it declared on the
+/// response (auth_middleware.dart, `auditAgentKey`), or null.
+Map<String, dynamic>? _agentOf(Response response) {
+  final agent = response.context['audit_agent'];
+  return agent is Map<String, dynamic> ? agent : null;
+}
+
 /// Builds the AuditEvent for one request and queues it.
 Future<void> _queueAuditEvent(
   Request request,
@@ -296,6 +307,7 @@ Future<void> _queueAuditEvent(
     subtype: bundleSubtype is String ? bundleSubtype : null,
     action: bundleSubtype is String ? 'E' : null,
     attemptedUsername: attempted is String ? attempted : null,
+    agent: _agentOf(response),
   );
 }
 
@@ -305,6 +317,7 @@ Future<void> _queueAuditEvent(
 /// (REVIEW-2026-09-06 finding 15).
 Future<void> _queueBundleEntryEvents(
   Request request,
+  Response response,
   List<dynamic> entries,
   FhirAntDb dbInterface,
   AuditQueue queue,
@@ -335,6 +348,7 @@ Future<void> _queueBundleEntryEvents(
       patientRef: patient is String ? patient : null,
       subtype: isSearch ? 'search' : null,
       action: isSearch ? 'R' : null,
+      agent: _agentOf(response),
     );
   }
 }
@@ -356,9 +370,10 @@ Future<void> _queueEvent(
   String? subtype,
   String? action,
   String? attemptedUsername,
+  Map<String, dynamic>? agent,
 }) async {
   try {
-    final authUser = request.context['auth_user'] as Map<String, dynamic>?;
+    final authUser = agent;
     // A refused login names the account that was tried. It goes in
     // agent.name (R4B AuditEvent.agent.name, profiles-resources.json:
     // "Human-meaningful name for the agent") and in who.display, with no

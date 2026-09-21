@@ -50,7 +50,7 @@ void main() {
   /// The id the admin routes act on: a second account, never the caller's.
   /// With `<userId>` mapped to 1 this loop deactivated its own admin at
   /// route 5, every later request was refused by the auth middleware (which
-  /// runs before the audit middleware, so a refusal leaves no record), and
+  /// then ran before the audit middleware, so a refusal left no record), and
   /// the count froze: 60 routes looked unaudited. That was the whole cause.
   late int targetUserId;
 
