@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 8 OPEN (structural, plus one from thedifferential run)
+# REVIEW-2026-09-17 triage: 8 OPEN (seven structural, one from the differential run)
 
 The twelve behaviour items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
