@@ -1,0 +1,69 @@
+verb	route	status	content_type	body_kind
+GET	/metadata	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	CapabilityStatement
+GET	/.well-known/smart-configuration	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	json:authorization_endpoint,capabilities,code_challenge_methods_supported,grant_types_supported,response_types_supported,revocation_endpoint,scopes_supported,token_endpoint
+POST	/Library/<id>/$evaluate	404	application/fhir+json	OperationOutcome
+POST	/Library/$evaluate	400	application/fhir+json	OperationOutcome
+POST	/$validate	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/<resourceType>/$validate	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/<id>/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/<id>/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ValueSet/<id>/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ValueSet/<id>/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ValueSet/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ValueSet/$validate-code	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/<id>/$lookup	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/<id>/$lookup	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/$lookup	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/$lookup	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ValueSet/<id>/$expand	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ValueSet/<id>/$expand	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ValueSet/$expand	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ValueSet/$expand	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/NamingSystem/$preferred-id	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/NamingSystem/$preferred-id	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ConceptMap/<id>/$translate	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ConceptMap/<id>/$translate	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/ConceptMap/$translate	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/ConceptMap/$translate	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/<id>/$subsumes	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/<id>/$subsumes	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/CodeSystem/$subsumes	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/CodeSystem/$subsumes	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/$reindex	202	application/fhir+json	OperationOutcome
+GET	/$reindex-status	202	-	empty
+POST	/$backup	400	application/fhir+json	OperationOutcome
+POST	/$restore	400	application/fhir+json	OperationOutcome
+GET	/$fhirpath	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/$fhirpath	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/$cql	400	application/fhir+json	OperationOutcome
+POST	/$immds-forecast	400	application/fhir+json	OperationOutcome
+POST	/$immds-forecast-who	400	application/fhir+json	OperationOutcome
+POST	/$transform	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/$export	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/Group/<groupId>/$export	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/Patient/$export	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/$export-poll-status/<jobId>	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+DELETE	/$export-poll-status/<jobId>	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/$export-file/<jobId>/<fileName>	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/Composition/<id>/$document	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/<compartmentType>/<id>/$everything	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/<resourceType>/<id>/$meta	404	application/fhir+json	OperationOutcome
+POST	/<resourceType>/<id>/$meta-add	404	application/fhir+json	OperationOutcome
+POST	/<resourceType>/<id>/$meta-delete	404	application/fhir+json	OperationOutcome
+GET	/<resourceType>/<id>/_history/<vid>	404	application/fhir+json	OperationOutcome
+GET	/<resourceType>/<id>/_history	404	application/fhir+json	OperationOutcome
+GET	/<resourceType>/_history	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	Bundle
+GET	/_history	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	Bundle
+GET	/<compartmentType>/<compartmentId>/<resourceType>	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+POST	/_search	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/<resourceType>	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	Bundle
+POST	/<resourceType>/_search	200	application/fhir+json; charset=utf-8; fhirVersion=4.3	Bundle
+POST	/<resourceType>	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+GET	/<resourceType>/<id>	404	application/fhir+json	OperationOutcome
+PUT	/<resourceType>	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+PUT	/<resourceType>/<id>	500	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+PATCH	/<resourceType>/<id>	404	application/fhir+json	OperationOutcome
+DELETE	/<resourceType>/<id>	404	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome
+DELETE	/<resourceType>	400	application/fhir+json; charset=utf-8; fhirVersion=4.3	OperationOutcome

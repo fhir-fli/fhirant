@@ -1,0 +1,12 @@
+verb	url	status	allow	body_start
+DELETE	/metadata	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
+PUT	/metadata	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
+PATCH	/_history	404	-	Route not found
+PUT	/_history	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
+DELETE	/$export	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
+PATCH	/$validate	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
+HEAD	/Patient	200	-	
+HEAD	/metadata	200	-	
+OPTIONS	/Patient	204	-	
+TRACE	/Patient	404	-	Route not found
+DELETE	/Patient	400	-	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code"
