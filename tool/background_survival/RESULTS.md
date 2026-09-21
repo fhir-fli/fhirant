@@ -11,9 +11,14 @@ in runs/. One run per row, one phone.
 | 2 | screen locked (dozing) | 60/60 | alive |
 | 3 | unplugged | 34/59 | killed 13:59:13, 5 min 20 s after unplug; `o-kill(6)`, importance 125 (foreground service), 268 MB |
 | 5 | battery exemption (adb `deviceidle whitelist`) | 34/71 | killed 14:12:38, 5 min 10 s after unplug; `o-kill(6)`, 245 MB |
-| 6 | app locked in Recents (card → More → Lock) | 184/184 | alive 14:25:18–14:57, uptime 1,986 s; still up at 3,314 s |
+| 6 | app locked in Recents (card → More → Lock) | 184/184 | alive; unplugged 14:25:43–15:34:48 (69 min), no kill recorded, same pid, uptime past 4,168 s |
 
 Run 4 (the phone in normal use) has not been run.
+
+Back button (`runs/back_button.tsv`, 15:37): the server survived, same
+uptime count, the activity paused rather than finished. Two checks right
+after pressing back got no answer within 8 s (15:37:36, 15:37:49); cause
+unmeasured.
 
 Defects seen:
 - After each kill, Android restarted the process 19 s later with the

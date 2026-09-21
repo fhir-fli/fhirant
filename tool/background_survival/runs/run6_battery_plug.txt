@@ -1,0 +1,4 @@
+  09-21 14:07:28.321 100 status=discharging plug=none temp=294 volt=4519 -plugged -charging +cellular_high_tx_power conn=1:"CONNECTED"
+  09-21 14:13:58.285 100 plug=usb volt=4479 +plugged -job=u0a354:"com.oplus.framework.network.drs/com.oplus.drs.core.schduler.UploadJobService"
+  09-21 14:25:43.771 100 plug=none volt=4472 +wifi_multicast -plugged -charging conn=1:"CONNECTED"
+  09-21 15:34:48.573 100 plug=usb temp=267 volt=4454 +plugged +cellular_high_tx_power
