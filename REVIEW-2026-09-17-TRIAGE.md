@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 7 OPEN (all structural, nothing built)
+# REVIEW-2026-09-17 triage: 8 OPEN (structural, plus one from thedifferential run)
 
 The twelve behaviour items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
@@ -16,6 +16,7 @@ working code. Rule: **do**, **defer** or **drop**.
 | ST4 | Two search engines (review §4) | None reproduced. This is the code the search findings keep landing in | Merge to one path | Defer until the HAPI differential test exists; that test is the safety net for it |
 | ST5 | `fhirant_secure_storage` half dead: six methods with no caller; the app uses `FlutterSecureStorage` directly under different key names | Dead code, verified by search | Delete the unused methods, or move the app onto them | Do. Deleting unused key-handling code removes a way to store a key in the wrong place |
 | ST6 | Three hand-written PBKDF2 loops (`password_hasher.dart`, `backup_crypto.dart`, `fhir_db/cipher_from_key.dart`) | None. All three are tested and produce correct keys | One shared implementation | Defer. Rewriting working crypto to share code is the riskiest item here |
+| D1 | `_sort=not-a-search-parameter` is answered 200, unsorted, where HAPI refuses it with a 400 | Found by the differential run (case `sort-unknown-key`). R4B search.html 3.1.1.5.3, read whole 2026-09-21, verbatim: "Each item in the comma separated list is a search parameter", and "Servers can choose how to sort the return results, though they SHOULD honor the _sort parameter". No MUST either way, so ignoring it is permitted; the client cannot tell its sort was dropped | Refuse an unknown sort key, as fhirant already refuses an unsupported modifier | Do, but it is your call: the spec permits both |
 | ST7 | Errors swallowed at the store boundary: `saveResource` catches everything and returns null; `saveResources` returns false | One real instance, already fixed: audit writes vanished with no log line (A16.10). The handler still answers "Database operation failed" with the cause gone | Store errors carry their cause to the handler and the log | Do. It is the one that makes future defects findable |
 
 

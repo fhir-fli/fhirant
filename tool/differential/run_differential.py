@@ -43,18 +43,7 @@ HAPI_IMAGE = 'hapiproject/hapi:latest'
 
 # A search whose answers differ for a reason we have named. Each entry is
 # case name -> the reason. Nothing goes here without one.
-KNOWN_DIFFERENCES: dict[str, str] = {
-    # One spec sentence, two defensible readings, and fhir_db uses each in a
-    # different place: the numeric path takes "the range above the search
-    # value" as above the VALUE (a stored 70 matches gt70, documented with
-    # the same quote in search_paged_in_sql_test.dart), the date path takes
-    # it as above the value's RANGE (it does not). HAPI answers the second
-    # for both. Open with HL7: OPEN-QUESTION-gt-lt-ranges.md. Nothing is
-    # changed until that comes back.
-    'quantity-gt-unit': 'gt/lt range reading, open with HL7',
-    'quantity-gt-boundary': 'gt/lt range reading, open with HL7',
-    'quantity-lt-boundary': 'gt/lt range reading, open with HL7',
-}
+KNOWN_DIFFERENCES: dict[str, str] = {}
 
 
 def log(message: str) -> None:
@@ -318,6 +307,9 @@ CASES: list[tuple[str, str]] = [
     ('datetime-ge-boundary', 'Observation?date=ge2026-03-01T13:30:00Z'),
     ('datetime-sa', 'Observation?date=sa2026-03-01'),
     ('datetime-eb', 'Observation?date=eb2026-03-01'),
+    # A sort key that names no search parameter. HAPI refuses it; fhirant
+    # answered 200 when the harness sent one by accident.
+    ('sort-unknown-key', 'Patient?_sort=not-a-search-parameter'),
 ]
 
 
@@ -345,13 +337,21 @@ def pinned(query: str) -> str:
     """
     if '_summary=count' in query or '_count=0' in query:
         return query
-    joiner = '&' if '?' in query else '?'
+    extra = []
+    if '_sort=' in query:
+        query = re.sub(r'(_sort=[^&]*)', r'\1,_id', query)
+    else:
+        extra.append('_sort=_id')
     # A case that sets its own _count keeps it: a second _count made one
     # server read 5 and the other 100 (page-five, first pinned run).
-    page = '' if '_count=' in query else f'{joiner}_count=100'
-    if '_sort=' in query:
-        return re.sub(r'(_sort=[^&]*)', r'\1,_id', query) + page
-    return f'{query}{joiner}_sort=_id{page}'
+    if '_count=' not in query:
+        extra.append('_count=100')
+    if not extra:
+        return query
+    # One joiner for the whole tail. Two of them turned the sort value into
+    # `_id?_count=100`, which HAPI refused and fhirant answered 200.
+    joiner = '&' if '?' in query else '?'
+    return query + joiner + '&'.join(extra)
 
 
 def compare(name: str, query: str) -> tuple[str, str]:

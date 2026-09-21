@@ -21,7 +21,7 @@ date-range-two	match	12 entries, total 12/12	Patient?birthdate=ge1980-01-01&birt
 datetime-ge	match	12 entries, total 12/12	Observation?date=ge2026-06-01
 datetime-eq-day	match	6 entries, total 6/6	Observation?date=2026-03-01
 quantity-eq	match	1 entries, total 1/1	Observation?value-quantity=60
-quantity-gt-unit	differ	total 10 vs 9; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=gt70|http://unitsofmeasure.org|kg
+quantity-gt-unit	match	9 entries, total 9/9	Observation?value-quantity=gt70|http://unitsofmeasure.org|kg
 reference-literal	match	2 entries, total 2/2	Observation?subject=Patient/dp3
 reference-type	match	2 entries, total 2/2	Observation?subject:Patient=dp3
 reference-bare-id	match	2 entries, total 2/2	Observation?subject=dp3
@@ -35,7 +35,7 @@ count-zero	match	0 entries, total 20/20	Patient?_count=0
 sort-family	match	20 entries, total 20/20	Patient?_sort=family
 sort-family-desc	match	20 entries, total 20/20	Patient?_sort=-family
 sort-birthdate	match	20 entries, total 20/20	Patient?_sort=birthdate
-page-five	differ	total 20 vs None; only fhirant ['Patient/dp13', 'Patient/dp14', 'Patient/dp15', 'Patient/dp16', 'Patient/dp17', 'Patient/dp18']; only hapi []	Patient?_count=5&_sort=_id
+page-five	match	5 entries, total 20/None	Patient?_count=5&_sort=_id
 include-subject	match	13 entries, total 8/8	Observation?code=http://loinc.org|8302-2&_include=Observation:subject
 revinclude	match	3 entries, total 1/1	Patient?_id=dp3&_revinclude=Observation:subject
 summary-count	match	0 entries, total 20/20	Patient?_summary=count
@@ -43,9 +43,9 @@ total-accurate	match	20 entries, total 20/20	Patient?_total=accurate
 and-two-params	match	1 entries, total 1/1	Patient?gender=female&birthdate=1999-06-15
 or-comma	match	10 entries, total 10/10	Patient?gender=female,male
 type-all	match	30 entries, total 30/30	Observation
-quantity-gt-boundary	differ	total 10 vs 9; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=gt70
+quantity-gt-boundary	match	9 entries, total 9/9	Observation?value-quantity=gt70
 quantity-ge-boundary	match	10 entries, total 10/10	Observation?value-quantity=ge70
-quantity-lt-boundary	differ	total 21 vs 20; only fhirant ['Observation/do20']; only hapi []	Observation?value-quantity=lt70
+quantity-lt-boundary	match	20 entries, total 20/20	Observation?value-quantity=lt70
 quantity-le-boundary	match	21 entries, total 21/21	Observation?value-quantity=le70
 quantity-eq-boundary	match	1 entries, total 1/1	Observation?value-quantity=70
 quantity-ne-boundary	match	29 entries, total 29/29	Observation?value-quantity=ne70
@@ -59,3 +59,4 @@ datetime-gt-boundary	match	12 entries, total 12/12	Observation?date=gt2026-03-01
 datetime-ge-boundary	match	18 entries, total 18/18	Observation?date=ge2026-03-01T13:30:00Z
 datetime-sa	match	12 entries, total 12/12	Observation?date=sa2026-03-01
 datetime-eb	match	12 entries, total 12/12	Observation?date=eb2026-03-01
+sort-unknown-key	one-refuses	fhirant 200, hapi 400	Patient?_sort=not-a-search-parameter

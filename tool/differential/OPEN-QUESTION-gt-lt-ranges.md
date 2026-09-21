@@ -1,5 +1,8 @@
 # ONE QUESTION OPEN — for HL7 (Zulip #fhir/implementers)
 
+Asked as confirmation, not as a blocker: reading A is implemented as of
+2026-09-21, because two reference servers answer that way.
+
 Paste the block below. It names no file of ours and needs no context from
 this repository.
 
@@ -31,16 +34,21 @@ The same question applies to `lt` and the lower bound.
 
 What we have found:
 
-- HAPI FHIR 8 (`hapiproject/hapi`, R4) answers reading A: `gt70` excludes a
-  stored 70, `ge70` includes it. Measured over the same 50 resources loaded
-  into both servers.
+- HAPI FHIR 8.13.9 answers reading A: `gt70` excludes a stored 70, `ge70`
+  includes it. Measured over the same 50 resources loaded into both servers.
+- Firely Server 6.9.1 (`server.fire.ly`) answers reading A too. Read-only
+  probes against its own data, three Observations with `_id` pinned so only
+  that resource could match, at 120 mm[Hg], 16 /min and 98 %: `gt` and `lt`
+  at the stored value returned nothing, `ge` and `le` returned the resource.
+- `test.fhir.org` did not respond, so Grahame Grieve's reference server is
+  unchecked.
 - The same sentence covers `date`, and for dates every boundary case we ran
   against HAPI agreed on reading A.
 - Microsoft's server widens by half a unit of the last decimal place, which
   is neither reading exactly.
 
-Suites re-run after reverting the change, unchanged: fhir_db 37, the R4
-binding 484, R5 481, R6 479.
+Suites after implementing reading A: fhir_db 37, the R4 binding 484, R5 481,
+R6 479, and the server on top of it 1,298.
 
 Which reading is intended for number and quantity? If it is A, is the
 difference between `gt` and `ge` at a value equal to the search value the
