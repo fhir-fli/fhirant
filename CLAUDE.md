@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 > **Universal rules are in `~/.claude/CLAUDE.md`** — it loads in every session, in
-> every directory, so they are not repeated here. Full records: `~/.claude/rules/`.
+> every directory, so they are not repeated here. Full records: `~/.claude/rule-records/`.
 > This file holds project facts only.
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
