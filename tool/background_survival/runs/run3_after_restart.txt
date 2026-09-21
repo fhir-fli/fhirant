@@ -1,0 +1,1 @@
+after replug 14:04:22: process restarted pid 30890 at 13:59:32 (19 s after the kill), foreground service isForeground=true lastStartId=2, GET /health connection refused (curl exit 7): nothing serving

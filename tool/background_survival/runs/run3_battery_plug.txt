@@ -1,0 +1,8 @@
+  09-21 13:25:07.686 100 status=charging +wifi_radio wakeupap=u0a344:""
+  09-21 13:25:08.117 100 plug=usb temp=294 volt=4435 charge=6584 +sensor +plugged phone_signal_strength=poor +state=1000:"sensor:0x10f"
+  09-21 13:26:12.915 100 status=full charge=6602
+  09-21 13:53:53.010 100 status=discharging stats=0:"battery-state"
+  09-21 13:53:53.544 100 plug=none temp=300 volt=4486 -plugged -charging
+  09-21 14:04:14.184 100 status=charging
+  09-21 14:04:14.555 100 plug=usb volt=4478 charge=6882 +plugged +cellular_high_tx_power
+    reset_while_plugged_in_minimum_duration_hours=47
