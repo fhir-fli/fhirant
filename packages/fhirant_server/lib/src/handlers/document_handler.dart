@@ -3,6 +3,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for `GET /Composition/<id>/$document`.
@@ -20,14 +21,9 @@ Future<Response> documentHandler(
 ) async {
   try {
     // 1. Fetch the Composition
-    final composition = await dbInterface.getResource(
-      fhir.R4ResourceType.Composition,
-      id,
-    );
-    if (composition == null) {
-      return _operationOutcome(404, 'Composition/$id not found');
-    }
-
+    final lookup = await lookupStored(request, dbInterface, 'Composition', id);
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final composition = lookup.resource;
     if (composition is! fhir.Composition) {
       return _operationOutcome(
         500,

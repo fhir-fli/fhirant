@@ -4,6 +4,7 @@ import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Shared FHIRPath engine — created once (creation is async and non-trivial)
@@ -49,47 +50,18 @@ Future<Response> fhirPathHandler(
 
     // Try to get resource from query parameters first
     if (resourceType != null && resourceId != null) {
-      final type = fhir.R4ResourceType.fromString(resourceType);
-      if (type == null) {
-        return Response(
-          400,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'invalid',
-                'diagnostics': 'Invalid resource type: $resourceType',
-              }
-            ],
-          }),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
-
-      resource = await dbInterface.getResource(type, resourceId);
+      // A user- or system-context scope is required for $fhirpath
+      // (request_authorization.dart), so no patient compartment applies.
+      final lookup =
+          await lookupStored(request, dbInterface, resourceType, resourceId);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      resource = lookup.resource;
       // The audit middleware sees only `/$fhirpath` in the path, so it cannot
       // tell which record this disclosed. Hand the identity back up through
       // the response context, which is shelf's route for handler-to-middleware
       // data. Only the database read is declared: a resource posted in the
       // body came from the caller and was never disclosed by the server.
       auditedEntity = '$resourceType/$resourceId';
-      if (resource == null) {
-        return Response(
-          404,
-          body: jsonEncode({
-            'resourceType': 'OperationOutcome',
-            'issue': [
-              {
-                'severity': 'error',
-                'code': 'not-found',
-                'diagnostics': 'Resource not found: $resourceType/$resourceId',
-              }
-            ],
-          }),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
     } else {
       // Try to get resource from request body
       final body = await request.readAsString();

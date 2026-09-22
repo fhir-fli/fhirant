@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,479 tests** across 140 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-22) by
+**1,480 tests** across 141 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-22) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,317 | 128 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,318 | 129 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -145,6 +145,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/every_route_is_rate_limited_test.dart` | Every registered route, plus a path no route matches and a method none registers, is refused (429) once the bucket is spent; each route floods its own server because at handler level all requests share one bucket; the credential endpoints have their own tighter bucket, with a general-bucket route as control; the route list's own count (89, of which 51 operations) is asserted (5) |
 | `test/integration/store_failure_carries_cause_test.dart` | A save on a closed store logs a SEVERE record carrying the exception and answers 500 with an OperationOutcome; the wrapper used to swallow the cause and the create handler answered 400 (1) |
 | `test/integration/every_route_refuses_a_garbled_body_test.dart` | Every registered route that reads a body, sent `{this is not json` under two content types, answers 4xx, never 5xx (RFC 9110 §15.5.1); register and login answered 500 before (1) |
+| `test/integration/every_route_answers_an_absent_id_alike_test.dart` | Every registered route that names a resource id (24, PUT excluded), sent an absent id, answers 404, `application/fhir+json`, OperationOutcome issue code `not-found`; DELETE carried `exception` before the shared lookup (1) |
 | `test/integration/refusals_are_audited_test.dart` | A refused request is still audited: a garbled token (as anonymous), a deactivated account, a token older than an account change, and a valid token without the scope each leave one failure record naming whoever the token proved; no credential leaves none; allowed and dev-mode requests are controls (7) |
 | `test/integration/bootstrap_token_test.dart` | REVIEW-2026-09-17 A15: with a bootstrap token issued, `/auth/status` says so, the first registration without it or with a wrong one is 403, the header or the body field creates the administrator, afterwards the token opens nothing, and a server with no token leaves the first registration open (7) |
 | `test/integration/account_management_test.dart` | REVIEW-2026-09-17 A14: own password change (wrong current 401, policy 400, old access and refresh tokens 401 after, new pair works), admin reset, deactivate/activate, role and scopes changes each end the old sessions, list carries no secrets, last-admin guard 409, non-admin 403, unknown id 404, a token behind the account's generation 401 (10) |

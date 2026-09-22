@@ -6,6 +6,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Library/$evaluate — evaluate a stored CQL Library resource.
@@ -29,15 +30,10 @@ Future<Response> libraryEvaluateHandler(
     FhirantLogging().logInfo('Library/${'evaluate'}: loading Library/{id}');
 
     // Load the Library resource from the database
-    final libraryResource = await dbInterface.getResource(
-      fhir.R4ResourceType.Library,
-      libraryId,
-    );
-    if (libraryResource == null) {
-      return _errorResponse(404, 'not-found', 'Library/$libraryId not found');
-    }
-
-    final library = libraryResource as fhir.Library;
+    final lookup =
+        await lookupStored(request, dbInterface, 'Library', libraryId);
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final library = lookup.resource as fhir.Library;
 
     // Extract CQL or ELM from the Library's content attachments
     final cqlLibrary = _extractCqlFromLibrary(library);

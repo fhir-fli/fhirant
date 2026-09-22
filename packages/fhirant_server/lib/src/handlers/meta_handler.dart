@@ -4,31 +4,8 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
-import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
-
-/// A patient-scoped token reaches a resource's meta only inside its own
-/// compartment, as it does for a read of the resource itself. These
-/// operations used to skip the check (REVIEW-2026-09-06 finding 5).
-Future<Response?> _refuseOutsidePatientCompartment(
-  Request request,
-  String resourceType,
-  String id,
-  FhirAntDb dbInterface,
-  String permission,
-) async {
-  final patientId = patientContextFor(request, resourceType, permission);
-  if (patientId == null) return null;
-  if (await isInPatientCompartment(resourceType, id, patientId, dbInterface)) {
-    return null;
-  }
-  // `$meta` is a read and answers as absent; `$meta-add` and `$meta-delete`
-  // are writes and refuse (REVIEW-2026-09-17 A13).
-  return permission == 'r'
-      ? patientScopeNotFoundResponse(resourceType, id)
-      : patientScopeForbiddenResponse(resourceType, id, patientId);
-}
 
 /// Handler for $meta operation: GET /{resourceType}/{id}/$meta
 ///
@@ -41,23 +18,15 @@ Future<Response> metaHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    final resource = await dbInterface.getResource(type, id);
-    if (resource == null) {
-      return notFoundOutcome('$resourceType/$id');
-    }
-    final outside = await _refuseOutsidePatientCompartment(
+    final lookup = await lookupStored(
       request,
+      dbInterface,
       resourceType,
       id,
-      dbInterface,
-      'r',
+      permission: 'r',
     );
-    if (outside != null) return outside;
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final resource = lookup.resource;
 
     // Return a Parameters resource with the meta
     final meta = resource.meta ?? const fhir.FhirMeta();
@@ -99,24 +68,15 @@ Future<Response> metaAddHandler(
   // a PUT (REVIEW-2026-09-17 A7).
   final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    final resource = await dbInterface.getResource(type, id);
-    if (resource == null) {
-      return notFoundOutcome('$resourceType/$id');
-    }
-
-    final outsideAdd = await _refuseOutsidePatientCompartment(
+    final lookup = await lookupStored(
       request,
+      dbInterface,
       resourceType,
       id,
-      dbInterface,
-      'u',
+      permission: 'u',
     );
-    if (outsideAdd != null) return outsideAdd;
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final resource = lookup.resource;
 
     // Parse the input Parameters resource
     final body = await request.readAsString();
@@ -173,24 +133,15 @@ Future<Response> metaDeleteHandler(
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    final resource = await dbInterface.getResource(type, id);
-    if (resource == null) {
-      return notFoundOutcome('$resourceType/$id');
-    }
-
-    final outsideDelete = await _refuseOutsidePatientCompartment(
+    final lookup = await lookupStored(
       request,
+      dbInterface,
       resourceType,
       id,
-      dbInterface,
-      'u',
+      permission: 'u',
     );
-    if (outsideDelete != null) return outsideDelete;
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final resource = lookup.resource;
 
     // Parse the input Parameters resource
     final body = await request.readAsString();
