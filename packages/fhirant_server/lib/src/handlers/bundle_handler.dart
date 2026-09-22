@@ -14,10 +14,10 @@ import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -489,7 +489,9 @@ BundleEntryException _entryRefusal(StoredLookup lookup, int entryIndex) =>
           'Bundle entry $entryIndex: Invalid resource type: $resourceType',
         ),
       StoredAbsent() => BundleEntryException(
-          404, 'Bundle entry $entryIndex: Resource not found'),
+          404,
+          'Bundle entry $entryIndex: Resource not found',
+        ),
       StoredOutsideCompartment(
         :final resourceType,
         :final id,

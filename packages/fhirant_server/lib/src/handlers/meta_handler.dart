@@ -4,8 +4,8 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
-import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for $meta operation: GET /{resourceType}/{id}/$meta

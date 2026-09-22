@@ -5,9 +5,9 @@ import 'package:fhir_r4_cql/fhir_r4_cql.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Library/$evaluate — evaluate a stored CQL Library resource.
@@ -106,7 +106,10 @@ Future<Response> libraryEvaluateByUrlHandler(
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
       return outcome(
-          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
+        400,
+        fhir.IssueType.invalid,
+        'Invalid JSON in request body',
+      );
     }
 
     final evalParams = _parseParametersResource(bodyJson);
@@ -143,7 +146,10 @@ Future<Response> libraryEvaluateByUrlHandler(
         cqlLibrary = _parseCql(evalParams.cqlSource!);
       } catch (e) {
         return outcome(
-            400, fhir.IssueType.invalid, 'The CQL does not translate: $e');
+          400,
+          fhir.IssueType.invalid,
+          'The CQL does not translate: $e',
+        );
       }
     } else if (evalParams.elmJson != null) {
       // Convenience: inline ELM JSON
@@ -207,7 +213,10 @@ Future<Response> cqlHandler(
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
       return outcome(
-          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
+        400,
+        fhir.IssueType.invalid,
+        'Invalid JSON in request body',
+      );
     }
 
     final evalParams = bodyJson['resourceType'] == 'Parameters'

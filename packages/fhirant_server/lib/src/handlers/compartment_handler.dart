@@ -1,12 +1,13 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// The token's scopes, or null when no authenticated caller is on the
@@ -37,8 +38,11 @@ Response? _refuseOutsidePatientContext(
   if (compartmentType == 'Patient' && compartmentId == patientId) return null;
   // As absent: the same answer the focal resource's absence gives below
   // (REVIEW-2026-09-17 A13; R4B security.html's 404).
-  return outcome(404, fhir.IssueType.notFound,
-      '$compartmentType/$compartmentId not found');
+  return outcome(
+    404,
+    fhir.IssueType.notFound,
+    '$compartmentType/$compartmentId not found',
+  );
 }
 
 /// The compartments this server answers `$everything` and compartment
@@ -191,72 +195,20 @@ Future<Response> everythingHandler(
       }
     }
 
-    // 6. Links. The self link repeats the request with its page position;
-    // next and previous move `_offset` by the page size and keep every
-    // other parameter, `_count` included, as the client sent it.
-    final requested = request.requestedUri;
-    Uri pageUrl(int pageOffset) => requested.replace(
-          queryParameters: {
-            ...requested.queryParametersAll,
-            '_offset': ['$pageOffset'],
-          },
-        );
-    final links = <fhir.BundleLink>[
-      fhir.BundleLink(
-        relation: fhir.FhirString('self'),
-        url: fhir.FhirUri(pageUrl(offset).toString()),
-      ),
-      if (count > 0 && offset > 0)
-        fhir.BundleLink(
-          relation: fhir.FhirString('previous'),
-          url: fhir.FhirUri(
-            pageUrl((offset - count).clamp(0, offset)).toString(),
-          ),
-        ),
-      if (count > 0 && offset + count < total)
-        fhir.BundleLink(
-          relation: fhir.FhirString('next'),
-          url: fhir.FhirUri(pageUrl(offset + count).toString()),
-        ),
-    ];
-
-    // 7. Build Bundle
-    final baseUrl = _baseUrl(request);
-
-    if (paged.isEmpty) {
-      final bundle = fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        total: fhir.FhirUnsignedInt(total),
-        link: links,
-      );
-      return Response.ok(
-        bundle.toJsonString(),
-        headers: {'Content-Type': 'application/json'},
-      );
-    }
-
-    final entries = paged.map((resource) {
-      final resType = resource.resourceTypeString;
-      final resId = resource.id?.toString() ?? '';
-      return fhir.BundleEntry(
-        resource: resource,
-        fullUrl:
-            resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
-      );
-    }).toList();
-
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      total: fhir.FhirUnsignedInt(total),
-      entry: entries,
-      link: links,
+    // 6. The page, its links and its total, as any search's.
+    final bundle = searchsetPage(
+      requested: request.requestedUri,
+      links: SearchLinks.everything(request.url.queryParametersAll),
+      matches: paged,
+      count: count,
+      offset: offset,
+      hasMore: count > 0 && offset + count < total,
+      total: queryParams['_total'] == 'none' ? null : total,
     );
-
     FhirantLogging().logInfo(
       '\$everything for $compartmentType/{id}: $total resources, '
-      '${entries.length} on this page',
+      '${paged.length} on this page',
     );
-
     return Response.ok(
       bundle.toJsonString(),
       headers: {'Content-Type': 'application/json'},
@@ -300,8 +252,11 @@ Future<Response> compartmentSearchHandler(
     // 2. Validate resource type
     final resTypeEnum = fhir.R4ResourceType.fromString(resourceType);
     if (resTypeEnum == null) {
-      return outcome(400, fhir.IssueType.processing,
-          'Invalid resource type: $resourceType');
+      return outcome(
+        400,
+        fhir.IssueType.processing,
+        'Invalid resource type: $resourceType',
+      );
     }
 
     // 3. Validate resource type is in compartment (the focal type is in its
@@ -337,7 +292,11 @@ Future<Response> compartmentSearchHandler(
 
     // 5. Verify focal resource exists
     final lookup = await lookupStored(
-        request, dbInterface, compartmentType, compartmentId);
+      request,
+      dbInterface,
+      compartmentType,
+      compartmentId,
+    );
     if (lookup is! StoredFound) return lookupRefusal(lookup);
 
     // 6. The query, parsed as for any search. queryParametersAll keeps every
@@ -422,80 +381,16 @@ Response _buildSearchsetBundle(
   required int offset,
   required bool hasMore,
 }) {
-  final requested = request.requestedUri;
-  final bundleLinks = <fhir.BundleLink>[links.self(requested)];
-  if (count > 0) {
-    bundleLinks.add(
-      fhir.BundleLink(
-        relation: fhir.FhirString('first'),
-        url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
-      ),
-    );
-    if (offset > 0) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('previous'),
-          url: fhir.FhirUri(
-            links
-                .url(requested, offset: (offset - count).clamp(0, offset))
-                .toString(),
-          ),
-        ),
-      );
-    }
-    if (hasMore) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('next'),
-          url: fhir.FhirUri(
-            links.url(requested, offset: offset + count).toString(),
-          ),
-        ),
-      );
-    }
-    if (total != null && total > 0) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('last'),
-          url: fhir.FhirUri(
-            links
-                .url(requested, offset: ((total - 1) ~/ count) * count)
-                .toString(),
-          ),
-        ),
-      );
-    }
-  }
-
-  final baseUrl = _baseUrl(request);
-  final entries = resources.map((resource) {
-    final resType = resource.resourceTypeString;
-    final resId = resource.id?.toString() ?? '';
-    return fhir.BundleEntry(
-      resource: resource,
-      fullUrl:
-          resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
-      search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-    );
-  }).toList();
-
-  final bundle = fhir.Bundle(
-    type: fhir.BundleType.searchset,
-    total: total != null ? fhir.FhirUnsignedInt(total) : null,
-    entry: entries.isEmpty ? null : entries,
-    link: bundleLinks,
-  );
-
   return Response.ok(
-    bundle.toJsonString(),
+    searchsetPage(
+      requested: request.requestedUri,
+      links: links,
+      matches: resources,
+      count: count,
+      offset: offset,
+      hasMore: hasMore,
+      total: total,
+    ).toJsonString(),
     headers: {'Content-Type': 'application/json'},
   );
-}
-
-/// Extracts the base URL from a request.
-String _baseUrl(Request request) {
-  final uri = request.requestedUri;
-  return uri.hasPort
-      ? '${uri.scheme}://${uri.host}:${uri.port}'
-      : '${uri.scheme}://${uri.host}';
 }

@@ -8,8 +8,8 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:fhirant_server/src/utils/host_resource_cache.dart';
-import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:shelf/shelf.dart';
 
 /// FHIR Mapping Handler - Transform resources using StructureMap
@@ -80,13 +80,19 @@ Future<Response> mappingHandler(
     }
 
     if (requestJson['map'] == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Missing required field: map (StructureMap)');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Missing required field: map (StructureMap)',
+      );
     }
 
     if (requestJson['source'] == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Missing required field: source (source resource)');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Missing required field: source (source resource)',
+      );
     }
 
     // Parse StructureMap
@@ -108,7 +114,10 @@ Future<Response> mappingHandler(
       source = fhir.Resource.fromJsonString(sourceString);
     } catch (e) {
       return outcome(
-          400, fhir.IssueType.invalid, 'Invalid source resource: $e');
+        400,
+        fhir.IssueType.invalid,
+        'Invalid source resource: $e',
+      );
     }
 
     // The engine cannot invent the target: given null it fails with
@@ -124,8 +133,11 @@ Future<Response> mappingHandler(
       return outcome(400, fhir.IssueType.notSupported, e.message);
     }
     if (targetType == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'StructureMap has no structure with mode "target"');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'StructureMap has no structure with mode "target"',
+      );
     }
 
     // Proved buildable here so the refusal is specific; the worker builds
@@ -162,7 +174,10 @@ Future<Response> mappingHandler(
 
     if (resultJson == null) {
       return outcome(
-          500, fhir.IssueType.exception, 'Mapping returned null result');
+        500,
+        fhir.IssueType.exception,
+        'Mapping returned null result',
+      );
     }
 
     // The engine reports a failed transform by RETURNING an OperationOutcome,

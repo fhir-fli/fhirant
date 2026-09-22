@@ -14,9 +14,10 @@ import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
-import 'package:meta/meta.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler to fetch all resources of a given type
@@ -265,20 +266,14 @@ Future<Response> systemSearchHandler(
 
     if (summary == 'count' || count == 0) {
       return Response.ok(
-        fhir.Bundle(
-          type: fhir.BundleType.searchset,
-          total: fhir.FhirUnsignedInt(totalCount),
-          link: [links.self(requested)],
-        ).toJsonString(),
+        countOnlyPage(requested: requested, links: links, total: totalCount)
+            .toJsonString(),
         headers: {'Content-Type': 'application/json'},
       );
     }
 
     // The page [offset, offset + count) of the concatenation.
-    final baseUrl = requested.hasPort
-        ? '${requested.scheme}://${requested.host}:${requested.port}'
-        : '${requested.scheme}://${requested.host}';
-    final allEntries = <fhir.BundleEntry>[];
+    final allMatches = <fhir.Resource>[];
     var skip = offset;
     var remaining = count > 0 ? count : totalCount;
     for (final type in types) {
@@ -299,74 +294,21 @@ Future<Response> systemSearchHandler(
       );
       skip = 0;
       remaining -= page.length;
-      for (final resource in page) {
-        final resourceId = resource.id?.toString() ?? '';
-        final resType = resource.resourceTypeString;
-        allEntries.add(
-          fhir.BundleEntry(
-            resource: resource,
-            fullUrl: resourceId.isNotEmpty
-                ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
-                : null,
-            search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-          ),
-        );
-      }
+      allMatches.addAll(page);
     }
 
-    final bundleLinks = <fhir.BundleLink>[links.self(requested)];
-    if (count > 0) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('first'),
-          url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
-        ),
-      );
-      if (offset > 0) {
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('previous'),
-            url: fhir.FhirUri(
-              links
-                  .url(requested, offset: (offset - count).clamp(0, offset))
-                  .toString(),
-            ),
-          ),
-        );
-      }
-      if (offset + count < totalCount) {
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('next'),
-            url: fhir.FhirUri(
-              links.url(requested, offset: offset + count).toString(),
-            ),
-          ),
-        );
-      }
-      if (totalCount > 0) {
-        bundleLinks.add(
-          fhir.BundleLink(
-            relation: fhir.FhirString('last'),
-            url: fhir.FhirUri(
-              links
-                  .url(requested, offset: ((totalCount - 1) ~/ count) * count)
-                  .toString(),
-            ),
-          ),
-        );
-      }
-    }
-
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      entry: allEntries.isEmpty ? null : allEntries,
-      total: total == 'none' ? null : fhir.FhirUnsignedInt(totalCount),
-      link: bundleLinks,
+    final bundle = searchsetPage(
+      requested: requested,
+      links: links,
+      matches: allMatches,
+      count: count,
+      offset: offset,
+      hasMore: count > 0 && offset + count < totalCount,
+      total: total == 'none' ? null : totalCount,
     );
 
     FhirantLogging().logInfo(
-      'System search returned ${allEntries.length} of $totalCount resources '
+      'System search returned ${allMatches.length} of $totalCount resources '
       'across ${types.length} types',
     );
     return Response.ok(
@@ -391,7 +333,9 @@ Future<Response> systemSearchHandler(
       stackTrace,
     );
     return exceptionOutcome(
-        'Failed to process system search', 'Internal error');
+      'Failed to process system search',
+      'Internal error',
+    );
   }
 }
 
@@ -635,10 +579,14 @@ Future<fhir.Bundle> typeSearch(
       throw SearchRefused(fhir.IssueType.processing, e.message);
     }
     if (filterIds.isEmpty) {
-      return fhir.Bundle(
-        type: fhir.BundleType.searchset,
-        total: total != 'none' ? fhir.FhirUnsignedInt(0) : null,
-        link: [links.self(requestedUri)],
+      return searchsetPage(
+        requested: requestedUri,
+        links: links,
+        matches: const [],
+        count: count,
+        offset: offset,
+        hasMore: false,
+        total: total != 'none' ? 0 : null,
       );
     }
   }
@@ -665,12 +613,11 @@ Future<fhir.Bundle> typeSearch(
     } else {
       totalCount = await dbInterface.getResourceCount(type);
     }
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      total: fhir.FhirUnsignedInt(totalCount),
-      link: [links.self(requestedUri)],
+    return countOnlyPage(
+      requested: requestedUri,
+      links: links,
+      total: totalCount,
     );
-    return bundle;
   }
 
   final effectiveSearchParams = searchParams;
@@ -739,68 +686,19 @@ Future<fhir.Bundle> typeSearch(
     }
   }
 
-  // R4 3.1.1.5.3 and 3.1.1.6: every link is built from the parameters
-  // actually used, with only `_offset` changed. `first` and `self` are
-  // always present; `previous` when there is a page before this one;
-  // `next` from the probe row, so it survives `_total=none`; `last` when
-  // the total is known.
-  final requested = requestedUri;
-  final bundleLinks = <fhir.BundleLink>[
-    links.self(requested),
-  ];
-  if (count > 0) {
-    bundleLinks.add(
-      fhir.BundleLink(
-        relation: fhir.FhirString('first'),
-        url: fhir.FhirUri(links.url(requested, offset: 0).toString()),
-      ),
-    );
-    if (offset > 0) {
-      final prevOffset = (offset - count).clamp(0, offset);
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('previous'),
-          url: fhir.FhirUri(
-            links.url(requested, offset: prevOffset).toString(),
-          ),
-        ),
-      );
-    }
-    if (hasMore) {
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('next'),
-          url: fhir.FhirUri(
-            links.url(requested, offset: offset + count).toString(),
-          ),
-        ),
-      );
-    }
-    if (totalCount != null && totalCount > 0) {
-      final lastOffset = ((totalCount - 1) ~/ count) * count;
-      bundleLinks.add(
-        fhir.BundleLink(
-          relation: fhir.FhirString('last'),
-          url: fhir.FhirUri(
-            links.url(requested, offset: lastOffset).toString(),
-          ),
-        ),
-      );
-    }
-  }
-
-  // Handle empty results
   if (resources.isEmpty) {
-    final bundle = fhir.Bundle(
-      type: fhir.BundleType.searchset,
-      total: totalCount != null ? fhir.FhirUnsignedInt(0) : null,
-      link: [links.self(requested)],
-    );
-
     FhirantLogging().logInfo(
       'Successfully fetched 0 resources of type: $resourceType',
     );
-    return bundle;
+    return searchsetPage(
+      requested: requestedUri,
+      links: links,
+      matches: const [],
+      count: count,
+      offset: offset,
+      hasMore: false,
+      total: totalCount == null ? null : 0,
+    );
   }
 
   // Process _include and _revinclude parameters. The page carries at most
@@ -911,20 +809,7 @@ Future<fhir.Bundle> typeSearch(
     return resource;
   }
 
-  // Build match entries (from search results)
-  final matchEntries = resources.map((resource) {
-    final shaped = shapeResource(resource);
-    final resourceId = shaped.id?.toString() ?? '';
-    final resType = shaped.resourceTypeString;
-    final fullUrl = resourceId.isNotEmpty
-        ? fhir.FhirUri('$baseUrl/$resType/$resourceId')
-        : null;
-    return fhir.BundleEntry(
-      resource: shaped,
-      fullUrl: fullUrl,
-      search: const fhir.BundleSearch(mode: fhir.SearchEntryMode.match),
-    );
-  }).toList();
+  final matchResources = resources.map(shapeResource).toList();
 
   // Build include entries (from _include/_revinclude results)
   final includeEntries = includedResources.map((resource) {
@@ -941,22 +826,23 @@ Future<fhir.Bundle> typeSearch(
     );
   }).toList();
 
-  final bundle = fhir.Bundle(
-    type: fhir.BundleType.searchset,
-    entry: [
-      ...matchEntries,
-      ...includeEntries,
-      if (includesTruncated) _includeBudgetOutcome(),
-    ],
-    total: totalCount != null ? fhir.FhirUnsignedInt(totalCount) : null,
-    link: bundleLinks,
-  );
-
   FhirantLogging().logInfo(
     'Successfully fetched ${resources.length} '
     'resources of type: $resourceType',
   );
-  return bundle;
+  return searchsetPage(
+    requested: requestedUri,
+    links: links,
+    matches: matchResources,
+    count: count,
+    offset: offset,
+    hasMore: hasMore,
+    total: totalCount,
+    extra: [
+      ...includeEntries,
+      if (includesTruncated) _includeBudgetOutcome(),
+    ],
+  );
 }
 
 /// A type-level search the server will not answer: the OperationOutcome
