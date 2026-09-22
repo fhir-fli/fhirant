@@ -13,6 +13,11 @@ in runs/. One run per row, one phone.
 | 5 | battery exemption (adb `deviceidle whitelist`) | 34/71 | killed 14:12:38, 5 min 10 s after unplug; `o-kill(6)`, 245 MB |
 | 6 | app locked in Recents (card → More → Lock) | 184/184 | alive; unplugged 14:25:43–15:34:48 (69 min), no kill recorded, same pid, uptime past 4,168 s |
 
+| 7 | fix build, Recents lock OFF, exemption on, cable IN, screen awake | 89/89 | alive 16:31–16:45, uptime to 937 s; no kill recorded. The raw TSV was deleted by mistake on 2026-09-21; the counts are from its summary line before deletion |
+
+Plugged in, the app was never killed: runs 1, 2 and 7, and 105 min for
+sensorium (graiai/sensorium/PLAN.md 16.4). Every kill came after unplugging.
+
 Run 4 (the phone in normal use) has not been run.
 
 Back button (`runs/back_button.tsv`, 15:37): the server survived, same
