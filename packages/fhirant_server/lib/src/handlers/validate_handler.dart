@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_validation/fhir_r4_validation.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
@@ -205,21 +206,9 @@ Future<fhir.StructureDefinition?> _resolveProfile(
 ) async {
   if (dbInterface == null) return null;
 
-  final pipe = canonical.indexOf('|');
-  final url = pipe < 0 ? canonical : canonical.substring(0, pipe);
-  final version = pipe < 0 ? null : canonical.substring(pipe + 1);
-
-  final matches = await dbInterface.search(
-    resourceType: fhir.R4ResourceType.StructureDefinition,
-    searchParameters: {
-      'url': [url],
-    },
+  return findOneByCanonical<fhir.StructureDefinition>(
+    dbInterface,
+    fhir.R4ResourceType.StructureDefinition,
+    canonical,
   );
-
-  for (final match in matches.whereType<fhir.StructureDefinition>()) {
-    if (version == null || match.version?.valueString == version) {
-      return match;
-    }
-  }
-  return null;
 }

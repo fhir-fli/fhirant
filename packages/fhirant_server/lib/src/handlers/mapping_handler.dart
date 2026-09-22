@@ -6,6 +6,7 @@ import 'package:fhir_r4_mapping/fhir_r4_mapping.dart';
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:fhirant_server/src/utils/host_resource_cache.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
@@ -62,21 +63,19 @@ Future<Response> mappingHandler(
           'stored StructureMap) and `content` (the resource to transform)',
         );
       }
-      final maps = await db.search(
-        resourceType: fhir.R4ResourceType.StructureMap,
-        searchParameters: {
-          'url': [sourceUri],
-        },
-        count: 1,
+      final map = await findOneByCanonical<fhir.StructureMap>(
+        db,
+        fhir.R4ResourceType.StructureMap,
+        sourceUri,
       );
-      if (maps.isEmpty) {
+      if (map == null) {
         return outcome(
           404,
           fhir.IssueType.notFound,
           'No StructureMap with url $sourceUri',
         );
       }
-      requestJson = {'map': maps.first.toJson(), 'source': content};
+      requestJson = {'map': map.toJson(), 'source': content};
     }
 
     if (requestJson['map'] == null) {

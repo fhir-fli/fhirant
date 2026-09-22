@@ -256,9 +256,9 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 
 ## Testing
 
-**1,483 tests** across 143 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
+**1,486 tests** across 144 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
 
-- **Server tests** (1,321 tests, 131 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,324 tests, 132 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
@@ -293,7 +293,7 @@ Every package uses `very_good_analysis` through the repo's root `analysis_option
 
 ## Key Design Decisions
 
-- **One error reply builder**: `outcome(status, IssueType, diagnostics)` in `lib/src/utils/operation_outcomes.dart`, with `exceptionOutcome` and `validationOutcome` as its two common forms, and `lookupStored` in `utils/stored_resource.dart` as the one decision for "the resource this URL names, under this caller's scope"; `searchsetPage` / `countOnlyPage` in `utils/search_page.dart` are the one way a page of results becomes a searchset Bundle (links from `SearchLinks.page`, total null under `_total=none`). Handlers do not define their own; 14 private helpers of six shapes were replaced on 2026-09-22 (PR #7)
+- **One error reply builder**: `outcome(status, IssueType, diagnostics)` in `lib/src/utils/operation_outcomes.dart`, with `exceptionOutcome` and `validationOutcome` as its two common forms, and `lookupStored` in `utils/stored_resource.dart` as the one decision for "the resource this URL names, under this caller's scope"; `searchsetPage` / `countOnlyPage` in `utils/search_page.dart` are the one way a page of results becomes a searchset Bundle (links from `SearchLinks.page`, total null under `_total=none`). `findByCanonical` / `findOneByCanonical` in `utils/canonical.dart` are the one search by canonical URL (`url|version` split there), and `readOperationParameters` / `parametersToMap` in `utils/parameters_body.dart` the one reader of an operation's input. Handlers do not define their own; 14 private helpers of six shapes were replaced on 2026-09-22 (PR #7)
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
 - **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
 - **Version ID = a counter** — `fhirDao.versionIdAsTime = false` (fhirant_db.dart), so each save's version id is the previous one plus one

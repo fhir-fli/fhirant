@@ -1,6 +1,7 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 
 /// The canonical types the mapping engine asks this cache for. The engine
 /// calls `fetchResource<StructureDefinition>` when resolving a type,
@@ -58,9 +59,8 @@ class DbResourceCache extends ResourceCache {
     // asks for `http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0`.
     // Searching for that whole string as the url matches nothing, so every
     // versioned binding failed to resolve.
-    final pipe = url.indexOf('|');
-    final canonical = pipe < 0 ? url : url.substring(0, pipe);
-    final wantVersion = version ?? (pipe < 0 ? null : url.substring(pipe + 1));
+    final (url: canonical, version: pipeVersion) = splitCanonical(url);
+    final wantVersion = version ?? pipeVersion;
 
     final seen = _seen[canonical];
     final versionMatches =
@@ -69,12 +69,10 @@ class DbResourceCache extends ResourceCache {
       return seen;
     }
     for (final type in _canonicalTypes) {
-      final hits = await db.search(
-        resourceType: type,
-        searchParameters: {
-          'url': [canonical],
-          if (wantVersion != null) 'version': [wantVersion],
-        },
+      final hits = await findByCanonical(
+        db,
+        type,
+        wantVersion == null ? canonical : '$canonical|$wantVersion',
       );
       for (final hit in hits) {
         if (hit is T) {
