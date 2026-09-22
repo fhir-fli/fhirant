@@ -189,7 +189,7 @@ Requests pass through middleware in this order:
 - **OAuth 2.0** authorization code flow; PKCE S256 required (`plain` refused); `redirect_uri` pinned per `client_id` on first authorized use (`oauth_clients`), loopback ports free
 - **Granted scope** = requested ∩ account's grant (`SmartScopeEnforcer.grantScopes`); `openid`/`fhirUser`/`launch/*` pass through the response and stay out of the token claim
 - **Patient context** comes from the account (`users.patient_id`, admin-set at `/auth/register` with `patient`), never from the request. A read of a resource outside the compartment is answered as absent (404, byte for byte with the route's real 404; R4B security.html; REVIEW-2026-09-17 A13); a write outside it is 403
-- **JWT tokens**: HS256, 8-hour access tokens, 7-day refresh tokens
+- **JWT tokens**: HS256, 8-hour access tokens, 7-day refresh tokens; every session is minted by `JwtService.issueSession(user, scopes:)` from the account row, and an account's held scopes come from `SmartScopeEnforcer.heldScopes(user)` (one decision each, 2026-09-22)
 - **SMART on FHIR scopes**: `patient/*.read`, `user/Observation.write`, `system/*.*`, etc.
 - **Account lockout**: 5 failed attempts → 15-minute lockout of password login, counted by one credential check shared by login and both authorize handlers (`lib/src/auth/credential_check.dart`); a lock does not end live sessions (deactivation does). A wrong password, an unknown account, a deactivated one and a locked one all answer 401 "Invalid username or password", with the hash computed first (OWASP Authentication Cheat Sheet, "Authentication Responses"; REVIEW-2026-09-17 A12)
 - **One authorization table**: `authorizeRequest` (`lib/src/auth/request_authorization.dart`) decides every REST request and every Bundle entry: scopes, patient context (fails closed at the root too), HEAD as GET, AuditEvent append-only to clients, SearchParameter delete by system authority
@@ -256,9 +256,9 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 
 ## Testing
 
-**1,485 tests** across 143 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
+**1,486 tests** across 144 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
 
-- **Server tests** (1,323 tests, 131 files): `cd packages/fhirant_server && dart test`
+- **Server tests** (1,324 tests, 132 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
 - The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev

@@ -411,9 +411,7 @@ Future<_Outcome> _authorize(
       return const _Denied(401, 'Invalid username or password');
   }
 
-  final held = user.scopes != null && user.scopes!.isNotEmpty
-      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
-      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final held = SmartScopeEnforcer.heldScopes(user);
   final requested =
       scope.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
   final granted = SmartScopeEnforcer.grantScopes(

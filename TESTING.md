@@ -2,7 +2,7 @@
 
 ## Summary
 
-**1,485 tests** across 143 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-22) by
+**1,486 tests** across 144 test files, all passing. Counted 2026-09-14 (server recounted 2026-09-22) by
 running every package the way `.github/workflows/ci.yml` runs it, not from
 memory (the 2026-08-30 figure was 936 across 69; before that a months-old 690
 across 45 that listed the Flutter app not at all and gave `flutter test` for
@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,323 | 131 | `cd packages/fhirant_server && dart test` |
+| fhirant_server | 1,324 | 132 | `cd packages/fhirant_server && dart test` |
 | fhirant_db | 129 | 6 | `cd packages/fhirant_db && dart test` |
 | fhirant | 34 | 4 | `cd packages/fhirant && flutter test` |
 | fhirant_secure_storage | 11 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -146,6 +146,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/store_failure_carries_cause_test.dart` | A save on a closed store logs a SEVERE record carrying the exception and answers 500 with an OperationOutcome; the wrapper used to swallow the cause and the create handler answered 400 (1) |
 | `test/integration/every_route_refuses_a_garbled_body_test.dart` | Every registered route that reads a body, sent `{this is not json` under two content types, answers 4xx, never 5xx (RFC 9110 §15.5.1); register and login answered 500 before (1) |
 | `test/integration/every_route_answers_an_absent_id_alike_test.dart` | Every registered route that names a resource id (24, PUT excluded), sent an absent id, answers 404, `application/fhir+json`, OperationOutcome issue code `not-found`; DELETE carried `exception` before the shared lookup (1) |
+| `test/integration/every_session_carries_the_account_test.dart` | Register, login, the refresh grant and the caller's password change each mint tokens carrying the account row's current generation, id and held scopes, across a role change that moves the generation on; fails at login when the shared minter is given generation 0 (1) |
 | `test/integration/every_search_route_pages_alike_test.dart` | The four paged routes (type, system and compartment search, $everything), each with three matches and asked for the middle one, answer the same link set (self, first, previous, next, last), drop an unknown parameter from the self link, and honour `_total=none`; $everything failed all three before the shared page builder (2) |
 | `test/integration/every_canonical_lookup_honours_version_test.dart` | Two versions of one ValueSet and one CodeSystem held: `$expand?url=X|2` expands version 2, `$lookup?system=X|1` reads version 1, and `url|3` answers 404; passed before the shared finder and pins what it keeps (3) |
 | `test/integration/refusals_are_audited_test.dart` | A refused request is still audited: a garbled token (as anonymous), a deactivated account, a token older than an account change, and a valid token without the scope each leave one failure record naming whoever the token proved; no credential leaves none; allowed and dev-mode requests are controls (7) |
