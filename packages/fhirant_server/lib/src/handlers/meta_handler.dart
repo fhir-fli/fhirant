@@ -208,7 +208,10 @@ fhir.FhirMeta? _extractMetaFromParameters(String body) {
       }
     }
     return null;
-  } catch (_) {
+  } on FormatException {
+    // Not JSON: no meta parameter, and the caller's 400 says a Parameters
+    // resource is required. Anything else propagates; this used to swallow
+    // every failure as "no meta".
     return null;
   }
 }

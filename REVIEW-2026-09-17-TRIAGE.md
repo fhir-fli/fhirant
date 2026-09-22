@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 6 OPEN (five structural, one from the differential run)
+# REVIEW-2026-09-17 triage: 5 OPEN (four structural, one from the differential run)
 
 The twelve behaviour items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
@@ -10,7 +10,7 @@ working code. Rule: **do**, **defer** or **drop**.
 
 | # | Item | Evidence | If done | My recommendation |
 |---|---|---|---|---|
-| ST1 | 22 copied response helpers and 28 hand-built OperationOutcome maps across the handlers | They already disagree: some answer `application/json`, some `application/fhir+json`, some no content type; some build the FHIR class, some a Map. No wrong answer reproduced | One shared builder; touches every handler | Defer. Fold each into the shared builder only when a handler is edited for another reason |
+| ST1 | ~~22 copied response helpers and 28 hand-built OperationOutcome maps~~ | **DONE 2026-09-22 (PR #7).** One builder, `outcome` in `utils/operation_outcomes.dart`, with `exceptionOutcome` and `validationOutcome`; 14 private helpers of six shapes and 18 inline maps replaced, 187 call sites. Measured first: of 82 failure replies 76 already carried `application/fhir+json` and the six that did not were OAuth replies, which stay JSON | | |
 | ST2 | ~~Authorization checked in three layers~~ | **DONE 2026-09-22 for the per-resource part.** `lookupStored` (utils/stored_resource.dart) is the one decision for "the resource this URL names, under this caller's scope": type, presence, compartment. 20 sites in 10 handler files call it; the three private scope helpers in meta, bundle and patch are gone (the compartment handler keeps its own rule for non-Patient compartments, documented there). `every_route_answers_an_absent_id_alike_test.dart` pins the 24 id-bearing routes. The per-route table for scopes and returned types remains open as ST2b | | |
 | ST3 | `parseQueryParameters` returns `Map<String, dynamic>`, read back with 14 casts at 5 call sites | None. A cast could throw, but no case found | A class | Defer |
 | ST4 | Two search engines (review §4) | None reproduced. This is the code the search findings keep landing in | Merge to one path | Defer until the HAPI differential test exists; that test is the safety net for it |

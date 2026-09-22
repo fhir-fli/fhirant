@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:fhirant_logging/fhirant_logging.dart';
+
 /// Generation and offline-friendly persistence of the JWT signing secret.
 ///
 /// The signing secret must be strong and unique per deployment: anyone who
@@ -66,8 +68,15 @@ class JwtSecret {
     if (Platform.isLinux || Platform.isMacOS) {
       try {
         Process.runSync('chmod', ['600', file.path]);
-      } catch (_) {
-        // Ignored: permissions are a hardening bonus, not a correctness need.
+      } catch (e, stackTrace) {
+        // Non-fatal: permissions are a hardening bonus, not a correctness
+        // need. Logged rather than ignored, so a secret left world-readable
+        // is at least visible.
+        FhirantLogging().logWarning(
+          'Could not restrict ${file.path} to its owner (chmod 600)',
+          e,
+          stackTrace,
+        );
       }
     }
   }

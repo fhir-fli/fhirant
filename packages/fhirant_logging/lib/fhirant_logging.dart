@@ -143,9 +143,10 @@ class FhirantLogging {
     _logger.info(message);
   }
 
-  /// Log warnings
-  void logWarning(String message) {
-    _logger.warning(message);
+  /// Log warnings. [error] and [stackTrace] carry the cause when there is
+  /// one: a warning about a failure that names nothing is a swallowed error.
+  void logWarning(String message, [Object? error, StackTrace? stackTrace]) {
+    _logger.warning(message, error, stackTrace);
   }
 
   /// Log errors

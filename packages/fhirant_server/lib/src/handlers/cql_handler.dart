@@ -51,6 +51,9 @@ Future<Response> libraryEvaluateHandler(
 
     // Parse request body for evaluation parameters
     final evalParams = await _parseEvaluateParams(request);
+    if (evalParams == null) {
+      return outcome(400, fhir.IssueType.invalid, 'Request body is not JSON');
+    }
     final refused = _evaluationRefusal(request, evalParams);
     if (refused != null) return refused;
 
@@ -363,19 +366,22 @@ _EvalParams _parsePlainJson(Map<String, dynamic> json) {
 }
 
 /// Parse evaluation parameters from the request body (for Library/$evaluate).
-Future<_EvalParams> _parseEvaluateParams(Request request) async {
+/// The evaluation parameters in the body, or null when the body is not a
+/// JSON object (the caller's 400). This used to read a garbled body as no
+/// parameters.
+Future<_EvalParams?> _parseEvaluateParams(Request request) async {
   final body = await request.readAsString();
   if (body.isEmpty) return _EvalParams();
-
+  final Object? json;
   try {
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    if (json['resourceType'] == 'Parameters') {
-      return _parseParametersResource(json);
-    }
-    return _parsePlainJson(json);
-  } catch (_) {
-    return _EvalParams();
+    json = jsonDecode(body);
+  } on FormatException {
+    return null;
   }
+  if (json is! Map<String, dynamic>) return null;
+  return json['resourceType'] == 'Parameters'
+      ? _parseParametersResource(json)
+      : _parsePlainJson(json);
 }
 
 /// Extract a CqlLibrary from a FHIR Library resource's content attachments.
@@ -396,7 +402,15 @@ CqlLibrary? _extractCqlFromLibrary(fhir.Library library) {
       try {
         final elmMap = jsonDecode(decoded) as Map<String, dynamic>;
         return CqlLibrary.fromJson(elmMap);
-      } catch (_) {
+      } catch (e, stackTrace) {
+        // The next attachment may serve; the reason this one did not is
+        // logged rather than dropped.
+        FhirantLogging().logWarning(
+          'Library/${library.id}: an application/elm+json attachment could '
+          'not be read, trying the next',
+          e,
+          stackTrace,
+        );
         continue;
       }
     }
@@ -414,7 +428,13 @@ CqlLibrary? _extractCqlFromLibrary(fhir.Library library) {
     if (contentType == 'text/cql') {
       try {
         return _parseCql(decoded);
-      } catch (_) {
+      } catch (e, stackTrace) {
+        FhirantLogging().logWarning(
+          'Library/${library.id}: a text/cql attachment does not translate, '
+          'trying the next',
+          e,
+          stackTrace,
+        );
         continue;
       }
     }
