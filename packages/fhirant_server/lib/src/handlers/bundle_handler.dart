@@ -17,6 +17,7 @@ import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -33,13 +34,13 @@ Future<Response> bundleHandler(
 
     if (bundle.type != fhir.BundleType.transaction &&
         bundle.type != fhir.BundleType.batch) {
-      return _validationErrorResponse(
+      return validationOutcome(
         'Bundle type must be "transaction" or "batch"',
       );
     }
 
     if (bundle.entry == null || bundle.entry!.isEmpty) {
-      return _validationErrorResponse('Bundle must contain at least one entry');
+      return validationOutcome('Bundle must contain at least one entry');
     }
 
     if (bundle.type == fhir.BundleType.transaction) {
@@ -49,7 +50,7 @@ Future<Response> bundleHandler(
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error processing Bundle request', e, stackTrace);
-    return _errorResponse(
+    return exceptionOutcome(
       'Failed to process Bundle',
       e is BundleEntryException ? e.message : 'Internal error',
       statusCode: 400,
@@ -76,7 +77,7 @@ Future<Response> _processTransaction(
 
   for (var i = 0; i < bundle.entry!.length; i++) {
     if (bundle.entry![i].request == null) {
-      return _validationErrorResponse('Bundle entry $i missing request');
+      return validationOutcome('Bundle entry $i missing request');
     }
   }
 
@@ -164,7 +165,7 @@ Future<Response> _processTransaction(
     final statusCode = cause is BundleEntryException ? cause.statusCode : 400;
     // Rolled back: no entry changed anything, and every one is recorded as
     // attempted and failed, the failing entry's status on all of them.
-    return _errorResponse(
+    return exceptionOutcome(
       'Transaction failed at entry $index',
       cause is BundleEntryException ? cause.message : 'Internal error',
       statusCode: statusCode,
@@ -1242,46 +1243,4 @@ class BundleEntryException implements Exception {
 
   @override
   String toString() => message;
-}
-
-Response _errorResponse(
-  String message,
-  String details, {
-  int statusCode = 500,
-  Map<String, Object>? context,
-}) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.exception,
-        diagnostics: '$message: $details'.toFhirString,
-      ),
-    ],
-  );
-  FhirantLogging().logWarning('Error Response: $message - $details');
-  return Response(
-    statusCode,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-    context: context,
-  );
-}
-
-Response _validationErrorResponse(String message) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-  FhirantLogging().logWarning('Validation Error: $message');
-  return Response(
-    400,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }

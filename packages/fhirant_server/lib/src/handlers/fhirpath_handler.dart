@@ -5,6 +5,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Shared FHIRPath engine — created once (creation is async and non-trivial)
@@ -29,20 +30,8 @@ Future<Response> fhirPathHandler(
     final resourceId = queryParams['resourceId'];
 
     if (expression == null || expression.isEmpty) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Missing required parameter: expression',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Missing required parameter: expression');
     }
 
     fhir.Resource? resource;
@@ -69,40 +58,18 @@ Future<Response> fhirPathHandler(
         try {
           resource = fhir.Resource.fromJsonString(body);
         } catch (e) {
-          return Response(
-            400,
-            body: jsonEncode({
-              'resourceType': 'OperationOutcome',
-              'issue': [
-                {
-                  'severity': 'error',
-                  'code': 'invalid',
-                  'diagnostics': 'Invalid resource in request body: $e',
-                }
-              ],
-            }),
-            headers: {'Content-Type': 'application/json'},
-          );
+          return outcome(400, fhir.IssueType.invalid,
+              'Invalid resource in request body: $e');
         }
       }
     }
 
     if (resource == null) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'No resource provided. Use query params '
-                  '(resourceType & resourceId) or request body',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(
+          400,
+          fhir.IssueType.invalid,
+          'No resource provided. Use query params '
+          '(resourceType & resourceId) or request body');
     }
 
     // Evaluate the FHIRPath expression. An expression that does not parse
@@ -112,20 +79,8 @@ Future<Response> fhirPathHandler(
     try {
       engine.parse(expression);
     } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'The FHIRPath expression does not parse: $e',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/fhir+json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'The FHIRPath expression does not parse: $e');
     }
     // Evaluated in a worker isolate under the deadline (REVIEW-2026-09-17
     // A9): the worker parses again from the text, builds its own engine,
@@ -147,20 +102,8 @@ Future<Response> fhirPathHandler(
     } on ProgramTimeout catch (e) {
       return _tooCostly('$e');
     } on ProgramFailed catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'The FHIRPath expression failed: ${e.error}',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/fhir+json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'The FHIRPath expression failed: ${e.error}');
     }
 
     FhirantLogging().logInfo(
@@ -176,35 +119,10 @@ Future<Response> fhirPathHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('FHIRPath evaluation failed', e, stackTrace);
-    return Response(
-      500,
-      body: jsonEncode({
-        'resourceType': 'OperationOutcome',
-        'issue': [
-          {
-            'severity': 'error',
-            'code': 'exception',
-            'diagnostics': 'FHIRPath evaluation error',
-          }
-        ],
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
+    return outcome(500, fhir.IssueType.exception, 'FHIRPath evaluation error');
   }
 }
 
 /// 422 `too-costly`: the program was stopped at its deadline.
-Response _tooCostly(String diagnostics) => Response(
-      422,
-      body: jsonEncode({
-        'resourceType': 'OperationOutcome',
-        'issue': [
-          {
-            'severity': 'error',
-            'code': 'too-costly',
-            'diagnostics': diagnostics,
-          }
-        ],
-      }),
-      headers: {'Content-Type': 'application/fhir+json'},
-    );
+Response _tooCostly(String diagnostics) =>
+    outcome(422, fhir.IssueType.tooCostly, diagnostics);

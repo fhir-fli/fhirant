@@ -5,6 +5,7 @@ import 'package:fhir_r4_validation/fhir_r4_validation.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// `$validate`, per `OperationDefinition/Resource-validate`.
@@ -32,14 +33,14 @@ Future<Response> validateHandler(
 
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return _outcome(400, 'invalid', 'Request body is empty');
+      return outcome(400, fhir.IssueType.invalid, 'Request body is empty');
     }
 
     Map<String, dynamic> bodyJson;
     try {
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return _outcome(400, 'invalid', 'Invalid JSON format: $e');
+      return outcome(400, fhir.IssueType.invalid, 'Invalid JSON format: $e');
     }
 
     // A Parameters body carries the resource and the profile separately.
@@ -64,9 +65,9 @@ Future<Response> validateHandler(
         }
       }
       if (identical(resourceJson, bodyJson)) {
-        return _outcome(
+        return outcome(
           400,
-          'invalid',
+          fhir.IssueType.invalid,
           'Parameters body carries no "resource" parameter',
         );
       }
@@ -77,11 +78,11 @@ Future<Response> validateHandler(
     if (resourceType != null) {
       final bodyResourceType = resourceJson['resourceType'];
       if (bodyResourceType != resourceType) {
-        return _outcome(
+        return outcome(
           400,
-          'invalid',
+          fhir.IssueType.invalid,
           'Resource type in body ($bodyResourceType) does not match URL path '
-              '($resourceType)',
+          '($resourceType)',
         );
       }
     }
@@ -92,12 +93,12 @@ Future<Response> validateHandler(
       if (structureDefinition == null) {
         // The SHALL above: say so rather than validating against the base
         // type and reporting that as the answer.
-        return _outcome(
+        return outcome(
           400,
-          'not-supported',
+          fhir.IssueType.notSupported,
           'Cannot validate against the nominated profile "$profile": no '
-              'StructureDefinition with that canonical URL is known to this '
-              'server. POST the StructureDefinition first.',
+          'StructureDefinition with that canonical URL is known to this '
+          'server. POST the StructureDefinition first.',
         );
       }
     }
@@ -132,11 +133,11 @@ Future<Response> validateHandler(
       // packaged specification. POST it and the validation completes.
       final message = e.toString();
       if (message.contains('Resource not found at')) {
-        return _outcome(
+        return outcome(
           422,
-          'not-supported',
+          fhir.IssueType.notSupported,
           'Validation needs a canonical resource this server cannot resolve: '
-              '$message',
+          '$message',
         );
       }
       rethrow;
@@ -151,11 +152,11 @@ Future<Response> validateHandler(
       (r) => r.diagnostics.startsWith('No StructureDefinition found for'),
     );
     if (notPerformed.isNotEmpty) {
-      return _outcome(
+      return outcome(
         422,
-        'not-supported',
+        fhir.IssueType.notSupported,
         'Validation could not be performed: ${notPerformed.first.diagnostics}. '
-            'Load the specification, or POST the StructureDefinition, first.',
+        'Load the specification, or POST the StructureDefinition, first.',
       );
     }
 
@@ -188,7 +189,7 @@ Future<Response> validateHandler(
       e,
       stackTrace,
     );
-    return _outcome(500, 'exception', 'Validation error');
+    return outcome(500, fhir.IssueType.exception, 'Validation error');
   }
 }
 
@@ -222,18 +223,3 @@ Future<fhir.StructureDefinition?> _resolveProfile(
   }
   return null;
 }
-
-Response _outcome(int status, String code, String diagnostics) => Response(
-      status,
-      body: jsonEncode({
-        'resourceType': 'OperationOutcome',
-        'issue': [
-          {
-            'severity': 'error',
-            'code': code,
-            'diagnostics': diagnostics,
-          },
-        ],
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );

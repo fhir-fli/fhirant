@@ -5,6 +5,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for $meta operation: GET /{resourceType}/{id}/$meta
@@ -49,7 +50,7 @@ Future<Response> metaHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to get resource meta', 'Internal error');
+    return exceptionOutcome('Failed to get resource meta', 'Internal error');
   }
 }
 
@@ -82,7 +83,7 @@ Future<Response> metaAddHandler(
     final body = await request.readAsString();
     final inputMeta = _extractMetaFromParameters(body);
     if (inputMeta == null) {
-      return _validationErrorResponse(
+      return validationOutcome(
         'Request body must be a Parameters resource with a meta parameter',
       );
     }
@@ -116,7 +117,7 @@ Future<Response> metaAddHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to add resource meta', 'Internal error');
+    return exceptionOutcome('Failed to add resource meta', 'Internal error');
   }
 }
 
@@ -147,7 +148,7 @@ Future<Response> metaDeleteHandler(
     final body = await request.readAsString();
     final inputMeta = _extractMetaFromParameters(body);
     if (inputMeta == null) {
-      return _validationErrorResponse(
+      return validationOutcome(
         'Request body must be a Parameters resource with a meta parameter',
       );
     }
@@ -186,7 +187,7 @@ Future<Response> metaDeleteHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to delete resource meta', 'Internal error');
+    return exceptionOutcome('Failed to delete resource meta', 'Internal error');
   }
 }
 
@@ -294,42 +295,4 @@ fhir.Resource _setMeta(fhir.Resource resource, fhir.FhirMeta meta) {
   final json = resource.toJson();
   json['meta'] = meta.toJson();
   return fhir.Resource.fromJson(json);
-}
-
-Response _errorResponse(
-  String message,
-  String details, {
-  int statusCode = 500,
-}) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.exception,
-        diagnostics: '$message: $details'.toFhirString,
-      ),
-    ],
-  );
-  return Response(
-    statusCode,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
-Response _validationErrorResponse(String message) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-  return Response(
-    400,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }

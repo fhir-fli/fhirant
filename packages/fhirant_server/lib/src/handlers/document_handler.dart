@@ -4,6 +4,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for `GET /Composition/<id>/$document`.
@@ -25,8 +26,9 @@ Future<Response> documentHandler(
     if (lookup is! StoredFound) return lookupRefusal(lookup);
     final composition = lookup.resource;
     if (composition is! fhir.Composition) {
-      return _operationOutcome(
+      return outcome(
         500,
+        fhir.IssueType.processing,
         'Resource Composition/$id is not a valid Composition',
       );
     }
@@ -47,7 +49,7 @@ Future<Response> documentHandler(
         )) {
       // As absent, the same answer as the line above (REVIEW-2026-09-17
       // A13).
-      return _operationOutcome(404, 'Composition/$id not found');
+      return outcome(404, fhir.IssueType.notFound, 'Composition/$id not found');
     }
 
     // 2. Collect all references from the Composition
@@ -125,7 +127,7 @@ Future<Response> documentHandler(
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -258,26 +260,4 @@ String _baseUrl(Request request) {
   return uri.hasPort
       ? '${uri.scheme}://${uri.host}:${uri.port}'
       : '${uri.scheme}://${uri.host}';
-}
-
-/// Returns an OperationOutcome response.
-Response _operationOutcome(int statusCode, String message) {
-  final outcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: statusCode >= 500
-            ? fhir.IssueSeverity.fatal
-            : fhir.IssueSeverity.error,
-        code: statusCode == 404
-            ? fhir.IssueType.notFound
-            : fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-  return Response(
-    statusCode,
-    body: outcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }

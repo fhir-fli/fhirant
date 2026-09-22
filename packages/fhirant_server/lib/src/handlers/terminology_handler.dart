@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for CodeSystem/$validate-code and ValueSet/$validate-code.
@@ -30,7 +31,8 @@ Future<Response> validateCodeHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return _errorResponse(400, 'Parameter "code" or "coding" is required');
+      return outcome(400, fhir.IssueType.invalid,
+          'Parameter "code" or "coding" is required');
     }
 
     // Instance-level: validate against specific resource
@@ -55,19 +57,15 @@ Future<Response> validateCodeHandler(
           dbInterface,
         );
       }
-      return _errorResponse(
-        400,
-        r'$validate-code only supported for CodeSystem and ValueSet',
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          r'$validate-code only supported for CodeSystem and ValueSet');
     }
 
     // Type-level or system-level: look up by URL/system
     if (resourceType == 'CodeSystem' || (resourceType == null && url == null)) {
       if (effectiveSystem == null && url == null) {
-        return _errorResponse(
-          400,
-          'Parameter "system" or "url" is required for CodeSystem',
-        );
+        return outcome(400, fhir.IssueType.invalid,
+            'Parameter "system" or "url" is required for CodeSystem');
       }
       final lookupUrl = url ?? effectiveSystem;
       final codeSystem = await _findCodeSystemByUrl(lookupUrl!, dbInterface);
@@ -77,11 +75,11 @@ Future<Response> validateCodeHandler(
         // heads its error example, verbatim: "An error like this not
         // returned if the code is not valid, but when the server is unable
         // to determine whether the code is valid".
-        return _errorResponse(
-          404,
-          'CodeSystem $lookupUrl is not held by this server, so the code '
-          'cannot be validated',
-        );
+        return outcome(
+            404,
+            fhir.IssueType.notFound,
+            'CodeSystem $lookupUrl is not held by this server, so the code '
+            'cannot be validated');
       }
       return _validateAgainstCodeSystem(
         codeSystem,
@@ -93,15 +91,16 @@ Future<Response> validateCodeHandler(
 
     if (resourceType == 'ValueSet') {
       if (url == null) {
-        return _errorResponse(400, 'Parameter "url" is required for ValueSet');
+        return outcome(400, fhir.IssueType.invalid,
+            'Parameter "url" is required for ValueSet');
       }
       final valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
-        return _errorResponse(
-          404,
-          'ValueSet $url is not held by this server, so the code cannot be '
-          'validated',
-        );
+        return outcome(
+            404,
+            fhir.IssueType.notFound,
+            'ValueSet $url is not held by this server, so the code cannot be '
+            'validated');
       }
       return await _validateAgainstValueSet(
         valueSet,
@@ -112,11 +111,12 @@ Future<Response> validateCodeHandler(
       );
     }
 
-    return _errorResponse(400, 'Unable to determine target for validation');
+    return outcome(400, fhir.IssueType.invalid,
+        'Unable to determine target for validation');
   } catch (e, stackTrace) {
     FhirantLogging()
         .logError(r'Terminology $validate-code failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 
@@ -140,7 +140,8 @@ Future<Response> lookupHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return _errorResponse(400, 'Parameter "code" or "coding" is required');
+      return outcome(400, fhir.IssueType.invalid,
+          'Parameter "code" or "coding" is required');
     }
 
     // Instance-level: lookup in specific CodeSystem
@@ -152,14 +153,13 @@ Future<Response> lookupHandler(
     } else {
       // Type-level: find by system URL
       if (effectiveSystem == null) {
-        return _errorResponse(
-          400,
-          'Parameter "system" or "coding.system" is required',
-        );
+        return outcome(400, fhir.IssueType.invalid,
+            'Parameter "system" or "coding.system" is required');
       }
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {
-        return _errorResponse(404, 'CodeSystem not found: $effectiveSystem');
+        return outcome(404, fhir.IssueType.notFound,
+            'CodeSystem not found: $effectiveSystem');
       }
     }
 
@@ -168,10 +168,8 @@ Future<Response> lookupHandler(
     if (concept == null) {
       final systemName =
           codeSystem.url?.valueString ?? codeSystem.id?.toString() ?? 'unknown';
-      return _errorResponse(
-        404,
-        'Code "$effectiveCode" not found in CodeSystem $systemName',
-      );
+      return outcome(404, fhir.IssueType.notFound,
+          'Code "$effectiveCode" not found in CodeSystem $systemName');
     }
 
     // Build response Parameters
@@ -290,7 +288,7 @@ Future<Response> lookupHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $lookup failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 
@@ -327,24 +325,23 @@ Future<Response> expandHandler(
     } else if (url != null) {
       valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
-        return _errorResponse(404, 'ValueSet not found: $url');
+        return outcome(
+            404, fhir.IssueType.notFound, 'ValueSet not found: $url');
       }
     } else {
-      return _errorResponse(
-        400,
-        r'Parameter "url" is required for type-level $expand',
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          r'Parameter "url" is required for type-level $expand');
     }
 
     // Check version if specified
     if (valueSetVersion != null) {
       final vsVersion = valueSet.version?.valueString;
       if (vsVersion == null || vsVersion != valueSetVersion) {
-        return _errorResponse(
-          404,
-          'ValueSet version "$valueSetVersion" not found'
-          '${vsVersion != null ? ' (available: $vsVersion)' : ''}',
-        );
+        return outcome(
+            404,
+            fhir.IssueType.notFound,
+            'ValueSet version "$valueSetVersion" not found'
+            '${vsVersion != null ? ' (available: $vsVersion)' : ''}');
       }
     }
 
@@ -384,7 +381,7 @@ Future<Response> expandHandler(
     try {
       codes = await dbInterface.fhirDao.expandValueSet(valueSet);
     } on ValueSetRefusal catch (e) {
-      return _errorResponse(422, e.message, code: e.issueCode);
+      return outcome(422, issueTypeOfCode(e.issueCode), e.message);
     }
     final allContains = [
       for (final c in codes)
@@ -426,7 +423,7 @@ Future<Response> expandHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $expand failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 
@@ -563,13 +560,12 @@ Response _validateAgainstCodeSystem(
     // complete) is not thereby invalid: the server cannot tell.
     final content = codeSystem.content.toString();
     if (content != 'complete') {
-      return _errorResponse(
-        422,
-        'CodeSystem ${csUrl ?? ''} is held with content "$content", not '
-        'the complete code system, so a code it does not list cannot be '
-        'called invalid',
-        code: 'not-supported',
-      );
+      return outcome(
+          422,
+          fhir.IssueType.notSupported,
+          'CodeSystem ${csUrl ?? ''} is held with content "$content", not '
+          'the complete code system, so a code it does not list cannot be '
+          'called invalid');
     }
     return _validationResult(
       result: false,
@@ -632,7 +628,7 @@ Future<Response> _validateAgainstValueSet(
   try {
     codes = await dbInterface.fhirDao.expandValueSet(valueSet);
   } on ValueSetRefusal catch (e) {
-    return _errorResponse(422, e.message, code: e.issueCode);
+    return outcome(422, issueTypeOfCode(e.issueCode), e.message);
   }
   for (final c in codes) {
     if (c.code != code) continue;
@@ -712,23 +708,6 @@ Response _validationResult({
   );
 }
 
-Response _errorResponse(int statusCode, String message, {String? code}) {
-  return Response(
-    statusCode,
-    body: jsonEncode({
-      'resourceType': 'OperationOutcome',
-      'issue': [
-        {
-          'severity': 'error',
-          'code': code ?? (statusCode == 404 ? 'not-found' : 'invalid'),
-          'diagnostics': message,
-        }
-      ],
-    }),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
 // ── NamingSystem $preferred-id ─────────────────────────────────────────
 
 /// Handler for NamingSystem/$preferred-id.
@@ -746,10 +725,11 @@ Future<Response> preferredIdHandler(
     final type = params['type'] as String?;
 
     if (id == null) {
-      return _errorResponse(400, 'Parameter "id" is required');
+      return outcome(400, fhir.IssueType.invalid, 'Parameter "id" is required');
     }
     if (type == null) {
-      return _errorResponse(400, 'Parameter "type" is required');
+      return outcome(
+          400, fhir.IssueType.invalid, 'Parameter "type" is required');
     }
 
     // Try to find the NamingSystem by resource id first, then by name
@@ -773,7 +753,8 @@ Future<Response> preferredIdHandler(
     }
 
     if (namingSystem == null) {
-      return _errorResponse(404, 'NamingSystem not found: $id');
+      return outcome(
+          404, fhir.IssueType.notFound, 'NamingSystem not found: $id');
     }
 
     // Find the uniqueId entry matching the requested type.
@@ -792,10 +773,8 @@ Future<Response> preferredIdHandler(
 
     final chosen = preferredMatch ?? match;
     if (chosen == null) {
-      return _errorResponse(
-        404,
-        'No uniqueId of type "$type" found in NamingSystem',
-      );
+      return outcome(404, fhir.IssueType.notFound,
+          'No uniqueId of type "$type" found in NamingSystem');
     }
 
     final result = fhir.Parameters(
@@ -815,7 +794,7 @@ Future<Response> preferredIdHandler(
   } catch (e, stackTrace) {
     FhirantLogging()
         .logError(r'Terminology $preferred-id failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 
@@ -844,7 +823,8 @@ Future<Response> translateHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return _errorResponse(400, 'Parameter "code" or "coding" is required');
+      return outcome(400, fhir.IssueType.invalid,
+          'Parameter "code" or "coding" is required');
     }
 
     // Find the ConceptMap
@@ -871,7 +851,7 @@ Future<Response> translateHandler(
     }
 
     if (conceptMap == null) {
-      return _errorResponse(404, 'ConceptMap not found');
+      return outcome(404, fhir.IssueType.notFound, 'ConceptMap not found');
     }
 
     // Every target of every element for the code, across the groups whose
@@ -964,7 +944,7 @@ Future<Response> translateHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $translate failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 
@@ -1011,8 +991,9 @@ Future<Response> subsumesHandler(
         (codingB?['system'] as String?);
 
     if (effectiveCodeA == null || effectiveCodeB == null) {
-      return _errorResponse(
+      return outcome(
           400,
+          fhir.IssueType.invalid,
           'Parameters "codeA" and "codeB" (or "codingA"/"codingB") '
           'are required');
     }
@@ -1026,62 +1007,57 @@ Future<Response> subsumesHandler(
     } else if (effectiveSystem != null) {
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {
-        return _errorResponse(404, 'CodeSystem not found: $effectiveSystem');
+        return outcome(404, fhir.IssueType.notFound,
+            'CodeSystem not found: $effectiveSystem');
       }
     } else {
-      return _errorResponse(
-        400,
-        'Parameter "system" is required when no id is provided',
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Parameter "system" is required when no id is provided');
     }
 
     // Verify both codes exist in the CodeSystem
     final conceptA = _findConcept(codeSystem.concept, effectiveCodeA);
     if (conceptA == null) {
-      return _errorResponse(
-        400,
-        'Code "$effectiveCodeA" not found in CodeSystem',
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Code "$effectiveCodeA" not found in CodeSystem');
     }
     final conceptB = _findConcept(codeSystem.concept, effectiveCodeB);
     if (conceptB == null) {
-      return _errorResponse(
-        400,
-        'Code "$effectiveCodeB" not found in CodeSystem',
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Code "$effectiveCodeB" not found in CodeSystem');
     }
 
     // Determine subsumption relationship
-    String outcome;
+    String relation;
     if (effectiveCodeA == effectiveCodeB) {
-      outcome = 'equivalent';
+      relation = 'equivalent';
     } else if (_isAncestor(
       codeSystem.concept,
       effectiveCodeA,
       effectiveCodeB,
     )) {
-      outcome = 'subsumes';
+      relation = 'subsumes';
     } else if (_isAncestor(
       codeSystem.concept,
       effectiveCodeB,
       effectiveCodeA,
     )) {
-      outcome = 'subsumed-by';
+      relation = 'subsumed-by';
     } else {
-      outcome = 'not-subsumed';
+      relation = 'not-subsumed';
     }
 
     final result = fhir.Parameters(
       parameter: [
         fhir.ParametersParameter(
           name: fhir.FhirString('outcome'),
-          valueCode: fhir.FhirCode(outcome),
+          valueCode: fhir.FhirCode(relation),
         ),
       ],
     );
 
     FhirantLogging().logInfo(
-      'CodeSystem \$subsumes: $outcome',
+      'CodeSystem \$subsumes: $relation',
     );
     return Response.ok(
       result.toJsonString(),
@@ -1089,7 +1065,7 @@ Future<Response> subsumesHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError(r'Terminology $subsumes failed', e, stackTrace);
-    return _errorResponse(500, 'Internal error');
+    return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
 

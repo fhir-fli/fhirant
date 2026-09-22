@@ -4,6 +4,7 @@ import 'package:cicada/cicada.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Immunization forecast handler — CDC CDSi logic.
@@ -43,14 +44,15 @@ Future<Response> _handleForecast(
 
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return _errorResponse(400, 'invalid', 'Request body is required');
+      return outcome(400, fhir.IssueType.invalid, 'Request body is required');
     }
 
     Map<String, dynamic> bodyJson;
     try {
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return _errorResponse(400, 'invalid', 'Invalid JSON in request body');
+      return outcome(
+          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
     }
 
     // If the body is already a Parameters resource, use it directly
@@ -105,20 +107,20 @@ Future<Response> _handleForecast(
       );
     }
 
-    return _errorResponse(
+    return outcome(
       400,
-      'invalid',
+      fhir.IssueType.invalid,
       'Expected a Parameters resource or JSON with patientId',
     );
   } on PatientNotFound catch (e) {
     // A patient the request names and the store does not hold is a 404, not
     // a 500 (REVIEW-2026-09-08 row 32).
-    return _errorResponse(404, 'not-found', 'Patient/${e.id} not found');
+    return outcome(404, fhir.IssueType.notFound, 'Patient/${e.id} not found');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Immunization forecast failed', e, stackTrace);
-    return _errorResponse(
+    return outcome(
       500,
-      'exception',
+      fhir.IssueType.exception,
       'Immunization forecast error',
     );
   }
@@ -255,20 +257,3 @@ Future<List<fhir.Resource>> _searchForPatient(
         'patient': ['Patient/$patientId'],
       },
     );
-
-Response _errorResponse(int status, String code, String diagnostics) {
-  return Response(
-    status,
-    body: jsonEncode({
-      'resourceType': 'OperationOutcome',
-      'issue': [
-        {
-          'severity': 'error',
-          'code': code,
-          'diagnostics': diagnostics,
-        }
-      ],
-    }),
-    headers: {'Content-Type': 'application/fhir+json'},
-  );
-}

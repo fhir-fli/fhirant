@@ -61,14 +61,14 @@ Future<Response> patchResourceHandler(
         // this server does not support.
         return _fhirPatchNotSupported();
       } else {
-        return _validationErrorResponse(
+        return validationOutcome(
           'Invalid patch format. Expected JSON Patch array or FHIR '
           'Parameters resource.',
         );
       }
     } catch (e) {
       FhirantLogging().logError('Error parsing patch document: $e');
-      return _validationErrorResponse('Invalid JSON in patch document: $e');
+      return validationOutcome('Invalid JSON in patch document: $e');
     }
 
     // Convert resource to JSON for patching
@@ -83,14 +83,14 @@ Future<Response> patchResourceHandler(
 
       // Validate resource type and ID haven't changed
       if (patchedResource.resourceTypeString != resourceType) {
-        return _validationErrorResponse(
+        return validationOutcome(
           'Patch operation cannot change resource type',
         );
       }
 
       final resourceId = patchedResource.id?.toString() ?? '';
       if (resourceId != id) {
-        return _validationErrorResponse(
+        return validationOutcome(
           'Patch operation cannot change resource ID',
         );
       }
@@ -150,7 +150,7 @@ Future<Response> patchResourceHandler(
           e,
           stackTrace,
         );
-        return _errorResponse(
+        return exceptionOutcome(
           'Failed to save patched resource',
           'Internal error',
         );
@@ -176,7 +176,7 @@ Future<Response> patchResourceHandler(
         e,
         stackTrace,
       );
-      return _errorResponse(
+      return exceptionOutcome(
         'Failed to apply patch',
         e.toString(),
         statusCode: 400,
@@ -188,55 +188,11 @@ Future<Response> patchResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
+    return exceptionOutcome(
       'Error processing PATCH request',
       'Internal error',
     );
   }
-}
-
-/// Utility for creating a generic error response
-Response _errorResponse(
-  String message,
-  String details, {
-  int statusCode = 500,
-}) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.exception,
-        diagnostics: '$message: $details'.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Error Response: $message - $details');
-  return Response(
-    statusCode,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
-/// Utility for creating a validation error response
-Response _validationErrorResponse(String message) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Validation Error: $message');
-  return Response(
-    400,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }
 
 /// 415 for a FHIRPath Patch body: the CapabilityStatement's patchFormat is

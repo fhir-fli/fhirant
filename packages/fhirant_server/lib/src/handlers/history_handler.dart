@@ -26,7 +26,7 @@ Future<Response> resourceHistoryHandler(
       FhirantLogging().logWarning(
         'Invalid resource type requested: $resourceType',
       );
-      return _validationErrorResponse('Invalid resource type');
+      return validationOutcome('Invalid resource type');
     }
 
     // Get pagination and history parameters
@@ -35,17 +35,17 @@ Future<Response> resourceHistoryHandler(
       queryParams['_count'],
       queryParams['_offset'],
     );
-    if (pageError != null) return _validationErrorResponse(pageError);
+    if (pageError != null) return validationOutcome(pageError);
     final count = pageSize(queryParams['_count']);
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
     final instantError = _instantError(queryParams, since, at);
-    if (instantError != null) return _validationErrorResponse(instantError);
+    if (instantError != null) return validationOutcome(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
-      return _validationErrorResponse(
+      return validationOutcome(
         '_since and _at are mutually exclusive; specify only one',
       );
     }
@@ -116,7 +116,7 @@ Future<Response> resourceHistoryHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
+    return exceptionOutcome(
       'Failed to fetch resource history',
       'Internal error',
     );
@@ -139,7 +139,7 @@ Future<Response> typeHistoryHandler(
       FhirantLogging().logWarning(
         'Invalid resource type requested: $resourceType',
       );
-      return _validationErrorResponse('Invalid resource type');
+      return validationOutcome('Invalid resource type');
     }
 
     // Get pagination and history parameters
@@ -148,17 +148,17 @@ Future<Response> typeHistoryHandler(
       queryParams['_count'],
       queryParams['_offset'],
     );
-    if (pageError != null) return _validationErrorResponse(pageError);
+    if (pageError != null) return validationOutcome(pageError);
     final count = pageSize(queryParams['_count']);
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
     final instantError = _instantError(queryParams, since, at);
-    if (instantError != null) return _validationErrorResponse(instantError);
+    if (instantError != null) return validationOutcome(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
-      return _validationErrorResponse(
+      return validationOutcome(
         '_since and _at are mutually exclusive; specify only one',
       );
     }
@@ -218,7 +218,7 @@ Future<Response> typeHistoryHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
+    return exceptionOutcome(
       'Failed to fetch resource type history',
       'Internal error',
     );
@@ -239,17 +239,17 @@ Future<Response> systemHistoryHandler(
       queryParams['_count'],
       queryParams['_offset'],
     );
-    if (pageError != null) return _validationErrorResponse(pageError);
+    if (pageError != null) return validationOutcome(pageError);
     final count = pageSize(queryParams['_count']);
     final offset = int.parse(queryParams['_offset'] ?? '0');
     final since = _parseSince(queryParams['_since']);
     final at = _parseSince(queryParams['_at']);
     final instantError = _instantError(queryParams, since, at);
-    if (instantError != null) return _validationErrorResponse(instantError);
+    if (instantError != null) return validationOutcome(instantError);
 
     // _since and _at are mutually exclusive
     if (since != null && at != null) {
-      return _validationErrorResponse(
+      return validationOutcome(
         '_since and _at are mutually exclusive; specify only one',
       );
     }
@@ -318,7 +318,7 @@ Future<Response> systemHistoryHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
+    return exceptionOutcome(
       'Failed to fetch system history',
       'Internal error',
     );
@@ -343,7 +343,7 @@ Future<Response> vreadResourceHandler(
       FhirantLogging().logWarning(
         'Invalid resource type requested: $resourceType',
       );
-      return _validationErrorResponse('Invalid resource type');
+      return validationOutcome('Invalid resource type');
     }
 
     final outside =
@@ -402,7 +402,7 @@ Future<Response> vreadResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
+    return exceptionOutcome(
       'Failed to fetch resource version',
       'Internal error',
     );
@@ -449,50 +449,6 @@ String? _instantError(
 DateTime? _parseSince(String? value) {
   if (value == null || value.isEmpty) return null;
   return DateTime.tryParse(value);
-}
-
-/// Utility for creating a generic error response
-Response _errorResponse(
-  String message,
-  String details, {
-  int statusCode = 500,
-}) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.exception,
-        diagnostics: '$message: $details'.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Error Response: $message - $details');
-  return Response(
-    statusCode,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
-/// Utility for creating a validation error response
-Response _validationErrorResponse(String message) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Validation Error: $message');
-  return Response(
-    400,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }
 
 /// One `Bundle.entry` of a history Bundle, the same for instance, type and
