@@ -30,6 +30,16 @@ fhirant/
 
 **Dependency graph:** `fhirant (Flutter app) → fhirant_server → fhirant_db → fhirant_secure_storage → fhirant_logging`
 
+## How changes land
+
+`main` is protected (set 2026-09-22): direct pushes are refused, and a merge
+needs the `build` and `docker` CI checks green, admins included. Every
+change goes on its own short-lived branch, as one pull request, merged
+by `gh pr merge --auto --squash` when CI passes. One change per pull
+request, merged the same day; no standing dev branch (DORA,
+trunk-based development). The strict analyzer flags are on in the root
+`analysis_options.yaml`.
+
 ## Common Commands
 
 ```bash
