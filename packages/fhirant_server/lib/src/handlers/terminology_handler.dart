@@ -18,7 +18,8 @@ Future<Response> validateCodeHandler(
   String? id,
 ]) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -153,7 +154,8 @@ Future<Response> lookupHandler(
   String? id,
 ]) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -344,7 +346,8 @@ Future<Response> expandHandler(
   String? id,
 ]) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final url = params['url'] as String?;
     final filter = params['filter'] as String?;
@@ -687,7 +690,8 @@ Future<Response> preferredIdHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final id = params['id'] as String?;
     final type = params['type'] as String?;
@@ -787,7 +791,8 @@ Future<Response> translateHandler(
   String? id,
 ]) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -944,7 +949,8 @@ Future<Response> subsumesHandler(
   String? id,
 ]) async {
   try {
-    final params = await readOperationParameters(request);
+    final (:params, :refusal) = await readOperationParameters(request);
+    if (refusal != null) return refusal;
 
     final codeA = params['codeA'] as String?;
     final codeB = params['codeB'] as String?;

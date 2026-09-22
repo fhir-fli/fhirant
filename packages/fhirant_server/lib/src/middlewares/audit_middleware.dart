@@ -479,7 +479,14 @@ Future<void> _queueEvent(
     };
 
     queue.add(fhir.Resource.fromJson(auditEventJson));
-  } catch (_) {
-    // Audit logging must never break the response pipeline
+  } catch (e, stackTrace) {
+    // Never thrown into the response pipeline; never silent either. An
+    // event that cannot be built is a use of the record with no trace, and
+    // this used to drop it without a word.
+    FhirantLogging().logError(
+      'Audit event could not be built for $method $path',
+      e,
+      stackTrace,
+    );
   }
 }

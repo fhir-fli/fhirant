@@ -35,7 +35,8 @@ Future<Response> backupHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final params = await _readParameters(request);
+    final (:params, :refusal) = await _readParameters(request);
+    if (refusal != null) return refusal;
     final passphrase = params['passphrase'];
     if (passphrase == null || passphrase.isEmpty) {
       return outcome(
@@ -209,10 +210,18 @@ Future<Response> restoreHandler(
 
 /// The string parameters of the request's Parameters body (or, empty,
 /// none): a passphrase and its like.
-Future<Map<String, String>> _readParameters(Request request) async => {
-      for (final e in (await readOperationParameters(request)).entries)
+Future<({Map<String, String> params, Response? refusal})> _readParameters(
+  Request request,
+) async {
+  final (:params, :refusal) = await readOperationParameters(request);
+  return (
+    params: {
+      for (final e in params.entries)
         if (e.value is String) e.key: e.value as String,
-    };
+    },
+    refusal: refusal,
+  );
+}
 
 /// Reads the restore passphrase from the `X-Backup-Passphrase` header.
 ///

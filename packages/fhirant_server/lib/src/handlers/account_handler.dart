@@ -267,11 +267,14 @@ Map<String, dynamic> _tokenPair(JwtService jwtService, User user) {
   };
 }
 
+/// The JSON object in the body, or null when the body is not one (the
+/// caller's 400). Only a parse failure is null; this used to swallow
+/// every failure.
 Future<Map<String, dynamic>?> _body(Request request) async {
   try {
     final decoded = jsonDecode(await request.readAsString());
     return decoded is Map<String, dynamic> ? decoded : null;
-  } catch (_) {
+  } on FormatException {
     return null;
   }
 }

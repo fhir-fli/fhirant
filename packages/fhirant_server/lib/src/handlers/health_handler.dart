@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:shelf/shelf.dart';
 
 const _version = '1.0.0';
@@ -18,7 +19,13 @@ Future<Response> healthHandler(
   try {
     await dbInterface.getUserCount();
     status = 'ok';
-  } catch (_) {
+  } catch (e, stackTrace) {
+    // Degraded, and the log says why; this used to say nothing.
+    FhirantLogging().logWarning(
+      'Health check: the store did not answer',
+      e,
+      stackTrace,
+    );
     status = 'degraded';
   }
 
