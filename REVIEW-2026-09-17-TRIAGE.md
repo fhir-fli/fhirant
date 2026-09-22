@@ -1,4 +1,4 @@
-# REVIEW-2026-09-17 triage: 7 OPEN (six structural, one from the differential run)
+# REVIEW-2026-09-17 triage: 6 OPEN (five structural, one from the differential run)
 
 The twelve behaviour items were ruled on 2026-09-19; the rulings are in
 `REVIEW_DECISIONS.md`. Do not re-raise a ruled item without new evidence.
@@ -11,7 +11,7 @@ working code. Rule: **do**, **defer** or **drop**.
 | # | Item | Evidence | If done | My recommendation |
 |---|---|---|---|---|
 | ST1 | 22 copied response helpers and 28 hand-built OperationOutcome maps across the handlers | They already disagree: some answer `application/json`, some `application/fhir+json`, some no content type; some build the FHIR class, some a Map. No wrong answer reproduced | One shared builder; touches every handler | Defer. Fold each into the shared builder only when a handler is edited for another reason |
-| ST2 | Authorization checked in three layers: middleware, then each handler in its own words | The strongest evidence in the review: A5 (HEAD), A6 (SearchParameter delete) and A7 (PATCH) were each "one path forgot". All three are fixed | A per-route table declaring permission, returned type and compartment confinement | Do, after the search oracle. It is the one refactor with reproduced bugs behind it |
+| ST2 | ~~Authorization checked in three layers~~ | **DONE 2026-09-22 for the per-resource part.** `lookupStored` (utils/stored_resource.dart) is the one decision for "the resource this URL names, under this caller's scope": type, presence, compartment. 20 sites in 10 handler files call it; the three private scope helpers in meta, bundle and patch are gone (the compartment handler keeps its own rule for non-Patient compartments, documented there). `every_route_answers_an_absent_id_alike_test.dart` pins the 24 id-bearing routes. The per-route table for scopes and returned types remains open as ST2b | | |
 | ST3 | `parseQueryParameters` returns `Map<String, dynamic>`, read back with 14 casts at 5 call sites | None. A cast could throw, but no case found | A class | Defer |
 | ST4 | Two search engines (review §4) | None reproduced. This is the code the search findings keep landing in | Merge to one path | Defer until the HAPI differential test exists; that test is the safety net for it |
 | ST5 | `fhirant_secure_storage` half dead: six methods with no caller; the app uses `FlutterSecureStorage` directly under different key names | Dead code, verified by search | Delete the unused methods, or move the app onto them | Do. Deleting unused key-handling code removes a way to store a key in the wrong place |

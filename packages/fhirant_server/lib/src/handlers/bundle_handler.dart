@@ -16,6 +16,7 @@ import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -474,40 +475,37 @@ String? _entryPatient(
 ) =>
     principal?.compartmentFor(resourceType, permission)?.id;
 
-/// Throws unless the stored resource is in the compartment: for a [read],
-/// the entry's ordinary 404, byte for byte (REVIEW-2026-09-17 A13; R4B
-/// security.html "Access Denied Response Handling", read 2026-09-19,
-/// verbatim: a 404 "is indistinguishable from a query against a resource
-/// that doesn't exist"); for a write, the entry's 403.
-Future<void> _requireStoredInCompartment(
-  String? patientId,
-  String resourceType,
-  String resourceId,
-  FhirAntDb dbInterface,
-  int entryIndex, {
-  bool read = false,
-}) async {
-  if (patientId == null) return;
-  if (await isInPatientCompartment(
-    resourceType,
-    resourceId,
-    patientId,
-    dbInterface,
-  )) {
-    return;
-  }
-  if (read) {
-    throw BundleEntryException(
-      404,
-      'Bundle entry $entryIndex: Resource not found',
-    );
-  }
-  throw BundleEntryException(
-    403,
-    'Bundle entry $entryIndex: $resourceType/$resourceId is not in the '
-    'patient compartment for Patient/$patientId',
-  );
-}
+/// The entry's answer to a lookup that found no reachable resource: the
+/// same decision as a REST route's ([lookupStoredFor]), in the entry's
+/// shape. A read outside the caller's compartment is the entry's ordinary
+/// 404, byte for byte (REVIEW-2026-09-17 A13; the reason and its source are
+/// on [patientScopeNotFoundResponse]); a write outside it is 403.
+BundleEntryException _entryRefusal(StoredLookup lookup, int entryIndex) =>
+    switch (lookup) {
+      StoredFound() => throw StateError('found: nothing to refuse'),
+      StoredInvalidType(:final resourceType) => BundleEntryException(
+          400,
+          'Bundle entry $entryIndex: Invalid resource type: $resourceType',
+        ),
+      StoredAbsent() => BundleEntryException(
+          404, 'Bundle entry $entryIndex: Resource not found'),
+      StoredOutsideCompartment(
+        :final resourceType,
+        :final id,
+        :final patientId,
+        :final permission
+      ) =>
+        permission == 'r'
+            ? BundleEntryException(
+                404,
+                'Bundle entry $entryIndex: Resource not found',
+              )
+            : BundleEntryException(
+                403,
+                'Bundle entry $entryIndex: $resourceType/$id is not in the '
+                'patient compartment for Patient/$patientId',
+              ),
+    };
 
 /// Throws the entry's 403 unless the resource about to be written is in
 /// the compartment.
@@ -624,22 +622,15 @@ Future<_BundleOperation> _processBundleEntry(
         status = '200';
         break;
       }
-      resultResource =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
-      if (resultResource == null) {
-        throw BundleEntryException(
-          404,
-          'Bundle entry $entryIndex: Resource not found',
-        );
-      }
-      await _requireStoredInCompartment(
-        _entryPatient(principal, resourceType, 'r'),
+      final lookup = await lookupStoredFor(
+        principal,
+        dbInterface,
         resourceType,
         resourceId,
-        dbInterface,
-        entryIndex,
-        read: true,
+        permission: 'r',
       );
+      if (lookup is! StoredFound) throw _entryRefusal(lookup, entryIndex);
+      resultResource = lookup.resource;
       status = '200';
 
     case fhir.HTTPVerb.pOST:
@@ -834,15 +825,17 @@ Future<_BundleOperation> _processBundleEntry(
       }
       resourceId = putId;
 
-      if (updatePatient != null &&
-          await dbInterface.getResource(resourceTypeEnum, putId) != null) {
-        await _requireStoredInCompartment(
-          updatePatient,
-          resourceType,
-          putId,
-          dbInterface,
-          entryIndex,
-        );
+      // An absent id is a create; a stored resource outside the caller's
+      // compartment is the entry's 403.
+      final lookup = await lookupStoredFor(
+        principal,
+        dbInterface,
+        resourceType,
+        putId,
+        permission: 'u',
+      );
+      if (lookup is StoredOutsideCompartment) {
+        throw _entryRefusal(lookup, entryIndex);
       }
 
       // Conditional update: ifMatch, checked INSIDE the store's write
@@ -852,8 +845,7 @@ Future<_BundleOperation> _processBundleEntry(
       // not exist yet silently created it (REVIEW-2026-09-08 row 22).
       final ifMatchVersion =
           FhirHttpHeaders.parseETag(req.ifMatch?.valueString);
-      previousResource =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
+      previousResource = lookup is StoredFound ? lookup.resource : null;
 
       // Resolve urn:uuid references in the resource
       var putJson = bodyResource.toJson();
@@ -903,23 +895,17 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
-      final currentResource =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
-      if (currentResource == null) {
-        throw BundleEntryException(
-          404,
-          'Bundle entry $entryIndex: Resource not found for PATCH',
-        );
-      }
-      previousResource = currentResource;
-      final patchPatient = _entryPatient(principal, resourceType, 'u');
-      await _requireStoredInCompartment(
-        patchPatient,
+      final lookup = await lookupStoredFor(
+        principal,
+        dbInterface,
         resourceType,
         resourceId,
-        dbInterface,
-        entryIndex,
+        permission: 'u',
       );
+      if (lookup is! StoredFound) throw _entryRefusal(lookup, entryIndex);
+      final currentResource = lookup.resource;
+      previousResource = currentResource;
+      final patchPatient = _entryPatient(principal, resourceType, 'u');
 
       // Parse patch document from the entry resource
       List<dynamic> patchOperations;
@@ -1017,27 +1003,20 @@ Future<_BundleOperation> _processBundleEntry(
         break;
       }
 
-      final existingResource =
-          await dbInterface.getResource(resourceTypeEnum, resourceId);
-      if (existingResource == null) {
-        throw BundleEntryException(
-          404,
-          'Bundle entry $entryIndex: Resource not found for DELETE',
-        );
-      }
-      deletedResource = existingResource;
+      final lookup = await lookupStoredFor(
+        principal,
+        dbInterface,
+        resourceType,
+        resourceId,
+        permission: 'd',
+      );
+      if (lookup is! StoredFound) throw _entryRefusal(lookup, entryIndex);
+      deletedResource = lookup.resource;
       // The audit trail names the subject of care; after the delete the
       // index rows that answer that are gone, so it is read now.
       subjectBeforeDelete = await dbInterface.subjectOfCare(
         resourceType,
         resourceId,
-      );
-      await _requireStoredInCompartment(
-        _entryPatient(principal, resourceType, 'd'),
-        resourceType,
-        resourceId,
-        dbInterface,
-        entryIndex,
       );
 
       final deleteSuccess =

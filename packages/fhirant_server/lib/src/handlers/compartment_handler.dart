@@ -5,6 +5,7 @@ import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// The token's scopes, or null when no authenticated caller is on the
@@ -65,10 +66,6 @@ Future<Response> everythingHandler(
     }
 
     // 2. Fetch focal resource
-    final focalType = fhir.R4ResourceType.fromString(compartmentType);
-    if (focalType == null) {
-      return _operationOutcome(400, 'Invalid resource type: $compartmentType');
-    }
     final outside = _refuseOutsidePatientContext(
       request,
       compartmentType,
@@ -77,13 +74,10 @@ Future<Response> everythingHandler(
       'r',
     );
     if (outside != null) return outside;
-    final focalResource = await dbInterface.getResource(focalType, id);
-    if (focalResource == null) {
-      return _operationOutcome(
-        404,
-        '$compartmentType/$id not found',
-      );
-    }
+    final lookup =
+        await lookupStored(request, dbInterface, compartmentType, id);
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final focalResource = lookup.resource;
 
     // 3. Parse optional parameters
     final queryParams = request.url.queryParameters;
@@ -336,21 +330,9 @@ Future<Response> compartmentSearchHandler(
     }
 
     // 5. Verify focal resource exists
-    final focalType = fhir.R4ResourceType.fromString(compartmentType);
-    if (focalType == null) {
-      return _operationOutcome(
-        400,
-        'Invalid compartment type: $compartmentType',
-      );
-    }
-    final focalResource =
-        await dbInterface.getResource(focalType, compartmentId);
-    if (focalResource == null) {
-      return _operationOutcome(
-        404,
-        '$compartmentType/$compartmentId not found',
-      );
-    }
+    final lookup = await lookupStored(
+        request, dbInterface, compartmentType, compartmentId);
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
 
     // 6. The query, parsed as for any search. queryParametersAll keeps every
     // repetition; a repeated parameter is an AND join.
