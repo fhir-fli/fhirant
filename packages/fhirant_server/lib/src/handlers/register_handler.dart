@@ -50,10 +50,29 @@ Future<Response> registerHandler(
       headers: {'Content-Type': 'application/json'},
     );
   }
+  // The body is parsed outside the block below: a garbled body is the
+  // client's 400 (RFC 9110 §15.5.1, "malformed request syntax"), and the
+  // one catch used to answer it as 500 "Registration failed"
+  // (every_route_refuses_a_garbled_body_test.dart, 2026-09-22).
+  final Object? decoded;
   try {
-    final body =
-        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-
+    decoded = jsonDecode(await request.readAsString());
+  } on FormatException catch (e) {
+    return Response(
+      400,
+      body: jsonEncode({'error': 'Body is not JSON: ${e.message}'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+  if (decoded is! Map<String, dynamic>) {
+    return Response(
+      400,
+      body: jsonEncode({'error': 'Body must be a JSON object'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+  final body = decoded;
+  try {
     // Validate username
     final username = body['username'];
     if (username is! String || username.length < 3) {

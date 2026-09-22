@@ -1,0 +1,98 @@
+file	line	try_parses	try_stores	catch_answers	mixed
+lib/src/fhirant_server.dart	768	False	False	Response.internalServerError	False
+lib/src/fhirant_server.dart	966	False	False	none	False
+lib/src/fhirant_server.dart	977	False	True	none	False
+lib/src/handlers/account_handler.dart	40	False	False	none	False
+lib/src/handlers/account_handler.dart	288	True	False	none	False
+lib/src/handlers/auth_status_handler.dart	18	False	True	Response.internalServerError	False
+lib/src/handlers/authorize_handler.dart	133	True	False	Response(
+      400	False
+lib/src/handlers/authorize_handler.dart	263	True	False	Response(
+      400	False
+lib/src/handlers/backup_handler.dart	35	False	False	Response.internalServerError	False
+lib/src/handlers/backup_handler.dart	107	False	False	Response.internalServerError	False
+lib/src/handlers/backup_handler.dart	220	True	False	none	False
+lib/src/handlers/bundle_handler.dart	28	True	False	_errorResponse(	False
+lib/src/handlers/bundle_handler.dart	127	False	True	_errorResponse(	False
+lib/src/handlers/bundle_handler.dart	257	False	False	none	False
+lib/src/handlers/compartment_handler.dart	57	False	True	none	False
+lib/src/handlers/compartment_handler.dart	293	False	True	none	False
+lib/src/handlers/cql_handler.dart	28	False	True	_errorResponse(	False
+lib/src/handlers/cql_handler.dart	99	True	True	_errorResponse(	True
+lib/src/handlers/cql_handler.dart	198	True	False	_errorResponse(	False
+lib/src/handlers/cql_handler.dart	403	True	False	none	False
+lib/src/handlers/cql_handler.dart	429	True	False	none	False
+lib/src/handlers/cql_handler.dart	448	False	False	none	False
+lib/src/handlers/cql_handler.dart	461	True	False	none	False
+lib/src/handlers/document_handler.dart	21	False	True	none	False
+lib/src/handlers/export_handler.dart	117	False	True	none	False
+lib/src/handlers/export_handler.dart	303	False	True	none	False
+lib/src/handlers/export_handler.dart	383	True	True	none	False
+lib/src/handlers/export_handler.dart	469	False	True	none	False
+lib/src/handlers/export_handler.dart	528	True	True	none	False
+lib/src/handlers/export_handler.dart	857	False	False	none	False
+lib/src/handlers/favico_handler.dart	7	False	False	Response.notFound	False
+lib/src/handlers/fhirpath_handler.dart	22	True	True	Response(
+      500	True
+lib/src/handlers/forecast_handler.dart	40	True	False	_errorResponse(	False
+lib/src/handlers/health_handler.dart	18	False	True	none	False
+lib/src/handlers/history_handler.dart	19	False	True	_errorResponse(	False
+lib/src/handlers/history_handler.dart	132	False	True	_errorResponse(	False
+lib/src/handlers/history_handler.dart	233	False	True	_errorResponse(	False
+lib/src/handlers/history_handler.dart	336	False	True	_errorResponse(	False
+lib/src/handlers/login_handler.dart	26	True	False	Response.internalServerError	False
+lib/src/handlers/login_handler.dart	124	False	True	Response.internalServerError	False
+lib/src/handlers/mapping_handler.dart	20	True	True	Response(
+      500	True
+lib/src/handlers/meta_handler.dart	43	False	True	_errorResponse(	False
+lib/src/handlers/meta_handler.dart	101	True	True	_errorResponse(	True
+lib/src/handlers/meta_handler.dart	175	True	True	_errorResponse(	True
+lib/src/handlers/meta_handler.dart	244	True	False	none	False
+lib/src/handlers/metadata_handler.dart	96	False	False	Response(
+      500	False
+lib/src/handlers/patch_handler.dart	29	True	True	_errorResponse(	True
+lib/src/handlers/refresh_handler.dart	27	True	False	Response.internalServerError	False
+lib/src/handlers/refresh_handler.dart	445	False	False	none	False
+lib/src/handlers/register_handler.dart	53	True	True	Response.internalServerError	True
+lib/src/handlers/reindex_handler.dart	67	False	True	none	False
+lib/src/handlers/resource_handler.dart	40	True	False	_errorResponse(	False
+lib/src/handlers/resource_handler.dart	117	False	True	_errorResponse(	False
+lib/src/handlers/resource_handler.dart	416	False	False	_errorResponse(	False
+lib/src/handlers/resource_handler.dart	1230	True	False	_validationErrorResponse	False
+lib/src/handlers/resource_handler.dart	1235	False	True	_errorResponse(	False
+lib/src/handlers/resource_handler.dart	1403	True	True	_errorResponse(	True
+lib/src/handlers/resource_handler.dart	1527	True	True	_errorResponse(	True
+lib/src/handlers/resource_handler.dart	1720	False	True	_errorResponse(	False
+lib/src/handlers/resource_handler.dart	1900	True	False	_validationErrorResponse	False
+lib/src/handlers/resource_handler.dart	1977	False	True	_errorResponse(	False
+lib/src/handlers/revoke_handler.dart	26	False	True	Response.internalServerError	False
+lib/src/handlers/revoke_handler.dart	71	True	True	Response.internalServerError	True
+lib/src/handlers/revoke_handler.dart	118	False	False	none	False
+lib/src/handlers/revoke_handler.dart	140	True	False	none	False
+lib/src/handlers/terminology_handler.dart	18	False	True	_errorResponse(	False
+lib/src/handlers/terminology_handler.dart	136	False	True	_errorResponse(	False
+lib/src/handlers/terminology_handler.dart	316	False	True	_errorResponse(	False
+lib/src/handlers/terminology_handler.dart	469	True	False	none	False
+lib/src/handlers/terminology_handler.dart	752	False	True	_errorResponse(	False
+lib/src/handlers/terminology_handler.dart	843	False	True	_errorResponse(	False
+lib/src/handlers/terminology_handler.dart	1011	False	True	_errorResponse(	False
+lib/src/handlers/validate_handler.dart	30	True	False	_outcome(500	False
+lib/src/middlewares/audit_middleware.dart	94	False	True	none	False
+lib/src/middlewares/audit_middleware.dart	375	True	True	none	False
+lib/src/services/backup_service.dart	216	True	False	none	False
+lib/src/services/backup_service.dart	236	False	True	none	False
+lib/src/services/subscription_service.dart	269	False	True	none	False
+lib/src/services/subscription_service.dart	316	False	True	none	False
+lib/src/services/subscription_service.dart	361	False	False	none	False
+lib/src/services/websocket_subscriptions.dart	73	False	False	none	False
+lib/src/utils/backup_crypto.dart	108	True	False	none	False
+lib/src/utils/backup_crypto.dart	147	False	False	none	False
+lib/src/utils/backup_crypto.dart	163	False	False	none	False
+lib/src/utils/backup_crypto.dart	173	False	False	none	False
+lib/src/utils/backup_crypto.dart	185	True	False	none	False
+lib/src/utils/jwt_secret.dart	67	False	False	none	False
+lib/src/utils/jwt_service.dart	82	False	False	none	False
+lib/src/utils/jwt_service.dart	96	True	False	none	False
+lib/src/utils/program_sandbox.dart	78	False	False	none	False
+lib/src/utils/program_sandbox.dart	126	False	False	none	False
+lib/src/utils/spec_loader.dart	110	True	True	none	False
