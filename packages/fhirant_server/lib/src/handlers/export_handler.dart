@@ -9,9 +9,10 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/export_file_crypto.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:fhirant_server/src/utils/stored_resource.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 
@@ -256,7 +257,7 @@ Future<Response> exportKickoffHandler(
     );
 
     // 8. Return 202 Accepted with Content-Location
-    final baseUrl = _baseUrl(request);
+    final baseUrl = baseUrlOf(request.requestedUri);
     final statusUrl = '$baseUrl/\$export-poll-status/$jobId';
 
     FhirantLogging().logInfo(
@@ -305,7 +306,10 @@ Future<Response> exportStatusHandler(
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
       return outcome(
-          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
+        404,
+        fhir.IssueType.notFound,
+        'Export job not found: $jobId',
+      );
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -362,11 +366,17 @@ Future<Response> exportStatusHandler(
 
       case 'cancelled':
         return outcome(
-            404, fhir.IssueType.notFound, 'Export job was cancelled: $jobId');
+          404,
+          fhir.IssueType.notFound,
+          'Export job was cancelled: $jobId',
+        );
 
       default:
-        return outcome(500, fhir.IssueType.processing,
-            'Unknown job status: ${job.status}');
+        return outcome(
+          500,
+          fhir.IssueType.processing,
+          'Unknown job status: ${job.status}',
+        );
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error in export status poll', e, stackTrace);
@@ -395,7 +405,10 @@ Future<Response> exportFileHandler(
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
       return outcome(
-          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
+        404,
+        fhir.IssueType.notFound,
+        'Export job not found: $jobId',
+      );
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -404,7 +417,10 @@ Future<Response> exportFileHandler(
     final file = File(filePath);
     if (!file.existsSync()) {
       return outcome(
-          404, fhir.IssueType.notFound, 'Export file not found: $fileName');
+        404,
+        fhir.IssueType.notFound,
+        'Export file not found: $fileName',
+      );
     }
     final fileKey = job.fileKey;
     if (fileKey == null) {
@@ -484,7 +500,10 @@ Future<Response> exportDeleteHandler(
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
       return outcome(
-          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
+        404,
+        fhir.IssueType.notFound,
+        'Export job not found: $jobId',
+      );
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -546,7 +565,7 @@ Future<void> _processExport(
     // The key this job's files are written under, minted with the job.
     final fileKey = base64Decode(job.fileKey!);
 
-    final baseUrl = _baseUrl(request);
+    final baseUrl = baseUrlOf(request.requestedUri);
     final since = job.since;
 
     // Parse typeFilters from job
@@ -952,12 +971,4 @@ Future<void> _failJob(
     ]),
     completedAt: DateTime.now().toUtc(),
   );
-}
-
-/// Extracts the base URL from a request.
-String _baseUrl(Request request) {
-  final uri = request.requestedUri;
-  return uri.hasPort
-      ? '${uri.scheme}://${uri.host}:${uri.port}'
-      : '${uri.scheme}://${uri.host}';
 }

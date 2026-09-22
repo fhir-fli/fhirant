@@ -52,7 +52,10 @@ Future<Response> _handleForecast(
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
       return outcome(
-          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
+        400,
+        fhir.IssueType.invalid,
+        'Invalid JSON in request body',
+      );
     }
 
     // If the body is already a Parameters resource, use it directly
