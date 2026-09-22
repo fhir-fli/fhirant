@@ -107,7 +107,12 @@ void main() {
         for (final l in (first['link'] as List).cast<Map<String, dynamic>>())
           l['relation'] as String: l['url'] as String,
       };
-      expect(links['self'], contains('_offset=0'));
+      // The self link carries the parameters as used; the first page was
+      // asked for without _offset, so it carries none, as every other
+      // search's self link (R4B search.html 3.1.1.6, shared page builder).
+      expect(links['self'], contains('_count=2'));
+      expect(links['self'], isNot(contains('_offset')));
+      expect(links['first'], contains('_offset=0'));
       expect(links['next'], contains('_offset=2'));
       // Every other parameter rides along on the paging links.
       expect(links['next'], contains('_type=Patient%2CObservation'));

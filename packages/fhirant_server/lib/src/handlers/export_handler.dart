@@ -10,6 +10,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
@@ -256,7 +257,7 @@ Future<Response> exportKickoffHandler(
     );
 
     // 8. Return 202 Accepted with Content-Location
-    final baseUrl = _baseUrl(request);
+    final baseUrl = baseUrlOf(request.requestedUri);
     final statusUrl = '$baseUrl/\$export-poll-status/$jobId';
 
     FhirantLogging().logInfo(
@@ -564,7 +565,7 @@ Future<void> _processExport(
     // The key this job's files are written under, minted with the job.
     final fileKey = base64Decode(job.fileKey!);
 
-    final baseUrl = _baseUrl(request);
+    final baseUrl = baseUrlOf(request.requestedUri);
     final since = job.since;
 
     // Parse typeFilters from job
@@ -970,12 +971,4 @@ Future<void> _failJob(
     ]),
     completedAt: DateTime.now().toUtc(),
   );
-}
-
-/// Extracts the base URL from a request.
-String _baseUrl(Request request) {
-  final uri = request.requestedUri;
-  return uri.hasPort
-      ? '${uri.scheme}://${uri.host}:${uri.port}'
-      : '${uri.scheme}://${uri.host}';
 }

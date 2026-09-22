@@ -87,6 +87,23 @@ class SearchLinks {
   /// for the results of a search or history interaction, and if they do,
   /// they SHALL conform to this method". History Bundles used to carry no
   /// links at all (REVIEW-2026-09-08 row 25).
+  /// The parameters `$everything` takes (R4 operation
+  /// patient-everything: `_since`, `_type`, `_count`; `_offset` and
+  /// `_total` as this server pages). Anything else is [ignored].
+  factory SearchLinks.everything(Map<String, List<String>> query) {
+    const known = {'_count', '_offset', '_since', '_type', '_total', '_format'};
+    final used = <String, List<String>>{};
+    final ignored = <String>[];
+    for (final entry in query.entries) {
+      if (known.contains(entry.key)) {
+        used[entry.key] = entry.value;
+      } else {
+        ignored.add(entry.key);
+      }
+    }
+    return SearchLinks._(used, ignored);
+  }
+
   factory SearchLinks.history(Map<String, List<String>> query) {
     const known = {'_count', '_offset', '_since', '_at', '_format', '_pretty'};
     final used = <String, List<String>>{};
@@ -105,23 +122,31 @@ class SearchLinks {
   /// there is a page before; `next` while [offset] + [count] < [total];
   /// `last` when [total] is known and positive. A [count] of zero is a
   /// count-only page and carries `self` alone.
+  /// The links of one page: `self` and `first` always; `previous` when
+  /// there is a page before; `next` when [hasMore] (the caller's probe
+  /// row, or `offset + count < total` when it has a total and no probe);
+  /// `last` when the total is known and positive. [total] is null under
+  /// `_total=none`, and paging goes on without it.
   List<fhir.BundleLink> page(
     Uri requested, {
     required int count,
     required int offset,
-    required int total,
+    required int? total,
+    bool? hasMore,
   }) {
     fhir.BundleLink link(String relation, int at) => fhir.BundleLink(
           relation: fhir.FhirString(relation),
           url: fhir.FhirUri(url(requested, offset: at).toString()),
         );
     if (count <= 0) return [self(requested)];
+    final more = hasMore ?? (total != null && offset + count < total);
     return [
       self(requested),
       link('first', 0),
       if (offset > 0) link('previous', (offset - count).clamp(0, offset)),
-      if (offset + count < total) link('next', offset + count),
-      if (total > 0) link('last', ((total - 1) ~/ count) * count),
+      if (more) link('next', offset + count),
+      if (total != null && total > 0)
+        link('last', ((total - 1) ~/ count) * count),
     ];
   }
 

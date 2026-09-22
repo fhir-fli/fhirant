@@ -4,6 +4,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
@@ -91,7 +92,7 @@ Future<Response> documentHandler(
 
     // 4. Build document Bundle
     // Order: Composition first, then subject, then all others
-    final baseUrl = _baseUrl(request);
+    final baseUrl = baseUrlOf(request.requestedUri);
     final entries = <fhir.BundleEntry>[
       // First entry: Composition
       _bundleEntry(composition, baseUrl),
@@ -252,12 +253,4 @@ fhir.BundleEntry _bundleEntry(fhir.Resource resource, String baseUrl) {
     resource: resource,
     fullUrl: resId.isNotEmpty ? fhir.FhirUri('$baseUrl/$resType/$resId') : null,
   );
-}
-
-/// Extracts the base URL from a request.
-String _baseUrl(Request request) {
-  final uri = request.requestedUri;
-  return uri.hasPort
-      ? '${uri.scheme}://${uri.host}:${uri.port}'
-      : '${uri.scheme}://${uri.host}';
 }
