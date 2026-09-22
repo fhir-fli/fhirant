@@ -1,0 +1,6 @@
+          timestamp=2026-09-22 11:28:50.112 pid=19341 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=13 (OTHER KILLS BY SYSTEM) subreason=2006 (UNKNOWN) status=0
+          importance=125 pss=0.00 rss=256MB description=o-kill(6) state=empty trace=null
+          timestamp=2026-09-21 21:23:29.471 pid=21166 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=3 (LOW_MEMORY) subreason=0 (UNKNOWN) status=0
+          importance=400 pss=0.00 rss=64MB description= state=empty trace=null
