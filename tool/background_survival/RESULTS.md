@@ -15,6 +15,8 @@ in runs/. One run per row, one phone.
 
 | 7 | fix build, Recents lock OFF, exemption on, cable IN, screen awake | 89/89 | alive 16:31–16:45, uptime to 937 s; no kill recorded. The raw TSV was deleted by mistake on 2026-09-21; the counts are from its summary line before deletion |
 
+| 8 | fix build, Recents lock OFF, exemption on, cable out 11:21 (2026-09-22), locked | 87/88 | killed about 11:28:50 (last answer 11:28:44); answered again 11:29:05 with uptime 7 s, a fresh server started by the service; then 534 s with no miss. Down 10–21 s. Exit record not yet read |
+
 Plugged in, the app was never killed: runs 1, 2 and 7, and 105 min for
 sensorium (graiai/sensorium/PLAN.md 16.4). Every kill came after unplugging.
 
@@ -28,6 +30,9 @@ unmeasured.
 Defects seen:
 - After each kill, Android restarted the process 19 s later with the
   foreground service up, and the server did not start: /health refused.
+  FIXED (run 8): the service now runs `serverTaskCallback`
+  (packages/fhirant/lib/src/services/server_task.dart), which starts the
+  server when Android restarted the service and the user had left it on.
 - POST_NOTIFICATIONS is never requested, so the service's notification is
   hidden.
 - The app does not ask for the battery exemption, and nothing tells the user

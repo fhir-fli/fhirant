@@ -6,7 +6,9 @@ import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
 import 'package:fhirant/src/config/security_config.dart';
 import 'package:fhirant/src/services/database_service.dart';
 import 'package:fhirant/src/services/server_service.dart';
+import 'package:fhirant/src/services/server_task.dart';
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
+import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -22,14 +24,18 @@ class ServerState extends ChangeNotifier {
   })  : _dbService = dbService,
         _serverService = serverService {
     unawaited(_detectWifiIp());
-    unawaited(_loadPersistedMode());
+    unawaited(_loadPersistedMode().then((_) => _resumeOnOpen()));
   }
   final DatabaseService _dbService;
   final ServerService _serverService;
 
   /// SharedPreferences key for the persisted auth posture. Absent until the
   /// operator has explicitly chosen a mode.
-  static const _authDisabledKey = 'auth_disabled';
+  static const String _authDisabledKey = authDisabledKey;
+
+  /// Fingerprint of a server this screen did not start: one the foreground
+  /// service started after Android restarted it (server_task.dart).
+  String? _adoptedFingerprint;
 
   ServerStatus _status = ServerStatus.stopped;
   String? _errorMessage;
@@ -48,6 +54,73 @@ class ServerState extends ChangeNotifier {
       _devMode = stored;
       notifyListeners();
     }
+    final port = prefs.getInt(serverPortKey);
+    if (port != null && port != _port) {
+      _port = port;
+      notifyListeners();
+    }
+  }
+
+  /// On opening the screen: if a server already answers on the port (the
+  /// service started it after Android restarted the app), show it as
+  /// running rather than starting a second one; otherwise start one if the
+  /// user last left it on. The service being up is not taken as proof of a
+  /// server: after a kill, Android brought the service back with nothing
+  /// serving (tool/background_survival/RESULTS.md).
+  Future<void> _resumeOnOpen() async {
+    if (!Platform.isAndroid) return;
+    try {
+      if (await _serverAnswers()) {
+        final tls = await SecureStorageService().loadOrCreateTlsIdentity();
+        _adoptedFingerprint =
+            SecureStorageService.certificateFingerprint(tls.certificate);
+        _status = ServerStatus.running;
+        await _refreshResourceCounts();
+        _countsTimer ??= Timer.periodic(
+          const Duration(seconds: 10),
+          (_) => _refreshResourceCounts(),
+        );
+        notifyListeners();
+        return;
+      }
+      if (await FlutterForegroundTask.isRunningService) {
+        await FlutterForegroundTask.stopService();
+      }
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(serverWantedKey) ?? false) {
+        await startServer();
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  /// Whether something answers GET /health on this phone's port. The
+  /// certificate is the server's own self-signed one, so it is not checked.
+  Future<bool> _serverAnswers() async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 3)
+      ..badCertificateCallback = ((_, __, ___) => true);
+    try {
+      final request = await client
+          .getUrl(Uri.parse('https://127.0.0.1:$_port/health'))
+          .timeout(const Duration(seconds: 3));
+      final response =
+          await request.close().timeout(const Duration(seconds: 3));
+      await response.drain<void>();
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<void> _persistWanted(bool wanted) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(serverWantedKey, wanted);
+    if (wanted) await prefs.setInt(serverPortKey, _port);
   }
 
   Future<void> _persistMode(bool authDisabled) async {
@@ -86,7 +159,8 @@ class ServerState extends ChangeNotifier {
   /// A joining device cannot validate a self-signed certificate by name, so it
   /// pins this. It is shown alongside the address, and carried in the QR
   /// payload, so pairing does not require typing it.
-  String? get certificateFingerprint => _serverService.certificateFingerprint;
+  String? get certificateFingerprint =>
+      _serverService.certificateFingerprint ?? _adoptedFingerprint;
 
   set port(int value) {
     if (_status != ServerStatus.stopped) return;
@@ -143,8 +217,10 @@ class ServerState extends ChangeNotifier {
         await FlutterForegroundTask.startService(
           notificationTitle: 'FHIR ANT Server',
           notificationText: 'Running on port $_port',
+          callback: serverTaskCallback,
         );
       }
+      await _persistWanted(true);
 
       notifyListeners();
     } catch (e) {
@@ -154,8 +230,12 @@ class ServerState extends ChangeNotifier {
     }
   }
 
-  Future<void> stopServer() async {
+  /// Stops the server. [byUser] records that the user turned it off, so it
+  /// is not started again on the next open or restart; iOS stopping it on
+  /// leaving the screen passes false.
+  Future<void> stopServer({bool byUser = true}) async {
     if (_status != ServerStatus.running) return;
+    if (byUser) await _persistWanted(false);
 
     _status = ServerStatus.stopping;
     notifyListeners();
@@ -172,6 +252,7 @@ class ServerState extends ChangeNotifier {
       _logSubscription = null;
 
       await _serverService.stop();
+      _adoptedFingerprint = null;
       _status = ServerStatus.stopped;
       notifyListeners();
     } catch (e) {

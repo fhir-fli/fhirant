@@ -166,7 +166,7 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (Platform.isIOS && state == AppLifecycleState.paused) {
-      unawaited(context.read<ServerState>().stopServer());
+      unawaited(context.read<ServerState>().stopServer(byUser: false));
     }
   }
 

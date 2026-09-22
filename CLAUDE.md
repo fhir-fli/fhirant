@@ -241,7 +241,7 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 - **Dashboard UI**: Material 3 with server control, network info (QR code), resource counts, live request log
 - **Resource Browser**: JSON/YAML toggle, clickable FHIR references with navigation stack
 - **MIMIC sample data**: bulk-loadable clinical data for demos
-- **Android**: foreground service keeps server running when backgrounded
+- **Android**: foreground service keeps server running when backgrounded. When the phone kills the app, Android restarts only the service; `serverTaskCallback` (`lib/src/services/server_task.dart`) then starts the server if the user left it on (`server_wanted` in SharedPreferences, set by Start, cleared by Stop). Opening the app adopts a server already answering instead of starting a second. Measured on a OnePlus: `tool/background_survival/RESULTS.md`
 - **iOS**: server stops when app goes to background (OS limitation)
 
 ## Testing
