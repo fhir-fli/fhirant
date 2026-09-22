@@ -23,10 +23,29 @@ Future<Response> loginHandler(
   FhirAntDb dbInterface,
   JwtService jwtService,
 ) async {
+  // The body is parsed outside the block below: a garbled body is the
+  // client's 400 (RFC 9110 §15.5.1), and the one catch used to answer it
+  // as 500 "Login failed" (every_route_refuses_a_garbled_body_test.dart,
+  // 2026-09-22).
+  final Object? decoded;
   try {
-    final body =
-        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-
+    decoded = jsonDecode(await request.readAsString());
+  } on FormatException catch (e) {
+    return Response(
+      400,
+      body: jsonEncode({'error': 'Body is not JSON: ${e.message}'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+  if (decoded is! Map<String, dynamic>) {
+    return Response(
+      400,
+      body: jsonEncode({'error': 'Body must be a JSON object'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+  final body = decoded;
+  try {
     // Validate required fields
     final username = body['username'];
     final password = body['password'];
