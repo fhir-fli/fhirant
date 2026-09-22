@@ -9,6 +9,7 @@ import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for PATCH operation: PATCH /{resourceType}/{id}
@@ -31,35 +32,17 @@ Future<Response> patchResourceHandler(
       'Patching resource: $resourceType/{id}',
     );
 
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      FhirantLogging().logWarning(
-        'Invalid resource type requested: $resourceType',
-      );
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    // Get the current resource
-    final currentResource = await dbInterface.getResource(type, id);
-    if (currentResource == null) {
-      FhirantLogging().logWarning(
-        'Resource not found for PATCH: $resourceType/{id}',
-      );
-      return notFoundOutcome('$resourceType/{id}');
-    }
-
-    // Patient-level scope enforcement for patch
+    final lookup = await lookupStored(
+      request,
+      dbInterface,
+      resourceType,
+      id,
+      permission: 'u',
+    );
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final currentResource = lookup.resource;
+    // Re-read below for the patched body's own compartment check.
     final patchPatientId = patientContextFor(request, resourceType, 'u');
-    if (patchPatientId != null) {
-      if (!await isInPatientCompartment(
-        resourceType,
-        id,
-        patchPatientId,
-        dbInterface,
-      )) {
-        return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
-      }
-    }
 
     // Read and parse the patch document
     final body = await request.readAsString();

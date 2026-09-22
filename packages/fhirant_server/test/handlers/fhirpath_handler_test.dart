@@ -23,6 +23,8 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
+      // The shared lookup reads the caller off the request context.
+      when(() => mockRequest.context).thenReturn(const {});
     });
 
     test('evaluates expression against resource from DB', () async {

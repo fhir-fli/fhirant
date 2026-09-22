@@ -338,7 +338,7 @@ void main() {
       expect(response.statusCode, equals(404));
       final body = jsonDecode(await response.readAsString());
       expect(body['resourceType'], equals('OperationOutcome'));
-      expect(body['issue'][0]['diagnostics'], contains('Group not found'));
+      expect(body['issue'][0]['diagnostics'], contains('Group/g1 not found'));
     });
 
     test('returns 202 on valid group export kick-off', () async {

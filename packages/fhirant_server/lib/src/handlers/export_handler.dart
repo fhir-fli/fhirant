@@ -10,6 +10,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 
@@ -212,13 +213,8 @@ Future<Response> exportKickoffHandler(
 
     // 5. Validate group-level: ensure the Group resource exists
     if (exportLevel == 'group' && groupId != null) {
-      final groupResource = await dbInterface.getResource(
-        fhir.R4ResourceType.FhirGroup,
-        groupId,
-      );
-      if (groupResource == null) {
-        return _operationOutcome(404, 'Group not found: $groupId');
-      }
+      final lookup = await lookupStored(request, dbInterface, 'Group', groupId);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
     }
 
     // 6. Create the export job

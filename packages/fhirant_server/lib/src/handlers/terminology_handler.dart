@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for CodeSystem/$validate-code and ValueSet/$validate-code.
@@ -34,14 +35,9 @@ Future<Response> validateCodeHandler(
 
     // Instance-level: validate against specific resource
     if (id != null && resourceType != null) {
-      final type = fhir.R4ResourceType.fromString(resourceType);
-      if (type == null) {
-        return _errorResponse(400, 'Invalid resource type: $resourceType');
-      }
-      final resource = await dbInterface.getResource(type, id);
-      if (resource == null) {
-        return _errorResponse(404, '$resourceType/$id not found');
-      }
+      final lookup = await lookupStored(request, dbInterface, resourceType, id);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      final resource = lookup.resource;
 
       if (resourceType == 'CodeSystem' && resource is fhir.CodeSystem) {
         return _validateAgainstCodeSystem(
@@ -150,12 +146,9 @@ Future<Response> lookupHandler(
     // Instance-level: lookup in specific CodeSystem
     fhir.CodeSystem? codeSystem;
     if (id != null) {
-      final resource =
-          await dbInterface.getResource(fhir.R4ResourceType.CodeSystem, id);
-      if (resource == null) {
-        return _errorResponse(404, 'CodeSystem/$id not found');
-      }
-      codeSystem = resource as fhir.CodeSystem;
+      final lookup = await lookupStored(request, dbInterface, 'CodeSystem', id);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      codeSystem = lookup.resource as fhir.CodeSystem;
     } else {
       // Type-level: find by system URL
       if (effectiveSystem == null) {
@@ -328,12 +321,9 @@ Future<Response> expandHandler(
     // Find the ValueSet
     fhir.ValueSet? valueSet;
     if (id != null) {
-      final resource =
-          await dbInterface.getResource(fhir.R4ResourceType.ValueSet, id);
-      if (resource == null) {
-        return _errorResponse(404, 'ValueSet/$id not found');
-      }
-      valueSet = resource as fhir.ValueSet;
+      final lookup = await lookupStored(request, dbInterface, 'ValueSet', id);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      valueSet = lookup.resource as fhir.ValueSet;
     } else if (url != null) {
       valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
@@ -860,12 +850,9 @@ Future<Response> translateHandler(
     // Find the ConceptMap
     fhir.ConceptMap? conceptMap;
     if (id != null) {
-      final resource =
-          await dbInterface.getResource(fhir.R4ResourceType.ConceptMap, id);
-      if (resource == null) {
-        return _errorResponse(404, 'ConceptMap/$id not found');
-      }
-      conceptMap = resource as fhir.ConceptMap;
+      final lookup = await lookupStored(request, dbInterface, 'ConceptMap', id);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      conceptMap = lookup.resource as fhir.ConceptMap;
     } else if (url != null) {
       conceptMap = await _findConceptMapByUrl(url, dbInterface);
     } else if (source != null || target != null) {
@@ -1033,12 +1020,9 @@ Future<Response> subsumesHandler(
     // Find the CodeSystem
     fhir.CodeSystem? codeSystem;
     if (id != null) {
-      final resource =
-          await dbInterface.getResource(fhir.R4ResourceType.CodeSystem, id);
-      if (resource == null) {
-        return _errorResponse(404, 'CodeSystem/$id not found');
-      }
-      codeSystem = resource as fhir.CodeSystem;
+      final lookup = await lookupStored(request, dbInterface, 'CodeSystem', id);
+      if (lookup is! StoredFound) return lookupRefusal(lookup);
+      codeSystem = lookup.resource as fhir.CodeSystem;
     } else if (effectiveSystem != null) {
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {

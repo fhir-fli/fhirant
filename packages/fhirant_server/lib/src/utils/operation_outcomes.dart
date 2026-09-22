@@ -39,3 +39,19 @@ Response notFoundOutcome(String what) => Response(
       ).toJsonString(),
       headers: {'Content-Type': 'application/fhir+json'},
     );
+
+/// The 400 for a path segment that names no R4 resource type, as an
+/// OperationOutcome.
+Response invalidTypeOutcome(String resourceType) => Response(
+      400,
+      body: fhir.OperationOutcome(
+        issue: [
+          fhir.OperationOutcomeIssue(
+            severity: fhir.IssueSeverity.error,
+            code: fhir.IssueType.invalid,
+            diagnostics: 'Invalid resource type: $resourceType'.toFhirString,
+          ),
+        ],
+      ).toJsonString(),
+      headers: {'Content-Type': 'application/fhir+json'},
+    );

@@ -16,6 +16,7 @@ import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:meta/meta.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler to fetch all resources of a given type
@@ -1525,30 +1526,15 @@ Future<Response> getResourceByIdHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      FhirantLogging().logWarning(
-        'Invalid resource type requested: $resourceType',
-      );
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    final resource = await dbInterface.getResource(type, id);
-    if (resource != null) {
-      // Patient-level scope enforcement: verify resource is in patient
-      // compartment
-      final readPatientId = patientContextFor(request, resourceType, 'r');
-      if (readPatientId != null) {
-        if (!await isInPatientCompartment(
-          resourceType,
-          id,
-          readPatientId,
-          dbInterface,
-        )) {
-          // As absent (REVIEW-2026-09-17 A13; R4B security.html's 404).
-          return patientScopeNotFoundResponse(resourceType, id);
-        }
-      }
+    final lookup = await lookupStored(
+      request,
+      dbInterface,
+      resourceType,
+      id,
+      permission: 'r',
+    );
+    if (lookup is StoredFound) {
+      final resource = lookup.resource;
 
       // Check If-None-Match for conditional read (ETag-based)
       final ifNoneMatch =
@@ -1623,8 +1609,10 @@ Future<Response> getResourceByIdHandler(
         responseBody,
         headers: FhirHttpHeaders.resourceHeaders(resource),
       );
-    } else {
-      // Check if resource was previously deleted (has history but no current)
+    } else if (lookup is StoredAbsent) {
+      // Absent, so the type is real. Check whether it was deleted (history
+      // rows but no current version).
+      final type = fhir.R4ResourceType.fromString(resourceType)!;
       if (await dbInterface.countHistory(type, id) > 0) {
         // A deleted resource has no compartment rows to check against, so a
         // confined caller cannot be told it was ever there: absent
@@ -1655,6 +1643,8 @@ Future<Response> getResourceByIdHandler(
         'Resource of type $resourceType with ID: {id} not found.',
       );
       return notFoundOutcome('$resourceType/$id');
+    } else {
+      return lookupRefusal(lookup);
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
@@ -1718,39 +1708,15 @@ Future<Response> deleteResourceHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    if (type == null) {
-      FhirantLogging().logWarning(
-        'Invalid resource type requested: $resourceType',
-      );
-      return _validationErrorResponse('Invalid resource type');
-    }
-
-    // Check if resource exists before attempting to delete
-    final resource = await dbInterface.getResource(type, id);
-    if (resource == null) {
-      FhirantLogging().logWarning(
-        'Resource of type $resourceType with ID: {id} not found for deletion.',
-      );
-      return _errorResponse(
-        'Resource not found',
-        'The resource does not exist',
-        statusCode: 404,
-      );
-    }
-
-    // Patient-level scope enforcement for delete
-    final deletePatientId = patientContextFor(request, resourceType, 'd');
-    if (deletePatientId != null) {
-      if (!await isInPatientCompartment(
-        resourceType,
-        id,
-        deletePatientId,
-        dbInterface,
-      )) {
-        return patientScopeForbiddenResponse(resourceType, id, deletePatientId);
-      }
-    }
+    final lookup = await lookupStored(
+      request,
+      dbInterface,
+      resourceType,
+      id,
+      permission: 'd',
+    );
+    if (lookup is! StoredFound) return lookupRefusal(lookup);
+    final type = lookup.type;
 
     // Conditional delete: If-Match header, checked inside the delete's
     // transaction (FhirAntDb.deleteResource, ifMatchVersion).
