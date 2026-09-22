@@ -111,6 +111,8 @@ Future<({FhirAntDb db, Handler handler})> createTestServer({
   String? exportDir,
   bool devMode = false,
   String? bootstrapToken,
+  int maxRequests = 600,
+  int authMaxRequests = 10,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
@@ -120,6 +122,8 @@ Future<({FhirAntDb db, Handler handler})> createTestServer({
     exportDir: exportDir,
     devMode: devMode,
     bootstrapToken: bootstrapToken,
+    maxRequests: maxRequests,
+    authMaxRequests: authMaxRequests,
   );
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler);
