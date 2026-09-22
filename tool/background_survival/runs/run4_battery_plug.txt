@@ -1,0 +1,3 @@
+  09-22 11:38:18.661 100 plug=usb volt=4436 +plugged
+  09-22 11:45:21.811 100 plug=none temp=311 volt=4499 +wifi_scan -plugged -charging
+  09-22 12:21:27.985 098 plug=usb temp=337 +plugged +cellular_high_tx_power

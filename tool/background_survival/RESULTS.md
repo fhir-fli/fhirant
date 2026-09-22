@@ -20,7 +20,13 @@ in runs/. One run per row, one phone.
 Plugged in, the app was never killed: runs 1, 2 and 7, and 105 min for
 sensorium (graiai/sensorium/PLAN.md 16.4). Every kill came after unplugging.
 
-Run 4 (the phone in normal use) has not been run.
+Run 4, the phone in normal use (2026-09-22, fix build, locked in Recents,
+battery exemption on): unplugged 11:45:21–12:21:27. Checks 11:43:19–12:18,
+208/208 answered, no restart (uptime 861 → 2,956 s, same pid 24875), slowest
+0.6 s; no kill recorded (newest exit record is run 8's). Use while unplugged,
+as Grey reported it: camera ~5 min, maps 3–4 min, a game a few min, web
+5–10 min, Instagram 5–10 min, YouTube 5–10 min. Screen-on time was not
+read from the phone.
 
 Back button (`runs/back_button.tsv`, 15:37): the server survived, same
 uptime count, the activity paused rather than finished. Two checks right
