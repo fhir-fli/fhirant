@@ -246,9 +246,7 @@ Map<String, dynamic> _publicUser(User u) => {
       'username': u.username,
       'role': u.role,
       'active': u.active,
-      'scopes': u.scopes == null
-          ? SmartScopeEnforcer.defaultScopesForRole(u.role)
-          : jsonDecode(u.scopes!),
+      'scopes': SmartScopeEnforcer.heldScopes(u),
       if (u.patientId != null) 'patient': u.patientId,
       'locked': u.lockedUntil != null && u.lockedUntil!.isAfter(DateTime.now()),
       if (u.lastLogin != null) 'last_login': u.lastLogin!.toIso8601String(),
@@ -256,26 +254,11 @@ Map<String, dynamic> _publicUser(User u) => {
 
 /// A fresh token pair for [user], as login issues it.
 Map<String, dynamic> _tokenPair(JwtService jwtService, User user) {
-  final scopes = user.scopes != null && user.scopes!.isNotEmpty
-      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
-      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final scopes = SmartScopeEnforcer.heldScopes(user);
+  final session = jwtService.issueSession(user, scopes: scopes);
   return {
-    'token': jwtService.generateToken(
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      scopes: scopes,
-      patientId: user.patientId,
-      generation: user.tokenGeneration,
-    ),
-    'refresh_token': jwtService.generateRefreshToken(
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      scopes: scopes,
-      patientId: user.patientId,
-      generation: user.tokenGeneration,
-    ),
+    'token': session.access,
+    'refresh_token': session.refresh,
     'token_type': 'Bearer',
     'username': user.username,
     'role': user.role,

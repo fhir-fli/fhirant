@@ -212,34 +212,16 @@ Future<Response> _handleAuthorizationCodeGrant(
   // intersected with the account's grant (authorize_handler). The token's
   // scope claim carries the resource scopes; launch and OpenID scopes are
   // echoed in the response only.
-  final held = user.scopes != null && user.scopes!.isNotEmpty
-      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
-      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final held = SmartScopeEnforcer.heldScopes(user);
   final granted = authCode.scope.isNotEmpty
       ? authCode.scope.split(' ')
       : List<String>.of(held);
   final scopes = SmartScopeEnforcer.resourceScopesOf(granted);
   // The patient context is the account's, never the caller's.
   final patientId = user.patientId;
-
-  // Generate tokens
-  final accessToken = jwtService.generateToken(
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    scopes: scopes,
-    patientId: patientId,
-    generation: user.tokenGeneration,
-  );
-
-  final refreshToken = jwtService.generateRefreshToken(
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    scopes: scopes,
-    patientId: patientId,
-    generation: user.tokenGeneration,
-  );
+  final session = jwtService.issueSession(user, scopes: scopes);
+  final accessToken = session.access;
+  final refreshToken = session.refresh;
 
   return Response.ok(
     jsonEncode({
@@ -385,9 +367,7 @@ Future<Response> _handleRefreshTokenGrant(
   // an administrator's downgrade takes effect at the next refresh rather
   // than at the refresh token's expiry. The patient context is re-read
   // from the account for the same reason.
-  final held = user.scopes != null && user.scopes!.isNotEmpty
-      ? (jsonDecode(user.scopes!) as List<dynamic>).cast<String>()
-      : SmartScopeEnforcer.defaultScopesForRole(user.role);
+  final held = SmartScopeEnforcer.heldScopes(user);
   final scopeStr = payload['scope'] as String?;
   final carried =
       scopeStr != null && scopeStr.isNotEmpty ? scopeStr.split(' ') : held;
@@ -399,26 +379,9 @@ Future<Response> _handleRefreshTokenGrant(
     ),
   );
   final patientId = user.patientId;
-
-  // Generate new access token
-  final newAccessToken = jwtService.generateToken(
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    scopes: scopes,
-    patientId: patientId,
-    generation: user.tokenGeneration,
-  );
-
-  // Generate new refresh token (rotation)
-  final newRefreshToken = jwtService.generateRefreshToken(
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    scopes: scopes,
-    patientId: patientId,
-    generation: user.tokenGeneration,
-  );
+  final session = jwtService.issueSession(user, scopes: scopes);
+  final newAccessToken = session.access;
+  final newRefreshToken = session.refresh;
 
   // Revoke the old refresh token (rotation revocation)
   final oldExpiresAt = _extractExpiresAt(refreshToken);

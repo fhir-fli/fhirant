@@ -86,6 +86,19 @@ void main() {
           scopes: any(named: 'scopes'),
         ),
       ).thenAnswer((_) async => 1);
+      // The session is minted from the stored row, so the handler reads it
+      // back (JwtService.issueSession, 2026-09-22).
+      when(() => mockDb.getUserById(1)).thenAnswer(
+        (_) async => User(
+          id: 1,
+          username: 'admin_user',
+          passwordHash: 'h',
+          salt: 's',
+          role: 'admin',
+          active: true,
+          createdAt: DateTime(2026),
+        ),
+      );
 
       final response = await registerHandler(request, mockDb, jwtService);
 
@@ -160,6 +173,17 @@ void main() {
           scopes: any(named: 'scopes'),
         ),
       ).thenAnswer((_) async => 2);
+      when(() => mockDb.getUserById(2)).thenAnswer(
+        (_) async => User(
+          id: 2,
+          username: 'new_clinician',
+          passwordHash: 'h',
+          salt: 's',
+          role: 'clinician',
+          active: true,
+          createdAt: DateTime(2026),
+        ),
+      );
 
       final response = await registerHandler(request, mockDb, jwtService);
 

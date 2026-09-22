@@ -15,8 +15,8 @@ import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/response_shaper.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
-import 'package:meta/meta.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler to fetch all resources of a given type
@@ -391,7 +391,9 @@ Future<Response> systemSearchHandler(
       stackTrace,
     );
     return exceptionOutcome(
-        'Failed to process system search', 'Internal error');
+      'Failed to process system search',
+      'Internal error',
+    );
   }
 }
 

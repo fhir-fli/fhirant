@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
-import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for CodeSystem/$validate-code and ValueSet/$validate-code.
@@ -31,8 +31,11 @@ Future<Response> validateCodeHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Parameter "code" or "coding" is required');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Parameter "code" or "coding" is required',
+      );
     }
 
     // Instance-level: validate against specific resource
@@ -57,15 +60,21 @@ Future<Response> validateCodeHandler(
           dbInterface,
         );
       }
-      return outcome(400, fhir.IssueType.invalid,
-          r'$validate-code only supported for CodeSystem and ValueSet');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        r'$validate-code only supported for CodeSystem and ValueSet',
+      );
     }
 
     // Type-level or system-level: look up by URL/system
     if (resourceType == 'CodeSystem' || (resourceType == null && url == null)) {
       if (effectiveSystem == null && url == null) {
-        return outcome(400, fhir.IssueType.invalid,
-            'Parameter "system" or "url" is required for CodeSystem');
+        return outcome(
+          400,
+          fhir.IssueType.invalid,
+          'Parameter "system" or "url" is required for CodeSystem',
+        );
       }
       final lookupUrl = url ?? effectiveSystem;
       final codeSystem = await _findCodeSystemByUrl(lookupUrl!, dbInterface);
@@ -91,8 +100,11 @@ Future<Response> validateCodeHandler(
 
     if (resourceType == 'ValueSet') {
       if (url == null) {
-        return outcome(400, fhir.IssueType.invalid,
-            'Parameter "url" is required for ValueSet');
+        return outcome(
+          400,
+          fhir.IssueType.invalid,
+          'Parameter "url" is required for ValueSet',
+        );
       }
       final valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
@@ -111,8 +123,11 @@ Future<Response> validateCodeHandler(
       );
     }
 
-    return outcome(400, fhir.IssueType.invalid,
-        'Unable to determine target for validation');
+    return outcome(
+      400,
+      fhir.IssueType.invalid,
+      'Unable to determine target for validation',
+    );
   } catch (e, stackTrace) {
     FhirantLogging()
         .logError(r'Terminology $validate-code failed', e, stackTrace);
@@ -140,8 +155,11 @@ Future<Response> lookupHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Parameter "code" or "coding" is required');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Parameter "code" or "coding" is required',
+      );
     }
 
     // Instance-level: lookup in specific CodeSystem
@@ -153,13 +171,19 @@ Future<Response> lookupHandler(
     } else {
       // Type-level: find by system URL
       if (effectiveSystem == null) {
-        return outcome(400, fhir.IssueType.invalid,
-            'Parameter "system" or "coding.system" is required');
+        return outcome(
+          400,
+          fhir.IssueType.invalid,
+          'Parameter "system" or "coding.system" is required',
+        );
       }
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {
-        return outcome(404, fhir.IssueType.notFound,
-            'CodeSystem not found: $effectiveSystem');
+        return outcome(
+          404,
+          fhir.IssueType.notFound,
+          'CodeSystem not found: $effectiveSystem',
+        );
       }
     }
 
@@ -168,8 +192,11 @@ Future<Response> lookupHandler(
     if (concept == null) {
       final systemName =
           codeSystem.url?.valueString ?? codeSystem.id?.toString() ?? 'unknown';
-      return outcome(404, fhir.IssueType.notFound,
-          'Code "$effectiveCode" not found in CodeSystem $systemName');
+      return outcome(
+        404,
+        fhir.IssueType.notFound,
+        'Code "$effectiveCode" not found in CodeSystem $systemName',
+      );
     }
 
     // Build response Parameters
@@ -326,11 +353,17 @@ Future<Response> expandHandler(
       valueSet = await _findValueSetByUrl(url, dbInterface);
       if (valueSet == null) {
         return outcome(
-            404, fhir.IssueType.notFound, 'ValueSet not found: $url');
+          404,
+          fhir.IssueType.notFound,
+          'ValueSet not found: $url',
+        );
       }
     } else {
-      return outcome(400, fhir.IssueType.invalid,
-          r'Parameter "url" is required for type-level $expand');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        r'Parameter "url" is required for type-level $expand',
+      );
     }
 
     // Check version if specified
@@ -729,7 +762,10 @@ Future<Response> preferredIdHandler(
     }
     if (type == null) {
       return outcome(
-          400, fhir.IssueType.invalid, 'Parameter "type" is required');
+        400,
+        fhir.IssueType.invalid,
+        'Parameter "type" is required',
+      );
     }
 
     // Try to find the NamingSystem by resource id first, then by name
@@ -754,7 +790,10 @@ Future<Response> preferredIdHandler(
 
     if (namingSystem == null) {
       return outcome(
-          404, fhir.IssueType.notFound, 'NamingSystem not found: $id');
+        404,
+        fhir.IssueType.notFound,
+        'NamingSystem not found: $id',
+      );
     }
 
     // Find the uniqueId entry matching the requested type.
@@ -773,8 +812,11 @@ Future<Response> preferredIdHandler(
 
     final chosen = preferredMatch ?? match;
     if (chosen == null) {
-      return outcome(404, fhir.IssueType.notFound,
-          'No uniqueId of type "$type" found in NamingSystem');
+      return outcome(
+        404,
+        fhir.IssueType.notFound,
+        'No uniqueId of type "$type" found in NamingSystem',
+      );
     }
 
     final result = fhir.Parameters(
@@ -823,8 +865,11 @@ Future<Response> translateHandler(
     final effectiveSystem = system ?? (coding?['system'] as String?);
 
     if (effectiveCode == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Parameter "code" or "coding" is required');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Parameter "code" or "coding" is required',
+      );
     }
 
     // Find the ConceptMap
@@ -1007,24 +1052,36 @@ Future<Response> subsumesHandler(
     } else if (effectiveSystem != null) {
       codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
       if (codeSystem == null) {
-        return outcome(404, fhir.IssueType.notFound,
-            'CodeSystem not found: $effectiveSystem');
+        return outcome(
+          404,
+          fhir.IssueType.notFound,
+          'CodeSystem not found: $effectiveSystem',
+        );
       }
     } else {
-      return outcome(400, fhir.IssueType.invalid,
-          'Parameter "system" is required when no id is provided');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Parameter "system" is required when no id is provided',
+      );
     }
 
     // Verify both codes exist in the CodeSystem
     final conceptA = _findConcept(codeSystem.concept, effectiveCodeA);
     if (conceptA == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Code "$effectiveCodeA" not found in CodeSystem');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Code "$effectiveCodeA" not found in CodeSystem',
+      );
     }
     final conceptB = _findConcept(codeSystem.concept, effectiveCodeB);
     if (conceptB == null) {
-      return outcome(400, fhir.IssueType.invalid,
-          'Code "$effectiveCodeB" not found in CodeSystem');
+      return outcome(
+        400,
+        fhir.IssueType.invalid,
+        'Code "$effectiveCodeB" not found in CodeSystem',
+      );
     }
 
     // Determine subsumption relationship

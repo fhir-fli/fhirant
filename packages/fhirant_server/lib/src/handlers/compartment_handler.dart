@@ -1,12 +1,12 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
-import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// The token's scopes, or null when no authenticated caller is on the
@@ -37,8 +37,11 @@ Response? _refuseOutsidePatientContext(
   if (compartmentType == 'Patient' && compartmentId == patientId) return null;
   // As absent: the same answer the focal resource's absence gives below
   // (REVIEW-2026-09-17 A13; R4B security.html's 404).
-  return outcome(404, fhir.IssueType.notFound,
-      '$compartmentType/$compartmentId not found');
+  return outcome(
+    404,
+    fhir.IssueType.notFound,
+    '$compartmentType/$compartmentId not found',
+  );
 }
 
 /// The compartments this server answers `$everything` and compartment
@@ -300,8 +303,11 @@ Future<Response> compartmentSearchHandler(
     // 2. Validate resource type
     final resTypeEnum = fhir.R4ResourceType.fromString(resourceType);
     if (resTypeEnum == null) {
-      return outcome(400, fhir.IssueType.processing,
-          'Invalid resource type: $resourceType');
+      return outcome(
+        400,
+        fhir.IssueType.processing,
+        'Invalid resource type: $resourceType',
+      );
     }
 
     // 3. Validate resource type is in compartment (the focal type is in its
@@ -337,7 +343,11 @@ Future<Response> compartmentSearchHandler(
 
     // 5. Verify focal resource exists
     final lookup = await lookupStored(
-        request, dbInterface, compartmentType, compartmentId);
+      request,
+      dbInterface,
+      compartmentType,
+      compartmentId,
+    );
     if (lookup is! StoredFound) return lookupRefusal(lookup);
 
     // 6. The query, parsed as for any search. queryParametersAll keeps every
