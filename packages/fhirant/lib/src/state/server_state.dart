@@ -214,6 +214,15 @@ class ServerState extends ChangeNotifier {
 
       // Start Android foreground service to keep server alive
       if (Platform.isAndroid) {
+        // Android 13+ hides a foreground service's notification unless the
+        // app holds POST_NOTIFICATIONS, which fhirant never asked for: on a
+        // OnePlus the service ran with `granted=false` and no visible sign
+        // that a server was running (tool/background_survival/RESULTS.md).
+        // Asked here, on the user's tap; a refusal still starts the server.
+        if (await FlutterForegroundTask.checkNotificationPermission() !=
+            NotificationPermission.granted) {
+          await FlutterForegroundTask.requestNotificationPermission();
+        }
         await FlutterForegroundTask.startService(
           notificationTitle: 'FHIR ANT Server',
           notificationText: 'Running on port $_port',

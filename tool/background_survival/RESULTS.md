@@ -39,10 +39,16 @@ Defects seen:
   FIXED (run 8): the service now runs `serverTaskCallback`
   (packages/fhirant/lib/src/services/server_task.dart), which starts the
   server when Android restarted the service and the user had left it on.
-- POST_NOTIFICATIONS is never requested, so the service's notification is
-  hidden.
+- POST_NOTIFICATIONS is never requested (dumpsys: granted=false) and the
+  service's notification did not show. FIXED: Start asks; verified on the
+  phone, granted=true and the "FHIR ANT Server" notification posted.
 - The app does not ask for the battery exemption, and nothing tells the user
-  to lock it in Recents.
+  to lock it in Recents. FIXED: after Start, when not exempt, a dialog opens
+  the battery settings list and gives the Recents-lock steps; verified on the
+  phone by following the dialog's own words (App battery usage → FHIR ANT →
+  Allow background usage → Unrestricted), after which the exemption list
+  held fhirant and the dialog read "Done". The dontkillmyapp.com link was
+  not tapped.
 
 The iPhone was not tested: Apple suspends an app about 5 s after it leaves
 the screen, and no background mode covers serving network requests; the app

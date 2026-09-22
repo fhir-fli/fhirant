@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant/src/widgets/admin_setup_dialog.dart';
+import 'package:fhirant/src/widgets/keep_running_dialog.dart';
 import 'package:fhirant_server/fhirant_server.dart' show AdminProvisioning;
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 
 class ServerControlCard extends StatefulWidget {
@@ -50,6 +53,16 @@ class _ServerControlCardState extends State<ServerControlCard> {
       if (created != true) return; // no admin created — stay in Experimentation
     }
     state.devMode = false;
+  }
+
+  /// Starts the server, then, on Android, shows how to keep it running if
+  /// fhirant is still subject to battery optimisation.
+  Future<void> _start(ServerState state) async {
+    await state.startServer();
+    if (!Platform.isAndroid || !state.isRunning) return;
+    if (await FlutterForegroundTask.isIgnoringBatteryOptimizations) return;
+    if (!mounted) return;
+    await showKeepRunningDialog(context);
   }
 
   @override
@@ -144,7 +157,7 @@ class _ServerControlCardState extends State<ServerControlCard> {
                               if (state.isRunning) {
                                 unawaited(state.stopServer());
                               } else {
-                                unawaited(state.startServer());
+                                unawaited(_start(state));
                               }
                             },
                       icon:
@@ -153,6 +166,16 @@ class _ServerControlCardState extends State<ServerControlCard> {
                     ),
                   ],
                 ),
+                if (Platform.isAndroid)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          unawaited(showKeepRunningDialog(context)),
+                      icon: const Icon(Icons.battery_saver_outlined),
+                      label: const Text('Keep running in the background'),
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
