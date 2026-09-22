@@ -59,7 +59,7 @@ Future<Response> postSearchHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to process search', 'Internal error');
+    return exceptionOutcome('Failed to process search', 'Internal error');
   }
 }
 
@@ -146,7 +146,7 @@ Future<Response> systemSearchHandler(
       for (final name in names) {
         final type = fhir.R4ResourceType.fromString(name);
         if (type == null) {
-          return _validationErrorResponse(
+          return validationOutcome(
             'Invalid resource type in _type: $name',
           );
         }
@@ -241,7 +241,7 @@ Future<Response> systemSearchHandler(
     if (handling == 'strict' &&
         unknownParams != null &&
         unknownParams.isNotEmpty) {
-      return _validationErrorResponse(
+      return validationOutcome(
         'Unsupported search parameter(s): ${unknownParams.join(', ')}',
       );
     }
@@ -390,7 +390,8 @@ Future<Response> systemSearchHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to process system search', 'Internal error');
+    return exceptionOutcome(
+        'Failed to process system search', 'Internal error');
   }
 }
 
@@ -406,7 +407,7 @@ Future<Response> _searchResources(
     FhirantLogging().logWarning(
       'Invalid resource type requested: $resourceType',
     );
-    return _validationErrorResponse('Invalid resource type');
+    return validationOutcome('Invalid resource type');
   }
   // Patient-level scope enforcement: the whole search runs inside the
   // patient's compartment, as the compartment context of R4B search.html
@@ -457,7 +458,7 @@ Future<Response> _searchResources(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to fetch resources', 'Internal error');
+    return exceptionOutcome('Failed to fetch resources', 'Internal error');
   }
 }
 
@@ -1231,7 +1232,7 @@ Future<Response> postResourceHandler(
   try {
     resource = fhir.Resource.fromJsonString(await request.readAsString());
   } catch (e) {
-    return _validationErrorResponse('Invalid resource: $e');
+    return validationOutcome('Invalid resource: $e');
   }
   try {
     if (resource.resourceTypeString != resourceType) {
@@ -1239,7 +1240,7 @@ Future<Response> postResourceHandler(
         'Resource type mismatch: expected $resourceType, '
         'got ${resource.resourceTypeString}',
       );
-      return _validationErrorResponse(
+      return validationOutcome(
         'Resource type in URL does not match resource type in body',
       );
     }
@@ -1388,7 +1389,7 @@ Future<Response> postResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error processing request', 'Internal error');
+    return exceptionOutcome('Error processing request', 'Internal error');
   }
 }
 
@@ -1410,7 +1411,7 @@ Future<Response> putResourceHandler(
         'Resource type mismatch in update: expected $resourceType, '
         'got ${updatedResource.resourceTypeString}',
       );
-      return _validationErrorResponse(
+      return validationOutcome(
         'Resource type in URL does not match resource type in body',
       );
     }
@@ -1421,7 +1422,7 @@ Future<Response> putResourceHandler(
       FhirantLogging().logWarning(
         'Resource ID mismatch in update',
       );
-      return _validationErrorResponse(
+      return validationOutcome(
         'Resource ID in URL does not match resource ID in body',
       );
     }
@@ -1429,7 +1430,7 @@ Future<Response> putResourceHandler(
     // /Patient/a$b_c` was a 201, and the id then sat in every URL the
     // server built from it (REVIEW-2026-09-17 C5).
     if (!isFhirId(id)) {
-      return _validationErrorResponse(
+      return validationOutcome(
         '"$id" is not a FHIR id: letters, digits, "-" and ".", 1 to 64 '
         'characters',
       );
@@ -1514,7 +1515,7 @@ Future<Response> putResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error updating resource', 'Internal error');
+    return exceptionOutcome('Error updating resource', 'Internal error');
   }
 }
 
@@ -1585,7 +1586,7 @@ Future<Response> getResourceByIdHandler(
           summary != 'false' &&
           elements != null &&
           elements.isNotEmpty) {
-        return _validationErrorResponse(
+        return validationOutcome(
           '_summary and _elements are mutually exclusive; specify only one',
         );
       }
@@ -1652,52 +1653,8 @@ Future<Response> getResourceByIdHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Failed to fetch resource', 'Internal error');
+    return exceptionOutcome('Failed to fetch resource', 'Internal error');
   }
-}
-
-/// Utility for creating a generic error response
-Response _errorResponse(
-  String message,
-  String details, {
-  int statusCode = 500,
-}) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.exception,
-        diagnostics: '$message: $details'.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Error Response: $message - $details');
-  return Response(
-    statusCode,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
-}
-
-/// Utility for creating a validation error response
-Response _validationErrorResponse(String message) {
-  final operationOutcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: fhir.IssueSeverity.error,
-        code: fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-
-  FhirantLogging().logWarning('Validation Error: $message');
-  return Response(
-    400,
-    body: operationOutcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }
 
 /// Handler to delete a resource by its type and ID
@@ -1744,7 +1701,7 @@ Future<Response> deleteResourceHandler(
       FhirantLogging().logError(
         'Failed to delete resource of type: $resourceType with ID: {id}',
       );
-      return _errorResponse(
+      return exceptionOutcome(
         'Failed to delete resource',
         'Database operation failed',
       );
@@ -1755,7 +1712,7 @@ Future<Response> deleteResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error deleting resource', 'Internal error');
+    return exceptionOutcome('Error deleting resource', 'Internal error');
   }
 }
 
@@ -1859,17 +1816,17 @@ Future<Response> conditionalUpdateHandler(
 }) async {
   final type = fhir.R4ResourceType.fromString(resourceType);
   if (type == null) {
-    return _validationErrorResponse('Invalid resource type');
+    return validationOutcome('Invalid resource type');
   }
   final body = await request.readAsString();
   final fhir.Resource resource;
   try {
     resource = fhir.Resource.fromJsonString(body);
   } catch (e) {
-    return _validationErrorResponse('Invalid resource: $e');
+    return validationOutcome('Invalid resource: $e');
   }
   if (resource.resourceTypeString != resourceType) {
-    return _validationErrorResponse(
+    return validationOutcome(
       'Resource type in URL does not match resource type in body',
     );
   }
@@ -1946,7 +1903,7 @@ Future<Response> conditionalDeleteHandler(
       FhirantLogging().logWarning(
         'Invalid resource type for conditional delete: $resourceType',
       );
-      return _validationErrorResponse('Invalid resource type');
+      return validationOutcome('Invalid resource type');
     }
 
     final queryParams = request.url.queryParametersAll;
@@ -1954,7 +1911,7 @@ Future<Response> conditionalDeleteHandler(
     final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
 
     if (searchParams == null || searchParams.isEmpty) {
-      return _validationErrorResponse(
+      return validationOutcome(
         'Conditional delete requires at least one search parameter',
       );
     }
@@ -2035,7 +1992,7 @@ Future<Response> conditionalDeleteHandler(
       e,
       stackTrace,
     );
-    return _errorResponse('Error in conditional delete', 'Internal error');
+    return exceptionOutcome('Error in conditional delete', 'Internal error');
   }
 }
 

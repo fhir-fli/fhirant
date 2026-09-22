@@ -293,6 +293,7 @@ Every package uses `very_good_analysis` through the repo's root `analysis_option
 
 ## Key Design Decisions
 
+- **One error reply builder**: `outcome(status, IssueType, diagnostics)` in `lib/src/utils/operation_outcomes.dart`, with `exceptionOutcome` and `validationOutcome` as its two common forms, and `lookupStored` in `utils/stored_resource.dart` as the one decision for "the resource this URL names, under this caller's scope". Handlers do not define their own; 14 private helpers of six shapes were replaced on 2026-09-22 (PR #7)
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
 - **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
 - **Version ID = a counter** — `fhirDao.versionIdAsTime = false` (fhirant_db.dart), so each save's version id is the previous one plus one

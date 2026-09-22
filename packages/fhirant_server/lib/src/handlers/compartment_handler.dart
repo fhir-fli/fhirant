@@ -6,6 +6,7 @@ import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// The token's scopes, or null when no authenticated caller is on the
@@ -36,7 +37,8 @@ Response? _refuseOutsidePatientContext(
   if (compartmentType == 'Patient' && compartmentId == patientId) return null;
   // As absent: the same answer the focal resource's absence gives below
   // (REVIEW-2026-09-17 A13; R4B security.html's 404).
-  return _operationOutcome(404, '$compartmentType/$compartmentId not found');
+  return outcome(404, fhir.IssueType.notFound,
+      '$compartmentType/$compartmentId not found');
 }
 
 /// The compartments this server answers `$everything` and compartment
@@ -58,8 +60,9 @@ Future<Response> everythingHandler(
   try {
     // 1. Validate compartment type
     if (!compartmentDefinitions.containsKey(compartmentType)) {
-      return _operationOutcome(
+      return outcome(
         400,
+        fhir.IssueType.processing,
         'Unsupported compartment type: $compartmentType. '
         'Supported types: ${supportedCompartments.join(', ')}',
       );
@@ -96,16 +99,16 @@ Future<Response> everythingHandler(
       // an instant used to be ignored, and everything returned
       // (REVIEW-2026-09-08 row 32).
       if (since == null) {
-        return _operationOutcome(
+        return outcome(
           400,
-          '_since must be an instant; got "$sinceParam"',
           fhir.IssueType.invalid,
+          '_since must be an instant; got "$sinceParam"',
         );
       }
     }
     final pageError = pageArgumentError(countParam, offsetParam);
     if (pageError != null) {
-      return _operationOutcome(400, pageError, fhir.IssueType.invalid);
+      return outcome(400, fhir.IssueType.invalid, pageError);
     }
     final count = pageSize(countParam, defaultCount: 100);
     final offset = int.parse(offsetParam ?? '0');
@@ -134,11 +137,11 @@ Future<Response> everythingHandler(
           .toList()
         ..sort();
       if (unreadable.isNotEmpty) {
-        return _operationOutcome(
+        return outcome(
           403,
+          fhir.IssueType.forbidden,
           'Insufficient scope to read ${unreadable.join(', ')}; narrow the '
           'request with _type or obtain a scope covering them.',
-          fhir.IssueType.forbidden,
         );
       }
     }
@@ -264,7 +267,7 @@ Future<Response> everythingHandler(
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -287,8 +290,9 @@ Future<Response> compartmentSearchHandler(
   try {
     // 1. Validate compartment type
     if (!compartmentDefinitions.containsKey(compartmentType)) {
-      return _operationOutcome(
+      return outcome(
         404,
+        fhir.IssueType.notFound,
         'Unsupported compartment type: $compartmentType',
       );
     }
@@ -296,15 +300,17 @@ Future<Response> compartmentSearchHandler(
     // 2. Validate resource type
     final resTypeEnum = fhir.R4ResourceType.fromString(resourceType);
     if (resTypeEnum == null) {
-      return _operationOutcome(400, 'Invalid resource type: $resourceType');
+      return outcome(400, fhir.IssueType.processing,
+          'Invalid resource type: $resourceType');
     }
 
     // 3. Validate resource type is in compartment (the focal type is in its
     // own compartment)
     if (resourceType != compartmentType &&
         !compartmentDefinitions[compartmentType]!.containsKey(resourceType)) {
-      return _operationOutcome(
+      return outcome(
         400,
+        fhir.IssueType.processing,
         '$resourceType is not part of the $compartmentType compartment',
       );
     }
@@ -322,10 +328,10 @@ Future<Response> compartmentSearchHandler(
     final scopes = _scopesOf(request);
     if (scopes != null &&
         !SmartScopeEnforcer.isAuthorized(scopes, resourceType, 's')) {
-      return _operationOutcome(
+      return outcome(
         403,
-        'Insufficient scope for s on $resourceType',
         fhir.IssueType.forbidden,
+        'Insufficient scope for s on $resourceType',
       );
     }
 
@@ -385,29 +391,23 @@ Future<Response> compartmentSearchHandler(
     // `:in` / `:not-in` against a ValueSet the store cannot evaluate or
     // does not hold, as on a type-level search. This was not caught here
     // at all, so it was a 500.
-    return _operationOutcome(
-      400,
-      e.message,
-      e.issueCode == 'not-found'
-          ? fhir.IssueType.notFound
-          : fhir.IssueType.notSupported,
-    );
+    return outcome(400, issueTypeOfCode(e.issueCode), e.message);
   } on UnsupportedSearchModifier catch (e) {
     // R4 3.1.1.4.4: a SHALL, the same as on a type-level search.
-    return _operationOutcome(400, e.message, fhir.IssueType.notSupported);
+    return outcome(400, fhir.IssueType.notSupported, e.message);
   } on InvalidSearchValue catch (e) {
     // R4B 3.1.1.3: a value that is not valid for its type is an error, not
     // an empty compartment and not a 500.
-    return _operationOutcome(400, e.message, fhir.IssueType.invalid);
+    return outcome(400, fhir.IssueType.invalid, e.message);
   } on AmbiguousReference catch (e) {
-    return _operationOutcome(400, e.message, fhir.IssueType.invalid);
+    return outcome(400, fhir.IssueType.invalid, e.message);
   } catch (e, stackTrace) {
     FhirantLogging().logError(
       'Error in compartment search $compartmentType/{id}/$resourceType',
       e,
       stackTrace,
     );
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -498,31 +498,4 @@ String _baseUrl(Request request) {
   return uri.hasPort
       ? '${uri.scheme}://${uri.host}:${uri.port}'
       : '${uri.scheme}://${uri.host}';
-}
-
-/// Returns an OperationOutcome response.
-Response _operationOutcome(
-  int statusCode,
-  String message, [
-  fhir.IssueType? code,
-]) {
-  final outcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: statusCode >= 500
-            ? fhir.IssueSeverity.fatal
-            : fhir.IssueSeverity.error,
-        code: code ??
-            (statusCode == 404
-                ? fhir.IssueType.notFound
-                : fhir.IssueType.processing),
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-  return Response(
-    statusCode,
-    body: outcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }

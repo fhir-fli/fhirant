@@ -9,6 +9,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:fhirant_server/src/utils/host_resource_cache.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// FHIR Mapping Handler - Transform resources using StructureMap
@@ -22,40 +23,14 @@ Future<Response> mappingHandler(
 
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Request body is empty',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid, 'Request body is empty');
     }
 
     Map<String, dynamic> requestJson;
     try {
       requestJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Invalid JSON format: $e',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid, 'Invalid JSON format: $e');
     }
 
     // R4B OperationDefinition StructureMap-transform (profiles-resources.json,
@@ -80,11 +55,11 @@ Future<Response> mappingHandler(
         }
       }
       if (sourceUri == null || sourceUri.isEmpty || content == null) {
-        return _outcome(
+        return outcome(
           400,
-          'invalid',
+          fhir.IssueType.invalid,
           'StructureMap-transform takes `source` (the canonical url of a '
-              'stored StructureMap) and `content` (the resource to transform)',
+          'stored StructureMap) and `content` (the resource to transform)',
         );
       }
       final maps = await db.search(
@@ -95,9 +70,9 @@ Future<Response> mappingHandler(
         count: 1,
       );
       if (maps.isEmpty) {
-        return _outcome(
+        return outcome(
           404,
-          'not-found',
+          fhir.IssueType.notFound,
           'No StructureMap with url $sourceUri',
         );
       }
@@ -105,37 +80,13 @@ Future<Response> mappingHandler(
     }
 
     if (requestJson['map'] == null) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Missing required field: map (StructureMap)',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Missing required field: map (StructureMap)');
     }
 
     if (requestJson['source'] == null) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Missing required field: source (source resource)',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'Missing required field: source (source resource)');
     }
 
     // Parse StructureMap
@@ -145,20 +96,7 @@ Future<Response> mappingHandler(
         requestJson['map'] as Map<String, dynamic>,
       );
     } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Invalid StructureMap: $e',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid, 'Invalid StructureMap: $e');
     }
 
     // Parse source resource
@@ -169,20 +107,8 @@ Future<Response> mappingHandler(
           sourceData is String ? sourceData : jsonEncode(sourceData);
       source = fhir.Resource.fromJsonString(sourceString);
     } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'Invalid source resource: $e',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(
+          400, fhir.IssueType.invalid, 'Invalid source resource: $e');
     }
 
     // The engine cannot invent the target: given null it fails with
@@ -195,36 +121,11 @@ Future<Response> mappingHandler(
     } on TargetTypeAmbiguous catch (e) {
       // Refusing beats guessing: a transform that returned a resource of a
       // type the map did not ask for is a wrong answer, not a limitation.
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'not-supported',
-              'diagnostics': e.message,
-            },
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.notSupported, e.message);
     }
     if (targetType == null) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'invalid',
-              'diagnostics': 'StructureMap has no structure with mode "target"',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(400, fhir.IssueType.invalid,
+          'StructureMap has no structure with mode "target"');
     }
 
     // Proved buildable here so the refusal is specific; the worker builds
@@ -232,24 +133,13 @@ Future<Response> mappingHandler(
     try {
       resourceFromJson(<String, dynamic>{'resourceType': targetType});
     } catch (e) {
-      return Response(
-        400,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'not-supported',
-              'diagnostics':
-                  'Unsupported target type "$targetType". The target '
-                      'structure canonical must name a base FHIR resource; '
-                      'this server does not resolve a profile or logical '
-                      'model canonical to its underlying type.',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(
+          400,
+          fhir.IssueType.notSupported,
+          'Unsupported target type "$targetType". The target '
+          'structure canonical must name a base FHIR resource; '
+          'this server does not resolve a profile or logical '
+          'model canonical to its underlying type.');
     }
 
     // The map is the client's program: it runs in a worker isolate under
@@ -264,27 +154,15 @@ Future<Response> mappingHandler(
         host: (request) => serveResourceCache(cache, request),
       );
     } on ProgramTimeout catch (e) {
-      return _outcome(422, 'too-costly', '$e');
+      return outcome(422, fhir.IssueType.tooCostly, '$e');
     }
     // A ProgramFailed (the engine threw) falls through to the catch below
     // and is a 500, as it was on this isolate: the engine reports a failed
     // transform by returning an OperationOutcome, so a throw is its defect.
 
     if (resultJson == null) {
-      return Response(
-        500,
-        body: jsonEncode({
-          'resourceType': 'OperationOutcome',
-          'issue': [
-            {
-              'severity': 'error',
-              'code': 'exception',
-              'diagnostics': 'Mapping returned null result',
-            }
-          ],
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return outcome(
+          500, fhir.IssueType.exception, 'Mapping returned null result');
     }
 
     // The engine reports a failed transform by RETURNING an OperationOutcome,
@@ -316,20 +194,7 @@ Future<Response> mappingHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Mapping/transformation failed', e, stackTrace);
-    return Response(
-      500,
-      body: jsonEncode({
-        'resourceType': 'OperationOutcome',
-        'issue': [
-          {
-            'severity': 'error',
-            'code': 'exception',
-            'diagnostics': 'Mapping error',
-          }
-        ],
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
+    return outcome(500, fhir.IssueType.exception, 'Mapping error');
   }
 }
 
@@ -440,14 +305,3 @@ class TargetTypeAmbiguous implements Exception {
   @override
   String toString() => message;
 }
-
-Response _outcome(int status, String code, String diagnostics) => Response(
-      status,
-      body: jsonEncode({
-        'resourceType': 'OperationOutcome',
-        'issue': [
-          {'severity': 'error', 'code': code, 'diagnostics': diagnostics},
-        ],
-      }),
-      headers: {'Content-Type': 'application/fhir+json'},
-    );

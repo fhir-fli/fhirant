@@ -7,6 +7,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Library/$evaluate — evaluate a stored CQL Library resource.
@@ -38,11 +39,11 @@ Future<Response> libraryEvaluateHandler(
     // Extract CQL or ELM from the Library's content attachments
     final cqlLibrary = _extractCqlFromLibrary(library);
     if (cqlLibrary == null) {
-      return _errorResponse(
+      return outcome(
         422,
-        'invalid',
+        fhir.IssueType.invalid,
         'Library/$libraryId has no evaluable content. '
-            'Expected content with contentType text/cql or application/elm+json',
+        'Expected content with contentType text/cql or application/elm+json',
       );
     }
 
@@ -69,9 +70,9 @@ Future<Response> libraryEvaluateHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Library/${'evaluate'} failed', e, stackTrace);
-    return _errorResponse(
+    return outcome(
       500,
-      'exception',
+      fhir.IssueType.exception,
       'CQL evaluation error',
     );
   }
@@ -97,14 +98,15 @@ Future<Response> libraryEvaluateByUrlHandler(
 
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return _errorResponse(400, 'invalid', 'Request body is required');
+      return outcome(400, fhir.IssueType.invalid, 'Request body is required');
     }
 
     Map<String, dynamic> bodyJson;
     try {
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return _errorResponse(400, 'invalid', 'Invalid JSON in request body');
+      return outcome(
+          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
     }
 
     final evalParams = _parseParametersResource(bodyJson);
@@ -127,9 +129,9 @@ Future<Response> libraryEvaluateByUrlHandler(
         },
       );
       if (results.isEmpty) {
-        return _errorResponse(
+        return outcome(
           404,
-          'not-found',
+          fhir.IssueType.notFound,
           'No Library found with url: ${evalParams.url}',
         );
       }
@@ -140,7 +142,8 @@ Future<Response> libraryEvaluateByUrlHandler(
       try {
         cqlLibrary = _parseCql(evalParams.cqlSource!);
       } catch (e) {
-        return _errorResponse(400, 'invalid', 'The CQL does not translate: $e');
+        return outcome(
+            400, fhir.IssueType.invalid, 'The CQL does not translate: $e');
       }
     } else if (evalParams.elmJson != null) {
       // Convenience: inline ELM JSON
@@ -149,11 +152,11 @@ Future<Response> libraryEvaluateByUrlHandler(
     }
 
     if (cqlLibrary == null) {
-      return _errorResponse(
+      return outcome(
         400,
-        'invalid',
+        fhir.IssueType.invalid,
         'No evaluable library provided. Supply a Library id, url, '
-            'inline library resource, cql, or elm parameter',
+        'inline library resource, cql, or elm parameter',
       );
     }
 
@@ -169,9 +172,9 @@ Future<Response> libraryEvaluateByUrlHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Library/${'evaluate'} failed', e, stackTrace);
-    return _errorResponse(
+    return outcome(
       500,
-      'exception',
+      fhir.IssueType.exception,
       'CQL evaluation error',
     );
   }
@@ -196,14 +199,15 @@ Future<Response> cqlHandler(
 
     final body = await request.readAsString();
     if (body.isEmpty) {
-      return _errorResponse(400, 'invalid', 'Request body is required');
+      return outcome(400, fhir.IssueType.invalid, 'Request body is required');
     }
 
     Map<String, dynamic> bodyJson;
     try {
       bodyJson = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      return _errorResponse(400, 'invalid', 'Invalid JSON in request body');
+      return outcome(
+          400, fhir.IssueType.invalid, 'Invalid JSON in request body');
     }
 
     final evalParams = bodyJson['resourceType'] == 'Parameters'
@@ -211,11 +215,11 @@ Future<Response> cqlHandler(
         : _parsePlainJson(bodyJson);
 
     if (evalParams.cqlSource == null && evalParams.elmJson == null) {
-      return _errorResponse(
+      return outcome(
         400,
-        'invalid',
+        fhir.IssueType.invalid,
         'Either "cql" (CQL source text) or "elm" (ELM JSON) parameter '
-            'is required',
+        'is required',
       );
     }
     final refused = _evaluationRefusal(request, evalParams);
@@ -230,9 +234,9 @@ Future<Response> cqlHandler(
         cqlLibrary = _parseCql(evalParams.cqlSource!);
       }
     } catch (e) {
-      return _errorResponse(
+      return outcome(
         400,
-        'invalid',
+        fhir.IssueType.invalid,
         'Failed to parse CQL/ELM: $e',
       );
     }
@@ -249,9 +253,9 @@ Future<Response> cqlHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('CQL evaluation failed', e, stackTrace);
-    return _errorResponse(
+    return outcome(
       500,
-      'exception',
+      fhir.IssueType.exception,
       'CQL evaluation error',
     );
   }
@@ -282,21 +286,21 @@ Response? _evaluationRefusal(Request request, _EvalParams params) {
     final own = subject != null &&
         (subject == 'Patient/${compartment.id}' || subject == compartment.id);
     if (!own) {
-      return _errorResponse(
+      return outcome(
         403,
-        'forbidden',
+        fhir.IssueType.forbidden,
         'A patient-scoped token may evaluate over its own patient only '
-            '(subject=Patient/${compartment.id})',
+        '(subject=Patient/${compartment.id})',
       );
     }
     return null;
   }
   if (!principal.mayReadUnscoped) {
-    return _errorResponse(
+    return outcome(
       403,
-      'forbidden',
+      fhir.IssueType.forbidden,
       "Evaluation reads the subject's whole record, so it requires a "
-          'user- or system-context scope covering all resource types.',
+      'user- or system-context scope covering all resource types.',
     );
   }
   return null;
@@ -482,11 +486,12 @@ Future<({String? body, Response? refusal})> _executeSandboxed(
     );
     return (body: body, refusal: null);
   } on ProgramTimeout catch (e) {
-    return (body: null, refusal: _errorResponse(422, 'too-costly', '$e'));
+    return (body: null, refusal: outcome(422, fhir.IssueType.tooCostly, '$e'));
   } on ProgramFailed catch (e) {
     return (
       body: null,
-      refusal: _errorResponse(400, 'invalid', 'The CQL failed: ${e.error}'),
+      refusal:
+          outcome(400, fhir.IssueType.invalid, 'The CQL failed: ${e.error}'),
     );
   }
 }
@@ -742,21 +747,4 @@ Map<String, dynamic>? _resultToParameter(String name, dynamic value) {
   }
 
   return {'name': name, 'valueString': value.toString()};
-}
-
-Response _errorResponse(int status, String code, String diagnostics) {
-  return Response(
-    status,
-    body: jsonEncode({
-      'resourceType': 'OperationOutcome',
-      'issue': [
-        {
-          'severity': 'error',
-          'code': code,
-          'diagnostics': diagnostics,
-        }
-      ],
-    }),
-    headers: {'Content-Type': 'application/fhir+json'},
-  );
 }

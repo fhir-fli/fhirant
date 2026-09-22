@@ -7,6 +7,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/backup_service.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for POST /$backup — exports all FHIR resources as a collection
@@ -36,7 +37,7 @@ Future<Response> backupHandler(
     final params = await _readParameters(request);
     final passphrase = params['passphrase'];
     if (passphrase == null || passphrase.isEmpty) {
-      return _outcome(
+      return outcome(
         400,
         fhir.IssueType.required_,
         'A passphrase is required. Send a Parameters resource with a '
@@ -146,18 +147,18 @@ Future<Response> restoreHandler(
         passphrase: _passphraseHeader(request),
       );
     } on BackupSchemaTooNew catch (e) {
-      return _outcome(400, fhir.IssueType.notSupported, e.toString());
+      return outcome(400, fhir.IssueType.notSupported, e.toString());
     } on BackupPassphraseRequired {
-      return _outcome(
+      return outcome(
         400,
         fhir.IssueType.required_,
         'This backup is encrypted. Supply the passphrase it was created '
         'with in the X-Backup-Passphrase header.',
       );
     } on BackupDecryptionException catch (e) {
-      return _outcome(400, fhir.IssueType.security, e.message);
+      return outcome(400, fhir.IssueType.security, e.message);
     } on FormatException catch (e) {
-      return _outcome(400, fhir.IssueType.invalid, e.message);
+      return outcome(400, fhir.IssueType.invalid, e.message);
     }
 
     // The summary issue comes first, so a caller reading only the first issue
@@ -233,24 +234,6 @@ Future<Map<String, String>> _readParameters(Request request) async {
     if (name is String && value is String) out[name] = value;
   }
   return out;
-}
-
-Response _outcome(int status, fhir.IssueType code, String diagnostics) {
-  return Response(
-    status,
-    body: jsonEncode(
-      fhir.OperationOutcome(
-        issue: [
-          fhir.OperationOutcomeIssue(
-            severity: fhir.IssueSeverity.error,
-            code: code,
-            diagnostics: diagnostics.toFhirString,
-          ),
-        ],
-      ).toJson(),
-    ),
-    headers: {'content-type': 'application/fhir+json'},
-  );
 }
 
 /// Reads the restore passphrase from the `X-Backup-Passphrase` header.

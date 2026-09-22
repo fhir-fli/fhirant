@@ -11,6 +11,7 @@ import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart' show specTag;
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 
@@ -119,8 +120,9 @@ Future<Response> exportKickoffHandler(
     // 1. Validate Prefer: respond-async header
     final prefer = request.headers['prefer'] ?? '';
     if (!prefer.contains('respond-async')) {
-      return _operationOutcome(
+      return outcome(
         400,
+        fhir.IssueType.processing,
         'Bulk data export requires the Prefer: respond-async header.',
       );
     }
@@ -133,11 +135,12 @@ Future<Response> exportKickoffHandler(
     try {
       kickoff = BulkExportKickoff.fromQuery(request.url.queryParametersAll);
     } on FormatException catch (e) {
-      return _operationOutcome(400, e.message);
+      return outcome(400, fhir.IssueType.processing, e.message);
     }
     if (!kickoff.outputFormatSupported) {
-      return _operationOutcome(
+      return outcome(
         400,
+        fhir.IssueType.processing,
         'Unsupported _outputFormat: ${kickoff.outputFormat}. '
         'Supported formats: ${bulkOutputFormats.join(', ')}',
       );
@@ -158,16 +161,18 @@ Future<Response> exportKickoffHandler(
     final prefersLenient =
         (request.headers['prefer'] ?? '').contains('handling=lenient');
     if (unsupported.isNotEmpty && !prefersLenient) {
-      return _operationOutcome(
+      return outcome(
         400,
+        fhir.IssueType.processing,
         'This server does not support ${unsupported.join(', ')}; omit the '
         'parameter, or send Prefer: handling=lenient to have it ignored.',
       );
     }
     for (final filter in kickoff.typeFilters) {
       if (!filter.resourceTypeKnown) {
-        return _operationOutcome(
+        return outcome(
           400,
+          fhir.IssueType.processing,
           'Invalid resource type in _typeFilter: ${filter.resourceType}',
         );
       }
@@ -271,7 +276,7 @@ Future<Response> exportKickoffHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error in export kick-off', e, stackTrace);
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -299,7 +304,8 @@ Future<Response> exportStatusHandler(
   try {
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
-      return _operationOutcome(404, 'Export job not found: $jobId');
+      return outcome(
+          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -355,14 +361,16 @@ Future<Response> exportStatusHandler(
         );
 
       case 'cancelled':
-        return _operationOutcome(404, 'Export job was cancelled: $jobId');
+        return outcome(
+            404, fhir.IssueType.notFound, 'Export job was cancelled: $jobId');
 
       default:
-        return _operationOutcome(500, 'Unknown job status: ${job.status}');
+        return outcome(500, fhir.IssueType.processing,
+            'Unknown job status: ${job.status}');
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error in export status poll', e, stackTrace);
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -379,14 +387,15 @@ Future<Response> exportFileHandler(
   try {
     // Validate both path segments to prevent traversal out of the export dir.
     if (!_isValidJobId(jobId)) {
-      return _operationOutcome(400, 'Invalid job id');
+      return outcome(400, fhir.IssueType.processing, 'Invalid job id');
     }
     if (fileName.contains('..') || fileName.contains('/')) {
-      return _operationOutcome(400, 'Invalid file name');
+      return outcome(400, fhir.IssueType.processing, 'Invalid file name');
     }
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
-      return _operationOutcome(404, 'Export job not found: $jobId');
+      return outcome(
+          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -394,12 +403,14 @@ Future<Response> exportFileHandler(
     final filePath = '$exportDir/$jobId/$fileName';
     final file = File(filePath);
     if (!file.existsSync()) {
-      return _operationOutcome(404, 'Export file not found: $fileName');
+      return outcome(
+          404, fhir.IssueType.notFound, 'Export file not found: $fileName');
     }
     final fileKey = job.fileKey;
     if (fileKey == null) {
-      return _operationOutcome(
+      return outcome(
         410,
+        fhir.IssueType.processing,
         'This export was written before its files were encrypted at rest '
         'and cannot be served; run it again.',
       );
@@ -428,8 +439,9 @@ Future<Response> exportFileHandler(
       first = await iterator.moveNext() ? iterator.current : null;
     } on ExportFileCorrupt catch (e) {
       FhirantLogging().logError('Export file $jobId/$fileName: $e');
-      return _operationOutcome(
+      return outcome(
         500,
+        fhir.IssueType.processing,
         'The export file on disk is not the file the job wrote: $e',
       );
     }
@@ -449,7 +461,7 @@ Future<Response> exportFileHandler(
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error serving export file', e, stackTrace);
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -467,11 +479,12 @@ Future<Response> exportDeleteHandler(
     // The DB lookup below already gates on a real job, but reject a malformed
     // id outright so the path can never traverse the export dir.
     if (!_isValidJobId(jobId)) {
-      return _operationOutcome(400, 'Invalid job id');
+      return outcome(400, fhir.IssueType.processing, 'Invalid job id');
     }
     final job = await dbInterface.getExportJob(jobId);
     if (job == null) {
-      return _operationOutcome(404, 'Export job not found: $jobId');
+      return outcome(
+          404, fhir.IssueType.notFound, 'Export job not found: $jobId');
     }
     final refused = _refuseUnlessOwner(request, job);
     if (refused != null) return refused;
@@ -501,7 +514,7 @@ Future<Response> exportDeleteHandler(
     return Response(202, body: '');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error deleting export job', e, stackTrace);
-    return _operationOutcome(500, 'Internal error');
+    return outcome(500, fhir.IssueType.processing, 'Internal error');
   }
 }
 
@@ -947,26 +960,4 @@ String _baseUrl(Request request) {
   return uri.hasPort
       ? '${uri.scheme}://${uri.host}:${uri.port}'
       : '${uri.scheme}://${uri.host}';
-}
-
-/// Returns an OperationOutcome response.
-Response _operationOutcome(int statusCode, String message) {
-  final outcome = fhir.OperationOutcome(
-    issue: [
-      fhir.OperationOutcomeIssue(
-        severity: statusCode >= 500
-            ? fhir.IssueSeverity.fatal
-            : fhir.IssueSeverity.error,
-        code: statusCode == 404
-            ? fhir.IssueType.notFound
-            : fhir.IssueType.processing,
-        diagnostics: message.toFhirString,
-      ),
-    ],
-  );
-  return Response(
-    statusCode,
-    body: outcome.toJsonString(),
-    headers: {'Content-Type': 'application/json'},
-  );
 }
