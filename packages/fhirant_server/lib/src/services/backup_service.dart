@@ -234,14 +234,11 @@ class BackupService {
           continue;
         }
         try {
-          if (await db.saveResource(resource) != null) {
-            saved++;
-          } else {
-            failures.add(
-              'Failed to save ${resource.resourceTypeString}/'
-              '${resource.id ?? "(no id)"}',
-            );
-          }
+          // Per-resource: the rest of the backup still restores, and the
+          // caller gets the list with each cause. The wrapper used to
+          // swallow the cause and return null (REVIEW-2026-09-17 ST7).
+          await db.saveResource(resource);
+          saved++;
         } catch (e) {
           failures.add(
             'Failed to save ${resource.resourceTypeString}/'

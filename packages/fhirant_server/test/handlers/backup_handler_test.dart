@@ -277,13 +277,13 @@ void main() {
         ],
       );
 
-      // First save succeeds, second fails
+      // First save succeeds, second throws: a save failure is thrown with
+      // its cause, never a null (REVIEW-2026-09-17 ST7).
       var callCount = 0;
       when(() => mockDb.saveResource(any())).thenAnswer((i) async {
         callCount++;
-        return callCount == 1
-            ? i.positionalArguments.first as fhir.Resource
-            : null;
+        if (callCount == 1) return i.positionalArguments.first as fhir.Resource;
+        throw StateError('disk full');
       });
 
       final request = Request(

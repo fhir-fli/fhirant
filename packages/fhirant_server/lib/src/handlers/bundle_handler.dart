@@ -731,19 +731,13 @@ Future<_BundleOperation> _processBundleEntry(
         entryIndex,
       );
 
-      final fhir.Resource? saved;
+      final fhir.Resource saved;
       try {
         saved = await dbInterface.saveResource(resourceToSave);
       } on InvalidSearchParameter catch (e) {
         throw BundleEntryException(
           400,
           'Bundle entry $entryIndex: ${e.message}',
-        );
-      }
-      if (saved == null) {
-        throw BundleEntryException(
-          500,
-          'Bundle entry $entryIndex: Failed to create resource',
         );
       }
       resultResource = saved;
@@ -874,7 +868,7 @@ Future<_BundleOperation> _processBundleEntry(
       );
       await _requireBodyInCompartment(updatePatient, putResource, entryIndex);
 
-      final fhir.Resource? updated;
+      final fhir.Resource updated;
       try {
         updated = await dbInterface.saveResource(
           putResource,
@@ -890,12 +884,6 @@ Future<_BundleOperation> _processBundleEntry(
         throw BundleEntryException(
           400,
           'Bundle entry $entryIndex: ${e.message}',
-        );
-      }
-      if (updated == null) {
-        throw BundleEntryException(
-          500,
-          'Bundle entry $entryIndex: Failed to update resource',
         );
       }
       resultResource = updated;
@@ -997,7 +985,7 @@ Future<_BundleOperation> _processBundleEntry(
         principal,
         entryIndex,
       );
-      final fhir.Resource? patchSaved;
+      final fhir.Resource patchSaved;
       try {
         patchSaved = await dbInterface.saveResource(
           patchedToSave,
@@ -1008,12 +996,6 @@ Future<_BundleOperation> _processBundleEntry(
           412,
           'Bundle entry $entryIndex: version mismatch (ifMatch precondition '
           'failed)',
-        );
-      }
-      if (patchSaved == null) {
-        throw BundleEntryException(
-          500,
-          'Bundle entry $entryIndex: Failed to save patched resource',
         );
       }
       resultResource = patchSaved;

@@ -797,34 +797,27 @@ class FhirAntDb extends FhirDb {
       fhirDao.getResource(resourceType, id);
 
   /// Saves [resource] and returns it as stored (server-assigned version and
-  /// lastUpdated), or null when the save failed. Callers used to get a bool
-  /// and re-read the resource to learn its version (REVIEW-2026-09-06
-  /// finding 32). A [VersionConflict] from [ifMatchVersion] (HTTP `If-Match`)
-  /// is rethrown: it is the caller's 412, not a failure.
-  Future<fhir.Resource?> saveResource(
+  /// lastUpdated). Callers used to get a bool and re-read the resource to
+  /// learn its version (REVIEW-2026-09-06 finding 32).
+  ///
+  /// A failure is thrown, with its cause. This used to catch everything,
+  /// print the cause to stderr and return null, so the handler logged
+  /// "Failed to save resource" with nothing behind it (REVIEW-2026-09-17
+  /// ST7; measured 2026-09-22: a save on a closed store logged one record
+  /// whose error was null). [VersionConflict] (HTTP `If-Match`) and
+  /// [InvalidSearchParameter] are the caller's 412 and 400.
+  Future<fhir.Resource> saveResource(
     fhir.Resource resource, {
     String? ifMatchVersion,
     bool mergeTags = true,
     bool asServer = false,
-  }) async {
-    try {
-      return await fhirDao.saveResource(
+  }) =>
+      fhirDao.saveResource(
         resource,
         ifMatchVersion: ifMatchVersion,
         mergeTags: mergeTags,
         asServer: asServer,
       );
-    } on VersionConflict {
-      rethrow;
-    } on InvalidSearchParameter {
-      // A SearchParameter the store cannot index by: the caller's 400, not
-      // a failure of the save.
-      rethrow;
-    } catch (e) {
-      stderr.writeln('Error in saveResource: $e');
-      return null;
-    }
-  }
 
   /// See [FhirDao.saveResources]: a first version is stored once, and a
   /// stored resource's row moves into history as it is replaced.
