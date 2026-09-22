@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:fhirant_db/fhirant_db.dart' show User;
+
 /// SMART on FHIR scope parsing and enforcement.
 ///
 /// Supports SMART v2 scope syntax: `context/resourceType.cruds`
@@ -66,6 +70,17 @@ class SmartScope {
 /// Static methods for SMART scope enforcement.
 class SmartScopeEnforcer {
   /// Returns the default scopes for a given role.
+  /// The scopes an account holds: the ones stored on it, else its role's
+  /// defaults. Decided here once; it used to be written at six sites, one
+  /// of which read an empty stored list as "none" rather than the defaults.
+  static List<String> heldScopes(User user) {
+    final stored = user.scopes;
+    if (stored != null && stored.isNotEmpty) {
+      return (jsonDecode(stored) as List<dynamic>).cast<String>();
+    }
+    return defaultScopesForRole(user.role);
+  }
+
   static List<String> defaultScopesForRole(String role) {
     switch (role) {
       case 'admin':

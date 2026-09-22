@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:fhirant_db/fhirant_db.dart' show User;
 
 /// The one signing/verification algorithm this server accepts. Pinning it
 /// (rather than trusting the `alg` header of an incoming token) closes
@@ -22,6 +23,33 @@ class JwtService {
   final Duration _refreshTokenLifetime;
 
   /// Generates a signed JWT containing user claims.
+  /// The one way a session is minted: an access token and a refresh token
+  /// for [user], carrying its id, name, role, patient context and current
+  /// token generation, and [scopes]. Before 2026-09-22 the pair was minted
+  /// at five sites, and registration's carried no generation.
+  ({String access, String refresh}) issueSession(
+    User user, {
+    required List<String> scopes,
+  }) =>
+      (
+        access: generateToken(
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+          scopes: scopes,
+          patientId: user.patientId,
+          generation: user.tokenGeneration,
+        ),
+        refresh: generateRefreshToken(
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+          scopes: scopes,
+          patientId: user.patientId,
+          generation: user.tokenGeneration,
+        ),
+      );
+
   String generateToken({
     required int userId,
     required String username,

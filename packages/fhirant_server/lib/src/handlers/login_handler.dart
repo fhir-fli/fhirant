@@ -83,36 +83,11 @@ Future<Response> loginHandler(
         );
     }
 
-    // Compute effective scopes: user-specific or role defaults
-    final List<String> effectiveScopes;
-    if (user.scopes != null && user.scopes!.isNotEmpty) {
-      effectiveScopes =
-          (jsonDecode(user.scopes!) as List<dynamic>).cast<String>();
-    } else {
-      effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(user.role);
-    }
-
+    final effectiveScopes = SmartScopeEnforcer.heldScopes(user);
     final patientId = user.patientId;
-
-    // Generate JWT access token
-    final token = jwtService.generateToken(
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      scopes: effectiveScopes,
-      patientId: patientId,
-      generation: user.tokenGeneration,
-    );
-
-    // Generate refresh token
-    final refreshToken = jwtService.generateRefreshToken(
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      scopes: effectiveScopes,
-      patientId: patientId,
-      generation: user.tokenGeneration,
-    );
+    final session = jwtService.issueSession(user, scopes: effectiveScopes);
+    final token = session.access;
+    final refreshToken = session.refresh;
 
     return Response.ok(
       jsonEncode({

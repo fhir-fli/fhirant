@@ -218,20 +218,13 @@ Future<Response> registerHandler(
     );
 
     // Generate JWT tokens so the user is logged in immediately
-    final token = jwtService.generateToken(
-      userId: userId,
-      username: username,
-      role: effectiveRole,
-      scopes: effectiveScopes,
-      patientId: patientId,
-    );
-    final refreshToken = jwtService.generateRefreshToken(
-      userId: userId,
-      username: username,
-      role: effectiveRole,
-      scopes: effectiveScopes,
-      patientId: patientId,
-    );
+    // Minted from the stored row, so the tokens carry what the store holds,
+    // its generation included; this used to mint from the request's fields
+    // and carry no generation.
+    final created = (await dbInterface.getUserById(userId))!;
+    final session = jwtService.issueSession(created, scopes: effectiveScopes);
+    final token = session.access;
+    final refreshToken = session.refresh;
 
     return Response(
       201,
