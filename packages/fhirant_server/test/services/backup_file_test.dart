@@ -223,7 +223,7 @@ void main() {
     );
     // And the next save counts on, over nothing.
     final next = await target.saveResource(patient('p1', 'After'));
-    expect(next!.meta!.versionId!.valueString, '5');
+    expect(next.meta!.versionId!.valueString, '5');
     expect(
       (await target.getResourceHistory(fhir.R4ResourceType.Patient, 'p1'))
           .map((r) => r.meta!.versionId!.valueString),

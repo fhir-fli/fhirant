@@ -137,9 +137,10 @@ void main() {
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patientJson);
       when(() => mockRequest.headers).thenReturn({});
+      // A save failure is thrown with its cause (REVIEW-2026-09-17 ST7).
       when(
         () => mockDb.saveResource(any()),
-      ).thenAnswer((_) async => null);
+      ).thenThrow(StateError('disk full'));
 
       final response = await putResourceHandler(
         mockRequest,

@@ -222,12 +222,13 @@ void main() {
       when(
         () => mockRequest.readAsString(),
       ).thenAnswer((_) async => patchBody);
+      // A save failure is thrown with its cause (REVIEW-2026-09-17 ST7).
       when(
         () => mockDb.saveResource(
           any(),
           ifMatchVersion: any(named: 'ifMatchVersion'),
         ),
-      ).thenAnswer((_) async => null);
+      ).thenThrow(StateError('disk full'));
 
       final response = await patchResourceHandler(
         mockRequest,

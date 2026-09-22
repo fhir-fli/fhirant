@@ -134,12 +134,6 @@ Future<Response> metaAddHandler(
     // Update the resource with new meta (via JSON round-trip)
     final updatedResource = _setMeta(resource, mergedMeta);
     final saved = await dbInterface.saveResource(updatedResource);
-    if (saved == null) {
-      return _errorResponse(
-        'Failed to add resource meta',
-        'Database operation failed',
-      );
-    }
     await subs.onResourceChanged(saved);
 
     // Return the updated meta
@@ -219,12 +213,6 @@ Future<Response> metaDeleteHandler(
       updatedResource,
       mergeTags: false,
     );
-    if (saved == null) {
-      return _errorResponse(
-        'Failed to delete resource meta',
-        'Database operation failed',
-      );
-    }
     await subs.onResourceChanged(saved);
 
     // Return the updated meta

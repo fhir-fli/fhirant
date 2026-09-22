@@ -99,7 +99,7 @@ Future<void> main(List<String> args) async {
     // Whole evaluations, one per write, worker drained each time.
     final samples = <double>[];
     for (var w = 0; w < writes; w++) {
-      final changed = (await db.saveResource(observation(observations + w)))!;
+      final changed = await db.saveResource(observation(observations + w));
       final sw = Stopwatch()..start();
       await service.onResourceChanged(changed);
       await service.drain();

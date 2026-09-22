@@ -134,7 +134,7 @@ Future<Response> patchResourceHandler(
       final toSave = patchedResource is fhir.Subscription
           ? await subs.activate(patchedResource)
           : patchedResource;
-      final fhir.Resource? savedResource;
+      final fhir.Resource savedResource;
       try {
         savedResource = await dbInterface.saveResource(
           toSave,
@@ -158,14 +158,18 @@ Future<Response> patchResourceHandler(
           ).toJsonString(),
           headers: {'Content-Type': 'application/fhir+json'},
         );
-      }
-      if (savedResource == null) {
+      } catch (e, stackTrace) {
+        // The store failed, not the patch: the server's 500. Inside the
+        // enclosing catch this was answered as the client's 400
+        // (REVIEW-2026-09-17 ST7).
         FhirantLogging().logError(
           'Failed to save patched resource: $resourceType/{id}',
+          e,
+          stackTrace,
         );
         return _errorResponse(
           'Failed to save patched resource',
-          'Database operation failed',
+          'Internal error',
         );
       }
       await subs.onResourceChanged(savedResource);

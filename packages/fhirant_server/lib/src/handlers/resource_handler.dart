@@ -1221,10 +1221,18 @@ Future<Response> postResourceHandler(
   // quietly does nothing when a caller forgets to pass it is the same defect
   // as an empty exported handler: it looks wired and is not.
   final subs = subscriptions ?? SubscriptionService(dbInterface);
+  // The body is parsed outside the block below: a garbled body is the
+  // client's 400, and everything after it that fails is the server's 500.
+  // One catch used to answer both as 400 "Internal error", so a store
+  // failure was reported as the client's fault (found by
+  // store_failure_carries_cause_test.dart, REVIEW-2026-09-17 ST7).
+  final fhir.Resource resource;
   try {
-    final body = await request.readAsString();
-    final resource = fhir.Resource.fromJsonString(body);
-
+    resource = fhir.Resource.fromJsonString(await request.readAsString());
+  } catch (e) {
+    return _validationErrorResponse('Invalid resource: $e');
+  }
+  try {
     if (resource.resourceTypeString != resourceType) {
       FhirantLogging().logWarning(
         'Resource type mismatch: expected $resourceType, '
@@ -1344,13 +1352,13 @@ Future<Response> postResourceHandler(
     if (resourceWithId is fhir.Subscription) {
       resourceWithId = await subs.activate(resourceWithId);
     }
-    final fhir.Resource? savedResource;
+    final fhir.Resource savedResource;
     try {
       savedResource = await dbInterface.saveResource(resourceWithId);
     } on InvalidSearchParameter catch (e) {
       return invalidSearchParameter(e);
     }
-    if (savedResource != null) {
+    {
       final responseResource = savedResource;
 
       await subs.onResourceChanged(responseResource);
@@ -1372,14 +1380,6 @@ Future<Response> postResourceHandler(
         headers: headers,
         preference: preference,
       );
-    } else {
-      FhirantLogging().logError(
-        'Failed to save resource of type: $resourceType',
-      );
-      return _errorResponse(
-        'Failed to save resource',
-        'Database operation failed',
-      );
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError(
@@ -1387,11 +1387,7 @@ Future<Response> postResourceHandler(
       e,
       stackTrace,
     );
-    return _errorResponse(
-      'Error processing request',
-      'Internal error',
-      statusCode: 400,
-    );
+    return _errorResponse('Error processing request', 'Internal error');
   }
 }
 
@@ -1478,7 +1474,7 @@ Future<Response> putResourceHandler(
     final toSave = updatedResource is fhir.Subscription
         ? await subs.activate(updatedResource)
         : updatedResource;
-    final fhir.Resource? savedResource;
+    final fhir.Resource savedResource;
     try {
       savedResource = await dbInterface.saveResource(
         toSave,
@@ -1493,7 +1489,7 @@ Future<Response> putResourceHandler(
     } on InvalidSearchParameter catch (e) {
       return invalidSearchParameter(e);
     }
-    if (savedResource != null) {
+    {
       final responseResource = savedResource;
 
       await subs.onResourceChanged(responseResource);
@@ -1509,14 +1505,6 @@ Future<Response> putResourceHandler(
         resource: responseResource,
         headers: FhirHttpHeaders.resourceHeaders(responseResource),
         preference: preference,
-      );
-    } else {
-      FhirantLogging().logError(
-        'Failed to update resource of type: $resourceType with ID: {id}',
-      );
-      return _errorResponse(
-        'Failed to update resource',
-        'Database operation failed',
       );
     }
   } catch (e, stackTrace) {
