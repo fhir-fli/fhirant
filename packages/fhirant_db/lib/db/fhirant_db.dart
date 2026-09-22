@@ -638,13 +638,9 @@ class FhirAntDb extends FhirDb {
         for (final row in held) {
           final restored =
               fhir.Resource.fromJsonString(row.read<String>('resource'));
-          final saved = await saveResource(restored);
-          if (saved == null) {
-            throw StateError(
-              'Restore of ${restored.resourceTypeString}/${restored.id} '
-              'failed; nothing was restored',
-            );
-          }
+          // A failed save throws with its cause and ends the restore; it
+          // used to return null and be rethrown here without one.
+          await saveResource(restored);
         }
         await customStatement(
           'INSERT OR IGNORE INTO main.resources SELECT * FROM bk.resources',
