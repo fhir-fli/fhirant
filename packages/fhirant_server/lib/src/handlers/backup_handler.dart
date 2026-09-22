@@ -8,6 +8,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/backup_service.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/parameters_body.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for POST /$backup — exports all FHIR resources as a collection
@@ -206,35 +207,12 @@ Future<Response> restoreHandler(
   }
 }
 
-/// Reads the string parameters of a Parameters body: `passphrase` and,
-/// optionally, `format`.
-///
-/// Returns null when the body is absent, unparseable, or carries no such
-/// parameter — the caller turns all of those into the same "passphrase
-/// required" answer, so a malformed body cannot be mistaken for consent to an
-/// unencrypted export.
-Future<Map<String, String>> _readParameters(Request request) async {
-  final body = await request.readAsString();
-  if (body.isEmpty) return const {};
-
-  final Map<String, dynamic> json;
-  try {
-    json = jsonDecode(body) as Map<String, dynamic>;
-  } catch (_) {
-    return const {};
-  }
-
-  final parameters = json['parameter'];
-  if (parameters is! List) return const {};
-  final out = <String, String>{};
-  for (final p in parameters) {
-    if (p is! Map<String, dynamic>) continue;
-    final name = p['name'];
-    final value = p['valueString'] ?? p['valueCode'];
-    if (name is String && value is String) out[name] = value;
-  }
-  return out;
-}
+/// The string parameters of the request's Parameters body (or, empty,
+/// none): a passphrase and its like.
+Future<Map<String, String>> _readParameters(Request request) async => {
+      for (final e in (await readOperationParameters(request)).entries)
+        if (e.value is String) e.key: e.value as String,
+    };
 
 /// Reads the restore passphrase from the `X-Backup-Passphrase` header.
 ///

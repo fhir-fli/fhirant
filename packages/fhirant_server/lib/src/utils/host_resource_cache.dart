@@ -2,6 +2,7 @@ import 'dart:isolate';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_path/fhir_r4_path.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 
 /// A [ResourceCache] for a program running in a worker isolate: every
@@ -27,9 +28,8 @@ class HostResourceCache extends ResourceCache {
     String url, [
     String? version,
   ]) async {
-    final pipe = url.indexOf('|');
-    final canonical = pipe < 0 ? url : url.substring(0, pipe);
-    final wantVersion = version ?? (pipe < 0 ? null : url.substring(pipe + 1));
+    final (url: canonical, version: pipeVersion) = splitCanonical(url);
+    final wantVersion = version ?? pipeVersion;
     final seen = _seen[canonical];
     if (seen is T &&
         (wantVersion == null || seen.version?.valueString == wantVersion)) {

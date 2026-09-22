@@ -1,9 +1,9 @@
-import 'dart:convert';
-
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/parameters_body.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
 
@@ -18,7 +18,7 @@ Future<Response> validateCodeHandler(
   String? id,
 ]) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -77,7 +77,11 @@ Future<Response> validateCodeHandler(
         );
       }
       final lookupUrl = url ?? effectiveSystem;
-      final codeSystem = await _findCodeSystemByUrl(lookupUrl!, dbInterface);
+      final codeSystem = await findOneByCanonical<fhir.CodeSystem>(
+        dbInterface,
+        fhir.R4ResourceType.CodeSystem,
+        lookupUrl!,
+      );
       if (codeSystem == null) {
         // "Not held" is not "not valid" (REVIEW-2026-09-17 T1). R4B
         // codesystem-operation-validate-code.html, read whole 2026-09-17,
@@ -106,7 +110,11 @@ Future<Response> validateCodeHandler(
           'Parameter "url" is required for ValueSet',
         );
       }
-      final valueSet = await _findValueSetByUrl(url, dbInterface);
+      final valueSet = await findOneByCanonical<fhir.ValueSet>(
+        dbInterface,
+        fhir.R4ResourceType.ValueSet,
+        url,
+      );
       if (valueSet == null) {
         return outcome(
             404,
@@ -145,7 +153,7 @@ Future<Response> lookupHandler(
   String? id,
 ]) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -177,7 +185,11 @@ Future<Response> lookupHandler(
           'Parameter "system" or "coding.system" is required',
         );
       }
-      codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
+      codeSystem = await findOneByCanonical<fhir.CodeSystem>(
+        dbInterface,
+        fhir.R4ResourceType.CodeSystem,
+        effectiveSystem,
+      );
       if (codeSystem == null) {
         return outcome(
           404,
@@ -332,7 +344,7 @@ Future<Response> expandHandler(
   String? id,
 ]) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final url = params['url'] as String?;
     final filter = params['filter'] as String?;
@@ -350,7 +362,11 @@ Future<Response> expandHandler(
       if (lookup is! StoredFound) return lookupRefusal(lookup);
       valueSet = lookup.resource as fhir.ValueSet;
     } else if (url != null) {
-      valueSet = await _findValueSetByUrl(url, dbInterface);
+      valueSet = await findOneByCanonical<fhir.ValueSet>(
+        dbInterface,
+        fhir.R4ResourceType.ValueSet,
+        url,
+      );
       if (valueSet == null) {
         return outcome(
           404,
@@ -475,87 +491,6 @@ List<fhir.ValueSetContains> _filterContains(
 }
 
 // ── Private helpers ────────────────────────────────────────────────────
-
-/// Extract operation parameters from GET query params or POST body.
-Future<Map<String, dynamic>> _extractOperationParams(Request request) async {
-  if (request.method == 'GET') {
-    return Map<String, dynamic>.from(request.url.queryParameters);
-  }
-
-  // POST: try Parameters resource first, then form-encoded
-  final body = await request.readAsString();
-  if (body.isEmpty) return {};
-
-  try {
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    if (json['resourceType'] == 'Parameters') {
-      return _parseParametersResource(json);
-    }
-    // Might be a raw Coding or other JSON
-    return json;
-  } catch (_) {
-    // Fall back to form-encoded
-    return Map<String, dynamic>.from(Uri.splitQueryString(body));
-  }
-}
-
-/// Parse a Parameters resource into a flat map of name→value.
-Map<String, dynamic> _parseParametersResource(Map<String, dynamic> json) {
-  final result = <String, dynamic>{};
-  final params = json['parameter'] as List<dynamic>?;
-  if (params == null) return result;
-
-  for (final p in params) {
-    final param = p as Map<String, dynamic>;
-    final name = param['name'] as String?;
-    if (name == null) continue;
-
-    // Check for typed value fields
-    for (final key in param.keys) {
-      if (key.startsWith('value')) {
-        result[name] = param[key];
-        break;
-      }
-    }
-    // Check for resource
-    if (param.containsKey('resource')) {
-      result[name] = param['resource'];
-    }
-  }
-  return result;
-}
-
-/// Find a CodeSystem by its canonical URL.
-Future<fhir.CodeSystem?> _findCodeSystemByUrl(
-  String url,
-  FhirAntDb dbInterface,
-) async {
-  final results = await dbInterface.search(
-    resourceType: fhir.R4ResourceType.CodeSystem,
-    searchParameters: {
-      'url': [url],
-    },
-    count: 1,
-  );
-  if (results.isEmpty) return null;
-  return results.first as fhir.CodeSystem;
-}
-
-/// Find a ValueSet by its canonical URL.
-Future<fhir.ValueSet?> _findValueSetByUrl(
-  String url,
-  FhirAntDb dbInterface,
-) async {
-  final results = await dbInterface.search(
-    resourceType: fhir.R4ResourceType.ValueSet,
-    searchParameters: {
-      'url': [url],
-    },
-    count: 1,
-  );
-  if (results.isEmpty) return null;
-  return results.first as fhir.ValueSet;
-}
 
 /// Recursively find a concept by code in a hierarchical concept list.
 fhir.CodeSystemConcept? _findConcept(
@@ -752,7 +687,7 @@ Future<Response> preferredIdHandler(
   FhirAntDb dbInterface,
 ) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final id = params['id'] as String?;
     final type = params['type'] as String?;
@@ -852,7 +787,7 @@ Future<Response> translateHandler(
   String? id,
 ]) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final code = params['code'] as String?;
     final system = params['system'] as String?;
@@ -879,7 +814,11 @@ Future<Response> translateHandler(
       if (lookup is! StoredFound) return lookupRefusal(lookup);
       conceptMap = lookup.resource as fhir.ConceptMap;
     } else if (url != null) {
-      conceptMap = await _findConceptMapByUrl(url, dbInterface);
+      conceptMap = await findOneByCanonical<fhir.ConceptMap>(
+        dbInterface,
+        fhir.R4ResourceType.ConceptMap,
+        url,
+      );
     } else if (source != null || target != null) {
       // Search by source and/or target
       final searchParams = <String, List<String>>{};
@@ -993,22 +932,6 @@ Future<Response> translateHandler(
   }
 }
 
-/// Find a ConceptMap by its canonical URL.
-Future<fhir.ConceptMap?> _findConceptMapByUrl(
-  String url,
-  FhirAntDb dbInterface,
-) async {
-  final results = await dbInterface.search(
-    resourceType: fhir.R4ResourceType.ConceptMap,
-    searchParameters: {
-      'url': [url],
-    },
-    count: 1,
-  );
-  if (results.isEmpty) return null;
-  return results.first as fhir.ConceptMap;
-}
-
 // ── CodeSystem $subsumes ───────────────────────────────────────────────
 
 /// Handler for CodeSystem/$subsumes.
@@ -1021,7 +944,7 @@ Future<Response> subsumesHandler(
   String? id,
 ]) async {
   try {
-    final params = await _extractOperationParams(request);
+    final params = await readOperationParameters(request);
 
     final codeA = params['codeA'] as String?;
     final codeB = params['codeB'] as String?;
@@ -1050,7 +973,11 @@ Future<Response> subsumesHandler(
       if (lookup is! StoredFound) return lookupRefusal(lookup);
       codeSystem = lookup.resource as fhir.CodeSystem;
     } else if (effectiveSystem != null) {
-      codeSystem = await _findCodeSystemByUrl(effectiveSystem, dbInterface);
+      codeSystem = await findOneByCanonical<fhir.CodeSystem>(
+        dbInterface,
+        fhir.R4ResourceType.CodeSystem,
+        effectiveSystem,
+      );
       if (codeSystem == null) {
         return outcome(
           404,

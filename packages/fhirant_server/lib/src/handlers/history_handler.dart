@@ -6,6 +6,7 @@ import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
+import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:shelf/shelf.dart';
 
@@ -82,8 +83,7 @@ Future<Response> resourceHistoryHandler(
     }
 
     // Build base URL
-    final baseUrl =
-        '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
+    final baseUrl = baseUrlOf(request.requestedUri);
 
     // Create Bundle with history entries, paged with the links of
     // http.html §3.1.0.14.
@@ -184,8 +184,7 @@ Future<Response> typeHistoryHandler(
     );
 
     // Build base URL
-    final baseUrl =
-        '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
+    final baseUrl = baseUrlOf(request.requestedUri);
 
     // Create Bundle with history entries, paged with the links of
     // http.html §3.1.0.14.
@@ -284,8 +283,7 @@ Future<Response> systemHistoryHandler(
     );
 
     // Build base URL
-    final baseUrl =
-        '${request.requestedUri.scheme}://${request.requestedUri.host}:${request.requestedUri.port}';
+    final baseUrl = baseUrlOf(request.requestedUri);
 
     // Create Bundle with history entries, paged with the links of
     // http.html §3.1.0.14.

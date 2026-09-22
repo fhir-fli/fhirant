@@ -5,7 +5,9 @@ import 'package:fhir_r4_cql/fhir_r4_cql.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/utils/canonical.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/parameters_body.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
@@ -125,20 +127,19 @@ Future<Response> libraryEvaluateByUrlHandler(
       cqlLibrary = _extractCqlFromLibrary(library);
     } else if (evalParams.url != null) {
       // Look up by canonical URL
-      final results = await dbInterface.search(
-        resourceType: fhir.R4ResourceType.Library,
-        searchParameters: {
-          'url': [evalParams.url!],
-        },
+      final found = await findOneByCanonical<fhir.Library>(
+        dbInterface,
+        fhir.R4ResourceType.Library,
+        evalParams.url!,
       );
-      if (results.isEmpty) {
+      if (found == null) {
         return outcome(
           404,
           fhir.IssueType.notFound,
           'No Library found with url: ${evalParams.url}',
         );
       }
-      cqlLibrary = _extractCqlFromLibrary(results.first as fhir.Library);
+      cqlLibrary = _extractCqlFromLibrary(found);
     } else if (evalParams.cqlSource != null) {
       // Convenience: inline CQL source. CQL that does not translate is
       // the client's error (400), not a 500 (REVIEW-2026-09-08 row 32).
@@ -336,53 +337,10 @@ class _EvalParams {
 }
 
 /// Parse evaluation parameters from a FHIR Parameters resource body.
-_EvalParams _parseParametersResource(Map<String, dynamic> bodyJson) {
-  String? subject;
-  Map<String, dynamic>? dataBundle;
-  Map<String, dynamic>? inputParameters;
-  String? cqlSource;
-  String? elmJson;
-  String? url;
-  Map<String, dynamic>? libraryResource;
-
-  final params = bodyJson['parameter'] as List<dynamic>? ?? [];
-  for (final param in params) {
-    if (param is! Map<String, dynamic>) continue;
-    final name = param['name'] as String?;
-    switch (name) {
-      case 'subject':
-        subject = param['valueString'] as String?;
-      case 'patientId':
-        // Convenience alias — auto-prefix with Patient/
-        final id = param['valueString'] as String?;
-        if (id != null) {
-          subject = id.startsWith('Patient/') ? id : 'Patient/$id';
-        }
-      case 'data':
-        dataBundle = param['resource'] as Map<String, dynamic>?;
-      case 'parameters':
-        inputParameters = param['resource'] as Map<String, dynamic>?;
-      case 'cql':
-        cqlSource = param['valueString'] as String?;
-      case 'elm':
-        elmJson = param['valueString'] as String?;
-      case 'url':
-        url = (param['valueUri'] ?? param['valueString']) as String?;
-      case 'library':
-        libraryResource = param['resource'] as Map<String, dynamic>?;
-    }
-  }
-
-  return _EvalParams(
-    subject: subject,
-    dataBundle: dataBundle,
-    inputParameters: inputParameters,
-    cqlSource: cqlSource,
-    elmJson: elmJson,
-    url: url,
-    libraryResource: libraryResource,
-  );
-}
+/// A Parameters body, read as the plain JSON form: the same names, with
+/// `value[x]` and `resource` entries flattened by [parametersToMap].
+_EvalParams _parseParametersResource(Map<String, dynamic> bodyJson) =>
+    _parsePlainJson(parametersToMap(bodyJson));
 
 /// Parse evaluation parameters from a plain JSON object (convenience).
 _EvalParams _parsePlainJson(Map<String, dynamic> json) {
