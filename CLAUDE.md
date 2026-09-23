@@ -256,7 +256,7 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 
 ## Testing
 
-**1,487 tests** across 145 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
+**1,483 tests** across 145 test files, all passing (counted 2026-09-14; server recounted 2026-09-22).
 
 - **Server tests** (1,325 tests, 133 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
