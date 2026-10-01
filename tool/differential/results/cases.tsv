@@ -59,4 +59,4 @@ datetime-gt-boundary	match	12 entries, total 12/12	Observation?date=gt2026-03-01
 datetime-ge-boundary	match	18 entries, total 18/18	Observation?date=ge2026-03-01T13:30:00Z
 datetime-sa	match	12 entries, total 12/12	Observation?date=sa2026-03-01
 datetime-eb	match	12 entries, total 12/12	Observation?date=eb2026-03-01
-sort-unknown-key	one-refuses	fhirant 200, hapi 400	Patient?_sort=not-a-search-parameter
+sort-unknown-key	one-refuses	fhirant 200, hapi 400 [known: fhirant drops an unknown _sort under lenient (the default) and refuses it under Prefer: handling=strict; HAPI refuses it regardless]	Patient?_sort=not-a-search-parameter
