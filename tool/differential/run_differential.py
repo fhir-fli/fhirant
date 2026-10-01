@@ -43,7 +43,15 @@ HAPI_IMAGE = 'hapiproject/hapi:latest'
 
 # A search whose answers differ for a reason we have named. Each entry is
 # case name -> the reason. Nothing goes here without one.
-KNOWN_DIFFERENCES: dict[str, str] = {}
+KNOWN_DIFFERENCES: dict[str, str] = {
+    # R4B search.html 3.1.1.3: unknown parameters are ignored unless the
+    # client sends Prefer: handling=strict. fhirant honours the header on
+    # every search route (ruled 2026-10-01); HAPI refuses an unknown _sort
+    # whatever the header.
+    'sort-unknown-key': 'fhirant drops an unknown _sort under lenient (the '
+    'default) and refuses it under Prefer: handling=strict; HAPI refuses '
+    'it regardless',
+}
 
 
 def log(message: str) -> None:

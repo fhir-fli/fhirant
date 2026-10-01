@@ -1,6 +1,7 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_links.dart';
@@ -310,6 +311,23 @@ Future<Response> compartmentSearchHandler(
     final sort = parsed['sort'] as List<String>?;
     final total = parsed['total'] as String?;
     final links = SearchLinks.decide(resourceType, queryParams);
+    // Prefer: handling=strict, as on a type-level search (R4B search.html
+    // 3.1.1.3, read whole 2026-10-01): an unknown or unsupported parameter,
+    // an unknown _sort rule included, is refused; under lenient (the
+    // default) it is dropped and left out of the self link. This route
+    // ignored the header (measured 2026-10-01).
+    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
+    final unsupported = <String>[
+      ...?(parsed['unknownParams'] as List<String>?),
+      ...links.ignored,
+    ];
+    if (handling == 'strict' && unsupported.isNotEmpty) {
+      return outcome(
+        400,
+        fhir.IssueType.processing,
+        'Unsupported search parameter(s): ${unsupported.join(', ')}',
+      );
+    }
     final scope = CompartmentScope(compartmentType, compartmentId);
 
     // 7. One scoped search. One row past the page says whether a `next`
