@@ -169,12 +169,11 @@ Future<Response> systemSearchHandler(
     final searchParamsIn = Map<String, List<String>>.from(mergedParams)
       ..remove('_type');
     final parsed = SearchParameterParser.parseQueryParameters(searchParamsIn);
-    final searchParameters =
-        parsed['searchParams'] as Map<String, List<String>>?;
+    var searchParameters = parsed['searchParams'] as Map<String, List<String>>?;
     final hasParams = parsed['has'] as List<HasParameter>?;
     final count = parsed['count'] as int? ?? 20;
     final offset = parsed['offset'] as int? ?? 0;
-    final sort = parsed['sort'] as List<String>?;
+    var sort = parsed['sort'] as List<String>?;
     final total = parsed['total'] as String?;
     final summary = parsed['summary'] as String?;
     final namedQuery = parsed['query'] as String?;
@@ -199,12 +198,32 @@ Future<Response> systemSearchHandler(
     final commonScope = typeParam == null || typeParam.isEmpty
         ? const <String>['Resource']
         : types.map((t) => t.toString()).toList();
+    // A parameter no named type defines is not a search parameter here at
+    // all, so the SHALL above does not reach it. It is an unknown parameter
+    // (R4B search.html 3.1.1.3, read whole 2026-10-01, verbatim: "servers
+    // SHOULD ignore unknown or unsupported parameters" and "Prefer:
+    // handling=strict: Client requests that the server return an error for
+    // any unknown or unsupported parameter"): dropped and left out of the
+    // self link, or refused under strict, as the type and compartment
+    // searches do. This used to refuse it even under handling=lenient
+    // (measured 2026-10-01).
+    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
+    // Unknown means no resource type defines the name. A real parameter
+    // that is merely not common to the types named (`gender` with no
+    // _type) is the SHALL's own case and is refused whatever the header.
+    bool definedAnywhere(String name) => fhir.R4ResourceType.values
+        .any((t) => searchParameterFor('$t', name) != null);
+    final unknownHere = <String>[];
     for (final key
         in (searchParameters ?? const <String, List<String>>{}).keys) {
       final name = SearchQueryKey.parse(key).name;
       final lacking = commonScope
           .where((t) => searchParameterFor(t, name) == null)
           .toList();
+      if (lacking.isNotEmpty && !definedAnywhere(name)) {
+        unknownHere.add(key);
+        continue;
+      }
       if (lacking.isNotEmpty) {
         return _searchRefusal(
           typeParam == null || typeParam.isEmpty
@@ -222,12 +241,17 @@ Future<Response> systemSearchHandler(
     // For the has parameters the target type is named in the parameter
     // itself and validated by the store; for _sort, the rule is the same as
     // for a search parameter.
+    final unknownSort = <String>[];
     for (final rule in sort ?? const <String>[]) {
       final name = rule.startsWith('-') ? rule.substring(1) : rule;
       if (name == '_id' || name == '_lastUpdated') continue;
       final lacking = commonScope
           .where((t) => searchParameterFor(t, name) == null)
           .toList();
+      if (lacking.isNotEmpty && !definedAnywhere(name)) {
+        unknownSort.add(rule);
+        continue;
+      }
       if (lacking.isNotEmpty) {
         return _searchRefusal(
           '_sort=$rule is not defined for ${lacking.join(", ")}.',
@@ -236,15 +260,28 @@ Future<Response> systemSearchHandler(
       }
     }
 
-    // Prefer: handling=strict, as for a type-level search: an unknown
-    // `_`-parameter is refused; anything else unknown was refused above.
-    final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
-    if (handling == 'strict' &&
-        unknownParams != null &&
-        unknownParams.isNotEmpty) {
+    // Prefer: handling=strict, as for a type-level search.
+    final unsupported = <String>[
+      ...?unknownParams,
+      ...unknownHere,
+      for (final rule in unknownSort) '_sort=$rule',
+    ];
+    if (handling == 'strict' && unsupported.isNotEmpty) {
       return validationOutcome(
-        'Unsupported search parameter(s): ${unknownParams.join(', ')}',
+        'Unsupported search parameter(s): ${unsupported.join(', ')}',
       );
+    }
+    if (unknownHere.isNotEmpty) {
+      searchParameters = {
+        for (final e in searchParameters!.entries)
+          if (!unknownHere.contains(e.key)) e.key: e.value,
+      };
+    }
+    if (unknownSort.isNotEmpty) {
+      sort = [
+        for (final rule in sort!)
+          if (!unknownSort.contains(rule)) rule,
+      ];
     }
 
     // The links: the parameters were checked common, so any one type decides

@@ -28,3 +28,5 @@ before it is built.
 - A16.5 refresh-token reuse ends the grant: required, RFC 9700 §4.14.2 MUST for public clients.
 - A16.9 failed logins audited: kept, 45 CFR 164.308(a)(5)(ii)(C) log-in monitoring.
 - A16.11 audit retention: no deletion by default; a deployment sets its own period (NIST SP 800-66r2 §5.3.2).
+
+- 2026-10-01, D1 (unknown `_sort`): Grey first said refuse, then, shown that `Prefer: handling` already exists in the type search and is the spec's mechanism, ruled the updated way: strict 400, lenient/default drop, on every search route.
