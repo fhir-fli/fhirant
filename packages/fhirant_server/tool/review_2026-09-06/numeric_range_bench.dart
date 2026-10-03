@@ -13,7 +13,7 @@ Future<void> main(List<String> args) async {
   final tsv = File(args[1]);
   final label = args[2];
   if (!tsv.existsSync()) {
-    tsv.writeAsStringSync('label\tquery\tround\tms\thits\tpaged_in_sql\n');
+    tsv.writeAsStringSync('label\tquery\tround\tms\thits\n');
   }
   final db = FhirAntDb(NativeDatabase(File('$dir/fhirant.sqlite')));
   await db.initialize();
@@ -94,9 +94,7 @@ Future<void> main(List<String> args) async {
       );
       sw.stop();
       final row = '$label\t${entry.key}\t$round\t${sw.elapsedMilliseconds}\t'
-          // A measurement tool reads the test-visible flag on purpose.
-          // ignore: invalid_use_of_visible_for_testing_member
-          '${hits.length}\t${db.fhirDao.lastSearchPagedInSql}\n';
+          '${hits.length}\n';
       tsv.writeAsStringSync(row, mode: FileMode.append);
       stdout.write(row);
     }
