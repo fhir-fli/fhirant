@@ -230,11 +230,11 @@ Drift ORM over SQLite with SQLCipher encryption. The main database class is `Fhi
 
 **Search flow:**
 1. On resource save, `search_parameters.dart` extracts all searchable values and indexes them into the appropriate tables
-2. On search, parameters are routed to the correct table by type detection
-3. AND logic across parameters (set intersection of resource IDs), OR logic within a parameter (comma-separated values)
-4. Reference chaining resolves through intermediate resource lookups
+2. On search, each parameter's declared type (from the published definitions, never guessed from the value) picks its table and condition builder
+3. One SQL statement per search (fhir_db `_pagedIds`, since 2026-10-01): repeated parameters AND as nested `IN`/`EXISTS` parts, comma values OR on one table, chains and `_has` as correlated subqueries on the reference table, `_sort` as a LEFT JOIN, the page as `LIMIT`. There is no Dart set path
+4. A modifier the builders give no meaning (`_id:not`, `subject:Foo`) is refused with `UnsupportedSearchModifier` (R4B 3.1.1.4.4), never answered as something else
 5. An uploaded `SearchParameter` (admin-only; `status: active`) is indexed by evaluating its FHIRPath expression on every later save of its base types (fhir_db `CustomSearchParameters`); `POST /$reindex` indexes what was stored before it; the CapabilityStatement lists it
-6. Results are sorted and paginated
+6. `identifier:of-type` searches its own `<param>:of-type` token rows (one per `Identifier.type.coding`); stores from before fhirant_db schema 26 get them on upgrade
 
 ### Secure Storage (`fhirant_secure_storage`)
 
