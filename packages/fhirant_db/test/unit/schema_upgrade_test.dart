@@ -179,4 +179,58 @@ void main() {
     expect(version.read<int>('user_version'), second.schemaVersion);
     await second.close();
   });
+
+  test('opening a schema-25 database adds the identifier:of-type rows',
+      () async {
+    // fhir_db schema 15 indexes one `<param>:of-type` token row per
+    // Identifier.type.coding (R4B search.html 3.1.1.4.10, read whole
+    // 2026-10-01) and re-extracts the index on upgrade so stored resources
+    // get theirs. fhirant overrides `migration`, so the rebuild has to be
+    // its own step: a store at 25 holds no such row until it is reopened.
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.saveResource(
+      fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': 'typed',
+        'identifier': [
+          {
+            'system': 'urn:mrn',
+            'value': '446053',
+            'type': {
+              'coding': [
+                {
+                  'system': 'http://terminology.hl7.org/CodeSystem/v2-0203',
+                  'code': 'MR',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    await first.customStatement(
+      "DELETE FROM token_search_parameters WHERE search_name LIKE '%:of-type'",
+    );
+    await first.customStatement('PRAGMA user_version = 25');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    expect(
+      (await second.search(
+        resourceType: fhir.R4ResourceType.Patient,
+        searchParameters: {
+          'identifier:of-type': <String>[
+            'http://terminology.hl7.org/CodeSystem/v2-0203|MR|446053',
+          ],
+        },
+      ))
+          .map((r) => r.id!.valueString),
+      ['typed'],
+    );
+    final version =
+        await second.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), second.schemaVersion);
+    await second.close();
+  });
 }

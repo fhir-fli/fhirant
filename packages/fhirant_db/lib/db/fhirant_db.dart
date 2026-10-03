@@ -24,7 +24,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -290,6 +290,13 @@ class FhirAntDb extends FhirDb {
                 'NULL DEFAULT 0',
               );
             }
+          }
+          if (from < 26) {
+            // fhir_db schema 15: one `<param>:of-type` token row per
+            // Identifier.type.coding (R4B search.html 3.1.1.4.10), which
+            // only a re-extraction writes for resources already stored.
+            // fhir_db's own step does this; this override has to repeat it.
+            await rebuildSearchIndex(includeUploaded: false);
           }
         },
       );
