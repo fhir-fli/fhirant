@@ -466,7 +466,11 @@ Future<({String? body, Response? refusal})> _executeSandboxed(
   try {
     final body = await runProgram(
       () async {
-        final result = await CqlLibrary.fromJson(elm).execute(context);
+        // cql 0.7.0 reads the model from the execution context and refuses
+        // to run without one ("No ModelResolver in execution context");
+        // the R4B resolver is this server's.
+        final result = await CqlLibrary.fromJson(elm)
+            .execute(context, const R4ModelResolver());
         return jsonEncode(_buildParametersResponse(result));
       },
       deadline: deadline,

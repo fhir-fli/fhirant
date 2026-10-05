@@ -3,7 +3,6 @@ import 'dart:isolate';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_mapping/fhir_r4_mapping.dart';
-import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/utils/canonical.dart';
@@ -277,7 +276,8 @@ Future<String?> _targetResourceType(
       continue;
     }
     final resolved = await cache.getStructureDefinition(url);
-    final declared = resolved?.type.valueString;
+    final declared =
+        resolved is fhir.StructureDefinition ? resolved.type.valueString : null;
     if (declared != null && declared.isNotEmpty) {
       found.add(declared);
       continue;

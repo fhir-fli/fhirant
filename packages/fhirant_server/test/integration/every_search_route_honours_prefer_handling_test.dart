@@ -67,9 +67,9 @@ void main() {
       ),
     );
     final body = await response.readAsString();
-    return response.statusCode == 200
-        ? '200'
-        : '${response.statusCode} ${body.length > 160 ? body.substring(0, 160) : body}';
+    if (response.statusCode == 200) return '200';
+    final head = body.length > 160 ? body.substring(0, 160) : body;
+    return '${response.statusCode} $head';
   }
 
   for (final unsupported in ['_sort=not-a-search-parameter', 'zzz=1']) {

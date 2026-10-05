@@ -255,7 +255,11 @@ void main() {
           final missing = await worker.getStructureDefinition(
             'http://example.org/StructureDefinition/NotHeld',
           );
-          return (sd?.type.valueString, names.contains('Held'), missing);
+          return (
+            (sd as fhir.StructureDefinition?)?.type.valueString,
+            names.contains('Held'),
+            missing,
+          );
         },
         deadline: const Duration(seconds: 10),
         host: (request) => serveResourceCache(cache, request),
