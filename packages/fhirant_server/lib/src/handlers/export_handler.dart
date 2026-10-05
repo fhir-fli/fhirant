@@ -170,7 +170,7 @@ Future<Response> exportKickoffHandler(
       );
     }
     for (final filter in kickoff.typeFilters) {
-      if (!filter.resourceTypeKnown) {
+      if (!filter.resourceTypeKnown(const R4BulkModel())) {
         return outcome(
           400,
           fhir.IssueType.processing,

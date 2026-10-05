@@ -57,12 +57,20 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  characters:
+    dependency: transitive
+    description:
+      name: characters
+      sha256: faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   cicada:
     dependency: "direct main"
     description:
       path: cicada
       ref: main
-      resolved-ref: "0914a0361d2d1ac361a1976221b4f704bd85b14c"
+      resolved-ref: "422c096e312546897837058f7562955b80406ae3"
       url: "https://github.com/fhir-fli/cicada.git"
     source: git
     version: "0.0.1"
@@ -118,10 +126,10 @@ packages:
     dependency: "direct main"
     description:
       name: cql
-      sha256: "5a46cb782f0885baf69c8e8f0a7ff5d189060b055f384cb707125e43bf2c1209"
+      sha256: "26375650e004a46dd8e86dd3c5303a5fcbdb1d1c5c39f7dc56a9b5c06e483754"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.3"
+    version: "0.7.0"
   crypto:
     dependency: "direct main"
     description:
@@ -154,81 +162,110 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  fhir_db:
-    dependency: "direct overridden"
-    description:
-      path: "/home/grey/dev/fhir/fhir_db"
-      relative: false
-    source: path
-    version: "0.14.0"
-  fhir_node:
+  fhir_bulk:
     dependency: transitive
     description:
-      name: fhir_node
-      sha256: "904b145b4a967c2b7a94f3b2f9946fd9136bf1e0d3b879a9b191e7a507cf29da"
+      name: fhir_bulk
+      sha256: fad07ef6e6a4ba9eb70f2e5af31402a4c34edd3ad4f4682bd6cae4d11bce4f20
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
-  fhir_path:
-    dependency: "direct overridden"
+    version: "0.13.0"
+  fhir_db:
+    dependency: transitive
     description:
-      path: "/home/grey/dev/fhir/fhirpath"
-      relative: false
-    source: path
-    version: "0.14.2"
+      name: fhir_db
+      sha256: "33620710195863a854af10f0f4a78777cecfee34db7a2232383b149d4be470d4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.0"
+  fhir_mapping:
+    dependency: transitive
+    description:
+      name: fhir_mapping
+      sha256: "0d3e9a5bd25cb468a5b0780c09f722524d95576b943d26172dae19f1024621c5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
+  fhir_node:
+    dependency: "direct main"
+    description:
+      name: fhir_node
+      sha256: "3fec7f3d5dcc0e699b42b9f64c292acc794f27caf729811e0f984abd26ca4f95"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.1"
+  fhir_path:
+    dependency: transitive
+    description:
+      name: fhir_path
+      sha256: "263913f41045a1f9fbc8a51b1d8166b7bee504d54dd00feef018b7463aa24fb4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.0"
   fhir_r4:
     dependency: "direct main"
     description:
-      path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4"
-      relative: false
-    source: path
-    version: "0.12.0"
+      name: fhir_r4
+      sha256: b9a17284110c82ad68292cc5f193ebf0ec6806b4ea85747107543b6769414cf6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
   fhir_r4_bulk:
     dependency: "direct main"
     description:
-      path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4_bulk"
-      relative: false
-    source: path
-    version: "0.12.0"
+      name: fhir_r4_bulk
+      sha256: "9ffb87b215a97be83a7a5d20a47aa0862e6b90d8034aa255caa44f059ef2c07d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
   fhir_r4_cql:
     dependency: "direct main"
     description:
       name: fhir_r4_cql
-      sha256: ed2c03ed4c277f0cc93cbf866fadebd3133688f2abca77551bfd3ceaa8899fc2
+      sha256: fda7af23b82e5d55ea503032361d670650089df62b2d463d8cefc83b84600b5d
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.0"
+    version: "0.13.0"
   fhir_r4_db:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "/home/grey/dev/fhir/fhir_r4/packages/fhir_r4_db"
-      relative: false
-    source: path
-    version: "0.12.0"
+      name: fhir_r4_db
+      sha256: b44273eeb23bd09709ca7a6508b151737739f1946f44d3f2c40b5f539eff15e9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
   fhir_r4_mapping:
     dependency: "direct main"
     description:
       name: fhir_r4_mapping
-      sha256: "29d8fe9e7fe01be5bb5f0e8b0fd3e4a571f6c16d149f08329ffee24999fb4014"
+      sha256: "7f58e001fef5f60062fcb091d4786aee5fa353aba40e5b25b175aabbe9eb3aea"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.0"
+    version: "0.13.0"
   fhir_r4_path:
     dependency: "direct main"
     description:
       name: fhir_r4_path
-      sha256: a4185b9e9dac92ec5ad14a14fe1a3366d0d9e2eddda5b5c3b7a5cef7c654b18d
+      sha256: bdd14c40af647e8c3ddf0179f9f13e2996086c993159a54acab7b00d15e90f07
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.0"
+    version: "0.13.0"
   fhir_r4_validation:
     dependency: "direct main"
     description:
       name: fhir_r4_validation
-      sha256: "794f01fec47a0a2e8ad420ba101fcec475be614312c42a8a2d076634c94c2828"
+      sha256: f934a43d7372cae9048c2654914eb0d70f193a1e6ea71f60d64d24e3d15550e1
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.0"
+    version: "0.13.0"
+  fhir_validation:
+    dependency: transitive
+    description:
+      name: fhir_validation
+      sha256: af7d8f7a77d679747c1971d2b0c540007905bb55679f6d406b5a77395b9715f6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.0"
   fhirant_db:
     dependency: "direct main"
     description:

@@ -1,3 +1,4 @@
+import 'package:fhir_node/fhir_node.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_db/fhirant_db.dart';
@@ -32,6 +33,10 @@ const _canonicalTypes = <fhir.R4ResourceType>[
 ///
 /// Resources the engine resolves mid-transform are memoised in `_seen` and take
 /// precedence, matching `CanonicalResourceCache`.
+///
+/// fhir_path 0.15.0's [ResourceCache] speaks `FhirNode`, untyped: the
+/// binding's nodes ARE its typed resources, so [canonical] is the typed
+/// lookup this server's own callers use and the overrides answer it.
 class DbResourceCache extends ResourceCache {
   /// Creates a cache over [db].
   DbResourceCache(this.db);
@@ -42,7 +47,8 @@ class DbResourceCache extends ResourceCache {
   final Map<String, fhir.CanonicalResource> _seen = {};
 
   @override
-  Future<void> saveCanonicalResource(fhir.CanonicalResource resource) async {
+  Future<void> saveCanonicalResource(FhirNode resource) async {
+    if (resource is! fhir.CanonicalResource) return;
     final url = resource.url?.valueString;
     if (url != null && url.isNotEmpty) {
       _seen[url] = resource;
@@ -50,7 +56,11 @@ class DbResourceCache extends ResourceCache {
   }
 
   @override
-  Future<T?> getCanonicalResource<T extends fhir.CanonicalResource>(
+  Future<FhirNode?> getCanonicalResource(String url, [String? version]) =>
+      canonical<fhir.CanonicalResource>(url, version);
+
+  /// The canonical of type [T] at [url] (and [version]), or null.
+  Future<T?> canonical<T extends fhir.CanonicalResource>(
     String url, [
     String? version,
   ]) async {
@@ -85,11 +95,11 @@ class DbResourceCache extends ResourceCache {
   }
 
   @override
-  Future<fhir.StructureDefinition?> getStructureDefinition(String url) =>
-      getCanonicalResource<fhir.StructureDefinition>(url);
+  Future<FhirNode?> getStructureDefinition(String url) =>
+      canonical<fhir.StructureDefinition>(url);
 
   @override
-  Future<List<fhir.StructureDefinition>> getStructureDefinitions() async {
+  Future<List<FhirNode>> getStructureDefinitions() async {
     final stored = await db.getResourcesByType(
       fhir.R4ResourceType.StructureDefinition,
     );
@@ -100,12 +110,8 @@ class DbResourceCache extends ResourceCache {
   }
 
   @override
-  Future<fhir.CodeSystem?> getCodeSystem(String url, [String? version]) =>
-      getCanonicalResource<fhir.CodeSystem>(url, version);
-
-  @override
-  Future<Map<String, dynamic>?> getResourceMap(String url) async =>
-      (await getCanonicalResource(url))?.toJson();
+  Future<FhirNode?> getCodeSystem(String url, [String? version]) =>
+      canonical<fhir.CodeSystem>(url, version);
 
   /// The `name` of every canonical this cache knows about.
   ///

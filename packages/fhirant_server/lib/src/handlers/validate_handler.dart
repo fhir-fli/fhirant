@@ -107,7 +107,7 @@ Future<Response> validateHandler(
     // through the cache below, by its canonical URL
     // http://hl7.org/fhir/StructureDefinition/<type>.
 
-    final validator = FhirValidationEngine();
+    const validator = FhirValidationEngine();
     final ValidationResults validationResults;
     try {
       validationResults = await validator.validateFhirMap(

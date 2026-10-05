@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.12.0, `cql` ^0.6.3); until the family's next release `fhir_r4`, `fhir_r4_bulk`, `fhir_r4_db`, `fhir_db` and `fhir_path` are git `dependency_overrides` in `fhirant_server/pubspec.yaml`, and a local checkout overrides those with the gitignored `pubspec_overrides.yaml`. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages from pub.dev (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.13.0, `fhir_node` ^0.6.1, `cql` ^0.7.0; the family release of 2026-10-05). There are no `dependency_overrides` in the committed pubspecs; to work against an unreleased checkout, put a gitignored `pubspec_overrides.yaml` in the package. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency at `main`.
 
 ## Package Structure
 
@@ -261,8 +261,7 @@ Flutter app wrapping the server for on-device use. Not published: v1.0.0 is buil
 - **Server tests** (1,329 tests, 134 files): `cd packages/fhirant_server && dart test`
 - **DB tests** (129 tests, 6 files): `cd packages/fhirant_db && dart test`
 - **App tests** (34 tests, 4 files): `cd packages/fhirant && flutter test`
-- The three need the gitignored `pubspec_overrides.yaml` (`fhir_r4`, `fhir_r4_db` → dev
-  checkouts) until the family's next release.
+- All three resolve from pub.dev; no override file is needed.
 
 See **TESTING.md** for full inventory by file.
 

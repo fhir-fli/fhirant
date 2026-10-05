@@ -1,8 +1,10 @@
 import 'dart:isolate';
 
+import 'package:fhir_node/fhir_node.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_path/fhir_r4_path.dart';
 import 'package:fhirant_server/src/utils/canonical.dart';
+import 'package:fhirant_server/src/utils/db_resource_cache.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
 
 /// A [ResourceCache] for a program running in a worker isolate: every
@@ -24,7 +26,12 @@ class HostResourceCache extends ResourceCache {
   final Map<String, fhir.CanonicalResource> _seen = {};
 
   @override
-  Future<T?> getCanonicalResource<T extends fhir.CanonicalResource>(
+  Future<FhirNode?> getCanonicalResource(String url, [String? version]) =>
+      canonical<fhir.CanonicalResource>(url, version);
+
+  /// The canonical of type [T] at [url] (and [version]), asked of the host
+  /// by type name so the host searches that type's table.
+  Future<T?> canonical<T extends fhir.CanonicalResource>(
     String url, [
     String? version,
   ]) async {
@@ -47,7 +54,8 @@ class HostResourceCache extends ResourceCache {
   }
 
   @override
-  Future<void> saveCanonicalResource(fhir.CanonicalResource resource) async {
+  Future<void> saveCanonicalResource(FhirNode resource) async {
+    if (resource is! fhir.CanonicalResource) return;
     final url = resource.url?.valueString;
     if (url != null && url.isNotEmpty) {
       _seen[url] = resource;
@@ -55,15 +63,11 @@ class HostResourceCache extends ResourceCache {
   }
 
   @override
-  Future<Map<String, dynamic>?> getResourceMap(String url) async =>
-      (await getCanonicalResource(url))?.toJson();
+  Future<FhirNode?> getStructureDefinition(String url) =>
+      canonical<fhir.StructureDefinition>(url);
 
   @override
-  Future<fhir.StructureDefinition?> getStructureDefinition(String url) =>
-      getCanonicalResource<fhir.StructureDefinition>(url);
-
-  @override
-  Future<List<fhir.StructureDefinition>> getStructureDefinitions() async {
+  Future<List<FhirNode>> getStructureDefinitions() async {
     final list = await askHost(
       host,
       (op: 'structureDefinitions', type: null, url: null, version: null),
@@ -75,8 +79,8 @@ class HostResourceCache extends ResourceCache {
   }
 
   @override
-  Future<fhir.CodeSystem?> getCodeSystem(String url, [String? version]) =>
-      getCanonicalResource<fhir.CodeSystem>(url, version);
+  Future<FhirNode?> getCodeSystem(String url, [String? version]) =>
+      canonical<fhir.CodeSystem>(url, version);
 
   @override
   Future<List<String>> getResourceNames() async {
@@ -97,35 +101,32 @@ typedef ResourceCacheRequest = ({
 });
 
 /// Answers a [HostResourceCache]'s request from [cache], on the server's
-/// isolate. Pass as the `host` of `runHostedProgram`.
-Future<Object?> serveResourceCache(ResourceCache cache, Object? request) async {
+/// isolate. Pass as the `host` of `runHostedProgram`. Takes the server's
+/// own [DbResourceCache] because the request names a TYPE, which only its
+/// typed [DbResourceCache.canonical] honours.
+Future<Object?> serveResourceCache(
+  DbResourceCache cache,
+  Object? request,
+) async {
   final r = request! as ResourceCacheRequest;
   switch (r.op) {
     case 'canonical':
       final url = r.url!;
       final resource = switch (r.type) {
         'StructureDefinition' =>
-          await cache.getCanonicalResource<fhir.StructureDefinition>(
-            url,
-            r.version,
-          ),
-        'ValueSet' =>
-          await cache.getCanonicalResource<fhir.ValueSet>(url, r.version),
-        'CodeSystem' =>
-          await cache.getCanonicalResource<fhir.CodeSystem>(url, r.version),
-        'ConceptMap' =>
-          await cache.getCanonicalResource<fhir.ConceptMap>(url, r.version),
+          await cache.canonical<fhir.StructureDefinition>(url, r.version),
+        'ValueSet' => await cache.canonical<fhir.ValueSet>(url, r.version),
+        'CodeSystem' => await cache.canonical<fhir.CodeSystem>(url, r.version),
+        'ConceptMap' => await cache.canonical<fhir.ConceptMap>(url, r.version),
         'StructureMap' =>
-          await cache.getCanonicalResource<fhir.StructureMap>(url, r.version),
-        _ => await cache.getCanonicalResource<fhir.CanonicalResource>(
-            url,
-            r.version,
-          ),
+          await cache.canonical<fhir.StructureMap>(url, r.version),
+        _ => await cache.canonical<fhir.CanonicalResource>(url, r.version),
       };
       return resource?.toJson();
     case 'structureDefinitions':
       return [
-        for (final sd in await cache.getStructureDefinitions()) sd.toJson(),
+        for (final sd in await cache.getStructureDefinitions())
+          (sd as fhir.Resource).toJson(),
       ];
     case 'resourceNames':
       return cache.getResourceNames();
