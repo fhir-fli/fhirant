@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:http/http.dart' as http;
@@ -108,6 +109,23 @@ class SubscriptionService {
       'http://fhirant.fhir-fli.dev/StructureDefinition/'
       'subscription-consecutive-failures';
 
+  /// Where the compartment the creator's search of the criteria type was
+  /// confined to is kept, as a `Patient/[id]` reference.
+  ///
+  /// R4B subscription.html, Security Considerations (read 2026-10-06,
+  /// verbatim): "The criteria are subject to the same limitations as the
+  /// client that created it, such as access to patient compartments etc."
+  /// The criteria used to run against the whole store, so a token confined
+  /// to one patient's Observations was pinged whenever ANOTHER patient's
+  /// matching Observation was written: a ping carries no payload, but the
+  /// criteria are the client's, so the existence of a named patient's named
+  /// lab was one subscription away (fhirant REVIEW-2026-10-06 finding 3,
+  /// probe P11). Written by [activate] from the creator's principal on
+  /// every save, so a client cannot set or clear it; read by [matches].
+  static const compartmentExtensionUrl =
+      'http://fhirant.fhir-fli.dev/StructureDefinition/'
+      'subscription-compartment';
+
   /// Channel types this server delivers to. A subscription asking for anything
   /// else is refused at activation rather than accepted and silently ignored,
   /// so a client is never told a subscription is `active` when nothing will
@@ -158,14 +176,60 @@ class SubscriptionService {
     if (criteria.resourceType != changed.resourceType) {
       return false;
     }
+    // Inside the creator's compartment when its search of this type was
+    // confined ([compartmentExtensionUrl]): the same search the creator
+    // could run, no wider.
     final hits = await db.search(
       resourceType: criteria.resourceType,
       searchParameters: {
         ...criteria.parameters,
         '_id': [id],
       },
+      compartment: compartmentOf(subscription),
     );
     return hits.isNotEmpty;
+  }
+
+  /// The compartment [subscription]'s criteria run inside, or null.
+  static CompartmentScope? compartmentOf(fhir.Subscription subscription) {
+    for (final extension in subscription.extension_ ?? <fhir.FhirExtension>[]) {
+      if (extension.url.valueString != compartmentExtensionUrl) continue;
+      final reference = extension.valueX;
+      final value =
+          reference is fhir.Reference ? reference.reference?.valueString : null;
+      if (value == null) return null;
+      final slash = value.indexOf('/');
+      if (slash <= 0) return null;
+      return CompartmentScope(
+        value.substring(0, slash),
+        value.substring(slash + 1),
+      );
+    }
+    return null;
+  }
+
+  /// [subscription] carrying [scope] under [compartmentExtensionUrl], or
+  /// with that extension removed when [scope] is null. The server's
+  /// statement, never the client's: whatever the client sent there goes.
+  static fhir.Subscription _withCompartment(
+    fhir.Subscription subscription,
+    CompartmentScope? scope,
+  ) {
+    final others = (subscription.extension_ ?? <fhir.FhirExtension>[])
+        .where((e) => e.url.valueString != compartmentExtensionUrl)
+        .toList();
+    return subscription.copyWith(
+      extension_: [
+        ...others,
+        if (scope != null)
+          fhir.FhirExtension(
+            url: fhir.FhirString(compartmentExtensionUrl),
+            valueX: fhir.Reference(
+              reference: fhir.FhirString('${scope.type}/${scope.id}'),
+            ),
+          ),
+      ],
+    );
   }
 
   /// Decides whether the server can honour [subscription], and writes the
@@ -176,13 +240,29 @@ class SubscriptionService {
   /// process it. A subscription it cannot process becomes `error` with the
   /// reason in `Subscription.error`, so the client is never told a
   /// subscription is live when nothing will ever be delivered.
-  Future<fhir.Subscription> activate(fhir.Subscription subscription) async {
+  ///
+  /// [principal] is the caller writing the subscription. When its search of
+  /// the criteria type is confined to a patient compartment, the stored
+  /// subscription carries that compartment ([compartmentExtensionUrl]) and
+  /// [matches] runs the criteria inside it; otherwise any such extension the
+  /// client sent is removed. Null (dev mode, a handler test) confines
+  /// nothing.
+  Future<fhir.Subscription> activate(
+    fhir.Subscription original, {
+    Principal? principal,
+  }) async {
+    final criteria = parseCriteria(original.criteria.valueString ?? '');
+    final subscription = _withCompartment(
+      original,
+      criteria == null
+          ? null
+          : principal?.compartmentFor(criteria.resourceType.toString(), 's'),
+    );
     final status = subscription.status.valueString;
     if (status == 'off') {
       return subscription;
     }
 
-    final criteria = parseCriteria(subscription.criteria.valueString ?? '');
     if (criteria == null) {
       return _withStatus(
         subscription,
