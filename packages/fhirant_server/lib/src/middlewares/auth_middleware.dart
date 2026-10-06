@@ -52,6 +52,13 @@ const auditAgentKey = 'audit_agent';
 Response _withAgent(Response response, Map<String, dynamic> agent) =>
     response.change(context: {auditAgentKey: agent});
 
+/// The account id a verified token names, or -1 when the claim is not an
+/// integer (no account has that id, so the account read finds nothing).
+int _userIdOf(Map<String, dynamic> payload) {
+  final rawUserId = payload['userId'];
+  return rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
+}
+
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context. Every response it
 /// returns or passes on carries, under [auditAgentKey], whoever the token
@@ -66,16 +73,29 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
 
       // Public routes: auth not required, but optionally inject auth_user
       // if a valid token is present (needed for e.g. admin registering users).
+      //
+      // The token is held to the same four checks as on a protected route:
+      // not revoked, its account exists, is active, and the token is of the
+      // account's current generation. One that fails any of them is treated
+      // as absent, and the request goes on anonymous, as a revoked one
+      // always did. Only the first check ran here, so a deactivated or
+      // demoted administrator's token, refused everywhere else, was injected
+      // as an administrator and `POST /auth/register` trusted it: it created
+      // a new administrator (REVIEW-2026-10-06 finding 1, probe P1).
       if (_isPublic(request)) {
         final authHeader = request.headers['authorization'];
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
           final rawToken = authHeader.substring(7);
           final payload = jwtService.verifyAccessToken(rawToken);
           if (payload != null) {
-            // Check revocation — skip injecting auth_user if revoked
             final revoked =
                 await dbInterface.isTokenRevoked(TokenHasher.hash(rawToken));
-            if (!revoked) {
+            final account = revoked
+                ? null
+                : await dbInterface.getUserById(_userIdOf(payload));
+            if (account != null &&
+                account.active &&
+                !tokenPredatesAccount(payload, account)) {
               final updatedRequest =
                   request.change(context: {'auth_user': payload});
               return _withAgent(await innerHandler(updatedRequest), payload);
@@ -102,9 +122,7 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       }
       // From here the server's signature is verified, so the token's
       // account id is the server's own statement of who was issued it.
-      final rawUserId = payload['userId'];
-      final userId =
-          rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
+      final userId = _userIdOf(payload);
       final claimed = <String, dynamic>{
         'userId': userId,
         'username': payload['username'],
