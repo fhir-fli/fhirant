@@ -226,6 +226,17 @@ String? encryptionKeyRefusal(
   String encryptionKey, {
   required bool allowPublicKey,
 }) {
+  // Set but empty (`export FHIRANT_ENCRYPTION_KEY=`, `KEY=$UNSET` in a unit
+  // file): not a published key, so it passed, and `PRAGMA key = ''` is no
+  // cipher at all, so the store was written in the clear and nothing said
+  // so (REVIEW-2026-10-06 finding 2, probe P7: the file began "SQLite
+  // format 3" and a patient's name was readable in it). Refused whatever
+  // the flags: an empty key is a mistake, not a throwaway-database choice.
+  if (encryptionKey.isEmpty) {
+    return 'Refusing to start: FHIRANT_ENCRYPTION_KEY is set but empty, and '
+        'an empty key is no encryption at all. Set it to a strong secret, or '
+        'unset it and pass --allow-public-key for a throwaway database.';
+  }
   if (!publicKeys.contains(encryptionKey) || allowPublicKey) return null;
   return 'Refusing to start: FHIRANT_ENCRYPTION_KEY is not set (or is a '
       'key published in this repository), so the database would be '
