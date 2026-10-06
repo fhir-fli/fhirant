@@ -171,7 +171,7 @@ packages:
     source: hosted
     version: "0.13.0"
   fhir_db:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: fhir_db
       sha256: "33620710195863a854af10f0f4a78777cecfee34db7a2232383b149d4be470d4"
