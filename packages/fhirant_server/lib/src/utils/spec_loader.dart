@@ -47,28 +47,31 @@ fhir.Resource _tagged(fhir.Resource resource) {
   );
 }
 
-/// Whether the store already holds the specification: the loader runs once,
-/// on the first boot, and a store with CodeSystems in it has had it.
+/// Whether the store holds any of the specification: a store with
+/// CodeSystems in it has had at least one load. Not the loader's gate any
+/// more (that is per file, [FhirAntDb.specFileLoaded]); kept for callers
+/// that ask the broad question.
 Future<bool> specResourcesLoaded(FhirAntDb db) async =>
     await db.getResourceCount(fhir.R4ResourceType.CodeSystem) > 0;
 
 /// Loads all FHIR R4 spec canonical resources from NDJSON files into the
-/// database on first boot.
+/// database.
 ///
 /// This includes StructureDefinitions, SearchParameters, ValueSets,
 /// CodeSystems, ConceptMaps, NamingSystems, OperationDefinitions,
 /// CompartmentDefinitions, and CapabilityStatements.
 ///
-/// Skips loading if the database already contains CodeSystem resources.
-/// This is the CLI's and the container's path; the app loads the same set
-/// from its asset bundle through [loadSpecResourcesFromAssets].
+/// Each file is loaded once: a file the store records as finished
+/// (`FhirAntDb.specFileLoaded`) is skipped, any other is read and what is
+/// missing written. The gate used to be the whole store ("any CodeSystem
+/// held"), so a file added to a later release, `fhirant-operations.ndjson`
+/// on 2026-09-18, never reached a store created before it, and the
+/// CapabilityStatement cited four definitions such a store did not hold
+/// (REVIEW-2026-10-06 finding 12, probe P10). This is the CLI's and the
+/// container's path; the app loads the same set from its asset bundle
+/// through [loadSpecResourcesFromAssets].
 Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
   final logger = FhirantLogging();
-
-  if (await specResourcesLoaded(db)) {
-    logger.logInfo('Spec resources already loaded, skipping');
-    return;
-  }
 
   final specDir = Directory(specPath);
   if (!specDir.existsSync()) {
@@ -89,12 +92,18 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
       .toList()
     ..sort((a, b) => a.path.compareTo(b.path));
 
+  var skipped = 0;
   for (final file in ndjsonFiles) {
     final fileName = file.path.split('/').last;
+    if (await db.specFileLoaded(fileName)) {
+      skipped++;
+      continue;
+    }
     final lines = NdjsonStream.lines(file.openRead());
     final (loaded, errors) = await loadSpecLines(db, lines, fileName);
     totalLoaded += loaded;
     totalErrors += errors;
+    await db.markSpecFileLoaded(fileName);
   }
 
   // Load individual JSON fixtures (e.g. NamingSystem example)
@@ -107,12 +116,18 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
         .whereType<File>()
         .where((f) => f.path.endsWith('.json'));
     for (final file in fixtureFiles) {
+      final marker = 'fixture:${file.path.split('/').last}';
+      if (await db.specFileLoaded(marker)) {
+        skipped++;
+        continue;
+      }
       try {
         final json =
             jsonDecode(await file.readAsString()) as Map<String, dynamic>;
         final resource = fhir.Resource.fromJson(json);
         await db.saveResource(resource);
         totalLoaded++;
+        await db.markSpecFileLoaded(marker);
       } catch (e) {
         totalErrors++;
         logger.logWarning('Failed to load fixture ${file.path}: $e');
@@ -120,7 +135,7 @@ Future<void> loadSpecResources(FhirAntDb db, String specPath) async {
     }
   }
 
-  _report(totalLoaded, totalErrors);
+  _report(totalLoaded, totalErrors, skipped: skipped);
 }
 
 /// Loads the specification from an asset bundle: [assetKeys] are the NDJSON
@@ -140,34 +155,37 @@ Future<void> loadSpecResourcesFromAssets(
   required Future<ByteData> Function(String key) loadBytes,
 }) async {
   final logger = FhirantLogging();
-  if (await specResourcesLoaded(db)) {
-    logger.logInfo('Spec resources already loaded, skipping');
-    return;
-  }
   final keys = assetKeys.where((k) => k.endsWith('.ndjson')).toList()..sort();
   if (keys.isEmpty) {
     logger.logWarning('No spec assets in the bundle, skipping');
     return;
   }
-  logger.logInfo(
-    'Loading FHIR R4 spec canonical resources from the app bundle',
-  );
   var totalLoaded = 0;
   var totalErrors = 0;
+  var skipped = 0;
   for (final key in keys) {
+    // Per file, as [loadSpecResources]: a file the store has finished is
+    // not read again, a new one is loaded.
+    final fileName = key.split('/').last;
+    if (await db.specFileLoaded(fileName)) {
+      skipped++;
+      continue;
+    }
+    if (skipped == 0 && totalLoaded == 0) {
+      logger.logInfo(
+        'Loading FHIR R4 spec canonical resources from the app bundle',
+      );
+    }
     final data = await loadBytes(key);
     final bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     final lines = NdjsonStream.lines(_pieces(bytes));
-    final (loaded, errors) = await loadSpecLines(
-      db,
-      lines,
-      key.split('/').last,
-    );
+    final (loaded, errors) = await loadSpecLines(db, lines, fileName);
     totalLoaded += loaded;
     totalErrors += errors;
+    await db.markSpecFileLoaded(fileName);
   }
-  _report(totalLoaded, totalErrors);
+  _report(totalLoaded, totalErrors, skipped: skipped);
 }
 
 /// The size of one piece of an asset handed to the decoder at a time.
@@ -242,12 +260,17 @@ Future<(int, int)> loadSpecLines(
   return (loaded, errors);
 }
 
-void _report(int totalLoaded, int totalErrors) {
+void _report(int totalLoaded, int totalErrors, {int skipped = 0}) {
   final logger = FhirantLogging();
   if (totalErrors > 0) {
     logger.logWarning('$totalErrors resources failed to parse');
   }
+  if (totalLoaded == 0 && totalErrors == 0) {
+    logger.logInfo('Spec resources already loaded ($skipped files), skipping');
+    return;
+  }
   logger.logInfo(
-    'Spec loading complete: $totalLoaded canonical resources loaded',
+    'Spec loading complete: $totalLoaded canonical resources loaded'
+    '${skipped > 0 ? ', $skipped files already loaded' : ''}',
   );
 }
