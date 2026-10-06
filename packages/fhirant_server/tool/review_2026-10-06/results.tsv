@@ -56,3 +56,9 @@ P12	one DbResourceCache.getResourceNames() ms, names	2547 1745
 P12	$validate Patient run n: ms, getResourceNames calls, ms in them, issues	178 0 0 8
 P12	$validate Patient run n: ms, getResourceNames calls, ms in them, issues	32 0 0 8
 P12	$validate Observation: ms, getResourceNames calls, ms in them, issues	36 0 0 8
+P2b	POST /auth/login valid credentials #1	200 token issued
+P2b	POST /auth/login valid credentials #2	200 token issued
+P2b	POST /auth/login valid credentials #3	429 Too many requests
+P2b	POST //auth/login valid credentials #1	401 OperationOutcome code=login (auth middleware: not a public path; the login handler never ran)
+P2b	POST //auth/login valid credentials #2	401 OperationOutcome code=login
+P2b	POST //auth/login valid credentials #3	401 OperationOutcome code=login
