@@ -304,12 +304,12 @@ Future<Response> compartmentSearchHandler(
     // repetition; a repeated parameter is an AND join.
     final queryParams = request.url.queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
-    final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
-    final hasParams = parsed['has'] as List<HasParameter>?;
-    final count = parsed['count'] as int? ?? 20;
-    final offset = parsed['offset'] as int? ?? 0;
-    final sort = parsed['sort'] as List<String>?;
-    final total = parsed['total'] as String?;
+    final searchParams = parsed.searchParams;
+    final hasParams = parsed.has;
+    final count = parsed.count ?? 20;
+    final offset = parsed.offset ?? 0;
+    final sort = parsed.sort;
+    final total = parsed.total;
     final links = SearchLinks.decide(resourceType, queryParams);
     // Prefer: handling=strict, as on a type-level search (R4B search.html
     // 3.1.1.3, read whole 2026-10-01): an unknown or unsupported parameter,
@@ -318,7 +318,7 @@ Future<Response> compartmentSearchHandler(
     // ignored the header (measured 2026-10-01).
     final handling = FhirHttpHeaders.parsePreferHandling(request.headers);
     final unsupported = <String>[
-      ...?(parsed['unknownParams'] as List<String>?),
+      ...?(parsed.unknownParams),
       ...links.ignored,
     ];
     if (handling == 'strict' && unsupported.isNotEmpty) {

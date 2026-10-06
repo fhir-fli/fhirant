@@ -958,7 +958,7 @@ void main() {
         '_elements': ['name,gender,birthDate'],
       });
 
-      final elements = result['elements'] as List<String>?;
+      final elements = result.elements;
       expect(elements, isNotNull);
       expect(elements, equals(['name', 'gender', 'birthDate']));
     });
@@ -968,7 +968,7 @@ void main() {
         '_elements': [' name , gender '],
       });
 
-      final elements = result['elements'] as List<String>?;
+      final elements = result.elements;
       expect(elements, equals(['name', 'gender']));
     });
 
@@ -977,7 +977,7 @@ void main() {
         'name': ['Smith'],
       });
 
-      expect(result['elements'], isNull);
+      expect(result.elements, isNull);
     });
 
     test('_elements is not treated as a search parameter', () {
@@ -986,7 +986,7 @@ void main() {
         'name': ['Smith'],
       });
 
-      final searchParams = result['searchParams'] as Map<String, List<String>>?;
+      final searchParams = result.searchParams;
       expect(searchParams, isNotNull);
       expect(searchParams!.containsKey('_elements'), isFalse);
       expect(searchParams.containsKey('name'), isTrue);
