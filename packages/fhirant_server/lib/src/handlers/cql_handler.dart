@@ -39,7 +39,7 @@ Future<Response> libraryEvaluateHandler(
     final library = lookup.resource as fhir.Library;
 
     // Extract CQL or ELM from the Library's content attachments
-    final cqlLibrary = _extractCqlFromLibrary(library);
+    final cqlLibrary = await _extractCqlFromLibrary(library, deadline);
     if (cqlLibrary == null) {
       return outcome(
         422,
@@ -73,6 +73,9 @@ Future<Response> libraryEvaluateHandler(
       answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
+  } on ProgramTimeout catch (e) {
+    // The translation did not finish within the deadline (finding 14).
+    return outcome(422, fhir.IssueType.tooCostly, '$e');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Library/${'evaluate'} failed', e, stackTrace);
     return outcome(
@@ -122,12 +125,17 @@ Future<Response> libraryEvaluateByUrlHandler(
     if (refused != null) return refused;
 
     // Resolve the Library — by URL, inline resource, or inline CQL/ELM
-    CqlLibrary? cqlLibrary;
+    // The library as ELM JSON: parsed into the engine's classes once, in
+    // the worker. `CqlLibrary.fromJson(x).toJson()` is not stable in cql
+    // 0.7.0 (a Literal's value comes back as a nested Literal, measured
+    // 2026-10-06), so the JSON is what crosses isolates and nothing here
+    // round-trips it.
+    Map<String, dynamic>? cqlLibrary;
 
     if (evalParams.libraryResource != null) {
       // Inline Library resource
       final library = fhir.Library.fromJson(evalParams.libraryResource!);
-      cqlLibrary = _extractCqlFromLibrary(library);
+      cqlLibrary = await _extractCqlFromLibrary(library, deadline);
     } else if (evalParams.url != null) {
       // Look up by canonical URL
       final found = await findOneByCanonical<fhir.Library>(
@@ -142,12 +150,14 @@ Future<Response> libraryEvaluateByUrlHandler(
           'No Library found with url: ${evalParams.url}',
         );
       }
-      cqlLibrary = _extractCqlFromLibrary(found);
+      cqlLibrary = await _extractCqlFromLibrary(found, deadline);
     } else if (evalParams.cqlSource != null) {
       // Convenience: inline CQL source. CQL that does not translate is
       // the client's error (400), not a 500 (REVIEW-2026-09-08 row 32).
       try {
-        cqlLibrary = _parseCql(evalParams.cqlSource!);
+        cqlLibrary = await _parseCql(evalParams.cqlSource!, deadline);
+      } on ProgramTimeout {
+        rethrow;
       } catch (e) {
         return outcome(
           400,
@@ -158,7 +168,8 @@ Future<Response> libraryEvaluateByUrlHandler(
     } else if (evalParams.elmJson != null) {
       // Convenience: inline ELM JSON
       final elmMap = jsonDecode(evalParams.elmJson!) as Map<String, dynamic>;
-      cqlLibrary = CqlLibrary.fromJson(elmMap);
+      CqlLibrary.fromJson(elmMap); // Refused here if it is not ELM.
+      cqlLibrary = elmMap;
     }
 
     if (cqlLibrary == null) {
@@ -180,6 +191,9 @@ Future<Response> libraryEvaluateByUrlHandler(
       answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
+  } on ProgramTimeout catch (e) {
+    // The translation did not finish within the deadline (finding 14).
+    return outcome(422, fhir.IssueType.tooCostly, '$e');
   } catch (e, stackTrace) {
     FhirantLogging().logError('Library/${'evaluate'} failed', e, stackTrace);
     return outcome(
@@ -238,14 +252,17 @@ Future<Response> cqlHandler(
     final refused = _evaluationRefusal(request, evalParams);
     if (refused != null) return refused;
 
-    CqlLibrary cqlLibrary;
+    Map<String, dynamic> cqlLibrary;
     try {
       if (evalParams.elmJson != null) {
         final elmMap = jsonDecode(evalParams.elmJson!) as Map<String, dynamic>;
-        cqlLibrary = CqlLibrary.fromJson(elmMap);
+        CqlLibrary.fromJson(elmMap); // Refused here if it is not ELM.
+        cqlLibrary = elmMap;
       } else {
-        cqlLibrary = _parseCql(evalParams.cqlSource!);
+        cqlLibrary = await _parseCql(evalParams.cqlSource!, deadline);
       }
+    } on ProgramTimeout {
+      rethrow;
     } catch (e) {
       return outcome(
         400,
@@ -264,6 +281,9 @@ Future<Response> cqlHandler(
       answer.body,
       headers: {'Content-Type': 'application/fhir+json'},
     );
+  } on ProgramTimeout catch (e) {
+    // The translation did not finish within the deadline (finding 14).
+    return outcome(422, fhir.IssueType.tooCostly, '$e');
   } catch (e, stackTrace) {
     FhirantLogging().logError('CQL evaluation failed', e, stackTrace);
     return outcome(
@@ -384,8 +404,11 @@ Future<_EvalParams?> _parseEvaluateParams(Request request) async {
       : _parsePlainJson(json);
 }
 
-/// Extract a CqlLibrary from a FHIR Library resource's content attachments.
-CqlLibrary? _extractCqlFromLibrary(fhir.Library library) {
+/// The ELM JSON of a FHIR Library resource's content attachments, or null.
+Future<Map<String, dynamic>?> _extractCqlFromLibrary(
+  fhir.Library library,
+  Duration deadline,
+) async {
   final contents = library.content;
   if (contents == null || contents.isEmpty) return null;
 
@@ -401,7 +424,8 @@ CqlLibrary? _extractCqlFromLibrary(fhir.Library library) {
     if (contentType == 'application/elm+json') {
       try {
         final elmMap = jsonDecode(decoded) as Map<String, dynamic>;
-        return CqlLibrary.fromJson(elmMap);
+        CqlLibrary.fromJson(elmMap); // Refused here if it is not ELM.
+        return elmMap;
       } catch (e, stackTrace) {
         // The next attachment may serve; the reason this one did not is
         // logged rather than dropped.
@@ -427,7 +451,10 @@ CqlLibrary? _extractCqlFromLibrary(fhir.Library library) {
 
     if (contentType == 'text/cql') {
       try {
-        return _parseCql(decoded);
+        return await _parseCql(decoded, deadline);
+      } on ProgramTimeout {
+        // Past the deadline is the caller's 422, not "try the next".
+        rethrow;
       } catch (e, stackTrace) {
         FhirantLogging().logWarning(
           'Library/${library.id}: a text/cql attachment does not translate, '
@@ -458,11 +485,10 @@ String? _base64Decode(String encoded) {
 /// The library crosses as its ELM JSON and comes back as the response text;
 /// nothing else of this isolate is visible to the program.
 Future<({String? body, Response? refusal})> _executeSandboxed(
-  CqlLibrary library,
+  Map<String, dynamic> elm,
   Map<String, dynamic> context,
   Duration deadline,
 ) async {
-  final elm = library.toJson();
   try {
     final body = await runProgram(
       () async {
@@ -546,7 +572,29 @@ Future<Map<String, dynamic>> _buildContext(
 /// `null` for every definition. An error-severity annotation is refused
 /// here as a [FormatException], which the callers answer with 400
 /// (REVIEW-2026-09-08 row 32).
-CqlLibrary _parseCql(String cqlSource) {
+///
+/// Translated in a worker isolate under [deadline], as the execution is
+/// (REVIEW-2026-10-06 finding 14, probe P13: 15 KB of CQL held the server
+/// isolate 915 ms, 269 KB 5.3 s, linear, against a 16 MiB body cap). The
+/// source crosses as text and the ELM comes back as JSON; a translation
+/// that does not finish is a [ProgramTimeout] for the caller's 422, a
+/// translation error a [FormatException] for its 400.
+Future<Map<String, dynamic>> _parseCql(
+  String cqlSource,
+  Duration deadline,
+) async {
+  try {
+    return await runProgram(
+      () => _translateCql(cqlSource),
+      deadline: deadline,
+    );
+  } on ProgramFailed catch (e) {
+    throw FormatException(e.error);
+  }
+}
+
+/// [cqlSource] translated to ELM JSON, on the calling isolate.
+Map<String, dynamic> _translateCql(String cqlSource) {
   final library = libraryFromCql(cqlSource);
   // Read through `toJson()`: the published `cql` 0.6.3 does not export the
   // annotation types (the export is on cql's main for the next release;
@@ -566,7 +614,7 @@ CqlLibrary _parseCql(String cqlSource) {
         .join('; ');
     throw FormatException('The CQL does not translate: $described');
   }
-  return library;
+  return library.toJson();
 }
 
 /// Load common resource types for a patient from the database.
