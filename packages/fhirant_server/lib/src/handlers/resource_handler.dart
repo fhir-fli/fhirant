@@ -1364,14 +1364,25 @@ Future<Response> putResourceHandler(
     // Only the stored one used to be checked, so a patient could write its
     // own Observation with another patient as subject and move it out of
     // the compartment (REVIEW-2026-09-08 row 11).
+    //
+    // A resource that does not exist yet ("Update as Create", R4B
+    // http.html, advertised as `updateCreate: true`) has no index rows to
+    // be a member by, and the membership check refused it: `PUT
+    // /Observation/new` of the patient's own Observation was 403 over REST
+    // and 201 as a Bundle entry (REVIEW-2026-10-06 finding 7, probe P4).
+    // The body is the rule for a create, as it is in the Bundle.
+    final type = fhir.R4ResourceType.fromString(resourceType);
+    final existing =
+        type == null ? null : await dbInterface.getResource(type, id);
     final updatePatientId = patientContextFor(request, resourceType, 'u');
     if (updatePatientId != null) {
-      if (!await isInPatientCompartment(
-        resourceType,
-        id,
-        updatePatientId,
-        dbInterface,
-      )) {
+      if (existing != null &&
+          !await isInPatientCompartment(
+            resourceType,
+            id,
+            updatePatientId,
+            dbInterface,
+          )) {
         return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
       if (!await isNewResourceInPatientCompartment(
@@ -1391,10 +1402,8 @@ Future<Response> putResourceHandler(
     // the check and the write; a mismatch surfaces as VersionConflict.
     final ifMatch = FhirHttpHeaders.parseETag(request.headers['if-match']);
 
-    // Check if this is a create (resource doesn't exist) or update
-    final type = fhir.R4ResourceType.fromString(resourceType);
-    final isCreate =
-        type == null || await dbInterface.getResource(type, id) == null;
+    // A create (nothing stored under the id) or an update.
+    final isCreate = existing == null;
 
     final toSave = updatedResource is fhir.Subscription
         ? await subs.activate(updatedResource)
