@@ -94,7 +94,11 @@ void main() {
     expect(await historyRows(), 1);
   });
 
-  test('a store that already holds CodeSystems is left alone', () async {
+  test('a file the store has finished is not read again; a new file is',
+      () async {
+    // REVIEW-2026-10-06 finding 12: the gate used to be "any CodeSystem
+    // held", so a store holding CodeSystems never received a file added
+    // later (fhirant-operations.ndjson, 2026-09-18). The gate is per file.
     await db.saveResource(
       fhir.CodeSystem.fromJson({
         'resourceType': 'CodeSystem',
@@ -103,9 +107,19 @@ void main() {
         'content': 'complete',
       }),
     );
+    await db.markSpecFileLoaded('codesystems.ndjson');
     await load();
-    expect(await db.getResourceCount(fhir.R4ResourceType.CodeSystem), 1);
-    expect(await db.getResourceCount(fhir.R4ResourceType.ValueSet), 0);
+    expect(
+      await db.getResourceCount(fhir.R4ResourceType.CodeSystem),
+      1,
+      reason: 'codesystems.ndjson was finished before: not read again',
+    );
+    expect(
+      await db.getResourceCount(fhir.R4ResourceType.ValueSet),
+      2,
+      reason: 'valuesets.ndjson is new to this store: loaded',
+    );
+    expect(await db.specFileLoaded('valuesets.ndjson'), isTrue);
   });
 
   test('loadSpecLines saves in chunks and counts what failed', () async {
