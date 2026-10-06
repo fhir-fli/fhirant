@@ -113,6 +113,8 @@ Requests pass through middleware in this order:
 
 #### Route Table
 
+What each route asks a caller for (SMART permission, resource type, special rule) is pinned per route in `packages/fhirant_server/test/auth/route_scope_table_test.dart`, read against the router's own registrations.
+
 | Domain | Route Pattern | Handler | Purpose |
 |--------|---|---|---|
 | **Auth** | `GET /auth/status` | `authStatusHandler` | `firstUser`, and whether the first registration needs the bootstrap token |
