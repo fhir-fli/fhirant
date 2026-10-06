@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:fhir_db/fhir_db.dart' show pbkdf2;
 import 'package:pointycastle/export.dart';
 
 /// Password hashing and verification.
@@ -106,11 +107,14 @@ class PasswordHasher {
     if (parts.length == 3 && parts[0] == _pbkdf2Prefix) {
       final iterations = int.tryParse(parts[1]);
       if (iterations == null || iterations < 1) return false;
-      final dk = _pbkdf2(
-        utf8.encode(password),
-        utf8.encode(salt),
-        iterations,
-        _dkLen,
+      // fhir_db's pbkdf2, the one PBKDF2-HMAC-SHA256 in the family
+      // (REVIEW-2026-09-17 ST6); its known answers are fhir_db's
+      // test/pbkdf2_test.dart.
+      final dk = pbkdf2(
+        password: password,
+        salt: utf8.encode(salt),
+        iterations: iterations,
+        keyLength: _dkLen,
       );
       return _constantTimeEquals(_toHex(dk), parts[2]);
     }
@@ -171,30 +175,6 @@ class PasswordHasher {
         ),
       );
     return generator.process(Uint8List.fromList(password));
-  }
-
-  /// PBKDF2 (RFC 2898) with HMAC-SHA256, for the previous format. For
-  /// [dkLen] equal to the HMAC output size (32 bytes) only the first derived
-  /// block is needed.
-  static List<int> _pbkdf2(
-    List<int> password,
-    List<int> salt,
-    int iterations,
-    int dkLen,
-  ) {
-    final hmac = Hmac(sha256, password);
-    final salted = Uint8List(salt.length + 4)
-      ..setRange(0, salt.length, salt)
-      ..[salt.length + 3] = 1; // block index 1, big-endian
-    var u = hmac.convert(salted).bytes;
-    final result = Uint8List.fromList(u);
-    for (var i = 1; i < iterations; i++) {
-      u = hmac.convert(u).bytes;
-      for (var j = 0; j < result.length; j++) {
-        result[j] ^= u[j];
-      }
-    }
-    return result.sublist(0, dkLen);
   }
 
   static String _toHex(List<int> bytes) {

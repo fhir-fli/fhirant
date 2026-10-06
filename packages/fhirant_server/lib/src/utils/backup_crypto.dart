@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
+import 'package:fhir_db/fhir_db.dart' show pbkdf2;
 import 'package:meta/meta.dart';
 import 'package:pointycastle/export.dart';
 
@@ -21,9 +21,11 @@ import 'package:pointycastle/export.dart';
 /// hand — a network transfer, or an SD card, which in a disaster setting is
 /// often the only one available.
 ///
-/// PBKDF2-HMAC-SHA256 for derivation (the same pure-Dart primitive the
-/// password hasher uses, so there is no native dependency and it behaves the
-/// same on-device and headless) and AES-256-GCM for encryption, so a wrong
+/// PBKDF2-HMAC-SHA256 for derivation (fhir_db's `pbkdf2`, the one
+/// implementation in the family: it derives the SQLCipher key, verifies the
+/// older password hashes and derives this key; fhirant REVIEW-2026-09-17
+/// ST6 found the loop written three times) and AES-256-GCM for encryption,
+/// so a wrong
 /// passphrase or a tampered file fails the authentication tag rather than
 /// silently producing garbage.
 class BackupCrypto {
@@ -197,37 +199,23 @@ class BackupCrypto {
     );
   }
 
-  /// PBKDF2-HMAC-SHA256, matching the construction in [PasswordHasher].
   /// [_deriveKey] with a fixed salt, for measuring its cost
   /// (tool/review_2026-09-17/fix_a16/kdf_cost.dart).
   @visibleForTesting
   static Uint8List deriveKeyForMeasurement(String passphrase, int rounds) =>
       _deriveKey(passphrase, Uint8List(_saltLengthBytes), rounds);
 
-  static Uint8List _deriveKey(String passphrase, Uint8List salt, int rounds) {
-    final hmac = Hmac(sha256, utf8.encode(passphrase));
-    final out = BytesBuilder();
-    var block = 1;
-    while (out.length < _keyLengthBytes) {
-      final blockIndex = Uint8List(4)
-        ..[0] = block >> 24
-        ..[1] = (block >> 16) & 0xff
-        ..[2] = (block >> 8) & 0xff
-        ..[3] = block & 0xff;
-
-      var u = Uint8List.fromList(hmac.convert([...salt, ...blockIndex]).bytes);
-      final acc = Uint8List.fromList(u);
-      for (var i = 1; i < rounds; i++) {
-        u = Uint8List.fromList(hmac.convert(u).bytes);
-        for (var j = 0; j < acc.length; j++) {
-          acc[j] ^= u[j];
-        }
-      }
-      out.add(acc);
-      block++;
-    }
-    return Uint8List.fromList(out.toBytes().sublist(0, _keyLengthBytes));
-  }
+  /// PBKDF2-HMAC-SHA256 (RFC 8018 §5.2), fhir_db's implementation; its
+  /// known answers are fhir_db's `test/pbkdf2_test.dart`.
+  static Uint8List _deriveKey(String passphrase, Uint8List salt, int rounds) =>
+      Uint8List.fromList(
+        pbkdf2(
+          password: passphrase,
+          salt: salt,
+          iterations: rounds,
+          keyLength: _keyLengthBytes,
+        ),
+      );
 }
 
 /// Raised when a backup envelope cannot be decrypted or is not understood.
