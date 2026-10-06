@@ -174,7 +174,13 @@ bool _shouldAudit(Request request) {
   // every poll (REVIEW-2026-09-08 row 45). A POST to the root is a Bundle
   // and is audited; the empty-path skip used to swallow it, so a
   // transaction left no trail at all (REVIEW-2026-09-06 finding 15).
-  if ((path.isEmpty && request.method != 'POST') ||
+  // `GET /?…` is the system search (R4B search.html 3.1.1.2) and is
+  // audited as one; only the bare welcome page is skipped
+  // (REVIEW-2026-10-06 finding 11).
+  final bareRoot = path.isEmpty &&
+      request.method != 'POST' &&
+      !(request.method == 'GET' && request.url.hasQuery);
+  if (bareRoot ||
       path == 'metadata' ||
       path == 'favicon.ico' ||
       path == 'health' ||
@@ -198,6 +204,7 @@ String _mapAction(String method, String path) {
   final segments = path.split('/');
   if (segments.isNotEmpty && segments.last == '_search') return 'R';
   if (segments.any((s) => s.startsWith(r'$'))) return 'E';
+  if (_searchSubtype(method, path) != null) return 'R';
   switch (method) {
     case 'POST':
       return 'C';
@@ -216,8 +223,9 @@ String _mapAction(String method, String path) {
 
 /// Maps a request to a FHIR AuditEvent subtype display.
 String _mapSubtype(String method, String path) {
+  final search = _searchSubtype(method, path);
+  if (search != null) return search;
   final segments = path.split('/');
-  if (segments.isNotEmpty && segments.last == '_search') return 'search';
   if (segments.any((s) => s.startsWith(r'$'))) return 'execute';
   switch (method) {
     case 'POST':
@@ -233,6 +241,31 @@ String _mapSubtype(String method, String path) {
     default:
       return 'execute';
   }
+}
+
+/// The search interaction [method] on [path] is, as a restful-interaction
+/// code (`search-system`, `search-type`, `search-compartment`), or null when
+/// it is not a search. R4B http.html names the three; `GET /[type]?…` used
+/// to be recorded as `read`, so the trail could not tell a search of a type
+/// from a read of one record, and `GET /?…` was not recorded at all
+/// (REVIEW-2026-10-06 finding 11, probe P9).
+String? _searchSubtype(String method, String path) {
+  final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+  if (segments.isNotEmpty && segments.last == '_search') {
+    return segments.length == 1 ? 'search-system' : 'search-type';
+  }
+  if (method != 'GET') return null;
+  bool isType(String s) => fhir.R4ResourceType.fromString(s) != null;
+  if (segments.isEmpty) return 'search-system';
+  if (segments.length == 1 && isType(segments[0])) return 'search-type';
+  if (segments.length == 3 &&
+      isType(segments[0]) &&
+      isType(segments[2]) &&
+      !segments[1].startsWith('_') &&
+      !segments[1].startsWith(r'$')) {
+    return 'search-compartment';
+  }
+  return null;
 }
 
 /// Maps an HTTP response status to a FHIR AuditEvent outcome code.
@@ -346,7 +379,7 @@ Future<void> _queueBundleEntryEvents(
       statusCode: status,
       entityRef: entityRef,
       patientRef: patient is String ? patient : null,
-      subtype: isSearch ? 'search' : null,
+      subtype: isSearch ? 'search-type' : null,
       action: isSearch ? 'R' : null,
       agent: _agentOf(response),
     );
