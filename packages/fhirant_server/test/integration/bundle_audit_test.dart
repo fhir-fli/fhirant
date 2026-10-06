@@ -193,7 +193,7 @@ void main() {
     };
     expect(byEntity, {'Patient/p-d': '0', 'Patient/nobody': '4'});
     // The type-level GET is the search interaction, with no single record.
-    final search = shapes.singleWhere((s) => s.subtype == 'search');
+    final search = shapes.singleWhere((s) => s.subtype == 'search-type');
     expect(search.action, 'R');
     expect(search.entities, isEmpty);
   });
