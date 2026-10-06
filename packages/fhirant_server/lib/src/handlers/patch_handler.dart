@@ -115,7 +115,10 @@ Future<Response> patchResourceHandler(
       // same as specified for update in Concurrency Management". PATCH used
       // to ignore the header (REVIEW-2026-09-08 row 22).
       final toSave = patchedResource is fhir.Subscription
-          ? await subs.activate(patchedResource)
+          ? await subs.activate(
+              patchedResource,
+              principal: Principal.of(request),
+            )
           : patchedResource;
       final fhir.Resource savedResource;
       try {
