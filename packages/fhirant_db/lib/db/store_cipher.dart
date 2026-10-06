@@ -54,6 +54,12 @@ const storeSynchronous = 'FULL';
 /// The key is a passphrase inside a SQL string literal: a quote in it is
 /// doubled, as SQL requires, rather than ending the literal.
 void applyStoreCipher(Database raw, String key) {
+  // `PRAGMA key = ''` is no cipher: sqlite3mc opens and writes the file in
+  // the clear (measured 2026-10-06, fhirant REVIEW-2026-10-06 finding 2).
+  // Every store, CLI or app, comes through here, so the refusal is here.
+  if (key.isEmpty) {
+    throw ArgumentError.value(key, 'key', 'must not be empty');
+  }
   raw
     ..execute("PRAGMA cipher = '$storeCipherScheme';")
     ..execute('PRAGMA legacy = $storeCipherLegacy;')
