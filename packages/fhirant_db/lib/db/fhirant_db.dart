@@ -24,7 +24,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,6 +35,7 @@ class FhirAntDb extends FhirDb {
           await _createAuthorizationCodesTable();
           await _createRevokedTokensTable();
           await _createOAuthClientsTable();
+          await _createSpecLoadsTable();
           await createValueIndexes();
         },
         // fhir_r4_db runs ANALYZE from its own beforeOpen when the database
@@ -298,6 +299,17 @@ class FhirAntDb extends FhirDb {
             // fhir_db's own step does this; this override has to repeat it.
             await rebuildSearchIndex(includeUploaded: false);
           }
+          if (from < 27) {
+            // Which specification files the loader has finished, so a file
+            // added to a later release is loaded into a store that already
+            // holds the others. The loader used to skip everything once
+            // any CodeSystem was held, so stores from before 2026-09-18
+            // never received fhirant-operations.ndjson (fhirant
+            // REVIEW-2026-10-06 finding 12). An upgraded store starts with
+            // no rows here: every file is checked once, line by line, and
+            // only what is missing is written.
+            await _createSpecLoadsTable();
+          }
         },
       );
 
@@ -377,6 +389,35 @@ class FhirAntDb extends FhirDb {
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     ''');
+  }
+
+  /// One row per specification file the loader has finished
+  /// ([markSpecFileLoaded]); see the schema-27 step.
+  Future<void> _createSpecLoadsTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS spec_loads (
+        file TEXT NOT NULL PRIMARY KEY,
+        loaded_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      )
+    ''');
+  }
+
+  /// Whether the loader has finished the specification file [file] (its
+  /// base name, as the loader names it).
+  Future<bool> specFileLoaded(String file) async {
+    final rows = await customSelect(
+      'SELECT 1 FROM spec_loads WHERE file = ?',
+      variables: [Variable.withString(file)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  /// Records that the loader finished [file]; a second call is ignored.
+  Future<void> markSpecFileLoaded(String file) async {
+    await customStatement(
+      'INSERT OR IGNORE INTO spec_loads (file) VALUES (?)',
+      [file],
+    );
   }
 
   Future<void> _createRevokedTokensTable() async {
