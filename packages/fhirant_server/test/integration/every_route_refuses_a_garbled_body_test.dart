@@ -54,10 +54,20 @@ void main() {
         );
     final serverFault = <String>[];
     var tried = 0;
+    // A row that answers 401 measured the token, not the route. This loop
+    // used to send `POST /auth/logout` with the admin token at its fifth
+    // route, which revoked it, and the other 42 routes answered 401 at
+    // both content types: the test asserted nothing about any data route
+    // from the day it was written (REVIEW-2026-10-06 finding 5,
+    // `tool/review_2026-10-06/garbled_test_statuses.txt`).
+    final unauthorized = <String>[];
     for (final route in routes) {
       final verb = route.verb == 'ALL' ? 'POST' : route.verb;
       if (verb == 'GET' || verb == 'DELETE' || verb == 'HEAD') continue;
       if (route.path == '/ws') continue;
+      // Logout revokes the token every later row needs; it reads its body
+      // through a form fallback and refuses nothing, so it has no row here.
+      if (route.path == '/auth/logout') continue;
       final url = route.path
           .replaceAll('<resourceType>', 'Patient')
           .replaceAll('<compartmentType>', 'Patient')
@@ -84,9 +94,15 @@ void main() {
             '$verb ${route.path} ($contentType) -> ${response.statusCode}',
           );
         }
+        if (response.statusCode == 401) {
+          unauthorized.add('$verb ${route.path} ($contentType)');
+        }
       }
     }
     expect(serverFault, isEmpty);
+    // Control on the instrument: every row was answered as the admin, so
+    // it was the route, not the token, that was measured.
+    expect(unauthorized, isEmpty);
     // Control: the loop sent something.
     expect(tried, greaterThan(40));
   });

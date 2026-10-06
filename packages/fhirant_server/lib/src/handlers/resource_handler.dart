@@ -1328,10 +1328,18 @@ Future<Response> putResourceHandler(
   SubscriptionService? subscriptions,
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
+  // The body is parsed outside the block below, as the POST's is: a garbled
+  // body, or an element value the model refuses, is the client's 400. Inside
+  // the one catch it was a 500 (REVIEW-2026-10-06 finding 6, probe P3),
+  // which the garbled-body test did not see (finding 5).
+  final fhir.Resource updatedResource;
   try {
-    final body = await request.readAsString();
-    final updatedResource = fhir.Resource.fromJsonString(body);
-
+    updatedResource =
+        fhir.Resource.fromJsonString(await request.readAsString());
+  } catch (e) {
+    return validationOutcome('Invalid resource: $e');
+  }
+  try {
     if (updatedResource.resourceTypeString != resourceType) {
       FhirantLogging().logWarning(
         'Resource type mismatch in update: expected $resourceType, '
