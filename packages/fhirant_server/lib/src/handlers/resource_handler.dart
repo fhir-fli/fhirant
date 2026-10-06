@@ -1275,7 +1275,10 @@ Future<Response> postResourceHandler(
     // save means the stored status is the server's answer, never the client's
     // claim.
     if (resourceWithId is fhir.Subscription) {
-      resourceWithId = await subs.activate(resourceWithId);
+      resourceWithId = await subs.activate(
+        resourceWithId,
+        principal: Principal.of(request),
+      );
     }
     final fhir.Resource savedResource;
     try {
@@ -1325,10 +1328,18 @@ Future<Response> putResourceHandler(
   SubscriptionService? subscriptions,
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
+  // The body is parsed outside the block below, as the POST's is: a garbled
+  // body, or an element value the model refuses, is the client's 400. Inside
+  // the one catch it was a 500 (REVIEW-2026-10-06 finding 6, probe P3),
+  // which the garbled-body test did not see (finding 5).
+  final fhir.Resource updatedResource;
   try {
-    final body = await request.readAsString();
-    final updatedResource = fhir.Resource.fromJsonString(body);
-
+    updatedResource =
+        fhir.Resource.fromJsonString(await request.readAsString());
+  } catch (e) {
+    return validationOutcome('Invalid resource: $e');
+  }
+  try {
     if (updatedResource.resourceTypeString != resourceType) {
       FhirantLogging().logWarning(
         'Resource type mismatch in update: expected $resourceType, '
@@ -1397,7 +1408,7 @@ Future<Response> putResourceHandler(
         type == null || await dbInterface.getResource(type, id) == null;
 
     final toSave = updatedResource is fhir.Subscription
-        ? await subs.activate(updatedResource)
+        ? await subs.activate(updatedResource, principal: Principal.of(request))
         : updatedResource;
     final fhir.Resource savedResource;
     try {
