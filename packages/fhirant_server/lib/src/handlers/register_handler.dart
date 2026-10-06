@@ -175,22 +175,16 @@ Future<Response> registerHandler(
     final List<String> effectiveScopes;
     final rawScopes = body['scopes'];
     if (rawScopes != null) {
-      if (rawScopes is! List) {
-        return Response(
-          400,
-          body: jsonEncode({'error': 'scopes must be an array of strings'}),
-        );
+      // The one rule for a scopes array (account_rules.dart), as the
+      // scope change applies it. A hand-written copy here cast the entries
+      // to String before looking at them, so `scopes: [42]` was a TypeError
+      // inside the catch below and a 500 (REVIEW-2026-10-06 finding 13,
+      // probe P14).
+      final error = scopesError(rawScopes);
+      if (error != null) {
+        return Response(400, body: jsonEncode({'error': error}));
       }
-      final scopeStrings = rawScopes.cast<String>();
-      for (final s in scopeStrings) {
-        if (SmartScope.parse(s) == null) {
-          return Response(
-            400,
-            body: jsonEncode({'error': 'Invalid SMART scope: $s'}),
-          );
-        }
-      }
-      effectiveScopes = scopeStrings;
+      effectiveScopes = (rawScopes as List).cast<String>();
     } else {
       effectiveScopes = SmartScopeEnforcer.defaultScopesForRole(effectiveRole);
     }
