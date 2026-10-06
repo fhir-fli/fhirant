@@ -14,6 +14,7 @@ import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
+import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/program_sandbox.dart';
@@ -711,13 +712,15 @@ class FhirAntServer {
     // check, a revocation query and an AuditEvent write per request before
     // it was ever counted (REVIEW-2026-09-06 finding 11). The credential
     // endpoints get their own, much tighter, bucket.
+    // Storage that drops addresses whose window has passed; the package's
+    // own never does (REVIEW-2026-10-06 finding 15).
     final generalLimiter = ShelfRateLimiter(
-      storage: MemStorage(),
+      storage: ExpiringMemStorage(),
       duration: rateLimitDuration,
       maxRequests: maxRequests,
     );
     final authLimiter = ShelfRateLimiter(
-      storage: MemStorage(),
+      storage: ExpiringMemStorage(),
       duration: rateLimitDuration,
       maxRequests: authMaxRequests,
     );
