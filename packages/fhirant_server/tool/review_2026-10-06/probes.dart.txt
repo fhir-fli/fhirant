@@ -1,0 +1,379 @@
+// Probes for the 2026-10-06 review. One line per case to results.tsv.
+// Run: dart run tool/review_2026-10-06/probes.dart [probe ids...]
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
+import 'package:fhir_r4_cql/fhir_r4_cql.dart';
+import 'package:fhir_r4_path/fhir_r4_path.dart';
+import 'package:fhir_r4_validation/fhir_r4_validation.dart';
+import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/cli/options.dart';
+import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/services/subscription_service.dart';
+import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
+import 'package:fhirant_server/src/utils/db_resource_cache.dart';
+import 'package:fhirant_server/src/utils/json_patch.dart';
+import 'package:fhirant_server/src/utils/spec_loader.dart';
+import 'package:shelf/shelf.dart';
+import 'package:web_socket_channel/io.dart';
+
+import '../../test/integration/test_helpers.dart';
+
+final out = File('tool/review_2026-10-06/results.tsv');
+void log(String probe, String caseName, Object result) {
+  final line = '$probe\t$caseName\t$result\n';
+  out.writeAsStringSync(line, mode: FileMode.append, flush: true);
+  stdout.write(line);
+}
+
+Future<String> body(Response r) async {
+  final b = (await r.readAsString()).replaceAll('\n', ' ');
+  return b.length > 160 ? b.substring(0, 160) : b;
+}
+
+Future<void> main(List<String> args) async {
+  final want = args.toSet();
+  bool run(String id) => want.isEmpty || want.contains(id);
+  out.writeAsStringSync('probe\tcase\tresult\n', flush: true);
+  if (run('P1')) await p1();
+  if (run('P2')) await p2();
+  if (run('P3')) await p3();
+  if (run('P4')) await p4();
+  if (run('P5')) p5();
+  if (run('P6')) await p6();
+  if (run('P7')) await p7();
+  if (run('P8')) await p8();
+  if (run('P9')) await p9();
+  if (run('P10')) await p10();
+  if (run('P11')) await p11();
+  if (run('P13')) await p13();
+  if (run('P14')) await p14();
+  if (run('P15')) await p15();
+  if (run('P12')) await p12();
+  exit(0);
+}
+
+// C1: a token verified by signature on a public path is not re-read.
+Future<void> p1() async {
+  final s = await createTestServer();
+  final a = await issueTestToken(s.db, username: 'adminA', role: 'admin', scopes: ['system/*.*']);
+  await issueTestToken(s.db, username: 'adminB', role: 'admin', scopes: ['system/*.*']);
+  final aId = (await s.db.getUserByUsername('adminA'))!.id;
+  String reg(String u) => jsonEncode({'username': u, 'password': 'averylongpassword123', 'role': 'admin'});
+  var r = await s.handler(testRequest('POST', '/auth/register', body: reg('ctl1'), authToken: a));
+  log('P1', 'control: active admin registers admin', r.statusCode);
+  await s.db.deactivateUser(aId);
+  await s.db.bumpTokenGeneration(aId);
+  r = await s.handler(testRequest('GET', '/Patient', authToken: a));
+  log('P1', 'deactivated admin token on GET /Patient', r.statusCode);
+  r = await s.handler(testRequest('POST', '/auth/register', body: reg('evil1'), authToken: a));
+  log('P1', 'deactivated admin token registers a NEW ADMIN', '${r.statusCode} ${await body(r)}');
+  final evil = await s.db.getUserByUsername('evil1');
+  log('P1', 'new admin row exists, role', '${evil != null} ${evil?.role}');
+  // demoted (role change bumps generation; token still says admin)
+  await s.db.activateUser(aId);
+  await s.db.updateUserRole(aId, 'readonly');
+  await s.db.bumpTokenGeneration(aId);
+  r = await s.handler(testRequest('GET', '/Patient', authToken: a));
+  log('P1', 'demoted admin stale token on GET /Patient', r.statusCode);
+  r = await s.handler(testRequest('POST', '/auth/register', body: reg('evil2'), authToken: a));
+  log('P1', 'demoted admin stale token registers a NEW ADMIN', r.statusCode);
+  // /auth/password with a deactivated account's token: requires current password -> expect 401
+  await s.db.close();
+}
+
+// C8: credential limiter path matching vs router matching.
+Future<void> p2() async {
+  for (final path in ['/auth/login', '/auth/login/', '//auth/login', '/auth//login', '/auth/login%20']) {
+    final s = await createTestServer(authMaxRequests: 2);
+    final codes = <int>[];
+    for (var i = 0; i < 4; i++) {
+      final r = await s.handler(testRequest('POST', path, body: jsonEncode({'username': 'x', 'password': 'y'})));
+      codes.add(r.statusCode);
+    }
+    log('P2', 'POST $path x4 (limit 2)', codes.join(','));
+    await s.db.close();
+  }
+}
+
+// C3: PUT with a garbled body or an unknown type.
+Future<void> p3() async {
+  final s = await createTestServer();
+  final t = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  var r = await s.handler(testRequest('PUT', '/Patient/p1', body: '{not json', authToken: t));
+  log('P3', 'PUT /Patient/p1 garbled body', '${r.statusCode} ${await body(r)}');
+  r = await s.handler(testRequest('POST', '/Patient', body: '{not json', authToken: t));
+  log('P3', 'POST /Patient garbled body (control)', r.statusCode);
+  r = await s.handler(testRequest('PUT', '/Patient/p1', body: '{"resourceType":"Patient","id":"p1","birthDate":"not-a-date"}', authToken: t));
+  log('P3', 'PUT /Patient/p1 invalid element value', r.statusCode);
+  r = await s.handler(testRequest('PUT', '/Patient?identifier=x', body: '{not json', authToken: t));
+  log('P3', 'PUT /Patient?identifier=x garbled (control)', r.statusCode);
+  r = await s.handler(testRequest('PATCH', '/Patient/p1', body: '{not json', authToken: t));
+  log('P3', 'PATCH /Patient/p1 garbled (resource absent)', r.statusCode);
+  await s.db.close();
+}
+
+// C4: update-as-create under a patient scope, REST vs Bundle entry.
+Future<void> p4() async {
+  final s = await createTestServer();
+  final adm = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  await s.handler(testRequest('PUT', '/Patient/pat1', body: '{"resourceType":"Patient","id":"pat1"}', authToken: adm));
+  final pat = await issueTestToken(s.db, username: 'patu', role: 'readonly', scopes: ['patient/*.*'], patientId: 'pat1');
+  String obs(String id) => jsonEncode({'resourceType': 'Observation', 'id': id, 'status': 'final', 'code': {'text': 'x'}, 'subject': {'reference': 'Patient/pat1'}});
+  var r = await s.handler(testRequest('PUT', '/Observation/new1', body: obs('new1'), authToken: pat));
+  log('P4', 'REST PUT /Observation/new1 (absent) patient scope', '${r.statusCode} ${await body(r)}');
+  r = await s.handler(testRequest('POST', '/Observation', body: obs('ignored'), authToken: pat));
+  log('P4', 'REST POST /Observation patient scope (control)', r.statusCode);
+  final bundle = jsonEncode({'resourceType': 'Bundle', 'type': 'transaction', 'entry': [
+    {'resource': jsonDecode(obs('new2')), 'request': {'method': 'PUT', 'url': 'Observation/new2'}},
+  ]});
+  r = await s.handler(testRequest('POST', '/', body: bundle, authToken: pat));
+  final b = await body(r);
+  log('P4', 'Bundle PUT Observation/new2 (absent) patient scope', '${r.statusCode} ${b}');
+  log('P4', 'Observation/new2 stored', (await s.db.getResource(fhir.R4ResourceType.Observation, 'new2')) != null);
+  await s.db.close();
+}
+
+// C5: JSON Patch test op compares encoded strings.
+void p5() {
+  final doc = <String, dynamic>{'a': {'x': 1, 'y': 2}};
+  try {
+    applyJsonPatch(doc, [{'op': 'test', 'path': '/a', 'value': {'y': 2, 'x': 1}}]);
+    log('P5', 'test op, same object different key order', 'passes');
+  } catch (e) {
+    log('P5', 'test op, same object different key order', 'FAILS: $e');
+  }
+  try {
+    applyJsonPatch(doc, [{'op': 'test', 'path': '/a/x', 'value': 1.0}]);
+    log('P5', 'test op, 1 vs 1.0', 'passes');
+  } catch (e) {
+    log('P5', 'test op, 1 vs 1.0', 'FAILS: $e');
+  }
+}
+
+// C6: $reindex Content-Location.
+Future<void> p6() async {
+  final s = await createTestServer();
+  final adm = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  final r = await s.handler(testRequest('POST', r'/$reindex', authToken: adm));
+  log('P6', r'POST /$reindex status, Content-Location', '${r.statusCode} ${r.headers['content-location']}');
+  await Future<void>.delayed(const Duration(milliseconds: 300));
+  await s.db.close();
+}
+
+// C10: empty encryption key.
+Future<void> p7() async {
+  log('P7', "encryptionKeyRefusal('', allowPublicKey:false)", encryptionKeyRefusal('', allowPublicKey: false) ?? 'null (no refusal)');
+  final dir = Directory('tool/review_2026-10-06/p7').. createSync(recursive: true);
+  for (final key in ['', 'a-real-key']) {
+    final f = File('${dir.path}/store_${key.isEmpty ? 'empty' : 'real'}.db');
+    if (f.existsSync()) f.deleteSync();
+    final db = FhirAntDb(NativeDatabase(f, setup: (raw) => applyStoreCipher(raw, key)));
+    await db.initialize();
+    await db.saveResource(fhir.Patient(id: fhir.FhirString('p1'), name: [fhir.HumanName(family: fhir.FhirString('PLAINTEXTMARKER'))]));
+    await db.close();
+    final bytes = f.readAsBytesSync();
+    final head = String.fromCharCodes(bytes.take(15));
+    final marker = utf8.decode(bytes, allowMalformed: true).contains('PLAINTEXTMARKER');
+    log('P7', "key='${key.isEmpty ? '' : 'a-real-key'}' header", '"$head" plaintext marker found: $marker');
+  }
+}
+
+// C16: $expand with Parameters valueInteger offset.
+Future<void> p8() async {
+  final s = await createTestServer();
+  final adm = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  await s.handler(testRequest('PUT', '/CodeSystem/cs1', authToken: adm, body: jsonEncode({'resourceType': 'CodeSystem', 'id': 'cs1', 'url': 'http://x/cs', 'status': 'active', 'content': 'complete', 'concept': [{'code': 'a'}, {'code': 'b'}, {'code': 'c'}]})));
+  await s.handler(testRequest('PUT', '/ValueSet/vs1', authToken: adm, body: jsonEncode({'resourceType': 'ValueSet', 'id': 'vs1', 'url': 'http://x/vs', 'status': 'active', 'compose': {'include': [{'system': 'http://x/cs'}]}})));
+  var r = await s.handler(testRequest('POST', r'/ValueSet/vs1/$expand', authToken: adm, body: jsonEncode({'resourceType': 'Parameters', 'parameter': [{'name': 'offset', 'valueInteger': 1}, {'name': 'count', 'valueInteger': 1}]})));
+  log('P8', r'POST ValueSet/vs1/$expand Parameters valueInteger offset/count', '${r.statusCode} ${await body(r)}');
+  r = await s.handler(testRequest('GET', r'/ValueSet/vs1/$expand?offset=1&count=1', authToken: adm));
+  log('P8', r'GET $expand?offset=1&count=1 (control)', r.statusCode);
+  r = await s.handler(testRequest('POST', r'/ValueSet/vs1/$expand', authToken: adm, body: jsonEncode({'resourceType': 'Parameters', 'parameter': [{'name': 'offset', 'valueString': '1'}]})));
+  log('P8', r'POST $expand Parameters valueString offset (control)', r.statusCode);
+  await s.db.close();
+}
+
+// C17: audit subtype of a type-level GET.
+Future<void> p9() async {
+  final db = FhirAntDb(NativeDatabase.memory());
+  await db.initialize();
+  final server = FhirAntServer(db, jwtSecret: testJwtSecret);
+  final h = server.createHandler(server.createRouter());
+  final adm = await issueTestToken(db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  await h(testRequest('GET', '/Patient?name=x', authToken: adm));
+  await h(testRequest('POST', '/Patient/_search', body: 'name=x', authToken: adm, headers: {'content-type': 'application/x-www-form-urlencoded'}));
+  await h(testRequest('GET', '/Patient/nope', authToken: adm));
+  await Future<void>.delayed(const Duration(milliseconds: 400));
+  await server.auditQueue.drain();
+  final events = await db.getResourcesByType(fhir.R4ResourceType.AuditEvent);
+  for (final e in events.whereType<fhir.AuditEvent>()) {
+    log('P9', 'AuditEvent subtype/action', '${e.subtype?.first.code?.valueString} ${e.action?.valueString}');
+  }
+  await db.close();
+}
+
+// C18: the spec loader skips whole when any CodeSystem exists.
+Future<void> p10() async {
+  final db = FhirAntDb(NativeDatabase.memory());
+  await db.initialize();
+  await db.saveResource(fhir.CodeSystem(id: fhir.FhirString('cs0'), status: fhir.PublicationStatus.active, content: fhir.CodeSystemContentMode.complete));
+  final dir = Directory('tool/review_2026-10-06/p10/fhir_spec')..createSync(recursive: true);
+  File('${dir.path}/zz-new-ops.ndjson').writeAsStringSync('${jsonEncode({'resourceType': 'OperationDefinition', 'id': 'od-new', 'url': 'http://x/od', 'name': 'x', 'status': 'active', 'kind': 'operation', 'code': 'x', 'system': true, 'type': false, 'instance': false})}\n');
+  await loadSpecResources(db, dir.path);
+  log('P10', 'store with 1 CodeSystem, loader given a new OperationDefinition file; OperationDefinitions after', await db.getResourceCount(fhir.R4ResourceType.OperationDefinition));
+  final ops = File('assets/fhir_spec/fhirant-operations.ndjson');
+  log('P10', 'assets/fhir_spec/fhirant-operations.ndjson exists, lines', '${ops.existsSync()} ${ops.existsSync() ? ops.readAsLinesSync().where((l) => l.trim().isNotEmpty).length : 0}');
+  await db.close();
+}
+
+// C19: a patient-scoped websocket Subscription is pinged by other patients' writes.
+Future<void> p11() async {
+  final db = FhirAntDb(NativeDatabase.memory());
+  await db.initialize();
+  final server = FhirAntServer(db, jwtSecret: testJwtSecret);
+  await server.startHttp(0);
+  final port = server.port!;
+  final base = 'http://127.0.0.1:$port';
+  final adm = await issueTestToken(db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  final pat = await issueTestToken(db, username: 'patu', role: 'readonly', scopes: ['patient/*.rs', 'user/Subscription.*'], patientId: 'pat1');
+  final client = HttpClient();
+  Future<(int, String)> send(String method, String path, String token, [String? bodyStr]) async {
+    final req = await client.openUrl(method, Uri.parse('$base$path'));
+    req.headers.set('authorization', 'Bearer $token');
+    req.headers.set('content-type', 'application/fhir+json');
+    if (bodyStr != null) req.write(bodyStr);
+    final res = await req.close();
+    return (res.statusCode, await res.transform(utf8.decoder).join());
+  }
+  await send('PUT', '/Patient/pat1', adm, '{"resourceType":"Patient","id":"pat1"}');
+  await send('PUT', '/Patient/pat2', adm, '{"resourceType":"Patient","id":"pat2","name":[{"family":"Secret"}]}');
+  final sub = await send('POST', '/Subscription', pat, jsonEncode({'resourceType': 'Subscription', 'status': 'requested', 'reason': 'x', 'criteria': 'Observation?subject=Patient/pat2&code=http://loinc.org|718-7', 'channel': {'type': 'websocket'}}));
+  log('P11', 'patient token creates websocket Subscription on Patient/pat2 criteria', '${sub.$1} status=${(jsonDecode(sub.$2) as Map)['status']}');
+  final subId = (jsonDecode(sub.$2) as Map)['id'];
+  final ws = IOWebSocketChannel.connect(Uri.parse('ws://127.0.0.1:$port/ws'), headers: {'authorization': 'Bearer $pat'});
+  final messages = <String>[];
+  final sub2 = ws.stream.listen((m) => messages.add('$m'));
+  ws.sink.add('bind $subId');
+  await Future<void>.delayed(const Duration(milliseconds: 300));
+  log('P11', 'bind reply', messages.join('|'));
+  messages.clear();
+  final w = await send('POST', '/Observation', adm, jsonEncode({'resourceType': 'Observation', 'status': 'final', 'code': {'coding': [{'system': 'http://loinc.org', 'code': '718-7'}]}, 'subject': {'reference': 'Patient/pat2'}}));
+  await Future<void>.delayed(const Duration(milliseconds: 800));
+  log('P11', "admin writes Patient/pat2's Observation (status $w); patient pat1's socket received", messages.isEmpty ? 'nothing' : messages.join('|'));
+  final rd = await send('GET', '/Observation?subject=Patient/pat2', pat);
+  log('P11', 'control: patient token GET /Observation?subject=Patient/pat2 total', '${rd.$1} total=${(jsonDecode(rd.$2) as Map)['total']}');
+  await sub2.cancel();
+  await ws.sink.close();
+  client.close(force: true);
+  await server.stop();
+  await db.close();
+}
+
+// C21: translation/parse on the server isolate, outside the deadline.
+Future<void> p13() async {
+  for (final n in [500, 2000, 8000]) {
+    final sb = StringBuffer('library L version \'1\'\nusing FHIR version \'4.0.1\'\ncontext Patient\n');
+    for (var i = 0; i < n; i++) {
+      sb.writeln('define D$i: ${i} + ${i} * 2 - 1');
+    }
+    final cql = sb.toString();
+    final sw = Stopwatch()..start();
+    try {
+      libraryFromCql(cql);
+    } catch (e) {
+      log('P13', 'cql defines=$n', 'threw $e');
+      continue;
+    }
+    log('P13', 'cql defines=$n bytes=${cql.length} translate ms', sw.elapsedMilliseconds);
+  }
+  final engine = await FHIRPathEngine.create(WorkerContext());
+  for (final n in [1000, 10000, 100000]) {
+    final expr = List.filled(n, '1').join(' + ');
+    final sw = Stopwatch()..start();
+    try {
+      engine.parse(expr);
+      log('P13', 'fhirpath parse terms=$n ms', sw.elapsedMilliseconds);
+    } catch (e) {
+      log('P13', 'fhirpath parse terms=$n', 'threw ${e.runtimeType} after ${sw.elapsedMilliseconds} ms');
+    }
+  }
+  final nested = '${'('.padLeft(5000, '(')}1${')'.padLeft(5000, ')')}';
+  final sw = Stopwatch()..start();
+  try {
+    engine.parse(nested);
+    log('P13', 'fhirpath parse 5000 nested parens ms', sw.elapsedMilliseconds);
+  } catch (e) {
+    log('P13', 'fhirpath parse 5000 nested parens', 'threw ${e.runtimeType} after ${sw.elapsedMilliseconds} ms');
+  }
+}
+
+// C2: register with a non-string scope entry.
+Future<void> p14() async {
+  final s = await createTestServer();
+  final adm = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  final r = await s.handler(testRequest('POST', '/auth/register', authToken: adm, body: jsonEncode({'username': 'newu', 'password': 'averylongpassword123', 'scopes': [42]})));
+  log('P14', 'POST /auth/register scopes:[42]', '${r.statusCode} ${await body(r)}');
+  await s.db.close();
+}
+
+// C11: _filter not(...) cost.
+Future<void> p15() async {
+  final s = await createTestServer();
+  final adm = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  final list = <fhir.Resource>[
+    for (var i = 0; i < 5000; i++)
+      fhir.Observation(id: fhir.FhirString('o$i'), status: i % 2 == 0 ? fhir.ObservationStatus.final_ : fhir.ObservationStatus.preliminary, code: fhir.CodeableConcept(text: fhir.FhirString('c'))),
+  ];
+  await s.db.saveResources(list);
+  for (final q in ['status=preliminary', '_filter=not(status eq final)', '_filter=status eq preliminary']) {
+    final sw = Stopwatch()..start();
+    final r = await s.handler(testRequest('GET', '/Observation?$q&_count=20', authToken: adm));
+    final b = jsonDecode(await r.readAsString()) as Map;
+    log('P15', '5000 Observations GET /Observation?$q', '${r.statusCode} total=${b['total']} ${sw.elapsedMilliseconds} ms');
+  }
+  await s.db.close();
+}
+
+class CountingCache extends DbResourceCache {
+  CountingCache(super.db);
+  int names = 0;
+  int namesMs = 0;
+  @override
+  Future<List<String>> getResourceNames() async {
+    final sw = Stopwatch()..start();
+    final r = await super.getResourceNames();
+    names++;
+    namesMs += sw.elapsedMilliseconds;
+    return r;
+  }
+}
+
+// C20: getResourceNames cost under $validate with the specification loaded.
+Future<void> p12() async {
+  final db = FhirAntDb(NativeDatabase.memory());
+  await db.initialize();
+  final sw0 = Stopwatch()..start();
+  await loadSpecResources(db, 'assets/fhir_spec');
+  log('P12', 'spec load ms, resources', '${sw0.elapsedMilliseconds} ${await db.customSelect('SELECT count(*) AS n FROM resources').getSingle().then((r) => r.read<int>('n'))}');
+  final cache = CountingCache(db);
+  final sw1 = Stopwatch()..start();
+  final names = await cache.getResourceNames();
+  log('P12', 'one DbResourceCache.getResourceNames() ms, names', '${sw1.elapsedMilliseconds} ${names.length}');
+  final patient = {'resourceType': 'Patient', 'id': 'p', 'gender': 'male', 'name': [{'family': 'X'}], 'contact': [{'name': {'family': 'Y'}}]};
+  for (var i = 0; i < 2; i++) {
+    final c = CountingCache(db);
+    final sw = Stopwatch()..start();
+    final res = await const FhirValidationEngine().validateFhirMap(structureToValidate: patient, resourceCache: c);
+    log('P12', r'$validate Patient run ${i+1}: ms, getResourceNames calls, ms in them, issues', '${sw.elapsedMilliseconds} ${c.names} ${c.namesMs} ${res.results.length}');
+  }
+  final obs = {'resourceType': 'Observation', 'status': 'final', 'code': {'coding': [{'system': 'http://loinc.org', 'code': '1'}]}, 'subject': {'reference': 'Patient/p'}, 'valueQuantity': {'value': 1, 'unit': 'mg'}};
+  final c = CountingCache(db);
+  final sw = Stopwatch()..start();
+  final res = await const FhirValidationEngine().validateFhirMap(structureToValidate: obs, resourceCache: c);
+  log('P12', r'$validate Observation: ms, getResourceNames calls, ms in them, issues', '${sw.elapsedMilliseconds} ${c.names} ${c.namesMs} ${res.results.length}');
+  await db.close();
+}

@@ -1,0 +1,17 @@
+import 'dart:io';
+import '../../test/integration/test_helpers.dart';
+Future<void> main() async {
+  final s = await createTestServer();
+  final t = await issueTestToken(s.db, username: 'adm', role: 'admin', scopes: ['system/*.*']);
+  for (final (path, ct, body) in [
+    ('/Patient/nope', 'application/fhir+json', '{this is not json'),
+    ('/Patient/p1', 'application/fhir+json', '{this is not json'),
+    ('/Patient/p1', null, '{not json'),
+    ('/Patient/nope', null, '{not json'),
+  ]) {
+    final r = await s.handler(testRequest('PUT', path, body: body, authToken: t, headers: ct == null ? null : {'content-type': ct}));
+    stdout.writeln('P3b\tPUT $path ct=$ct body=$body\t${r.statusCode}');
+  }
+  await s.db.close();
+  exit(0);
+}

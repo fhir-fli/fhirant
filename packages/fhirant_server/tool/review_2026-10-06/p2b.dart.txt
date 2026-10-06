@@ -1,0 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:fhirant_server/src/utils/password_hasher.dart';
+import '../../test/integration/test_helpers.dart';
+Future<void> main() async {
+  final s = await createTestServer(authMaxRequests: 2);
+  final salt = PasswordHasher.generateSalt();
+  await s.db.createUser(username: 'real', passwordHash: await PasswordHasher.hashPassword('a-long-password-123', salt), salt: salt, role: 'admin');
+  for (final path in ['/auth/login', '//auth/login']) {
+    for (var i = 0; i < 3; i++) {
+      final r = await s.handler(testRequest('POST', path, body: jsonEncode({'username': 'real', 'password': 'a-long-password-123'})));
+      final b = await r.readAsString();
+      stdout.writeln('\nP2b\tPOST $path valid credentials #${i + 1}\t${r.statusCode} ${b.length > 90 ? b.substring(0, 90) : b}');
+    }
+  }
+  await s.db.close();
+  exit(0);
+}
