@@ -35,6 +35,90 @@ String? pageArgumentError(String? count, String? offset) {
 int pageSize(String? count, {int defaultCount = 20}) =>
     (count == null ? defaultCount : int.parse(count)).clamp(0, kMaxPageSize);
 
+/// What [SearchParameterParser.parseQueryParameters] read from a query
+/// string, typed. It was a `Map<String, dynamic>` read back with casts at
+/// 40 sites in four files (fhirant REVIEW-2026-09-17 ST3); a wrong key or
+/// type there was a runtime throw, here it is a compile error. A list or
+/// map the query did not use is null, as the map's entry was.
+class ParsedSearch {
+  /// Creates the parsed query.
+  const ParsedSearch({
+    this.searchParams,
+    this.count,
+    this.offset,
+    this.sort,
+    this.include,
+    this.revinclude,
+    this.includeIterate,
+    this.revincludeIterate,
+    this.summary,
+    this.elements,
+    this.total,
+    this.filter,
+    this.contained,
+    this.containedType,
+    this.query,
+    this.unknownParams,
+    this.invalidParams,
+    this.has,
+  });
+
+  /// The search parameters, raw: one entry per repetition of a key.
+  final Map<String, List<String>>? searchParams;
+
+  /// `_count`, validated.
+  final int? count;
+
+  /// `_offset`, validated.
+  final int? offset;
+
+  /// `_sort` rules in order, each with its optional `-`.
+  final List<String>? sort;
+
+  /// `_include` values.
+  final List<String>? include;
+
+  /// `_revinclude` values.
+  final List<String>? revinclude;
+
+  /// `_include:iterate` values.
+  final List<String>? includeIterate;
+
+  /// `_revinclude:iterate` values.
+  final List<String>? revincludeIterate;
+
+  /// `_summary`.
+  final String? summary;
+
+  /// `_elements`, split on commas.
+  final List<String>? elements;
+
+  /// `_total`.
+  final String? total;
+
+  /// `_filter`, as written.
+  final String? filter;
+
+  /// `_contained`.
+  final String? contained;
+
+  /// `_containedType`.
+  final String? containedType;
+
+  /// `_query`.
+  final String? query;
+
+  /// `_`-prefixed parameters this server has no definition for.
+  final List<String>? unknownParams;
+
+  /// Parameters whose value failed validation (a `_count` that is not a
+  /// number), as `name=value`.
+  final List<String>? invalidParams;
+
+  /// `_has` reverse-chaining parameters.
+  final List<HasParameter>? has;
+}
+
 class SearchParameterParser {
   /// Parse query parameters into search parameters and pagination parameters
   ///
@@ -60,7 +144,7 @@ class SearchParameterParser {
   /// `Uri.queryParameters` keeps only the LAST value for a repeated key, so
   /// reading it silently discarded every earlier one. `queryParametersAll` is
   /// what the caller must pass.
-  static Map<String, dynamic> parseQueryParameters(
+  static ParsedSearch parseQueryParameters(
     Map<String, List<String>> queryParams,
   ) {
     final searchParams = <String, List<String>>{};
@@ -264,27 +348,26 @@ class SearchParameterParser {
       }
     }
 
-    return {
-      'searchParams': searchParams.isEmpty ? null : searchParams,
-      'count': count,
-      'offset': offset,
-      'sort': sort.isEmpty ? null : sort,
-      'include': include.isEmpty ? null : include,
-      'revinclude': revinclude.isEmpty ? null : revinclude,
-      'includeIterate': includeIterate.isEmpty ? null : includeIterate,
-      'revincludeIterate': revincludeIterate.isEmpty ? null : revincludeIterate,
-      'summary': summary,
-      'elements': elements,
-      'total': total,
-      'filter': filter,
-      'contained': contained,
-      'containedType': containedType,
-      'query': query,
-      'unknownParams':
-          unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
-      'invalidParams': invalidParams.isEmpty ? null : invalidParams,
-      'has': has.isEmpty ? null : has,
-    };
+    return ParsedSearch(
+      searchParams: searchParams.isEmpty ? null : searchParams,
+      count: count,
+      offset: offset,
+      sort: sort.isEmpty ? null : sort,
+      include: include.isEmpty ? null : include,
+      revinclude: revinclude.isEmpty ? null : revinclude,
+      includeIterate: includeIterate.isEmpty ? null : includeIterate,
+      revincludeIterate: revincludeIterate.isEmpty ? null : revincludeIterate,
+      summary: summary,
+      elements: elements,
+      total: total,
+      filter: filter,
+      contained: contained,
+      containedType: containedType,
+      query: query,
+      unknownParams: unknownSpecialParams.isEmpty ? null : unknownSpecialParams,
+      invalidParams: invalidParams.isEmpty ? null : invalidParams,
+      has: has.isEmpty ? null : has,
+    );
   }
 
   /// Check if there are any search parameters (excluding pagination)

@@ -1133,7 +1133,7 @@ Future<int> _entryConditionalDelete(
   int entryIndex,
 ) async {
   final parsed = SearchParameterParser.parseQueryParameters(query);
-  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  final searchParams = parsed.searchParams;
   if (searchParams == null || searchParams.isEmpty) {
     throw BundleEntryException(
       400,

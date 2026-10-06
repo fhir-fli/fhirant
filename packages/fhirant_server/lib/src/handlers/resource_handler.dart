@@ -169,16 +169,16 @@ Future<Response> systemSearchHandler(
     final searchParamsIn = Map<String, List<String>>.from(mergedParams)
       ..remove('_type');
     final parsed = SearchParameterParser.parseQueryParameters(searchParamsIn);
-    var searchParameters = parsed['searchParams'] as Map<String, List<String>>?;
-    final hasParams = parsed['has'] as List<HasParameter>?;
-    final count = parsed['count'] as int? ?? 20;
-    final offset = parsed['offset'] as int? ?? 0;
-    var sort = parsed['sort'] as List<String>?;
-    final total = parsed['total'] as String?;
-    final summary = parsed['summary'] as String?;
-    final namedQuery = parsed['query'] as String?;
-    final unknownParams = parsed['unknownParams'] as List<String>?;
-    final invalidParams = parsed['invalidParams'] as List<String>?;
+    var searchParameters = parsed.searchParams;
+    final hasParams = parsed.has;
+    final count = parsed.count ?? 20;
+    final offset = parsed.offset ?? 0;
+    var sort = parsed.sort;
+    final total = parsed.total;
+    final summary = parsed.summary;
+    final namedQuery = parsed.query;
+    final unknownParams = parsed.unknownParams;
+    final invalidParams = parsed.invalidParams;
     if (invalidParams != null) {
       return _searchRefusal(invalidParams.join('; '), fhir.IssueType.invalid);
     }
@@ -475,28 +475,28 @@ Future<fhir.Bundle> typeSearch(
 
   // Parse query parameters into search params and pagination params
   final parsed = SearchParameterParser.parseQueryParameters(queryParams);
-  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
-  final include = parsed['include'] as List<String>?;
-  final revinclude = parsed['revinclude'] as List<String>?;
-  final includeIterate = parsed['includeIterate'] as List<String>?;
-  final revincludeIterate = parsed['revincludeIterate'] as List<String>?;
+  final searchParams = parsed.searchParams;
+  final include = parsed.include;
+  final revinclude = parsed.revinclude;
+  final includeIterate = parsed.includeIterate;
+  final revincludeIterate = parsed.revincludeIterate;
 
-  final hasParams = parsed['has'] as List<HasParameter>?;
-  final count = parsed['count'] as int? ?? 20;
-  final offset = parsed['offset'] as int? ?? 0;
-  final sort = parsed['sort'] as List<String>?;
-  final summary = parsed['summary'] as String?;
-  final elements = parsed['elements'] as List<String>?;
-  final total = parsed['total'] as String?;
-  final unknownParams = parsed['unknownParams'] as List<String>?;
-  final invalidParams = parsed['invalidParams'] as List<String>?;
+  final hasParams = parsed.has;
+  final count = parsed.count ?? 20;
+  final offset = parsed.offset ?? 0;
+  final sort = parsed.sort;
+  final summary = parsed.summary;
+  final elements = parsed.elements;
+  final total = parsed.total;
+  final unknownParams = parsed.unknownParams;
+  final invalidParams = parsed.invalidParams;
   if (invalidParams != null) {
     throw SearchRefused(fhir.IssueType.invalid, invalidParams.join('; '));
   }
-  final filter = parsed['filter'] as String?;
-  final contained = parsed['contained'] as String?;
-  final containedType = parsed['containedType'] as String?;
-  final namedQuery = parsed['query'] as String?;
+  final filter = parsed.filter;
+  final contained = parsed.contained;
+  final containedType = parsed.containedType;
+  final namedQuery = parsed.query;
 
   // R4 3.1.1.7: "Servers processing search requests SHALL refuse to process
   // a search request if they do not recognize the _query parameter value."
@@ -1672,11 +1672,11 @@ Future<String?> resolveConditionalUpdate(
   CompartmentScope? compartment,
 }) async {
   final parsed = SearchParameterParser.parseQueryParameters(query);
-  final invalid = parsed['invalidParams'] as List<String>?;
+  final invalid = parsed.invalidParams;
   if (invalid != null) {
     throw ConditionalUpdateRefused(400, invalid.join('; '));
   }
-  final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+  final searchParams = parsed.searchParams;
   if (searchParams == null || searchParams.isEmpty) {
     throw const ConditionalUpdateRefused(
       400,
@@ -1831,7 +1831,7 @@ Future<Response> conditionalDeleteHandler(
 
     final queryParams = request.url.queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
-    final searchParams = parsed['searchParams'] as Map<String, List<String>>?;
+    final searchParams = parsed.searchParams;
 
     if (searchParams == null || searchParams.isEmpty) {
       return validationOutcome(

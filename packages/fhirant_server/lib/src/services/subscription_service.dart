@@ -138,8 +138,7 @@ class SubscriptionService {
         ? <String, List<String>>{}
         : Uri(query: query).queryParametersAll;
     final parsed = SearchParameterParser.parseQueryParameters(raw);
-    final parameters =
-        (parsed['searchParams'] as Map<String, List<String>>?) ?? {};
+    final parameters = (parsed.searchParams) ?? {};
     return (resourceType: resourceType, parameters: parameters);
   }
 
