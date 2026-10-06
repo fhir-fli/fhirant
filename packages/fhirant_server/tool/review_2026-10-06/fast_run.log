@@ -1,0 +1,49 @@
+P1	control: active admin registers admin	201
+P1	deactivated admin token on GET /Patient	401
+P1	deactivated admin token registers a NEW ADMIN	201 {"id":4,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInVzZXJuYW1lIjoiZXZpbDEiLCJyb2xlIjoiYWRtaW4iLCJzY29wZSI6InN5c3RlbS8qLioiLCJnZW4iOjAsImlhdC
+P1	new admin row exists, role	true admin
+P1	demoted admin stale token on GET /Patient	401
+P1	demoted admin stale token registers a NEW ADMIN	201
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+P2	POST /auth/login x4 (limit 2)	401,401,429,429
+P2	POST /auth/login/ x4 (limit 2)	404,404,404,404
+P2	POST //auth/login x4 (limit 2)	401,401,401,401
+P2	POST /auth//login x4 (limit 2)	404,404,404,404
+P2	POST /auth/login%20 x4 (limit 2)	404,404,404,404
+P3	PUT /Patient/p1 garbled body	500 {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Error updating resource: Internal error"}]}
+P3	POST /Patient garbled body (control)	400
+P3	PUT /Patient/p1 invalid element value	500
+P3	PUT /Patient?identifier=x garbled (control)	400
+P3	PATCH /Patient/p1 garbled (resource absent)	404
+P4	REST PUT /Observation/new1 (absent) patient scope	403 {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Observation/new1 is not in the patient compartment for Patient
+P4	REST POST /Observation patient scope (control)	201
+P4	Bundle PUT Observation/new2 (absent) patient scope	200 {"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://localhost:8080/Observation/new2","resource":{"resourceType":"Observation","id
+P4	Observation/new2 stored	true
+P5	test op, same object different key order	FAILS: FormatException: Test operation failed: values do not match
+P5	test op, 1 vs 1.0	FAILS: FormatException: Test operation failed: values do not match
+P6	POST /$reindex status, Content-Location	202 http://localhost:8080/?$reindex-status
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+P7	encryptionKeyRefusal('', allowPublicKey:false)	null (no refusal)
+P7	key='' header	"SQLite format 3" plaintext marker found: true
+P7	key='a-real-key' header	"p½.Ù$ú£-Í"É&	¤" plaintext marker found: false
+P8	POST ValueSet/vs1/$expand Parameters valueInteger offset/count	500 {"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Internal error"}]}
+P8	GET $expand?offset=1&count=1 (control)	200
+P8	POST $expand Parameters valueString offset (control)	200
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+P9	AuditEvent subtype/action	read R
+P9	AuditEvent subtype/action	search R
+P9	AuditEvent subtype/action	read R
+P10	store with 1 CodeSystem, loader given a new OperationDefinition file; OperationDefinitions after	0
+P10	assets/fhir_spec/fhirant-operations.ndjson exists, lines	true 4
+P13	cql defines=500 bytes=15235 translate ms	915
+P13	cql defines=2000 bytes=64735 translate ms	1478
+P13	cql defines=8000 bytes=268735 translate ms	5343
+P13	fhirpath parse terms=1000 ms	30
+P13	fhirpath parse terms=10000	threw StackOverflowError after 104 ms
+P13	fhirpath parse terms=100000	threw StackOverflowError after 350 ms
+P13	fhirpath parse 5000 nested parens ms	41
+P14	POST /auth/register scopes:[42]	500 {"error":"Registration failed"}
+P15	5000 Observations GET /Observation?status=preliminary	200 total=2500 18 ms
+P15	5000 Observations GET /Observation?_filter=not(status eq final)	200 total=2500 128 ms
+P15	5000 Observations GET /Observation?_filter=status eq preliminary	200 total=2500 30 ms

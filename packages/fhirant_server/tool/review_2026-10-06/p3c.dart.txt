@@ -1,0 +1,17 @@
+import 'dart:io';
+import '../../test/integration/test_helpers.dart';
+Future<void> main() async {
+  final source = File('lib/src/fhirant_server.dart').readAsStringSync();
+  final routes = RegExp(r"\.\.(get|post|put|delete|patch|all|head|mount|add)\(\s*r?'([^']+)'", dotAll: true)
+      .allMatches(source).map((m) => (verb: m.group(1)!.toUpperCase(), path: m.group(2)!)).toList();
+  stdout.writeln('\nP3c\troutes matched\t${routes.length}; PUT: ${routes.where((r) => r.verb == 'PUT').map((r) => r.path).join(' ')}');
+  final s = await createTestServer();
+  final t = await issueTestToken(s.db, username: 'garble-admin', role: 'admin', scopes: ['system/*.*']);
+  for (final route in routes.where((r) => r.verb == 'PUT' || r.verb == 'PATCH')) {
+    final url = route.path.replaceAll('<resourceType>', 'Patient').replaceAll('<id>', 'nope').replaceAll('<userId>', '99');
+    final r = await s.handler(testRequest(route.verb, url, authToken: t, headers: {'content-type': 'application/fhir+json'}, body: '{this is not json'));
+    stdout.writeln('P3c\t${route.verb} $url\t${r.statusCode}');
+  }
+  await s.db.close();
+  exit(0);
+}
