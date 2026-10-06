@@ -98,11 +98,21 @@ Response reindexKickoffHandler(
   }
   FhirantLogging()
       .logInfo('\$reindex started by ${Principal.of(request)?.username}');
-  final base = request.requestedUri.replace(path: '/', query: '');
+  // The status route under the request's origin. `replace(path: '/',
+  // query: '')` kept an empty query, so the header read
+  // `http://host/?$reindex-status`, the system search (REVIEW-2026-10-06
+  // finding 9, probe P6).
+  final origin = request.requestedUri;
+  final status = Uri(
+    scheme: origin.scheme,
+    host: origin.host,
+    port: origin.hasPort ? origin.port : null,
+    path: r'/$reindex-status',
+  );
   return Response(
     202,
     headers: {
-      'Content-Location': '$base\$reindex-status',
+      'Content-Location': '$status',
       'Content-Type': 'application/fhir+json',
     },
     body: _outcome(

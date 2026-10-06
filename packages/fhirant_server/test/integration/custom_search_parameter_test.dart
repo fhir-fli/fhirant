@@ -169,7 +169,12 @@ void main() {
     expect(await patientIds('race=2028-9'), isEmpty);
     final kickoff = await send('POST', r'/$reindex');
     expect(kickoff.statusCode, 202, reason: await kickoff.readAsString());
-    expect(kickoff.headers['content-location'], endsWith(r'$reindex-status'));
+    // The whole URL: `endsWith` passed `http://localhost:8080/?$reindex-status`,
+    // the system search (REVIEW-2026-10-06 finding 9).
+    expect(
+      kickoff.headers['content-location'],
+      r'http://localhost:8080/$reindex-status',
+    );
     Response status;
     do {
       await Future<void>.delayed(const Duration(milliseconds: 20));

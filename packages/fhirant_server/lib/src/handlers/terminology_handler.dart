@@ -353,10 +353,12 @@ Future<Response> expandHandler(
     final filter = params['filter'] as String?;
     final valueSetVersion =
         params['valueSetVersion'] as String? ?? params['version'] as String?;
-    final offsetStr = params['offset'] as String?;
-    final countStr = params['count'] as String?;
-    final offset = offsetStr != null ? int.tryParse(offsetStr) : null;
-    final count = countStr != null ? int.tryParse(countStr) : null;
+    // Typed `integer` by OperationDefinition ValueSet-expand, so a
+    // Parameters body carries them as `valueInteger` (an int here) and the
+    // query string as text; the cast to String took the int as a 500
+    // (REVIEW-2026-10-06 finding 10, probe P8).
+    final offset = _integerParameter(params['offset']);
+    final count = _integerParameter(params['count']);
 
     // Find the ValueSet
     fhir.ValueSet? valueSet;
@@ -478,6 +480,11 @@ Future<Response> expandHandler(
     return outcome(500, fhir.IssueType.invalid, 'Internal error');
   }
 }
+
+/// An operation's integer parameter: an int from a Parameters body, or the
+/// text of a query string; null when absent or not a whole number.
+int? _integerParameter(Object? value) =>
+    value is int ? value : (value is String ? int.tryParse(value) : null);
 
 /// Filter ValueSetContains entries by a text filter (case-insensitive match
 /// on display or code).
