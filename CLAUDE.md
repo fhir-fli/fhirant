@@ -228,7 +228,7 @@ A client's program (`$fhirpath`, `$cql`, `Library/$evaluate`, `$transform`) runs
 
 Drift ORM over SQLite with SQLCipher encryption. The main database class is `FhirAntDb` (in `db/fhirant_db.dart`).
 
-**Tables:** `resources` (current versions), `resources_history` (all versions), `users` (with `patient_id` and `token_generation`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
+**Tables:** `resources` (current versions), `resources_history` (all versions), `users` (with `patient_id` and `token_generation`), `oauth_clients`, `authorization_codes`, `revoked_tokens`, `export_jobs`, `spec_loads` (which specification files the loader has finished; schema 27), plus 9 search parameter tables (string, token, date, number, quantity, reference, uri, composite, special).
 
 **Search flow:**
 1. On resource save, `search_parameters.dart` extracts all searchable values and indexes them into the appropriate tables
