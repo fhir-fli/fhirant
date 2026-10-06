@@ -561,7 +561,10 @@ void main() {
         for (final e in events)
           e.action?.valueString: e.subtype?.first.code?.valueString,
       };
-      expect(byAction['R'], 'search');
+      // `search-type` since REVIEW-2026-10-06 finding 11: the specific
+      // restful-interaction code for a type-level search, where this row
+      // pinned the parent code `search`.
+      expect(byAction['R'], 'search-type');
       expect(byAction['E'], 'execute');
       expect(byAction.containsKey('C'), isFalse, reason: 'nothing was created');
     });
