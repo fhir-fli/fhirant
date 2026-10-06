@@ -147,9 +147,37 @@ void _applyTest(Map<String, dynamic> document, Map<String, dynamic> op) {
   final pointer = _parseJsonPointer(path);
   final currentValue = _getValueAtPath(document, pointer);
 
-  if (jsonEncode(currentValue) != jsonEncode(value)) {
+  if (!_jsonEquals(currentValue, value)) {
     throw const FormatException('Test operation failed: values do not match');
   }
+}
+
+/// RFC 6902 §4.6 equality (read 2026-10-06, verbatim): objects "are
+/// considered equal if they contain the same number of members, and if each
+/// member can be considered equal to a member in the other object, by
+/// comparing their keys (as strings) and their values"; arrays "if they
+/// contain the same number of values, and if each value can be considered
+/// equal to the value at the corresponding position in the other array";
+/// numbers "if their values are numerically equal". The comparison used to
+/// be of the JSON encodings, so key order and `1` against `1.0` failed a
+/// test a client held correctly (REVIEW-2026-10-06 finding 8).
+bool _jsonEquals(Object? a, Object? b) {
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || !_jsonEquals(a[key], b[key])) return false;
+    }
+    return true;
+  }
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_jsonEquals(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (a is num && b is num) return a == b;
+  return a == b;
 }
 
 List<String> _parseJsonPointer(String pointer) {
