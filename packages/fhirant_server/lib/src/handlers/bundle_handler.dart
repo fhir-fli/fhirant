@@ -1188,7 +1188,7 @@ Future<fhir.Resource> _activated(
     );
   }
   return resource is fhir.Subscription
-      ? await subscriptions.activate(resource)
+      ? await subscriptions.activate(resource, principal: principal)
       : resource;
 }
 

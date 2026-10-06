@@ -1275,7 +1275,10 @@ Future<Response> postResourceHandler(
     // save means the stored status is the server's answer, never the client's
     // claim.
     if (resourceWithId is fhir.Subscription) {
-      resourceWithId = await subs.activate(resourceWithId);
+      resourceWithId = await subs.activate(
+        resourceWithId,
+        principal: Principal.of(request),
+      );
     }
     final fhir.Resource savedResource;
     try {
@@ -1397,7 +1400,7 @@ Future<Response> putResourceHandler(
         type == null || await dbInterface.getResource(type, id) == null;
 
     final toSave = updatedResource is fhir.Subscription
-        ? await subs.activate(updatedResource)
+        ? await subs.activate(updatedResource, principal: Principal.of(request))
         : updatedResource;
     final fhir.Resource savedResource;
     try {
