@@ -165,6 +165,17 @@ audit-retention-days: 30
       );
     });
 
+    test('an empty key is refused whatever the flags', () {
+      // REVIEW-2026-10-06 finding 2: `FHIRANT_ENCRYPTION_KEY=` (set but
+      // empty) passed this check and the store was written in the clear.
+      for (final allow in [false, true]) {
+        expect(
+          encryptionKeyRefusal('', allowPublicKey: allow),
+          contains('empty'),
+        );
+      }
+    });
+
     test('the config file can carry it', () {
       final o = resolve(
         ['--config', 'c.yaml'],
