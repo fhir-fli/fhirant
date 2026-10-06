@@ -1,0 +1,6 @@
+Running build hooks...Running build hooks...P12	spec load ms, resources	12489 4217
+P12	one DbResourceCache.getResourceNames() ms, names	2547 1745
+P12	$validate Patient run ${i+1}: ms, getResourceNames calls, ms in them, issues	178 0 0 8
+P12	$validate Patient run ${i+1}: ms, getResourceNames calls, ms in them, issues	32 0 0 8
+P12	$validate Observation: ms, getResourceNames calls, ms in them, issues	36 0 0 8
+exit 0
