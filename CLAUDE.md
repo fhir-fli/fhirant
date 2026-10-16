@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages from pub.dev (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.13.0, `fhir_node` ^0.6.1, `cql` ^0.7.0; the family release of 2026-10-05). There are no `dependency_overrides` in the committed pubspecs; to work against an unreleased checkout, put a gitignored `pubspec_overrides.yaml` in the package. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency at `main`.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages from pub.dev (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.14.0, `fhir_db` ^0.15.1, `fhir_node` ^0.6.1, `cql` ^0.8.0; the family release of 2026-10-16). There are no `dependency_overrides` in the committed pubspecs; to work against an unreleased checkout, put a gitignored `pubspec_overrides.yaml` in the package. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency at `main`.
 
 ## Package Structure
 

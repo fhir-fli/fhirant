@@ -78,7 +78,7 @@ packages:
     description:
       path: cicada
       ref: main
-      resolved-ref: "422c096e312546897837058f7562955b80406ae3"
+      resolved-ref: e0b12590993781aea027d24e5c4ca137e5e631e8
       url: "https://github.com/fhir-fli/cicada.git"
     source: git
     version: "0.0.1"
@@ -134,10 +134,10 @@ packages:
     dependency: transitive
     description:
       name: cql
-      sha256: "26375650e004a46dd8e86dd3c5303a5fcbdb1d1c5c39f7dc56a9b5c06e483754"
+      sha256: b24771719a3d9140fd0a82393318afd4ca92424cb6184829fbcbfae901db9129
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.8.0"
   cross_file:
     dependency: transitive
     description:
@@ -214,18 +214,18 @@ packages:
     dependency: transitive
     description:
       name: fhir_db
-      sha256: "33620710195863a854af10f0f4a78777cecfee34db7a2232383b149d4be470d4"
+      sha256: a82e7726328751232fba277d4c077d4a7c56975ef6f636703c4fdb2d5f84c646
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.0"
+    version: "0.15.1"
   fhir_mapping:
     dependency: transitive
     description:
       name: fhir_mapping
-      sha256: "0d3e9a5bd25cb468a5b0780c09f722524d95576b943d26172dae19f1024621c5"
+      sha256: b17eec6b9cc2a87b9b564ec3339f6c312156fcaa9e5f92abe209deda89527d76
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.13.1"
   fhir_node:
     dependency: transitive
     description:
@@ -246,58 +246,58 @@ packages:
     dependency: "direct main"
     description:
       name: fhir_r4
-      sha256: b9a17284110c82ad68292cc5f193ebf0ec6806b4ea85747107543b6769414cf6
+      sha256: "654b4cf3648415028e416df9d1ec21fd0cad147790a304ac1c1559966cd994da"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_bulk:
     dependency: transitive
     description:
       name: fhir_r4_bulk
-      sha256: "9ffb87b215a97be83a7a5d20a47aa0862e6b90d8034aa255caa44f059ef2c07d"
+      sha256: be573fddfa514617b105071ee40a1042f77023c727d0b8d88850ae94f704e1c8
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_cql:
     dependency: transitive
     description:
       name: fhir_r4_cql
-      sha256: fda7af23b82e5d55ea503032361d670650089df62b2d463d8cefc83b84600b5d
+      sha256: "7383a8c637062dd05d28b7b1b97c5d405f147becf253123b97a9ae2019612e28"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_db:
     dependency: transitive
     description:
       name: fhir_r4_db
-      sha256: b44273eeb23bd09709ca7a6508b151737739f1946f44d3f2c40b5f539eff15e9
+      sha256: e8913d0bdbb9715b404f6cd37edc699abd795d742d5b5e1a3115361da07fffc5
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_mapping:
     dependency: transitive
     description:
       name: fhir_r4_mapping
-      sha256: "7f58e001fef5f60062fcb091d4786aee5fa353aba40e5b25b175aabbe9eb3aea"
+      sha256: "922f3cc811934eddfdf4d7e6820418a9929cc5dfd74c6a26f8266d23fd24175f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_path:
     dependency: transitive
     description:
       name: fhir_r4_path
-      sha256: bdd14c40af647e8c3ddf0179f9f13e2996086c993159a54acab7b00d15e90f07
+      sha256: f1432a3025c16b35a0653b4718c809198a5a721eb1afa730878f7fb3b067f425
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_r4_validation:
     dependency: transitive
     description:
       name: fhir_r4_validation
-      sha256: f934a43d7372cae9048c2654914eb0d70f193a1e6ea71f60d64d24e3d15550e1
+      sha256: d7183d0397447eb14b97bfaab004a909a4da7cc763e27711dbe4f5b1dd09c266
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.14.0"
   fhir_validation:
     dependency: transitive
     description:
@@ -1093,10 +1093,10 @@ packages:
     dependency: transitive
     description:
       name: ucum
-      sha256: "4050dc5c4b45fe769ef7e2174b1de055eae3447977024b307ff5e0a3172e3302"
+      sha256: "9e4730ee9b6a847aea20fbbbb4e11eeee0ac14205e1ed70cd3f6ba7a0c87121f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.0"
+    version: "0.9.1"
   url_launcher:
     dependency: "direct main"
     description:
