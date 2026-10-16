@@ -19,18 +19,18 @@ dependencies:
       url: https://github.com/fhir-fli/cicada.git
       path: cicada
       ref: main
-  cql: ^0.7.0
+  cql: ^0.8.0
   crypto: ^3.0.3
   dart_jsonwebtoken: ^3.3.1
   drift: ^2.29.0
-  fhir_db: ^0.15.0
+  fhir_db: ^0.15.1
   fhir_node: ^0.6.1
-  fhir_r4: ^0.13.0
-  fhir_r4_bulk: ^0.13.0
-  fhir_r4_cql: ^0.13.0
-  fhir_r4_mapping: ^0.13.0
-  fhir_r4_path: ^0.13.0
-  fhir_r4_validation: ^0.13.0
+  fhir_r4: ^0.14.0
+  fhir_r4_bulk: ^0.14.0
+  fhir_r4_cql: ^0.14.0
+  fhir_r4_mapping: ^0.14.0
+  fhir_r4_path: ^0.14.0
+  fhir_r4_validation: ^0.14.0
   fhirant_db:
     path: ../fhirant_db
   fhirant_logging:
