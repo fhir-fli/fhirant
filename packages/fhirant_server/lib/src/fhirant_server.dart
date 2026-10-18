@@ -495,7 +495,7 @@ class FhirAntServer {
       )
       // Websocket channel for Subscription. R4 subscription.html: the client
       // connects here, sends `bind :id`, and the server answers `bound :id`.
-      ..get('/ws', websocketHandler(websockets))
+      ..get('/ws', websocketHandler(websockets, dbInterface))
       // Mapping/Transform endpoint
       ..post(
         r'/$transform',
