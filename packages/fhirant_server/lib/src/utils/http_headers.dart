@@ -16,9 +16,26 @@ class FhirHttpHeaders {
   /// Accepts both weak (`W/"ver"`) and strong (`"ver"`) ETags.
   /// Returns `null` if the header is null or cannot be parsed.
   static String? parseETag(String? header) {
-    if (header == null || header.isEmpty) return null;
-    final match = RegExp('(?:W/)?"([^"]+)"').firstMatch(header);
-    return match?.group(1);
+    if (header == null || header.trim().isEmpty) return null;
+    final value = header.trim();
+    // RFC 9110 13.1.1 (rfc-editor.org/rfc/rfc9110.txt, read 2026-10-18,
+    // verbatim): "If the field value is "*", the condition is true if the
+    // origin server has a current representation for the target resource";
+    // "If the field value is a list of entity tags, the condition is true if
+    // any of the listed tags match"; "Otherwise, the condition is false."
+    if (value == '*') return null;
+    // One or more entity tags, `W/"v"` or `"v"`, comma-separated. A list is
+    // compared by its first tag (a limit of this server: the store takes
+    // one version).
+    final tag = RegExp('(?:W/)?"([^"]*)"');
+    final list = RegExp(r'^(?:W/)?"[^"]*"(?:\s*,\s*(?:W/)?"[^"]*")*$');
+    if (list.hasMatch(value)) return tag.firstMatch(value)!.group(1);
+    // A header that names no version matches none: R4B http.html 3.1.0.5,
+    // "If the version id given in the If-Match header does not match, the
+    // server returns a 412". This used to read as no header, and the write
+    // ran unconditionally (REVIEW-2026-10-17 finding 9). The value carries
+    // characters no version id may hold, so it equals none.
+    return 'malformed: $value';
   }
 
   /// Build standard FHIR resource response headers:
