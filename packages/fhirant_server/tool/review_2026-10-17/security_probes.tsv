@@ -1,0 +1,36 @@
+case	scopes	status	types or detail	verdict
+chain to unreadable type	['user/Observation.rs']	200	['Observation']	PASS
+chain discloses an attribute of an unreadable type	['user/Observation.rs']	200	total=2	FAIL
+_include of unreadable type	['user/Observation.rs']	200	['Observation']	PASS
+_include:iterate	['user/Observation.rs']	200	['Observation']	PASS
+_revinclude of unreadable type	['user/Patient.rs']	200	['Patient']	PASS
+_has on unreadable type	['user/Patient.rs']	200	total=2	NOTE
+$everything with Patient scope only	['user/Patient.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to read AuditEvent, Composition, Encounter,	PASS
+$everything Encounter with Observation scope	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Encounter"}]}	PASS
+compartment search via unreadable compartment	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+compartment search of unreadable type	['user/Patient.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Observation"}]}	PASS
+$document with Composition scope only	['user/Composition.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to read Observation, Patient, which this do	PASS
+Group read lists members of an unreadable type	['user/Group.rs']	200	{"resourceType":"Group","id":"g1","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:27:49.419950Z"},"type":"person","actual":true,"name":"LEAKMARKOUT","member":[{"entity":{"reference":"Patient/pat1	NOTE
+Group export with Group scope only	['user/Group.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to export Account, AdverseEvent, AllergyInt	PASS
+system search	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Patient"}]}	PASS
+system search, no _type	['user/Observation.rs']	200	['Observation']	PASS
+POST _search system	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Patient"}]}	PASS
+history system	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"System history returns every resource type, so it requires a u	PASS
+history type of unreadable	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+batch GET of unreadable type	['user/Observation.rs']	200	['-']	PASS
+batch entries for unreadable type	['user/Observation.rs']	200	[('403', [None]), ('403', [None])]	PASS
+conditional reference searches an unreadable type	['user/Observation.cruds']	200	{"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/d3eca1aa-04a8-4946-9ae4-2944897c2f52","resource":{"resourceType":"Observation","id":"d3ec	NOTE
+If-None-Exist chain to unreadable type	['user/Observation.cruds']	412	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"duplicate","diagnostics":"Multiple matches found for If-None-Exist criteria"}]}	NOTE
+$fhirpath on unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"This operation can return data the request does not name, so i	PASS
+$meta of unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+vread of unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+narrative script	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+narrative onclick	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+narrative javascript href	admin	201	{"resourceType":"Patient","id":"abd42f10-bd76-4236-a658-1477b5c62334","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:37:38.509562Z"},"	FAIL
+narrative iframe	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+Binary text/html read Accept=text/html	admin	406	('application/fhir+json; charset=utf-8; fhirVersion=4.3', '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supp')	PASS
+Binary text/html read Accept=*/*	admin	200	('application/fhir+json; charset=utf-8; fhirVersion=4.3', '{"resourceType":"Binary","id":"bin1","meta":{"versionId":"1","lastUpdated":"2026')	PASS
+Binary text/html read Accept=application/fhir+json	admin	200	('application/fhir+json; charset=utf-8; fhirVersion=4.3', '{"resourceType":"Binary","id":"bin1","meta":{"versionId":"1","lastUpdated":"2026')	PASS
+401 headers	none	401	[('content-length', '137'), ('content-type', 'application/fhir+json'), ('date', 'Sun, 18 Oct 2026 03:37:38 GMT'), ('x-content-type-options', 'nosniff'), ('x-frame-options', 'SAMEORIGIN'), ('x-powered-by', 'Dart with package:shelf'), ('x-xss-protection', '1; mode=block')]	NOTE
+400 detail	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"The value \"garbage-date\" is not a valid date for \"date\"."}]}	NOTE
+login garbled detail	none	400	{"error":"Body is not JSON: Unexpected end of input"}	NOTE

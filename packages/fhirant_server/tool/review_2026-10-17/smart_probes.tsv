@@ -1,0 +1,38 @@
+case	rule	expected	observed	verdict
+discovery	conformance.html	read	{'authorization_endpoint': 'http://127.0.0.1:18411/auth/authorize', 'token_endpoint': 'http://127.0.0.1:18411/auth/token', 'code_challenge_methods_supported': ['S256'], 'capabilities': ['launch-standalone', 'authorize-post', 'client-public', 'context-standalone-patient', 'permission-offline', 'permission-patient', 'permission-user', 'permission-v2'], 'grant_types_supported': ['authorization_code',	NOTE
+discovery lists S256 only	SMART servers SHALL support the S256 code_challenge_method and SHALL NOT support the plain method	['S256']	['S256']	PASS
+authorize POST	Authorization Servers SHALL support the use of the HTTP GET and POST methods	302 with code + state	(302, 'https://app.example/cb?code=98f55d60-d82c-4cf1-b3a6-5e5c1c8c5784&state=st-123')	PASS
+state echoed	state: The exact value received from the client	st-123	['st-123']	PASS
+token exchange	SHALL return a JSON object that includes an access token	200 access_token, token_type Bearer, scope, expires_in	(200, ['access_token', 'patient', 'refresh_token', 'role', 'scope', 'token_type', 'username'], 'Bearer', 'patient/*.rs openid fhirUser launch/patient', None)	PASS
+token no-store / no-cache	SHALL include the HTTP "Cache-Control" response header field with a value of "no-store," as well as the "Pragma" response header field with a value of "no-cache."	no-store / no-cache	('no-store', 'no-cache')	PASS
+access token lifetime	Access tokens SHOULD have a valid lifetime no greater than one hour	<= 3600	None	FAIL
+patient context in token response	a parameter like "patient": "123" MAY BE included	pat1	pat1	NOTE
+token works on the FHIR API	Access FHIR API	200	200	PASS
+token aud claim	The resource server also validates that the aud parameter associated with the authorization matches the resource server's own FHIR endpoint	aud present	None	NOTE
+code reuse	authorization code ... single use (RFC 6749 4.1.2: MUST NOT be used more than once)	400 invalid_grant	(400, '{"error":"invalid_grant","error_description":"Authorization code has already been used"}')	PASS
+tokens from a reused code revoked	RFC 6749 4.1.2: SHOULD revoke (when possible) all tokens previously issued based on that authorization code	401	401	PASS
+authorize GET with credentials in query	GET supported (OIDC 3.1.2.1); credentials in a URL are logged	read	(200, '')	NOTE
+missing code_verifier	the EHR SHALL ensure that the code_verifier is present and valid	400	(400, '{"error":"invalid_request","error_description":"code_verifier is required (PKCE was used during authorization)"}')	PASS
+wrong code_verifier	present and valid	400	(400, '{"error":"invalid_grant","error_description":"PKCE code_verifier does not match"}')	PASS
+plain method	SHALL NOT support the plain method	refused	(302, 'https://app.example/cb?error=invalid_request&error_description=code_challenge_method+must+be+S256%3B+%22plain%22+is+not+')	PASS
+no PKCE at all	code_challenge required	refused	(302, 'https://app.example/cb?error=invalid_request&error_description=code_challenge+is+required+%28PKCE%2C+method+S256%29&stat')	PASS
+aud='https://evil.example/fhir'	servers SHALL support the aud parameter (prevents leaking a genuine bearer token to a counterfeit resource server)	refused unless it names this server	(302, 'https://app.example/cb?error=invalid_request&error_description=aud+does+not+name+this+server+%28http%3A%2F%2F127.0.0.1%3')	PASS
+aud=''	servers SHALL support the aud parameter (prevents leaking a genuine bearer token to a counterfeit resource server)	refused unless it names this server	(302, 'https://app.example/cb?error=invalid_request&error_description=aud+is+required&state=st-123')	PASS
+aud='http://127.0.0.1:18411/'	servers SHALL support the aud parameter (prevents leaking a genuine bearer token to a counterfeit resource server)	refused unless it names this server	(302, 'https://app.example/cb?code=92e51e73-bf65-4385-a382-9ed8d58adee9&state=st-123')	PASS
+aud='HTTP://127.0.0.1:18411'	servers SHALL support the aud parameter (prevents leaking a genuine bearer token to a counterfeit resource server)	refused unless it names this server	(302, 'https://app.example/cb?error=invalid_request&error_description=aud+does+not+name+this+server+%28http%3A%2F%2F127.0.0.1%3')	PASS
+redirect_uri other than registered	redirect_uri Must match one of the client's pre-registered redirect URIs	no redirect to evil	(400, '')	PASS
+exchange with a different redirect_uri	redirect_uri: The same redirect_uri used in the initial authorization request	400	(400, '{"error":"invalid_grant","error_description":"redirect_uri does not match"}')	PASS
+exchange by another client_id	code bound to the client	400	(400, '{"error":"invalid_grant","error_description":"client_id does not match"}')	PASS
+redirect_uri 'javascript:alert(1)'	RFC 6749 3.1.2: absolute URI, no fragment	refused	(302, 'javascript:alert(1)?code=9e35d188-5d58-4196-935f-81365b7d6ff3&state=st-123')	FAIL
+redirect_uri 'http://app.example/cb#frag'	RFC 6749 3.1.2: absolute URI, no fragment	refused	(302, 'http://app.example/cb?code=3b66795f-8f5b-4dcd-a20e-792c231f2f41&state=st-123#frag')	FAIL
+redirect_uri 'not a url'	RFC 6749 3.1.2: absolute URI, no fragment	refused	(302, 'not%20a%20url?code=1053ace0-f86f-4285-a9be-940721bd577a&state=st-123')	FAIL
+scope wider than the account	Scope of access authorized ... can be different from the scopes requested	no system/ or user/ for a patient account	(400, None)	PASS
+refresh token issued for offline_access	If granted, the EHR supplies a refresh_token	present	True	NOTE
+refresh response	access_token, token_type, expires_in (required), scope (required)	all four	(200, ['access_token', 'patient', 'refresh_token', 'role', 'scope', 'scopes', 'token_type', 'username'])	FAIL
+refresh no-store	Cache-Control no-store, Pragma no-cache	both	('no-store', 'no-cache')	PASS
+refresh widening scope	this value must be a strict sub-set of the scopes granted in the original launch	refused or not widened	(401, None, '{"error":"invalid_grant","error_description":"Refresh token has been revoked"}')	PASS
+old refresh token after rotation	the app should discard any previous refresh_token	refused if rotated	(401, '{"error":"invalid_grant","error_description":"Refresh token has been revoked"}')	NOTE
+CORS GET /.well-known/smart-configuration	Servers that support purely browser-based apps SHALL enable CORS: discovery from any origin; token and FHIR API from registered origins	read	(200, None)	NOTE
+CORS GET /metadata	Servers that support purely browser-based apps SHALL enable CORS: discovery from any origin; token and FHIR API from registered origins	read	(200, None)	NOTE
+CORS OPTIONS /auth/token	Servers that support purely browser-based apps SHALL enable CORS: discovery from any origin; token and FHIR API from registered origins	read	(204, None)	NOTE
+CORS OPTIONS /Patient	Servers that support purely browser-based apps SHALL enable CORS: discovery from any origin; token and FHIR API from registered origins	read	(204, None)	NOTE

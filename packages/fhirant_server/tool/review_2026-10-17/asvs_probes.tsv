@@ -1,0 +1,83 @@
+asvs	case	observed	verdict
+V1.2.4	injection in Patient?name=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection in Patient?family=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection in Patient?identifier=	[(200, 0), (200, 0), (200, 0), (200, 0), (200, 0), (200, 0)]	PASS
+V1.2.4	injection in Patient?_id=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection in Patient?general-practitioner=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection in Patient?name:contains=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection in Patient?address-city:exact=	[(200, 0), (200, 0), (200, 0), (200, 0), (400, None), (200, 0)]	PASS
+V1.2.4	injection /Patient?_sort=family%27%20DESC--	(200, 2)	PASS
+V1.2.4	injection /Observation?subject:Patient.family=x%27%20OR%201%3D1--	(200, 0)	PASS
+V1.2.4	injection /Patient?_has:Observation:subject:code=x%27%20OR%20%271%27%3D%271	(200, 0)	PASS
+V1.2.4	injection /Patient?name%27--=x	(200, 2)	PASS
+V1.2.4	injection /Observation?value-quantity=1%27%20OR%201%3D1	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid"')	PASS
+V1.2.4	injection /Observation?date=2020%27%20OR%201%3D1	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid"')	PASS
+V1.2.4	store intact after injection probes	(200, 2)	PASS
+V1.3.6	SSRF candidate POST /Patient/$validate	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics"')	NOTE
+V1.3.6	SSRF candidate POST /$validate	(200, '{"resourceType":"OperationOutcome","issue":[{"extension":[{"url":"http://hl7.org/fhir/StructureDefin')	NOTE
+V1.3.6	SSRF candidate GET /ValueSet/$expand	(404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Va')	NOTE
+V1.3.6	SSRF candidate GET /CodeSystem/$lookup	(404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Co')	NOTE
+V1.3.6	SSRF candidate POST /$transform	(404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"No')	NOTE
+V1.3.6	SSRF candidate POST /Library/$evaluate	(404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"No')	NOTE
+V1.3.6	SSRF candidate POST /$cql	(200, '{"resourceType":"Parameters","parameter":[{"name":"Patient","resource":{"resourceType":"Patient","id')	NOTE
+V1.3.6	outbound requests the server made to the client-named URL	[]	PASS
+V1.2.1	authorize page reflects client_id	(200, 'text/html; charset=utf-8', False, "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")	PASS
+V1.2.1	authorize page reflects redirect_uri	(200, 'text/html; charset=utf-8', False, "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")	PASS
+V1.2.1	authorize page reflects scope	(200, 'text/html; charset=utf-8', False, "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")	PASS
+V1.2.1	authorize page reflects state	(200, 'text/html; charset=utf-8', False, "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")	PASS
+V1.2.1	authorize page reflects response_type	(400, 'text/html; charset=utf-8', False, "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")	PASS
+V5.3.2	export file name ..%2F..%2Fdb%2Ffhirant.db	(400, 120, '{"resourceType":"OperationOutcome","issue":[{"severity":"err')	PASS
+V5.3.2	export file name ..%2Fdb%2Ffhirant.db	(400, 120, '{"resourceType":"OperationOutcome","issue":[{"severity":"err')	PASS
+V5.3.2	export file name %2E%2E%2F%2E%2E%2Fserver.log	(400, 120, '{"resourceType":"OperationOutcome","issue":[{"severity":"err')	PASS
+V5.3.2	export file name ....//....//server.log	(404, 15, 'Route not found')	PASS
+V5.3.2	export file name ..%5C..%5Cserver.log	(400, 120, '{"resourceType":"OperationOutcome","issue":[{"severity":"err')	PASS
+V5.3.2	export file name %252E%252E%252Fserver.log	(404, 150, '{"resourceType":"OperationOutcome","issue":[{"severity":"err')	PASS
+V5.3.2	export job id ..%2F..%2Fdb	(400, 117)	PASS
+V5.3.2	export job id ..	(400, 124)	PASS
+V5.3.2	export job id %2E%2E	(400, 124)	PASS
+V13.4.4	method TRACE	(404, b'Route not found')	PASS
+V13.4.4	method CONNECT	(404, b'Route not found')	PASS
+V13.4.4	method PROPFIND	(404, b'Route not found')	PASS
+V13.4.4	method FOO	(404, b'Route not found')	PASS
+V14.3.2	Cache-Control on /Patient/pat1	(200, None)	FAIL
+V14.3.2	Cache-Control on /Observation?subject=Patient/pat1	(200, None)	FAIL
+V14.3.2	Cache-Control on /Patient/pat1/$everything	(200, None)	FAIL
+V15.3.4	14 logins, one socket address, 14 forwarded addresses	[401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 429, 429, 429, 429]	PASS
+V9.1/V9.2	token: HS256 control	200	PASS
+V9.1/V9.2	token: HS384 with the real secret	401	NOTE
+V9.1/V9.2	token: HS512 with the real secret	401	NOTE
+V9.1/V9.2	token: header jwk (attacker key)	200	NOTE
+V9.1/V9.2	token: nbf in the future	401	PASS
+V9.1/V9.2	token: no exp	200	FAIL
+V9.1/V9.2	token: exp as string	401	PASS
+V9.1/V9.2	token: iat far future	200	NOTE
+V9.1/V9.2	token: RS256 header, HMAC body	401	PASS
+V9.1	token of 20,000 characters	401	PASS
+V6.2	register password 'abcdefgh' (8 chars)	(400, '{"error":"Password must be at least 12 characters. Longer passwords are more secure than complex one')	NOTE
+V6.2	register password 'abcdefghijk' (11 chars)	(400, '{"error":"Password must be at least 12 characters. Longer passwords are more secure than complex one')	NOTE
+V6.2	register password 'k7#Lm2$qZx9!' (12 chars)	(201, '{"id":13,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEzLCJ1c2VybmFtZSI6InB3LXAxMiIsI')	NOTE
+V6.2	register password 'correcthorsebat' (15 chars)	(201, '{"id":14,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE0LCJ1c2VybmFtZSI6InB3LXAxNSIsI')	NOTE
+V6.2	register password 'qqqqqq...' (64 chars)	(201, '{"id":15,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6InB3LXA2NCIsI')	NOTE
+V6.2	register password 'wwwwww...' (128 chars)	(201, '{"id":16,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJ1c2VybmFtZSI6InB3LXAxMjgiL')	NOTE
+V6.2	register password 'eeeeee...' (129 chars)	(400, '{"error":"Password must be at most 128 characters."}')	NOTE
+V6.2	register password 'aaaaaaaaaaaaaaaa' (16 chars)	(201, '{"id":17,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE3LCJ1c2VybmFtZSI6InB3LXBhbGwiL')	NOTE
+V6.2	register password '1qaz2wsx3edc4rfv' (16 chars)	(201, '{"id":18,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE4LCJ1c2VybmFtZSI6InB3LXBrYiIsI')	NOTE
+V6.2	register password 'qwertyuiopasdfgh' (16 chars)	(201, '{"id":19,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE5LCJ1c2VybmFtZSI6InB3LXBxIiwic')	NOTE
+V6.2	register password 'pässwörd-über-long' (18 chars)	(201, '{"id":20,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIwLCJ1c2VybmFtZSI6InB3LXB1bmkiL')	NOTE
+V6.2.8	login with first 72 chars / upper-cased / exact	(401, 401, 200)	PASS
+V6.3.8	median ms: unknown user / known user wrong password	(275.0, 350.5)	NOTE
+V10.4.5	rotate, replay old, then use the new one	(200, 401, 401)	PASS
+V10.4.8	refresh exp before/after rotation (absolute cap?)	(1792900503, 1792900505, 2)	FAIL
+V15.3.3	patient-scoped client sets the compartment/failure extensions itself	(403, [])	PASS
+V5.2.1	17 MiB body	413	PASS
+V5.2.1	JSON nested 100,000 deep (195 KB)	(400, 0.1, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"I')	PASS
+V5.2.1	server alive after the deep body	200	PASS
+V1.3.12	catastrophic regex in $fhirpath	(422, 10.0, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"too-costly","diagnostics":"T')	PASS
+V1.3.12	server alive after the regex	200	PASS
+V1.3.12	search value of 5,000 chars	(200, 0.01)	NOTE
+V16.4.1	forged log lines / unparsable JSON lines	(0, 0)	PASS
+V16.2.5	passwords / tokens in server.log	{'password': False, 'token': False}	PASS
+V14.1	file mode db/fhirant.db	0o644	NOTE
+V14.1	file mode db/fhirant.db-shm	0o644	NOTE
+V14.1	file mode db/fhirant.db-wal	0o644	NOTE
+V14.1	file mode data/export/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	0o664	NOTE

@@ -1,0 +1,4 @@
+case	patients exported
+_type=Patient	['pat1', 'pat2']
+_type=Patient&_typeFilter=Patient%3Factive%3Dtrue	[]
+_type=Patient&_typeFilter=Patient%3F_id%3Dpat1	['pat1']

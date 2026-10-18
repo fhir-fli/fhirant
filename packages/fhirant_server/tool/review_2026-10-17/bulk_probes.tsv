@@ -1,0 +1,34 @@
+case	rule	expected	observed	verdict
+kick-off GET	A server SHALL support GET requests	202 + Content-Location	(202, 'http://127.0.0.1:18411/$export-poll-status/c7adbaa9-efe7-498f-9105-3db6ef69faf0')	PASS
+in-progress status	A server SHOULD supply a Retry-After header	Retry-After on 202	(202, None, 'Exporting...')	FAIL
+complete manifest	transactionTime, request, requiresAccessToken, output[type,url], error	all keys	(200, ['error', 'output', 'request', 'requiresAccessToken', 'transactionTime'])	PASS
+Expires header	The server SHOULD return an Expires header	present	Mon, 19 Oct 2026 03:49:26 GMT	PASS
+requiresAccessToken	Value SHALL be true if both the file server and the FHIR API server control access using OAuth 2.0 bearer tokens	True	True	PASS
+file Content-Type	For files in ndjson format, SHALL be application/fhir+ndjson	all application/fhir+ndjson	['application/fhir+ndjson']	PASS
+one type per file	Each file SHALL contain resources of only one type	one type each	[['AuditEvent'], ['Binary'], ['Composition'], ['Encounter'], ['Group'], ['Immunization'], ['Library'], ['NamingSystem'], ['Observation'], ['Patient'], ['Provenance']]	PASS
+only the latest version	The exported data SHALL include only the most recent version	obs1 once, status amended	[('obs1', 'amended')]	PASS
+deleted not in output	Resources that appear in the 'deleted' section ... SHALL NOT appear in 'output'	no Observation/gone	False	PASS
+Binary associated with a patient	Binary Resources whose content is associated with an individual patient SHALL be serialized as DocumentReference	no Binary/b1 in system export, or as DocumentReference	(['AuditEvent', 'Binary', 'Composition', 'Encounter', 'Group', 'Immunization', 'Library', 'NamingSystem', 'Observation', 'Patient', 'Provenance'], ['b1'])	NOTE
+transactionTime	SHALL include any matching resources modified up to and including this instant	present	2026-10-18T03:49:26.000Z	PASS
+poll after DELETE	Following the delete request, when subsequent requests are made to the polling location, the server SHALL return a 404 Not Found error and an associated FHIR OperationOutcome	404 OO	(202, 404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Ex')	PASS
+file after DELETE	a server MAY use the request as a signal that it is safe to remove those from storage	read	404	NOTE
+_outputFormat=application/fhir+ndjson	The server SHALL accept the full content type of application/fhir+ndjson as well as the abbreviated representations application/ndjson and ndjson	202	(202, '{"message":"Export job accepted","jobId":"c5e7e514-21ea-45cd-98db-72fea5248924"}')	PASS
+_outputFormat=application/ndjson	The server SHALL accept the full content type of application/fhir+ndjson as well as the abbreviated representations application/ndjson and ndjson	202	(202, '{"message":"Export job accepted","jobId":"6269ab41-a0c4-4308-8e7f-7aa589a6feda"}')	PASS
+_outputFormat=ndjson	The server SHALL accept the full content type of application/fhir+ndjson as well as the abbreviated representations application/ndjson and ndjson	202	(202, '{"message":"Export job accepted","jobId":"42f61c68-2347-475b-b604-86b0b5ed82a1"}')	PASS
+_outputFormat=text/csv	The server SHALL accept the full content type of application/fhir+ndjson as well as the abbreviated representations application/ndjson and ndjson	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"U')	PASS
+repeated _type	The server SHALL treat the values provided as if they were comma delimited values within a single instance	['Group', 'Patient']	['Group', 'Patient']	PASS
+_type unknown	the server SHOULD return details via a FHIR OperationOutcome resource in an error response	4xx OO	(202, '{"message":"Export job accepted","jobId":"3859aca1-85ee-4566-bcd1-bb71477ee9d9"}')	FAIL
+_since	Resources will be included in the response if their state has changed after the supplied time	['obs2']	['obs2']	PASS
+_since deleted array	When a _since timestamp is supplied ... this array SHOULD be populated	read	None	NOTE
+Group export members only	compartments of the group members	pat1, pat2 only; no obs3	(['pat1', 'pat2'], ['obs1', 'obs2', 'obs2b'])	PASS
+Provenance in Group/Patient export	the server SHALL include all available Provenance resources whose Provenance.target is a resource in the Patient compartment	prov1	[]	FAIL
+Provenance in Patient export	SHALL include all available Provenance ... in a patient level export request	prov1	[]	FAIL
+Binary in Patient export	SHALL be serialized as DocumentReference	no raw Binary/b1	([], 0)	PASS
+patient parameter (POST kick-off)	MAY support POST; a server unable to support patient SHOULD return an error and OO	202 or 4xx OO	(404, 'Route not found')	FAIL
+patient as GET param	patient: POST only in STU2	read	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"This server does not ')	NOTE
+kick-off _elements	A server unable to support it SHOULD return an error and OO	applied or 4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"This server does not ')	NOTE
+kick-off _typeFilter	A server unable to support it SHOULD return an error and OO	applied or 4xx	(202, '{"message":"Export job accepted","jobId":"d2027d5d-edd6-486f-a66b-ddd939326471"}')	NOTE
+kick-off includeAssociatedData	A server unable to support it SHOULD return an error and OO	applied or 4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"This server does not ')	NOTE
+kick-off notAParam	A server unable to support it SHOULD return an error and OO	applied or 4xx	(202, '{"message":"Export job accepted","jobId":"0b9d315c-9124-4803-b15a-0867d60ba4aa"}')	NOTE
+concurrent kick-offs	it SHOULD respond with a 429 Too Many Requests status and a Retry-After header (if it limits)	read	[(202, None), (202, None), (202, None), (202, None)]	NOTE
+kick-off without Prefer	MAY return an error or MAY process	read	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"B')	NOTE

@@ -1,0 +1,9 @@
+case	status	parameter names	recommendations
+$immds-forecast patientId pat2 (no birthDate)	200	immunization,evaluation,recommendation	16
+$immds-forecast patientId fc1 (birthDate 2025-01-01)	200	recommendation	16
+$immds-forecast Parameters, no patient	500		0
+$immds-forecast Parameters, patient resource without birthDate	200	recommendation	16
+$immds-forecast-who patientId pat2 (no birthDate)	200	immunization,evaluation,recommendation	16
+$immds-forecast-who patientId fc1 (birthDate 2025-01-01)	200	recommendation	16
+$immds-forecast-who Parameters, no patient	500		0
+$immds-forecast-who Parameters, patient resource without birthDate	200	recommendation	16

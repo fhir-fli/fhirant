@@ -1,0 +1,17 @@
+case	observed
+invalid status: create, read back status	201	not-a-status
+invalid status: searchable	200	1
+invalid status: $validate of the stored copy	200	{"resourceType":"OperationOutcome","issue":[{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/operationoutcome-issue-line","valueInteger":1},{"url":"http://hl7.org/fhir/StructureDefinition/operationoutcome-issue-col","valueInteger":75}],"severity":"error","code":"processing","diagnostics
+unknown element: create status, read back keys	201	['code', 'id', 'meta', 'resourceType', 'status', 'valueQuantity']	{'value': 1}
+string where decimal is required	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: Invalid argument(s): FhirDecimal only supports numeric input or null, got: six poin
+tx atomic (PUT id mismatch)	400	OperationOutcome	before	0	after	0
+tx atomic (unknown type)	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Transaction failed at entry 1: Bundle entry 1: Inval	after	0
+conditional reference Patient?_id=pat1	200	stored subject:	{'reference': 'Patient?_id=pat1'}
+conditional reference Patient?identifier=urn:none|x	200	stored subject:	{'reference': 'Patient?identifier=urn:none|x'}
+pat1 $everything holds a condref Observation	False
+overlap: stored	200	{'text': 'second'}	2
+If-Match garbage (current version >1)	200
+If-Match "1" (current version >1)	412
+If-Match W/1 (current version >1)	200
+If-Match * (current version >1)	200
+If-Match W/"1", W/"2" (current version >1)	412

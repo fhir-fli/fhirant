@@ -1,0 +1,19 @@
+{
+ "users": {
+  "adm2": 2,
+  "clin": 3,
+  "rdonly": 4,
+  "pat": 5,
+  "patro": 6,
+  "deact": 7,
+  "demo": 8,
+  "pwch": 9,
+  "narrow": 10,
+  "loggedout": 11,
+  "target": 12,
+  "root": 1
+ },
+ "job": "c382c8b5-03bf-471a-8166-c6932e29e98f",
+ "file": "c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson",
+ "audit": "3773d973-561b-4746-8474-a685a4409f49"
+}
