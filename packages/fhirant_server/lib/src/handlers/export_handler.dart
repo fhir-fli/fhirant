@@ -720,6 +720,22 @@ Future<void> _processExport(
             .addAll(patientIds.toSet());
       }
 
+      // The Provenance of what is exported ([_provenanceAbout]).
+      if (typeFilter.isEmpty || typeFilter.contains('Provenance')) {
+        final members = {
+          for (final e in allResourceIds.entries)
+            for (final id in e.value) '${e.key}/$id',
+          for (final id in patientIds) 'Patient/$id',
+        };
+        final about = await _provenanceAbout(
+          dbInterface,
+          (type, id) async => members.contains('$type/$id'),
+        );
+        if (about.isNotEmpty) {
+          allResourceIds.putIfAbsent('Provenance', () => {}).addAll(about);
+        }
+      }
+
       // Fetch and write NDJSON files per resource type
       for (final entry in allResourceIds.entries) {
         final currentJob = await dbInterface.getExportJob(jobId);
@@ -837,6 +853,26 @@ Future<void> _processExport(
           typeName,
           since: since,
         );
+        if (typeName == 'Provenance') {
+          // The Provenance of what is exported ([_provenanceAbout]): a
+          // target that is a Patient, or a member of a Patient compartment.
+          final membersOf = <String, Set<String>>{};
+          memberIds = {
+            ...memberIds,
+            ...await _provenanceAbout(dbInterface, (type, id) async {
+              if (type == 'Patient') {
+                return await dbInterface.getResource(
+                      fhir.R4ResourceType.Patient,
+                      id,
+                    ) !=
+                    null;
+              }
+              final members = membersOf[type] ??=
+                  await dbInterface.compartmentTypeMembers('Patient', type);
+              return members.contains(id);
+            }),
+          };
+        }
         if (memberIds.isEmpty) continue;
       }
 
@@ -913,6 +949,43 @@ Future<void> _processExport(
       );
     }
   }
+}
+
+/// The ids of the stored Provenance resources with a target that
+/// [isExported] (`[type]`, `[id]`) accepts.
+///
+/// Bulk Data Access STU2 export.html (read 2026-10-17, verbatim): "the server
+/// SHALL include all available Provenance resources whose Provenance.target
+/// is a resource in the Patient compartment in a patient level export
+/// request". A Provenance is in the Patient compartment only through
+/// `patient` (a target that is the Patient itself), so the Provenance of a
+/// patient's Observation was left out of Patient and Group exports
+/// (REVIEW-2026-10-17 finding 13). Every Provenance is read once here;
+/// references are taken as `[type]/[id]`, a version suffix dropped, and
+/// anything else (an absolute URL, a contained `#id`) is not a stored
+/// resource of this server and matches nothing.
+Future<Set<String>> _provenanceAbout(
+  FhirAntDb dbInterface,
+  Future<bool> Function(String type, String id) isExported,
+) async {
+  final found = <String>{};
+  await for (final line
+      in dbInterface.exportJson(fhir.R4ResourceType.Provenance)) {
+    final json = jsonDecode(line) as Map<String, dynamic>;
+    for (final target in (json['target'] as List?) ?? const []) {
+      final reference = (target as Map)['reference'];
+      if (reference is! String) continue;
+      final parts = reference.split('/');
+      if (parts.length != 2 && !(parts.length == 4 && parts[2] == '_history')) {
+        continue;
+      }
+      if (await isExported(parts[0], parts[1])) {
+        found.add(json['id'] as String);
+        break;
+      }
+    }
+  }
+  return found;
 }
 
 /// How long a finished export's files stay after it completes, when the
