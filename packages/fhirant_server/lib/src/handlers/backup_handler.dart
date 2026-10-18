@@ -102,10 +102,17 @@ Future<Response> backupHandler(
 /// encrypted Bundle envelope, or a plain FHIR Bundle (collection or
 /// transaction), told apart by its first byte. It is streamed to a
 /// temporary file first, so a multi-gigabyte backup never sits in memory.
+///
+/// With [authenticationEnabled] false the restore brings in the FHIR record
+/// and none of the server's own tables: the caller proved nothing, and the
+/// backup's accounts used to be merged, so anyone on the network could plant
+/// the administrator Secure mode later trusted (REVIEW-2026-10-17, phone
+/// run; `no_accounts_while_auth_off_test.dart`).
 Future<Response> restoreHandler(
   Request request,
-  FhirAntDb dbInterface,
-) async {
+  FhirAntDb dbInterface, {
+  bool authenticationEnabled = true,
+}) async {
   Directory? dir;
   try {
     dir = await Directory.systemTemp.createTemp('fhirant-restore-');
@@ -147,6 +154,7 @@ Future<Response> restoreHandler(
         dbInterface,
         upload.path,
         passphrase: _passphraseHeader(request),
+        withServerState: authenticationEnabled,
       );
     } on BackupSchemaTooNew catch (e) {
       return outcome(400, fhir.IssueType.notSupported, e.toString());

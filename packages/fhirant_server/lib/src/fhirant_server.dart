@@ -467,7 +467,14 @@ class FhirAntServer {
         (Request req) => reindexStatusHandler(req, reindexJobs),
       )
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
-      ..post(r'/$restore', (Request req) => restoreHandler(req, dbInterface))
+      ..post(
+        r'/$restore',
+        (Request req) => restoreHandler(
+          req,
+          dbInterface,
+          authenticationEnabled: !devMode,
+        ),
+      )
       // FHIRPath endpoint - supports GET and POST
       ..get(
         r'/$fhirpath',
@@ -1011,9 +1018,27 @@ class FhirAntServer {
   ///
   /// Injects a synthetic admin auth_user into every request so that
   /// downstream middleware (audit, scope enforcement) still functions.
+  ///
+  /// Account management (`/admin/*`) is refused, 403, as registration is:
+  /// with no one authenticated, the synthetic admin would let anyone on the
+  /// network reset an account's password, reactivate it or raise its role,
+  /// and Secure mode later trusts those accounts (REVIEW-2026-09-08 row 13;
+  /// REVIEW-2026-10-17, phone run).
   Middleware _devModeMiddleware() {
     return (Handler innerHandler) {
       return (Request request) async {
+        if (request.url.path == 'admin' ||
+            request.url.path.startsWith('admin/')) {
+          return Response(
+            403,
+            body: jsonEncode({
+              'error': 'Account management is disabled while '
+                  'authentication is off; accounts are provisioned by the '
+                  'operator.',
+            }),
+            headers: {'Content-Type': 'application/json'},
+          );
+        }
         final devUser = <String, dynamic>{
           'sub': 'dev-mode',
           'username': 'dev-mode',

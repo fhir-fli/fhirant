@@ -437,6 +437,18 @@ class FhirAntDb extends FhirDb {
   /// The cipher scheme every FHIRant database and backup is written with.
   static const String cipherScheme = storeCipherScheme;
 
+  /// The tables this server keeps about itself rather than about patients:
+  /// every table [_createUsersTable] and its neighbours create here, as
+  /// opposed to the FHIR record fhir_db holds.
+  static const serverStateTables = {
+    'users',
+    'oauth_clients',
+    'export_jobs',
+    'authorization_codes',
+    'spec_loads',
+    'revoked_tokens',
+  };
+
   /// Writes every table of this database to [path] as a SQLite file
   /// encrypted under [passphrase], streamed by SQLite: `ATTACH … KEY` then
   /// `INSERT INTO bk.t SELECT * FROM main.t` per table, `user_version`
@@ -573,7 +585,19 @@ class FhirAntDb extends FhirDb {
   /// ([BackupSchemaTooNew]). A wrong passphrase, or a file that is not a
   /// backup, is [BackupUnreadable]. Returns the number of resources
   /// restored.
-  Future<int> restoreEncrypted(String path, String passphrase) async {
+  ///
+  /// With [withServerState] false only the FHIR record comes in: the
+  /// [serverStateTables] (accounts, OAuth client pins, authorization codes,
+  /// revoked tokens, export jobs, specification loads) are left as they are.
+  /// A server running with authentication off restores that way, since its
+  /// caller proved nothing (fhirant REVIEW-2026-10-17, phone run: a backup
+  /// restored over the network planted the administrator Secure mode then
+  /// trusted).
+  Future<int> restoreEncrypted(
+    String path,
+    String passphrase, {
+    bool withServerState = true,
+  }) async {
     if (passphrase.isEmpty) {
       throw ArgumentError.value(passphrase, 'passphrase', 'must not be empty');
     }
@@ -693,14 +717,15 @@ class FhirAntDb extends FhirDb {
         await customStatement(
           'INSERT OR IGNORE INTO main.resources SELECT * FROM bk.resources',
         );
-        if (backupTables.contains('users')) {
+        if (withServerState && backupTables.contains('users')) {
           await _mergeUsers();
         }
         for (final table in tables) {
           if (table == 'resources' ||
               table == 'users' ||
               searchTables.contains(table) ||
-              !backupTables.contains(table)) {
+              !backupTables.contains(table) ||
+              (!withServerState && serverStateTables.contains(table))) {
             continue;
           }
           await customStatement(
