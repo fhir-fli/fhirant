@@ -70,6 +70,18 @@ Future<Response> _handleForecast(
         );
       }
 
+      // ImmDSForecastOperation 1.0.0 (package hl7.fhir.us.immds 1.0.0, read
+      // 2026-10-18): input `patient`, 1..1, a Patient. Without one the engine
+      // threw and this answered 500 (REVIEW-2026-10-17 finding 15).
+      if (!_hasPatientResource(bodyJson)) {
+        return outcome(
+          400,
+          fhir.IssueType.required_,
+          'The patient parameter (a Patient resource, or patientId naming '
+          'a stored one) is required',
+        );
+      }
+
       final result = forecastFromMap(bodyJson, mode: mode);
 
       FhirantLogging().logInfo(
