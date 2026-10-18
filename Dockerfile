@@ -54,7 +54,10 @@ EXPOSE 8080
 # for use", "1: unhealthy - the container isn't working correctly", "2:
 # reserved - don't use this exit code"; hence `|| exit 1`, since curl's
 # own failures are 7, 22, 28 and so on.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+# start-period: a first boot loads the FHIR specification before the
+# server listens, 31 s measured 2026-10-18 (REVIEW-2026-10-17 finding 20);
+# 90 s keeps a slower host's first boot from counting as failures.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s \
   CMD curl -fsS http://localhost:8080/health || exit 1
 
 CMD ["/app/bin/server", "--port", "8080", "--db-path", "/data"]
