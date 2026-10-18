@@ -38,6 +38,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   very_good_analysis: ^10.0.0
+  xml: ^6.5.0
 hooks:
   user_defines:
     sqlite3:
