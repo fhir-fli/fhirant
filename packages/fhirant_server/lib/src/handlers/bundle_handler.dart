@@ -129,6 +129,12 @@ Future<Response> _processTransaction(
   // transaction — a 100-entry Bundle goes from seconds to well under one.
   int? failedIndex;
   Object? failure;
+  // R4B http.html 3.1.0.11.2 (read whole 2026-10-17): "If any resource
+  // identities (including resolved identities from conditional
+  // update/delete) overlap in steps 1-3, then the transaction SHALL fail."
+  // Each write's identity, as resolved, against the entry that wrote it
+  // (REVIEW-2026-10-17 finding 10: two PUTs of one id ran and the last won).
+  final writtenBy = <String, int>{};
   try {
     await dbInterface.transaction<void>(() async {
       for (final i in order) {
@@ -145,6 +151,18 @@ Future<Response> _processTransaction(
             assignedId: assignedIds[i],
             transaction: true,
           );
+          final identity = _writtenIdentity(operation);
+          if (identity != null) {
+            final earlier = writtenBy[identity];
+            if (earlier != null) {
+              throw BundleEntryException(
+                400,
+                'Bundle entry $i: $identity is also changed by entry '
+                '$earlier; a transaction may change a resource once',
+              );
+            }
+            writtenBy[identity] = i;
+          }
           operations.add(operation);
           resultByIndex[i] = operation.resultEntry;
           operationByIndex[i] = operation;
@@ -1382,6 +1400,24 @@ Future<void> _notify(
       await subscriptions.onResourceChanged(resource);
     }
   }
+}
+
+/// `[type]/[id]` of the resource [operation] changed, or null when it
+/// changed none: a GET or HEAD, a conditional create that found its match
+/// (answered 200, nothing written), or a conditional delete with no id.
+String? _writtenIdentity(_BundleOperation operation) {
+  final id = operation.resourceId;
+  if (id == null) return null;
+  switch (operation.method) {
+    case fhir.HTTPVerb.gET:
+    case fhir.HTTPVerb.hEAD:
+      return null;
+    case fhir.HTTPVerb.pOST:
+      if (operation.createdResource == null) return null;
+    default:
+      break;
+  }
+  return '${operation.resourceType}/$id';
 }
 
 class _BundleOperation {
