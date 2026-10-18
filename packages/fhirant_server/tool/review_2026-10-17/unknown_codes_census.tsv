@@ -1,0 +1,3 @@
+file	flags
+KNOWN POSITIVE	[Observation.status = not-a-status]
+TOTAL	files 3022, parsed 3012, flagged 0
