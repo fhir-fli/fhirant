@@ -70,7 +70,7 @@ packages:
     description:
       path: cicada
       ref: main
-      resolved-ref: a90e13adb7c507dd7c5ea0fb9aad11d433ccb0f2
+      resolved-ref: d2c93b3a45538a4980906a0473e48dc38c673168
       url: "https://github.com/fhir-fli/cicada.git"
     source: git
     version: "0.0.1"
