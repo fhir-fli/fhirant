@@ -1,0 +1,69 @@
+# Phone run, 2026-10-18. OnePlus CPH2749, Android 16 (SDK 36), on USB and
+# the same Wi-Fi as the laptop (phone 192.168.8.107, laptop 192.168.8.193).
+# App: `flutter build apk --release` of main d7bd309, installed over the
+# 2026-09-21 test build (`adb install -r`, data kept). Driven by adb input
+# and `uiautomator dump` (screencap is black: the window is FLAG_SECURE).
+# Checklist: OWASP MASVS 2.1.0 (OWASP/masvs release v2.1.0,
+# OWASP_MASVS.yaml, 24 controls). Commands as run, results as measured.
+
+## Static: merged manifest of the release APK (aapt2 dump xmltree)
+minSdkVersion=24 targetSdkVersion=36
+allowBackup=false; no dataExtractionRules            -> fixed, PR #65
+exported=true: MainActivity (LAUNCHER)
+               flutter_foreground_task RebootReceiver (BOOT_COMPLETED,
+                 MY_PACKAGE_REPLACED, QUICKBOOT_POWERON)
+               androidx ProfileInstallReceiver (permission android.permission.DUMP)
+exported=false: ForegroundService, RestartReceiver, ShareFileProvider,
+                SharePlusPendingIntent, url_launcher WebViewActivity,
+                InitializationProvider
+signer: CN=FHIR-FLI, SHA-256 977dd55d...ead28
+app lock file: 163 packages; analytics/crash/ads SDK names (firebase,
+  analytics, crashlytics, sentry, admob): 0 (same search finds sqlite3 and
+  flutter_secure_storage: 2)
+
+## Window flags (dumpsys window windows)
+MainActivity fl=... SECURE ...  (set in MainActivity.kt)
+
+## Boot receiver, from the shell
+am broadcast -a android.intent.action.QUICKBOOT_POWERON -n dev.fhirfli.fhirant.app/com.pravera.flutter_foreground_task.service.RebootReceiver
+  -> result=0; after 8 s no listener on 8080 (/proc/net/tcp, tcp6), no service
+
+## Experimentation mode (the state the old install was left in)
+GET /health 200, GET /metadata 200, GET /Patient?_summary=count 200 (no token: by design)
+certificate CN=localhost, RSA 2048, sha256WithRSAEncryption,
+  2026-09-21 -> 2036-09-18, SHA-256 C7:7F:68:...:7C:F4 (= the app's screen)
+TLS (openssl s_client -cipher DEFAULT@SECLEVEL=0):
+  tls1 refused, tls1_1 refused, tls1_2 ECDHE-RSA-AES256-GCM-SHA384, tls1_3 TLS_CHACHA20_POLY1305_SHA256
+
+## System log (logcat -c; requests; logcat -d)
+create Patient "Qorvexpii Marlobent" 201; search name=Qorvexpii 200;
+bad PUT 400; garbled POST 400; forecast without birthDate 422
+logcat: 173 lines, 0 contain qorvexpii|marlobent; 0 lines with the app's
+  JSON log ('"level"'); the app pid's framework lines do appear (88 at
+  launch), so the instrument sees the process
+(probe Patient deleted afterwards: 204, search total 0)
+
+## Server log content (desktop CLI of d7bd309, --dev-mode, same requests)
+stdout 29 lines, 1 names the probe value:
+  "Bundle entry 0: Code(s) not in the required value set: Patient.gender = Marlobent"
+search terms are not logged (the request line carries the path only)
+POST $immds-forecast with Immunization occurrenceDateTime "bad" -> 500   -> fixed, PR #64
+POST $immds-forecast with an Immunization without id -> 500
+  (cicada vax_dose.dart:34 `immunization.id!`)                            -> fixed, cicada #4 + PR #64
+Immunization dated only by occurrenceString -> 200, dated 2999-01-01       -> fixed, cicada #4 + PR #64
+
+## Planted administrator, Experimentation mode, from the laptop
+POST /auth/register {"role":"admin",...}            -> 403 (REVIEW-2026-09-08 row 13 holds)
+desktop CLI, FHIRANT_ADMIN_USERNAME=lanattacker, POST /$backup -> 200, 139,264 bytes
+GET /auth/status (phone) before: {"firstUser":true}
+POST /$restore (phone), no credential, that backup -> 200
+GET /auth/status after:  {"firstUser":false}
+operator (Grey, on the phone): Stop, switch to Secure -> no "Create admin account" dialog
+phone in Secure mode: GET /Patient (no token) 401
+  POST /auth/login lanattacker -> 200; GET /Patient with its token -> 200
+  GET /admin/users -> [lanattacker admin active]  (the only account)  -> fixed, PR #63
+cleanup: phoneadmin registered through lanattacker (201); lanattacker
+  deactivated (200); its login now 401, its old token 401
+
+## Phone settings touched and restored
+screen_off_timeout 60000 -> 1800000 -> 60000; stay_on_while_plugged_in 2 (untouched)
