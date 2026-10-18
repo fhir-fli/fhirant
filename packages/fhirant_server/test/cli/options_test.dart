@@ -22,6 +22,15 @@ void main() {
     expect(o.auditRetention, isNull, reason: 'no retention unless set');
   });
 
+  // REVIEW-2026-10-17 finding 1: the export directory defaulted to
+  // `data/export` under the working directory. The Docker image's working
+  // directory is /root, which its user cannot write, so every export
+  // failed. It belongs with the store the CLI was told to use.
+  test('export files go under --db-path, not the working directory', () {
+    expect(resolve([]).exportDir, 'data/db/export');
+    expect(resolve(['--db-path', '/data']).exportDir, '/data/export');
+  });
+
   test('the config file sets what the command line did not', () {
     final o = resolve(
       ['--config', 'server.yaml'],
