@@ -14,6 +14,11 @@ JWT_SECRET="test-jwt-secret"
 BASE="http://localhost:$PORT"
 PASS=0
 FAIL=0
+# A first boot loads the FHIR specification before the server listens:
+# 31 s measured 2026-10-18 on the review desktop (REVIEW-2026-10-17 finding
+# 20, tool/review_2026-10-17/docker_probe.txt), and this script used to give
+# up at 30. Four times that, so a slower machine is not a failure.
+BOOT_WAIT=120
 
 # X-Forwarded-For is OVERWRITTEN by the server with the connection address
 # (_trustedClientIpMiddleware), so every request here shares one rate-limit
@@ -75,7 +80,7 @@ docker run -d --name "$CONTAINER_NAME" \
 # --- Wait for healthy (uses separate IP so probes don't eat test rate-limit) ---
 echo "=== Waiting for server to be ready ==="
 READY=false
-for i in $(seq 1 30); do
+for i in $(seq 1 "$BOOT_WAIT"); do
   if curl -sf -H "X-Forwarded-For: $PROBE_IP" "$BASE/metadata" >/dev/null 2>&1; then
     READY=true
     echo "  Server ready after ${i}s"
@@ -85,7 +90,7 @@ for i in $(seq 1 30); do
 done
 
 if [ "$READY" = false ]; then
-  echo "FAIL: Server did not start within 30s"
+  echo "FAIL: Server did not start within ${BOOT_WAIT}s"
   echo "=== Container logs ==="
   docker logs "$CONTAINER_NAME"
   exit 1
@@ -341,7 +346,7 @@ docker run -d --name "$SEED_CONTAINER" \
   -e "FHIRANT_ADMIN_PASSWORD=SeedPass123!" \
   "$IMAGE_NAME" >/dev/null
 SEED_READY=false
-for i in $(seq 1 30); do
+for i in $(seq 1 "$BOOT_WAIT"); do
   if curl -sf "$SEED_BASE/metadata" >/dev/null 2>&1; then
     SEED_READY=true
     break
@@ -349,7 +354,7 @@ for i in $(seq 1 30); do
   sleep 1
 done
 if [ "$SEED_READY" = false ]; then
-  echo "  FAIL: seeded container did not start within 30s"
+  echo "  FAIL: seeded container did not start within ${BOOT_WAIT}s"
   docker logs "$SEED_CONTAINER"
   FAIL=$((FAIL + 1))
 else
