@@ -82,6 +82,9 @@ Future<Response> _handleForecast(
         );
       }
 
+      final noBirthDate = _birthDateRefusal(bodyJson);
+      if (noBirthDate != null) return noBirthDate;
+
       final result = forecastFromMap(bodyJson, mode: mode);
 
       FhirantLogging().logInfo(
@@ -109,6 +112,9 @@ Future<Response> _handleForecast(
           'valueDate': assessmentDate,
         });
       }
+
+      final noBirthDate = _birthDateRefusal(parameters);
+      if (noBirthDate != null) return noBirthDate;
 
       final result = forecastFromMap(parameters, mode: mode);
 
@@ -151,6 +157,31 @@ class PatientNotFound implements Exception {
 }
 
 /// Check if the Parameters resource already contains a Patient resource.
+/// A 422 when the forecast's Patient has no birthDate, else null.
+///
+/// CDSi Logic Specification v4.6 gives Date of Birth no assumed value
+/// (Tables 5-2, 6-14, 7-2: "Assumed Value if Empty" "-") and computes every
+/// age date from it (Table 3-6, CALCDTAGE-1..5). The engine used to assume
+/// 1900-01-01 and answer a full forecast (REVIEW-2026-10-17 finding 7).
+Response? _birthDateRefusal(Map<String, dynamic> params) {
+  for (final p in (params['parameter'] as List<dynamic>?) ?? const []) {
+    if (p is! Map<String, dynamic>) continue;
+    final resource = p['resource'];
+    if (resource is Map<String, dynamic> &&
+        resource['resourceType'] == 'Patient') {
+      final birthDate = resource['birthDate'];
+      if (birthDate is String && birthDate.isNotEmpty) return null;
+      return outcome(
+        422,
+        fhir.IssueType.businessRule,
+        'The Patient has no birthDate; an immunization forecast is computed '
+        'from the date of birth (CDSi assumes none)',
+      );
+    }
+  }
+  return null;
+}
+
 bool _hasPatientResource(Map<String, dynamic> params) {
   final paramList = params['parameter'] as List<dynamic>? ?? [];
   return paramList.any((p) {
