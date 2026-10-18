@@ -52,7 +52,16 @@ void main() {
     final started = Stopwatch()..start();
     final timer = Future<void>.delayed(const Duration(milliseconds: 100))
         .then((_) => started.elapsedMilliseconds);
-    final response = cqlHandler(cql(defines(4000)), db);
+    // An explicit deadline: what this test asserts is the timer, and 4,000
+    // defines translate in 5.2-5.8 s with no other load (measured
+    // 2026-10-18, tool/review_2026-10-17/cql_deadline_timing.tsv), close
+    // to the 10 s default, so under the parallel suite the translation was
+    // killed and the 200 below failed.
+    final response = cqlHandler(
+      cql(defines(4000)),
+      db,
+      deadline: const Duration(seconds: 60),
+    );
     final firedAt = await timer;
     expect(firedAt, lessThan(1000), reason: 'the timer waited $firedAt ms');
     expect((await response).statusCode, 200);
