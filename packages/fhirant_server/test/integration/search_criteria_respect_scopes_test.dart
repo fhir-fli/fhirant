@@ -296,6 +296,46 @@ void main() {
     expect(text, contains('chain'));
   });
 
+  test(
+      'a transaction conditional reference whose search chains into an '
+      'unsearchable type is 403', () async {
+    await db.saveResource(
+      fhir.Encounter(
+        id: 'e1'.toFhirString,
+        status: fhir.EncounterStatus.finished,
+        class_: fhir.Coding(code: 'AMB'.toFhirCode),
+        subject: fhir.Reference(reference: 'Patient/p1'.toFhirString),
+      ),
+    );
+    final token = await issueTestToken(
+      db,
+      username: 'enc',
+      scopes: ['user/Observation.cruds', 'user/Encounter.rs'],
+    );
+    Future<Response> send(String reference) => call(
+          'POST',
+          '/',
+          token,
+          body: {
+            'resourceType': 'Bundle',
+            'type': 'transaction',
+            'entry': [
+              {
+                'resource': {
+                  ...observation,
+                  'encounter': {'reference': reference},
+                },
+                'request': {'method': 'POST', 'url': 'Observation'},
+              },
+            ],
+          },
+        );
+    final control = await send('Encounter?_id=e1');
+    expect(control.statusCode, 200, reason: await control.readAsString());
+    final r = await send('Encounter?subject:Patient.family=Secretname');
+    expect(r.statusCode, 403, reason: await r.readAsString());
+  });
+
   group('controls', () {
     test('a plain search on the granted type still works', () async {
       final r = await call('GET', '/Observation?code=hiv', obsOnly);
