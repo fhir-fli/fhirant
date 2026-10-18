@@ -268,6 +268,36 @@ assert_status "PUT /Patient returns 200" 200 "$STATUS"
 assert_contains "Updated patient has new given name" '"Updated"' "$BODY"
 echo ""
 
+# --- Test 8b: bulk export (REVIEW-2026-10-17 finding 1) ---
+# The export directory used to be relative to the working directory, /root
+# in this image, which the server's user cannot write: every export failed
+# with 500 "Export failed". It now lives under --db-path (/data).
+echo "=== Test: Bulk export ==="
+LOCATION=$(curl -s -D - -o /dev/null "$BASE/\$export?_type=Patient" \
+  -H "X-Forwarded-For: $TEST_IP" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/fhir+json" \
+  -H "Prefer: respond-async" \
+  | grep -i '^content-location:' | tr -d '\r' | awk '{print $2}')
+EXPORT_STATUS=none
+MANIFEST=""
+for i in $(seq 1 30); do
+  RESPONSE=$(curl -s -w "\n%{http_code}" "$LOCATION" \
+    -H "X-Forwarded-For: $TEST_IP" \
+    -H "Authorization: Bearer $TOKEN")
+  EXPORT_STATUS=$(echo "$RESPONSE" | tail -1)
+  MANIFEST=$(echo "$RESPONSE" | head -n -1)
+  [ "$EXPORT_STATUS" = "202" ] || break
+  sleep 1
+done
+assert_status "the export completes" 200 "$EXPORT_STATUS"
+FILE_URL=$(echo "$MANIFEST" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FILE_URL" \
+  -H "X-Forwarded-For: $TEST_IP" \
+  -H "Authorization: Bearer $TOKEN")
+assert_status "the export file downloads" 200 "$STATUS"
+echo ""
+
 # Switch to second IP for remaining requests to stay within rate limit
 # --- Test 9: Check history ---
 echo "=== Test: Patient history ==="
