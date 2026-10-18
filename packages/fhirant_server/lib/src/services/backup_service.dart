@@ -70,10 +70,14 @@ class BackupService {
   /// [createFile], an encrypted Bundle envelope from [create], or a plain
   /// FHIR Bundle, told apart by the first byte (JSON starts with `{`; a
   /// SQLCipher file starts with its random salt).
+  ///
+  /// [withServerState] is [FhirAntDb.restoreEncrypted]'s: false brings in
+  /// the FHIR record only. A Bundle carries nothing else in any case.
   static Future<BackupRestoreResult> restoreFile(
     FhirAntDb db,
     String path, {
     String? passphrase,
+    bool withServerState = true,
   }) async {
     if (await isJsonFile(path)) {
       return restore(
@@ -88,7 +92,11 @@ class BackupService {
       );
     }
     try {
-      final restored = await db.restoreEncrypted(path, passphrase);
+      final restored = await db.restoreEncrypted(
+        path,
+        passphrase,
+        withServerState: withServerState,
+      );
       return BackupRestoreResult(saved: restored, failures: const []);
     } on BackupUnreadable catch (e) {
       throw BackupDecryptionException(e.toString());
