@@ -378,30 +378,57 @@ void main() {
       final set = ((b['entry'] as List).first as Map)['resource'] as Map;
       expect(set['total'], 1, reason: 'POSTs run before GETs');
     });
-    test('a DELETE runs before a PUT of the same id', () async {
+    // This used to DELETE and PUT the same id in one transaction. The same
+    // section of R4B http.html (Transaction Processing Rules, read whole
+    // 2026-10-17) says such a transaction SHALL fail ("If any resource
+    // identities ... overlap in steps 1-3"; REVIEW-2026-10-17 finding 10,
+    // transaction_identity_overlap_test.dart), so the order is now shown
+    // without an overlap: a conditional DELETE and a PUT of a NEW resource
+    // its criteria would also match. Had the DELETE run after the PUT, the
+    // new resource would be gone.
+    test('a DELETE runs before a PUT', () async {
+      await send(
+        'PUT',
+        '/Observation/old',
+        body: {
+          'resourceType': 'Observation',
+          'id': 'old',
+          'status': 'final',
+          'code': {'text': 'order-probe'},
+        },
+      );
       final r = await send(
         'POST',
         '/',
         body: tx([
           {
             'resource': {
-              'resourceType': 'Patient',
-              'id': 'p1',
-              'name': [
-                {'family': 'Rewritten'},
-              ],
+              'resourceType': 'Observation',
+              'id': 'new',
+              'status': 'final',
+              'code': {'text': 'order-probe'},
             },
-            'request': {'method': 'PUT', 'url': 'Patient/p1'},
+            'request': {'method': 'PUT', 'url': 'Observation/new'},
           },
           {
-            'request': {'method': 'DELETE', 'url': 'Patient/p1'},
+            'request': {
+              'method': 'DELETE',
+              'url': 'Observation?code:text=order-probe',
+            },
           },
         ]),
       );
       await json(r, 200);
-      final p1 = (await db.getResource(fhir.R4ResourceType.Patient, 'p1'))!
-          as fhir.Patient;
-      expect(p1.name?.first.family?.valueString, 'Rewritten');
+      expect(
+        await db.getResource(fhir.R4ResourceType.Observation, 'new'),
+        isNotNull,
+        reason: 'the PUT ran after the DELETE',
+      );
+      expect(
+        await db.getResource(fhir.R4ResourceType.Observation, 'old'),
+        isNull,
+        reason: 'the DELETE removed what was there before',
+      );
     });
   });
 
