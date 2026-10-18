@@ -39,9 +39,17 @@ class JwtService {
   /// for [user], carrying its id, name, role, patient context and current
   /// token generation, and [scopes]. Before 2026-09-22 the pair was minted
   /// at five sites, and registration's carried no generation.
+  ///
+  /// [notAfter] caps both tokens' lifetimes: a refresh passes the presented
+  /// refresh token's own expiry, so the session ends where the login set it
+  /// however often it is refreshed. OWASP ASVS 5.0.0 V10.4.8 (read
+  /// 2026-10-17): "refresh tokens have an absolute expiration, including if
+  /// sliding refresh token expiration is applied"; each rotation used to
+  /// grant a fresh 7 days (REVIEW-2026-10-17 finding 17).
   ({String access, String refresh}) issueSession(
     User user, {
     required List<String> scopes,
+    DateTime? notAfter,
   }) =>
       (
         access: generateToken(
@@ -51,6 +59,7 @@ class JwtService {
           scopes: scopes,
           patientId: user.patientId,
           generation: user.tokenGeneration,
+          notAfter: notAfter,
         ),
         refresh: generateRefreshToken(
           userId: user.id,
@@ -59,8 +68,16 @@ class JwtService {
           scopes: scopes,
           patientId: user.patientId,
           generation: user.tokenGeneration,
+          notAfter: notAfter,
         ),
       );
+
+  /// [lifetime], shortened so that it ends no later than [notAfter].
+  static Duration _capped(Duration lifetime, DateTime? notAfter) {
+    if (notAfter == null) return lifetime;
+    final left = notAfter.difference(DateTime.now());
+    return left < lifetime ? left : lifetime;
+  }
 
   String generateToken({
     required int userId,
@@ -69,6 +86,7 @@ class JwtService {
     List<String>? scopes,
     String? patientId,
     int generation = 0,
+    DateTime? notAfter,
   }) {
     final jwt = JWT({
       'userId': userId,
@@ -82,7 +100,7 @@ class JwtService {
     });
     return jwt.sign(
       SecretKey(_secret),
-      expiresIn: _tokenLifetime,
+      expiresIn: _capped(_tokenLifetime, notAfter),
     );
   }
 
@@ -97,6 +115,7 @@ class JwtService {
     List<String>? scopes,
     String? patientId,
     int generation = 0,
+    DateTime? notAfter,
   }) {
     final jwt = JWT({
       'userId': userId,
@@ -110,7 +129,7 @@ class JwtService {
     });
     return jwt.sign(
       SecretKey(_secret),
-      expiresIn: _refreshTokenLifetime,
+      expiresIn: _capped(_refreshTokenLifetime, notAfter),
     );
   }
 
