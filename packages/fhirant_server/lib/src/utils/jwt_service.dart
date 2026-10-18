@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_db/fhirant_db.dart' show User;
@@ -8,6 +9,17 @@ import 'package:fhirant_db/fhirant_db.dart' show User;
 /// algorithm-substitution attacks — most importantly a forged token with
 /// `alg: none`, and HMAC/RSA confusion.
 const JWTAlgorithm _pinnedAlgorithm = JWTAlgorithm.HS256;
+
+final Random _random = Random.secure();
+
+/// A fresh `jti` (RFC 7519 §4.1.7, read 2026-10-18: the claim "provides a
+/// unique identifier for the JWT"): 128 random bits, base64url. Without it
+/// two sessions of one account minted in the same second were the same
+/// string, so revoking one by its hash revoked the other (REVIEW-2026-10-17
+/// finding 5).
+String _newJti() => base64Url
+    .encode(List<int>.generate(16, (_) => _random.nextInt(256)))
+    .replaceAll('=', '');
 
 /// Service for generating and verifying JWT tokens.
 class JwtService {
@@ -66,6 +78,7 @@ class JwtService {
       if (patientId != null) 'patient': patientId,
       // The account's token generation at issue (auth/token_bound.dart).
       'gen': generation,
+      'jti': _newJti(),
     });
     return jwt.sign(
       SecretKey(_secret),
@@ -93,6 +106,7 @@ class JwtService {
       if (scopes != null) 'scope': scopes.join(' '),
       if (patientId != null) 'patient': patientId,
       'gen': generation,
+      'jti': _newJti(),
     });
     return jwt.sign(
       SecretKey(_secret),
