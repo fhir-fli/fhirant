@@ -58,6 +58,12 @@ class ServerOptions {
   /// authentication on.
   final bool allowPublicKey;
 
+  /// Where bulk export files are written: beside the store, under
+  /// [dbPath]. The server's own default is relative to the working
+  /// directory, which in the Docker image is /root and not writable by its
+  /// user, so every export failed there (REVIEW-2026-10-17 finding 1).
+  String get exportDir => '$dbPath/export';
+
   /// The parser, shared by the binary (for `--help`) and [resolve].
   static ArgParser parser() => ArgParser()
     ..addOption('port', abbr: 'p', defaultsTo: '8080', help: 'Server port')

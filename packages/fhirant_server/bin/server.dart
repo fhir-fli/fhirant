@@ -172,6 +172,7 @@ void main(List<String> arguments) async {
     baseUrl: options.baseUrl,
     bootstrapToken: bootstrapToken,
     auditRetention: options.auditRetention,
+    exportDir: options.exportDir,
   );
 
   if (devMode) {
