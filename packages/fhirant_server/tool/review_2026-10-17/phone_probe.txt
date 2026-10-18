@@ -76,5 +76,5 @@ POST /auth/login phoneadmin 200; GET /Patient?_summary=count with its token 200
 POST /auth/login lanattacker 401; POST /$restore (no token) 401
 am force-stop: pidof empty, /health no answer (000)
 relaunch: "Running · Secure"; GET /Patient (no token) 401; the token from before 200
-not done: an Android kill that restarts only the service (needs root)
+not done: an Android kill that restarts only the service (unplug, no Recents lock, ~7 min: tool/background_survival run 8)
 screen_off_timeout 60000 -> 1800000 -> 60000
