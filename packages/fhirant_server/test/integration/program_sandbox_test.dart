@@ -23,7 +23,13 @@ void main() {
   late FhirAntDb db;
   late Handler handler;
   late String token;
-  const deadline = Duration(milliseconds: 300);
+  // 3 s. Measured 2026-10-18 at a load average of 14-25 on 16 cores
+  // (tool/review_2026-10-17/sandbox_timing.tsv, cql_deadline_timing.tsv):
+  // the slow programs run 22 s (FHIRPath and $transform at depth 7) and
+  // 46-49 s (the CQL cartesian define); the quick ones 23-79 ms warm and up
+  // to 578 ms cold. At 300 ms the cold quick ones missed it under load and
+  // the tests failed about one full run in three.
+  const deadline = Duration(seconds: 3);
 
   setUp(() async {
     db = FhirAntDb(NativeDatabase.memory());
@@ -97,18 +103,6 @@ void main() {
     // A define whose evaluation cannot finish in time: a seven-way
     // cartesian query, 10^7 rows.
     //
-    // Its own deadline, 5 s, not the group's 300 ms. Measured 2026-10-18
-    // with no other load (tool/review_2026-10-17/cql_deadline_timing.tsv):
-    // the slow define runs 46-49 s, the `1 + 1` control 27-79 ms warm and
-    // 578 ms cold, so under the parallel suite the control passed 300 ms
-    // and this test failed about one run in three. 5 s leaves the slow one
-    // nine times short and the control several times clear.
-    final server = FhirAntServer(
-      db,
-      jwtSecret: testJwtSecret,
-      programDeadline: const Duration(seconds: 5),
-    );
-    final handler = server.createHandler(server.createRouter());
     const ten = '{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}';
     const slow = "library P version '1.0.0'\n"
         'define X: Count(from ($ten) A, ($ten) B, ($ten) C, ($ten) D, '
