@@ -5,6 +5,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/search_reach.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
@@ -285,6 +286,22 @@ Future<Response> systemSearchHandler(
       ];
     }
 
+    // The criteria may read other types by chain or `_has` (R4B
+    // security.html 6.1.0.5.1; REVIEW-2026-10-17 finding 6).
+    final unreachable = {
+      for (final type in types)
+        ...unsearchableTypesReachedBy(
+          principal,
+          dbInterface,
+          '$type',
+          searchParamsIn,
+        ),
+    }.toList()
+      ..sort();
+    if (unreachable.isNotEmpty) {
+      return forbidden(unsearchableTypesMessage(unreachable));
+    }
+
     // The links: the parameters were checked common, so any one type decides
     // the same used set; `_type` is a control parameter and is kept.
     final links = SearchLinks.decide(commonScope.first, mergedParams);
@@ -412,7 +429,7 @@ Future<Response> _searchResources(
       headers: {'Content-Type': 'application/json'},
     );
   } on SearchRefused catch (e) {
-    return _searchRefusal(e.message, e.code);
+    return _searchRefusal(e.message, e.code, status: e.statusCode);
   } on ValueSetRefusal catch (e) {
     // `:in` / `:not-in` against a ValueSet this store cannot evaluate, or
     // does not hold (REVIEW-2026-09-06 finding 24, REVIEW-2026-09-17 T1):
@@ -519,6 +536,22 @@ Future<fhir.Bundle> typeSearch(
   // patient.
   final links = SearchLinks.decide(resourceType, queryParams);
   final refused = <String>[...?unknownParams, ...links.ignored];
+  // R4B security.html 6.1.0.5.1: a chain, `_has` or `_filter` chain reads
+  // the chained type, so the caller must be able to search it
+  // (REVIEW-2026-10-17 finding 6; auth/search_reach.dart).
+  final unreachable = unsearchableTypesReachedBy(
+    principal,
+    dbInterface,
+    resourceType,
+    queryParams,
+  );
+  if (unreachable.isNotEmpty) {
+    throw SearchRefused(
+      fhir.IssueType.forbidden,
+      unsearchableTypesMessage(unreachable),
+      statusCode: 403,
+    );
+  }
   if (handling == 'strict' && refused.isNotEmpty) {
     throw SearchRefused(
       fhir.IssueType.processing,
@@ -888,7 +921,11 @@ Future<fhir.Bundle> typeSearch(
 /// Bundle entry can send the same.
 class SearchRefused implements Exception {
   /// Creates the refusal.
-  const SearchRefused(this.code, this.message);
+  const SearchRefused(this.code, this.message, {this.statusCode = 400});
+
+  /// The HTTP status: 400, or 403 when the criteria reach a type the caller
+  /// may not search ([unsearchableTypesReachedBy]).
+  final int statusCode;
 
   /// The OperationOutcome issue code.
   final fhir.IssueType code;
@@ -1187,6 +1224,15 @@ Future<Response> postResourceHandler(
           searchParams[entry.key] = entry.value;
         }
 
+        final unreachable = unsearchableTypesReachedBy(
+          Principal.of(request),
+          dbInterface,
+          resourceType,
+          searchParams,
+        );
+        if (unreachable.isNotEmpty) {
+          return forbidden(unsearchableTypesMessage(unreachable));
+        }
         if (searchParams.isNotEmpty) {
           final List<fhir.Resource> existing;
           try {
@@ -1707,7 +1753,16 @@ Future<String?> resolveConditionalUpdate(
   Map<String, List<String>> query,
   String? bodyId, {
   CompartmentScope? compartment,
+  Principal? principal,
 }) async {
+  final unreachable =
+      unsearchableTypesReachedBy(principal, dbInterface, '$type', query);
+  if (unreachable.isNotEmpty) {
+    throw ConditionalUpdateRefused(
+      403,
+      unsearchableTypesMessage(unreachable),
+    );
+  }
   final parsed = SearchParameterParser.parseQueryParameters(query);
   final invalid = parsed.invalidParams;
   if (invalid != null) {
@@ -1799,6 +1854,7 @@ Future<Response> conditionalUpdateHandler(
       request.url.queryParametersAll,
       resource.id?.valueString,
       compartment: patientId == null ? null : patientCompartment(patientId),
+      principal: Principal.of(request),
     );
   } on ConditionalUpdateRefused catch (e) {
     return _refusal(
@@ -1874,6 +1930,15 @@ Future<Response> conditionalDeleteHandler(
       return validationOutcome(
         'Conditional delete requires at least one search parameter',
       );
+    }
+    final unreachable = unsearchableTypesReachedBy(
+      Principal.of(request),
+      dbInterface,
+      resourceType,
+      queryParams,
+    );
+    if (unreachable.isNotEmpty) {
+      return forbidden(unsearchableTypesMessage(unreachable));
     }
 
     // Bounded: R4B http.html "conditional delete" leaves the multiple-match
@@ -1974,10 +2039,14 @@ fhir.IssueType _valueSetIssue(ValueSetRefusal refusal) =>
         ? fhir.IssueType.notFound
         : fhir.IssueType.notSupported;
 
-Response _searchRefusal(String message, fhir.IssueType code) {
+Response _searchRefusal(
+  String message,
+  fhir.IssueType code, {
+  int status = 400,
+}) {
   FhirantLogging().logInfo('Rejected search ($code)');
   return Response(
-    400,
+    status,
     body: fhir.OperationOutcome(
       issue: [
         fhir.OperationOutcomeIssue(
