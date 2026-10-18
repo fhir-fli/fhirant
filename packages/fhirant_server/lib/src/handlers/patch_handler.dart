@@ -11,6 +11,7 @@ import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patch_narrative.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/unknown_codes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for PATCH operation: PATCH /{resourceType}/{id}
@@ -107,6 +108,14 @@ Future<Response> patchResourceHandler(
 
       final storeRefused = storeRefusal(Principal.of(request), patchedResource);
       if (storeRefused != null) return storeRefused;
+      final unknown = unknownRequiredCodes(patchedResource);
+      if (unknown.isNotEmpty) {
+        return outcome(
+          400,
+          fhir.IssueType.codeInvalid,
+          unknownCodesMessage(unknown),
+        );
+      }
 
       // The patched resource must still be in the compartment, as a PUT's
       // body must (REVIEW-2026-09-08 row 11).

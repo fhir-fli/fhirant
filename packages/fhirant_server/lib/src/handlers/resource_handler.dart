@@ -18,6 +18,7 @@ import 'package:fhirant_server/src/utils/search_links.dart';
 import 'package:fhirant_server/src/utils/search_page.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/unknown_codes.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
@@ -1309,6 +1310,14 @@ Future<Response> postResourceHandler(
     }
     final storeRefused = storeRefusal(Principal.of(request), resource);
     if (storeRefused != null) return storeRefused;
+    final unknownCreate = unknownRequiredCodes(resource);
+    if (unknownCreate.isNotEmpty) {
+      return outcome(
+        400,
+        fhir.IssueType.codeInvalid,
+        unknownCodesMessage(unknownCreate),
+      );
+    }
 
     // R4B http.html §3.1.0.8 create (read 2026-09-08): "If an id is
     // provided, the server SHALL ignore it." and "The server SHALL populate
@@ -1452,6 +1461,14 @@ Future<Response> putResourceHandler(
 
     final storeRefused = storeRefusal(Principal.of(request), updatedResource);
     if (storeRefused != null) return storeRefused;
+    final unknownUpdate = unknownRequiredCodes(updatedResource);
+    if (unknownUpdate.isNotEmpty) {
+      return outcome(
+        400,
+        fhir.IssueType.codeInvalid,
+        unknownCodesMessage(unknownUpdate),
+      );
+    }
 
     // Conditional update: If-Match header. The check happens INSIDE the
     // database write (FhirAntDb.saveResource, ifMatchVersion), in the same
