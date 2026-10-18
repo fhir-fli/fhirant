@@ -18,6 +18,7 @@ import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
+import 'package:fhirant_server/src/utils/unknown_codes.dart';
 import 'package:shelf/shelf.dart';
 
 /// Handler for Transaction and Batch operations: POST /
@@ -1310,6 +1311,14 @@ Future<fhir.Resource> _activated(
       403,
       'Bundle entry $entryIndex: a rest-hook Subscription requires '
       'system-level (admin) privilege',
+    );
+  }
+  // REVIEW-2026-10-17 finding 8 (utils/unknown_codes.dart).
+  final unknown = unknownRequiredCodes(resource);
+  if (unknown.isNotEmpty) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: ${unknownCodesMessage(unknown)}',
     );
   }
   return resource is fhir.Subscription
