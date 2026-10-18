@@ -188,8 +188,17 @@ class SearchLinks {
     if (offset != null) {
       params['_offset'] = ['$offset'];
     }
-    return requested.replace(
-      queryParameters: params.isEmpty ? null : params,
+    if (params.isNotEmpty) return requested.replace(queryParameters: params);
+    // Nothing was used. `replace(queryParameters: null)` would keep the
+    // request's own query, and the self link would then name parameters the
+    // search ignored (REVIEW-2026-10-17 finding 2), so the URL is rebuilt
+    // without one.
+    return Uri(
+      scheme: requested.scheme,
+      userInfo: requested.userInfo,
+      host: requested.host,
+      port: requested.hasPort ? requested.port : null,
+      path: requested.path,
     );
   }
 
