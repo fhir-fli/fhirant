@@ -379,12 +379,19 @@ Future<Response> _handleRefreshTokenGrant(
     ),
   );
   final patientId = user.patientId;
-  final session = jwtService.issueSession(user, scopes: scopes);
+  // The session ends where the presented refresh token ends: a rotation
+  // keeps that expiry rather than starting a new 7 days (REVIEW-2026-10-17
+  // finding 17; JwtService.issueSession).
+  final oldExpiresAt = _extractExpiresAt(refreshToken);
+  final session = jwtService.issueSession(
+    user,
+    scopes: scopes,
+    notAfter: oldExpiresAt,
+  );
   final newAccessToken = session.access;
   final newRefreshToken = session.refresh;
 
   // Revoke the old refresh token (rotation revocation)
-  final oldExpiresAt = _extractExpiresAt(refreshToken);
   await dbInterface.revokeToken(refreshHash, oldExpiresAt);
 
   return Response.ok(
