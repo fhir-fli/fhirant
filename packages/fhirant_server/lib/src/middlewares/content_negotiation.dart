@@ -48,7 +48,22 @@ Middleware contentNegotiationMiddleware() {
       // Accept can be comma-separated: "application/fhir+json, application/json"
       final types =
           requestedType.split(',').map((t) => t.trim().split(';').first.trim());
-      final isSupported = types.any((t) => supportedTypes.contains(t));
+      // An export file is NDJSON. Bulk Data Access STU2 export.html, Bulk
+      // Data Output File Request (read 2026-10-17): "Accept (optional,
+      // defaults to application/fhir+ndjson)"; its _outputFormat accepts the
+      // same three spellings. A client sending it got 406
+      // (REVIEW-2026-10-17 finding 14).
+      final exportFile = request.url.path.startsWith(r'$export-file/');
+      const ndjsonTypes = {
+        'application/fhir+ndjson',
+        'application/ndjson',
+        'ndjson',
+      };
+      final isSupported = types.any(
+        (t) =>
+            supportedTypes.contains(t) ||
+            (exportFile && ndjsonTypes.contains(t)),
+      );
 
       if (!isSupported && !types.contains('*/*') && requestedType.isNotEmpty) {
         if (requestedType.contains('xml')) {
