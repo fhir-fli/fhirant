@@ -67,3 +67,14 @@ cleanup: phoneadmin registered through lanattacker (201); lanattacker
 
 ## Phone settings touched and restored
 screen_off_timeout 60000 -> 1800000 -> 60000; stay_on_while_plugged_in 2 (untouched)
+
+## After the fixes (2026-10-18 18:31)
+adb install -r app-release.apk (main 41948bc) over the old build: Success, data kept
+app screen: "FHIR Server Running · Authentication Secure", 4239 resources
+GET /metadata (no token) 200; GET /Patient (no token) 401
+POST /auth/login phoneadmin 200; GET /Patient?_summary=count with its token 200
+POST /auth/login lanattacker 401; POST /$restore (no token) 401
+am force-stop: pidof empty, /health no answer (000)
+relaunch: "Running · Secure"; GET /Patient (no token) 401; the token from before 200
+not done: an Android kill that restarts only the service (needs root)
+screen_off_timeout 60000 -> 1800000 -> 60000
