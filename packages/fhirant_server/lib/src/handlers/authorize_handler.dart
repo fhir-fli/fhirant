@@ -477,7 +477,10 @@ Future<Response> _errorToClient(
       redirectUri != null &&
       redirectUri.isNotEmpty) {
     final pinned = await db.getOAuthClientRedirect(clientId);
-    if (pinned != null && _sameRedirect(pinned, redirectUri)) {
+    // A store may hold a redirect pinned before its form was checked.
+    if (pinned != null &&
+        _sameRedirect(pinned, redirectUri) &&
+        _redirectFormProblem(redirectUri) == null) {
       return _errorRedirect(redirectUri, state, error, description);
     }
   }
@@ -533,10 +536,39 @@ Future<String?> _redirectPinProblem(
   String clientId,
   String redirectUri,
 ) async {
+  final form = _redirectFormProblem(redirectUri);
+  if (form != null) return form;
   final pinned = await db.getOAuthClientRedirect(clientId);
   if (pinned == null || _sameRedirect(pinned, redirectUri)) return null;
   return 'redirect_uri does not match the one registered for this '
       'client_id';
+}
+
+/// Why [redirectUri] cannot be a redirection endpoint, or null.
+///
+/// RFC 6749 3.1.2 (read 2026-10-18, verbatim): "The redirection endpoint URI
+/// MUST be an absolute URI as defined by [RFC3986] Section 4.3." and "The
+/// endpoint URI MUST NOT include a fragment component." OWASP ASVS 5.0.0
+/// V1.2.2 (L1): a URL built from untrusted data permits "only safe URL
+/// protocols ... (e.g., disallow javascript: or data:)"; the code goes out
+/// in a Location built from this value. On a client's first use the value
+/// used to be pinned whatever it was, `javascript:alert(1)` included
+/// (REVIEW-2026-10-17 finding 19). Other schemes stay allowed: a native
+/// app's private-use scheme is RFC 8252's own example.
+String? _redirectFormProblem(String redirectUri) {
+  final uri = Uri.tryParse(redirectUri);
+  if (uri == null || !uri.hasScheme || redirectUri.contains(' ')) {
+    return 'redirect_uri must be an absolute URI';
+  }
+  if (uri.hasFragment) return 'redirect_uri must not have a fragment';
+  const unsafe = {'javascript', 'data', 'vbscript'};
+  if (unsafe.contains(uri.scheme.toLowerCase())) {
+    return 'redirect_uri scheme "${uri.scheme}" is not allowed';
+  }
+  if ((uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isEmpty) {
+    return 'redirect_uri must name a host';
+  }
+  return null;
 }
 
 /// Exact match, except that two loopback URIs match regardless of port:
