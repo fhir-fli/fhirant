@@ -82,10 +82,21 @@ Future<Response> _handleForecast(
         );
       }
 
-      final noBirthDate = _birthDateRefusal(bodyJson);
-      if (noBirthDate != null) return noBirthDate;
+      final refusal = _unforecastable(bodyJson);
+      if (refusal != null) return refusal;
 
-      final result = forecastFromMap(bodyJson, mode: mode);
+      // The client's resources are read here, outside the catch-all below,
+      // so one the model cannot read is the client's 400 and not the
+      // server's 500 (R4B http.html 3.1.0.4.2, "400 Bad Request - resource
+      // could not be parsed"; REVIEW-2026-10-17, phone run).
+      final fhir.Parameters parsed;
+      try {
+        parsed = fhir.Parameters.fromJson(bodyJson);
+      } catch (e) {
+        return validationOutcome('Invalid Parameters: $e');
+      }
+
+      final result = forecastFromParameters(parsed, mode: mode);
 
       FhirantLogging().logInfo(
         '\$immds-forecast ($modeName) completed successfully',
@@ -113,8 +124,8 @@ Future<Response> _handleForecast(
         });
       }
 
-      final noBirthDate = _birthDateRefusal(parameters);
-      if (noBirthDate != null) return noBirthDate;
+      final refusal = _unforecastable(parameters);
+      if (refusal != null) return refusal;
 
       final result = forecastFromMap(parameters, mode: mode);
 
@@ -156,32 +167,57 @@ class PatientNotFound implements Exception {
   final String id;
 }
 
-/// Check if the Parameters resource already contains a Patient resource.
-/// A 422 when the forecast's Patient has no birthDate, else null.
+/// A 422 when the request holds what the engine cannot evaluate, else null.
 ///
-/// CDSi Logic Specification v4.6 gives Date of Birth no assumed value
-/// (Tables 5-2, 6-14, 7-2: "Assumed Value if Empty" "-") and computes every
-/// age date from it (Table 3-6, CALCDTAGE-1..5). The engine used to assume
-/// 1900-01-01 and answer a full forecast (REVIEW-2026-10-17 finding 7).
-Response? _birthDateRefusal(Map<String, dynamic> params) {
+/// - A Patient with no birthDate. CDSi Logic Specification v4.6 gives Date
+///   of Birth no assumed value (Tables 5-2, 6-14, 7-2: "Assumed Value if
+///   Empty" "-") and computes every age date from it (Table 3-6,
+///   CALCDTAGE-1..5). The engine used to assume 1900-01-01 and answer a full
+///   forecast (REVIEW-2026-10-17 finding 7).
+/// - A dose with no occurrenceDateTime. R4B Immunization.occurrence[x] may
+///   be a string; CDSi gives Date Administered no assumed value (Tables 3-4,
+///   6-2), and the engine used to date such a dose 2999-01-01.
+/// - A dose with no id. R4B ImmunizationEvaluation.immunizationEvent is 1..1
+///   (profiles-resources.json, read 2026-10-18) and the engine names the
+///   dose by id; it stopped on a null check and this answered 500
+///   (REVIEW-2026-10-17, phone run).
+Response? _unforecastable(Map<String, dynamic> params) {
+  Response refuse(String message) =>
+      outcome(422, fhir.IssueType.businessRule, message);
   for (final p in (params['parameter'] as List<dynamic>?) ?? const []) {
     if (p is! Map<String, dynamic>) continue;
     final resource = p['resource'];
-    if (resource is Map<String, dynamic> &&
-        resource['resourceType'] == 'Patient') {
-      final birthDate = resource['birthDate'];
-      if (birthDate is String && birthDate.isNotEmpty) return null;
-      return outcome(
-        422,
-        fhir.IssueType.businessRule,
-        'The Patient has no birthDate; an immunization forecast is computed '
-        'from the date of birth (CDSi assumes none)',
-      );
+    if (resource is! Map<String, dynamic>) continue;
+    switch (resource['resourceType']) {
+      case 'Patient':
+        final birthDate = resource['birthDate'];
+        if (birthDate is! String || birthDate.isEmpty) {
+          return refuse(
+            'The Patient has no birthDate; an immunization forecast is '
+            'computed from the date of birth (CDSi assumes none)',
+          );
+        }
+      case 'Immunization':
+        final id = resource['id'];
+        if (id is! String || id.isEmpty) {
+          return refuse(
+            'An Immunization has no id; each evaluation names the dose it '
+            'evaluates (ImmunizationEvaluation.immunizationEvent 1..1)',
+          );
+        }
+        final occurrence = resource['occurrenceDateTime'];
+        if (occurrence is! String || occurrence.isEmpty) {
+          return refuse(
+            'Immunization/$id has no occurrenceDateTime; a dose is evaluated '
+            'from its date administered (CDSi assumes none)',
+          );
+        }
     }
   }
   return null;
 }
 
+/// Check if the Parameters resource already contains a Patient resource.
 bool _hasPatientResource(Map<String, dynamic> params) {
   final paramList = params['parameter'] as List<dynamic>? ?? [];
   return paramList.any((p) {
