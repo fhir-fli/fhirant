@@ -1,36 +1,23 @@
+import 'package:fhirant_server/src/utils/common_passwords.g.dart';
+
 /// Password policy based on NIST 800-63B guidelines.
 ///
 /// Emphasizes length over complexity — no mandatory uppercase, digits, or
-/// symbols. Rejects a small set of common long passwords.
+/// symbols. Rejects the common passwords of the policy's length
+/// ([_commonPasswords]).
 class PasswordPolicy {
   PasswordPolicy._();
 
   static const int minLength = 12;
   static const int maxLength = 128;
 
-  /// Common passwords that are 12+ characters. Checked case-insensitively.
-  static const _commonPasswords = {
-    'password1234',
-    'password12345',
-    'password123456',
-    'passwordpassword',
-    'qwertyuiop12',
-    'qwerty123456',
-    '123456789012',
-    '1234567890123',
-    'iloveyou1234',
-    'changeme1234',
-    'letmein12345',
-    'welcome12345',
-    'admin1234567',
-    'trustno12345',
-    'monkey1234567',
-    'dragon1234567',
-    'master1234567',
-    'abc123456789',
-    'passw0rd1234',
-    'aaaaaaaaaaaa',
-  };
+  /// Common passwords of 12-128 characters, lowercased: the NCSC 100k and
+  /// Pwdb top-1M lists (SecLists, MIT) with the 20 this class listed by hand
+  /// before, 30,407 in all (common_passwords.g.dart, from
+  /// tool/generate_common_passwords.py). OWASP ASVS 5.0.0 V6.2.4 (L1): "at
+  /// least, the top 3000 passwords which match the application's password
+  /// policy"; the list here held 20 (REVIEW-2026-10-17 finding 18).
+  static final Set<String> _commonPasswords = commonPasswordList.toSet();
 
   /// Validate a password against the policy.
   ///
