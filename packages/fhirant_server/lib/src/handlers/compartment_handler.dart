@@ -1,6 +1,8 @@
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/search_reach.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
@@ -303,6 +305,21 @@ Future<Response> compartmentSearchHandler(
     // 6. The query, parsed as for any search. queryParametersAll keeps every
     // repetition; a repeated parameter is an AND join.
     final queryParams = request.url.queryParametersAll;
+    // Chains and `_has` read other types (R4B security.html 6.1.0.5.1;
+    // REVIEW-2026-10-17 finding 6).
+    final unreachable = unsearchableTypesReachedBy(
+      Principal.of(request),
+      dbInterface,
+      resourceType,
+      queryParams,
+    );
+    if (unreachable.isNotEmpty) {
+      return outcome(
+        403,
+        fhir.IssueType.forbidden,
+        unsearchableTypesMessage(unreachable),
+      );
+    }
     final parsed = SearchParameterParser.parseQueryParameters(queryParams);
     final searchParams = parsed.searchParams;
     final hasParams = parsed.has;

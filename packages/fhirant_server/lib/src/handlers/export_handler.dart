@@ -8,6 +8,7 @@ import 'package:fhir_r4_bulk/fhir_r4_bulk.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/search_reach.dart';
 import 'package:fhirant_server/src/utils/export_file_crypto.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/search_page.dart';
@@ -175,6 +176,21 @@ Future<Response> exportKickoffHandler(
           400,
           fhir.IssueType.processing,
           'Invalid resource type in _typeFilter: ${filter.resourceType}',
+        );
+      }
+      // A _typeFilter is a search; its chains read other types (R4B
+      // security.html 6.1.0.5.1; REVIEW-2026-10-17 finding 6).
+      final unreachable = unsearchableTypesReachedBy(
+        Principal.of(request),
+        dbInterface,
+        filter.resourceType,
+        Uri(query: filter.query).queryParametersAll,
+      );
+      if (unreachable.isNotEmpty) {
+        return outcome(
+          403,
+          fhir.IssueType.forbidden,
+          unsearchableTypesMessage(unreachable),
         );
       }
     }
