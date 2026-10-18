@@ -450,9 +450,7 @@ Future<_Outcome> _authorize(
     'code': code,
     if (state.isNotEmpty) 'state': state,
   };
-  final redirectUrl = Uri.parse(redirectUri)
-      .replace(queryParameters: redirectParams)
-      .toString();
+  final redirectUrl = _withParameters(redirectUri, redirectParams);
   return _Issued(code, redirectUrl);
 }
 
@@ -679,9 +677,24 @@ Response _errorRedirect(
     'error_description': description,
     if (state.isNotEmpty) 'state': state,
   };
-  final url =
-      Uri.parse(redirectUri).replace(queryParameters: params).toString();
+  final url = _withParameters(redirectUri, params);
   return Response(302, headers: {'Location': url});
+}
+
+/// [redirectUri] with [params] added to its own query.
+///
+/// RFC 6749 3.1.2 (read 2026-10-18, verbatim): the endpoint URI's query
+/// component "MUST be retained when adding additional query parameters".
+/// `Uri.replace(queryParameters:)` replaced it, so
+/// `https://app.example/cb?keep=this` received `?code=...&state=...` alone.
+String _withParameters(String redirectUri, Map<String, String> params) {
+  final uri = Uri.parse(redirectUri);
+  return uri.replace(
+    queryParameters: {
+      ...uri.queryParametersAll,
+      for (final e in params.entries) e.key: [e.value],
+    },
+  ).toString();
 }
 
 String _escapeHtml(String text) {
