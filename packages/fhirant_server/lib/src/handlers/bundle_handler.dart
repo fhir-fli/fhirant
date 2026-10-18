@@ -141,6 +141,7 @@ Future<Response> _processTransaction(
             principal,
             handling: handling,
             assignedId: assignedIds[i],
+            transaction: true,
           );
           operations.add(operation);
           resultByIndex[i] = operation.resultEntry;
@@ -444,6 +445,113 @@ dynamic _resolveValue(dynamic value, Map<String, String> urnMap) {
   return value;
 }
 
+/// A conditional reference: `[type]?[parameters]`, relative to the base
+/// (R4B http.html 3.1.0.11.2: "The search URI is relative to the server's
+/// [base] path, and always starts with a resource type").
+final RegExp _conditionalReference = RegExp(r'^([A-Z][A-Za-z]+)\?(.+)$');
+
+/// [json] with every conditional reference replaced by the one resource its
+/// search finds. R4B http.html 3.1.0.11.2, "Conditional References" (read
+/// whole 2026-10-17): "When processing transactions, servers SHALL: check
+/// all references for search URIs; For search URIs, use the search to
+/// locate matching resources; if there are no matches, or multiple
+/// matches, the transaction fails, and an error is returned to the user;
+/// if there is a single match, the server replaces the search URI with a
+/// reference to the matching resource". They used to be stored as written
+/// (REVIEW-2026-10-17 finding 3).
+///
+/// The search is the caller's own: refused unless [principal] may search
+/// the type, and confined to its patient compartment when it has one, so a
+/// reference cannot reach what a search could not.
+Future<Map<String, dynamic>> _resolveConditionalReferences(
+  Map<String, dynamic> json,
+  FhirAntDb dbInterface,
+  Principal? principal,
+  int entryIndex,
+) async {
+  Future<dynamic> walk(dynamic value) async {
+    if (value is List) {
+      return [for (final item in value) await walk(item)];
+    }
+    if (value is! Map) return value;
+    final out = <String, dynamic>{};
+    for (final e in value.entries) {
+      final key = e.key.toString();
+      final v = e.value;
+      out[key] = key == 'reference' && v is String
+          ? await _resolveOneConditionalReference(
+              v,
+              dbInterface,
+              principal,
+              entryIndex,
+            )
+          : await walk(v);
+    }
+    return out;
+  }
+
+  return await walk(json) as Map<String, dynamic>;
+}
+
+/// [reference] itself unless it is a conditional reference, else
+/// `[type]/[id]` of its single match.
+Future<String> _resolveOneConditionalReference(
+  String reference,
+  FhirAntDb dbInterface,
+  Principal? principal,
+  int entryIndex,
+) async {
+  final match = _conditionalReference.firstMatch(reference);
+  if (match == null) return reference;
+  final typeName = match.group(1)!;
+  final type = fhir.R4ResourceType.fromString(typeName);
+  if (type == null) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: conditional reference $reference names no '
+      'resource type',
+    );
+  }
+  _authorizeEntry(principal, fhir.HTTPVerb.gET, '/$typeName', entryIndex);
+  final parsed = SearchParameterParser.parseQueryParameters(
+    Uri(query: match.group(2)).queryParametersAll,
+  );
+  final invalid = parsed.invalidParams;
+  final searchParams = parsed.searchParams;
+  if (invalid != null || searchParams == null || searchParams.isEmpty) {
+    throw BundleEntryException(
+      400,
+      'Bundle entry $entryIndex: conditional reference $reference: '
+      '${invalid?.join('; ') ?? 'no search parameters'}',
+    );
+  }
+  final List<fhir.Resource> found;
+  try {
+    found = await dbInterface.search(
+      resourceType: type,
+      searchParameters: searchParams,
+      count: 2,
+      compartment: principal?.compartmentFor(typeName, 's'),
+    );
+  } on UnsupportedSearchModifier catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on InvalidSearchValue catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on AmbiguousReference catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  } on ValueSetRefusal catch (e) {
+    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+  }
+  if (found.length != 1) {
+    throw BundleEntryException(
+      412,
+      'Bundle entry $entryIndex: conditional reference $reference matched '
+      '${found.isEmpty ? 'no' : 'more than one'} resource',
+    );
+  }
+  return '$typeName/${found.single.id!.valueString}';
+}
+
 /// Refuses the entry when [principal] may not make the same request alone.
 ///
 /// An entry `PUT Patient/p2` is the request `PUT /Patient/p2`: the same
@@ -537,6 +645,7 @@ Future<_BundleOperation> _processBundleEntry(
   Principal? principal, {
   required String handling,
   String? assignedId,
+  bool transaction = false,
 }) async {
   final req = entry.request!;
   final method = req.method;
@@ -710,6 +819,14 @@ Future<_BundleOperation> _processBundleEntry(
       if (urnMap.isNotEmpty) {
         resourceJson = _resolveUrnReferences(resourceJson, urnMap);
       }
+      if (transaction) {
+        resourceJson = await _resolveConditionalReferences(
+          resourceJson,
+          dbInterface,
+          principal,
+          entryIndex,
+        );
+      }
       // The id assigned before processing began; never the client's.
       final withId = fhir.Resource.fromJson(resourceJson);
       final resourceToSave = await _activated(
@@ -855,6 +972,14 @@ Future<_BundleOperation> _processBundleEntry(
       var putJson = bodyResource.toJson();
       if (urnMap.isNotEmpty) {
         putJson = _resolveUrnReferences(putJson, urnMap);
+      }
+      if (transaction) {
+        putJson = await _resolveConditionalReferences(
+          putJson,
+          dbInterface,
+          principal,
+          entryIndex,
+        );
       }
       final putResource = await _activated(
         fhir.Resource.fromJson(putJson),
