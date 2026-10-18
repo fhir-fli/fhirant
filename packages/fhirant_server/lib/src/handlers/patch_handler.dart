@@ -8,6 +8,7 @@ import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/patch_narrative.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:shelf/shelf.dart';
@@ -76,7 +77,16 @@ Future<Response> patchResourceHandler(
 
     // Apply patch operations
     try {
-      final patchedJson = applyJsonPatch(resourceJson, patchOperations);
+      final Map<String, dynamic> patchedJson;
+      try {
+        patchedJson = narrativeAfterPatch(
+          resourceJson,
+          applyJsonPatch(resourceJson, patchOperations),
+          patchOperations,
+        );
+      } on NarrativeWouldMislead catch (e) {
+        return outcome(422, fhir.IssueType.businessRule, e.message);
+      }
 
       // Convert back to resource
       final patchedResource = fhir.Resource.fromJson(patchedJson);

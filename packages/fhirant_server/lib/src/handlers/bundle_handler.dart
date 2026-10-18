@@ -16,6 +16,7 @@ import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
+import 'package:fhirant_server/src/utils/patch_narrative.dart';
 import 'package:fhirant_server/src/utils/patient_scope.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:fhirant_server/src/utils/stored_resource.dart';
@@ -1094,8 +1095,17 @@ Future<_BundleOperation> _processBundleEntry(
         );
       }
 
-      final patchedJson =
-          applyJsonPatch(currentResource.toJson(), patchOperations);
+      final currentJson = currentResource.toJson();
+      final Map<String, dynamic> patchedJson;
+      try {
+        patchedJson = narrativeAfterPatch(
+          currentJson,
+          applyJsonPatch(currentJson, patchOperations),
+          patchOperations,
+        );
+      } on NarrativeWouldMislead catch (e) {
+        throw BundleEntryException(422, 'Bundle entry $entryIndex: $e');
+      }
       final patchedResource = fhir.Resource.fromJson(patchedJson);
 
       // Validate type and ID unchanged
