@@ -12,6 +12,7 @@ import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/middlewares/body_limit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
+import 'package:fhirant_server/src/middlewares/redact_subscription_headers.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
@@ -756,6 +757,9 @@ class FhirAntServer {
     }
 
     return pipeline
+        // Inside the auth check, which establishes the caller it reads
+        // (REVIEW-2026-10-17 finding 12).
+        .addMiddleware(redactSubscriptionHeaders())
         .addMiddleware(_uncaughtErrorMiddleware())
         .addHandler(router.call);
   }
