@@ -5,6 +5,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/search_reach.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/search_parser.dart';
 import 'package:http/http.dart' as http;
@@ -269,6 +270,26 @@ class SubscriptionService {
         'error',
         'criteria is not a search on a known resource type: '
             '${subscription.criteria.valueString}',
+      );
+    }
+
+    // "The criteria are subject to the same limitations as the client that
+    // created it" (R4B subscription.html 2.46.6, read whole 2026-10-17): a
+    // chain or `_has` in them reads other types (security.html 6.1.0.5.1;
+    // REVIEW-2026-10-17 finding 6), so the creator must be able to search
+    // those. A Subscription that may not run is kept in `error`, as an
+    // unknown criteria type is.
+    final unreachable = unsearchableTypesReachedBy(
+      principal,
+      db,
+      criteria.resourceType.toString(),
+      criteria.parameters,
+    );
+    if (unreachable.isNotEmpty) {
+      return _withStatus(
+        subscription,
+        'error',
+        unsearchableTypesMessage(unreachable),
       );
     }
 

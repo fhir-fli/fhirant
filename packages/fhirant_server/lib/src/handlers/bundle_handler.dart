@@ -4,6 +4,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/auth/search_reach.dart';
 import 'package:fhirant_server/src/handlers/resource_handler.dart'
     show
         ConditionalUpdateRefused,
@@ -443,6 +444,25 @@ dynamic _resolveValue(dynamic value, Map<String, String> urnMap) {
   return value;
 }
 
+/// Refuses the entry (403) when [query]'s criteria on [resourceType] read a
+/// type [principal] may not search, by chain, `_has` or `_filter` (R4B
+/// security.html 6.1.0.5.1; REVIEW-2026-10-17 finding 6).
+void _refuseUnreachable(
+  Principal? principal,
+  FhirAntDb dbInterface,
+  String resourceType,
+  Map<String, List<String>> query,
+  int entryIndex,
+) {
+  final unreachable =
+      unsearchableTypesReachedBy(principal, dbInterface, resourceType, query);
+  if (unreachable.isEmpty) return;
+  throw BundleEntryException(
+    403,
+    'Bundle entry $entryIndex: ${unsearchableTypesMessage(unreachable)}',
+  );
+}
+
 /// Refuses the entry when [principal] may not make the same request alone.
 ///
 /// An entry `PUT Patient/p2` is the request `PUT /Patient/p2`: the same
@@ -658,6 +678,13 @@ Future<_BundleOperation> _processBundleEntry(
         // queryParametersAll, not splitQueryString: a repeated parameter is
         // an AND (R4 3.1.1.4.17) and splitQueryString keeps only the last.
         final searchMap = Uri(query: ifNoneExist).queryParametersAll;
+        _refuseUnreachable(
+          principal,
+          dbInterface,
+          resourceType,
+          searchMap,
+          entryIndex,
+        );
         final List<fhir.Resource> existing;
         try {
           // Two rows settle it, as on the REST path (REVIEW-2026-09-17 Q9).
@@ -782,6 +809,7 @@ Future<_BundleOperation> _processBundleEntry(
             query,
             bodyResource.id?.valueString,
             compartment: principal?.compartmentFor(resourceType, 'u'),
+            principal: principal,
           );
         } on ConditionalUpdateRefused catch (e) {
           throw BundleEntryException(
@@ -1000,6 +1028,7 @@ Future<_BundleOperation> _processBundleEntry(
           query,
           principal?.compartmentFor(resourceType, 'd'),
           entryIndex,
+          principal,
         );
         resultResource = null;
         status = deleted == 0 ? '200' : '204';
@@ -1109,7 +1138,10 @@ Future<fhir.Bundle> _entrySearch(
       compartment: compartment,
     );
   } on SearchRefused catch (e) {
-    throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
+    throw BundleEntryException(
+      e.statusCode,
+      'Bundle entry $entryIndex: ${e.message}',
+    );
   } on UnsupportedSearchModifier catch (e) {
     throw BundleEntryException(400, 'Bundle entry $entryIndex: ${e.message}');
   } on InvalidSearchValue catch (e) {
@@ -1131,7 +1163,9 @@ Future<int> _entryConditionalDelete(
   Map<String, List<String>> query,
   CompartmentScope? compartment,
   int entryIndex,
+  Principal? principal,
 ) async {
+  _refuseUnreachable(principal, dbInterface, '$type', query, entryIndex);
   final parsed = SearchParameterParser.parseQueryParameters(query);
   final searchParams = parsed.searchParams;
   if (searchParams == null || searchParams.isEmpty) {
