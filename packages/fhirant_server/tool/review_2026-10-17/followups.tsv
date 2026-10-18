@@ -1,0 +1,16 @@
+case	result
+export-file Accept=None	200	application/fhir+ndjson	283
+export-file Accept=application/fhir+ndjson	406	application/fhir+json; charset=utf-8; fhirVersion=4.3	149
+export-file Accept=application/ndjson	406	application/fhir+json; charset=utf-8; fhirVersion=4.3	144
+export-file Accept=application/fhir+json	200	application/fhir+ndjson	283
+export-file Accept=*/*	200	application/fhir+ndjson	283
+export-file no token Accept=*/*	401
+pat /Patient/pat1/$everything	200	Patient/pat1 AuditEvent/099252f4-96b7-4667-9053-cb701f26c5ba AuditEvent/513c0c1e-0321-4dec-b483-404f16b2761d AuditEvent/c3ca2b84-e696-4d58-aa6d-cc461a5e7b3f AuditEvent/d8ff5d7f-2ca9-485b-84cc-c0a9fe2d8545 Composition/comp1 Encounter/enc1 Group/g1 Observation/obs1
+pat /_history?_count=100	200	AuditEvent/099252f4-96b7-4667-9053-cb701f26c5ba AuditEvent/d8ff5d7f-2ca9-485b-84cc-c0a9fe2d8545 AuditEvent/c3ca2b84-e696-4d58-aa6d-cc461a5e7b3f AuditEvent/513c0c1e-0321-4dec-b483-404f16b2761d Group/g1 Composition/comp1 Encounter/enc1 Observation/obs1 Patient/pat1
+obs2b after pat cond-delete (fresh store, control)	200
+pat cond-delete obs2b	200	{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"not-found","diagnostics":"No resources matched the search criteria"}]}
+obs2b after pat cond-delete	200
+$immds-forecast patientId=pat2 birthDate=None	200	{"resourceType":"Parameters","parameter":[{"name":"immunization","resource":{"resourceType":"Immunization","id":"imm2","meta":{"versionId":"1","lastUpdated":"20
+$immds-forecast-who patientId=pat2 birthDate=None	200	{"resourceType":"Parameters","parameter":[{"name":"immunization","resource":{"resourceType":"Immunization","id":"imm2","meta":{"versionId":"1","lastUpdated":"20
+$immds-forecast patientId=fc1 birthDate=2025-01-01	200	{"resourceType":"Parameters","parameter":[{"name":"recommendation","resource":{"resourceType":"ImmunizationRecommendation","patient":{"reference":"Patient/fc1"}
+$immds-forecast-who patientId=fc1 birthDate=2025-01-01	200	{"resourceType":"Parameters","parameter":[{"name":"recommendation","resource":{"resourceType":"ImmunizationRecommendation","patient":{"reference":"Patient/fc1"}

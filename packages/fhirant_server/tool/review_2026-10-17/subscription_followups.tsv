@@ -1,0 +1,14 @@
+case	observed
+rest-hook headers received (all)	{'user-agent': 'Dart/3.13 (dart:io)', 'x-probe': 'abc', 'accept-encoding': 'gzip', 'content-length': '0', 'host': '127.0.0.1:18490'}
+websocket sub created	201	active	cbfbea41-d421-4866-af34-3fa940bb909f
+bind	bound cbfbea41-d421-4866-af34-3fa940bb909f
+ws messages after a matching create (20 s)	['ping cbfbea41-d421-4866-af34-3fa940bb909f']
+criteria NotAType?x=1	201	error	criteria is not a search on a known resource type: NotAType?x=1
+criteria Observation?code:bogusmod=1	201	active	None
+criteria Observation?not-a-param=1	201	active	None
+dead endpoint after 1 writes	error	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 42946, uri=http://127.0.0.1:9/x
+dead endpoint after 2 writes	error	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 42962, uri=http://127.0.0.1:9/x
+dead endpoint after 3 writes	error	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 42976, uri=http://127.0.0.1:9/x
+dead endpoint after 4 writes	error	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 42986, uri=http://127.0.0.1:9/x
+dead endpoint after 5 writes	off	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 43002, uri=http://127.0.0.1:9/x (switched off after 5 consecutive failures)
+dead endpoint after 6 writes	off	delivery to http://127.0.0.1:9/x failed: ClientException with SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 43002, uri=http://127.0.0.1:9/x (switched off after 5 consecutive failures)

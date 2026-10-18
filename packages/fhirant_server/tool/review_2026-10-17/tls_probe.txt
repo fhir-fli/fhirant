@@ -1,0 +1,10 @@
+# openssl OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024); client legacy enabled with -cipher DEFAULT@SECLEVEL=0
+tls1: New, (NONE), Cipher is (NONE)
+tls1_1: New, (NONE), Cipher is (NONE)
+tls1_2: New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384
+tls1_3: New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+tls1_2 AES128-SHA: New, SSLv3, Cipher is AES128-SHA
+tls1_2 AES256-SHA: New, SSLv3, Cipher is AES256-SHA
+tls1_2 DES-CBC3-SHA: 
+tls1_2 ECDHE-RSA-AES128-SHA: New, TLSv1.0, Cipher is ECDHE-RSA-AES128-SHA
+HSTS header lines: 0

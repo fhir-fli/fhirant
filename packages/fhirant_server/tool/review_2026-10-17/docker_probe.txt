@@ -1,0 +1,29 @@
+# 2026-10-18T03:59:30Z image fhirant-test, container fhirant-review5-65731
+first boot: /health answered after 31 s
+docker health at that moment: starting
+kick-off: http://127.0.0.1:18085/$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a
+poll: 500
+export files in the container:
+volumes declared by the image: null
+working dir: /root
+{"timestamp":"2026-10-18T04:00:35.177405","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:36.240442","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:37.267796","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (2ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:38.334282","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:39.373574","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:40.394029","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:41.417709","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:42.441858","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+uid=1000 gid=1000 groups=1000
+/root
+ls: cannot access '/root/data': Permission denied
+drwx------ 1 root root 4096 Sep 19 00:45 /root
+{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Export failed"}]}
+
+{"timestamp":"2026-10-18T04:00:40.394029","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:41.417709","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (1ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:00:42.441858","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+{"timestamp":"2026-10-18T04:01:12.143267","level":"INFO","message":"GET /$export-poll-status/3afe4319-914d-4167-bc5f-50b3d9dc8c5a - 500 (0ms) from 172.17.0.1","error":null,"stackTrace":null}
+# A/B: same image, -w /data
+B (-w /data) poll: 200
+/data/data/export/0c6e6e55-c914-44c6-a36a-7d81cefd2997/Patient.ndjson

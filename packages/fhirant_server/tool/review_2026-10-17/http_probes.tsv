@@ -1,0 +1,128 @@
+case	rule	expected	observed	verdict
+read ETag	Servers SHOULD return an ETag header with the versionId	W/"<vid>"	W/"1"	PASS
+read Last-Modified	and a Last-Modified header	present	Sun, 18 Oct 2026 03:27:49 GMT	PASS
+Date header	SHOULD return the default timezone in the HTTP Response headers using the "Date" header	present	Sun, 18 Oct 2026 03:34:26 GMT	PASS
+read id	The returned resource SHALL have an id element with a value that is the [id]	obs1	obs1	PASS
+read unknown	a GET for an unknown resource returns 404	404	404	PASS
+read _summary=true SUBSETTED	Servers SHOULD define a Resource.meta.tag with the SUBSETTED	SUBSETTED tag, no valueQuantity-free check	(200, ['SUBSETTED'])	PASS
+read _elements SUBSETTED	The same applies to the _elements parameter	only status (+mandatory) and SUBSETTED	(200, ['code', 'id', 'meta', 'resourceType', 'status'], ['SUBSETTED'])	FAIL
+conditional read If-None-Match	they SHALL accept either a 304 Not Modified ... or full content	304 or 200	(304, 0)	PASS
+HEAD read	same response as a GET, but with no body	200, empty body, same ETag	(200, 0, 'W/"1"')	PASS
+HEAD search	Anywhere that a GET request can be used, a HEAD request is also allowed	200 empty	(200, 0)	PASS
+HEAD metadata	Anywhere that a GET request can be used	200 empty	(200, 0)	PASS
+HEAD history	Anywhere that a GET request can be used	200 empty	(200, 0)	PASS
+Accept application/fhir+json	406 Not Acceptable is the appropriate response when the Accept header requests a format that the server does not support	200	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+Accept application/json	406 Not Acceptable is the appropriate response when the Accept header requests a format that the server does not support	200	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+Accept application/fhir+json; fhirVersion=4.3	406 Not Acceptable is the appropriate response when the Accept header requests a format that the server does not support	200	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+Accept application/fhir+xml	406 Not Acceptable is the appropriate response when the Accept header requests a format that the server does not support	406	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+Accept application/xml	406 Not Acceptable is the appropriate response when the Accept header requests a format that the server does not support	406	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+Accept text/html	server-driven content negotiation	read	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	NOTE
+Accept application/fhir+json; fhirVersion=4.0	server-driven content negotiation	read	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	NOTE
+Accept application/fhir+json; fhirVersion=5.0	server-driven content negotiation	read	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	NOTE
+_format=json	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=application/json	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=application/fhir+json	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(200, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=xml	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=html	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=text/html	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+_format=ttl	the codes json, application/json and application/fhir+json SHALL be interpreted to mean the JSON format	json 200; xml/ttl 406; html allowed	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	PASS
+POST xml body	415 Unsupported Media Type when the client posts a format that is not supported	415	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: For')	FAIL
+POST text/plain body	415 when the client posts a format that is not supported	415	(201, '{"resourceType":"Observation","id":"0b858ee5-74a0-454e-92ca-d17ba6f503ea","meta":{"versionId":"1","lastUpdated":"2026-10')	FAIL
+two fhirVersions	It is an error for a client to attempt to use two different versions in the same interaction	4xx	(201, '{"resourceType":"Observation","id":"0abbea73-086b-49b4-9149-15e35b2d3e98","meta":{"versionId":"1","lastUpdated":"2026-10')	FAIL
+_pretty	servers MAY choose to support this parameter	200	(200, 0)	NOTE
+Accept text/json	If a client provides a generic mime type in the Accept header (application/xml, text/json, or application/json), the server SHOULD respond with the requested mime type	200 json	(406, 'application/fhir+json; charset=utf-8; fhirVersion=4.3')	FAIL
+create 201	The server returns a 201 Created	201	201	PASS
+create ignores id	If an id is provided, the server SHALL ignore it	id != client-id	8c2da880-f2c8-474b-9f17-4cc8a1cc336d	PASS
+create ignores meta	the server SHALL ignore the existing versionId and lastUpdated values	versionId 1, lastUpdated now	{'versionId': '1', 'lastUpdated': '2026-10-18T03:34:26.953015Z'}	PASS
+create Location	Location: [base]/[type]/[id]/_history/[vid]	/Observation/<id>/_history/1	/Observation/8c2da880-f2c8-474b-9f17-4cc8a1cc336d/_history/1	PASS
+create ETag	Servers SHOULD return an ETag header	W/"1"	W/"1"	PASS
+create garbled	resource syntax or data is incorrect ... 400	400	400	PASS
+create wrong type	The request body SHALL be a FHIR Resource (of the URL type)	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Resource type in URL ')	PASS
+create invalid code	failed basic FHIR validation rules -> 400	400 or 422	(201, '{"resourceType":"Observation","id":"42c3bc18-8f3c-4df1-83cd-ab8fbf7becc7","meta":{"versionId":"1","lastUpdated":"2026-10')	FAIL
+create missing required status	failed basic FHIR validation rules -> 400	400 or 422	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: Nul')	PASS
+create unknown element	failed basic FHIR validation rules	400 or 422	(201, '{"resourceType":"Observation","id":"dc9682ca-8b13-493c-8538-53cdd5edcc63","meta":{"versionId":"1","lastUpdated":"2026-10')	FAIL
+Prefer return=minimal	Servers SHOULD honor this header	empty	(201, 'empty')	PASS
+Prefer return=representation	Servers SHOULD honor this header	Observation	(201, 'Observation')	PASS
+Prefer return=OperationOutcome	Servers SHOULD honor this header	OperationOutcome	(201, 'OperationOutcome')	PASS
+conditional create	No matches: create; One Match: The server ignores the post and returns 200 OK	201 then 200	(201, 200)	PASS
+conditional create multiple	Multiple matches: The server returns a 412	412	(412, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"duplicate","diagnostics":"Mu')	PASS
+update no id	If no id element is provided ... the server SHALL respond with an HTTP 400	400	400	PASS
+update id mismatch	or the id disagrees with the id in the URL ... SHALL respond with an HTTP 400	400	400	PASS
+update 200	SHALL return either a 200 OK ... if the resource was updated	200	200	PASS
+update ignores meta	the server SHALL ignore the provided versionId and lastUpdated values	versionId != 77	{'versionId': '2', 'lastUpdated': '2026-10-18T03:34:27.109535Z'}	PASS
+update ETag+Last-Modified	with a Last-Modified header, and an ETag header which contains the new versionId	both	('W/"2"', 'Sun, 18 Oct 2026 03:34:27 GMT')	PASS
+update as create	201 Created status code if the resource was created ... SHOULD return a Location header	201 + Location	(201, None)	FAIL
+If-Match stale	If the version id given in the If-Match header does not match, the server returns a 412	412	412	PASS
+If-Match current	version aware update	200	200	PASS
+If-Match garbage	If-Match: W/"23"	4xx	(200, '{"resourceType":"Observation","id":"obs1","meta":{"versionId":"4","lastUpdated":"2026-10-18T03:34:27')	FAIL
+cond update no match no id	No matches, no id provided: The server creates the resource	201	201	PASS
+cond update one match	One Match, no resource id provided: update	200 same id	(200, 'cb117951-c29b-44b7-b724-15df0ed064b7')	PASS
+cond update id mismatch	One Match, resource id provided but does not match resource found: 400	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"The resource carries id ')	PASS
+cond update no match id given	No matches, id provided: Update as Create	201 with id cu-given	(201, 'cu-given')	PASS
+cond update multiple	Multiple matches: 412	412	412	PASS
+PATCH If-Match stale	servers SHALL support conditional PATCH	412	412	PASS
+PATCH If-Match current	conditional PATCH	200	(200, 'W/"5"')	PASS
+PATCH Prefer minimal	as does the Prefer Header	empty	(200, 0)	PASS
+FHIRPath Patch	The body of a PATCH operation SHALL be either ... a FHIRPath Patch parameters resource	supported or 4xx	(415, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"FHIRPath Patch (a ')	NOTE
+conditional PATCH by search, no match	No matches: The server returns a 404 Not Found (SHOULD, servers that support conditional update)	404	(404, 'Route not found')	PASS
+conditional PATCH by search, multiple	Multiple matches: 412	412	(404, 'Route not found')	FAIL
+PATCH narrative safety	The server SHALL ensure that the narrative in a resource is not clinically unsafe after the PATCH operation is performed	reject, regenerate or drop the stale narrative	(200, 6.5, '<div xmlns="http://www.w3.org/1999/xhtml">Potassium 3.0 mmol/L (LOW)</div>')	FAIL
+delete	200 OK if the response contains a payload, or a 204 No Content	200/202/204	204	PASS
+read deleted	subsequent non-version specific reads of a resource return a 410	410	410	PASS
+search deleted	the resource is no longer found through search	total 0	0	PASS
+delete again	Performing this interaction on a resource that is already deleted has no effect, ... 200 or 204	200/204	404	FAIL
+delete absent	or if the resource does not exist at all, the server should return either a 200 OK ... or a 204	200/202/204	404	FAIL
+delete keeps history	the delete interaction does not remove a resource's version history	>=2 entries, newest DELETE	(200, ['DELETE', 'POST'])	PASS
+vread deleted version	If the version referred to is actually one where the resource was deleted, the server should return a 410	410	(410, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"deleted","diagnostics":"Reso')	PASS
+bring back to life	Resources that have been deleted may be "brought back to life" by a subsequent update ... 201 Created if ... brought back to life/re-created	201	201	PASS
+delete with body	The request body SHALL be empty	note	(204, '')	NOTE
+conditional delete multiple	delete all the matching resources, or ... 412; A server indicates whether it can delete multiple resources in its Capability Statement	matches the capability statement	(204, 0, ['multiple'])	PASS
+POST _search same	servers that support search SHALL also support a POST based search ... exactly the same semantics	same total	(15, 15)	PASS
+POST _search URL+body	parameters may appear in both the URL and the body	same total	15	PASS
+searchset	the return content SHALL be a Bundle with type = searchset	searchset	searchset	PASS
+self link	All searches SHALL return this value	present	['http://127.0.0.1:18411/Observation?code=2823-3&_count=2']	PASS
+next page	The client must use the server supplied links	page 2, disjoint	(200, 2, set())	PASS
+next page via POST	servers SHOULD allow for a client to convert the follow up requests to be made via a POST	200	(200, '{"resourceType":"Bundle","type":"searchset","total":15,"link":[{"relation":"self","url":"http://127.')	PASS
+unknown search param	see search.html handling	read	(200, '{"resourceType":"Bundle","type":"searchset","total":19,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Observation?not-a-param=1"},{"relation":"first","url":"http://127.0.0.1:18411/Observatio')	NOTE
+compartment *	In the first URL the character "*" appears in the URL as a literal to mean 'all types'	200 searchset	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource type')	FAIL
+_type two types, shared param	the only parameters that can be used are those defined for both	200	(200, '{"resourceType":"Bundle","type":"searchset","total":15,"link":[{"relation":"self","url":"http://127.0.0.1:18411/?_type=C')	PASS
+_type param not on both	If a search lists types not listed in SearchParameter.base for any of the parameters, this is an error, and a server SHOULD return a 400	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Parameter \\"code\\" is no')	PASS
+system search non-base param	the only search parameters that be can be used in global search like this are the base parameters	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"A search across all reso')	PASS
+metadata ETag	An ETag header SHOULD be returned with the Response	present	None	FAIL
+metadata fhirVersion	CapabilityStatement.fhirVersion	4.3.0	4.3.0	PASS
+metadata conditionalDelete/update/versioning	Systems declare their support for versioning in their Capability Statements	read	[('Observation', 'versioned', True, 'multiple', True, True, True)]	NOTE
+metadata mode=terminology	A TerminologyCapabilities resource (Servers MAY ignore the mode parameter)	TerminologyCapabilities or CapabilityStatement	CapabilityStatement	NOTE
+transaction 200	servers SHALL either accept all actions and return a 200 OK, along with a response bundle	200 transaction-response	(200, 'transaction-response')	PASS
+transaction response entries	one entry for each entry in the request, in the same order ... SHALL contain a response element	3 entries with location	['http://127.0.0.1:18411/Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86/_history/1', 'http://127.0.0.1:18411/Patient/ff25e093-13a7-4866-81ca-1dadf6bd39cf/_history/1', 'http://127.0.0.1:18411/Observation/0bb1adbe-b0bb-467f-88e5-21d6b1c26d15/_history/1']	PASS
+tx reference rewritten	it SHALL also update any references to that resource	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	PASS
+tx circular reference	including circular references	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	PASS
+tx version-specific ref kept	Version-specific references should remain as version-specific references	Observation/obs1/_history/1	Observation/obs1/_history/1	PASS
+tx uri element rewritten	Servers SHALL replace all matching links in the bundle, whether they are found in ... elements of type uri	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	Patient/a4a9d003-5c9e-447a-bceb-4fa076db3b86	PASS
+tx narrative href rewritten	and <a href="" ... in the narrative	no urn:uuid in div	<div xmlns="http://www.w3.org/1999/xhtml"><a href="urn:uuid:11111111-1111-1111-1111-111111111111">p</a></div>	FAIL
+transaction atomic	or reject all resources and return an HTTP 400 or 500 type response	4xx/5xx, nothing stored	(200, 0, 1, 'Bundle')	FAIL
+failed transaction OO	For a failed transaction, the server returns a single OperationOutcome	OperationOutcome	Bundle	FAIL
+tx overlapping identities	If any resource identities ... overlap in steps 1-3, then the transaction SHALL fail	4xx	(200, '{"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/ov1","res')	FAIL
+tx overlapping DELETE+PUT	If any resource identities ... overlap in steps 1-3, then the transaction SHALL fail	4xx	(200, '{"resourceType":"Bundle","type":"transaction-response","entry":[{"response":{"status":"204"}},{"fullUrl":"http://127.0.0')	FAIL
+conditional reference single	if there is a single match, the server replaces the search URI	Patient/pat1	(200, '{"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/cc5f2e4a-a4ba-41e9-8cb0-fd5fddf6f3c4","')	FAIL
+conditional reference none	if there are no matches ... the transaction fails	4xx	(200, '{"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/64d9f7e3-')	FAIL
+conditional reference multiple	or multiple matches, the transaction fails	4xx	(200, '{"resourceType":"Bundle","type":"transaction-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/19ac1a4d-')	FAIL
+conditional reference in batch	in a transaction (and only in a transaction), references to resources may be replaced by a search URI	not resolved in a batch	(200, '{"resourceType":"Bundle","type":"batch-response","entry":[{"fullUrl":"http://127.0.0.1:18411/Observation/8eca488d-d8d1-4a74-9eff-f694a68bbad8","resource":{"resourceType":"Observation","id":"8eca488d-d')	NOTE
+batch 200 with failing entries	the HTTP response code is 200 Ok if the batch was processed correctly, regardless of the success of the operations	200, statuses 200/404/4xx	(200, ['200', '404', '201'])	PASS
+empty transaction	It is not an error if the submitted bundle has no resources in it	200	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"B')	FAIL
+history bundle	servers SHOULD accept a history Bundle	200	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Bundle type must be \\"transaction\\" or \\"batch\\""}]')	FAIL
+collection bundle	A server may choose to accept bundle types other than batch or transaction	read	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Bundle type must be \\"transaction\\" or \\"batch\\""}]')	NOTE
+entry without request	Each entry SHALL carry request details	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Bundle entry 0 missin')	PASS
+POST entry without resource	If the HTTP command is a PUT or POST, then the entry SHALL contain a resource	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Transaction failed at ')	PASS
+history order	sorted with oldest versions last, and including deleted resources	[DELETE, PUT, PUT|POST]	['DELETE', 'PUT', 'POST']	PASS
+history PUT/POST has resource	If the entry.request.method is a PUT or a POST, the entry SHALL contain a resource	all	[False, True, True]	PASS
+history lastModified	The server SHOULD populate at least response.lastModified	all	['2026-10-18T03:34:30.194Z', '2026-10-18T03:34:30.177Z', '2026-10-18T03:34:27.965Z']	PASS
+history type	a Bundle with type set to history	history	history	PASS
+history _since	Only include resource versions that were created at or after the given instant	2	(200, 2)	PASS
+history _at	Only include resource versions that were current at some point during the time period	version 1 only	(200, '{"resourceType":"Bundle","type":"history","total":1,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Observation/h1/_history?_at=2026-10-18T03%3A34%3A29Z"},{"relation":"first","url":"http://12')	NOTE
+history repeated param	Each of these parameters SHALL NOT appear more than once	400	(200, '{"resourceType":"Bundle","type":"history","total":3,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Observation')	FAIL
+history paging _count	respect the specified _count across pages	2 entries + next	(2, True)	PASS
+history next page _count	respect the specified _count across pages	2	(200, 2)	PASS
+history of unknown	If a request is made for a history that is not available ... 404	404	(404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Observation/{id} not f')	PASS
+X-Request-Id	The server can either use that id or assign its own, which it returns as the X-Request-Id header	echo or own + X-Correlation-Id	(None, None)	FAIL
+operation form POST	(operation) POST application/x-www-form-urlencoded form data	200	(200, '{"resourceType":"ValueSet","id":"administrative-gender","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:27:44.51774')	PASS
+$meta	Resource Operations	200 Parameters	(200, 'Parameters')	PASS

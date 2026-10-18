@@ -1,0 +1,6 @@
+case	observed
+trial 0: identical tokens; device 1 logs out, device 2 read	200	401	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"login","diagnostics":"Token 
+identical access tokens in 5 paired logins	1
+refresh 1	200	new refresh == old:	True
+refresh 2 with the token refresh 1 returned (same second)	401	{"error":"invalid_grant","error_description":"Refresh token has been revoked"}
+control: same with 1.2 s between steps	200	200	{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInVzZXJuYW

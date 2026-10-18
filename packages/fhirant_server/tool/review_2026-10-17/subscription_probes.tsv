@@ -1,0 +1,31 @@
+case	observed	verdict
+create rest-hook	(201, 'active')	PASS
+notify on create (empty POST)	[('POST', 0)]	PASS
+channel.header appended	[None]	FAIL
+notify on update	1	PASS
+no notify when update stops matching	0	PASS
+no notify on delete	0	PASS
+payload as update to [base]/[type]/[id]	[('PUT', '/fhir/Observation/6aea12b6-f218-497c-bcf0-b9e2427e37c1', '{"resourceType":"Observation","id":"6aea12b6-f218-497c-bcf0-')]	PASS
+unsupported channel email	(201, 'error')	FAIL
+unsupported channel sms	(201, 'error')	FAIL
+unsupported channel message	(201, 'error')	FAIL
+criteria unknown type	(201, '{"resourceType":"Subscription","id":"679b41e3-f80e-4597-ba45-dca0c9c9e0cc","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:40:53.237084')	FAIL
+criteria unknown param	(201, '{"resourceType":"Subscription","id":"b9906a12-c09f-4ee7-a94a-171e3ffce0ed","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:40:53.251034')	NOTE
+criteria bad modifier	(201, '{"resourceType":"Subscription","id":"bdac1f68-cb33-4683-a578-369030d511e0","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:40:53.265320')	FAIL
+failed delivery sets status error + error	('active', None)	FAIL
+endpoint accepted: http://169.254.169.254/latest/meta-data/	(201, 'active')	NOTE
+endpoint accepted: http://10.0.0.1/x	(201, 'active')	NOTE
+endpoint accepted: file:///etc/passwd	(201, 'active')	NOTE
+endpoint accepted: ftp://x/y	(201, 'active')	NOTE
+endpoint accepted: http://[::1]:9/x	(201, 'active')	NOTE
+past end: deleted / not notified	(200, 'active', 0)	NOTE
+create with end in the past	(201, '{"resourceType":"Subscription","id":"01211bab-3c13-4712-a129-bd161d2b165f","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:41:21.608854')	NOTE
+ws upgrade without token	401	PASS
+ws upgrade with token	101	PASS
+ws bind own	bound 6de80912-1b03-49df-91f8-fd36811bd85d	NOTE
+ws bind another account's subscription	bound 6de80912-1b03-49df-91f8-fd36811bd85d	FAIL
+ws bind unknown id	bound does-not-exist	NOTE
+ws ping own	None	NOTE
+ws ping on the other account	None	NOTE
+AuditEvent kinds after notifications	[(('110112', 'create'), 37), (('110112', 'delete'), 1), (('110112', 'execute'), 3), (('110112', 'read'), 42), (('110112', 'search-type'), 1), (('110112', 'update'), 14)]	NOTE
+another clinician's search sees the first one's channel.header	True	NOTE

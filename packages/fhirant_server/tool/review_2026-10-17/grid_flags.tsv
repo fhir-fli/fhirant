@@ -1,0 +1,40 @@
+identity	label	status	verdict	path	body
+admin	forecast-out	500	5xx	/$immds-forecast	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+admin	forecast-who-out	500	5xx	/$immds-forecast-who	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+admin	post:evil-accounts	200	an account was created: [{'id': 13, 'username': 'evil-admin', 'role': 'admin', 'active': True, 'scopes': ['system/*.*'], 'locked': False}]		[{'id': 13, 'username': 'evil-admin', 'role': 'admin', 'active': True, 'scopes': ['system/*.*'], 'locked': False}]
+clin	forecast-out	500	5xx	/$immds-forecast	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+clin	forecast-who-out	500	5xx	/$immds-forecast-who	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+rdonly	forecast-out	500	5xx	/$immds-forecast	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+rdonly	forecast-who-out	500	5xx	/$immds-forecast-who	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Immunization forecast error"}]}
+pat	everything-in	200	out-of-compartment data to a patient scope	/Patient/pat1/$everything	{"resourceType":"Bundle","type":"searchset","total":9,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Patient/pat1/$everything"},{"relation":"first","u
+pat	history-sys	200	out-of-compartment data to a patient scope	/_history	{"resourceType":"Bundle","type":"history","total":9,"link":[{"relation":"self","url":"http://127.0.0.1:18411/_history"},{"relation":"first","url":"http://127.0.
+pat	search-chain-out	200	out-of-compartment data to a patient scope	/Observation?subject:Patient.family=LEAKMARKOUT	{"resourceType":"Bundle","type":"searchset","total":0,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Observation?subject%3APatient.family=LEAKMARKOUT"
+pat	read-group	200	out-of-compartment data to a patient scope	/Group/g1	{"resourceType":"Group","id":"g1","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:27:49.419950Z"},"type":"person","actual":true,"name":"LEAKMARKOUT","membe
+pat	cond-delete-out	200	patient scope wrote outside its compartment	/Observation?identifier=urn:grid|obs2b	{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"not-found","diagnostics":"No resources matched the search criteria"}]}
+patro	everything-in	200	out-of-compartment data to a patient scope	/Patient/pat1/$everything	{"resourceType":"Bundle","type":"searchset","total":9,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Patient/pat1/$everything"},{"relation":"first","u
+patro	history-sys	200	out-of-compartment data to a patient scope	/_history	{"resourceType":"Bundle","type":"history","total":9,"link":[{"relation":"self","url":"http://127.0.0.1:18411/_history"},{"relation":"first","url":"http://127.0.
+patro	search-chain-out	200	out-of-compartment data to a patient scope	/Observation?subject:Patient.family=LEAKMARKOUT	{"resourceType":"Bundle","type":"searchset","total":0,"link":[{"relation":"self","url":"http://127.0.0.1:18411/Observation?subject%3APatient.family=LEAKMARKOUT"
+patro	read-group	200	out-of-compartment data to a patient scope	/Group/g1	{"resourceType":"Group","id":"g1","meta":{"versionId":"1","lastUpdated":"2026-10-18T03:27:49.419950Z"},"type":"person","actual":true,"name":"LEAKMARKOUT","membe
+none	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+none	options	204	stale or forged credential not refused	/Observation	
+garbage	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+garbage	options	204	stale or forged credential not refused	/Observation	
+wrong-secret	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+wrong-secret	options	204	stale or forged credential not refused	/Observation	
+alg-none	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+alg-none	options	204	stale or forged credential not refused	/Observation	
+refresh-as-access	refresh-own	200	public route acted for a dead credential	/auth/token	{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiY2xpbiIsInJvbGUiOiJjbGluaWNpYW4iLCJzY29wZSI6InVzZXIvKi4qIiwiZ2VuIjowLCJpYX
+refresh-as-access	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+refresh-as-access	options	204	stale or forged credential not refused	/Observation	
+expired	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+expired	options	204	stale or forged credential not refused	/Observation	
+deactivated	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+deactivated	options	204	stale or forged credential not refused	/Observation	
+demoted	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+demoted	options	204	stale or forged credential not refused	/Observation	
+pw-reset	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+pw-reset	options	204	stale or forged credential not refused	/Observation	
+scopes-narrowed	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+scopes-narrowed	options	204	stale or forged credential not refused	/Observation	
+logged-out	export-file-roots	406	stale or forged credential not refused	/$export-file/c382c8b5-03bf-471a-8166-c6932e29e98f/Patient.ndjson	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"Unsupported format: application/fhir+ndjson"}]}
+logged-out	options	204	stale or forged credential not refused	/Observation	

@@ -1,0 +1,48 @@
+case	rule	expected	observed	verdict
+self link: unknown parameter	SHALL return the parameters that were actually used to process the search ... encoded in the self link	ignored param absent from self link (or 400)	(200, 3, 'of', 3, 'http://127.0.0.1:18411/Observation?subjekt=Patient/pat1')	FAIL
+handling=strict: unknown parameter	Prefer: handling=strict: Client requests that the server return an error for any unknown or unsupported parameter (SHOULD honor)	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Unsupported search pa')	PASS
+self link: typo of a real parameter	SHALL return the parameters that were actually used to process the search ... encoded in the self link	ignored param absent from self link (or 400)	(200, 3, 'of', 3, 'http://127.0.0.1:18411/Observation?patiet=Patient/pat1')	FAIL
+handling=strict: typo of a real parameter	Prefer: handling=strict: Client requests that the server return an error for any unknown or unsupported parameter (SHOULD honor)	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Unsupported search pa')	PASS
+self link: known parameter, other type	SHALL return the parameters that were actually used to process the search ... encoded in the self link	ignored param absent from self link (or 400)	(200, 3, 'of', 3, 'http://127.0.0.1:18411/Observation?birthdate=2000')	FAIL
+handling=strict: known parameter, other type	Prefer: handling=strict: Client requests that the server return an error for any unknown or unsupported parameter (SHOULD honor)	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Unsupported search pa')	PASS
+self link: unknown + known	SHALL return the parameters that were actually used to process the search ... encoded in the self link	ignored param absent from self link (or 400)	(200, 3, 'of', 3, 'http://127.0.0.1:18411/Observation?code=8867-4')	PASS
+handling=strict: unknown + known	Prefer: handling=strict: Client requests that the server return an error for any unknown or unsupported parameter (SHOULD honor)	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Unsupported search pa')	PASS
+self link carries _sort	The server returns the sort it performs as part of the returned search parameters	_sort in self	http://127.0.0.1:18411/Observation?code=8867-4&_sort=-date	PASS
+self link: unknown _sort param	SHALL return the parameters that were actually used to process the search ... encoded in the self link	absent or 4xx	(200, 'http://127.0.0.1:18411/Observation?_sort=not-a-param')	FAIL
+_query unknown	Servers processing search requests SHALL refuse to process a search request if they do not recognize the _query parameter value	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics":"This server define')	PASS
+empty parameter	Empty parameters are not an error - they are just ignored by the server	200, total = all	(200, 3, 3)	PASS
+bad date format	servers SHOULD return an error	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"The ')	PASS
+bad quantity	syntactically incorrect -> error	400	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"The ')	PASS
+reference to nonexistent	SHOULD process the search ... returning an empty search set	200 total 0	(200, 0)	PASS
+illegal modifier	A parameter may use an illegal or unacceptable modifier	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supported","diagnostics"')	PASS
+_count=0	treated the same as _summary=count: total, no entries, no prev/next/last links	total, 0 entries, no next	(200, 3, 0, ['self'])	PASS
+_summary=count	just return a count	total, 0 entries	(200, 3, 0)	PASS
+_count repeated in next link	The server should repeat the original _count parameter in its returned page links	_count=2 in next	['http://127.0.0.1:18411/Observation?_count=2&_offset=2']	PASS
+_count honoured	Servers SHALL NOT return more resources than requested	<=2	2	PASS
+_count excludes includes	the _count parameter only applies to resources with entry.search.mode = search	2 matches + includes	(2, 1)	PASS
+include mode	adds to the results, with the entry.search.mode set to "include"	every entry has a mode	['match', 'match', 'include']	PASS
+_include=*	use the wild card "*" for the search parameter name	200	(200, 3)	PASS
+iterate wildcards	Servers are expected to limit the number of iterations	200 bounded	(200, 3)	NOTE
+_include unknown param	self link records what was used	absent from self or 4xx	(200, 'http://127.0.0.1:18411/Observation?_include=Observation:not-a-param')	FAIL
+_total=none	servers can ignore the _total parameter	read	(200, None)	NOTE
+_total=estimate	servers can ignore the _total parameter	read	(200, 3)	NOTE
+_total=accurate	servers can ignore the _total parameter	read	(200, 3)	NOTE
+_summary=true SUBSETTED	Servers SHOULD mark the resources with the tag SUBSETTED	SUBSETTED	['SUBSETTED']	PASS
+_summary=text with _include	the _include and _revinclude parameters cannot be mixed with _summary=text	4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_include/_revinclude ')	PASS
+_elements	Servers SHOULD always return mandatory elements ... SHOULD mark the resources with the tag SUBSETTED	status+code, SUBSETTED	([['code', 'id', 'meta', 'resourceType', 'status']], ['SUBSETTED'])	PASS
+_sort=family	SHOULD honor the _sort parameter; case-insensitive	ascending	['INMARKPAT1', 'LEAKMARKOUT']	PASS
+_sort multiple keys	comma-separated list of sort rules	200	(200, '{"resourceType":"Bundle","type":"searchset","total":2,"link":[{"relation":"self"')	PASS
+contained not returned by default	By default, search results only include resources that are not contained	total 0	(200, 0)	PASS
+chain into contained	A chained condition will be evaluated inside contained resources	mr1	(200, ['mr1'])	PASS
+_contained=true	return only contained resources	m1 or 4xx	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"_contained=true is not supported by this server. _contained=f')	NOTE
+common param _text	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_text=potassium')	NOTE
+common param _content	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_content=potassium')	NOTE
+common param _filter	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 3, 'http://127.0.0.1:18411/Observation?_filter=status+eq+final')	FAIL
+common param _list	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_list=List/x')	NOTE
+common param _security	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_security=urn:x|y')	NOTE
+common param _source	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_source=urn:x')	NOTE
+common param _profile	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_profile=http://x/y')	NOTE
+common param _tag	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, 'http://127.0.0.1:18411/Observation?_tag=urn:x|y')	NOTE
+common param _lastUpdated	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 3, 'http://127.0.0.1:18411/Observation?_lastUpdated=gt2000')	FAIL
+common param _id	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 1, 'http://127.0.0.1:18411/Observation?_id=obs1')	NOTE
+common param _has:Observation:subject:code	SHALL return the parameters that were actually used to process the search ... encoded in the self link	applied, or refused, or absent from self	(200, 0, '0.0.1:18411/Observation?_has:Observation:subject:code=8867-4')	NOTE
