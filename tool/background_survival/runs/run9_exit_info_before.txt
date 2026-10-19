@@ -1,0 +1,18 @@
+          timestamp=2026-10-18 18:51:32.293 pid=21541 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=10 (USER REQUESTED) subreason=21 (FORCE STOP) status=0
+          importance=100 pss=0.00 rss=240MB description=stop dev.fhirfli.fhirant.app due to from pid 28381 state=empty trace=null
+          timestamp=2026-10-18 18:31:27.740 pid=24554 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=16 (PACKAGE UPDATED) subreason=0 (UNKNOWN) status=0
+          importance=125 pss=0.00 rss=150MB description=stop dev.fhirfli.fhirant.app due to installPackageLI state=empty trace=null
+          timestamp=2026-10-10 17:18:56.732 pid=20914 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=13 (OTHER KILLS BY SYSTEM) subreason=1028 (UNKNOWN) status=0
+          importance=400 pss=0.00 rss=39MB description=grp(cameraLowFree)[(cch-empty){recent-locked}] state=empty trace=null
+          timestamp=2026-09-22 12:40:35.798 pid=29011 realUid=10648 packageUid=10648 definingUid=10648 user=0
+          process=dev.fhirfli.fhirant.app reason=16 (PACKAGE UPDATED) subreason=0 (UNKNOWN) status=0
+          importance=100 pss=0.00 rss=347MB description=stop dev.fhirfli.fhirant.app due to installPackageLI state=empty trace=null
+pid=22336
+curProcState=4
+  AC powered: false
+  USB powered: true
+  level: 100
+  Capacity level: 3

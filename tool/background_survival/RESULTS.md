@@ -17,6 +17,8 @@ in runs/. One run per row, one phone.
 
 | 8 | fix build, Recents lock OFF, exemption on, cable out 11:21 (2026-09-22), locked | 87/88 | killed 11:28:50, 7 min 0 s after unplug (11:21:50), `o-kill(6)`, importance 125, 256 MB; answered again 11:29:05 with uptime 7 s, a fresh server started by the service; then 534 s with no miss, and still up (uptime 627 s) at 11:39 after replug. Down 10–21 s |
 
+| 9 | build from main 41948bc (2026-10-18), Recents lock OFF (menu offered "Lock"), exemption on, cable out by 19:50:24, locked | 262/262 | alive; no miss, no restart: uptime 2,718 → 5,422 s over 19:36:52–20:21:56, about 31 min unplugged. No kill came, so the restart path was not exercised. Exit records before the run: `runs/run9_exit_info_before.txt` (none read after: phone off USB) |
+
 Plugged in, the app was never killed: runs 1, 2 and 7, and 105 min for
 sensorium (graiai/sensorium/PLAN.md 16.4). Every kill came after unplugging.
 
