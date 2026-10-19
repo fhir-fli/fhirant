@@ -327,7 +327,8 @@ Future<Response> compartmentSearchHandler(
     final offset = parsed.offset ?? 0;
     final sort = parsed.sort;
     final total = parsed.total;
-    final links = SearchLinks.decide(resourceType, queryParams);
+    final links =
+        await SearchLinks.forStore(dbInterface, resourceType, queryParams);
     // Prefer: handling=strict, as on a type-level search (R4B search.html
     // 3.1.1.3, read whole 2026-10-01): an unknown or unsupported parameter,
     // an unknown _sort rule included, is refused; under lenient (the

@@ -9,6 +9,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import 'store_lookup_stub.dart';
+
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
 class MockRequest extends Mock implements Request {}
@@ -26,6 +28,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubStoreLookup(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.headers).thenReturn({});
       when(() => mockRequest.context).thenReturn({});
@@ -429,6 +432,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubStoreLookup(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn({});
     });

@@ -200,6 +200,8 @@ Future<Response> systemSearchHandler(
     final commonScope = typeParam == null || typeParam.isEmpty
         ? const <String>['Resource']
         : types.map((t) => t.toString()).toList();
+    // The store's definitions, uploads included ([storeLookup]).
+    final lookup = await storeLookup(dbInterface);
     // A parameter no named type defines is not a search parameter here at
     // all, so the SHALL above does not reach it. It is an unknown parameter
     // (R4B search.html 3.1.1.3, read whole 2026-10-01, verbatim: "servers
@@ -213,15 +215,14 @@ Future<Response> systemSearchHandler(
     // Unknown means no resource type defines the name. A real parameter
     // that is merely not common to the types named (`gender` with no
     // _type) is the SHALL's own case and is refused whatever the header.
-    bool definedAnywhere(String name) => fhir.R4ResourceType.values
-        .any((t) => searchParameterFor('$t', name) != null);
+    bool definedAnywhere(String name) =>
+        fhir.R4ResourceType.values.any((t) => lookup('$t', name) != null);
     final unknownHere = <String>[];
     for (final key
         in (searchParameters ?? const <String, List<String>>{}).keys) {
       final name = SearchQueryKey.parse(key).name;
-      final lacking = commonScope
-          .where((t) => searchParameterFor(t, name) == null)
-          .toList();
+      final lacking =
+          commonScope.where((t) => lookup(t, name) == null).toList();
       if (lacking.isNotEmpty && !definedAnywhere(name)) {
         unknownHere.add(key);
         continue;
@@ -247,9 +248,8 @@ Future<Response> systemSearchHandler(
     for (final rule in sort ?? const <String>[]) {
       final name = rule.startsWith('-') ? rule.substring(1) : rule;
       if (name == '_id' || name == '_lastUpdated') continue;
-      final lacking = commonScope
-          .where((t) => searchParameterFor(t, name) == null)
-          .toList();
+      final lacking =
+          commonScope.where((t) => lookup(t, name) == null).toList();
       if (lacking.isNotEmpty && !definedAnywhere(name)) {
         unknownSort.add(rule);
         continue;
@@ -304,7 +304,7 @@ Future<Response> systemSearchHandler(
 
     // The links: the parameters were checked common, so any one type decides
     // the same used set; `_type` is a control parameter and is kept.
-    final links = SearchLinks.decide(commonScope.first, mergedParams);
+    final links = SearchLinks.decide(commonScope.first, mergedParams, lookup);
     final requested = request.requestedUri;
 
     // Counts per type, in SQL, for the total and to place the page.
@@ -494,11 +494,6 @@ Future<fhir.Bundle> typeSearch(
   // Parse query parameters into search params and pagination params
   final parsed = SearchParameterParser.parseQueryParameters(queryParams);
   final searchParams = parsed.searchParams;
-  final include = parsed.include;
-  final revinclude = parsed.revinclude;
-  final includeIterate = parsed.includeIterate;
-  final revincludeIterate = parsed.revincludeIterate;
-
   final hasParams = parsed.has;
   final count = parsed.count ?? 20;
   final offset = parsed.offset ?? 0;
@@ -534,8 +529,15 @@ Future<fhir.Bundle> typeSearch(
   // starts with `_`: the old check only saw `_`-prefixed unknowns, so a
   // strict client sending `?gendr=male` was answered 200 with every
   // patient.
-  final links = SearchLinks.decide(resourceType, queryParams);
+  final links =
+      await SearchLinks.forStore(dbInterface, resourceType, queryParams);
   final refused = <String>[...?unknownParams, ...links.ignored];
+  // The joins run are the ones the self link names: a value that can join
+  // nothing is left out of both.
+  final include = links.joins('_include');
+  final revinclude = links.joins('_revinclude');
+  final includeIterate = links.joins('_include:iterate');
+  final revincludeIterate = links.joins('_revinclude:iterate');
   // R4B security.html 6.1.0.5.1: a chain, `_has` or `_filter` chain reads
   // the chained type, so the caller must be able to search it
   // (REVIEW-2026-10-17 finding 6; auth/search_reach.dart).
@@ -614,10 +616,10 @@ Future<fhir.Bundle> typeSearch(
   }
 
   // Reject _include/_revinclude combined with _summary=text (per FHIR spec)
-  final hasIncludes = (include != null && include.isNotEmpty) ||
-      (revinclude != null && revinclude.isNotEmpty) ||
-      (includeIterate != null && includeIterate.isNotEmpty) ||
-      (revincludeIterate != null && revincludeIterate.isNotEmpty);
+  final hasIncludes = include.isNotEmpty ||
+      revinclude.isNotEmpty ||
+      includeIterate.isNotEmpty ||
+      revincludeIterate.isNotEmpty;
   if (hasIncludes && summary == 'text') {
     throw const SearchRefused(
       fhir.IssueType.processing,
@@ -786,7 +788,7 @@ Future<fhir.Bundle> typeSearch(
   // Observation (REVIEW-2026-09-08 row 10).
   int remaining() => maxIncluded - includedResources.length;
 
-  if (include != null && include.isNotEmpty) {
+  if (include.isNotEmpty) {
     includesTruncated |= await _processIncludes(
       include,
       resources,
@@ -800,7 +802,7 @@ Future<fhir.Bundle> typeSearch(
 
   // _include:iterate — iteratively resolve references from newly
   // included resources
-  if (includeIterate != null && includeIterate.isNotEmpty) {
+  if (includeIterate.isNotEmpty) {
     var newlyIncluded = List<fhir.Resource>.from(includedResources);
     for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
       if (remaining() <= 0) {
@@ -826,7 +828,7 @@ Future<fhir.Bundle> typeSearch(
     }
   }
 
-  if (revinclude != null && revinclude.isNotEmpty) {
+  if (revinclude.isNotEmpty) {
     includesTruncated |= await _processRevIncludes(
       revinclude,
       resources,
@@ -840,7 +842,7 @@ Future<fhir.Bundle> typeSearch(
 
   // _revinclude:iterate — iteratively find resources referencing newly
   // included
-  if (revincludeIterate != null && revincludeIterate.isNotEmpty) {
+  if (revincludeIterate.isNotEmpty) {
     var newlyIncluded = List<fhir.Resource>.from(includedResources);
     for (var i = 0; i < 5 && newlyIncluded.isNotEmpty; i++) {
       if (remaining() <= 0) {

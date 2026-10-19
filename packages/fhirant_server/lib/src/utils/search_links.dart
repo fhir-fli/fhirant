@@ -19,21 +19,41 @@ import 'package:fhirant_db/fhirant_db.dart';
 /// `queryParametersAll` rather than `queryParameters`: the latter keeps only
 /// the LAST value of a repeated key, so the `next` page of `given=A&given=B`
 /// used to run `given=B`.
+/// The definition of a search parameter [code] on [resourceType], or null.
+typedef ParameterLookup = SearchParameterDefinition? Function(
+  String resourceType,
+  String code,
+);
+
+/// The store's lookup: the specification's parameters, else the ones
+/// uploaded as SearchParameters (`FhirDao.lookupDefinition`), the uploads
+/// loaded first. The specification's table alone (`searchParameterFor`)
+/// knew no upload, so a search by one was left out of the self link and
+/// refused under `Prefer: handling=strict` though the store ran it (found
+/// fixing REVIEW-2026-10-17's smaller list).
+Future<ParameterLookup> storeLookup(FhirAntDb db) async {
+  await db.customSearchParameters;
+  return db.fhirDao.lookupDefinition;
+}
+
 class SearchLinks {
   SearchLinks._(this.used, this.ignored);
 
-  /// Decides which of [query]'s parameters a search of [resourceType] uses.
+  /// Decides which of [query]'s parameters a search of [resourceType] uses,
+  /// a parameter's definition read through [lookup].
   ///
-  /// Control parameters (`_count`, `_sort`, `_include`, ...) are kept as
-  /// given. A `_has` is kept when it parses. A search parameter is kept when
-  /// the store has a definition for its name on this type (or on Resource /
+  /// Control parameters (`_count`, `_summary`, ...) are kept as given. A
+  /// `_has` is kept when it parses. A search parameter is kept when [lookup]
+  /// has a definition for its name on this type (or on Resource /
   /// DomainResource, where `_id`, `_lastUpdated`, `_tag`, ... are published);
   /// the modifier or chain after the name is the store's to validate and is
   /// carried through. A `_sort` rule is kept when its parameter is defined.
-  /// Everything else is [ignored].
+  /// An `_include` or `_revinclude` value is kept when it can join
+  /// ([_joins]). Everything else is [ignored].
   factory SearchLinks.decide(
     String resourceType,
     Map<String, List<String>> query,
+    ParameterLookup lookup,
   ) {
     final used = <String, List<String>>{};
     final ignored = <String>[];
@@ -56,7 +76,7 @@ class SearchLinks {
             final name = rule.startsWith('-') ? rule.substring(1) : rule;
             if (name == '_id' ||
                 name == '_lastUpdated' ||
-                searchParameterFor(resourceType, name) != null) {
+                lookup(resourceType, name) != null) {
               kept.add(rule);
             } else {
               ignored.add('_sort=$rule');
@@ -67,12 +87,28 @@ class SearchLinks {
         if (rules.isNotEmpty) used[key] = rules;
         continue;
       }
+      if (joinParameters.contains(key)) {
+        final kept = <String>[];
+        for (final value in entry.value) {
+          final specs = [
+            for (final spec in value.split(',').map((s) => s.trim()))
+              if (spec.isNotEmpty) spec,
+          ];
+          for (final spec in specs) {
+            if (!_joins(spec, lookup)) ignored.add('$key=$spec');
+          }
+          final joining = specs.where((spec) => _joins(spec, lookup));
+          if (joining.isNotEmpty) kept.add(joining.join(','));
+        }
+        if (kept.isNotEmpty) used[key] = kept;
+        continue;
+      }
       if (controlParameters.contains(key)) {
         used[key] = entry.value;
         continue;
       }
       final name = SearchQueryKey.parse(key).name;
-      if (searchParameterFor(resourceType, name) != null) {
+      if (lookup(resourceType, name) != null) {
         used[key] = entry.value;
       } else {
         ignored.add(key);
@@ -118,6 +154,50 @@ class SearchLinks {
     return SearchLinks._(used, ignored);
   }
 
+  /// [decide] with the store's own lookup: the specification's parameters
+  /// and the ones uploaded as SearchParameters ([storeLookup]).
+  static Future<SearchLinks> forStore(
+    FhirAntDb db,
+    String resourceType,
+    Map<String, List<String>> query,
+  ) async =>
+      SearchLinks.decide(resourceType, query, await storeLookup(db));
+
+  /// Whether [spec], an `_include` or `_revinclude` value, can join.
+  ///
+  /// R4B search.html 3.1.1.5.4 (read 2026-10-18, verbatim): "Parameter
+  /// values for both _include and _revinclude have three parts, separated by
+  /// a : character: The name of the source resource from which the join
+  /// comes; The name of the search parameter which must be of type
+  /// reference; (Optional) A specific of type of target resource". The
+  /// second part may be `*`, "any search parameter of type=reference". A
+  /// value that names no reference parameter of its source type joins
+  /// nothing, so 3.1.1.6 keeps it out of the self link: it used to stay
+  /// there (REVIEW-2026-10-17, smaller list).
+  static bool _joins(String spec, ParameterLookup lookup) {
+    final parts = spec.split(':');
+    if (parts.length < 2 || parts.length > 3) return false;
+    if (fhir.R4ResourceType.fromString(parts[0]) == null) return false;
+    if (parts.length == 3 && fhir.R4ResourceType.fromString(parts[2]) == null) {
+      return false;
+    }
+    return parts[1] == '*' || lookup(parts[0], parts[1])?.type == 'reference';
+  }
+
+  /// The `_include` or `_revinclude` values ([key]) the search used, one
+  /// per join, for the code that runs them.
+  List<String> joins(String key) => [
+        for (final value in used[key] ?? const <String>[]) ...value.split(','),
+      ];
+
+  /// The joins: kept per value, by [_joins].
+  static const joinParameters = <String>{
+    '_include',
+    '_revinclude',
+    '_include:iterate',
+    '_revinclude:iterate',
+  };
+
   /// The links of one page: `self` and `first` always; `previous` when
   /// there is a page before; `next` while [offset] + [count] < [total];
   /// `last` when [total] is known and positive. A [count] of zero is a
@@ -157,10 +237,7 @@ class SearchLinks {
     '_count',
     '_offset',
     '_sort',
-    '_include',
-    '_revinclude',
-    '_include:iterate',
-    '_revinclude:iterate',
+    ...joinParameters,
     '_summary',
     '_elements',
     '_total',
