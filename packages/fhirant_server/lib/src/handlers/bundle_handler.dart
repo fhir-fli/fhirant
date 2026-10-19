@@ -440,10 +440,33 @@ Map<String, dynamic> _resolveUrnReferences(
 ) {
   final result = <String, dynamic>{};
   for (final entry in json.entries) {
-    result[entry.key] = _resolveValue(entry.value, urnMap);
+    final value = entry.value;
+    // Narrative.div is R4B's only xhtml element (every StructureDefinition
+    // in hl7.fhir.r4b.core 4.3.0), so a `div` string is narrative.
+    result[entry.key] = entry.key == 'div' && value is String
+        ? _resolveNarrativeLinks(value, urnMap)
+        : _resolveValue(value, urnMap);
   }
   return result;
 }
+
+/// `href` and `src` attribute values in a narrative that name a bundle
+/// entry by its urn:uuid, with that entry's new reference. R4B http.html
+/// 3.1.0.11.2 (hl7.org/fhir/R4B/http.html, read 2026-10-18): "Servers SHALL
+/// replace all matching links in the bundle, whether they are found in ...
+/// <a href="" & <img src="" in the narrative" (REVIEW-2026-10-17, smaller
+/// list). Text that is not a link stays as written, and so does a urn:uuid
+/// of something outside the bundle.
+String _resolveNarrativeLinks(String div, Map<String, String> urnMap) =>
+    div.replaceAllMapped(_narrativeLink, (m) {
+      final target = urnMap[m[3]];
+      return target == null ? m[0]! : '${m[1]}${m[2]}$target${m[2]}';
+    });
+
+final _narrativeLink = RegExp(
+  r'''(\b(?:href|src)\s*=\s*)(["'])(urn:uuid:[^"']*)\2''',
+  caseSensitive: false,
+);
 
 dynamic _resolveValue(dynamic value, Map<String, String> urnMap) {
   if (value is String) {
