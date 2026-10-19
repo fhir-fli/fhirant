@@ -46,31 +46,41 @@ class JwtService {
   /// 2026-10-17): "refresh tokens have an absolute expiration, including if
   /// sliding refresh token expiration is applied"; each rotation used to
   /// grant a fresh 7 days (REVIEW-2026-10-17 finding 17).
-  ({String access, String refresh}) issueSession(
+  ///
+  /// [expiresIn] is the access token's lifetime in seconds, read from its
+  /// own `exp` and `iat`, for the token reply's `expires_in` (SMART App
+  /// Launch STU 2.2 app-launch.html, read 2026-10-18: "required" in the
+  /// refresh response, "recommended" in the access token response;
+  /// REVIEW-2026-10-17, smaller list).
+  ({String access, String refresh, int expiresIn}) issueSession(
     User user, {
     required List<String> scopes,
     DateTime? notAfter,
-  }) =>
-      (
-        access: generateToken(
-          userId: user.id,
-          username: user.username,
-          role: user.role,
-          scopes: scopes,
-          patientId: user.patientId,
-          generation: user.tokenGeneration,
-          notAfter: notAfter,
-        ),
-        refresh: generateRefreshToken(
-          userId: user.id,
-          username: user.username,
-          role: user.role,
-          scopes: scopes,
-          patientId: user.patientId,
-          generation: user.tokenGeneration,
-          notAfter: notAfter,
-        ),
-      );
+  }) {
+    final access = generateToken(
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      scopes: scopes,
+      patientId: user.patientId,
+      generation: user.tokenGeneration,
+      notAfter: notAfter,
+    );
+    final claims = JWT.decode(access).payload as Map<String, dynamic>;
+    return (
+      access: access,
+      refresh: generateRefreshToken(
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+        scopes: scopes,
+        patientId: user.patientId,
+        generation: user.tokenGeneration,
+        notAfter: notAfter,
+      ),
+      expiresIn: (claims['exp'] as int) - (claims['iat'] as int),
+    );
+  }
 
   /// [lifetime], shortened so that it ends no later than [notAfter].
   static Duration _capped(Duration lifetime, DateTime? notAfter) {
