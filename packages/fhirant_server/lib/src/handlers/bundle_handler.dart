@@ -33,18 +33,20 @@ Future<Response> bundleHandler(
   try {
     FhirantLogging().logInfo('Processing Bundle request');
     final body = await request.readAsString();
-    final bundle = fhir.Bundle.fromJsonString(body);
+    final parsed = fhir.Bundle.fromJsonString(body);
 
-    if (bundle.type != fhir.BundleType.transaction &&
-        bundle.type != fhir.BundleType.batch) {
+    if (parsed.type != fhir.BundleType.transaction &&
+        parsed.type != fhir.BundleType.batch) {
       return validationOutcome(
         'Bundle type must be "transaction" or "batch"',
       );
     }
 
-    if (bundle.entry == null || bundle.entry!.isEmpty) {
-      return validationOutcome('Bundle must contain at least one entry');
-    }
+    // R4B http.html 3.1.0.11.2 (read 2026-10-18): "It is not an error if
+    // the submitted bundle has no resources in it." No entries is an empty
+    // response Bundle (REVIEW-2026-10-17, smaller list).
+    final bundle =
+        parsed.entry == null ? parsed.copyWith(entry: const []) : parsed;
 
     if (bundle.type == fhir.BundleType.transaction) {
       return await _processTransaction(bundle, dbInterface, request, subs);
