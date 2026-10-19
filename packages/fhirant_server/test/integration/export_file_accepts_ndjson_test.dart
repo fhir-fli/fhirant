@@ -34,12 +34,9 @@ void main() {
       ),
     );
     final jobId = kick.headers['content-location']!.split('/').last;
-    for (var i = 0; i < 100; i++) {
-      final r =
-          await handler(testRequest('GET', '/\$export-poll-status/$jobId'));
-      if (r.statusCode == 200) break;
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
+    // It used to stop polling after 5 s and go on whether or not the
+    // export had finished.
+    expect((await pollExport(handler, jobId)).statusCode, 200);
     fileUrl = '/\$export-file/$jobId/Patient.ndjson';
   });
 
