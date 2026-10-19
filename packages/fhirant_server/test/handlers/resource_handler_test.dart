@@ -8,6 +8,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import 'store_lookup_stub.dart';
+
 // Mock classes
 class MockFhirAntDb extends Mock implements FhirAntDb {}
 
@@ -28,6 +30,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubStoreLookup(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn({});
     });
@@ -344,6 +347,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubStoreLookup(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.headers).thenReturn({});
       when(() => mockRequest.context).thenReturn({});
@@ -622,12 +626,12 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10',
+          'http://localhost:8080/Patient?_include=Patient:organization&_count=10',
         ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_count=10',
+          'http://localhost:8080/Patient?_include=Patient:organization&_count=10',
         ),
       );
       when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
@@ -658,7 +662,7 @@ void main() {
         () => mockDb.referenceTargets(
           'Patient',
           any(),
-          parameter: 'managingOrganization',
+          parameter: 'organization',
         ),
       ).thenAnswer((_) async => {('Organization', 'org-inc-1')});
 
@@ -876,12 +880,12 @@ void main() {
 
       when(() => mockRequest.url).thenReturn(
         Uri.parse(
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10',
+          'http://localhost:8080/Patient?_include=Patient:organization&_include:iterate=Organization:partof&_count=10',
         ),
       );
       when(() => mockRequest.requestedUri).thenReturn(
         Uri.parse(
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_include:iterate=Organization:partOf&_count=10',
+          'http://localhost:8080/Patient?_include=Patient:organization&_include:iterate=Organization:partof&_count=10',
         ),
       );
       when(() => mockDb.getResources(any(), any())).thenAnswer((i) async {
@@ -907,20 +911,20 @@ void main() {
         () =>
             mockDb.getResource(fhir.R4ResourceType.Organization, 'org-iter-1'),
       ).thenAnswer((_) async => org);
-      // Patient:managingOrganization on the match, then Organization:partOf
+      // Patient:organization on the match, then Organization:partof
       // on what was included, then nothing more.
       when(
         () => mockDb.referenceTargets(
           'Patient',
           any(),
-          parameter: 'managingOrganization',
+          parameter: 'organization',
         ),
       ).thenAnswer((_) async => {('Organization', 'org-iter-1')});
       when(
         () => mockDb.referenceTargets(
           'Organization',
           any(),
-          parameter: 'partOf',
+          parameter: 'partof',
         ),
       ).thenAnswer((invocation) async {
         final ids = invocation.positionalArguments[1] as Iterable<String>;
@@ -1059,7 +1063,7 @@ void main() {
 
     test('_include + _summary=text returns 400', () async {
       const url =
-          'http://localhost:8080/Patient?_include=Patient:managingOrganization&_summary=text';
+          'http://localhost:8080/Patient?_include=Patient:organization&_summary=text';
       when(() => mockRequest.url).thenReturn(Uri.parse(url));
       // The search takes the requested URI up front now (its links are
       // built from it), before it refuses this combination.
@@ -1793,6 +1797,7 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
+      stubStoreLookup(mockDb);
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn(const <String, Object>{});
       when(() => mockDb.transaction<int>(any())).thenAnswer(
