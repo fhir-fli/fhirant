@@ -786,7 +786,10 @@ Future<void> _processExport(
         final path = '$exportDir/$jobId/$typeName.ndjson';
         final count = await _writeNdjsonFile(
           path,
-          dbInterface.exportJson(resourceType, since: since, ids: wanted),
+          _absoluteAttachmentUrls(
+            dbInterface.exportJson(resourceType, since: since, ids: wanted),
+            baseUrl,
+          ),
           fileKey,
         );
         if (count == 0) {
@@ -856,21 +859,9 @@ Future<void> _processExport(
         if (typeName == 'Provenance') {
           // The Provenance of what is exported ([_provenanceAbout]): a
           // target that is a Patient, or a member of a Patient compartment.
-          final membersOf = <String, Set<String>>{};
           memberIds = {
             ...memberIds,
-            ...await _provenanceAbout(dbInterface, (type, id) async {
-              if (type == 'Patient') {
-                return await dbInterface.getResource(
-                      fhir.R4ResourceType.Patient,
-                      id,
-                    ) !=
-                    null;
-              }
-              final members = membersOf[type] ??=
-                  await dbInterface.compartmentTypeMembers('Patient', type);
-              return members.contains(id);
-            }),
+            ...await _provenanceAbout(dbInterface, _patientTie(dbInterface)),
           };
         }
         if (memberIds.isEmpty) continue;
@@ -905,8 +896,32 @@ Future<void> _processExport(
         );
       }
 
+      // A Binary tied to a patient goes out only as the DocumentReference
+      // that names it ([_patientBinaries]).
+      if (typeName == 'Binary') {
+        final tied = await _patientBinaries(dbInterface, baseUrl);
+        if (tied.all.isNotEmpty) {
+          lines = lines.where(
+            (line) => !tied.all.contains(
+              (jsonDecode(line) as Map<String, dynamic>)['id'],
+            ),
+          );
+          final unnamed = tied.all.difference(tied.named).toList()..sort();
+          FhirantLogging().logInfo(
+            'Export job $jobId left out ${tied.all.length} Binary resource(s) '
+            'tied to a patient'
+            '${unnamed.isEmpty ? '' : '; named by no Attachment, so in no '
+                'file of the export: ${unnamed.join(', ')}'}',
+          );
+        }
+      }
+
       final path = '$exportDir/$jobId/$typeName.ndjson';
-      final count = await _writeNdjsonFile(path, lines, fileKey);
+      final count = await _writeNdjsonFile(
+        path,
+        _absoluteAttachmentUrls(lines, baseUrl),
+        fileKey,
+      );
       if (count == 0) {
         // Bulk Data v2.0.0 export.html, read 2026-09-08: "If no data are
         // found for a resource, the server SHOULD NOT return an output item
@@ -975,17 +990,163 @@ Future<Set<String>> _provenanceAbout(
     for (final target in (json['target'] as List?) ?? const []) {
       final reference = (target as Map)['reference'];
       if (reference is! String) continue;
-      final parts = reference.split('/');
-      if (parts.length != 2 && !(parts.length == 4 && parts[2] == '_history')) {
-        continue;
-      }
-      if (await isExported(parts[0], parts[1])) {
+      final local = _localTypeAndId(reference);
+      if (local == null) continue;
+      if (await isExported(local.$1, local.$2)) {
         found.add(json['id'] as String);
         break;
       }
     }
   }
   return found;
+}
+
+/// Whether `[type]/[id]` is a Patient, or a member of a Patient
+/// compartment; each type's members are read once.
+Future<bool> Function(String type, String id) _patientTie(
+  FhirAntDb dbInterface,
+) {
+  final membersOf = <String, Set<String>>{};
+  return (type, id) async {
+    if (type == 'Patient') {
+      return await dbInterface.getResource(fhir.R4ResourceType.Patient, id) !=
+          null;
+    }
+    final members = membersOf[type] ??=
+        await dbInterface.compartmentTypeMembers('Patient', type);
+    return members.contains(id);
+  };
+}
+
+/// The type and id a reference to a resource of this server names:
+/// `[type]/[id]`, or the same under [baseUrl], a version suffix dropped.
+/// Anything else (another server's URL, a contained `#id`) is null.
+(String, String)? _localTypeAndId(String reference, [String? baseUrl]) {
+  final path = baseUrl != null && reference.startsWith('$baseUrl/')
+      ? reference.substring(baseUrl.length + 1)
+      : reference;
+  final parts = path.split('/');
+  if (parts.length != 2 && !(parts.length == 4 && parts[2] == '_history')) {
+    return null;
+  }
+  return (parts[0], parts[1]);
+}
+
+/// Calls [visit] with the JSON of every Attachment in [json], which is the
+/// JSON of [node]. The typed tree says which objects are Attachments, so an
+/// Attachment in an extension or a contained resource is found too; the
+/// JSON is what [visit] may change.
+void _forEachAttachment(
+  fhir.FhirBase node,
+  Map<String, dynamic> json,
+  void Function(Map<String, dynamic> attachment) visit,
+) {
+  if (node is fhir.Attachment) visit(json);
+  for (final MapEntry(:key, :value) in json.entries) {
+    if (key == 'resourceType' || key.startsWith('_')) continue;
+    final items = value is List ? value : [value];
+    if (items.isEmpty || items.first is! Map<String, dynamic>) continue;
+    final children = node.getChildrenByName(key);
+    if (children.length != items.length) {
+      throw StateError(
+        '${node.fhirType}.$key: ${items.length} in the JSON, '
+        '${children.length} in the parsed resource',
+      );
+    }
+    for (var i = 0; i < items.length; i++) {
+      _forEachAttachment(children[i], items[i] as Map<String, dynamic>, visit);
+    }
+  }
+}
+
+/// A `url` member whose value starts with no scheme: the lines that may
+/// hold a relative Attachment.url. Every other line is passed through as
+/// stored.
+final _schemelessUrl = RegExp(r'"url"\s*:\s*"(?![A-Za-z][A-Za-z0-9+.\-]*:)');
+
+/// [lines] with every relative Attachment.url made absolute against the
+/// server's [baseUrl].
+///
+/// Bulk Data Access STU2 export.html, Attachments (read 2026-10-18,
+/// verbatim): "When populated, the url element SHALL be an absolute url that
+/// can be de-referenced to the attachment's content." A stored `Binary/x`
+/// went out as written (REVIEW-2026-10-17, smaller list). A `#id` names a
+/// contained resource, which no URL reaches, and is left as written.
+Stream<String> _absoluteAttachmentUrls(Stream<String> lines, String baseUrl) {
+  final base = Uri.parse('$baseUrl/');
+  return lines.map((line) {
+    if (!_schemelessUrl.hasMatch(line)) return line;
+    final json = jsonDecode(line) as Map<String, dynamic>;
+    var changed = false;
+    _forEachAttachment(fhir.Resource.fromJson(json), json, (attachment) {
+      final url = attachment['url'];
+      if (url is! String || url.startsWith('#')) return;
+      final uri = Uri.tryParse(url);
+      if (uri == null || uri.hasScheme) return;
+      attachment['url'] = base.resolveUri(uri).toString();
+      changed = true;
+    });
+    return changed ? jsonEncode(json) : line;
+  });
+}
+
+/// The ids of the stored Binary resources tied to a patient ([all]), and
+/// those of them an Attachment.url in a patient's resource names ([named]).
+///
+/// Bulk Data Access STU2 export.html (read 2026-10-18, verbatim): "Binary
+/// Resources whose content is associated with an individual patient SHALL
+/// be serialized as DocumentReference Resources with the content.attachment
+/// element populated as described in the Attachments section below. Binary
+/// Resources not associated with an individual patient MAY be included in a
+/// System Level export." R4B binary.html (read 2026-10-18) gives the two
+/// ties: a Binary "is generally used as the target in the Attachment data
+/// type to reference content via the .url element, such as in the
+/// DocumentReference and Media resources"; and its securityContext tells
+/// the server "that the Binary resource should be treated as if it was the
+/// other resource". So a Binary is tied to a patient when an Attachment in
+/// a Patient, or in a member of a Patient compartment, names it, or when its
+/// securityContext is one of those. The resource that names it is exported
+/// as stored, its url made absolute ([_absoluteAttachmentUrls]); no record
+/// is made up. The ties are read from the whole store, not from what the
+/// job exports, so `_type=Binary` leaves out the same ones.
+Future<({Set<String> all, Set<String> named})> _patientBinaries(
+  FhirAntDb dbInterface,
+  String baseUrl,
+) async {
+  final tie = _patientTie(dbInterface);
+  final byContext = <String>{};
+  await for (final line in dbInterface.exportJson(fhir.R4ResourceType.Binary)) {
+    final json = jsonDecode(line) as Map<String, dynamic>;
+    final reference = (json['securityContext'] as Map?)?['reference'];
+    if (reference is! String) continue;
+    final local = _localTypeAndId(reference, baseUrl);
+    if (local != null && await tie(local.$1, local.$2)) {
+      byContext.add(json['id'] as String);
+    }
+  }
+  final named = <String>{};
+  final base = Uri.parse('$baseUrl/');
+  for (final type in {'Patient', ...compartmentDefinitions['Patient']!.keys}) {
+    final resourceType = fhir.R4ResourceType.fromString(type);
+    if (resourceType == null) continue;
+    final ids = type == 'Patient'
+        ? null
+        : await dbInterface.compartmentTypeMembers('Patient', type);
+    if (ids != null && ids.isEmpty) continue;
+    await for (final line in dbInterface.exportJson(resourceType, ids: ids)) {
+      if (!line.contains('Binary/')) continue;
+      final json = jsonDecode(line) as Map<String, dynamic>;
+      _forEachAttachment(fhir.Resource.fromJson(json), json, (attachment) {
+        final url = attachment['url'];
+        if (url is! String) return;
+        final uri = Uri.tryParse(url);
+        if (uri == null) return;
+        final local = _localTypeAndId(base.resolveUri(uri).toString(), baseUrl);
+        if (local != null && local.$1 == 'Binary') named.add(local.$2);
+      });
+    }
+  }
+  return (all: {...byContext, ...named}, named: named);
 }
 
 /// How long a finished export's files stay after it completes, when the
