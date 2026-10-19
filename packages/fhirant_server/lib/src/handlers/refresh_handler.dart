@@ -227,6 +227,7 @@ Future<Response> _handleAuthorizationCodeGrant(
     jsonEncode({
       'access_token': accessToken,
       'token_type': 'Bearer',
+      'expires_in': session.expiresIn,
       'refresh_token': refreshToken,
       'scope': granted.join(' '),
       'username': user.username,
@@ -398,6 +399,7 @@ Future<Response> _handleRefreshTokenGrant(
     jsonEncode({
       'access_token': newAccessToken,
       'token_type': 'Bearer',
+      'expires_in': session.expiresIn,
       'refresh_token': newRefreshToken,
       'scope': scopes.join(' '),
       'username': user.username,
