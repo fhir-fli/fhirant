@@ -119,20 +119,10 @@ void main() {
     );
     expect(kick.statusCode, 202, reason: await kick.readAsString());
     final jobId = kick.headers['content-location']!.split('/').last;
-    Response? done;
-    for (var i = 0; i < 100; i++) {
-      final r = await handler(
-        testRequest('GET', '/\$export-poll-status/$jobId'),
-      );
-      if (r.statusCode != 202) {
-        done = r;
-        break;
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    expect(done?.statusCode, 200);
+    final done = await pollExport(handler, jobId);
+    expect(done.statusCode, 200);
     final manifest =
-        jsonDecode(await done!.readAsString()) as Map<String, dynamic>;
+        jsonDecode(await done.readAsString()) as Map<String, dynamic>;
     final out = <String, List<String>>{};
     for (final o in (manifest['output'] as List).cast<Map<String, dynamic>>()) {
       final file = await handler(

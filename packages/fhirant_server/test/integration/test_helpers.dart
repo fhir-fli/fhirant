@@ -36,6 +36,32 @@ Request testRequest(
   );
 }
 
+/// Polls export job [jobId]'s status until it is no longer 202 and returns
+/// that response, or throws after [timeout].
+///
+/// The export runs in the background, so how long it takes depends on the
+/// machine's load. A fixed 100 polls 50 ms apart (5 s) ran out in a full
+/// suite run (measured 2026-10-18: export_binary_test saw only 202s in 1 of
+/// 6 runs); the export tests that already polled to a deadline used 20 s.
+Future<Response> pollExport(
+  Handler handler,
+  String jobId, {
+  String? authToken,
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (true) {
+    final r = await handler(
+      testRequest('GET', '/\$export-poll-status/$jobId', authToken: authToken),
+    );
+    if (r.statusCode != 202) return r;
+    if (DateTime.now().isAfter(deadline)) {
+      throw StateError('Export $jobId still answered 202 after $timeout');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  }
+}
+
 /// A token for an account that EXISTS in [db].
 ///
 /// The auth middleware re-reads the account behind a token on every request

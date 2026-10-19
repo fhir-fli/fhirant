@@ -40,16 +40,7 @@ void main() {
     return r.headers['content-location']!.split('/').last;
   }
 
-  Future<Response> poll(String jobId) async {
-    for (var i = 0; i < 100; i++) {
-      final r = await handler(
-        testRequest('GET', '/\$export-poll-status/$jobId'),
-      );
-      if (r.statusCode != 202) return r;
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    fail('export $jobId did not finish');
-  }
+  Future<Response> poll(String jobId) => pollExport(handler, jobId);
 
   Map<String, dynamic> observation(int i) => {
         'resourceType': 'Observation',
