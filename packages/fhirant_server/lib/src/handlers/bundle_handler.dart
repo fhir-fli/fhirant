@@ -689,9 +689,16 @@ Future<void> _requireBodyInCompartment(
   String? patientId,
   fhir.Resource resource,
   int entryIndex,
+  FhirAntDb dbInterface,
 ) async {
   if (patientId == null) return;
-  if (await isNewResourceInPatientCompartment(resource, patientId)) return;
+  if (await isNewResourceInPatientCompartment(
+    resource,
+    patientId,
+    dbInterface,
+  )) {
+    return;
+  }
   throw BundleEntryException(
     403,
     'Bundle entry $entryIndex: the resource is not in the patient '
@@ -912,6 +919,7 @@ Future<_BundleOperation> _processBundleEntry(
         createPatient,
         resourceToSave,
         entryIndex,
+        dbInterface,
       );
 
       final fhir.Resource saved;
@@ -1059,7 +1067,12 @@ Future<_BundleOperation> _processBundleEntry(
         principal,
         entryIndex,
       );
-      await _requireBodyInCompartment(updatePatient, putResource, entryIndex);
+      await _requireBodyInCompartment(
+        updatePatient,
+        putResource,
+        entryIndex,
+        dbInterface,
+      );
 
       final fhir.Resource updated;
       try {
@@ -1171,6 +1184,7 @@ Future<_BundleOperation> _processBundleEntry(
         patchPatient,
         patchedResource,
         entryIndex,
+        dbInterface,
       );
 
       // A patch can change criteria or channel, so the server has to decide

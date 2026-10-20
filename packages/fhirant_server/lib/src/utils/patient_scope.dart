@@ -42,6 +42,12 @@ Future<bool> isInPatientCompartment(
   final type = fhir.R4ResourceType.fromString(resourceType);
   if (type == null) return false;
 
+  if (type == fhir.R4ResourceType.Binary) {
+    final binary = await dbInterface.getResource(type, resourceId);
+    return binary is fhir.Binary &&
+        await _binaryInPatientCompartment(binary, patientId, dbInterface);
+  }
+
   final count = await dbInterface.searchCount(
     resourceType: type,
     searchParameters: {
@@ -103,12 +109,16 @@ Response patientScopeForbiddenResponse(
 Future<bool> isNewResourceInPatientCompartment(
   fhir.Resource resource,
   String patientId,
+  FhirAntDb dbInterface,
 ) async {
   final resourceType = resource.resourceTypeString;
   // A patient creating their own Patient resource.
   if (resourceType == 'Patient') {
     final resourceId = resource.id?.valueString;
     return resourceId == null || resourceId == patientId;
+  }
+  if (resource is fhir.Binary) {
+    return _binaryInPatientCompartment(resource, patientId, dbInterface);
   }
 
   final params = compartmentDefinitions['Patient']?[resourceType];
@@ -128,4 +138,36 @@ Future<bool> isNewResourceInPatientCompartment(
     if (row.referenceIdPart.value == patientId) return true;
   }
   return false;
+}
+
+/// Whether [binary] is in [patientId]'s compartment, through its
+/// securityContext.
+///
+/// Binary is in no Patient CompartmentDefinition. R4B binary.html (read
+/// 2026-10-18, verbatim) gives securityContext the job instead: it
+/// "identifies another resource that can be used as a proxy of the security
+/// sensitivity to use when deciding and enforcing access control rules for
+/// the Binary resource ... E.g. to identify that the binary resource relates
+/// to a patient, and access should only be granted to applications that have
+/// access to the patient", and tells the server "that the Binary resource
+/// should be treated as if it was the other resource". So a Binary is in the
+/// compartment when its securityContext is `Patient/[patientId]`, or a
+/// resource in the compartment (a version suffix dropped). No context, a
+/// context that is another Binary, or one that is not `[type]/[id]` here,
+/// puts it in no compartment, as before. A patient-scoped token used to get
+/// 404 on every Binary, its own patient's included (found 2026-10-18).
+Future<bool> _binaryInPatientCompartment(
+  fhir.Binary binary,
+  String patientId,
+  FhirAntDb dbInterface,
+) async {
+  final reference = binary.securityContext?.reference?.valueString;
+  if (reference == null) return false;
+  final parts = reference.split('/');
+  if (parts.length != 2 && !(parts.length == 4 && parts[2] == '_history')) {
+    return false;
+  }
+  final (type, id) = (parts[0], parts[1]);
+  if (type == 'Binary') return false;
+  return isInPatientCompartment(type, id, patientId, dbInterface);
 }

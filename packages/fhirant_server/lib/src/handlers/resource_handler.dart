@@ -1302,6 +1302,7 @@ Future<Response> postResourceHandler(
       if (!await isNewResourceInPatientCompartment(
         resource,
         createPatientId,
+        dbInterface,
       )) {
         return patientScopeForbiddenResponse(
           resourceType,
@@ -1456,6 +1457,7 @@ Future<Response> putResourceHandler(
       if (!await isNewResourceInPatientCompartment(
         updatedResource,
         updatePatientId,
+        dbInterface,
       )) {
         return patientScopeForbiddenResponse(resourceType, id, updatePatientId);
       }
