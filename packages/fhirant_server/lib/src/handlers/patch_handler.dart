@@ -123,6 +123,7 @@ Future<Response> patchResourceHandler(
           !await isNewResourceInPatientCompartment(
             patchedResource,
             patchPatientId,
+            dbInterface,
           )) {
         return patientScopeForbiddenResponse(resourceType, id, patchPatientId);
       }
