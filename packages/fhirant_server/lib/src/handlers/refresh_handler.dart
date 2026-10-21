@@ -335,9 +335,14 @@ Future<Response> _handleRefreshTokenGrant(
   // every access token with it (auth/token_bound.dart). Checked after the
   // signature and the account, so only a token this server issued for a
   // live account can end its sessions (REVIEW-2026-09-17 A16: reuse used
-  // to be answered 401 and nothing else).
+  // to be answered 401 and nothing else). The token is consumed (revoked)
+  // in the same statement that finds it unused, so of two uses at once
+  // only one passes; the check and the revoke were two statements with the
+  // session issued between them, and ten uses at once all got tokens
+  // (REVIEW-2026-10-17, ASVS 5.0.0 V15.4.2).
   final refreshHash = TokenHasher.hash(refreshToken);
-  if (await dbInterface.isTokenRevoked(refreshHash)) {
+  final oldExpiresAt = _extractExpiresAt(refreshToken);
+  if (!await dbInterface.consumeToken(refreshHash, oldExpiresAt)) {
     await dbInterface.bumpTokenGeneration(user.id);
     FhirantLogging().logWarning(
       'Revoked refresh token presented for user ${user.id}; '
@@ -383,7 +388,6 @@ Future<Response> _handleRefreshTokenGrant(
   // The session ends where the presented refresh token ends: a rotation
   // keeps that expiry rather than starting a new 7 days (REVIEW-2026-10-17
   // finding 17; JwtService.issueSession).
-  final oldExpiresAt = _extractExpiresAt(refreshToken);
   final session = jwtService.issueSession(
     user,
     scopes: scopes,
@@ -391,9 +395,6 @@ Future<Response> _handleRefreshTokenGrant(
   );
   final newAccessToken = session.access;
   final newRefreshToken = session.refresh;
-
-  // Revoke the old refresh token (rotation revocation)
-  await dbInterface.revokeToken(refreshHash, oldExpiresAt);
 
   return Response.ok(
     jsonEncode({
