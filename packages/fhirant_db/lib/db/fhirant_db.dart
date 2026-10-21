@@ -1792,6 +1792,26 @@ class FhirAntDb extends FhirDb {
     );
   }
 
+  /// Revokes [tokenHash] and says whether this call was the one that did:
+  /// one statement, so two concurrent uses of the same refresh token cannot
+  /// both pass (the revoked check and the revoke used to be two statements
+  /// with the new session issued between them; fhirant REVIEW-2026-10-17,
+  /// ASVS V15.4.2). False when it was already revoked.
+  Future<bool> consumeToken(String tokenHash, DateTime expiresAt) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final changed = await customUpdate(
+      'INSERT OR IGNORE INTO revoked_tokens '
+      '(token_hash, revoked_at, expires_at) VALUES (?, ?, ?)',
+      variables: [
+        Variable.withString(tokenHash),
+        Variable.withInt(now),
+        Variable.withInt(expiresAt.millisecondsSinceEpoch ~/ 1000),
+      ],
+      updateKind: UpdateKind.insert,
+    );
+    return changed == 1;
+  }
+
   /// Check whether a token hash has been revoked.
   Future<bool> isTokenRevoked(String tokenHash) async {
     final rows = await customSelect(

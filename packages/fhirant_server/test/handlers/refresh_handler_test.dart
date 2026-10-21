@@ -23,9 +23,10 @@ void main() {
     setUp(() {
       mockDb = MockFhirAntDb();
       jwtService = JwtService('test-secret');
-      // Default stubs for token revocation
-      when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
-      when(() => mockDb.revokeToken(any(), any())).thenAnswer((_) async {});
+      // Default stub: the presented refresh token is unused, and this use
+      // consumes it (one statement; ASVS 5.0.0 V15.4.2).
+      when(() => mockDb.consumeToken(any(), any()))
+          .thenAnswer((_) async => true);
     });
 
     Request makeRequest(Map<String, dynamic> body) {
@@ -281,9 +282,9 @@ void main() {
       final response = await refreshHandler(request, mockDb, jwtService);
       expect(response.statusCode, 200);
 
-      // Verify the old refresh token hash was passed to revokeToken
+      // The old refresh token's hash was consumed, which revokes it
       final expectedHash = TokenHasher.hash(refreshToken);
-      verify(() => mockDb.revokeToken(expectedHash, any())).called(1);
+      verify(() => mockDb.consumeToken(expectedHash, any())).called(1);
     });
 
     test('revoked refresh token is rejected', () async {
@@ -294,8 +295,9 @@ void main() {
       );
 
       final refreshHash = TokenHasher.hash(refreshToken);
-      when(() => mockDb.isTokenRevoked(refreshHash))
-          .thenAnswer((_) async => true);
+      // Already consumed: this use finds it revoked.
+      when(() => mockDb.consumeToken(refreshHash, any()))
+          .thenAnswer((_) async => false);
       final mockUser = MockUser();
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
