@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -315,6 +316,13 @@ class SubscriptionService {
       );
     }
 
+    final outbound = channelType == 'rest-hook'
+        ? _outboundProblem(subscription, endpoint!)
+        : null;
+    if (outbound != null) {
+      return _withStatus(subscription, 'error', outbound);
+    }
+
     if (_hasEnded(subscription)) {
       return _withStatus(subscription, 'off', null);
     }
@@ -557,6 +565,67 @@ class SubscriptionService {
       ],
     );
   }
+
+  /// The longest line, in bytes, a delivery may send: the request line, or
+  /// one header field line. OWASP ASVS 5.0.0 V4.2.5 (read 2026-10-21): a
+  /// server that "builds and sends requests" avoids "URIs ... or HTTP
+  /// request header fields ... which are too long to be accepted by the
+  /// receiving component". 8190 is Apache httpd 2.4's default for both,
+  /// "LimitRequestFieldSize 8190" and "LimitRequestLine 8190" (core.html,
+  /// read 2026-10-21); nginx's default "large_client_header_buffers 4 8k"
+  /// refuses either past one 8k buffer (ngx_http_core_module.html).
+  static const int maxOutboundLine = 8190;
+
+  /// Why a rest-hook delivery of [subscription] to [endpoint] could not be
+  /// sent as asked, or null. dart:io refuses a header with CR or LF at
+  /// every send (tool/review_2026-10-17/outbound_crlf_probe.tsv); a line
+  /// over [maxOutboundLine] would go out and be refused by the receiver.
+  String? _outboundProblem(fhir.Subscription subscription, String endpoint) {
+    for (final MapEntry(key: name, :value) in _headers(subscription).entries) {
+      if ('$name$value'.contains(RegExp('[\r\n]'))) {
+        return 'channel.header "$name" contains a line break';
+      }
+      final line = utf8.encode(name).length + 2 + utf8.encode(value).length;
+      if (line > maxOutboundLine) {
+        return 'channel.header "$name" is $line bytes as sent; a receiver '
+            'may refuse a header line over $maxOutboundLine';
+      }
+    }
+    // The request line: "POST <target> HTTP/1.1", or with a payload
+    // "PUT <endpoint>/<type>/<id> HTTP/1.1" for the longest type and a
+    // 64-character id (R4B datatypes.html, id: "Any combination of upper-
+    // or lower-case ASCII letters ..., numerals ..., '-' and '.', with a
+    // length limit of 64 characters").
+    final payload = subscription.channel.payload?.valueString;
+    final hasPayload = payload != null && payload.isNotEmpty;
+    final target = _requestTarget(
+      Uri.parse(
+        hasPayload
+            ? '${endpoint.replaceAll(RegExp(r"/+$"), "")}/'
+                '${_longestTypeName()}/${'i' * 64}'
+            : endpoint,
+      ),
+    );
+    final line =
+        (hasPayload ? 'PUT ' : 'POST ').length + target + ' HTTP/1.1'.length;
+    if (line > maxOutboundLine) {
+      return 'channel.endpoint makes a $line-byte request line; a receiver '
+          'may refuse one over $maxOutboundLine';
+    }
+    return null;
+  }
+
+  /// The bytes of [uri]'s request target in origin form (RFC 9112 3.2.1):
+  /// the path, "/" when empty, and the query.
+  static int _requestTarget(Uri uri) {
+    final path = uri.path.isEmpty ? '/' : uri.path;
+    return utf8.encode(path).length +
+        (uri.hasQuery ? 1 + utf8.encode(uri.query).length : 0);
+  }
+
+  static String _longestTypeName() => fhir.R4ResourceType.values
+      .map((t) => t.toString())
+      .reduce((a, b) => a.length >= b.length ? a : b);
 
   /// The extra headers a subscription asks to be sent.
   ///
