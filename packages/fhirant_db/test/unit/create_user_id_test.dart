@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -40,5 +42,35 @@ void main() {
       db.saveResource(const fhir.Patient()),
     ]);
     expect(both.first, (await db.getUserByUsername('alone'))!.id);
+  });
+
+  // The store's UNIQUE constraint is the check two registrations at once
+  // cannot both pass; the CLI's store raises it as a SqliteException, the
+  // app's background store wraps it in a DriftRemoteException (measured
+  // 2026-10-21). Either way it is UsernameTaken.
+  test('a duplicate username is UsernameTaken, on this isolate', () async {
+    await db.createUser(username: 'dup', passwordHash: 'h', salt: 's');
+    expect(
+      () => db.createUser(username: 'dup', passwordHash: 'h', salt: 's'),
+      throwsA(isA<UsernameTaken>()),
+    );
+  });
+
+  test('a duplicate username is UsernameTaken, from a background store',
+      () async {
+    final dir = await Directory.systemTemp.createTemp('fhirant_db_dup_');
+    final background = FhirAntDb(
+      NativeDatabase.createInBackground(File('${dir.path}/x.db')),
+    );
+    addTearDown(() async {
+      await background.close();
+      await dir.delete(recursive: true);
+    });
+    await background.initialize();
+    await background.createUser(username: 'dup', passwordHash: 'h', salt: 's');
+    await expectLater(
+      background.createUser(username: 'dup', passwordHash: 'h', salt: 's'),
+      throwsA(isA<UsernameTaken>()),
+    );
   });
 }
