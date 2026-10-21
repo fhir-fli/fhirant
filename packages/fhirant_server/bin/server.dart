@@ -7,6 +7,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/cli/options.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
 
@@ -173,6 +174,13 @@ void main(List<String> arguments) async {
     bootstrapToken: bootstrapToken,
     auditRetention: options.auditRetention,
     exportDir: options.exportDir,
+    fileScanner: options.clamdHost == null
+        ? null
+        : ClamdScanner(
+            options.clamdHost!,
+            port: options.clamdPort,
+            timeout: options.clamdTimeout,
+          ),
   );
 
   if (devMode) {

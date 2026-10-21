@@ -1,0 +1,15 @@
+file	json_keys	file_data	paths
+codesystem-extensions-CodeSystem-author.json	unparsed		
+codesystem-extensions-CodeSystem-effective.json	unparsed		
+codesystem-extensions-CodeSystem-end.json	unparsed		
+codesystem-extensions-CodeSystem-keyword.json	unparsed		
+codesystem-extensions-CodeSystem-workflow.json	unparsed		
+consent-example-notThis.json	1	0	
+eventdefinition-example.json	1	0	
+observation-example-sample-data.json	3	0	
+valueset-extensions-ValueSet-author.json	unparsed		
+valueset-extensions-ValueSet-effective.json	unparsed		
+valueset-extensions-ValueSet-end.json	unparsed		
+valueset-extensions-ValueSet-keyword.json	unparsed		
+valueset-extensions-ValueSet-workflow.json	unparsed		
+TOTAL files=3022 read=3012 unparsed=10 json_keys=60 file_data=55 differ=3

@@ -3,6 +3,16 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:yaml/yaml.dart';
 
+/// The default deadline for one clamd scan: clamd's own limit on one scan
+/// plus ten seconds to send the file and read the answer. clamd logs that
+/// limit at start ("Limits: Global time limit set to 120000 milliseconds",
+/// clamav/clamav:1.5.4, tool/review_2026-10-17/clamd/clamd.log), and with
+/// AlertExceedsMax a scan past it comes back as a match
+/// (Heuristics.Limits.Exceeded.MaxScanTime, libclamav/others.c), so clamd
+/// decides before fhirant gives up. Measured there: a 12 MiB file in 83 to
+/// 2,258 ms, a 150 KB zip of zeros in 17.3 s.
+const Duration kClamdTimeout = Duration(seconds: 130);
+
 /// A usage error: what the person who typed the command needs to read.
 /// bin/server.dart prints it with the usage and exits 1.
 class CliUsageException implements Exception {
@@ -18,7 +28,8 @@ class CliUsageException implements Exception {
 ///
 /// The config file is a map whose keys are the long option names
 /// (`port`, `db-path`, `https`, `cert-path`, `key-path`, `spec-path`,
-/// `base-url`, `audit-retention-days`, `dev-mode`). A value given on the
+/// `base-url`, `audit-retention-days`, `dev-mode`, `clamd-host`,
+/// `clamd-port`, `clamd-timeout-seconds`). A value given on the
 /// command line wins over the file; the file wins over the default. A key
 /// the CLI does not know is a usage error, so a misspelling is not
 /// silently ignored.
@@ -34,6 +45,9 @@ class ServerOptions {
     required this.baseUrl,
     required this.auditRetention,
     this.allowPublicKey = false,
+    this.clamdHost,
+    this.clamdPort = 3310,
+    this.clamdTimeout = kClamdTimeout,
   });
 
   final int port;
@@ -45,6 +59,15 @@ class ServerOptions {
   final String specPath;
   final String? baseUrl;
   final Duration? auditRetention;
+
+  /// Where clamd listens, to scan every file a client's resource carries
+  /// before it is stored (OWASP ASVS 5.0.0 V5.4.3). Null: no scanning.
+  final String? clamdHost;
+  final int clamdPort;
+
+  /// How long one scan may take, connect to reply, before the file is
+  /// refused as unscanned.
+  final Duration clamdTimeout;
 
   /// Whether a store may be opened under a key this repository publishes
   /// ([publicKeys]). Its own switch, so authentication ON over a throwaway
@@ -105,6 +128,23 @@ class ServerOptions {
           'removes them. Unset (the default): none are removed; the '
           'retention period is the policy of the deployment.',
     )
+    ..addOption(
+      'clamd-host',
+      help: 'Host of a clamd (ClamAV) daemon. Set, every file a client '
+          'sends is scanned before it is stored; a match is refused (422), '
+          'and so is a file clamd cannot answer for (503). Unset (the '
+          'default): nothing is scanned.',
+    )
+    ..addOption(
+      'clamd-port',
+      defaultsTo: '3310',
+      help: "clamd's TCP port",
+    )
+    ..addOption(
+      'clamd-timeout-seconds',
+      defaultsTo: '${kClamdTimeout.inSeconds}',
+      help: 'How long one scan may take before the file is refused',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   /// The option names a config file may carry: every option but `config`
@@ -120,6 +160,9 @@ class ServerOptions {
     'spec-path',
     'base-url',
     'audit-retention-days',
+    'clamd-host',
+    'clamd-port',
+    'clamd-timeout-seconds',
   };
 
   /// Resolves [arguments] (already parsed as [args]) over the config file
@@ -210,6 +253,11 @@ class ServerOptions {
           : Duration(
               days: integer('audit-retention-days', min: 1, max: 36500),
             ),
+      clamdHost: optionalString('clamd-host'),
+      clamdPort: integer('clamd-port', min: 1, max: 65535),
+      clamdTimeout: Duration(
+        seconds: integer('clamd-timeout-seconds', min: 1, max: 3600),
+      ),
     );
   }
 

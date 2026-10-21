@@ -31,7 +31,8 @@ TEST_IP2="10.0.0.2"
 cleanup() {
   echo ""
   echo "=== Cleaning up ==="
-  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker rm -f "$CONTAINER_NAME" "fhirant-scan-$$" "fhirant-clamav-$$" \
+    >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -375,6 +376,86 @@ else
   assert_contains "with the admin role" '"role":"admin"' "$BODY"
 fi
 docker rm -f "$SEED_CONTAINER" >/dev/null 2>&1 || true
+echo ""
+
+# --- Test 13: files are scanned by a real clamd (OWASP ASVS 5.0.0 V5.4.3) ---
+# ClamAV's image with this repository's clamav/clamd.conf, as
+# docker-compose.yml runs it. The fhirant container joins the clamav
+# container's network namespace, so clamd is at 127.0.0.1 and no Docker
+# network is created; fhirant's port is published on the clamav container.
+# The EICAR test file is the standard known positive.
+echo "=== Test: uploaded files are scanned by clamd ==="
+CLAM_CONTAINER="fhirant-clamav-$$"
+SCAN_CONTAINER="fhirant-scan-$$"
+SCAN_PORT=18082
+SCAN_BASE="http://localhost:$SCAN_PORT"
+docker run -d --name "$CLAM_CONTAINER" \
+  -p "$SCAN_PORT:8080" \
+  --mount "type=bind,source=$PWD/clamav/clamd.conf,target=/etc/clamav/clamd.conf,readonly" \
+  clamav/clamav:1.5.4 >/dev/null
+# clamd answered PING 22 s after start on the review desktop (measured
+# 2026-10-21, tool/review_2026-10-17/clamd/ready.txt); the image's own
+# health check allows 360 s.
+CLAM_READY=false
+for i in $(seq 1 360); do
+  if docker exec "$CLAM_CONTAINER" clamdcheck.sh >/dev/null 2>&1; then
+    CLAM_READY=true
+    echo "  clamd ready after ${i}s"
+    break
+  fi
+  sleep 1
+done
+if [ "$CLAM_READY" = false ]; then
+  echo "  FAIL: clamd did not answer within 360s"
+  docker logs "$CLAM_CONTAINER"
+  FAIL=$((FAIL + 1))
+else
+  docker run -d --name "$SCAN_CONTAINER" \
+    --network "container:$CLAM_CONTAINER" \
+    -e "FHIRANT_ENCRYPTION_KEY=$ENCRYPTION_KEY" \
+    -e "FHIRANT_JWT_SECRET=$JWT_SECRET" \
+    -e "FHIRANT_ADMIN_USERNAME=scanadmin" \
+    -e "FHIRANT_ADMIN_PASSWORD=ScanPass123!" \
+    "$IMAGE_NAME" /app/bin/server --port 8080 --db-path /data \
+    --clamd-host 127.0.0.1 >/dev/null
+  SCAN_READY=false
+  for i in $(seq 1 "$BOOT_WAIT"); do
+    if curl -sf "$SCAN_BASE/metadata" >/dev/null 2>&1; then
+      SCAN_READY=true
+      break
+    fi
+    sleep 1
+  done
+  if [ "$SCAN_READY" = false ]; then
+    echo "  FAIL: scanning container did not start within ${BOOT_WAIT}s"
+    docker logs "$SCAN_CONTAINER"
+    FAIL=$((FAIL + 1))
+  else
+    SCAN_TOKEN=$(curl -s -X POST "$SCAN_BASE/auth/login" \
+      -H "Content-Type: application/json" \
+      -d '{"username": "scanadmin", "password": "ScanPass123!"}' \
+      | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+    # base64 of the 68-byte EICAR string, and of "a clean file".
+    EICAR_B64='WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo='
+    CLEAN_B64='YSBjbGVhbiBmaWxl'
+    for CASE in clean eicar; do
+      if [ "$CASE" = eicar ]; then DATA=$EICAR_B64; else DATA=$CLEAN_B64; fi
+      RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SCAN_BASE/Binary" \
+        -H "Authorization: Bearer $SCAN_TOKEN" \
+        -H "Content-Type: application/fhir+json" \
+        -d "{\"resourceType\": \"Binary\", \"contentType\": \"application/octet-stream\", \"data\": \"$DATA\"}")
+      BODY=$(echo "$RESPONSE" | head -n -1)
+      STATUS=$(echo "$RESPONSE" | tail -1)
+      if [ "$CASE" = eicar ]; then
+        assert_status "the EICAR file is refused" 422 "$STATUS"
+        assert_contains "named by clamd's signature" 'Eicar-Test-Signature' "$BODY"
+      else
+        assert_status "a clean file is stored" 201 "$STATUS"
+      fi
+    done
+  fi
+fi
+docker rm -f "$SCAN_CONTAINER" "$CLAM_CONTAINER" >/dev/null 2>&1 || true
 echo ""
 
 # --- Summary ---

@@ -11,8 +11,10 @@ import 'package:fhirant_server/src/handlers/resource_handler.dart'
         SearchRefused,
         resolveConditionalUpdate,
         typeSearch;
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/fhir_id.dart';
+import 'package:fhirant_server/src/utils/file_refusal.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
@@ -28,6 +30,7 @@ Future<Response> bundleHandler(
   Request request,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  FileScanner? fileScanner,
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
   try {
@@ -49,9 +52,21 @@ Future<Response> bundleHandler(
         parsed.entry == null ? parsed.copyWith(entry: const []) : parsed;
 
     if (bundle.type == fhir.BundleType.transaction) {
-      return await _processTransaction(bundle, dbInterface, request, subs);
+      return await _processTransaction(
+        bundle,
+        dbInterface,
+        request,
+        subs,
+        fileScanner,
+      );
     } else {
-      return await _processBatch(bundle, dbInterface, request, subs);
+      return await _processBatch(
+        bundle,
+        dbInterface,
+        request,
+        subs,
+        fileScanner,
+      );
     }
   } catch (e, stackTrace) {
     FhirantLogging().logError('Error processing Bundle request', e, stackTrace);
@@ -68,6 +83,7 @@ Future<Response> _processTransaction(
   FhirAntDb dbInterface,
   Request request,
   SubscriptionService subscriptions,
+  FileScanner? fileScanner,
 ) async {
   FhirantLogging().logInfo(
     'Processing Transaction Bundle with ${bundle.entry!.length} entries',
@@ -138,6 +154,21 @@ Future<Response> _processTransaction(
   // (REVIEW-2026-10-17 finding 10: two PUTs of one id ran and the last won).
   final writtenBy = <String, int>{};
   try {
+    // Every entry's files, before the database transaction opens: a scan is
+    // a round trip to clamd, and the store has one connection. A refusal
+    // fails the whole Bundle, as any failing entry does.
+    for (var i = 0; i < bundle.entry!.length; i++) {
+      final resource = bundle.entry![i].resource;
+      if (resource == null) continue;
+      final refused = await fileRefusal(fileScanner, resource);
+      if (refused != null) {
+        failedIndex = i;
+        throw BundleEntryException(
+          refused.status,
+          'Bundle entry $i: ${refused.message}',
+        );
+      }
+    }
     await dbInterface.transaction<void>(() async {
       for (final i in order) {
         try {
@@ -152,6 +183,7 @@ Future<Response> _processTransaction(
             handling: handling,
             assignedId: assignedIds[i],
             transaction: true,
+            fileScanner: fileScanner,
           );
           final identity = _writtenIdentity(operation);
           if (identity != null) {
@@ -236,6 +268,7 @@ Future<Response> _processBatch(
   FhirAntDb dbInterface,
   Request request,
   SubscriptionService subscriptions,
+  FileScanner? fileScanner,
 ) async {
   FhirantLogging()
       .logInfo('Processing Batch Bundle with ${bundle.entry!.length} entries');
@@ -281,6 +314,18 @@ Future<Response> _processBatch(
     }
 
     try {
+      // This entry's files, before its transaction opens; a refusal is this
+      // entry's failure alone, as any batch entry's is.
+      final resource = entry.resource;
+      if (resource != null) {
+        final refused = await fileRefusal(fileScanner, resource);
+        if (refused != null) {
+          throw BundleEntryException(
+            refused.status,
+            'Bundle entry $i: ${refused.message}',
+          );
+        }
+      }
       // Each batch entry is its own database transaction: its conditional
       // search and its write are one operation, so ten Bundles creating
       // with the same ifNoneExist at once make one resource (R4B http.html
@@ -299,6 +344,7 @@ Future<Response> _processBatch(
           principal,
           handling: handling,
           assignedId: assignedIds[i],
+          fileScanner: fileScanner,
         );
       });
       operations.add(operation);
@@ -726,6 +772,7 @@ Future<_BundleOperation> _processBundleEntry(
   required String handling,
   String? assignedId,
   bool transaction = false,
+  FileScanner? fileScanner,
 }) async {
   final req = entry.request!;
   final method = req.method;
@@ -1195,6 +1242,17 @@ Future<_BundleOperation> _processBundleEntry(
         entryIndex,
         dbInterface,
       );
+
+      // The patched resource, not the patch (a JSON Patch carries a file as
+      // a base64 string inside JSON). It exists only here, inside the
+      // database transaction, so this one scan holds the connection.
+      final fileRefused = await fileRefusal(fileScanner, patchedResource);
+      if (fileRefused != null) {
+        throw BundleEntryException(
+          fileRefused.status,
+          'Bundle entry $entryIndex: ${fileRefused.message}',
+        );
+      }
 
       // A patch can change criteria or channel, so the server has to decide
       // again whether it can honour the subscription.

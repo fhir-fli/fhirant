@@ -4,7 +4,9 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
+import 'package:fhirant_server/src/utils/file_refusal.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
 import 'package:fhirant_server/src/utils/json_patch.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
@@ -22,6 +24,7 @@ Future<Response> patchResourceHandler(
   String id,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  FileScanner? fileScanner,
 }) async {
   // Every write goes through the Subscription service, as PUT and POST do:
   // a Subscription's status is the server's to set, and a change notifies
@@ -108,6 +111,10 @@ Future<Response> patchResourceHandler(
 
       final storeRefused = storeRefusal(Principal.of(request), patchedResource);
       if (storeRefused != null) return storeRefused;
+      // The patched resource, not the patch: a JSON Patch carries a file as
+      // a base64 string inside JSON, which no scanner reads as the file.
+      final fileRefused = await fileRefusal(fileScanner, patchedResource);
+      if (fileRefused != null) return fileRefusalResponse(fileRefused);
       final unknown = unknownRequiredCodes(patchedResource);
       if (unknown.isNotEmpty) {
         return outcome(
