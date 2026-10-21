@@ -1,0 +1,4 @@
+CL + TE: chunked: responses=[HTTP/1.1 200, HTTP/1.1 200] closed=false second-served=true
+TE: gzip (chunked not final): responses=[] closed=true second-served=false
+two Content-Length values: responses=[] closed=true second-served=false
+space before colon: responses=[] closed=true second-served=false
