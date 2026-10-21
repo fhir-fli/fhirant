@@ -31,6 +31,8 @@ Future<Response> resourceHistoryHandler(
     }
 
     // Get pagination and history parameters
+    final repeatError = _repeatedError(request.url.queryParametersAll);
+    if (repeatError != null) return validationOutcome(repeatError);
     final queryParams = request.url.queryParameters;
     final pageError = pageArgumentError(
       queryParams['_count'],
@@ -143,6 +145,8 @@ Future<Response> typeHistoryHandler(
     }
 
     // Get pagination and history parameters
+    final repeatError = _repeatedError(request.url.queryParametersAll);
+    if (repeatError != null) return validationOutcome(repeatError);
     final queryParams = request.url.queryParameters;
     final pageError = pageArgumentError(
       queryParams['_count'],
@@ -233,6 +237,8 @@ Future<Response> systemHistoryHandler(
     FhirantLogging().logInfo('Fetching system-level history');
 
     // Get pagination and history parameters
+    final repeatError = _repeatedError(request.url.queryParametersAll);
+    if (repeatError != null) return validationOutcome(repeatError);
     final queryParams = request.url.queryParameters;
     final pageError = pageArgumentError(
       queryParams['_count'],
@@ -424,6 +430,19 @@ Future<Response?> _refuseOutsideCompartment(
   }
   // As absent: a read (REVIEW-2026-09-17 A13).
   return patientScopeNotFoundResponse(resourceType, id);
+}
+
+/// R4B http.html 3.1.0.10 (read 2026-10-20, verbatim), after the table of
+/// history parameters: "Each of these parameters SHALL NOT appear more than
+/// once." A request that repeats one is refused rather than answered with
+/// one value applied and both in the self link (REVIEW-2026-10-17).
+String? _repeatedError(Map<String, List<String>> query) {
+  for (final name in const ['_count', '_since', '_at', '_list']) {
+    if ((query[name]?.length ?? 0) > 1) {
+      return '$name SHALL NOT appear more than once in a history request';
+    }
+  }
+  return null;
 }
 
 /// A `_since` or `_at` that was given and did not parse: R4B 3.1.1.3, a
