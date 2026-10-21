@@ -408,6 +408,9 @@ Future<Response> exportStatusHandler(
   }
 }
 
+/// The name of a file an export job writes: `<type>.ndjson`.
+final _exportFileName = RegExp(r'^[A-Za-z]+\.ndjson$');
+
 /// Handler for `GET /$export-file/<jobId>/<fileName>`.
 ///
 /// Serves an NDJSON file from disk.
@@ -423,7 +426,10 @@ Future<Response> exportFileHandler(
     if (!_isValidJobId(jobId)) {
       return outcome(400, fhir.IssueType.processing, 'Invalid job id');
     }
-    if (fileName.contains('..') || fileName.contains('/')) {
+    // The only names a job writes are `<type>.ndjson`; anything else is
+    // refused, so the name echoed in Content-Disposition below needs no
+    // escaping (ASVS 5.0.0 V5.4.1-2).
+    if (!_exportFileName.hasMatch(fileName)) {
       return outcome(400, fhir.IssueType.processing, 'Invalid file name');
     }
     final job = await dbInterface.getExportJob(jobId);
@@ -497,6 +503,10 @@ Future<Response> exportFileHandler(
       headers: {
         'Content-Type': 'application/fhir+ndjson',
         'Content-Length': '$length',
+        // ASVS 5.0.0 V5.4.1 (read 2026-10-21): "specifies a filename in the
+        // Content-Disposition header field in the response"; RFC 6266 4.1
+        // form, the name a quoted-string of letters and `.ndjson`.
+        'Content-Disposition': 'attachment; filename="$fileName"',
       },
     );
   } catch (e, stackTrace) {
