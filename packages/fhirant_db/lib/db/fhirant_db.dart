@@ -1551,6 +1551,41 @@ class FhirAntDb extends FhirDb {
     );
   }
 
+  /// The condition, inside one UPDATE on `users`, that the row being
+  /// changed is not the last active administrator. SQLite evaluates the
+  /// count within the statement, so the check and the change are one
+  /// operation (fhirant REVIEW-2026-10-17, ASVS V15.4.2: two admins demoting
+  /// each other at once both succeeded when they were two).
+  static const _notLastActiveAdmin = "NOT (role = 'admin' AND active = 1 AND "
+      "(SELECT COUNT(*) FROM users WHERE role = 'admin' AND active = 1) <= 1)";
+
+  /// Sets the account's role unless that would demote the last active
+  /// administrator; says whether it was set.
+  Future<bool> setRoleUnlessLastAdmin(int id, String role) async {
+    final changed = await customUpdate(
+      'UPDATE users SET role = ? WHERE id = ? AND '
+      "(? = 'admin' OR $_notLastActiveAdmin)",
+      variables: [
+        Variable.withString(role),
+        Variable.withInt(id),
+        Variable.withString(role),
+      ],
+      updateKind: UpdateKind.update,
+    );
+    return changed == 1;
+  }
+
+  /// Deactivates the account unless it is the last active administrator;
+  /// says whether it was deactivated.
+  Future<bool> deactivateUnlessLastAdmin(int id) async {
+    final changed = await customUpdate(
+      'UPDATE users SET active = 0 WHERE id = ? AND $_notLastActiveAdmin',
+      variables: [Variable.withInt(id)],
+      updateKind: UpdateKind.update,
+    );
+    return changed == 1;
+  }
+
   Future<List<User>> getAllUsers() async {
     final rows = await customSelect('SELECT * FROM users').get();
     return rows.map(User.fromRow).toList();

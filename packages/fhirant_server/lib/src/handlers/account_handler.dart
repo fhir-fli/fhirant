@@ -131,9 +131,9 @@ Future<Response> setActiveHandler(
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
   if (!active) {
-    final last = await _lastActiveAdmin(dbInterface, user);
-    if (last != null) return last;
-    await dbInterface.deactivateUser(userId);
+    if (!await dbInterface.deactivateUnlessLastAdmin(userId)) {
+      return _lastActiveAdmin;
+    }
   } else {
     await dbInterface.activateUser(userId);
   }
@@ -163,11 +163,9 @@ Future<Response> setRoleHandler(
       {'error': 'Invalid role. Must be one of: ${validRoles.join(', ')}'},
     );
   }
-  if (role != 'admin') {
-    final last = await _lastActiveAdmin(dbInterface, user);
-    if (last != null) return last;
+  if (!await dbInterface.setRoleUnlessLastAdmin(userId, role)) {
+    return _lastActiveAdmin;
   }
-  await dbInterface.updateUserRole(userId, role);
   await dbInterface.bumpTokenGeneration(userId);
   FhirantLogging().logInfo('Role of user $userId set to $role by admin');
   return Response.ok(
@@ -214,19 +212,16 @@ Response? _requireAdmin(Request request) {
   return null;
 }
 
-/// Refuses when [user] is the last active administrator: deactivating or
-/// demoting it would leave nobody who can manage the server.
-Future<Response?> _lastActiveAdmin(FhirAntDb dbInterface, User user) async {
-  if (user.role != 'admin' || !user.active) return null;
-  final admins = (await dbInterface.getAllUsers())
-      .where((u) => u.role == 'admin' && u.active)
-      .length;
-  if (admins > 1) return null;
-  return _json(
-    409,
-    {'error': 'This is the last active administrator; add another first'},
-  );
-}
+/// The refusal when the account is the last active administrator:
+/// deactivating or demoting it would leave nobody who can manage the
+/// server. The store checks and changes in one statement
+/// (`setRoleUnlessLastAdmin`, `deactivateUnlessLastAdmin`); the count and
+/// the change were separate, and two admins demoting each other at once
+/// left none (REVIEW-2026-10-17, ASVS 5.0.0 V15.4.2).
+Response get _lastActiveAdmin => _json(
+      409,
+      {'error': 'This is the last active administrator; add another first'},
+    );
 
 Future<void> _setPassword(FhirAntDb db, int userId, String password) async {
   final salt = PasswordHasher.generateSalt();
