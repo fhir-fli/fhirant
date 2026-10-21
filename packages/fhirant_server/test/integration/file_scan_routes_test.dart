@@ -114,6 +114,41 @@ void main() {
     expect((await send('POST', '/Binary', binary(clean))).statusCode, 201);
   });
 
+  // A file the scanner cannot read is refused too (NHS e-Referral Service:
+  // a file that "could be password protected ... so scanning could not be
+  // performed" cannot be downloaded; Medplum serves only files GuardDuty
+  // marked NO_THREATS_FOUND). The reply says why, and what to send instead,
+  // rather than calling the file malware.
+  test('a password-protected file is refused as unscannable', () async {
+    final r = await send(
+      'POST',
+      '/Binary',
+      binary(base64.encode(latin1.encode(encryptedMarker))),
+    );
+    final body = await bodyOf(r);
+    expect(r.statusCode, 422, reason: '$body');
+    final issue = (body['issue'] as List).single as Map;
+    expect(issue['code'], 'business-rule');
+    final text = '${issue['diagnostics']}';
+    expect(text, contains('password'));
+    expect(text, isNot(contains('malware signature')));
+    expect(await stored('Binary'), 0);
+  });
+
+  test('a file too large or deep to scan whole is refused as such', () async {
+    final r = await send(
+      'POST',
+      '/Binary',
+      binary(base64.encode(latin1.encode(limitsMarker))),
+    );
+    final body = await bodyOf(r);
+    expect(r.statusCode, 422, reason: '$body');
+    final text = '${((body['issue'] as List).single as Map)['diagnostics']}';
+    expect(text, contains('could not be scanned whole'));
+    expect(text, isNot(contains('malware signature')));
+    expect(await stored('Binary'), 0);
+  });
+
   test('conditional create', () async {
     await expectRefused(
       await send(

@@ -10,6 +10,16 @@ import 'dart:typed_data';
 const eicar =
     r'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 
+/// A stream holding this is answered as clamd with AlertEncrypted answers a
+/// PDF that needs a password: `Heuristics.Encrypted.PDF` (measured,
+/// tool/review_2026-10-17/clamd/encrypted_samples.tsv).
+const encryptedMarker = 'FAKE-ENCRYPTED-PDF';
+
+/// A stream holding this is answered as clamd with AlertExceedsMax answers a
+/// scan cut short by MaxScanSize: `Heuristics.Limits.Exceeded.MaxScanSize`
+/// (the name in ClamAV 1.5.4 libclamav/others.c).
+const limitsMarker = 'FAKE-PAST-MAX-SCAN-SIZE';
+
 /// How the fake answers.
 enum ClamdMode {
   /// `stream: Eicar-Test-Signature FOUND` when the stream holds [eicar], else
@@ -101,12 +111,17 @@ class FakeClamd {
   void _answer(Socket socket, Uint8List data) {
     switch (mode) {
       case ClamdMode.scan:
-        final infected = latin1.decode(data).contains(eicar);
+        final text = latin1.decode(data);
+        final found = text.contains(eicar)
+            ? 'Eicar-Test-Signature'
+            : text.contains(encryptedMarker)
+                ? 'Heuristics.Encrypted.PDF'
+                : text.contains(limitsMarker)
+                    ? 'Heuristics.Limits.Exceeded.MaxScanSize'
+                    : null;
         socket.add(
           ascii.encode(
-            infected
-                ? 'stream: Eicar-Test-Signature FOUND\x00'
-                : 'stream: OK\x00',
+            found == null ? 'stream: OK\x00' : 'stream: $found FOUND\x00',
           ),
         );
         unawaited(socket.close());

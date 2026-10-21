@@ -58,17 +58,47 @@ Future<FileRefusal?> fileRefusal(
     }
     if (result is ScanFound) {
       FhirantLogging().logWarning(
-        'Refused ${file.path}: malware signature ${result.signature}',
+        'Refused ${file.path}: scanner signature ${result.signature}',
       );
       return (
         status: 422,
         code: fhir.IssueType.businessRule,
-        message: 'The file at ${file.path} matched the malware signature '
-            '${result.signature}; it was not stored',
+        message: _foundMessage(file.path, result.signature),
       );
     }
   }
   return null;
+}
+
+/// Why [signature] keeps the file at [path] out, in words the person who
+/// sent it can act on.
+///
+/// Two of clamd's heuristics are not malware but a file clamd could not
+/// read through, and say so in their names (measured on
+/// clamav/clamav:1.5.4, tool/review_2026-10-17/clamd/encrypted_samples.tsv
+/// and libclamav/others.c):
+/// - `Heuristics.Encrypted.*` (AlertEncrypted, in clamav/clamd.conf): a
+///   password-protected zip, PDF or Office file. Refused, as the NHS
+///   e-Referral Service refuses a file that "could be password protected
+///   ... so scanning could not be performed" (Changes to file attachments
+///   in the NHS e-Referral Service, read 2026-10-21), and as Medplum serves
+///   only Binaries GuardDuty marked NO_THREATS_FOUND (medplum
+///   docs/api/fhir/operations/binary-scan.md, read 2026-10-21).
+/// - `Heuristics.Limits.Exceeded.*` (AlertExceedsMax): a scan clamd cut
+///   short at one of its limits.
+String _foundMessage(String path, String signature) {
+  if (signature.startsWith('Heuristics.Encrypted.')) {
+    return 'The file at $path is password-protected or encrypted, so it '
+        'could not be scanned for malware, and it was not stored. Send it '
+        'without the password ($signature)';
+  }
+  if (signature.startsWith('Heuristics.Limits.Exceeded.')) {
+    return 'The file at $path is too large or too deeply nested to be '
+        'scanned for malware, so it could not be scanned whole, and it was '
+        'not stored ($signature)';
+  }
+  return 'The file at $path matched the malware signature $signature; it '
+      'was not stored';
 }
 
 /// [refusal] as the reply to a REST interaction.

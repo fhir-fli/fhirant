@@ -1,0 +1,395 @@
+repo	kind	file	line	text
+HeliosSoftware_hfs	crypt	.agents/skills/bulk-data-submit/SKILL.md	120	- NDJSON files stream to the ingestion engine; JWE-encrypted files are the exception and are buffered whole, since the authentication tag trails the ciphertext.
+HeliosSoftware_hfs	crypt	.claude/skills/bulk-data-submit/SKILL.md	120	- NDJSON files stream to the ingestion engine; JWE-encrypted files are the exception and are buffered whole, since the authentication tag trails the ciphertext.
+HeliosSoftware_hfs	crypt	ROADMAP.md	193	| **Bulk data processing** | Appendix I "Bulk data processing". `$export` at system / Patient / Group level with `_typeFilter`, `_since`, and pre-signed S3 downloads; `$bulk-submit` for bulk ingestion
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6569	let mut quarantined = Vec::new();
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6578	Some("https://provider/quarantine"),
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6588	Some("https://provider/quarantine"),
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6599	quarantined.push((
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6613	Some("https://provider/quarantine"),
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6624	quarantined.push((duplicate, LEGACY_REASON_CONFLICTING_DUPLICATE));
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/postgres/schema.rs	6642	for (row, reason) in quarantined {
+HeliosSoftware_hfs	scan	crates/persistence/src/backends/sqlite/schema.rs	3791	fn publication_migration_quarantines_conflicting_or_incomplete_generations() {
+HeliosSoftware_hfs	crypt	crates/persistence/src/core/bulk_submit_input.rs	87	/// `fileEncryptionKey` descriptor for JWE-encrypted files.
+HeliosSoftware_hfs	crypt	crates/persistence/src/core/bulk_submit_worker.rs	1785	// bar backwards on multi-file manifests (#874). Encrypted files are
+HeliosSoftware_hfs	crypt	crates/rest/src/bulk_submit_fetcher.rs	352	bulk-submit encrypted file could not be downloaded whole
+HeliosSoftware_hfs	crypt	crates/rest/src/bulk_submit_fetcher.rs	364	bulk-submit encrypted file transfer failed; re-fetching the whole file
+HeliosSoftware_hfs	crypt	crates/rest/src/bulk_submit_fetcher.rs	930	/// (see the module docs). JWE-encrypted files are the exception and are
+HeliosSoftware_hfs	crypt	crates/rest/src/bulk_submit_fetcher.rs	946	// has been read and the tag verified. Encrypted files are therefore
+LinuxForHealth_FHIR	scan	fhir-model/src/test/java/org/linuxforhealth/fhir/model/test/FHIRParserGeneratorTest.java	18	try (InputStream in = FHIRParserGeneratorTest.class.getClassLoader().getResourceAsStream("JSON/activitydefinition-administer-zika-virus-exposure-assessment.json")) {
+LinuxForHealth_FHIR	scan	fhir-server-test/src/test/java/org/linuxforhealth/fhir/server/test/PlanDefinitionApplyOperationTest.java	47	* @link http://hl7.org/fhir/activitydefinition-order-serum-zika-dengue-virus-igm.json
+hapifhir_hapi-fhir	scan	hapi-fhir-jpaserver-test-r5/src/test/java/ca/uhn/fhir/jpa/batch2/jobs/term/loinc/ImportLoincStep20LinguisticVariantTest.java	56	-Designation[lang=fr-CA, use={"system":"http://loinc.org","code":"FullySpecifiedName","display":"FullySpecifiedName"}]: Virus respiratoire syncytial bovin:Présence-Seuil:Temps ponctuel:XXX:Ordinal:Cul
+hapifhir_hapi-fhir	scan	hapi-fhir-jpaserver-test-r5/src/test/java/ca/uhn/fhir/jpa/batch2/jobs/term/loinc/ImportLoincStep20LinguisticVariantTest.java	91	-Designation[lang=zz-ZZ, use={"system":"http://loinc.org","code":"FullySpecifiedName","display":"FullySpecifiedName"}]: Virus respiratoire syncytial bovin:Présence-Seuil:Temps ponctuel:XXX:Ordinal:Cul
+hapifhir_hapi-fhir	scan	hapi-fhir-structures-r4/src/test/java/ca/uhn/fhir/parser/RDFParserTest.java	137	String input = "fhir:ActivityDefinition.code    [ fhir:CodeableConcept.coding  [ fhir:Coding.code    [ fhir:value  \"zika-virus-exposure-assessment\" ];";
+hapifhir_hapi-fhir	scan	hapi-fhir-validation-resources-dstu2.1/src/main/resources/org/hl7/fhir/dstu2016may/model/schema/fhir-single.xsd	21937	<xs:documentation xml:lang="en">The organism from which sample of the sequence was extracted. Supporting tests of human, viruses, and bacteria.</xs:documentation>
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	668	title: "Indicators of Human Immunodeficiency Virus (HIV)",
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	677	display: "Human immunodeficiency virus [HIV] disease"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	680	display: "Human immunodeficiency virus, type 2 [HIV-2]"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	698	display: "Nonspecific serologic evidence of human immunodeficiency virus [HIV]"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	701	display: "Asymptomatic human immunodeficiency virus [HIV] infection status"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	708	display: "Human immunodeficiency virus in mother complicating childbirth (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	711	display: "Acute human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	714	display: "Human immunodeficiency virus infection constitutional disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	717	display: "Human immunodeficiency virus infection with neurological disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	720	display: "Human immunodeficiency virus infection with secondary clinical infectious disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	723	display: "Human immunodeficiency virus leukoencephalopathy (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	726	display: "Neuropathy caused by human immunodeficiency virus (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	729	display: "Human immunodeficiency virus-associated periodontitis (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	732	display: "Human immunodeficiency virus enteropathy (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	738	display: "Human immunodeficiency virus myopathy (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	744	display: "Human immunodeficiency virus-related sclerosing cholangitis (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	747	display: "Human immunodeficiency virus infection with aseptic meningitis (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	750	display: "Human immunodeficiency virus encephalopathy (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	753	display: "Human immunodeficiency virus encephalitis (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	756	display: "Oral hairy leukoplakia associated with human immunodeficiency virus disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	759	display: "Pediatric human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	762	display: "Human immunodeficiency virus I infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	765	display: "Hairy leukoplakia of tongue associated with human immunodeficiency virus disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	768	display: "Leukoplakia of tongue associated with human immunodeficiency virus disease (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	774	display: "Hepatitis B associated with Human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	777	display: "Non-Hodgkin lymphoma associated with Human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	780	display: "Human immunodeficiency virus infection with infectious mononucleosis-like syndrome (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	783	display: "Congenital human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	789	display: "Subacute adenoviral encephalitis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	792	display: "Splenomegaly co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	795	display: "Neuralgia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	798	display: "Candidiasis of esophagus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	801	display: "Heart disease co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	804	display: "Disorder of eye proper co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	807	display: "Disorder of gastrointestinal tract co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	810	display: "Eruption of skin co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	813	display: "Myocarditis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	816	display: "Radiculitis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	819	display: "Primary cerebral lymphoma co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	822	display: "Infection caused by Strongyloides co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	825	display: "Disorder of skin co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	828	display: "Myelitis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	831	display: "Infection caused by Salmonella co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	834	display: "Anemia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	837	display: "Hemophagocytic syndrome co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	840	display: "Disseminated infection caused by Strongyloides co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	843	display: "Chronic infection caused by herpes simplex virus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	846	display: "Reticulosarcoma co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	849	display: "Disorder of respiratory system co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	852	display: "Progressive multifocal leukoencephalopathy co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	855	display: "Presenile dementia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	858	display: "Polyneuropathy co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	861	display: "Infection caused by Pneumocystis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	864	display: "Organic brain syndrome co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	867	display: "Candidiasis of mouth co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	870	display: "Disorder of spinal cord co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	873	display: "Disorder of kidney co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	876	display: "Gastrointestinal malabsorption syndrome co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	879	display: "Neuritis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	882	display: "Lymphadenopathy co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	885	display: "Aplastic anemia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	888	display: "Enlargement of liver co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	891	display: "Acute endocarditis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	894	display: "Cardiomyopathy co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	897	display: "Recurrent bacterial pneumonia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	900	display: "Disorder of peripheral nervous system co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	903	display: "Agranulocytosis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	906	display: "Visual impairment co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	909	display: "Infective arthritis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	912	display: "Acquired hemolytic anemia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	915	display: "Demyelinating disease of central nervous system co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	918	display: "Bacterial pneumonia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	921	display: "Infection caused by Nocardia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	924	display: "Isosporiasis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	927	display: "Infectious gastroenteritis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	930	display: "Disorder of central nervous system co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	933	display: "Malignant neoplastic disease co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	936	display: "Nephrotic syndrome co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	939	display: "Renal failure syndrome co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	942	display: "Diffuse non-Hodgkin immunoblastic lymphoma co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	945	display: "Infection caused by Cytomegalovirus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	948	display: "Infection caused by Coccidia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	951	display: "Infection caused by herpes simplex virus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	954	display: "Pyrexia of unknown origin co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	957	display: "Infection caused by Aspergillus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	960	display: "Infection caused by herpes zoster virus co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	963	display: "Infection caused by Dermatophyte co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	966	display: "Dementia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	969	display: "Infection caused by Cryptosporidium co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	972	display: "Opportunistic mycosis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	975	display: "Infection caused by Microsporidia co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	978	display: "Focal segmental glomerulosclerosis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	981	display: "Burkitt lymphoma co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	984	display: "Multidermatomal infection caused by Herpes zoster co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	987	display: "Disseminated atypical infection caused by Mycobacterium co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	990	display: "Recurrent salmonella sepsis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	993	display: "Immune reconstitution inflammatory syndrome caused by human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	996	display: "Human immunodeficiency virus (HIV) II infection category B1 (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	999	display: "Human immunodeficiency virus (HIV) II infection category B2 (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1002	display: "Invasive carcinoma of uterine cervix co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1005	display: "Extrapulmonary tuberculosis co-occurrent with human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1008	display: "Human immunodeficiency virus II infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1011	display: "Symptomatic human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1014	display: "Human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1017	display: "Human immunodeficiency virus infection with acute lymphadenitis (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1020	display: "Asymptomatic human immunodeficiency virus A1 infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1023	display: "Asymptomatic human immunodeficiency virus A2 infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1026	display: "Asymptomatic human immunodeficiency virus infection (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1029	display: "Asymptomatic human immunodeficiency virus infection in pregnancy (disorder)"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1036	display: "Human immunodeficiency virus [HIV] disease"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1039	display: "Human immunodeficiency virus, type 2 [HIV 2] as the cause of diseases classified elsewhere"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1042	display: "Human immunodeficiency virus [HIV] disease complicating pregnancy, first trimester"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1045	display: "Human immunodeficiency virus [HIV] disease complicating pregnancy, second trimester"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1048	display: "Human immunodeficiency virus [HIV] disease complicating pregnancy, third trimester"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1051	display: "Human immunodeficiency virus [HIV] disease complicating pregnancy, unspecified trimester"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1054	display: "Human immunodeficiency virus [HIV] disease complicating childbirth"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1057	display: "Human immunodeficiency virus [HIV] disease complicating the puerperium"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	1060	display: "Asymptomatic human immunodeficiency virus [HIV] infection status"
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	2094	div: "<div xmlns=\"http://www.w3.org/1999/xhtml\"><h2>Human Immunodeficiency Virus (HIV) Laboratory Test Codes (Ab and Ag)</h2><p>This value set includes codes from the following code systems:</p><u
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	2098	name: "Human Immunodeficiency Virus (HIV) Laboratory Test Codes (Ab and Ag)",
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	2738	citation: "Blackwell, D. L., & Villarroel, M. A. (2019). QuickStats: Age-adjusted percentage of adults aged greater than or equal to 18, who were ever tested for human immunodeficiency virus (HIV) i
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	2766	rationale: "Human immunodeficiency virus (HIV) is a communicable infection that leads to a progressive disease with a long asymptomatic period. There were an estimated 38,500 new HIV infections in t
+hapifhir_hapi-fhir-jpaserver-starter	scan	src/test/resources/r4/EXM349/EXM349-2.10.000-bundle.json.manuallyeditedtoremovesupplementaldata	2774	guidance: "This measure evaluates the proportion of patients aged 15 to 65 at the start of the measurement period who have documentation of having received an HIV test at least once on or after thei
+medplum_medplum	scan	examples/medplum-multilingual-demo/src/pages/DemoPage.tsx	25	import { IconAlertCircle, IconCheck, IconLanguage, IconNotes, IconUser, IconVirus } from '@tabler/icons-react';
+medplum_medplum	scan	examples/medplum-multilingual-demo/src/pages/DemoPage.tsx	373	<Tabs.Tab value="conditions" leftSection={<IconVirus size={15} />}>
+medplum_medplum	scan	packages/agent/DURABLE_QUEUE_ARCHITECTURE.md	25	3. **Survives process restart** — queued rows resume; rows interrupted mid-forward are quarantined as `failed` for operator review.
+medplum_medplum	scan	packages/cdk/src/backend.ts	368	// Binary $scan reads GuardDuty scan result tags and marks pending scans
+medplum_medplum	scan	packages/cdk/src/backend.ts	369	...(config.guardDutyMalwareProtectionEnabled ? ['s3:GetObjectTagging', 's3:PutObjectTagging'] : []),
+medplum_medplum	scan	packages/cdk/src/backend.ts	457	if (config.guardDutyMalwareProtectionEnabled) {
+medplum_medplum	scan	packages/cdk/src/backend.ts	459	// https://docs.aws.amazon.com/guardduty/latest/ug/malware-protection-s3-on-demand.html
+medplum_medplum	scan	packages/cdk/src/backend.ts	463	actions: ['guardduty:SendObjectMalwareScan'],
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	4	import { ArnFormat, Aws, Stack, aws_guardduty as guardduty, aws_iam as iam } from 'aws-cdk-lib';
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	7	const malwareScanStatusTagKey = 'GuardDutyMalwareScanStatus';
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	10	const servicePrincipal = 'malware-protection-plan.guardduty.amazonaws.com';
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	11	const sessionName = 'GuardDutyMalwareProtection';
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	13	// GuardDuty has no on-demand-only mode. Automatic scans only cover the plan's object prefixes, while
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	15	export const onDemandOnlyObjectPrefix = 'guardduty-on-demand-only/';
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	17	export interface GuardDutyMalwareProtectionProps {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	23	export interface GuardDutyMalwareProtection {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	25	plan: guardduty.CfnMalwareProtectionPlan;
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	28	export function buildGuardDutyMalwareProtection(
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	31	props: GuardDutyMalwareProtectionProps
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	32	): GuardDutyMalwareProtection {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	37	addGuardDutyScanRolePolicy(scanRole, props.bucket);
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	39	const plan = new guardduty.CfnMalwareProtectionPlan(construct, `${id}Plan`, {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	60	addGuardDutyMalwareProtectionReadGate(props.bucket, props.consumerPrincipals, props.onDemandOnly);
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	62	addGuardDutyTagGate(props.bucket, scanRole);
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	67	function addGuardDutyScanRolePolicy(role: iam.Role, bucket: s3.IBucket): void {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	68	const eventRuleArn = `arn:${Aws.PARTITION}:events:${Aws.REGION}:${Aws.ACCOUNT_ID}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*`;
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	72	sid: 'AllowManagedRuleToSendS3EventsToGuardDuty',
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	86	sid: 'AllowGuardDutyToMonitorEventBridgeManagedRule',
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	121	resources: [bucket.arnForObjects('malware-protection-resource-validation-object')],
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	136	sid: 'AllowMalwareScan',
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	146	sid: 'AllowDecryptForMalwareScan',
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	160	export function addGuardDutyMalwareProtectionReadGate(
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	165	const tagCondition = `s3:ExistingObjectTag/${malwareScanStatusTagKey}`;
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	180	function addGuardDutyTagGate(bucket: s3.IBucket, scanRole: iam.Role): void {
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	183	sid: 'OnlyGuardDutyCanTagScanStatus',
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	187	new iam.ArnPrincipal(getGuardDutyAssumedRoleArn(scanRole)),
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	193	's3:RequestObjectTagKeys': malwareScanStatusTagKey,
+medplum_medplum	scan	packages/cdk/src/guardduty.ts	200	function getGuardDutyAssumedRoleArn(role: iam.Role): string {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	11	const scanStatusTag = 's3:ExistingObjectTag/GuardDutyMalwareScanStatus';
+medplum_medplum	scan	packages/cdk/src/index.test.ts	614	test('GuardDuty', async () => {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	615	const filename = await writeConfig('./medplum.guardduty.config.json', {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	617	name: 'guardduty',
+medplum_medplum	scan	packages/cdk/src/index.test.ts	618	stackName: 'MedplumGuardDutyStack',
+medplum_medplum	scan	packages/cdk/src/index.test.ts	619	guardDutyMalwareProtectionEnabled: true,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	627	test.each([false, true])('GuardDuty (on-demand only %s) grants the server scan permissions', async (onDemandOnly) => {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	630	stackName: `MedplumGuardDutyScan${onDemandOnly}Stack`,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	631	guardDutyMalwareProtectionEnabled: true,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	632	guardDutyMalwareProtectionOnDemandOnly: onDemandOnly,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	653	Match.objectLike({ Action: 'guardduty:SendObjectMalwareScan', Resource: '*' }),
+medplum_medplum	scan	packages/cdk/src/index.test.ts	662	[true, ['guardduty-on-demand-only/'], { StringEquals: { [scanStatusTag]: 'THREATS_FOUND' } }],
+medplum_medplum	scan	packages/cdk/src/index.test.ts	665	'GuardDuty on-demand only (%s) sets the plan prefixes and read gate',
+medplum_medplum	scan	packages/cdk/src/index.test.ts	669	stackName: `MedplumGuardDutyOnDemandOnly${onDemandOnly}Stack`,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	670	guardDutyMalwareProtectionEnabled: true,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	671	guardDutyMalwareProtectionOnDemandOnly: onDemandOnly,
+medplum_medplum	scan	packages/cdk/src/index.test.ts	675	template.hasResourceProperties('AWS::GuardDuty::MalwareProtectionPlan', {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	687	test('No on-demand scan permissions without GuardDuty', async () => {
+medplum_medplum	scan	packages/cdk/src/index.test.ts	690	stackName: 'MedplumNoGuardDutyScanStack',
+medplum_medplum	scan	packages/cdk/src/index.test.ts	694	expect(JSON.stringify(template.toJSON())).not.toContain('guardduty:SendObjectMalwareScan');
+medplum_medplum	scan	packages/cdk/src/index.ts	14	export * from './guardduty';
+medplum_medplum	scan	packages/cdk/src/storage.ts	16	import { addGuardDutyMalwareProtectionReadGate, buildGuardDutyMalwareProtection } from './guardduty';
+medplum_medplum	scan	packages/cdk/src/storage.ts	48	if (config.guardDutyMalwareProtectionEnabled) {
+medplum_medplum	scan	packages/cdk/src/storage.ts	49	buildGuardDutyMalwareProtection(this, 'StorageGuardDuty', {
+medplum_medplum	scan	packages/cdk/src/storage.ts	51	onDemandOnly: config.guardDutyMalwareProtectionOnDemandOnly,
+medplum_medplum	scan	packages/cdk/src/storage.ts	56	// ClamAV serverless scan
+medplum_medplum	scan	packages/cdk/src/storage.ts	156	if (config.guardDutyMalwareProtectionEnabled) {
+medplum_medplum	scan	packages/cdk/src/storage.ts	157	addGuardDutyMalwareProtectionReadGate(
+medplum_medplum	scan	packages/cdk/src/storage.ts	160	config.guardDutyMalwareProtectionOnDemandOnly
+medplum_medplum	scan	packages/cli/src/aws/index.ts	87	'--guardduty-malware-protection',
+medplum_medplum	scan	packages/cli/src/aws/index.ts	88	'Adds the GuardDuty Malware Protection for S3 read-gating deny to the storage bucket policy.'
+medplum_medplum	scan	packages/cli/src/aws/index.ts	91	'--guardduty-on-demand-only',
+medplum_medplum	scan	packages/cli/src/aws/index.ts	92	'With --guardduty-malware-protection, only denies objects GuardDuty tagged THREATS_FOUND.'
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	450	test('Storage GuardDuty malware protection', async () => {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	457	{ dryrun: true, guarddutyMalwareProtection: true }
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	475	Sid: 'GuardDutyMalwareProtectionReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	484	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	496	test('Storage GuardDuty malware protection does not add duplicate deny', async () => {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	503	Sid: 'GuardDutyMalwareProtectionReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	512	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	525	{ dryrun: true, guarddutyMalwareProtection: true }
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	532	Sid: 'GuardDutyMalwareProtectionReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	541	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	557	test('Storage GuardDuty malware protection adds deny when existing deny is incomplete', async () => {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	563	Sid: 'IncompleteGuardDutyReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	572	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	585	{ dryrun: true, guarddutyMalwareProtection: true }
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	591	Sid: 'IncompleteGuardDutyReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	600	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	613	Sid: 'GuardDutyMalwareProtectionReadGate',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	622	's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	630	describe('Storage GuardDuty on-demand only', () => {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	646	const blanketGate = gate('GuardDutyMalwareProtectionReadGate', {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	647	StringNotEquals: { 's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'NO_THREATS_FOUND' },
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	649	const threatsFoundGate = gate('GuardDutyMalwareProtectionThreatsFoundGate', {
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	650	StringEquals: { 's3:ExistingObjectTag/GuardDutyMalwareScanStatus': 'THREATS_FOUND' },
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.test.ts	659	{ dryrun: true, guarddutyMalwareProtection: true, guarddutyOnDemandOnly: true }
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	12	guarddutyMalwareProtection?: boolean;
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	13	guarddutyOnDemandOnly?: boolean;
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	106	options.guarddutyMalwareProtection &&
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	107	addGuardDutyReadPolicyStatement(bucketPolicy, bucketName, oaiId, options.guarddutyOnDemandOnly);
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	184	function addGuardDutyReadPolicyStatement(
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	191	const tag = 's3:ExistingObjectTag/GuardDutyMalwareScanStatus';
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	195	? ['GuardDutyMalwareProtectionThreatsFoundGate', { StringEquals: { [tag]: 'THREATS_FOUND' } }]
+medplum_medplum	scan	packages/cli/src/aws/update-bucket-policies.ts	196	: ['GuardDutyMalwareProtectionReadGate', blanketCondition];
+medplum_medplum	scan	packages/core/src/config.ts	97	guardDutyMalwareProtectionEnabled?: ValueOrExternalSecret<boolean>;
+medplum_medplum	scan	packages/core/src/config.ts	98	/** With guardDutyMalwareProtectionEnabled, scan only via Binary $scan, and only block Binaries with threats found. */
+medplum_medplum	scan	packages/core/src/config.ts	99	guardDutyMalwareProtectionOnDemandOnly?: ValueOrExternalSecret<boolean>;
+medplum_medplum	scan	packages/core/src/config.ts	102	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/core/src/config.ts	104	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/core/src/config.ts	106	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/core/src/config.ts	276	guardDutyMalwareProtectionEnabled?: boolean;
+medplum_medplum	scan	packages/core/src/config.ts	277	/** With guardDutyMalwareProtectionEnabled, scan only via Binary $scan, and only block Binaries with threats found. */
+medplum_medplum	scan	packages/core/src/config.ts	278	guardDutyMalwareProtectionOnDemandOnly?: boolean;
+medplum_medplum	scan	packages/core/src/config.ts	281	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/core/src/config.ts	283	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/core/src/config.ts	285	/** @deprecated Use guardDutyMalwareProtectionEnabled instead */
+medplum_medplum	scan	packages/docs/blog/2026-06-01-may-2026-update.mdx	8	May was a heavy month for Medplum, with 100+ commits from 20+ contributors and four patch releases — v5.1.10 through v5.1.13. [Scheduling](/docs/scheduling) was the headline: the full appointment oper
+medplum_medplum	scan	packages/docs/blog/2026-06-01-may-2026-update.mdx	71	- **AWS GuardDuty Malware Protection** — Added support for [AWS GuardDuty Malware Protection](https://docs.aws.amazon.com/guardduty/latest/ug/malware-protection.html) on uploaded files, with graceful 
+medplum_medplum	scan	packages/docs/blog/2026-06-01-may-2026-update.mdx	163	May brought the scheduling operation suite to completion — `$find`, `$hold`, `$book`, `$confirm`, and `$cancel` now cover the full booking lifecycle — and moved the Provider App onto an Appointment-ba
+medplum_medplum	scan	packages/docs/blog/2026-06-22-ble-to-fhir-anybio-medplum.mdx	260	**Transaction Bundles are all-or-nothing.** A `transaction` Bundle either fully applies or fully rejects; one invalid resource or one broken reference fails the entire episode's export, and the server
+medplum_medplum	scan	packages/docs/blog/2026-08-31-terminology-2026.mdx	38	| 108097-7 | Monkeypox virus DNA [Presence] in Skin by NAA with probe detection |
+medplum_medplum	scan	packages/docs/blog/2026-08-31-terminology-2026.mdx	59	| 1366125001         | Monkeypox virus, subclade Ib                                  |
+medplum_medplum	scan	packages/docs/blog/2026-10-01-september-2026-update.mdx	162	- **Malware scanning** — A [`Binary/$scan`](/docs/api/fhir/operations/binary-scan) operation returns the AWS GuardDuty malware scan result for a stored object as an `OperationOutcome`, requesting an o
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	7	Checks the contents of a Binary for malware using
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	8	[Amazon GuardDuty Malware Protection for S3](https://docs.aws.amazon.com/guardduty/latest/ug/gdu-malware-protection-s3.html).
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	10	`$scan` returns the Binary's scan result if it has one. Otherwise it asks GuardDuty for an on-demand scan and waits for
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	11	the result, which usually takes seconds. The operation doesn't rely on GuardDuty scanning uploads automatically, and works
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	20	GuardDuty bills every on-demand scan, so `$scan` avoids sending repeat scans:
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	23	- When `$scan` sends a scan, it tags the S3 object `MedplumMalwareScanRequested` with the request time. Until a result
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	41	`https://medplum.com/fhir/CodeSystem/malware-scan-status`.
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	47	| `UNSUPPORTED`      | `warning`     | `not-supported` | GuardDuty cannot scan this object, for example a password-protected archive or an oversized file |
+medplum_medplum	crypt	packages/docs/docs/api/fhir/operations/binary-scan.md	47	| `UNSUPPORTED`      | `warning`     | `not-supported` | GuardDuty cannot scan this object, for example a password-protected archive or an oversized file |
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	48	| `FAILED`           | `error`       | `exception`     | GuardDuty couldn't finish the scan. The next call sends a new scan                               |
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	49	| `ACCESS_DENIED`    | `error`       | `forbidden`     | GuardDuty couldn't read the object. The next call sends a new scan                               |
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	53	`https://medplum.com/fhir/StructureDefinition/malware-scan-requested` extension whose `valueDateTime` is when the scan
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	54	was requested. Results from automatic scans of new uploads don't have it. GuardDuty doesn't report when a scan of an S3
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	76	url: "https://medplum.com/fhir/StructureDefinition/malware-scan-requested",
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	81	coding: [{ "system": "https://medplum.com/fhir/CodeSystem/malware-scan-status", "code": "NO_THREATS_FOUND" }],
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	92	- The storage bucket needs a GuardDuty Malware Protection plan with tagging enabled. The
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	93	`guardDutyMalwareProtectionEnabled` infra config option creates one. It also grants the server
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	94	`s3:GetObjectTagging`, `s3:PutObjectTagging` and `guardduty:SendObjectMalwareScan`.
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	95	- SSE-C encryption (`sseCustomerKey`) is not supported, because GuardDuty cannot read SSE-C objects.
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	99	GuardDuty Malware Protection supports two setups:
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	101	- **Scan every upload** (`guardDutyMalwareProtectionEnabled`): GuardDuty scans each new object, and CloudFront only
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	104	- **Scan on demand** (`guardDutyMalwareProtectionEnabled` and `guardDutyMalwareProtectionOnDemandOnly`): for
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	106	tagged `THREATS_FOUND`. Unscanned Binaries and Binaries with a scan in progress are still served. GuardDuty has no
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	107	on-demand-only mode, so this setup limits automatic scanning to the `guardduty-on-demand-only/` prefix, which Medplum
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	111	`medplum aws update-bucket-policies`. Pass `--guardduty-malware-protection`, and add `--guardduty-on-demand-only` for
+medplum_medplum	scan	packages/docs/docs/api/fhir/operations/binary-scan.md	117	served before GuardDuty tags it `THREATS_FOUND` may stay available from the cache until that entry expires.
+medplum_medplum	scan	packages/docs/docs/api/fhir/resources/condition.mdx	35	<div> <a name="scope"></a> <p>Condition is one of the <a href="https://www.hl7.org/fhir/workflow.html#event">event</a> resources in the FHIR <a href="https://www.hl7.org/fhir/workflow.html">workflow</
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	119	Conditional upserts are safe only when the identifier query resolves to zero or one target. Quarantine collisions instead of selecting a target arbitrarily.
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	155	Missing data should remain missing unless FHIR or an applicable profile provides an accurate representation. Do not invent defaults that imply facts absent from the source. Reject or quarantine invali
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	175	- Counts read, transformed, submitted, successful, rejected, skipped, and quarantined
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	242	| MAP-001 | `patients.birth_date` | `Patient.birthDate` | Parse the source date; quarantine invalid values | Data migration lead | Approved |
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	255	| Missing or invalid data           | Omit a missing value; quarantine an invalid value                                                     |
+medplum_medplum	scan	packages/docs/docs/migration/mapping-governance.md	271	- **Invalid-data action:** Omit when semantically accurate, Reject, Quarantine, Human review
+medplum_medplum	scan	packages/docs/docs/migration/migration-pipelines.md	145	4. Separate successful, rejected, skipped, and quarantined records.
+medplum_medplum	scan	packages/docs/docs/migration/validation-and-reconciliation.md	77	Preserve previous attempts rather than overwriting them. A retry is an attempt, not a final disposition. Every retried item must eventually become successful, rejected, skipped under an approved rule,
+medplum_medplum	scan	packages/docs/docs/migration/validation-and-reconciliation.md	138	+ quarantined units
+medplum_medplum	scan	packages/docs/docs/migration/validation-and-reconciliation.md	157	| Source dispositions           | 2 successful; 0 rejected; 0 skipped; 0 quarantined; 0 pending |
+medplum_medplum	scan	packages/docs/docs/migration/validation-and-reconciliation.md	192	- Route ambiguous or unmapped values to quarantine or human review.
+medplum_medplum	scan	packages/docs/docs/self-hosting/aws-cdk-settings.md	204	Boolean flag to enable [Serverless ClamScan antivirus](https://github.com/awslabs/cdk-serverless-clamscan)
+medplum_medplum	scan	packages/docs/docs/self-hosting/install-on-aws.md	290	With `guardDutyMalwareProtectionEnabled`, also pass `--guardduty-malware-protection` so CloudFront only serves Binaries
+medplum_medplum	scan	packages/docs/docs/self-hosting/install-on-aws.md	291	GuardDuty found clean. With `guardDutyMalwareProtectionOnDemandOnly`, add `--guardduty-on-demand-only` to only block
+medplum_medplum	scan	packages/docs/docs/self-hosting/install-on-aws.md	292	Binaries GuardDuty found threats in. Running the command again with this flag replaces an existing clean-only gate.
+medplum_medplum	scan	packages/docs/src/pages/terms.md	197	- attempt to submit, or submit a virus to the Medplum Service;
+medplum_medplum	crypt	packages/fhirtypes/dist/SmartHealthLink.d.ts	139	* Encrypted file available from the SMART Health Link.
+medplum_medplum	crypt	packages/fhirtypes/dist/SmartHealthLink.d.ts	145	* Encrypted file available from the SMART Health Link.
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	3	import { GuardDutyClient, SendObjectMalwareScanCommand } from '@aws-sdk/client-guardduty';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	18	MALWARE_SCAN_PENDING_MS,
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	19	MALWARE_SCAN_REQUESTED_EXTENSION,
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	20	MALWARE_SCAN_REQUESTED_TAG,
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	21	MALWARE_SCAN_STATUS_SYSTEM,
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	22	MALWARE_SCAN_STATUS_TAG,
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	32	let mockGuardDutyClient: AwsClientStub<GuardDutyClient>;
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	52	mockGuardDutyClient = mockClient(GuardDutyClient);
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	53	mockGuardDutyClient.on(SendObjectMalwareScanCommand).resolves({});
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	68	mockGuardDutyClient.restore();
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	91	return mockGuardDutyClient.commandCalls(SendObjectMalwareScanCommand).length;
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	105	issue: [{ severity, code, details: { coding: [{ system: MALWARE_SCAN_STATUS_SYSTEM, code: status }] } }],
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	110	return (res.body as OperationOutcome).issue[0].extension?.find((e) => e.url === MALWARE_SCAN_REQUESTED_EXTENSION)
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	120	const requested = { Other: 'keep', [MALWARE_SCAN_REQUESTED_TAG]: new Date().toISOString() };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	121	mockTags({ Other: 'keep' }, requested, { ...requested, [MALWARE_SCAN_STATUS_TAG]: 'NO_THREATS_FOUND' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	125	expect(mockGuardDutyClient.commandCalls(SendObjectMalwareScanCommand)[0].args[0].input).toStrictEqual({
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	131	expect(tagSet).toStrictEqual({ Other: 'keep', [MALWARE_SCAN_REQUESTED_TAG]: expect.any(String) });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	132	expect(Date.now() - Date.parse(tagSet[MALWARE_SCAN_REQUESTED_TAG])).toBeLessThan(60_000);
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	133	expect(requestedAt(res)).toBe(tagSet[MALWARE_SCAN_REQUESTED_TAG]);
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	142	mockTags({ [MALWARE_SCAN_STATUS_TAG]: status, [MALWARE_SCAN_REQUESTED_TAG]: scanRequestedAt });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	152	mockTags({ [MALWARE_SCAN_STATUS_TAG]: 'NO_THREATS_FOUND' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	169	const requested = { [MALWARE_SCAN_REQUESTED_TAG]: new Date(Date.now() - 60_000).toISOString() };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	170	mockTags(requested, { ...requested, [MALWARE_SCAN_STATUS_TAG]: 'THREATS_FOUND' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	179	const requested = { [MALWARE_SCAN_REQUESTED_TAG]: new Date().toISOString() };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	180	mockTags({}, requested, { ...requested, [MALWARE_SCAN_STATUS_TAG]: 'FAILED' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	188	mockTags({ [MALWARE_SCAN_REQUESTED_TAG]: new Date(Date.now() - MALWARE_SCAN_PENDING_MS - 1).toISOString() });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	197	const requested = { Other: 'keep', [MALWARE_SCAN_REQUESTED_TAG]: new Date().toISOString() };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	198	mockTags({ ...requested, [MALWARE_SCAN_STATUS_TAG]: status }, requested, {
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	200	[MALWARE_SCAN_STATUS_TAG]: 'NO_THREATS_FOUND',
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	206	expect(putTagSets()).toStrictEqual([{ Other: 'keep', [MALWARE_SCAN_REQUESTED_TAG]: expect.any(String) }]);
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	218	test('GuardDuty error clears the marker', async () => {
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	219	mockTags({ Other: 'keep', [MALWARE_SCAN_STATUS_TAG]: 'FAILED' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	220	mockGuardDutyClient.on(SendObjectMalwareScanCommand).rejects(new Error('Bucket is not protected'));
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	226	{ Other: 'keep', [MALWARE_SCAN_REQUESTED_TAG]: expect.any(String) },
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	231	test('GuardDuty error is reported even if clearing the marker fails', async () => {
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	233	mockGuardDutyClient.on(SendObjectMalwareScanCommand).rejects(new Error('Bucket is not protected'));
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	245	const requested = { [MALWARE_SCAN_REQUESTED_TAG]: new Date().toISOString() };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	246	mockTags({}, requested, { ...requested, [MALWARE_SCAN_STATUS_TAG]: 'NO_THREATS_FOUND' });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	265	test('Fails the AsyncJob when GuardDuty errors', async () => {
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	267	mockGuardDutyClient.on(SendObjectMalwareScanCommand).rejects(new Error('Bucket is not protected'));
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	299	expect(res.body.issue[0].details.text).toBe('Malware scanning requires S3 storage');
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.test.ts	311	expect(res.body.issue[0].details.text).toBe('Malware scanning is not supported with SSE-C encryption');
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	3	import { GuardDutyClient, SendObjectMalwareScanCommand } from '@aws-sdk/client-guardduty';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	26	/** Object tag written by GuardDuty Malware Protection for S3 once a scan finishes. */
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	27	export const MALWARE_SCAN_STATUS_TAG = 'GuardDutyMalwareScanStatus';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	30	export const MALWARE_SCAN_REQUESTED_TAG = 'MedplumMalwareScanRequested';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	33	export const MALWARE_SCAN_PENDING_MS = 60 * 60 * 1000;
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	35	export const MALWARE_SCAN_STATUS_SYSTEM = 'https://medplum.com/fhir/CodeSystem/malware-scan-status';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	38	export const MALWARE_SCAN_REQUESTED_EXTENSION = 'https://medplum.com/fhir/StructureDefinition/malware-scan-requested';
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	40	/** Our code for "scan submitted, result pending"; every other code is a GuardDuty tag value. */
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	43	/** How often and how long $scan polls for the GuardDuty result before reporting the scan as in progress. */
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	49	* Results a re-scan would not change; GuardDuty bills every on-demand scan without deduping.
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	55	UNSUPPORTED: { severity: 'warning', code: 'not-supported', text: 'Object not supported for malware scanning' },
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	59	FAILED: { severity: 'error', code: 'exception', text: 'Malware scan failed' },
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	60	ACCESS_DENIED: { severity: 'error', code: 'forbidden', text: 'GuardDuty could not read the object' },
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	66	* Returns the GuardDuty Malware Protection result for the Binary content, requesting an on-demand scan and waiting
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	77	return [badRequest('Malware scanning requires S3 storage')];
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	80	return [badRequest('Malware scanning is not supported with SSE-C encryption')];
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	116	let requestedAt: string | undefined = tags[MALWARE_SCAN_REQUESTED_TAG];
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	117	const status = tags[MALWARE_SCAN_STATUS_TAG];
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	122	if (status || !requestedAt || Date.now() - Date.parse(requestedAt) >= MALWARE_SCAN_PENDING_MS) {
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	129	const result = (await storage.getObjectTags(key))[MALWARE_SCAN_STATUS_TAG];
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	132	const described = known ?? { severity: 'error', code: 'exception', text: `Malware scan ${result}` };
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	140	text: 'Malware scan in progress, call $scan again for the result',
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	153	// PutObjectTagging replaces the whole set and only GuardDuty may write the status tag, so the stale
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	154	// status is dropped. Write before sending: a write after could erase a result GuardDuty already tagged.
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	156	Object.entries(tags).filter(([k]) => k !== MALWARE_SCAN_STATUS_TAG && k !== MALWARE_SCAN_REQUESTED_TAG)
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	159	await storage.putObjectTags(key, { ...otherTags, [MALWARE_SCAN_REQUESTED_TAG]: requestedAt });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	162	const client = new GuardDutyClient({ region: getConfig().awsRegion });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	163	await client.send(new SendObjectMalwareScanCommand({ S3Object: { Bucket: storage.bucket, Key: key } }));
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	167	getLogger().error('Failed to clear malware scan marker', { key, err: normalizeErrorString(clearErr) });
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	178	details: { coding: [{ system: MALWARE_SCAN_STATUS_SYSTEM, code: status }], text },
+medplum_medplum	scan	packages/server/src/fhir/operations/binary-scan.ts	181	issue.extension = [{ url: MALWARE_SCAN_REQUESTED_EXTENSION, valueDateTime: requestedAt }];
+microsoft_fhir-server	scan	build/InternalChecksCI-azureBuild-pipeline.yml	137	displayName: Anti-malware Phase
+microsoft_fhir-server	scan	build/InternalChecksCI-azureBuild-pipeline.yml	153	- task: AntiMalware@3
+microsoft_fhir-server	scan	build/InternalChecksCI-azureBuild-pipeline.yml	166	ArtifactName: CodeAnalysisLogs - Antimalware
+microsoft_fhir-server	scan	build/jobs/analyze.yml	5	runAntiMalware: true
+microsoft_fhir-server	scan	build/jobs/analyze.yml	54	- ${{ if eq(parameters.runAntiMalware, 'true') }}:
+microsoft_fhir-server	scan	build/jobs/analyze.yml	55	- task: AntiMalware@4
+microsoft_fhir-server	scan	build/jobs/analyze.yml	146	AntiMalware: ${{ eq(parameters.runAntiMalware, 'true') }}
+microsoft_fhir-server	scan	build/pr-arm.yml	42	runAntiMalware: false
