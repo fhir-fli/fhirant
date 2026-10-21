@@ -175,9 +175,14 @@ OVERRIDES = {
                '<type>.ndjson). $backup already sends one'),
     'V5.4.2': ('FINDING', 'fixed #80: the one served name is letters plus '
                '.ndjson, a plain RFC 6266 quoted-string'),
-    'V5.4.3': ('FINDING', 'open: client Binary and Attachment data are '
-               'stored and served (as base64 in FHIR JSON, never raw) with '
-               'no antivirus scan; needs a scanner choice'),
+    'V5.4.3': ('FINDING', 'client Binary and Attachment data were stored '
+               'and served (as base64 in FHIR JSON, never raw) unscanned. '
+               'Fixed #90 for the CLI/Docker server: every base64Binary in a '
+               'stored resource goes to clamd first (422 on a match, 503 if '
+               'clamd cannot answer); EICAR refused through the real '
+               'clamav/clamav:1.5.4 (test_docker.sh). Still open: $restore '
+               '(SQL copy in fhirant_db), and the phone, which has no '
+               'scanner'),
     'V4.2.5': ('FINDING', 'outbound_crlf_probe: CR/LF in a header name or '
                'value refused by dart:io, endpoint CRLF percent-encoded; a '
                '64 KiB channel.header went out whole. Fixed #81: rest-hook '

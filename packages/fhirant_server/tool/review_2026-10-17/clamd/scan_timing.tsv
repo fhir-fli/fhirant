@@ -1,0 +1,25 @@
+case	bytes	run	ms	result
+eicar	68	1	66	FOUND Eicar-Test-Signature
+eicar.zip	186	1	10	FOUND Eicar-Test-Signature
+zeros_150.zip	153005	1	17310	clean
+zeros_450.zip	458748	1	2593	clean
+random	0	1	3	clean
+random	0	2	3	clean
+random	0	3	2	clean
+random	0	4	5	clean
+random	0	5	4	clean
+random	1024	1	27	clean
+random	1024	2	8	clean
+random	1024	3	8	clean
+random	1024	4	8	clean
+random	1024	5	7	clean
+random	1048576	1	219	clean
+random	1048576	2	14	clean
+random	1048576	3	16	clean
+random	1048576	4	18	clean
+random	1048576	5	15	clean
+random	12582912	1	2258	clean
+random	12582912	2	113	clean
+random	12582912	3	106	clean
+random	12582912	4	83	clean
+random	12582912	5	83	clean

@@ -14,6 +14,16 @@ services:
       - "8080:8080"
     volumes:
       - fhirant-data:/data
+    # Every file a client sends is scanned by the clamav service before it
+    # is stored (OWASP ASVS 5.0.0 V5.4.3); a match is refused with 422, and
+    # while clamd cannot answer, uploads are refused with 503. Remove the
+    # last two arguments, and the clamav service, to run without scanning.
+    command:
+      ["/app/bin/server", "--port", "8080", "--db-path", "/data",
+       "--clamd-host", "clamav"]
+    depends_on:
+      clamav:
+        condition: service_healthy
     # Both are required. A default written here would be a public key, and
     # the server refuses the two placeholders this file and bin/server.dart
     # once carried. `docker compose up` fails with the message below until
@@ -30,5 +40,19 @@ services:
       # - FHIRANT_ADMIN_USERNAME=${FHIRANT_ADMIN_USERNAME}
       # - FHIRANT_ADMIN_PASSWORD=${FHIRANT_ADMIN_PASSWORD}
 
+  # ClamAV's own image, beside fhirant rather than inside it: it is 400 MB
+  # (measured, clamav/clamav:1.5.4) and needs "Minimum: 3 GiB" of memory,
+  # "Preferred: 4 GiB" (ClamAV Docker docs, read 2026-10-21). The plain tag
+  # ships with signatures and freshclam keeps them current; the volume keeps
+  # the updates across restarts. Port 3310 is reachable only on this
+  # compose network. The image's own health check (clamdcheck.sh) gates
+  # fhirant's start.
+  clamav:
+    image: clamav/clamav:1.5.4
+    volumes:
+      - ./clamav/clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav-db:/var/lib/clamav
+
 volumes:
   fhirant-data:
+  clamav-db:

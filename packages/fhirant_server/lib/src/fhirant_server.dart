@@ -14,6 +14,7 @@ import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/middlewares/no_store_middleware.dart';
 import 'package:fhirant_server/src/middlewares/redact_subscription_headers.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
@@ -61,6 +62,7 @@ class FhirAntServer {
     this.programDeadline = kProgramDeadline,
     this.bootstrapToken,
     this.auditRetention,
+    this.fileScanner,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
     this.baseUrl = baseUrl;
@@ -152,6 +154,12 @@ class FhirAntServer {
   /// which neither source says includes audit-log entries. The deployment
   /// sets its own period (CLI --audit-retention-days).
   final Duration? auditRetention;
+
+  /// Scans every file a client's resource carries before it is stored
+  /// (`utils/file_refusal.dart`; OWASP ASVS 5.0.0 V5.4.3). Null, the
+  /// default and the phone's case, scans nothing; the CLI sets it from
+  /// --clamd-host.
+  final FileScanner? fileScanner;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -641,8 +649,12 @@ class FhirAntServer {
       // Transaction/Batch endpoint
       ..post(
         '/',
-        (Request req) =>
-            bundleHandler(req, dbInterface, subscriptions: subscriptions),
+        (Request req) => bundleHandler(
+          req,
+          dbInterface,
+          subscriptions: subscriptions,
+          fileScanner: fileScanner,
+        ),
       )
       // Resource CRUD endpoints
       ..get(
@@ -663,6 +675,7 @@ class FhirAntServer {
           resourceType,
           dbInterface,
           subscriptions: subscriptions,
+          fileScanner: fileScanner,
         ),
       )
       ..get(
@@ -678,6 +691,7 @@ class FhirAntServer {
           resourceType,
           dbInterface,
           subscriptions: subscriptions,
+          fileScanner: fileScanner,
         ),
       )
       ..put(
@@ -688,6 +702,7 @@ class FhirAntServer {
           id,
           dbInterface,
           subscriptions: subscriptions,
+          fileScanner: fileScanner,
         ),
       )
       ..patch(
@@ -698,6 +713,7 @@ class FhirAntServer {
           id,
           dbInterface,
           subscriptions: subscriptions,
+          fileScanner: fileScanner,
         ),
       )
       ..delete(
