@@ -68,13 +68,21 @@ Future<int> _writeNdjsonFile(
   String filePath,
   Stream<String> lines,
   Uint8List key,
+  fhir.R4ResourceType resourceType,
 ) async {
   final file = File(filePath);
   await file.parent.create(recursive: true);
   final plain = StreamController<List<int>>();
   final sink = _CountingSink(plain);
   final out = file.openWrite();
-  final encrypting = ExportFileCrypto.encrypt(plain.stream, out, key);
+  // One file per type in a job, so the type's index tells the job's files
+  // apart under the job's one key.
+  final encrypting = ExportFileCrypto.encrypt(
+    plain.stream,
+    out,
+    key,
+    fileNumber: resourceType.index,
+  );
   try {
     final count = await NdjsonStream.write(lines, sink);
     await plain.close();
@@ -801,6 +809,7 @@ Future<void> _processExport(
             baseUrl,
           ),
           fileKey,
+          resourceType,
         );
         if (count == 0) {
           await File(path).delete();
@@ -931,6 +940,7 @@ Future<void> _processExport(
         path,
         _absoluteAttachmentUrls(lines, baseUrl),
         fileKey,
+        resourceType,
       );
       if (count == 0) {
         // Bulk Data v2.0.0 export.html, read 2026-09-08: "If no data are
