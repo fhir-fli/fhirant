@@ -1,22 +1,42 @@
-# Draft issue for dart-lang/sdk (not filed; Grey files it)
+# Draft security report for the Dart SDK (not sent; Grey sends it)
+
+**Where it goes:** https://g.co/vulnz, not a public GitHub issue. Dart's
+policy (https://dart.dev/security, read 2026-10-21): "To report a security
+issue, use https://g.co/vulnz", with "a detailed description of the issue,
+the steps you took to create the issue, affected versions, and any
+mitigations"; "The Google Security Team will respond within 5 working
+days". Paste everything below the line.
 
 Scripts and outputs: `packages/fhirant_server/tool/review_2026-10-17/
 dart_sdk_framing/` (`repro.dart`, `headers.dart`); the full probe is
 `smuggling_probe.dart` / `.tsv` beside it.
 
-Open issues searched 2026-10-21 (`gh search issues --repo dart-lang/sdk`):
-"Transfer-Encoding Content-Length smuggling", "request smuggling
-HttpServer", "Content-Length Transfer-Encoding both". Found #46670, #52494
-and #48822, all closed and all about responses received by the client. No
-issue about the server side was found.
+Issues searched 2026-10-21 (`gh search issues --repo dart-lang/sdk`, open
+and closed): "Transfer-Encoding" (80 results, all titles read), "smuggling",
+"Content-Length HttpServer", "persistentConnection Transfer-Encoding".
+One open server-side issue is related: #60481 (open since 2025-04-04),
+which reports that `Transfer-Encoding: ,chunked` is not read as chunked and
+that unknown transfer codings get no 501. It does not cover a request with
+both Content-Length and Transfer-Encoding keeping the connection open, or
+the missing 400s. #46670, #52494 and #48822 (all closed) are about
+responses received by the client.
 
 ---
 
-**Title:** HttpServer keeps the connection open after a request with both
-Content-Length and Transfer-Encoding, and drops malformed requests without
-a 400
+**Component:** Dart SDK, `dart:io` HttpServer (`sdk/lib/_http/http_parser.dart`)
 
-**Dart SDK:** 3.13.0 (stable), linux_x64
+**Summary:** HttpServer keeps the connection open after a request with both
+Content-Length and Transfer-Encoding (a CL.TE request-smuggling shape behind
+a front end that frames by Content-Length), and drops malformed requests
+without a 400.
+
+**Affected versions:** 3.13.0 (stable), linux_x64, measured. Earlier
+versions were not tested. On main (read 2026-10-21) `http_parser.dart`
+differs from 3.13.0 only in how header bytes are buffered (`_Bytes`); the
+framing and error paths are the same lines.
+
+**Related public issue:** #60481 (other Transfer-Encoding parsing bugs in
+the same parser, same smuggling consequence).
 
 **What happens**
 
@@ -106,6 +126,11 @@ space before colon: responses=[] closed=true second-served=false
 
 **Expected:** the first case answers once and closes the connection (it
 may answer 400). The other three answer 400, then close.
+
+**Mitigations:** we found none an application can apply (see "Why it
+matters"). A deployment can serve HttpServer directly, with no front end,
+or put it behind a front end that refuses requests carrying both headers.
+We have not tested any particular proxy.
 
 **Why it matters:** behind a front end that frames by Content-Length, the
 first case is the classic CL.TE request-smuggling shape, and an

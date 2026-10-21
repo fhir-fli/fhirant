@@ -6,8 +6,10 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/auth/search_reach.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/utils/fhir_id.dart';
+import 'package:fhirant_server/src/utils/file_refusal.dart';
 import 'package:fhirant_server/src/utils/filter_evaluator.dart';
 import 'package:fhirant_server/src/utils/filter_expression.dart';
 import 'package:fhirant_server/src/utils/http_headers.dart';
@@ -1181,6 +1183,7 @@ Future<Response> postResourceHandler(
   String resourceType,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  FileScanner? fileScanner,
 }) async {
   // Defaults to a real service rather than to null. A nullable notifier that
   // quietly does nothing when a caller forgets to pass it is the same defect
@@ -1207,6 +1210,11 @@ Future<Response> postResourceHandler(
         'Resource type in URL does not match resource type in body',
       );
     }
+
+    // Before the If-None-Exist transaction below opens: a scan is a round
+    // trip to clamd, and the store has one connection.
+    final fileRefused = await fileRefusal(fileScanner, resource);
+    if (fileRefused != null) return fileRefusalResponse(fileRefused);
 
     // Patient-level scope enforcement for create: decided first, because
     // the If-None-Exist search below runs inside the same compartment. It
@@ -1408,6 +1416,7 @@ Future<Response> putResourceHandler(
   String id,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  FileScanner? fileScanner,
   List<fhir.Resource>? deferredChanges,
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
@@ -1490,6 +1499,10 @@ Future<Response> putResourceHandler(
 
     final storeRefused = storeRefusal(Principal.of(request), updatedResource);
     if (storeRefused != null) return storeRefused;
+    // A conditional update scanned the body before its transaction opened,
+    // and calls this with no scanner (_resolveAndPut).
+    final fileRefused = await fileRefusal(fileScanner, updatedResource);
+    if (fileRefused != null) return fileRefusalResponse(fileRefused);
     final unknownUpdate = unknownRequiredCodes(updatedResource);
     if (unknownUpdate.isNotEmpty) {
       return outcome(
@@ -1861,6 +1874,7 @@ Future<Response> conditionalUpdateHandler(
   String resourceType,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  FileScanner? fileScanner,
 }) async {
   final type = fhir.R4ResourceType.fromString(resourceType);
   if (type == null) {
@@ -1878,6 +1892,10 @@ Future<Response> conditionalUpdateHandler(
       'Resource type in URL does not match resource type in body',
     );
   }
+  // Scanned here, before the transaction opens; the put inside it is given
+  // no scanner. The resource it stores carries the same files.
+  final fileRefused = await fileRefusal(fileScanner, resource);
+  if (fileRefused != null) return fileRefusalResponse(fileRefused);
   final patientId = patientContextFor(request, resourceType, 'u');
   // The search that picks the target and the write are one database
   // transaction, so of two conditional updates at once with no match only

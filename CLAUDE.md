@@ -284,6 +284,10 @@ Server and db tests use `package:test` + `mocktail`; the app uses `flutter_test`
 --spec-path         FHIR spec NDJSON directory (default /app/fhir_spec)
 --base-url          The URL clients reach this server by
 --audit-retention-days  Days AuditEvents are kept (unset: none are removed)
+--clamd-host        clamd (ClamAV) host; set, every file a client sends is
+                    scanned before it is stored (unset: nothing is scanned)
+--clamd-port        clamd's TCP port (default 3310)
+--clamd-timeout-seconds  Deadline for one scan (default 130)
 ```
 
 Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption key; `FHIRANT_JWT_SECRET` the token signing secret (else one is generated and persisted beside the database); `FHIRANT_ADMIN_USERNAME` + `FHIRANT_ADMIN_PASSWORD` seed the first administrator (else the CLI prints a one-time bootstrap token the first registration must carry).
@@ -296,6 +300,7 @@ Every package uses `very_good_analysis` through the repo's root `analysis_option
 
 - **One error reply builder**: `outcome(status, IssueType, diagnostics)` in `lib/src/utils/operation_outcomes.dart`, with `exceptionOutcome` and `validationOutcome` as its two common forms, and `lookupStored` in `utils/stored_resource.dart` as the one decision for "the resource this URL names, under this caller's scope"; `searchsetPage` / `countOnlyPage` in `utils/search_page.dart` are the one way a page of results becomes a searchset Bundle (links from `SearchLinks.page`, total null under `_total=none`). `findByCanonical` / `findOneByCanonical` in `utils/canonical.dart` are the one search by canonical URL (`url|version` split there), and `readOperationParameters` / `parametersToMap` in `utils/parameters_body.dart` the one reader of an operation's input. Handlers do not define their own; 14 private helpers of six shapes were replaced on 2026-09-22 (PR #7)
 - **One PBKDF2**: fhir_db's `pbkdf2` (PBKDF2-HMAC-SHA256, known answers in fhir_db `test/pbkdf2_test.dart`) derives the database key, the backup key (`BackupCrypto`) and verifies the pre-Argon2 password hashes; no other loop (REVIEW-2026-09-17 ST6)
+- **Files are scanned before they are stored** (OWASP ASVS 5.0.0 V5.4.3): with `--clamd-host` set, every base64Binary value in a client's resource (found by type, `utils/file_data.dart`) goes to clamd before the write, through `fileRefusal` (`utils/file_refusal.dart`), at create, update, conditional update, PATCH and every Bundle entry. A match is 422 `business-rule`, and so is a password-protected zip, PDF or Office file (`AlertEncrypted`), with a reply asking for it without the password; no answer from clamd is 503 `transient`, never stored unscanned. docker-compose runs `clamav/clamav:1.5.4` beside the server with `clamav/clamd.conf`. The phone has no scanner. `$restore` is not scanned yet
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
 - **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
 - **Version ID = a counter** — `fhirDao.versionIdAsTime = false` (fhirant_db.dart), so each save's version id is the previous one plus one
