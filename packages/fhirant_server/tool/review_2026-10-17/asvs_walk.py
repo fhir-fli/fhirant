@@ -170,6 +170,14 @@ OVERRIDES = {
                 'salt, so fresh key, per file'),
     'V11.3.5': ('PASS', 'GCM is an approved AEAD mode; no separate '
                 'cipher+MAC pairing exists'),
+    'V5.4.1': ('FINDING', '$export-file sent no Content-Disposition and '
+               'checked the name only for .. and /; fixed #80 (name must be '
+               '<type>.ndjson). $backup already sends one'),
+    'V5.4.2': ('FINDING', 'fixed #80: the one served name is letters plus '
+               '.ndjson, a plain RFC 6266 quoted-string'),
+    'V5.4.3': ('FINDING', 'open: client Binary and Attachment data are '
+               'stored and served (as base64 in FHIR JSON, never raw) with '
+               'no antivirus scan; needs a scanner choice'),
 }
 
 
