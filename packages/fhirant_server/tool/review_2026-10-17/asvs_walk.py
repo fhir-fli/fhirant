@@ -157,6 +157,19 @@ OVERRIDES = {
     'V10.4.8': ('FINDING', 'R1: each rotation grants a fresh 7 days'),
     'V9.2.1': ('FINDING', 'a signed token without exp never expires'),
     'V9.2.3': ('NOTPROBED', 'no aud claim; single service'),
+    # Measured after the review, 2026-10-21 (REVIEW-2026-10-17, "The
+    # NOTPROBED rows, measured after the review").
+    'V11.3.1': ('PASS', 'code read 2026-10-21: both file formats are '
+                'AES-256-GCM (pointycastle); no ECB, no padding'),
+    'V11.3.2': ('PASS', 'code read 2026-10-21: AES-256-GCM'),
+    'V11.3.3': ('PASS', 'GCM 128-bit tag; export_file_crypto_test refuses a '
+                'changed byte, a cut file, reordered frames, the wrong key'),
+    'V11.3.4': ('FINDING', 'export: one job key, one file per type, random '
+                '64-bit nonce fixed field (neither SP 800-38D 8.2.1 nor '
+                '8.2.2), counter wrapped at 2^32; fixed #79. Backup: fresh '
+                'salt, so fresh key, per file'),
+    'V11.3.5': ('PASS', 'GCM is an approved AEAD mode; no separate '
+                'cipher+MAC pairing exists'),
 }
 
 

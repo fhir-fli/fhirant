@@ -612,6 +612,7 @@ void main() {
         Stream.value(utf8.encode('${jsonEncode(patient.toJson())}\n')),
         out,
         fileKey,
+        fileNumber: fhir.R4ResourceType.Patient.index,
       );
       await out.close();
 

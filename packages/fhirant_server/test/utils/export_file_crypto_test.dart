@@ -14,7 +14,12 @@ void main() {
   Future<Uint8List> encrypt(List<int> plain, [Uint8List? k]) async {
     final out = BytesBuilder();
     final sink = _BuilderSink(out);
-    await ExportFileCrypto.encrypt(Stream.value(plain), sink, k ?? key);
+    await ExportFileCrypto.encrypt(
+      Stream.value(plain),
+      sink,
+      k ?? key,
+      fileNumber: 0,
+    );
     return out.takeBytes();
   }
 
@@ -30,6 +35,43 @@ void main() {
         .forEach(out.add);
     return out.takeBytes();
   }
+
+  // NIST SP 800-38D 8.2.1 (read 2026-10-21): the fixed field "shall
+  // identify ... the context", and "For any given key, no two distinct
+  // devices shall share the same fixed field". One job key encrypts one
+  // file per type, so the file's number is the fixed field.
+  test('the fixed field is the file number, so files under one key differ',
+      () async {
+    Future<Uint8List> fixed(int n) async {
+      final out = BytesBuilder();
+      await ExportFileCrypto.encrypt(
+        Stream.value([1, 2, 3]),
+        _BuilderSink(out),
+        key,
+        fileNumber: n,
+      );
+      return Uint8List.sublistView(
+        out.takeBytes(),
+        ExportFileCrypto.headerLength - 8,
+        ExportFileCrypto.headerLength,
+      );
+    }
+
+    expect(await fixed(7), [0, 0, 0, 0, 0, 0, 0, 7]);
+    expect(await fixed(7), await fixed(7));
+    expect(await fixed(8), isNot(await fixed(7)));
+  });
+
+  // SP 800-38D 8.3: an s-bit invocation field allows 2^s invocations per
+  // fixed field; a 4-byte counter written past that wraps onto frame 0.
+  test('a frame counter past 2^32 is refused, not wrapped onto frame 0', () {
+    final fixed = Uint8List(8);
+    expect(ExportFileCrypto.nonceFor(fixed, 0xFFFFFFFF), hasLength(12));
+    expect(
+      () => ExportFileCrypto.nonceFor(fixed, 0x100000000),
+      throwsStateError,
+    );
+  });
 
   test('round trip, empty, one frame and several frames', () async {
     for (final size in [
