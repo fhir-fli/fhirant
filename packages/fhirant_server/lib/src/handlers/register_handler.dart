@@ -202,14 +202,26 @@ Future<Response> registerHandler(
     final salt = PasswordHasher.generateSalt();
     final hash = await PasswordHasher.hashPassword(password, salt);
 
-    final userId = await dbInterface.createUser(
-      username: username,
-      passwordHash: hash,
-      salt: salt,
-      role: effectiveRole,
-      scopes: jsonEncode(effectiveScopes),
-      patientId: patientId,
-    );
+    // The read above cannot see a registration of the same name that is
+    // still hashing its password; the store's UNIQUE constraint can, and is
+    // answered as the read would be. Ten at once got nine 500s
+    // (REVIEW-2026-10-17, ASVS 5.0.0 V15.4.2).
+    final int userId;
+    try {
+      userId = await dbInterface.createUser(
+        username: username,
+        passwordHash: hash,
+        salt: salt,
+        role: effectiveRole,
+        scopes: jsonEncode(effectiveScopes),
+        patientId: patientId,
+      );
+    } on UsernameTaken {
+      return Response(
+        409,
+        body: jsonEncode({'error': 'Username already exists'}),
+      );
+    }
 
     // Generate JWT tokens so the user is logged in immediately
     // Minted from the stored row, so the tokens carry what the store holds,

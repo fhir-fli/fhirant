@@ -178,3 +178,17 @@ class AuthorizationCode {
   String toString() => 'AuthorizationCode(code: $code, clientId: $clientId, '
       'userId: $userId, used: $used)';
 }
+
+/// [FhirAntDb.createUser] refused [username] because an account already
+/// has it: the users table's UNIQUE constraint, which is the one check
+/// two concurrent registrations cannot both pass.
+class UsernameTaken implements Exception {
+  /// Creates the refusal for [username].
+  const UsernameTaken(this.username);
+
+  /// The name that is taken.
+  final String username;
+
+  @override
+  String toString() => 'UsernameTaken: $username';
+}
