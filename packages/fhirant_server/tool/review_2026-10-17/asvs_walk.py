@@ -178,6 +178,11 @@ OVERRIDES = {
     'V5.4.3': ('FINDING', 'open: client Binary and Attachment data are '
                'stored and served (as base64 in FHIR JSON, never raw) with '
                'no antivirus scan; needs a scanner choice'),
+    'V4.2.5': ('FINDING', 'outbound_crlf_probe: CR/LF in a header name or '
+               'value refused by dart:io, endpoint CRLF percent-encoded; a '
+               '64 KiB channel.header went out whole. Fixed #81: rest-hook '
+               'lines bounded at 8190 bytes (Apache/nginx defaults), CR/LF '
+               'refused at activation'),
 }
 
 

@@ -1,0 +1,7 @@
+case	client result	wire (escaped)
+control	sent, 200	POST /hook HTTP/1.1\r\nuser-agent: Dart/3.13 (dart:io)\r\naccept-encoding: gzip\r\ncontent-length: 0\r\nx-test: plain\r\nhost: 127.0.0.1:46615\r\n\r\n
+CRLF in a header value	refused: FormatException: Invalid HTTP header field value: "a\r\nInjected: b" (at character 2)	(not sent)
+LF in a header value	refused: FormatException: Invalid HTTP header field value: "a\nInjected: b" (at character 2)	(not sent)
+CRLF in a header name	refused: FormatException: Invalid HTTP header field name: "X-Test\r\nInjected" (at character 7)	(not sent)
+CRLF in the endpoint path	sent, 200	POST /hook%0D%0AInjected:%20b HTTP/1.1\r\nuser-agent: Dart/3.13 (dart:io)\r\naccept-encoding: gzip\r\ncontent-length: 0\r\nhost: 127.0.0.1:46615\r\n\r\n
+64 KiB header value	sent, 200	POST /hook HTTP/1.1\r\nuser-agent: Dart/3.13 (dart:io)\r\naccept-encoding: gzip\r\ncontent-length: 0\r\nx-test: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...
