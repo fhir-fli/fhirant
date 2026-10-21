@@ -1215,135 +1215,154 @@ Future<Response> postResourceHandler(
     // (REVIEW-2026-09-08 row 8).
     final createPatientId = patientContextFor(request, resourceType, 'c');
 
-    // Conditional create: If-None-Exist header
+    // The If-None-Exist search and the create are one database transaction,
+    // so of two conditional creates at once the second sees the first's
+    // resource (R4B http.html 3.1.0.8.1: the variant exists "to avoid the
+    // risk of two clients creating duplicate resources"). They were separate
+    // steps, and ten at once made ten (REVIEW-2026-10-17, ASVS 5.0.0
+    // V15.4.2). The answer is a Response to send, or the saved resource.
     final ifNoneExist = request.headers['if-none-exist'];
-    if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
-      final type = fhir.R4ResourceType.fromString(resourceType);
-      if (type != null) {
-        final searchUri = Uri(query: ifNoneExist);
-        final searchParams = <String, List<String>>{};
-        for (final entry in searchUri.queryParametersAll.entries) {
-          searchParams[entry.key] = entry.value;
-        }
-
-        final unreachable = unsearchableTypesReachedBy(
-          Principal.of(request),
-          dbInterface,
-          resourceType,
-          searchParams,
-        );
-        if (unreachable.isNotEmpty) {
-          return forbidden(unsearchableTypesMessage(unreachable));
-        }
-        if (searchParams.isNotEmpty) {
-          final List<fhir.Resource> existing;
-          try {
-            // Two rows settle it: none creates, one is returned, two or
-            // more is a 412. Without a count every match was hydrated to
-            // learn which (REVIEW-2026-09-17 Q9).
-            existing = await dbInterface.search(
-              resourceType: type,
-              searchParameters: searchParams,
-              count: 2,
-              compartment: createPatientId == null
-                  ? null
-                  : patientCompartment(createPatientId),
-            );
-          } on ValueSetRefusal catch (e) {
-            // `:in` / `:not-in` against a ValueSet this store cannot
-            // evaluate or does not hold: refused, not answered from the
-            // parts it can.
-            return _searchRefusal(e.message, _valueSetIssue(e));
-          } on UnsupportedSearchModifier catch (e) {
-            return _searchRefusal(
-              'If-None-Exist: ${e.message}',
-              fhir.IssueType.notSupported,
-            );
-          } on InvalidSearchValue catch (e) {
-            return _searchRefusal(
-              'If-None-Exist: ${e.message}',
-              fhir.IssueType.invalid,
-            );
-          } on AmbiguousReference catch (e) {
-            return _searchRefusal(
-              'If-None-Exist: ${e.message}',
-              fhir.IssueType.invalid,
-            );
+    Future<Object> searchAndSave() async {
+      // Conditional create: If-None-Exist header
+      if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
+        final type = fhir.R4ResourceType.fromString(resourceType);
+        if (type != null) {
+          final searchUri = Uri(query: ifNoneExist);
+          final searchParams = <String, List<String>>{};
+          for (final entry in searchUri.queryParametersAll.entries) {
+            searchParams[entry.key] = entry.value;
           }
 
-          if (existing.length == 1) {
-            return Response.ok(
-              existing.first.toJsonString(),
-              headers: FhirHttpHeaders.resourceHeaders(existing.first),
-            );
-          } else if (existing.length > 1) {
-            return Response(
-              412,
-              body: fhir.OperationOutcome(
-                issue: [
-                  fhir.OperationOutcomeIssue(
-                    severity: fhir.IssueSeverity.error,
-                    code: fhir.IssueType.duplicate,
-                    diagnostics:
-                        'Multiple matches found for If-None-Exist criteria'
-                            .toFhirString,
-                  ),
-                ],
-              ).toJsonString(),
-              headers: {'Content-Type': 'application/json'},
-            );
+          final unreachable = unsearchableTypesReachedBy(
+            Principal.of(request),
+            dbInterface,
+            resourceType,
+            searchParams,
+          );
+          if (unreachable.isNotEmpty) {
+            return forbidden(unsearchableTypesMessage(unreachable));
           }
-          // No match: proceed with create
+          if (searchParams.isNotEmpty) {
+            final List<fhir.Resource> existing;
+            try {
+              // Two rows settle it: none creates, one is returned, two or
+              // more is a 412. Without a count every match was hydrated to
+              // learn which (REVIEW-2026-09-17 Q9).
+              existing = await dbInterface.search(
+                resourceType: type,
+                searchParameters: searchParams,
+                count: 2,
+                compartment: createPatientId == null
+                    ? null
+                    : patientCompartment(createPatientId),
+              );
+            } on ValueSetRefusal catch (e) {
+              // `:in` / `:not-in` against a ValueSet this store cannot
+              // evaluate or does not hold: refused, not answered from the
+              // parts it can.
+              return _searchRefusal(e.message, _valueSetIssue(e));
+            } on UnsupportedSearchModifier catch (e) {
+              return _searchRefusal(
+                'If-None-Exist: ${e.message}',
+                fhir.IssueType.notSupported,
+              );
+            } on InvalidSearchValue catch (e) {
+              return _searchRefusal(
+                'If-None-Exist: ${e.message}',
+                fhir.IssueType.invalid,
+              );
+            } on AmbiguousReference catch (e) {
+              return _searchRefusal(
+                'If-None-Exist: ${e.message}',
+                fhir.IssueType.invalid,
+              );
+            }
+
+            if (existing.length == 1) {
+              return Response.ok(
+                existing.first.toJsonString(),
+                headers: FhirHttpHeaders.resourceHeaders(existing.first),
+              );
+            } else if (existing.length > 1) {
+              return Response(
+                412,
+                body: fhir.OperationOutcome(
+                  issue: [
+                    fhir.OperationOutcomeIssue(
+                      severity: fhir.IssueSeverity.error,
+                      code: fhir.IssueType.duplicate,
+                      diagnostics:
+                          'Multiple matches found for If-None-Exist criteria'
+                              .toFhirString,
+                    ),
+                  ],
+                ).toJsonString(),
+                headers: {'Content-Type': 'application/json'},
+              );
+            }
+            // No match: proceed with create
+          }
         }
       }
-    }
 
-    if (createPatientId != null) {
-      if (!await isNewResourceInPatientCompartment(
-        resource,
-        createPatientId,
-        dbInterface,
-      )) {
-        return patientScopeForbiddenResponse(
-          resourceType,
-          resource.id?.toString() ?? 'new',
+      if (createPatientId != null) {
+        if (!await isNewResourceInPatientCompartment(
+          resource,
           createPatientId,
+          dbInterface,
+        )) {
+          return patientScopeForbiddenResponse(
+            resourceType,
+            resource.id?.toString() ?? 'new',
+            createPatientId,
+          );
+        }
+      }
+      final storeRefused = storeRefusal(Principal.of(request), resource);
+      if (storeRefused != null) return storeRefused;
+      final unknownCreate = unknownRequiredCodes(resource);
+      if (unknownCreate.isNotEmpty) {
+        return outcome(
+          400,
+          fhir.IssueType.codeInvalid,
+          unknownCodesMessage(unknownCreate),
         );
       }
-    }
-    final storeRefused = storeRefusal(Principal.of(request), resource);
-    if (storeRefused != null) return storeRefused;
-    final unknownCreate = unknownRequiredCodes(resource);
-    if (unknownCreate.isNotEmpty) {
-      return outcome(
-        400,
-        fhir.IssueType.codeInvalid,
-        unknownCodesMessage(unknownCreate),
-      );
+
+      // R4B http.html §3.1.0.8 create (read 2026-09-08): "If an id is
+      // provided, the server SHALL ignore it." and "The server SHALL populate
+      // the id, meta.versionId and meta.lastUpdated with the new correct
+      // values." A POST used to keep the client's id and update the resource
+      // that had it, answering 201 (REVIEW-2026-09-08 row 21).
+      var resourceWithId = resource.newId();
+      // R4 subscription.html: a client creates a Subscription as `requested`,
+      // and the SERVER decides whether it can process it. Deciding before the
+      // save means the stored status is the server's answer, never the client's
+      // claim.
+      if (resourceWithId is fhir.Subscription) {
+        resourceWithId = await subs.activate(
+          resourceWithId,
+          principal: Principal.of(request),
+        );
+      }
+      try {
+        return await dbInterface.saveResource(resourceWithId);
+      } on InvalidSearchParameter catch (e) {
+        return invalidSearchParameter(e);
+      }
     }
 
-    // R4B http.html §3.1.0.8 create (read 2026-09-08): "If an id is
-    // provided, the server SHALL ignore it." and "The server SHALL populate
-    // the id, meta.versionId and meta.lastUpdated with the new correct
-    // values." A POST used to keep the client's id and update the resource
-    // that had it, answering 201 (REVIEW-2026-09-08 row 21).
-    var resourceWithId = resource.newId();
-    // R4 subscription.html: a client creates a Subscription as `requested`,
-    // and the SERVER decides whether it can process it. Deciding before the
-    // save means the stored status is the server's answer, never the client's
-    // claim.
-    if (resourceWithId is fhir.Subscription) {
-      resourceWithId = await subs.activate(
-        resourceWithId,
-        principal: Principal.of(request),
-      );
+    late final Object saved;
+    if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
+      await dbInterface.transaction<void>(() async {
+        saved = await searchAndSave();
+      });
+    } else {
+      saved = await searchAndSave();
     }
-    final fhir.Resource savedResource;
-    try {
-      savedResource = await dbInterface.saveResource(resourceWithId);
-    } on InvalidSearchParameter catch (e) {
-      return invalidSearchParameter(e);
-    }
+    final answer = saved;
+    if (answer is Response) return answer;
+    final savedResource = answer as fhir.Resource;
     {
       final responseResource = savedResource;
 
@@ -1356,7 +1375,7 @@ Future<Response> postResourceHandler(
       final headers = FhirHttpHeaders.resourceHeaders(responseResource);
       // http.html create: "Location: [base]/[type]/[id]/_history/[vid] …
       // if the server understands versioning, the version is included."
-      headers['Location'] = '/$resourceType/${resourceWithId.id}/_history/'
+      headers['Location'] = '/$resourceType/${savedResource.id}/_history/'
           '${responseResource.meta?.versionId?.valueString ?? '1'}';
 
       final preference = FhirHttpHeaders.parsePreferReturn(request.headers);
@@ -1378,12 +1397,18 @@ Future<Response> postResourceHandler(
 }
 
 /// Handler to update a resource by its type and ID
+///
+/// With [deferredChanges], the saved resource is added to it instead of
+/// being handed to the subscriptions: the caller runs this inside a database
+/// transaction and notifies after the commit (subscriptions fire after
+/// commit).
 Future<Response> putResourceHandler(
   Request request,
   String resourceType,
   String id,
   FhirAntDb dbInterface, {
   SubscriptionService? subscriptions,
+  List<fhir.Resource>? deferredChanges,
 }) async {
   final subs = subscriptions ?? SubscriptionService(dbInterface);
   // The body is parsed outside the block below, as the POST's is: a garbled
@@ -1504,7 +1529,11 @@ Future<Response> putResourceHandler(
     {
       final responseResource = savedResource;
 
-      await subs.onResourceChanged(responseResource);
+      if (deferredChanges != null) {
+        deferredChanges.add(responseResource);
+      } else {
+        await subs.onResourceChanged(responseResource);
+      }
 
       FhirantLogging().logInfo(
         'Resource of type $resourceType '
@@ -1850,6 +1879,44 @@ Future<Response> conditionalUpdateHandler(
     );
   }
   final patientId = patientContextFor(request, resourceType, 'u');
+  // The search that picks the target and the write are one database
+  // transaction, so of two conditional updates at once with no match only
+  // one creates (R4B http.html 3.1.0.4.3, "No matches, no id provided: The
+  // server creates the resource"); they were separate steps, and ten at
+  // once made ten (REVIEW-2026-10-17, ASVS 5.0.0 V15.4.2). Subscriptions
+  // are told after the commit.
+  final subs = subscriptions ?? SubscriptionService(dbInterface);
+  final changed = <fhir.Resource>[];
+  late final Response response;
+  await dbInterface.transaction<void>(() async {
+    response = await _resolveAndPut(
+      request,
+      resourceType,
+      type,
+      resource,
+      patientId,
+      dbInterface,
+      subs,
+      changed,
+    );
+  });
+  for (final c in changed) {
+    await subs.onResourceChanged(c);
+  }
+  return response;
+}
+
+/// [conditionalUpdateHandler]'s search for the target and its write.
+Future<Response> _resolveAndPut(
+  Request request,
+  String resourceType,
+  fhir.R4ResourceType type,
+  fhir.Resource resource,
+  String? patientId,
+  FhirAntDb dbInterface,
+  SubscriptionService subs,
+  List<fhir.Resource> changed,
+) async {
   final String? target;
   try {
     target = await resolveConditionalUpdate(
@@ -1888,7 +1955,8 @@ Future<Response> conditionalUpdateHandler(
     resourceType,
     withId.id!.valueString!,
     dbInterface,
-    subscriptions: subscriptions,
+    subscriptions: subs,
+    deferredChanges: changed,
   );
 }
 
