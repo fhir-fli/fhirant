@@ -1,0 +1,18 @@
+case	rule	statuses	closed	bytes	verdict
+HTTP/2 connection preface (h2c prior knowledge)	V4.2.3-4 apply only if HTTP/2 is spoken: RFC 9113 3.4 preface		true	0	N/A: no HTTP/2
+control: two requests pipelined	9.3.2 pipelining: answered in order	HTTP/1.1 200 OK | HTTP/1.1 200 OK	false	1030	PASS
+Content-Length and Transfer-Encoding: chunked	6.1: MAY reject or use TE alone; MUST close the connection after	HTTP/1.1 400 Bad Request | HTTP/1.1 200 OK	false	1000	FAIL
+HTTP/1.0 with Transfer-Encoding	6.1: treat framing as faulty; close after processing		true	0	PASS
+Transfer-Encoding: gzip (chunked not final)	6.3 item 4: MUST respond 400 and close		true	0	FAIL
+Transfer-Encoding: chunked, gzip (chunked not final)	6.3 item 4: MUST respond 400 and close		true	0	FAIL
+two different Content-Length fields	6.3 item 5: invalid; MUST respond 400 and close		true	0	FAIL
+Content-Length: 2, 40	6.3 item 5: invalid; MUST respond 400 and close		true	0	FAIL
+Content-Length: -2	6.3 item 5: invalid; MUST respond 400 and close		true	0	FAIL
+Content-Length: +2	6.3 item 5: invalid (1*DIGIT); MUST respond 400 and close		true	0	FAIL
+Content-Length: 0x2	6.3 item 5: invalid (1*DIGIT); MUST respond 400 and close		true	0	FAIL
+Content-Length: 2, 2 (same values)	6.3 item 5: allowed, processed as 2		true	0	PASS
+whitespace before the colon: Content-Length :	5.1: MUST reject with 400		true	0	FAIL
+whitespace before the colon: Transfer-Encoding :	5.1: MUST reject with 400		true	0	FAIL
+obs-fold in Transfer-Encoding	5.2: MUST reject 400, or replace the fold with SP	HTTP/1.1 400 Bad Request | HTTP/1.1 200 OK	false	1000	PASS
+chunk size past 2^64	7.1: MUST prevent integer overflow in chunk-size		true	0	PASS
+Transfer-Encoding: identity	6.1: coding not understood SHOULD 501; 6.3 item 4 400 + close		true	0	FAIL
