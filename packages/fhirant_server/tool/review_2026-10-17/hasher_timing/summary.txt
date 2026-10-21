@@ -1,0 +1,4 @@
+idle	isolate	n=60	timer max 21.4 ms	hash min 160.4 ms	ratio timer/done min 0.015 max 0.062
+idle	held	n=60	timer max 370.6 ms	hash min 162.0 ms	ratio timer/done min 0.998 max 1.000
+under_suite	isolate	n=60	timer max 25.8 ms	hash min 209.1 ms	ratio timer/done min 0.013 max 0.084
+under_suite	held	n=60	timer max 483.9 ms	hash min 237.7 ms	ratio timer/done min 0.998 max 1.000
