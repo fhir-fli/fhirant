@@ -1516,15 +1516,26 @@ class FhirAntDb extends FhirDb {
     String? patientId,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await customStatement(
+    // The id comes from the INSERT's own execution. It was read afterwards
+    // with `SELECT last_insert_rowid()`, which reports the connection's most
+    // recent insert into any table, so a write landing between the two was
+    // answered instead (100 overlapping calls, 99 wrong; fhirant
+    // REVIEW-2026-10-17, ASVS V15.4.2).
+    return customInsert(
       'INSERT INTO users '
       '(username, password_hash, salt, role, active, created_at, scopes, '
       'patient_id) '
       'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
-      [username, passwordHash, salt, role, now, scopes, patientId],
+      variables: [
+        Variable.withString(username),
+        Variable.withString(passwordHash),
+        Variable.withString(salt),
+        Variable.withString(role),
+        Variable.withInt(now),
+        Variable<String>(scopes),
+        Variable<String>(patientId),
+      ],
     );
-    final rows = await customSelect('SELECT last_insert_rowid() AS id').get();
-    return rows.first.read<int>('id');
   }
 
   Future<void> updateLastLogin(int id) async {
