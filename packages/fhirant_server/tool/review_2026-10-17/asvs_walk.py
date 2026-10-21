@@ -178,6 +178,21 @@ OVERRIDES = {
     'V5.4.3': ('FINDING', 'open: client Binary and Attachment data are '
                'stored and served (as base64 in FHIR JSON, never raw) with '
                'no antivirus scan; needs a scanner choice'),
+    'V4.2.5': ('FINDING', 'outbound_crlf_probe: CR/LF in a header name or '
+               'value refused by dart:io, endpoint CRLF percent-encoded; a '
+               '64 KiB channel.header went out whole. Fixed #81: rest-hook '
+               'lines bounded at 8190 bytes (Apache/nginx defaults), CR/LF '
+               'refused at activation'),
+    'V4.2.1': ('FINDING', 'smuggling_probe: dart:io 3.13 frames CL+TE by TE '
+               'and keeps the connection (RFC 9112 6.1 MUST close); 9 '
+               'malformed framings closed with no 400 (6.3, 5.1 MUST 400). '
+               'Not fixable in fhirant (handler sees neither header); SDK '
+               'issue drafted, DART-SDK-ISSUE-http-framing.md'),
+    'V4.2.2': ('PASS', 'the two hand-set Content-Lengths match the bytes '
+               'sent: export_scale_test, backup_file_e2e_test'),
+    'V4.2.3': ('N/A', 'no HTTP/2 or HTTP/3: h2c preface gets 0 bytes and a '
+               'close (smuggling_probe); no ALPN configured'),
+    'V4.2.4': ('N/A', 'no HTTP/2 or HTTP/3 (see V4.2.3)'),
 }
 
 
