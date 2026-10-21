@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:pointycastle/export.dart';
 
 /// Encryption at rest for the files a bulk export writes.
@@ -22,12 +23,20 @@ import 'package:pointycastle/export.dart';
 /// written and served in bounded memory and a download is refused at the
 /// first frame that fails its tag rather than served in part:
 ///
-///     magic "FHXP" · version 1 · 8-byte nonce prefix
+///     magic "FHXP" · version 1 · 8-byte fixed field
 ///     frame: 4-byte big-endian length L · L bytes of ciphertext + 16-byte tag
 ///
-/// The nonce of frame i is the prefix followed by i as a 4-byte counter;
-/// the associated data of every frame is the header plus a byte saying
-/// whether the frame is the last, so a file cut short after a frame
+/// The nonce of frame i is the fixed field followed by i as a 4-byte
+/// counter: NIST SP 800-38D 8.2.1, the deterministic construction (read
+/// 2026-10-21, verbatim): "The fixed field shall identify the device, or,
+/// more generally, the context for the instance of the authenticated
+/// encryption function", and "For any given key, no two distinct devices
+/// shall share the same fixed field". One job key encrypts several files,
+/// so the fixed field is the file's number in its job, given by the
+/// caller; it was random 64 bits, which is neither 8.2.1 nor 8.2.2 (that
+/// needs a random field of "at least 96 bits"; REVIEW-2026-10-17, ASVS
+/// V11.3.4). The associated data of every frame is the header plus a byte
+/// saying whether the frame is the last, so a file cut short after a frame
 /// boundary, or with frames reordered, fails too.
 class ExportFileCrypto {
   ExportFileCrypto._();
@@ -47,13 +56,16 @@ class ExportFileCrypto {
   static Uint8List newKey() => _randomBytes(_keyLength);
 
   /// Writes [plaintext] to [out] as an encrypted file under [key], frame by
-  /// frame as the chunks arrive.
+  /// frame as the chunks arrive. [fileNumber] is the fixed field: no two
+  /// files encrypted under one [key] may be given the same number.
   static Future<void> encrypt(
     Stream<List<int>> plaintext,
     Sink<List<int>> out,
-    Uint8List key,
-  ) async {
-    final prefix = _randomBytes(_prefixLength);
+    Uint8List key, {
+    required int fileNumber,
+  }) async {
+    final prefix = Uint8List(_prefixLength)
+      ..buffer.asByteData().setUint64(0, fileNumber);
     final header = Uint8List.fromList([..._magic, _version, ...prefix]);
     out.add(header);
     final buffer = BytesBuilder(copy: false);
@@ -175,7 +187,20 @@ class ExportFileCrypto {
     return total;
   }
 
+  /// The nonce of frame [counter] under the fixed field [prefix].
+  @visibleForTesting
+  static Uint8List nonceFor(Uint8List prefix, int counter) =>
+      _nonce(prefix, counter);
+
+  /// SP 800-38D 8.3: an s-bit invocation field allows 2^s invocations per
+  /// fixed field. Past that the 4-byte counter would wrap onto frame 0's
+  /// nonce, so it is refused (2^32 frames of [chunkSize] is 256 TiB).
   static Uint8List _nonce(Uint8List prefix, int counter) {
+    if (counter < 0 || counter > 0xFFFFFFFF) {
+      throw StateError(
+        'frame $counter is past the 2^32 one fixed field allows',
+      );
+    }
     final nonce = Uint8List(12)..setRange(0, _prefixLength, prefix);
     ByteData.sublistView(nonce).setUint32(_prefixLength, counter);
     return nonce;
