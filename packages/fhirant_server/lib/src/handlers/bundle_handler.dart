@@ -281,17 +281,26 @@ Future<Response> _processBatch(
     }
 
     try {
-      final operation = await _processBundleEntry(
-        entry,
-        dbInterface,
-        baseUrl,
-        i,
-        urnMap,
-        subscriptions,
-        principal,
-        handling: handling,
-        assignedId: assignedIds[i],
-      );
+      // Each batch entry is its own database transaction: its conditional
+      // search and its write are one operation, so ten Bundles creating
+      // with the same ifNoneExist at once make one resource (R4B http.html
+      // 3.1.0.8.1; ten at once made ten, REVIEW-2026-10-17, ASVS 5.0.0
+      // V15.4.2), and an entry that fails leaves nothing half written.
+      // Notifications still go out after the loop.
+      late final _BundleOperation operation;
+      await dbInterface.transaction<void>(() async {
+        operation = await _processBundleEntry(
+          entry,
+          dbInterface,
+          baseUrl,
+          i,
+          urnMap,
+          subscriptions,
+          principal,
+          handling: handling,
+          assignedId: assignedIds[i],
+        );
+      });
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
       operationByIndex[i] = operation;

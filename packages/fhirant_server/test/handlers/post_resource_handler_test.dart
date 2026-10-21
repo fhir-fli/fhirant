@@ -25,6 +25,13 @@ void main() {
       mockDb = MockFhirAntDb();
       mockRequest = MockRequest();
       when(() => mockRequest.context).thenReturn({});
+      // A conditional create's search and save run inside one database
+      // transaction (ASVS 5.0.0 V15.4.2), so the mock runs the closure it
+      // is handed, as bundle_handler_test's does.
+      when(() => mockDb.transaction<void>(any())).thenAnswer(
+        (invocation) async =>
+            (invocation.positionalArguments[0] as Future<void> Function())(),
+      );
     });
 
     test('returns 201 when resource created successfully', () async {
