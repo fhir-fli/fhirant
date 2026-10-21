@@ -438,8 +438,19 @@ else
     # base64 of the 68-byte EICAR string, and of "a clean file".
     EICAR_B64='WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo='
     CLEAN_B64='YSBjbGVhbiBmaWxl'
-    for CASE in clean eicar; do
-      if [ "$CASE" = eicar ]; then DATA=$EICAR_B64; else DATA=$CLEAN_B64; fi
+    # A password-protected zip of a text file (zip -P): clamav/clamd.conf
+    # sets AlertEncrypted, so it cannot be stored unscanned.
+    ZIP_DIR=$(mktemp -d)
+    printf 'a clinic letter\n' > "$ZIP_DIR/letter.txt"
+    (cd "$ZIP_DIR" && zip -q -P secret letter.zip letter.txt)
+    LOCKED_B64=$(base64 -w0 "$ZIP_DIR/letter.zip")
+    rm -rf "$ZIP_DIR"
+    for CASE in clean eicar locked; do
+      case "$CASE" in
+        eicar) DATA=$EICAR_B64 ;;
+        locked) DATA=$LOCKED_B64 ;;
+        *) DATA=$CLEAN_B64 ;;
+      esac
       RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SCAN_BASE/Binary" \
         -H "Authorization: Bearer $SCAN_TOKEN" \
         -H "Content-Type: application/fhir+json" \
@@ -449,6 +460,9 @@ else
       if [ "$CASE" = eicar ]; then
         assert_status "the EICAR file is refused" 422 "$STATUS"
         assert_contains "named by clamd's signature" 'Eicar-Test-Signature' "$BODY"
+      elif [ "$CASE" = locked ]; then
+        assert_status "a password-protected zip is refused" 422 "$STATUS"
+        assert_contains "as encrypted" 'Heuristics.Encrypted.Zip' "$BODY"
       else
         assert_status "a clean file is stored" 201 "$STATUS"
       fi

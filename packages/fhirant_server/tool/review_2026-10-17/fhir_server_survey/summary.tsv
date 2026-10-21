@@ -1,0 +1,11 @@
+repo	files	binary_files	scan_hits	crypt_hits
+FirelyTeam_spark	563	5	0	0
+HasteHealth_HasteHealth	3381	223	9	0
+HeliosSoftware_hfs	18259	294	871	9
+LinuxForHealth_FHIR	31417	301	1053	0
+bluehalo_node-fhir-server-core	3296	13	0	0
+hapifhir_hapi-fhir	13779	229	716	0
+hapifhir_hapi-fhir-jpaserver-starter	210	4	123	0
+intervention-engine_fhir	188	8	0	0
+medplum_medplum	5735	246	259	7
+microsoft_fhir-server	3729	121	8	0

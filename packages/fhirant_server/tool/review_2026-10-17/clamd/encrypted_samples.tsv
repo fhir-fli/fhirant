@@ -1,0 +1,15 @@
+arm	file	bytes	result
+as-is	plain.zip	211	clean
+as-is	encrypted.zip	239	clean
+as-is	plain.pdf	431	clean
+as-is	user_pw.pdf	1222	clean
+as-is	owner_only.pdf	1222	clean
+as-is	plain.docx	881	clean
+as-is	encrypted.docx	6144	clean
+alert-encrypted	plain.zip	211	clean
+alert-encrypted	encrypted.zip	239	FOUND Heuristics.Encrypted.Zip
+alert-encrypted	plain.pdf	431	clean
+alert-encrypted	user_pw.pdf	1222	FOUND Heuristics.Encrypted.PDF
+alert-encrypted	owner_only.pdf	1222	clean
+alert-encrypted	plain.docx	881	clean
+alert-encrypted	encrypted.docx	6144	FOUND Heuristics.Encrypted.OLE2
