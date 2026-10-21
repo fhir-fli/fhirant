@@ -1,0 +1,2 @@
+ 13:21:56 up 3 days, 15:02,  1 user,  load average: 6.97, 11.12, 14.55
+ 13:23:19 up 3 days, 15:03,  1 user,  load average: 16.63, 13.25, 15.01

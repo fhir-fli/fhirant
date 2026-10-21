@@ -55,15 +55,25 @@ void main() {
 
     test('the hash is computed off the calling isolate', () async {
       // A timer on this isolate fires while the hash runs; it could not if
-      // the hash held the isolate for its 100+ ms.
+      // the hash held the isolate. Judged against the hash's own time, not a
+      // fixed bound: a 50 ms bound failed at load average 22.6 (timer at
+      // 61 ms). Measured 2026-10-21, 60 runs each idle and under a full
+      // suite (tool/review_2026-10-17/hasher_timing/summary.txt): timer /
+      // hash time was 0.013-0.084 off the isolate, and 0.998-1.000 with
+      // hashPasswordSync run on it.
       final sw = Stopwatch()..start();
       final hashing = PasswordHasher.hashPassword('p', 'salt');
       await Future<void>.delayed(const Duration(milliseconds: 5));
-      final timerFiredAt = sw.elapsedMilliseconds;
+      final timerFiredAt = sw.elapsedMicroseconds;
       await hashing;
-      final hashDoneAt = sw.elapsedMilliseconds;
-      expect(timerFiredAt, lessThan(hashDoneAt));
-      expect(timerFiredAt, lessThan(50), reason: 'the isolate was held');
+      final hashDoneAt = sw.elapsedMicroseconds;
+      expect(
+        timerFiredAt,
+        lessThan(hashDoneAt / 2),
+        reason: 'the isolate was held: the timer fired at '
+            '${timerFiredAt / 1000} ms, the hash ended at '
+            '${hashDoneAt / 1000} ms',
+      );
     });
 
     group('older formats still verify (backward compatibility)', () {
