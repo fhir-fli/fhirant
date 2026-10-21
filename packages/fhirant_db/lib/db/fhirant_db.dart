@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:drift/isolate.dart' show DriftRemoteException;
 import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhir_r4_db/fhir_r4_db.dart';
@@ -1521,21 +1522,40 @@ class FhirAntDb extends FhirDb {
     // recent insert into any table, so a write landing between the two was
     // answered instead (100 overlapping calls, 99 wrong; fhirant
     // REVIEW-2026-10-17, ASVS V15.4.2).
-    return customInsert(
-      'INSERT INTO users '
-      '(username, password_hash, salt, role, active, created_at, scopes, '
-      'patient_id) '
-      'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
-      variables: [
-        Variable.withString(username),
-        Variable.withString(passwordHash),
-        Variable.withString(salt),
-        Variable.withString(role),
-        Variable.withInt(now),
-        Variable<String>(scopes),
-        Variable<String>(patientId),
-      ],
-    );
+    try {
+      return await customInsert(
+        'INSERT INTO users '
+        '(username, password_hash, salt, role, active, created_at, scopes, '
+        'patient_id) '
+        'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
+        variables: [
+          Variable.withString(username),
+          Variable.withString(passwordHash),
+          Variable.withString(salt),
+          Variable.withString(role),
+          Variable.withInt(now),
+          Variable<String>(scopes),
+          Variable<String>(patientId),
+        ],
+      );
+    } on Object catch (e) {
+      // A caller's "is it taken" read cannot see a concurrent INSERT; the
+      // UNIQUE constraint's refusal can, so it is the one reported.
+      if (_isUsernameTaken(e)) throw UsernameTaken(username);
+      rethrow;
+    }
+  }
+
+  /// SQLITE_CONSTRAINT_UNIQUE on users.username, as each store raises it
+  /// (measured 2026-10-21): a SqliteException (extendedResultCode 2067,
+  /// "UNIQUE constraint failed: users.username") on the calling isolate,
+  /// the CLI's; wrapped in a DriftRemoteException from a background
+  /// isolate, the app's.
+  static bool _isUsernameTaken(Object e) {
+    final cause = e is DriftRemoteException ? e.remoteCause : e;
+    return cause is SqliteException &&
+        cause.extendedResultCode == 2067 &&
+        cause.message.contains('users.username');
   }
 
   Future<void> updateLastLogin(int id) async {
