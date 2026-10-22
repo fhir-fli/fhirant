@@ -1,0 +1,72 @@
+source	path	type	decision
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/audit-event-example-pixQuery.json	AuditEvent.entity[1].query		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/audit-event-example-pixQuery.json	AuditEvent.entity[1].detail.value		stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/audit-event-example-search.json	AuditEvent.entity.query		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/binary-example.json	Binary.data	application/pdf	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/binary-f006.json	Binary.data	image/jpeg	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-attachment.json	Communication.payload[0].content.data	application/pdf	422 is not application/pdf: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-attachment.json	Communication.payload[1].content.hash		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-attachment.json	(resource)		422 The file at Communication.payload[0].content.data is not application/pdf: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-solicited-attachment.json	Communication.payload[0].content.data	application/pdf	422 is not application/pdf: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-solicited-attachment.json	Communication.payload[1].content.hash		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/communication-example-fm-solicited-attachment.json	(resource)		422 The file at Communication.payload[0].content.data is not application/pdf: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/diagnosticreport-example-gingival-mass.json	DiagnosticReport.presentedForm.data	application/pdf	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/diagnosticreport-example-pgx.json	DiagnosticReport.presentedForm.data	application/pdf	422 is not application/pdf: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/diagnosticreport-example-pgx.json	DiagnosticReport.presentedForm.hash		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/diagnosticreport-example-pgx.json	(resource)		422 The file at DiagnosticReport.presentedForm.data is not application/pdf: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/diagnosticreport-example.json	Bundle.entry[0].resource.presentedForm.data	application/pdf	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/document-example-dischargesummary.json	Bundle.signature.data	image/jpg	422 is declared image/jpg, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/document-example-dischargesummary.json	(resource)		422 The file at Bundle.signature.data is declared image/jpg, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose); it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/documentmanifest-fm-attachment.json	DocumentManifest.contained[1].content.attachment.data	application/pdf	422 is not application/pdf: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/documentmanifest-fm-attachment.json	DocumentManifest.contained[2].content.attachment.hash		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/documentmanifest-fm-attachment.json	(resource)		422 The file at DocumentManifest.contained[1].content.attachment.data is not application/pdf: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/documentreference-example.json	DocumentReference.content.attachment.hash		stored (not a file: no type check)
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/json-edge-cases.json	Patient.contained[0].data	image/gif	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-cms146-example.json	Library.content[0].data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-cms146-example.json	Library.content[1].data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-example.json	Library.content.data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-fhir-helpers.json	Library.content[0].data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-fhir-helpers.json	Library.content[1].data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-fhir-helpers.json	Library.content[2].data	application/elm+json	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-fhir-model-definition.json	Library.content.data	application/xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-hiv-indicators.json	Library.content[0].data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-hiv-indicators.json	Library.content[1].data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-mmi-suiciderisk-orderset-logic.json	Library.content.data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-omtk-logic.json	Library.content[0].data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-omtk-logic.json	Library.content[1].data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-omtk-modelinfo.json	Library.content.data	application/xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-common.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-04.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-05.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-07.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-08.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-10.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-opioidcds-recommendation-11.json	Library.content.data	application/elm+xml	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-predecessor-example.json	Library.content.data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/library-zika-virus-intervention-logic.json	Library.content.data	text/cql	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/list-example-familyhistory-genetics-profile-annie.json	List.contained[0].data	image/png	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/media-example-sound.json	Media.content.data	audio/mpeg	422 is not audio/mpeg: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/media-example-sound.json	(resource)		422 The file at Media.content.data is not audio/mpeg: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/media-example.json	Media.content.data	image/gif	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/medicationadministration0301.json	MedicationAdministration.contained[1].signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/medicationadministration0301.json	(resource)		422 The file at MedicationAdministration.contained[1].signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/medicationrequest0301.json	MedicationRequest.contained[1].signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/medicationrequest0301.json	(resource)		422 The file at MedicationRequest.contained[1].signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/patient-example-a.json	Patient.photo.data	image/gif	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/patient-example-b.json	Patient.photo.data	image/gif	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/person-example-f002-ariadne.json	Person.photo.data	image/jpeg	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/practitioner-example-f005-al.json	Practitioner.photo.data	image/jpeg	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/provenance-consent-signature.json	Provenance.signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/provenance-consent-signature.json	(resource)		422 The file at Provenance.signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/provenance-example-sig.json	Provenance.signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/provenance-example-sig.json	(resource)		422 The file at Provenance.signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/relatedperson-example-f002-ariadne.json	RelatedPerson.photo.data	image/jpeg	stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/servicerequest-example2.json	ServiceRequest.contained[0].signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/servicerequest-example2.json	(resource)		422 The file at ServiceRequest.contained[0].signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/task-example1.json	Task.contained.signature.data	application/signature+xml	422 is not application/signature+xml: its bytes do not match the type
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/task-example1.json	(resource)		422 The file at Task.contained.signature.data is not application/signature+xml: its bytes do not match the type; it was not stored
+/home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/xds-example.json	Bundle.entry[4].resource.data	text/plain	stored
+/home/grey/.fhir/packages/hl7.fhir.us.core#3.1.0/package/example/DiagnosticReport-chest-xray-report.json	DiagnosticReport.presentedForm.data	application/xhtml	422 is declared application/xhtml, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose)
+/home/grey/.fhir/packages/hl7.fhir.us.core#3.1.0/package/example/DiagnosticReport-chest-xray-report.json	(resource)		422 The file at DiagnosticReport.presentedForm.data is declared application/xhtml, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose); it was not stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.3.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
+summary			read 3389 parsed 3366 files 57 refused 13

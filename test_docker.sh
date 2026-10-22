@@ -438,31 +438,39 @@ else
     # base64 of the 68-byte EICAR string, and of "a clean file".
     EICAR_B64='WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo='
     CLEAN_B64='YSBjbGVhbiBmaWxl'
-    # A password-protected zip of a text file (zip -P): clamav/clamd.conf
-    # sets AlertEncrypted, so it cannot be stored unscanned.
+    # A PDF that needs a password to open (pypdf, AES-256; made by
+    # tool/review_2026-10-17/clamd/make_encrypted_samples.py as user_pw.pdf):
+    # clamav/clamd.conf sets AlertEncrypted, so it cannot be stored unscanned.
+    # A zip no longer reaches clamd: the type check refuses application/zip
+    # first, which the zip case shows.
+    LOCKED_B64=$(base64 -w0 "$(dirname "$0")/packages/fhirant_server/tool/review_2026-10-17/clamd/password_protected.pdf")
     ZIP_DIR=$(mktemp -d)
     printf 'a clinic letter\n' > "$ZIP_DIR/letter.txt"
-    (cd "$ZIP_DIR" && zip -q -P secret letter.zip letter.txt)
-    LOCKED_B64=$(base64 -w0 "$ZIP_DIR/letter.zip")
+    (cd "$ZIP_DIR" && zip -q letter.zip letter.txt)
+    ZIP_B64=$(base64 -w0 "$ZIP_DIR/letter.zip")
     rm -rf "$ZIP_DIR"
-    for CASE in clean eicar locked; do
+    for CASE in clean eicar locked zip; do
       case "$CASE" in
-        eicar) DATA=$EICAR_B64 ;;
-        locked) DATA=$LOCKED_B64 ;;
-        *) DATA=$CLEAN_B64 ;;
+        eicar) DATA=$EICAR_B64; TYPE=text/plain ;;
+        locked) DATA=$LOCKED_B64; TYPE=application/pdf ;;
+        zip) DATA=$ZIP_B64; TYPE=application/zip ;;
+        *) DATA=$CLEAN_B64; TYPE=text/plain ;;
       esac
       RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SCAN_BASE/Binary" \
         -H "Authorization: Bearer $SCAN_TOKEN" \
         -H "Content-Type: application/fhir+json" \
-        -d "{\"resourceType\": \"Binary\", \"contentType\": \"application/octet-stream\", \"data\": \"$DATA\"}")
+        -d "{\"resourceType\": \"Binary\", \"contentType\": \"$TYPE\", \"data\": \"$DATA\"}")
       BODY=$(echo "$RESPONSE" | head -n -1)
       STATUS=$(echo "$RESPONSE" | tail -1)
       if [ "$CASE" = eicar ]; then
         assert_status "the EICAR file is refused" 422 "$STATUS"
         assert_contains "named by clamd's signature" 'Eicar-Test-Signature' "$BODY"
       elif [ "$CASE" = locked ]; then
-        assert_status "a password-protected zip is refused" 422 "$STATUS"
-        assert_contains "as encrypted" 'Heuristics.Encrypted.Zip' "$BODY"
+        assert_status "a password-protected PDF is refused" 422 "$STATUS"
+        assert_contains "as encrypted" 'Heuristics.Encrypted.PDF' "$BODY"
+      elif [ "$CASE" = zip ]; then
+        assert_status "a zip is refused by its type" 422 "$STATUS"
+        assert_contains "as a type not stored" 'which this server does not store' "$BODY"
       else
         assert_status "a clean file is stored" 201 "$STATUS"
       fi
