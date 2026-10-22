@@ -80,10 +80,12 @@ void main() {
     return (await bodyOf(r))['total'] as int;
   }
 
+  // The files are text (the EICAR file is ASCII), declared as text so the
+  // type check (file_type_routes_test.dart) passes them on to the scanner.
   Map<String, dynamic> binary(String data, {String? id}) => {
         'resourceType': 'Binary',
         if (id != null) 'id': id,
-        'contentType': 'application/octet-stream',
+        'contentType': 'text/plain',
         'data': data,
       };
 
@@ -95,7 +97,7 @@ void main() {
         ],
         'content': [
           {
-            'attachment': {'contentType': 'application/pdf', 'data': data},
+            'attachment': {'contentType': 'text/plain', 'data': data},
           },
         ],
       };

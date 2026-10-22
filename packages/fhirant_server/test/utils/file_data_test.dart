@@ -236,4 +236,123 @@ void main() {
       isEmpty,
     );
   });
+
+  // What each file declares, for the type check (ASVS V5.2.2): its type,
+  // where the type sits, whether R4B requires it, and whether the value is
+  // a file at all.
+  List<Object> typesIn(Map<String, dynamic> json) => [
+        for (final f in fileData(fhir.Resource.fromJson(json)))
+          (f.path, f.isFile, f.type, f.typePath, f.typeRequired),
+      ];
+
+  test('each file carries the type its element declares', () {
+    expect(
+      typesIn({
+        'resourceType': 'Binary',
+        'contentType': 'image/png',
+        'data': bytes,
+      }),
+      [
+        ('Binary.data', true, 'image/png', 'Binary.contentType', true),
+      ],
+    );
+    expect(
+      typesIn({
+        'resourceType': 'Provenance',
+        'target': [
+          {'reference': 'Patient/p1'},
+        ],
+        'recorded': '2026-10-21T10:00:00Z',
+        'agent': [
+          {
+            'who': {'reference': 'Practitioner/x'},
+          },
+        ],
+        'signature': [
+          {
+            'type': [
+              {'code': 'x'},
+            ],
+            'when': '2026-10-21T10:00:00Z',
+            'who': {'reference': 'Practitioner/x'},
+            'data': bytes,
+          },
+        ],
+      }),
+      [
+        (
+          'Provenance.signature.data',
+          true,
+          null,
+          'Provenance.signature.sigFormat',
+          false
+        ),
+      ],
+    );
+    expect(
+      typesIn({
+        'resourceType': 'Patient',
+        'extension': [
+          {'url': 'urn:x', 'valueBase64Binary': bytes},
+        ],
+      }),
+      [('Patient.extension.value', true, null, null, false)],
+    );
+  });
+
+  test('a hash, an audit query and a barcode are not files', () {
+    expect(
+      typesIn({
+        'resourceType': 'DocumentReference',
+        'status': 'current',
+        'content': [
+          {
+            'attachment': {
+              'contentType': 'text/plain',
+              'data': bytes,
+              'hash': bytes,
+            },
+          },
+        ],
+      }),
+      [
+        (
+          'DocumentReference.content.attachment.data',
+          true,
+          'text/plain',
+          'DocumentReference.content.attachment.contentType',
+          true
+        ),
+        ('DocumentReference.content.attachment.hash', false, null, null, false),
+      ],
+    );
+    expect(
+      typesIn({
+        'resourceType': 'AuditEvent',
+        'type': {'code': 'rest'},
+        'recorded': '2026-10-21T10:00:00Z',
+        'agent': [
+          {'requestor': true},
+        ],
+        'source': {
+          'observer': {'reference': 'Device/d'},
+        },
+        'entity': [
+          {'query': bytes},
+        ],
+      }),
+      [('AuditEvent.entity.query', false, null, null, false)],
+    );
+    expect(
+      typesIn({
+        'resourceType': 'Device',
+        'udiCarrier': [
+          {'carrierAIDC': bytes},
+        ],
+      }),
+      [
+        ('Device.udiCarrier.carrierAIDC', false, null, null, false),
+      ],
+    );
+  });
 }

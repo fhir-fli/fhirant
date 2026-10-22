@@ -183,6 +183,25 @@ OVERRIDES = {
                'clamav/clamav:1.5.4 (test_docker.sh). Still open: $restore '
                '(SQL copy in fhirant_db), and the phone, which has no '
                'scanner'),
+    # V5.2's section verdict (body limit) had been inherited by every row;
+    # it answers V5.2.1 only. Re-read 2026-10-21.
+    'V5.2.2': ('FINDING', 'no file was checked against its declared type. '
+               'Fixed #92: Binary/Attachment/Signature data must match its '
+               'contentType/sigFormat (WHATWG MIME Sniffing patterns, UTF-8 '
+               'text, JSON/XML parse) from a 14-type list; HTML, XHTML, '
+               'office files and archives refused; undeclared values judged '
+               'by their bytes; on the phone too. 44 of the 57 files in the '
+               'published examples pass; the 13 refused are 11 placeholders '
+               '("Hello" as a PDF), image/jpg (not an IANA type) and one '
+               'XHTML (file_type_examples.tsv)'),
+    'V5.2.3': ('N/A', 'no compressed file is accepted (zip and undeclared '
+               'archives refused by the V5.2.2 check) and the server '
+               'decompresses nothing (no gzip/zlib in lib or bin)'),
+    'V5.2.4': ('FINDING', 'L3: no per-user file quota or file count (no '
+               'quota in lib or bin); only the 16 MiB body limit'),
+    'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
+    'V5.2.6': ('FINDING', 'L3: PNG, JPEG and GIF are accepted with no pixel '
+               'size limit; the server never decodes an image'),
     'V4.2.5': ('FINDING', 'outbound_crlf_probe: CR/LF in a header name or '
                'value refused by dart:io, endpoint CRLF percent-encoded; a '
                '64 KiB channel.header went out whole. Fixed #81: rest-hook '

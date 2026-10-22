@@ -1,0 +1,15 @@
+mutant	file	result
+no-html	lib/src/utils/file_type.dart	+32 -2: Some tests failed
+mp3-any-layer	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+no-charset	lib/src/utils/file_type.dart	+32 -2: Some tests failed
+jpeg-one-byte	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+png-seven-bytes	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+pdf-no-dash	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+no-binary-byte	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+jose-any	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+sniff-any-type	lib/src/utils/file_type.dart	+32 -2: Some tests failed
+sniff-no-html	lib/src/utils/file_type.dart	+32 -2: Some tests failed
+no-json-parse	lib/src/utils/file_type.dart	+33 -1: Some tests failed
+no-xml-parse	lib/src/utils/file_type.dart	+32 -2: Some tests failed
+not-a-file-removed	lib/src/utils/file_data.dart	+32 -2: Some tests failed
+attachment-type-optional	lib/src/utils/file_data.dart	+32 -2: Some tests failed
