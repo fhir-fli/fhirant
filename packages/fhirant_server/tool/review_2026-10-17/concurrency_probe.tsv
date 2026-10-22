@@ -1,0 +1,43 @@
+case	one-at-a-time rule	repeat	observed	verdict
+CONTROL one at a time: conditional create, 10 at once	http.html: one match, no create	0	201s=1 stored=1 statuses={201, 200}	PASS
+CONTROL one at a time: If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	0	200s=1 version after=2 statuses={200, 412}	PASS
+CONTROL one at a time: register one username, 10 at once	usernames unique: one 201	0	201s=1 statuses={201, 409}	PASS
+CONTROL one at a time: one refresh token, 10 at once	rotation: a refresh token is used once	0	200s=1 statuses={200, 401}	PASS
+CONTROL one at a time: one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	0	200s=1 statuses={200, 400}	PASS
+CONTROL one at a time: 10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	0	wrong statuses={401} then right=401	PASS
+CONTROL one at a time: the two admins demote each other at once	the last active admin cannot be demoted (409)	0	statuses=[200, 401] admins left=[adm-a]	PASS
+conditional create, 10 at once	http.html: one match, no create	1	201s=1 stored=1 statuses={201, 200}	PASS
+If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	1	200s=1 version after=2 statuses={200, 412}	PASS
+register one username, 10 at once	usernames unique: one 201	1	201s=1 statuses={409, 201}	PASS
+one refresh token, 10 at once	rotation: a refresh token is used once	1	200s=1 statuses={200, 401}	PASS
+one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	1	200s=1 statuses={200, 400}	PASS
+10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	1	wrong statuses={401} then right=401	PASS
+the two admins demote each other at once	the last active admin cannot be demoted (409)	1	statuses=[200, 409] admins left=[adm-a]	PASS
+conditional create, 10 at once	http.html: one match, no create	2	201s=1 stored=1 statuses={201, 200}	PASS
+If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	2	200s=1 version after=2 statuses={200, 412}	PASS
+register one username, 10 at once	usernames unique: one 201	2	201s=1 statuses={409, 201}	PASS
+one refresh token, 10 at once	rotation: a refresh token is used once	2	200s=1 statuses={200, 401}	PASS
+one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	2	200s=1 statuses={200, 400}	PASS
+10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	2	wrong statuses={401} then right=401	PASS
+the two admins demote each other at once	the last active admin cannot be demoted (409)	2	statuses=[200, 409] admins left=[adm-a]	PASS
+conditional create, 10 at once	http.html: one match, no create	3	201s=1 stored=1 statuses={201, 200}	PASS
+If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	3	200s=1 version after=2 statuses={200, 412}	PASS
+register one username, 10 at once	usernames unique: one 201	3	201s=1 statuses={409, 201}	PASS
+one refresh token, 10 at once	rotation: a refresh token is used once	3	200s=1 statuses={200, 401}	PASS
+one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	3	200s=1 statuses={200, 400}	PASS
+10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	3	wrong statuses={401} then right=401	PASS
+the two admins demote each other at once	the last active admin cannot be demoted (409)	3	statuses=[200, 409] admins left=[adm-a]	PASS
+conditional create, 10 at once	http.html: one match, no create	4	201s=1 stored=1 statuses={201, 200}	PASS
+If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	4	200s=1 version after=2 statuses={200, 412}	PASS
+register one username, 10 at once	usernames unique: one 201	4	201s=1 statuses={409, 201}	PASS
+one refresh token, 10 at once	rotation: a refresh token is used once	4	200s=1 statuses={200, 401}	PASS
+one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	4	200s=1 statuses={200, 400}	PASS
+10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	4	wrong statuses={401} then right=401	PASS
+the two admins demote each other at once	the last active admin cannot be demoted (409)	4	statuses=[200, 409] admins left=[adm-a]	PASS
+conditional create, 10 at once	http.html: one match, no create	5	201s=1 stored=1 statuses={201, 200}	PASS
+If-Match W/"1" update, 10 at once	http.html 3.1.0.4.1 (version-aware update): one 200, the rest 412	5	200s=1 version after=2 statuses={200, 412}	PASS
+register one username, 10 at once	usernames unique: one 201	5	201s=1 statuses={201, 409}	PASS
+one refresh token, 10 at once	rotation: a refresh token is used once	5	200s=1 statuses={200, 401}	PASS
+one authorization code, 10 at once	RFC 6749 4.1.2: used more than once, MUST deny	5	200s=1 statuses={200, 400}	PASS
+10 wrong passwords at once, then the right one	lockout after 5 failures: the right password is refused	5	wrong statuses={401} then right=401	PASS
+the two admins demote each other at once	the last active admin cannot be demoted (409)	5	statuses=[200, 409] admins left=[adm-a]	PASS

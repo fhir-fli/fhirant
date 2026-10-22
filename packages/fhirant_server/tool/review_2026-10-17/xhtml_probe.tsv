@@ -1,0 +1,16 @@
+part	name	verdict
+case	plain	accepted
+case	script	refused: FormatException: Invalid XHTML: FormatException: Element <script> is not allowed.
+case	onclick	refused: FormatException: Invalid XHTML: FormatException: Invalid attribute "onclick" in <p>.
+case	javascript-href	accepted
+case	javascript-img-src	accepted
+case	style-url	accepted
+case	iframe	refused: FormatException: Invalid XHTML: FormatException: Element <iframe> is not allowed.
+case	form	refused: FormatException: Invalid XHTML: FormatException: Element <form> is not allowed.
+case	sub	refused: FormatException: Invalid XHTML: FormatException: Element <sub> is not allowed.
+case	u	refused: FormatException: Invalid XHTML: FormatException: Element <u> is not allowed.
+case	address	refused: FormatException: Invalid XHTML: FormatException: Element <address> is not allowed.
+case	wrong-root	accepted
+case	no-namespace	refused: FormatException: Invalid XHTML: FormatException: Invalid XHTML namespace. Expected "http://www.w3.org/1999/xhtml", but found "null".
+case	whitespace-only	accepted
+summary	files 3022 narratives 4540	refused 0

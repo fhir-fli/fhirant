@@ -202,6 +202,27 @@ OVERRIDES = {
     'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
     'V5.2.6': ('FINDING', 'L3: PNG, JPEG and GIF are accepted with no pixel '
                'size limit; the server never decodes an image'),
+    # V15.4, measured 2026-10-21.
+    'V15.4.1': ('PASS', 'code read: three isolates (program_sandbox, '
+                'password_hasher Isolate.run, the app store '
+                'createInBackground) and Dart isolates share no mutable '
+                'memory; each gets port-sendable values; the store is one '
+                'connection'),
+    'V15.4.2': ('FINDING', 'concurrency_probe_before_fixes.tsv, bursts of 10, '
+                '5 repeats: 10 conditional creates made 10 Patients; one '
+                'refresh token was used 10 times; two admins demoting each '
+                'other left none; a taken username was 500. Fixed #84 #85 '
+                '#86 #87 #88; concurrency_probe.tsv after: every case 5/5'),
+    'V15.4.3': ('PASS', 'code read: fhirant takes no lock of its own (no '
+                'mutex, semaphore or lock in lib); the only locks are '
+                "SQLite's, held inside drift transactions on one connection; "
+                'no retry loop (the while (true) loops page or parse)'),
+    'V15.4.4': ('FINDING', 'CLI: the store runs on the server isolate, so a '
+                '2,000-entry transaction Bundle blocked every other request '
+                'for its whole run, 1.3-2.6 s; the app (createInBackground) '
+                'waited at most 36-55 ms (starvation_probe.tsv; load 20 on '
+                '16 cores, noisy). Not fixed: re-measure on a quiet machine '
+                'first'),
     'V4.2.5': ('FINDING', 'outbound_crlf_probe: CR/LF in a header name or '
                'value refused by dart:io, endpoint CRLF percent-encoded; a '
                '64 KiB channel.header went out whole. Fixed #81: rest-hook '
