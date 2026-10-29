@@ -1,0 +1,31 @@
+arm	run	bundle_ms	kind	statements	micros
+same-isolate	0	1300	batched	44000	108895
+same-isolate	0	1300	begin	21	
+same-isolate	0	1300	commit	21	25094
+same-isolate	0	1300	custom	20	4700
+same-isolate	0	1300	select	307	11573
+background	0	872	batched	44000	147557
+background	0	872	begin	21	
+background	0	872	commit	21	31084
+background	0	872	custom	20	12093
+background	0	872	select	21	15680
+same-isolate	1	683	batched	44000	150080
+same-isolate	1	683	begin	21	
+same-isolate	1	683	commit	21	30644
+same-isolate	1	683	custom	20	5943
+same-isolate	1	683	select	307	10363
+background	1	692	batched	44000	176007
+background	1	692	begin	21	
+background	1	692	commit	21	32518
+background	1	692	custom	20	9224
+background	1	692	select	21	9276
+same-isolate	2	615	batched	44000	128257
+same-isolate	2	615	begin	21	
+same-isolate	2	615	commit	21	29108
+same-isolate	2	615	custom	20	5733
+same-isolate	2	615	select	307	9961
+background	2	607	batched	44000	140721
+background	2	607	begin	21	
+background	2	607	commit	21	30536
+background	2	607	custom	20	9721
+background	2	607	select	21	8676

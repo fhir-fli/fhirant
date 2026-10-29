@@ -1,0 +1,40 @@
+arm	run	kind	shape	statements
+same-isolate	0	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+same-isolate	0	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+same-isolate	0	select	SELECT DISTINCT "token_search_parameters"."id" AS "token_search_parameters.id" FROM "token_search_parameters" WHERE ("to	286
+same-isolate	0	commit	COMMIT	21
+same-isolate	0	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+same-isolate	0	custom	PRAGMA optimize=0x10002	20
+same-isolate	0	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1
+background	0	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+background	0	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+background	0	commit	COMMIT	21
+background	0	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+background	0	custom	PRAGMA optimize=0x10002	20
+background	0	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1
+same-isolate	1	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+same-isolate	1	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+same-isolate	1	select	SELECT DISTINCT "token_search_parameters"."id" AS "token_search_parameters.id" FROM "token_search_parameters" WHERE ("to	286
+same-isolate	1	commit	COMMIT	21
+same-isolate	1	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+same-isolate	1	custom	PRAGMA optimize=0x10002	20
+same-isolate	1	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1
+background	1	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+background	1	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+background	1	commit	COMMIT	21
+background	1	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+background	1	custom	PRAGMA optimize=0x10002	20
+background	1	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1
+same-isolate	2	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+same-isolate	2	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+same-isolate	2	select	SELECT DISTINCT "token_search_parameters"."id" AS "token_search_parameters.id" FROM "token_search_parameters" WHERE ("to	286
+same-isolate	2	commit	COMMIT	21
+same-isolate	2	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+same-isolate	2	custom	PRAGMA optimize=0x10002	20
+same-isolate	2	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1
+background	2	batched	DELETE FROM "string_search_parameters" WHERE "resource_type" = ? AND "id" = ?;; DELETE FROM "string_search_parameters" W	42000
+background	2	batched	INSERT INTO "resources" ("resource_type", "id", "resource", "last_updated", "version_id") VALUES (?, ?, ?, ?, ?) ON CONF	2000
+background	2	commit	COMMIT	21
+background	2	select	SELECT id, resource, last_updated, version_id, json_extract(resource, '$.meta') AS meta FROM resources WHERE resource_ty	20
+background	2	custom	PRAGMA optimize=0x10002	20
+background	2	select	SELECT * FROM "resources" WHERE "resource_type" = ?;	1

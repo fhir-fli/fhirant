@@ -214,10 +214,10 @@ packages:
     dependency: transitive
     description:
       name: fhir_db
-      sha256: a82e7726328751232fba277d4c077d4a7c56975ef6f636703c4fdb2d5f84c646
+      sha256: "2500f02310ebd6793820057572e3251181525bbd38a24ff37f1a7413b8daee86"
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.1"
+    version: "0.15.2"
   fhir_mapping:
     dependency: transitive
     description:
