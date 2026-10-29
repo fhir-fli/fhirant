@@ -1,2 +1,2 @@
- 19:42:13 up 1 min,  1 user,  load average: 3.18, 1.08, 0.39
- 19:43:35 up 3 min,  1 user,  load average: 3.86, 1.98, 0.78
+ 19:50:12 up 9 min,  1 user,  load average: 2.63, 2.20, 1.27
+ 19:58:47 up 18 min,  1 user,  load average: 2.50, 2.58, 1.88
