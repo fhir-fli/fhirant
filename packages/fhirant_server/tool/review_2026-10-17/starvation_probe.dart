@@ -33,7 +33,8 @@ Future<void> main(List<String> args) async {
       .openSync(mode: FileMode.write)
     ..writeStringSync(
       'arm\tentries\tbundle_ms\tbundle_status\tticks\t'
-      'max_gap_ms\tgaps_over_1s\treads_500_ms\tsearch_ms\tsearch_total\n',
+      'max_gap_ms\tgaps_over_1s\treads_500_ms\tsearch_first_ms\t'
+      'search_median_ms\tsearch_total\n',
     )
     ..flushSync();
   for (final entries in args.map(int.parse)) {
@@ -100,7 +101,7 @@ Future<String> _once(String arm, int entries) async {
   final tail = bundleMs - last;
   if (tail > maxGap) maxGap = tail;
   if (tail > 1000) over1s++;
-  // The cost side: 500 reads one after another, and one search.
+  // The cost side: 500 reads one after another, and a search.
   final created = (jsonDecode(await r.readAsString()) as Map)['entry'] as List;
   final firstId =
       (((created.first as Map)['response'] as Map)['location'] as String)
@@ -112,15 +113,29 @@ Future<String> _once(String arm, int entries) async {
     );
   }
   reads.stop();
-  final search = Stopwatch()..start();
-  final found = await handler(
-    testRequest('GET', '/Observation?status=final&_count=50', headers: json),
-  );
-  search.stop();
-  final total = (jsonDecode(await found.readAsString()) as Map)['total'];
+  // The search 20 times: the first right after the Bundle and the reads,
+  // then the median of the rest, so a one-off cost after the write is told
+  // apart from the cost of every search. Every request queues an
+  // AuditEvent, written in batches off the response path (AuditQueue);
+  // each search is timed with the queue empty, so it measures the search
+  // and not a batch written beside it.
+  final times = <int>[];
+  Object? total;
+  for (var i = 0; i < 20; i++) {
+    await server.auditQueue.drain();
+    final search = Stopwatch()..start();
+    final found = await handler(
+      testRequest('GET', '/Observation?status=final&_count=50', headers: json),
+    );
+    total = (jsonDecode(await found.readAsString()) as Map)['total'];
+    search.stop();
+    times.add(search.elapsedMilliseconds);
+  }
+  final rest = times.sublist(1)..sort();
+  await server.auditQueue.drain();
   await db.close();
   await dir.delete(recursive: true);
   return '$arm\t$entries\t$bundleMs\t${r.statusCode}\t$ticks\t$maxGap\t'
       '$over1s\t${reads.elapsedMilliseconds}\t'
-      '${search.elapsedMilliseconds}\t$total';
+      '${times.first}\t${rest[rest.length ~/ 2]}\t$total';
 }
