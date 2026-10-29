@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_secure_storage/fhirant_secure_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -45,9 +44,9 @@ class DatabaseService {
     final dbFile = File('${dbDir.path}/fhirant.db');
 
     // SQLite is built from the sqlite3mc source (SQLite3 Multiple Ciphers)
-    // via the build hook declared in pubspec.yaml. `applyStoreCipher`
-    // (fhirant_db) is the one place the store's cipher configuration is
-    // written; the CLI opens its store with the same call.
+    // via the build hook declared in pubspec.yaml. `openStoreFile`
+    // (fhirant_db) is the one way the store is opened, by the app and the
+    // CLI alike; `applyStoreCipher` writes its configuration.
     //
     // The store runs on its own isolate (REVIEW-2026-09-06 §6.1): every SQL
     // statement used to execute on the UI isolate, so a search, a count, an
@@ -58,12 +57,7 @@ class DatabaseService {
     // real query nothing visible (100 single reads 22 → 26 ms, a token page
     // 12 → 6 ms, a count 70 → 73 ms, RSS unchanged). The JSON decode of
     // each row still happens on the caller.
-    final nativeDb = NativeDatabase.createInBackground(
-      dbFile,
-      setup: (rawDb) => applyStoreCipher(rawDb, storeKey),
-    );
-
-    _db = FhirAntDb(nativeDb);
+    _db = FhirAntDb(openStoreFile(dbFile, storeKey));
     await _db!.initialize();
   }
 

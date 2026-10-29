@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show QueryExecutor;
+import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart' show Database;
 
 /// The cipher scheme every FHIRant store and backup is written with.
@@ -32,8 +36,8 @@ const storeSynchronous = 'FULL';
 /// Configures [raw], a connection just opened on a store file: the cipher
 /// it is read and written under [key], then its journal mode and sync
 /// level. The ONE place the configuration of a store is written down: the
-/// CLI (`bin/server.dart`), the app (`database_service.dart`) and the tests
-/// of what they do all call this.
+/// CLI and the app reach it through [openStoreFile]; the tests of what they
+/// do call it directly.
 ///
 /// sqlite3mc SQL Pragmas page (read whole 2026-09-17): "If the encryption
 /// scheme is configured via PRAGMA statements, the order of the PRAGMA
@@ -68,3 +72,28 @@ void applyStoreCipher(Database raw, String key) {
     ..execute('PRAGMA main.synchronous = $storeSynchronous;');
   raw.config.doubleQuotedStringLiterals = false;
 }
+
+/// Opens the store at [file] under [key], with SQLite on its own isolate.
+/// The one way the CLI (`bin/server.dart`) and the app
+/// (`database_service.dart`) open their store.
+///
+/// The store runs on its own isolate so that a long statement does not
+/// hold the isolate serving requests: drift's documentation of
+/// `createInBackground` (drift 2.35.2 `lib/native.dart`), "the database is
+/// implicitly created on a background isolate, freeing up your main thread
+/// accessing the database from I/O work needed to run statements". With
+/// SQLite on the server's isolate, no other request was answered during a
+/// 2,000-entry transaction Bundle (1.09-1.21 s, OWASP ASVS 5.0.0 V15.4.4,
+/// fhirant REVIEW-2026-10-17); the app moved first (REVIEW-2026-09-06
+/// §6.1).
+///
+/// "The functions [setup], [isolateSetup] and [sqlite3], are sent to other
+/// isolates" (same documentation), and a closure is sent with its whole
+/// enclosing scope. Built here, the setup closure captures [key] alone,
+/// never a caller's scope. A store error then reaches the caller wrapped in
+/// a `DriftRemoteException` (its `remoteCause` is the `SqliteException`).
+QueryExecutor openStoreFile(File file, String key) =>
+    NativeDatabase.createInBackground(
+      file,
+      setup: (raw) => applyStoreCipher(raw, key),
+    );
