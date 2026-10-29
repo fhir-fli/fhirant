@@ -8,6 +8,8 @@ environment:
 
 dependencies:
   drift: ^2.29.0
+  # Direct, not only through fhir_r4_db: saveResourceList is 0.15.2.
+  fhir_db: ^0.15.2
   fhir_r4: ^0.14.0
   fhir_r4_db: ^0.14.0
   path: ^1.9.1

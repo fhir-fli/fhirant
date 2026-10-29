@@ -169,9 +169,35 @@ Future<Response> _processTransaction(
         );
       }
     }
+    // Records an entry's operation, refusing a second change of one
+    // identity.
+    void record(int i, _BundleOperation operation) {
+      final identity = _writtenIdentity(operation);
+      if (identity != null) {
+        final earlier = writtenBy[identity];
+        if (earlier != null) {
+          throw BundleEntryException(
+            400,
+            'Bundle entry $i: $identity is also changed by entry '
+            '$earlier; a transaction may change a resource once',
+          );
+        }
+        writtenBy[identity] = i;
+      }
+      operations.add(operation);
+      resultByIndex[i] = operation.resultEntry;
+      operationByIndex[i] = operation;
+    }
+
+    final held = _HeldCreates(dbInterface, baseUrl, urnMap, record);
     await dbInterface.transaction<void>(() async {
       for (final i in order) {
         try {
+          // Only a create can be held; any other entry may read, so what
+          // is held is saved first.
+          if (bundle.entry![i].request!.method != fhir.HTTPVerb.pOST) {
+            await held.save();
+          }
           final operation = await _processBundleEntry(
             bundle.entry![i],
             dbInterface,
@@ -184,30 +210,25 @@ Future<Response> _processTransaction(
             assignedId: assignedIds[i],
             transaction: true,
             fileScanner: fileScanner,
+            held: held,
           );
-          final identity = _writtenIdentity(operation);
-          if (identity != null) {
-            final earlier = writtenBy[identity];
-            if (earlier != null) {
-              throw BundleEntryException(
-                400,
-                'Bundle entry $i: $identity is also changed by entry '
-                '$earlier; a transaction may change a resource once',
-              );
-            }
-            writtenBy[identity] = i;
-          }
-          operations.add(operation);
-          resultByIndex[i] = operation.resultEntry;
-          operationByIndex[i] = operation;
+          if (operation != null) record(i, operation);
         } catch (e) {
           // Recorded, then rethrown: the throw is what aborts the database
           // transaction, and the record is what builds the response after it
-          // has been rolled back.
-          failedIndex = i;
-          failure = e;
+          // has been rolled back. A failed save of held creates names the
+          // first of them.
+          failedIndex = e is _HeldSaveFailed ? e.index : i;
+          failure = e is _HeldSaveFailed ? e.cause : e;
           rethrow;
         }
+      }
+      try {
+        await held.save();
+      } on _HeldSaveFailed catch (e) {
+        failedIndex = e.index;
+        failure = e.cause;
+        rethrow;
       }
     });
   } catch (e, stackTrace) {
@@ -334,7 +355,8 @@ Future<Response> _processBatch(
       // Notifications still go out after the loop.
       late final _BundleOperation operation;
       await dbInterface.transaction<void>(() async {
-        operation = await _processBundleEntry(
+        // No holder is passed, so the entry is never held.
+        operation = (await _processBundleEntry(
           entry,
           dbInterface,
           baseUrl,
@@ -345,7 +367,7 @@ Future<Response> _processBatch(
           handling: handling,
           assignedId: assignedIds[i],
           fileScanner: fileScanner,
-        );
+        ))!;
       });
       operations.add(operation);
       resultEntries.add(operation.resultEntry);
@@ -761,7 +783,7 @@ Future<void> _requireBodyInCompartment(
   );
 }
 
-Future<_BundleOperation> _processBundleEntry(
+Future<_BundleOperation?> _processBundleEntry(
   fhir.BundleEntry entry,
   FhirAntDb dbInterface,
   String baseUrl,
@@ -773,6 +795,7 @@ Future<_BundleOperation> _processBundleEntry(
   String? assignedId,
   bool transaction = false,
   FileScanner? fileScanner,
+  _HeldCreates? held,
 }) async {
   final req = entry.request!;
   final method = req.method;
@@ -891,6 +914,20 @@ Future<_BundleOperation> _processBundleEntry(
 
       // Conditional create: ifNoneExist
       final ifNoneExist = req.ifNoneExist?.valueString;
+      // A create that reads nothing on its way to the store is held and
+      // saved with the others in one call ([_HeldCreates]). Every read a
+      // create can make has one of these causes: the ifNoneExist search,
+      // the patient-compartment check, a conditional reference's search,
+      // a Subscription's activation. A SearchParameter is not held either:
+      // its save changes how every later save is indexed. Anything else
+      // first saves what is held, so its reads see every earlier write.
+      final holdable = held != null &&
+          (ifNoneExist == null || ifNoneExist.isEmpty) &&
+          createPatient == null &&
+          entry.resource is! fhir.Subscription &&
+          entry.resource is! fhir.SearchParameter &&
+          !_hasConditionalReference(entry.resource!.toJson());
+      if (!holdable) await held?.save();
       if (ifNoneExist != null && ifNoneExist.isNotEmpty) {
         // queryParametersAll, not splitQueryString: a repeated parameter is
         // an AND (R4 3.1.1.4.17) and splitQueryString keeps only the last.
@@ -977,6 +1014,17 @@ Future<_BundleOperation> _processBundleEntry(
         entryIndex,
         dbInterface,
       );
+
+      if (holdable) {
+        await held.hold(
+          index: entryIndex,
+          resource: resourceToSave,
+          resourceType: resourceType,
+          resourceTypeEnum: resourceTypeEnum,
+          fullUrl: entry.fullUrl?.toString() ?? '',
+        );
+        return null;
+      }
 
       final fhir.Resource saved;
       try {
@@ -1330,6 +1378,39 @@ Future<_BundleOperation> _processBundleEntry(
       );
   }
 
+  return _operationOf(
+    method: method,
+    resourceType: resourceType,
+    resourceTypeEnum: resourceTypeEnum,
+    resourceId: resourceId,
+    resultResource: resultResource,
+    status: status,
+    location: location,
+    baseUrl: baseUrl,
+    previousResource: previousResource,
+    createdResource: createdResource,
+    deletedResource: deletedResource,
+    subjectBeforeDelete: subjectBeforeDelete,
+  );
+}
+
+/// The entry's response and what the transaction records about it, from
+/// what the entry did. One builder for an entry processed alone and for a
+/// create saved with others ([_HeldCreates]).
+_BundleOperation _operationOf({
+  required fhir.HTTPVerb method,
+  required String resourceType,
+  required fhir.R4ResourceType resourceTypeEnum,
+  required String? resourceId,
+  required fhir.Resource? resultResource,
+  required String status,
+  required String? location,
+  required String baseUrl,
+  fhir.Resource? previousResource,
+  fhir.Resource? createdResource,
+  fhir.Resource? deletedResource,
+  String? subjectBeforeDelete,
+}) {
   // Build response with etag/lastModified for mutating operations
   fhir.FhirString? etag;
   fhir.FhirInstant? lastModified;
@@ -1511,6 +1592,127 @@ Future<void> _notify(
 /// `[type]/[id]` of the resource [operation] changed, or null when it
 /// changed none: a GET or HEAD, a conditional create that found its match
 /// (answered 200, nothing written), or a conditional delete with no id.
+/// Whether [json] holds a conditional reference (`Type?criteria`) anywhere,
+/// which [_resolveConditionalReferences] would answer with a search.
+bool _hasConditionalReference(Object? json) {
+  if (json is List) return json.any(_hasConditionalReference);
+  if (json is! Map) return false;
+  for (final e in json.entries) {
+    final v = e.value;
+    if (e.key == 'reference' && v is String) {
+      if (_conditionalReference.hasMatch(v)) return true;
+    } else if (_hasConditionalReference(v)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Creates in a transaction that are saved together, with one
+/// `saveResourceList` call, instead of one `saveResource` each.
+///
+/// Measured 2026-10-28 (`tool/review_2026-10-17/bundle_statements_probe.tsv`):
+/// a 2,000-entry transaction made about 10,000 trips to the store, five per
+/// entry, and took 1.3 s with SQLite on the serving isolate and 2.2-2.3 s on
+/// a background one; 2,000 saves one at a time took 1.5-1.9 s on the
+/// background store and one list save 0.56-1.23 s (`round_trip_probe.tsv`).
+///
+/// A held create has been checked and prepared as any create is, and made
+/// no read on the way. [save] runs before any entry that may read and at the
+/// end, so every read in the transaction sees every write before it, as
+/// when each create was saved at once. The ids were assigned before the
+/// transaction began, so a held create's reference targets are known.
+class _HeldCreates {
+  _HeldCreates(this.db, this.baseUrl, this.urnMap, this.record);
+
+  final FhirAntDb db;
+  final String baseUrl;
+  final Map<String, String> urnMap;
+  final void Function(int index, _BundleOperation operation) record;
+  final List<
+      ({
+        int index,
+        fhir.Resource resource,
+        String resourceType,
+        fhir.R4ResourceType resourceTypeEnum,
+        String fullUrl,
+      })> _held = [];
+
+  /// The most creates held before they are saved. Held without a limit,
+  /// a 2,000-entry Bundle's index rows were worked out in one stretch on
+  /// the serving isolate and other requests waited 221-228 ms; saving
+  /// every 50, 100 or 250 they waited 67-82 ms, as before held creates
+  /// (`tool/review_2026-10-17/held_limit_sweep.tsv`). 100 is from that
+  /// range, not a specification number.
+  static const limit = 100;
+
+  Future<void> hold({
+    required int index,
+    required fhir.Resource resource,
+    required String resourceType,
+    required fhir.R4ResourceType resourceTypeEnum,
+    required String fullUrl,
+  }) async {
+    _held.add(
+      (
+        index: index,
+        resource: resource,
+        resourceType: resourceType,
+        resourceTypeEnum: resourceTypeEnum,
+        fullUrl: fullUrl,
+      ),
+    );
+    if (_held.length >= limit) await save();
+  }
+
+  /// Saves what is held and records each entry's operation, in the order
+  /// held. A store failure is thrown as [_HeldSaveFailed], naming the first
+  /// held entry.
+  Future<void> save() async {
+    if (_held.isEmpty) return;
+    final batch = List.of(_held);
+    _held.clear();
+    final List<fhir.Resource> saved;
+    try {
+      saved = await db.saveResourceList([for (final h in batch) h.resource]);
+    } catch (e) {
+      throw _HeldSaveFailed(batch.first.index, e);
+    }
+    for (var k = 0; k < batch.length; k++) {
+      final h = batch[k];
+      final resource = saved[k];
+      if (h.fullUrl.startsWith('urn:uuid:') && !urnMap.containsKey(h.fullUrl)) {
+        urnMap[h.fullUrl] = '${h.resourceType}/${resource.id}';
+      }
+      record(
+        h.index,
+        _operationOf(
+          method: fhir.HTTPVerb.pOST,
+          resourceType: h.resourceType,
+          resourceTypeEnum: h.resourceTypeEnum,
+          resourceId: null,
+          resultResource: resource,
+          status: '201',
+          // The Location the create path above builds.
+          location: '$baseUrl/${h.resourceType}/${resource.id}/_history/'
+              '${resource.meta?.versionId?.valueString ?? '1'}',
+          baseUrl: baseUrl,
+          createdResource: resource,
+        ),
+      );
+    }
+  }
+}
+
+/// A held create's save failed; [index] is the first held entry.
+class _HeldSaveFailed implements Exception {
+  _HeldSaveFailed(this.index, this.cause);
+  final int index;
+  final Object cause;
+  @override
+  String toString() => 'held creates from entry $index: $cause';
+}
+
 String? _writtenIdentity(_BundleOperation operation) {
   final id = operation.resourceId;
   if (id == null) return null;

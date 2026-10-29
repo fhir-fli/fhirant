@@ -17,6 +17,12 @@ void _stubTransaction(MockFhirAntDb mockDb) {
     (invocation) async =>
         (invocation.positionalArguments[0] as Future<void> Function())(),
   );
+  // A transaction's plain creates are saved together (`_HeldCreates`); the
+  // list save answers with what it was given, as the saveResource stubs
+  // below do.
+  when(() => mockDb.saveResourceList(any())).thenAnswer(
+    (i) async => i.positionalArguments.first as List<fhir.Resource>,
+  );
 }
 
 class MockRequest extends Mock implements Request {}
@@ -25,6 +31,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(fhir.R4ResourceType.Patient);
     registerFallbackValue(const fhir.Patient());
+    registerFallbackValue(<fhir.Resource>[]);
   });
 
   group('bundleHandler - transaction', () {
@@ -814,14 +821,18 @@ void main() {
       expect(entries[1]['response']['status'], equals('201'));
 
       // Verify the Observation was saved with the resolved reference
-      final captured = verify(
-        () => mockDb.saveResource(captureAny()),
-      ).captured;
+      // Plain creates in a transaction are saved in one list.
+      final captured = [
+        for (final list in verify(
+          () => mockDb.saveResourceList(captureAny()),
+        ).captured)
+          ...list as List<fhir.Resource>,
+      ];
       // Second save is the Observation. The Patient's id is the one the
       // server assigned (a client id on a POST is ignored, REVIEW-2026-09-08
       // row 21), and the reference names it.
-      final savedPatientResource = captured[0] as fhir.Resource;
-      final savedObsResource = captured[1] as fhir.Resource;
+      final savedPatientResource = captured[0];
+      final savedObsResource = captured[1];
       final obsJson = savedObsResource.toJson();
       expect(savedPatientResource.id?.valueString, isNot('pat-abc'));
       expect(
@@ -946,12 +957,16 @@ void main() {
       expect(entries.length, equals(3));
 
       // Verify the Observation was saved with both resolved references
-      final captured = verify(
-        () => mockDb.saveResource(captureAny()),
-      ).captured;
-      final savedPatientResource = captured[0] as fhir.Resource;
-      final savedEncounterResource = captured[1] as fhir.Resource;
-      final savedObsResource = captured[2] as fhir.Resource;
+      // Plain creates in a transaction are saved in one list.
+      final captured = [
+        for (final list in verify(
+          () => mockDb.saveResourceList(captureAny()),
+        ).captured)
+          ...list as List<fhir.Resource>,
+      ];
+      final savedPatientResource = captured[0];
+      final savedEncounterResource = captured[1];
+      final savedObsResource = captured[2];
       final obsJson = savedObsResource.toJson();
       expect(
         obsJson['subject']['reference'],
@@ -1250,6 +1265,9 @@ void main() {
           ifMatchVersion: any(named: 'ifMatchVersion'),
         ),
       ).thenAnswer((_) async => savedPatient);
+      // The create is saved through the list save, which answers as stored.
+      when(() => mockDb.saveResourceList(any()))
+          .thenAnswer((_) async => [savedPatient]);
       when(
         () => mockDb.getResource(fhir.R4ResourceType.Patient, 'enrich-1'),
       ).thenAnswer((_) async => savedPatient);
@@ -1415,8 +1433,9 @@ void main() {
       final json = jsonDecode(body) as Map<String, dynamic>;
       final entries = json['entry'] as List;
       expect(entries[0]['response']['status'], equals('200'));
-      // saveResource should NOT have been called
+      // Nothing was created: neither save was called.
       verifyNever(() => mockDb.saveResource(any()));
+      verifyNever(() => mockDb.saveResourceList(any()));
     });
 
     test('PUT with ifMatch version mismatch fails transaction', () async {

@@ -1,0 +1,15 @@
+# starvation_probe.dart 2000 2000 2000, app arm (background store), 2026-10-28 22:06-22:22, load 1.2-2.6/16.
+# limit = _HeldCreates.limit; none = every create held until the end.
+limit	arm	entries	bundle_ms	bundle_status	ticks	max_gap_ms	gaps_over_1s	reads_500_ms	search_first_ms	search_median_ms	search_total
+none	app	2000	1600	200	24	862	0	82	10	8	2000
+none	app	2000	800	200	19	228	0	70	8	6	2000
+none	app	2000	719	200	19	221	0	63	6	6	2000
+100	app	2000	1566	200	63	465	0	63	7	7	2000
+100	app	2000	725	200	58	67	0	78	9	7	2000
+100	app	2000	786	200	61	78	0	71	6	6	2000
+50	app	2000	1650	200	74	480	0	64	10	7	2000
+50	app	2000	773	200	65	81	0	71	7	6	2000
+50	app	2000	835	200	73	77	0	52	8	7	2000
+250	app	2000	1696	200	45	526	0	94	9	7	2000
+250	app	2000	740	200	44	82	0	65	7	6	2000
+250	app	2000	766	200	47	76	0	55	6	6	2000

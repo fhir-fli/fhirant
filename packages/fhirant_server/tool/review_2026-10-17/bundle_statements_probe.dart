@@ -9,6 +9,9 @@
 // The Subscription worker's searches run after the reply; only statements
 // sent while the Bundle request is open are counted.
 //
+// (Before the held creates: bundle_statements_probe_before.tsv and
+// bundle_statements_shapes_before.tsv.)
+//
 // Writes bundle_statements_probe.tsv (one row per arm, kind) and
 // bundle_statements_shapes.tsv (one row per arm, statement shape), each
 // flushed as it is written.

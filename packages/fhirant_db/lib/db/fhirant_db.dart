@@ -900,6 +900,16 @@ class FhirAntDb extends FhirDb {
   }) =>
       fhirDao.saveResources(resourcesList, asServer: asServer);
 
+  /// Saves [resourcesList] in one transaction and returns each as stored
+  /// (version, lastUpdated), in the order given; a failure is thrown and
+  /// nothing is stored. See [FhirDao.saveResourceList]: a handful of
+  /// statements for the whole list, where [saveResource] makes about five
+  /// per resource.
+  Future<List<fhir.Resource>> saveResourceList(
+    List<fhir.Resource> resourcesList,
+  ) =>
+      fhirDao.saveResourceList(resourcesList);
+
   /// Which of [resourcesList] the store already holds a current version of,
   /// as `Type/id` keys. One query; a resource with no id is held by nothing.
   /// The specification load asks before each chunk, so it fills what is
