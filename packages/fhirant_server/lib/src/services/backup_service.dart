@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
+import 'package:fhirant_server/src/utils/file_refusal.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart'
     show isSpecResource, specTag;
 
@@ -73,17 +75,30 @@ class BackupService {
   ///
   /// [withServerState] is [FhirAntDb.restoreEncrypted]'s: false brings in
   /// the FHIR record only. A Bundle carries nothing else in any case.
+  ///
+  /// With [scanner], every stored resource in the backup has its files
+  /// checked and scanned ([fileRefusal]; OWASP ASVS 5.0.0 V5.4.3, "Verify
+  /// that files obtained from untrusted sources are scanned by antivirus
+  /// scanners", read in the ASVS 5.0.0 JSON release 2026-10-21) before
+  /// anything is written. A resource refused is left out and listed in the
+  /// result's failures; the rest restores. A scanner that cannot answer
+  /// ends the restore with nothing written ([BackupScanUnavailable]). An
+  /// encrypted backup's refused rows are deleted from the file at [path]
+  /// (the server's is its own temporary copy of the upload). The app has
+  /// no scanner and passes none.
   static Future<BackupRestoreResult> restoreFile(
     FhirAntDb db,
     String path, {
     String? passphrase,
     bool withServerState = true,
+    FileScanner? scanner,
   }) async {
     if (await isJsonFile(path)) {
       return restore(
         db,
         await File(path).readAsString(),
         passphrase: passphrase,
+        scanner: scanner,
       );
     }
     if (passphrase == null || passphrase.isEmpty) {
@@ -91,13 +106,32 @@ class BackupService {
         'This backup is encrypted and cannot be read without its passphrase',
       );
     }
+    final failures = <String>[];
     try {
       final restored = await db.restoreEncrypted(
         path,
         passphrase,
         withServerState: withServerState,
+        admit: scanner == null
+            ? null
+            : (table, json) async {
+                final fhir.Resource resource;
+                try {
+                  resource = fhir.Resource.fromJsonString(json);
+                } catch (e) {
+                  // Never restored unscanned: a row that does not parse
+                  // cannot have its files found.
+                  failures.add('Left out a $table row that is not a '
+                      'readable resource: $e');
+                  return false;
+                }
+                final why = await _refusal(scanner, resource);
+                if (why == null) return true;
+                failures.add('Left out ${_key(resource)} ($table): $why');
+                return false;
+              },
       );
-      return BackupRestoreResult(saved: restored, failures: const []);
+      return BackupRestoreResult(saved: restored, failures: failures);
     } on BackupUnreadable catch (e) {
       throw BackupDecryptionException(e.toString());
     }
@@ -213,10 +247,15 @@ class BackupService {
   /// Per-entry failures are collected rather than aborting. A restore reports
   /// what it could and could not take; all-or-nothing would turn one bad entry
   /// into no record at all.
+  ///
+  /// With [scanner], each entry's files are checked and scanned before the
+  /// transaction opens (a scan is a network round trip, and the store has
+  /// one connection); see [restoreFile].
   static Future<BackupRestoreResult> restore(
     FhirAntDb db,
     String payload, {
     String? passphrase,
+    FileScanner? scanner,
   }) async {
     final content = decode(payload, passphrase);
 
@@ -233,9 +272,21 @@ class BackupService {
     final entries = fhir.Bundle.fromJson(json).entry ?? [];
     var saved = 0;
     final failures = <String>[];
+    final refused = <fhir.BundleEntry>{};
+    if (scanner != null) {
+      for (final entry in entries) {
+        final resource = entry.resource;
+        if (resource == null) continue;
+        final why = await _refusal(scanner, resource);
+        if (why == null) continue;
+        refused.add(entry);
+        failures.add('Left out ${_key(resource)}: $why');
+      }
+    }
 
     await db.transaction<void>(() async {
       for (final entry in entries) {
+        if (refused.contains(entry)) continue;
         final resource = entry.resource;
         if (resource == null) {
           failures.add('Bundle entry has no resource');
@@ -258,6 +309,32 @@ class BackupService {
 
     return BackupRestoreResult(saved: saved, failures: failures);
   }
+}
+
+/// Why [resource]'s files keep it out of a restore, or null when they do
+/// not. Throws [BackupScanUnavailable] when the scanner cannot answer: the
+/// file would otherwise be restored unscanned.
+Future<String?> _refusal(FileScanner scanner, fhir.Resource resource) async {
+  final refusal = await fileRefusal(scanner, resource);
+  if (refusal == null) return null;
+  if (refusal.code == fhir.IssueType.transient) {
+    throw BackupScanUnavailable(refusal.message);
+  }
+  return refusal.message;
+}
+
+String _key(fhir.Resource resource) =>
+    '${resource.resourceTypeString}/${resource.id ?? "(no id)"}';
+
+/// The scanner could not answer for a file in a backup, so nothing was
+/// restored.
+class BackupScanUnavailable implements Exception {
+  const BackupScanUnavailable(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 /// A passphrase was needed and not supplied.

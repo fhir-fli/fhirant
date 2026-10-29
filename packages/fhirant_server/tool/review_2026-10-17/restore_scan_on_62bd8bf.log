@@ -1,0 +1,104 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/restore_scan_test.dart
+00:00 +0: a Bundle backup: the infected entries are left out, the rest restores
+00:00 +0 -1: a Bundle backup: the infected entries are left out, the rest restores [E]
+  Expected: contains '1 saved, 2 errors'
+    Actual: 'Restore complete: 3 saved, 0 errors, 3 total entries'
+     Which: does not contain '1 saved, 2 errors'
+  
+  package:matcher                                expect
+  test/integration/restore_scan_test.dart 186:5  main.<fn>
+  
+00:00 +0 -1: an encrypted backup: every infected row is left out, current, history and canonical
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.encryptedBackup (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:136:20)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:209:46)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:01 +0 -2: an encrypted backup: every infected row is left out, current, history and canonical [E]
+  Bad state: No element
+  dart:core                                       Iterable.single
+  test/integration/restore_scan_test.dart 223:44  main.<fn>
+  
+00:01 +0 -2: a Bundle backup with the scanner down: 503, nothing restored
+00:01 +0 -3: a Bundle backup with the scanner down: 503, nothing restored [E]
+  Expected: <503>
+    Actual: <200>
+  {resourceType: OperationOutcome, issue: [{severity: information, code: informational, diagnostics: Restore complete: 1 saved, 0 errors, 1 total entries}]}
+  
+  package:matcher                                expect
+  test/integration/restore_scan_test.dart 279:7  main.<fn>
+  
+00:01 +0 -3: an encrypted backup with the scanner down: 503, nothing restored
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.encryptedBackup (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:136:20)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:275:19)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +0 -4: an encrypted backup with the scanner down: 503, nothing restored [E]
+  Expected: <503>
+    Actual: <200>
+  {resourceType: OperationOutcome, issue: [{severity: information, code: informational, diagnostics: Restore complete: 5 saved, 0 errors, 5 total entries}]}
+  
+  package:matcher                                expect
+  test/integration/restore_scan_test.dart 279:7  main.<fn>
+  
+00:02 +0 -4: with no scanner configured, a backup restores as before
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.encryptedBackup (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:136:20)
+#8      main.<anonymous closure> (file:///home/grey/dev/fhir/fhirant-wt-62bd8bf/packages/fhirant_server/test/integration/restore_scan_test.dart:288:48)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:03 +1 -4: Some tests failed.
+
+Failing tests:
+  test/integration/restore_scan_test.dart: a Bundle backup with the scanner down: 503, nothing restored
+  test/integration/restore_scan_test.dart: a Bundle backup: the infected entries are left out, the rest restores
+  test/integration/restore_scan_test.dart: an encrypted backup with the scanner down: 503, nothing restored
+  test/integration/restore_scan_test.dart: an encrypted backup: every infected row is left out, current, history and canonical
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

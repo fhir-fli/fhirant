@@ -13,6 +13,10 @@ import 'package:sqlite3/sqlite3.dart' show Database, sqlite3;
 
 /// FHIR ANT server database.
 ///
+/// Whether a backup's row may be restored: the table it is in and the
+/// stored resource's JSON. See [FhirAntDb.restoreEncrypted].
+typedef BackupRowCheck = Future<bool> Function(String table, String resource);
+
 /// Extends [FhirDb] (from fhir_r4_db) to reuse all FHIR CRUD, search, history,
 /// and search parameter indexing logic. Adds server-specific functionality:
 /// Users, ExportJobs, and Logs tables (managed via raw SQL).
@@ -594,10 +598,22 @@ class FhirAntDb extends FhirDb {
   /// caller proved nothing (fhirant REVIEW-2026-10-17, phone run: a backup
   /// restored over the network planted the administrator Secure mode then
   /// trusted).
+  ///
+  /// With [admit], every stored resource in the backup (each row of each
+  /// table with a `resource` column: current versions, history less its
+  /// tombstones, the sync and canonical stores) is passed to it, table name
+  /// and JSON, before anything is merged; a row it answers false for is
+  /// deleted from the file at [path] (and a current version's index rows
+  /// with it), so it is not restored. The server scans the backup's files
+  /// this way (fhirant REVIEW-2026-10-17, OWASP ASVS 5.0.0 V5.4.3); an
+  /// exception from [admit] ends the restore with nothing written. The rows
+  /// are read outside the merge's transaction: [admit] may wait on the
+  /// network.
   Future<int> restoreEncrypted(
     String path,
     String passphrase, {
     bool withServerState = true,
+    BackupRowCheck? admit,
   }) async {
     if (passphrase.isEmpty) {
       throw ArgumentError.value(passphrase, 'passphrase', 'must not be empty');
@@ -661,6 +677,7 @@ class FhirAntDb extends FhirDb {
 
     await _attachBackup(path, passphrase, legacy);
     try {
+      if (admit != null) await _screenBackup(admit);
       final tables = (await customSelect(
         "SELECT name FROM main.sqlite_master WHERE type = 'table' "
         "AND name NOT LIKE 'sqlite_%'",
@@ -743,6 +760,64 @@ class FhirAntDb extends FhirDb {
       return restored;
     } finally {
       await customStatement('DETACH DATABASE bk');
+    }
+  }
+
+  /// Passes every row of every table in the attached backup `bk` that has a
+  /// `resource` column, tombstones aside, to [admit], a page at a time, and
+  /// deletes the rows it
+  /// refuses. A refused current version (`resources`) takes its index rows,
+  /// and those of what it contains, with it: the merge copies the backup's
+  /// index rows wholesale.
+  Future<void> _screenBackup(BackupRowCheck admit) async {
+    const page = 500;
+    final tables = (await customSelect(
+      "SELECT name FROM bk.sqlite_master WHERE type = 'table' "
+      "AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    ).get())
+        .map((r) => r.read<String>('name'))
+        .toList();
+    for (final table in tables) {
+      final columns =
+          (await customSelect('PRAGMA bk.table_info("$table")').get())
+              .map((r) => r.read<String>('name'))
+              .toSet();
+      if (!columns.contains('resource')) continue;
+      final keyed = columns.contains('resource_type') && columns.contains('id');
+      // A delete's tombstone (`deleted` set) is never read as a resource:
+      // fhir_db's HistoryEntry.fromRow gives it no resource whatever its
+      // JSON holds (fhir_dao.dart, 0.15.2), and that JSON is a skeleton that
+      // need not parse (a Binary's has no contentType).
+      final live = columns.contains('deleted') ? ' AND deleted = 0' : '';
+      var after = 0;
+      while (true) {
+        final rows = await customSelect(
+          'SELECT rowid AS r, resource'
+          '${keyed ? ', resource_type, id' : ''} FROM bk."$table" '
+          'WHERE rowid > ?$live ORDER BY rowid LIMIT $page',
+          variables: [Variable.withInt(after)],
+        ).get();
+        if (rows.isEmpty) break;
+        for (final row in rows) {
+          after = row.read<int>('r');
+          if (await admit(table, row.read<String>('resource'))) continue;
+          await customStatement(
+            'DELETE FROM bk."$table" WHERE rowid = ?',
+            [after],
+          );
+          if (table != 'resources') continue;
+          final type = row.read<String>('resource_type');
+          final id = row.read<String>('id');
+          for (final index in FhirDb.searchTableNames) {
+            if (!tables.contains(index)) continue;
+            await customStatement(
+              'DELETE FROM bk."$index" WHERE (resource_type = ? AND id = ?) '
+              "OR (resource_type LIKE '#%' AND id >= ? AND id < ?)",
+              [type, id, '$type/$id#', '$type/$id\$'],
+            );
+          }
+        }
+      }
     }
   }
 
