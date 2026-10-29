@@ -1,7 +1,6 @@
 // bin/server.dart
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
@@ -98,14 +97,9 @@ void main(List<String> arguments) async {
 
   final dbFile = File('$dbPath/fhirant.db');
   // SQLite is built from the sqlite3mc source (SQLite3 Multiple Ciphers)
-  // via the build hook declared in pubspec.yaml. The cipher/legacy PRAGMAs
-  // select the SQLCipher-v4-compatible scheme so databases created by the
-  // previous SQLCipher-based builds keep opening.
-  final nativeDb = NativeDatabase(
-    dbFile,
-    setup: (rawDb) => applyStoreCipher(rawDb, encryptionKey),
-  );
-  final db = FhirAntDb(nativeDb);
+  // via the build hook declared in pubspec.yaml. `openStoreFile` (fhirant_db)
+  // opens it on its own isolate, configured by `applyStoreCipher`.
+  final db = FhirAntDb(openStoreFile(dbFile, encryptionKey));
 
   try {
     await db.initialize();

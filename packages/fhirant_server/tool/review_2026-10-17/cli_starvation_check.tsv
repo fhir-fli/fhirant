@@ -1,0 +1,11 @@
+label	path	run	bundle_ms	bundle_status	polls	poll_max_ms	poll_median_ms
+before	/favicon.ico	0	1701	200	2	3831	3831
+before	/favicon.ico	1	1498	200	2	3919	3919
+before	/favicon.ico	2	1483	200	1	5081	5081
+before	/favicon.ico	3	1537	200	1	5567	5567
+before	/favicon.ico	4	1558	200	1	6376	6376
+after	/favicon.ico	0	4042	200	57	356	10
+after	/favicon.ico	1	3035	200	48	112	9
+after	/favicon.ico	2	3258	200	53	84	9
+after	/favicon.ico	3	3363	200	56	69	7
+after	/favicon.ico	4	3422	200	57	85	8

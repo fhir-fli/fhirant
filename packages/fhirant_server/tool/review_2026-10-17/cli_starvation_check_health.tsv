@@ -1,0 +1,11 @@
+label	run	bundle_ms	bundle_status	health_polls	health_max_ms	health_median_ms
+before	0	1744	200	2	3813	3813
+before	1	1465	200	2	3494	3494
+before	2	1115	200	2	4044	4044
+before	3	1678	200	2	6183	6183
+before	4	1703	200	2	5910	5910
+after	0	3522	200	2	3401	3401
+after	1	3112	200	1	3113	3113
+after	2	2372	200	1	2373	2373
+after	3	2208	200	1	2208	2208
+after	4	2947	200	2	3001	3001
