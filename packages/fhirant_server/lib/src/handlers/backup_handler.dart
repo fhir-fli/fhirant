@@ -6,6 +6,7 @@ import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/services/backup_service.dart';
+import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/utils/backup_crypto.dart';
 import 'package:fhirant_server/src/utils/operation_outcomes.dart';
 import 'package:fhirant_server/src/utils/parameters_body.dart';
@@ -108,10 +109,17 @@ Future<Response> backupHandler(
 /// backup's accounts used to be merged, so anyone on the network could plant
 /// the administrator Secure mode later trusted (REVIEW-2026-10-17, phone
 /// run; `no_accounts_while_auth_off_test.dart`).
+///
+/// With [fileScanner], the backup's files are scanned before anything is
+/// written ([BackupService.restoreFile]): a resource refused is left out
+/// and listed as an error, and a scanner that cannot answer is 503
+/// `transient` with nothing written, as on every other route that stores a
+/// client's file (`fileRefusal`).
 Future<Response> restoreHandler(
   Request request,
   FhirAntDb dbInterface, {
   bool authenticationEnabled = true,
+  FileScanner? fileScanner,
 }) async {
   Directory? dir;
   try {
@@ -155,6 +163,13 @@ Future<Response> restoreHandler(
         upload.path,
         passphrase: _passphraseHeader(request),
         withServerState: authenticationEnabled,
+        scanner: fileScanner,
+      );
+    } on BackupScanUnavailable catch (e) {
+      return outcome(
+        503,
+        fhir.IssueType.transient,
+        '${e.message}. Nothing was restored.',
       );
     } on BackupSchemaTooNew catch (e) {
       return outcome(400, fhir.IssueType.notSupported, e.toString());

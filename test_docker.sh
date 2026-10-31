@@ -475,6 +475,27 @@ else
         assert_status "a clean file is stored" 201 "$STATUS"
       fi
     done
+    # A backup is a file from an untrusted source too: $restore scans every
+    # resource in it, leaves out the infected one and restores the rest.
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SCAN_BASE/\$restore" \
+      -H "Authorization: Bearer $SCAN_TOKEN" \
+      -H "Content-Type: application/fhir+json" \
+      -d "{\"resourceType\": \"Bundle\", \"type\": \"collection\", \"entry\": [{\"resource\": {\"resourceType\": \"Binary\", \"id\": \"restored-bad\", \"contentType\": \"text/plain\", \"data\": \"$EICAR_B64\"}}, {\"resource\": {\"resourceType\": \"Binary\", \"id\": \"restored-ok\", \"contentType\": \"text/plain\", \"data\": \"$CLEAN_B64\"}}]}")
+    BODY=$(echo "$RESPONSE" | head -n -1)
+    STATUS=$(echo "$RESPONSE" | tail -1)
+    assert_status "a restore with an infected entry still restores" 200 "$STATUS"
+    assert_contains "the rest" '1 saved, 1 errors' "$BODY"
+    assert_contains "the infected entry left out by its signature" 'Eicar-Test-Signature' "$BODY"
+    for CASE in restored-bad restored-ok; do
+      STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SCAN_BASE/Binary/$CASE" \
+        -H "Authorization: Bearer $SCAN_TOKEN" \
+        -H "Accept: application/fhir+json")
+      if [ "$CASE" = restored-bad ]; then
+        assert_status "the infected Binary was not restored" 404 "$STATUS"
+      else
+        assert_status "the clean Binary was" 200 "$STATUS"
+      fi
+    done
   fi
 fi
 docker rm -f "$SCAN_CONTAINER" "$CLAM_CONTAINER" >/dev/null 2>&1 || true

@@ -481,6 +481,7 @@ class FhirAntServer {
           req,
           dbInterface,
           authenticationEnabled: !devMode,
+          fileScanner: fileScanner,
         ),
       )
       // FHIRPath endpoint - supports GET and POST

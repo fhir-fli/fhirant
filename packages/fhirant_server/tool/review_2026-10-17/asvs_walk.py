@@ -180,9 +180,11 @@ OVERRIDES = {
                'Fixed #90 for the CLI/Docker server: every base64Binary in a '
                'stored resource goes to clamd first (422 on a match, 503 if '
                'clamd cannot answer); EICAR refused through the real '
-               'clamav/clamav:1.5.4 (test_docker.sh). Still open: $restore '
-               '(SQL copy in fhirant_db), and the phone, which has no '
-               'scanner'),
+               'clamav/clamav:1.5.4 (test_docker.sh). $restore scanned too '
+               '(branch restore-clamd-scan): both formats, every stored '
+               'resource before anything is written; 31.8-32.8 s added on '
+               'the 928,935-resource MIMIC backup (restore_screen_cost.tsv). '
+               'Still open: the phone, which has no scanner'),
     # V5.2's section verdict (body limit) had been inherited by every row;
     # it answers V5.2.1 only. Re-read 2026-10-21.
     'V5.2.2': ('FINDING', 'no file was checked against its declared type. '
