@@ -24,7 +24,8 @@ String? fileTypeRefusal(String? declared, Uint8List bytes) {
       return 'declares no type, and its bytes are not a type this server '
           'stores (${_listed()})';
     }
-    return _checks[sniffed]!(bytes) ? null : _mismatch(sniffed);
+    if (!_checks[sniffed]!(bytes)) return _mismatch(sniffed);
+    return _imageRefusal(sniffed, bytes);
   }
   final type = _MediaType.parse(declared);
   final check = type == null ? null : _checks[type.essence];
@@ -38,7 +39,158 @@ String? fileTypeRefusal(String? declared, Uint8List bytes) {
       !const {'utf-8', 'us-ascii'}.contains(charset)) {
     return 'is declared $declared; this server stores text only as UTF-8';
   }
-  return check(bytes) ? null : _mismatch(type.essence);
+  if (!check(bytes)) return _mismatch(type.essence);
+  return _imageRefusal(type.essence, bytes);
+}
+
+/// The most pixels an image may have here (OWASP ASVS 5.0.0 V5.2.6, level 3:
+/// "Verify that the application rejects uploaded images with a pixel size
+/// larger than the maximum allowed, to prevent pixel flood attacks"; read in
+/// OWASP/ASVS v5.0.0 0x14-V5-File-Handling.md, 2026-11-01). ASVS sets no
+/// number. This is Pillow's `MAX_IMAGE_PIXELS`, "around a quarter gigabyte
+/// for a 24-bit (3 bpp) image", above which Pillow warns that the image
+/// "could be decompression bomb DOS attack" (and refuses at twice it;
+/// python-pillow/Pillow src/PIL/Image.py, read 2026-11-01). fhirant never
+/// decodes an image; a client that downloads one may.
+const int maxImagePixels = 1024 * 1024 * 1024 ~/ 4 ~/ 3;
+
+/// Why the image [type] in [bytes] may not be stored, or `null`: one whose
+/// size its header does not give, or larger than [maxImagePixels]. Only the
+/// headers are read, never the pixels. Anything but PNG, JPEG and GIF is
+/// `null`.
+String? _imageRefusal(String type, Uint8List bytes) {
+  final List<(int, int)>? sizes;
+  switch (type) {
+    case 'image/png':
+      sizes = _pngSize(bytes);
+    case 'image/gif':
+      sizes = _gifSizes(bytes);
+    case 'image/jpeg':
+      sizes = _jpegSizes(bytes);
+    default:
+      return null;
+  }
+  if (sizes == null || sizes.isEmpty) {
+    return 'is $type, but its size could not be read from its header';
+  }
+  for (final (width, height) in sizes) {
+    if (width * height > maxImagePixels) {
+      return 'is a $width x $height $type image, ${width * height} pixels, '
+          'more than the $maxImagePixels this server stores';
+    }
+  }
+  return null;
+}
+
+/// W3C PNG (Third Edition) 11.2.1: "The IHDR chunk shall be the first chunk
+/// in the PNG datastream", its Width and Height four-byte unsigned integers
+/// at offsets 16 and 20 (after the 8-byte signature and the chunk's length
+/// and type), and "Zero is an invalid value."
+List<(int, int)>? _pngSize(Uint8List b) {
+  if (b.length < 24) return null;
+  const ihdr = [0x49, 0x48, 0x44, 0x52];
+  for (var i = 0; i < 4; i++) {
+    if (b[12 + i] != ihdr[i]) return null;
+  }
+  final data = ByteData.sublistView(b);
+  final width = data.getUint32(16);
+  final height = data.getUint32(20);
+  if (width == 0 || height == 0) return null;
+  return [(width, height)];
+}
+
+/// GIF89a (W3C spec-gif89a.txt): the Logical Screen Descriptor's width and
+/// height (§18, little-endian at offsets 6 and 8), and every Image
+/// Descriptor's (§20, separator 0x2C) up to the Trailer (§27, 0x3B). A
+/// colour table is "3 x 2^(Size of Global Color Table+1)" bytes; extensions
+/// (§23, 0x21) and image data (§22) are data sub-blocks ended by a
+/// zero-length block (§16).
+List<(int, int)>? _gifSizes(Uint8List b) {
+  if (b.length < 13) return null;
+  int u16(int at) => b[at] | b[at + 1] << 8;
+  final sizes = [(u16(6), u16(8))];
+  var i = 13;
+  if (b[10] & 0x80 != 0) i += 3 * (1 << ((b[10] & 0x07) + 1));
+  bool skipSubBlocks() {
+    while (i < b.length) {
+      final size = b[i++];
+      if (size == 0) return true;
+      i += size;
+    }
+    return false;
+  }
+
+  while (i < b.length) {
+    final block = b[i++];
+    if (block == 0x3B) return sizes;
+    if (block == 0x21) {
+      i++; // the extension's label
+      if (!skipSubBlocks()) return null;
+    } else if (block == 0x2C) {
+      if (i + 9 > b.length) return null;
+      sizes.add((u16(i + 4), u16(i + 6)));
+      final flags = b[i + 8];
+      i += 9;
+      if (flags & 0x80 != 0) i += 3 * (1 << ((flags & 0x07) + 1));
+      i++; // LZW Minimum Code Size
+      if (!skipSubBlocks()) return null;
+    } else {
+      return null;
+    }
+  }
+  return null;
+}
+
+/// ITU-T T.81 (W3C itu-t81.pdf): the frame header of every Start Of Frame
+/// marker (Table B.1: X'FFC0'-X'FFCF' but DHT C4, JPG C8 and DAC CC) and of
+/// DHP (X'FFDE', hierarchical), whose Y ("Number of lines") and X ("Number
+/// of samples per line") follow Lf and P (B.2.2, Figure B.3). "Value 0
+/// indicates that the number of lines shall be defined by the DNL marker",
+/// which a header alone cannot bound, so it is not read. Markers without a
+/// length (SOI, EOI, RSTm, TEM) are stepped over, and the entropy-coded data
+/// after a scan header up to the next marker that is not X'FF00' stuffing or
+/// RSTm.
+List<(int, int)>? _jpegSizes(Uint8List b) {
+  final sizes = <(int, int)>[];
+  int u16(int at) => b[at] << 8 | b[at + 1];
+  var i = 2; // after SOI
+  while (i + 1 < b.length) {
+    if (b[i] != 0xFF) return null;
+    var marker = b[i + 1];
+    while (marker == 0xFF && i + 2 < b.length) {
+      i++; // fill bytes (B.1.1.2)
+      marker = b[i + 1];
+    }
+    i += 2;
+    if (marker == 0xD9) return sizes; // EOI
+    if (marker == 0x01 || (marker >= 0xD0 && marker <= 0xD8)) continue;
+    if (i + 2 > b.length) return null;
+    final length = u16(i);
+    final isFrame = (marker >= 0xC0 &&
+            marker <= 0xCF &&
+            marker != 0xC4 &&
+            marker != 0xC8 &&
+            marker != 0xCC) ||
+        marker == 0xDE;
+    if (isFrame) {
+      if (i + 7 > b.length) return null;
+      final lines = u16(i + 3);
+      final samples = u16(i + 5);
+      if (lines == 0 || samples == 0) return null;
+      sizes.add((samples, lines));
+    }
+    i += length;
+    if (marker == 0xDA) {
+      // SOS: entropy-coded data runs to the next real marker.
+      while (i + 1 < b.length &&
+          !(b[i] == 0xFF &&
+              b[i + 1] != 0x00 &&
+              !(b[i + 1] >= 0xD0 && b[i + 1] <= 0xD7))) {
+        i++;
+      }
+    }
+  }
+  return sizes.isEmpty ? null : sizes;
 }
 
 String _mismatch(String type) => 'is not $type: its bytes do not match the '

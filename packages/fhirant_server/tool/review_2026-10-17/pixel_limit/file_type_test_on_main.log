@@ -1,0 +1,52 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/file_type_test.dart
+00:00 +0: each binary type passes its own bytes and refuses another
+00:00 +1: a signature cut short or one byte off is refused
+00:00 +2: an image larger than maxImagePixels is refused, one under it kept
+00:00 +2 -1: an image larger than maxImagePixels is refused, one under it kept [E]
+  Expected: contains '9459 x 9460 image/png image, 89482140 pixels'
+    Actual: <null>
+     Which: is not a string, map or iterable
+  image/png
+  
+  package:matcher                      expect
+  test/utils/file_type_test.dart 29:7  main.refuses
+  test/utils/file_type_test.dart 66:7  main.<fn>
+  
+00:00 +2 -1: a GIF's frame larger than its screen is measured too
+00:00 +2 -2: a GIF's frame larger than its screen is measured too [E]
+  Expected: contains '89482140 pixels'
+    Actual: <null>
+     Which: is not a string, map or iterable
+  image/gif
+  
+  package:matcher                      expect
+  test/utils/file_type_test.dart 29:7  main.refuses
+  test/utils/file_type_test.dart 75:5  main.<fn>
+  
+00:00 +2 -2: an image whose header gives no size is refused
+00:00 +2 -3: an image whose header gives no size is refused [E]
+  Expected: contains 'its size could not be read'
+    Actual: <null>
+     Which: is not a string, map or iterable
+  image/png
+  
+  package:matcher                      expect
+  test/utils/file_type_test.dart 29:7  main.refuses
+  test/utils/file_type_test.dart 80:5  main.<fn>
+  
+00:00 +2 -3: an MPEG frame that is not layer III, or uses a reserved rate
+00:00 +3 -3: text is UTF-8 with no binary data byte, and not a page
+00:00 +4 -3: JSON and XML types parse
+00:00 +5 -3: application/jose is a JWS in compact form
+00:00 +6 -3: the declared type is read as a media type
+00:00 +7 -3: types not on the list are refused, whatever the bytes
+00:00 +8 -3: an undeclared file is judged by what its bytes show
+00:00 +9 -3: Some tests failed.
+
+Failing tests:
+  test/utils/file_type_test.dart: a GIF's frame larger than its screen is measured too
+  test/utils/file_type_test.dart: an image larger than maxImagePixels is refused, one under it kept
+  test/utils/file_type_test.dart: an image whose header gives no size is refused
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

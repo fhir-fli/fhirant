@@ -68,5 +68,10 @@ source	path	type	decision
 /home/grey/dev/fhir/fhir_generator/fhir_r4/examples-json/xds-example.json	Bundle.entry[4].resource.data	text/plain	stored
 /home/grey/.fhir/packages/hl7.fhir.us.core#3.1.0/package/example/DiagnosticReport-chest-xray-report.json	DiagnosticReport.presentedForm.data	application/xhtml	422 is declared application/xhtml, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose)
 /home/grey/.fhir/packages/hl7.fhir.us.core#3.1.0/package/example/DiagnosticReport-chest-xray-report.json	(resource)		422 The file at DiagnosticReport.presentedForm.data is declared application/xhtml, which this server does not store (it stores application/pdf, image/jpeg, image/png, image/gif, audio/mpeg, text/plain, text/cql, application/json, application/elm+json, application/json-patch+json, application/xml, application/elm+xml, application/signature+xml, application/jose); it was not stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#0.9.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.0.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.1.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.1.2/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
+/home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.2.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
 /home/grey/.fhir/packages/hl7.fhir.uv.tools.r4#1.3.0/package/Binary-CDSHookServices.json	Binary.data	application/json	stored
-summary			read 3389 parsed 3366 files 57 refused 13
+summary			read 52380 parsed 51738 files 62 refused 13

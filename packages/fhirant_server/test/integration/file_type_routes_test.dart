@@ -6,6 +6,7 @@ import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import '../utils/image_fixtures.dart';
 import 'test_helpers.dart';
 
 /// OWASP ASVS 5.0.0 V5.2.2 (L1; the OWASP ASVS 5.0.0 JSON release, read
@@ -23,12 +24,11 @@ void main() {
     'content-type': 'application/fhir+json',
     'accept': 'application/fhir+json',
   };
-  // The first bytes of a PDF and of a PNG (WHATWG MIME Sniffing §7.1 and
-  // §6.1, read 2026-10-21); what follows does not matter to the check.
+  // The first bytes of a PDF (WHATWG MIME Sniffing §7.1, read 2026-10-21);
+  // what follows does not matter to the check. The PNG is a whole one, as
+  // its header gives the size the pixel limit reads (image_fixtures.dart).
   final pdf = base64.encode([...latin1.encode('%PDF-1.7\n'), 0x25, 0xE2]);
-  final png = base64.encode(
-    [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13],
-  );
+  final png = base64.encode(png1x1);
   String text(String s) => base64.encode(utf8.encode(s));
 
   late FhirAntDb db;
