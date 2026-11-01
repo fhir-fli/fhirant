@@ -408,6 +408,12 @@ stops being true.
       hang reports the job, the elapsed budget, the poll count and the last
       `X-Progress` line — `Queued` or `Exporting...` separates a job that never
       started from one that never finished.
+      **Re-measured 2026-11-01** (main 322132b, after #99, which stops a job
+      running against a closed store): `export_integration_test.dart` 40 times
+      beside 12 busy loops (`tool/review_2026-10-17/export_stall/
+      repeat_export.sh`, `repeat_export.tsv`): 40 of 40 passed, 14 tests each,
+      no deadline or 404 message. Not reproduced; what caused the two August
+      occurrences is still unknown.
 
 ## Suite baseline — 2026-08-29
 
