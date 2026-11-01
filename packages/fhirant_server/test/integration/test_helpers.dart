@@ -133,7 +133,8 @@ Future<int> createTargetUser(
 
 /// Creates a fresh in-memory DB and full-pipeline handler for integration
 /// tests.
-Future<({FhirAntDb db, Handler handler})> createTestServer({
+Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
+    createTestServer({
   String? exportDir,
   bool devMode = false,
   String? bootstrapToken,
@@ -152,5 +153,5 @@ Future<({FhirAntDb db, Handler handler})> createTestServer({
     authMaxRequests: authMaxRequests,
   );
   final handler = server.createHandler(server.createRouter());
-  return (db: db, handler: handler);
+  return (db: db, handler: handler, server: server);
 }

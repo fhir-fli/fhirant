@@ -22,11 +22,16 @@ void main() {
   late Handler handler;
   late Directory exportDir;
 
+  // Ends the export jobs a test leaves running before the store closes and
+  // the directory is deleted under them (ExportJobs).
+  late Future<void> Function() stopExports;
+
   setUp(() async {
     exportDir = await Directory.systemTemp.createTemp('authz-2026-09-08');
     final server = await createTestServer(exportDir: exportDir.path);
     db = server.db;
     handler = server.handler;
+    stopExports = server.server.exportJobs.stop;
     await db.saveResource(
       fhir.Patient(
         id: 'p1'.toFhirString,
@@ -72,6 +77,7 @@ void main() {
   });
 
   tearDown(() async {
+    await stopExports();
     await db.close();
     await exportDir.delete(recursive: true);
   });

@@ -5,7 +5,7 @@
 # full suite's other isolates load the machine.
 # Run from packages/fhirant_server: tool/review_2026-10-17/errno39/repeat_authz.sh <runs> [load]
 set -u
-OUT=tool/review_2026-10-17/errno39/repeat_authz.tsv
+OUT=${OUT:-tool/review_2026-10-17/errno39/repeat_authz.tsv}
 LOGS=/tmp/claude-1000/errno39_runs; mkdir -p "$LOGS"
 printf 'run\tload\texit\terrno39\n' > "$OUT"
 PIDS=()

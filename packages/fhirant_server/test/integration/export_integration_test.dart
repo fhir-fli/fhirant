@@ -14,18 +14,24 @@ void main() {
   late String token;
   late String exportDir;
 
+  // Ends the export jobs a test leaves running before the store closes and
+  // the directory is deleted under them (ExportJobs).
+  late Future<void> Function() stopExports;
+
   setUp(() async {
     exportDir =
         '${Directory.systemTemp.path}/fhirant_export_integ_${DateTime.now().millisecondsSinceEpoch}';
     final server = await createTestServer(exportDir: exportDir);
     db = server.db;
     handler = server.handler;
+    stopExports = server.server.exportJobs.stop;
     // System-level $export requires system-level authorization; the operator
     // running these bulk exports is an admin.
     token = await issueTestToken(db, role: 'admin', scopes: ['system/*.*']);
   });
 
   tearDown(() async {
+    await stopExports();
     await db.close();
     final dir = Directory(exportDir);
     if (dir.existsSync()) {
