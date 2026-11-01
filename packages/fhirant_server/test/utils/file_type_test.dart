@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:fhirant_server/src/utils/file_type.dart';
 import 'package:test/test.dart';
 
+import 'image_fixtures.dart';
+
 /// Each listed type against bytes that are it and bytes that are not
 /// (patterns: WHATWG MIME Sniffing §6.1, §6.2, §7.1, read 2026-10-21; JWS:
 /// RFC 7515 §7.1).
@@ -11,10 +13,12 @@ void main() {
   Uint8List bytes(List<int> b) => Uint8List.fromList(b);
   Uint8List text(String s) => Uint8List.fromList(utf8.encode(s));
   final pdf = text('%PDF-1.4\n');
-  final png = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0]);
-  final jpeg = bytes([0xFF, 0xD8, 0xFF, 0xE0, 0, 0x10]);
-  final gif87 = text('GIF87a');
-  final gif89 = text('GIF89a');
+  // Whole images (image_fixtures.dart): the pixel limit reads each size
+  // from its header, so the first bytes alone are refused.
+  final png = png1x1;
+  final jpeg = jpeg1x1;
+  final gif87 = gif87a1x1;
+  final gif89 = gif89a1x1;
   final id3 = text('ID3\u0004');
   // Frame sync, MPEG-1 layer III, 128 kbit/s, 44.1 kHz.
   final mp3Frame = bytes([0xFF, 0xFB, 0x90, 0x00]);
@@ -49,6 +53,45 @@ void main() {
     refuses('image/gif', text('GIF88a'), 'is not');
     refuses('application/pdf', text('%PDF'), 'is not');
     refuses('audio/mpeg', text('ID'), 'is not');
+  });
+
+  test('an image larger than maxImagePixels is refused, one under it kept', () {
+    // Pillow's MAX_IMAGE_PIXELS (file_type.dart); the fixtures' sizes are
+    // read back by Pillow (make_fixtures.py).
+    expect(maxImagePixels, 89478485);
+    for (final (type, over, under) in [
+      ('image/png', pngOver, pngUnder),
+      ('image/jpeg', jpegOver, jpegUnder),
+      ('image/gif', gifOver, gifUnder),
+    ]) {
+      refuses(type, over, '9459 x 9460 $type image, 89482140 pixels');
+      accepts(type, under);
+      // Undeclared, the bytes' own type is checked the same way.
+      refuses(null, over, '89482140 pixels');
+      accepts(null, under);
+    }
+  });
+
+  test("a GIF's frame larger than its screen is measured too", () {
+    refuses('image/gif', gifFrameOver, '89482140 pixels');
+  });
+
+  test('an image whose header gives no size is refused', () {
+    // The signatures alone: right type, no size to read.
+    refuses(
+      'image/png',
+      bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0]),
+      'its size could not be read',
+    );
+    refuses(
+      'image/jpeg',
+      bytes([0xFF, 0xD8, 0xFF, 0xE0, 0, 0x10]),
+      'its size could not be read',
+    );
+    refuses('image/gif', text('GIF89a'), 'its size could not be read');
+    // PNG 11.2.1: "Zero is an invalid value."
+    final zero = Uint8List.fromList(png1x1)..setRange(16, 20, [0, 0, 0, 0]);
+    refuses('image/png', zero, 'its size could not be read');
   });
 
   test('an MPEG frame that is not layer III, or uses a reserved rate', () {

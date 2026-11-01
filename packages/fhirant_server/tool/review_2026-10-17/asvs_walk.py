@@ -202,8 +202,10 @@ OVERRIDES = {
     'V5.2.4': ('FINDING', 'L3: no per-user file quota or file count (no '
                'quota in lib or bin); only the 16 MiB body limit'),
     'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
-    'V5.2.6': ('FINDING', 'L3: PNG, JPEG and GIF are accepted with no pixel '
-               'size limit; the server never decodes an image'),
+    'V5.2.6': ('FINDING', 'L3, fixed 2026-11-01: a PNG, JPEG or GIF over '
+               'maxImagePixels (89,478,485, Pillow MAX_IMAGE_PIXELS) or whose '
+               'header gives no size is 422 (file_type.dart, headers only; '
+               'file_type_test.dart, pixel_limit/)'),
     # V15.4, measured 2026-10-21.
     'V15.4.1': ('PASS', 'code read: three isolates (program_sandbox, '
                 'password_hasher Isolate.run, the app store '
