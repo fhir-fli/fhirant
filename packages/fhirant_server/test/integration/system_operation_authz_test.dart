@@ -140,16 +140,21 @@ void main() {
     late FhirAntDb db;
     late Handler handler;
     late Directory exportDir;
+    late Future<void> Function() stopExports;
 
     setUp(() async {
       exportDir = await Directory.systemTemp.createTemp('authz-export');
       final server = await createTestServer(exportDir: exportDir.path);
       db = server.db;
       handler = server.handler;
+      stopExports = server.server.exportJobs.stop;
       await db.saveResource(fhir.Patient(id: 'p1'.toFhirString));
     });
 
     tearDown(() async {
+      // A test here ends with its job still running ("Directory not
+      // empty", errno 39, 1 run in 40 under load before ExportJobs).
+      await stopExports();
       await db.close();
       await exportDir.delete(recursive: true);
     });
@@ -252,22 +257,6 @@ void main() {
         ),
       );
       expect(narrowed.statusCode, 202, reason: await narrowed.readAsString());
-      // The job writes into the export directory after this returns; let it
-      // finish before tearDown deletes the directory under it (a
-      // "directory not empty" race, seen once 2026-09-18).
-      final jobId = narrowed.headers['content-location']!.split('/').last;
-      final deadline = DateTime.now().add(const Duration(seconds: 20));
-      while (DateTime.now().isBefore(deadline)) {
-        final status = await handler(
-          testRequest(
-            'GET',
-            '/\$export-poll-status/$jobId',
-            authToken: groupOnly,
-          ),
-        );
-        if (status.statusCode != 202) break;
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      }
     });
   });
 }

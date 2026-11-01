@@ -23,16 +23,22 @@ void main() {
   late String token;
   late String exportDir;
 
+  // Ends the export jobs a test leaves running before the store closes and
+  // the directory is deleted under them (ExportJobs).
+  late Future<void> Function() stopExports;
+
   setUp(() async {
     exportDir =
         (await Directory.systemTemp.createTemp('fhirant_export_rest_')).path;
     final server = await createTestServer(exportDir: exportDir);
     db = server.db;
     handler = server.handler;
+    stopExports = server.server.exportJobs.stop;
     token = await issueTestToken(db, role: 'admin', scopes: ['system/*.*']);
   });
 
   tearDown(() async {
+    await stopExports();
     await db.close();
     await Directory(exportDir).delete(recursive: true);
   });

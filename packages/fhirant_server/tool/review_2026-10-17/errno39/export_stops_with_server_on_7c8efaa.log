@@ -1,0 +1,22 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/export_stops_with_server_test.dart
+00:00 +0: stop ends a running export, failed with the reason, files removed
+00:03 +0 -1: stop ends a running export, failed with the reason, files removed [E]
+  Expected: 'error'
+    Actual: 'in_progress'
+     Which: is different.
+            Expected: error
+              Actual: in_progres ...
+                      ^
+             Differ at offset 0
+  status in_progress
+  
+  package:matcher                                           expect
+  test/integration/export_stops_with_server_test.dart 64:5  main.<fn>
+  
+00:03 +0 -1: Some tests failed.
+
+Failing tests:
+  test/integration/export_stops_with_server_test.dart: stop ends a running export, failed with the reason, files removed
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

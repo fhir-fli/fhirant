@@ -176,6 +176,9 @@ class FhirAntServer {
   /// The `\$reindex` job of this process (one at a time).
   final ReindexJobs reindexJobs = ReindexJobs();
 
+  /// The `\$export` jobs running in this process; ended by [stop].
+  final ExportJobs exportJobs = ExportJobs();
+
   /// The audit queue, for a test that must see its events stored.
   AuditQueue get auditQueue => _audit;
   bool _isRunning = false;
@@ -526,6 +529,7 @@ class FhirAntServer {
           req,
           dbInterface,
           exportDir,
+          jobs: exportJobs,
         ),
       )
       ..get(
@@ -536,6 +540,7 @@ class FhirAntServer {
           exportDir,
           exportLevel: 'group',
           groupId: groupId,
+          jobs: exportJobs,
         ),
       )
       ..get(
@@ -545,6 +550,7 @@ class FhirAntServer {
           dbInterface,
           exportDir,
           exportLevel: 'patient',
+          jobs: exportJobs,
         ),
       )
       ..get(
@@ -930,6 +936,10 @@ class FhirAntServer {
     } on TimeoutException {
       await server.close(force: true);
     }
+    // No request is left to kick one off; each running export ends at its
+    // next type and is failed with the reason, before the store closes
+    // under it.
+    await exportJobs.stop();
     await _audit.drain();
     // SQLite's advice (lang_analyze.html, read 2026-09-06) is to run PRAGMA
     // optimize "just before closing each database connection"; this is the

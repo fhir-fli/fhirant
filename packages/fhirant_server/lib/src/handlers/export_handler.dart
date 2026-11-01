@@ -26,6 +26,68 @@ final _jobIdPattern = RegExp(
 
 bool _isValidJobId(String jobId) => _jobIdPattern.hasMatch(jobId);
 
+/// The export jobs a server is running, so that stopping it can end them
+/// first.
+///
+/// A job runs after its kick-off is answered, and nothing held it: a server
+/// stopped mid-export closed the store under the job, which then failed on
+/// its next read and left its directory half-written, and a test's tearDown
+/// deleted the export directory while a job was still creating a file in it
+/// ("Directory not empty, errno = 39", 1 run in 40 under load,
+/// `tool/review_2026-10-17/errno39/repeat_authz.tsv`).
+class ExportJobs {
+  final Set<Future<void>> _running = {};
+  bool _stopping = false;
+
+  /// Whether [stop] has been called. A job checks this where it checks for
+  /// its own cancellation, between resource types.
+  bool get stopping => _stopping;
+
+  /// How many jobs are running.
+  int get running => _running.length;
+
+  /// Holds [job], which must not throw, until it completes.
+  void hold(Future<void> job) {
+    _running.add(job);
+    unawaited(job.whenComplete(() => _running.remove(job)));
+  }
+
+  /// Asks every running job to end at its next check and waits for them.
+  /// A job ended this way is failed, so its status request answers why
+  /// (Bulk Data export.html: an error status carries an OperationOutcome);
+  /// the type being written when this is called is finished first.
+  Future<void> stop() async {
+    _stopping = true;
+    await Future.wait(_running.toList());
+  }
+}
+
+/// The reason a job ended by [ExportJobs.stop] is failed with.
+const exportStoppedMessage =
+    'The server stopped before the export finished; kick it off again';
+
+/// Whether the job ends here: the server is stopping ([ExportJobs.stop]),
+/// so the job is failed, or its client cancelled it. Either way its
+/// directory is removed.
+Future<bool> _jobEnds(
+  FhirAntDb dbInterface,
+  String jobId,
+  String exportDir,
+  ExportJobs? jobs,
+) async {
+  if (jobs?.stopping ?? false) {
+    await _failJob(dbInterface, jobId, exportStoppedMessage);
+    await _removeJobDir(exportDir, jobId);
+    return true;
+  }
+  final current = await dbInterface.getExportJob(jobId);
+  if (current == null || current.status == 'cancelled') {
+    await _removeJobDir(exportDir, jobId);
+    return true;
+  }
+  return false;
+}
+
 /// The file items stored on a job (`outputJson`/`errorJson`), as the
 /// manifest's items.
 List<BulkExportFile> _files(String? json) => json == null
@@ -125,6 +187,7 @@ Future<Response> exportKickoffHandler(
   String exportLevel = 'system',
   String? patientId,
   String? groupId,
+  ExportJobs? jobs,
 }) async {
   try {
     // 1. Validate Prefer: respond-async header
@@ -272,13 +335,16 @@ Future<Response> exportKickoffHandler(
       fileKey: base64Encode(ExportFileCrypto.newKey()),
     );
 
-    // 7. Spawn background processing (fire-and-forget)
-    unawaited(
-      _processExport(dbInterface, jobId, exportDir, request)
-          .catchError((Object e, StackTrace st) {
-        FhirantLogging().logError('Export job $jobId failed', e, st);
-      }),
-    );
+    // 7. Spawn background processing, held by [jobs] so a stop can end it
+    final job = _processExport(dbInterface, jobId, exportDir, request, jobs)
+        .catchError((Object e, StackTrace st) {
+      FhirantLogging().logError('Export job $jobId failed', e, st);
+    });
+    if (jobs != null) {
+      jobs.hold(job);
+    } else {
+      unawaited(job);
+    }
 
     // 8. Return 202 Accepted with Content-Location
     final baseUrl = baseUrlOf(request.requestedUri);
@@ -586,16 +652,14 @@ Future<void> _processExport(
   String jobId,
   String exportDir,
   Request request,
+  ExportJobs? jobs,
 ) async {
   try {
     // Update to in_progress
     await dbInterface.updateExportJob(jobId, status: 'in_progress');
 
-    final job = await dbInterface.getExportJob(jobId);
-    if (job == null || job.status == 'cancelled') {
-      await _removeJobDir(exportDir, jobId);
-      return;
-    }
+    if (await _jobEnds(dbInterface, jobId, exportDir, jobs)) return;
+    final job = (await dbInterface.getExportJob(jobId))!;
     // The key this job's files are written under, minted with the job.
     final fileKey = base64Decode(job.fileKey!);
 
@@ -711,12 +775,7 @@ Future<void> _processExport(
       // Aggregate resource IDs across all patient members
       final allResourceIds = <String, Set<String>>{};
       for (final patientId in patientIds) {
-        // Check for cancellation
-        final currentJob = await dbInterface.getExportJob(jobId);
-        if (currentJob == null || currentJob.status == 'cancelled') {
-          await _removeJobDir(exportDir, jobId);
-          return;
-        }
+        if (await _jobEnds(dbInterface, jobId, exportDir, jobs)) return;
 
         final compartmentIds = await dbInterface.compartmentMembers(
           CompartmentScope('Patient', patientId),
@@ -756,11 +815,7 @@ Future<void> _processExport(
 
       // Fetch and write NDJSON files per resource type
       for (final entry in allResourceIds.entries) {
-        final currentJob = await dbInterface.getExportJob(jobId);
-        if (currentJob == null || currentJob.status == 'cancelled') {
-          await _removeJobDir(exportDir, jobId);
-          return;
-        }
+        if (await _jobEnds(dbInterface, jobId, exportDir, jobs)) return;
 
         final typeName = entry.key;
         final ids = entry.value;
@@ -849,12 +904,7 @@ Future<void> _processExport(
 
     // Export resources (works for both system and patient level)
     for (final resourceType in typesToExport) {
-      // Check for cancellation
-      final currentJob = await dbInterface.getExportJob(jobId);
-      if (currentJob == null || currentJob.status == 'cancelled') {
-        await _removeJobDir(exportDir, jobId);
-        return;
-      }
+      if (await _jobEnds(dbInterface, jobId, exportDir, jobs)) return;
 
       final typeName = resourceType.toString();
 

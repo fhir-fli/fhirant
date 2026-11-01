@@ -18,15 +18,21 @@ void main() {
   late Handler handler;
   late String exportDir;
 
+  // Ends the export jobs a test leaves running before the store closes and
+  // the directory is deleted under them (ExportJobs).
+  late Future<void> Function() stopExports;
+
   setUp(() async {
     exportDir = '${Directory.systemTemp.path}/fhirant_export_scale_'
         '${DateTime.now().microsecondsSinceEpoch}';
     final server = await createTestServer(exportDir: exportDir, devMode: true);
     db = server.db;
     handler = server.handler;
+    stopExports = server.server.exportJobs.stop;
   });
 
   tearDown(() async {
+    await stopExports();
     await db.close();
     final dir = Directory(exportDir);
     if (dir.existsSync()) await dir.delete(recursive: true);
