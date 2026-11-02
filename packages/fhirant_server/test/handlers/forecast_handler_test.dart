@@ -361,12 +361,19 @@ void main() {
       expect(cdcBody['resourceType'], 'Parameters');
       expect(whoBody['resourceType'], 'Parameters');
 
-      // WHO uses different vaccine groups (DTP vs DTaP, OPV vs IPV, etc.)
-      // so the recommendations should differ
       final cdcParams = cdcBody['parameter'] as List;
       final whoParams = whoBody['parameter'] as List;
       expect(cdcParams, isNotEmpty);
       expect(whoParams, isNotEmpty);
+
+      // Each endpoint forecasts its own schedule. Until cicada #5 (2026-11-01)
+      // the WHO endpoint returned the CDC forecast: zoster present, no BCG.
+      final cdcText = jsonEncode(cdcParams);
+      final whoText = jsonEncode(whoParams);
+      expect(whoText, isNot(cdcText));
+      expect(cdcText, contains('Zoster'));
+      expect(whoText, isNot(contains('Zoster')));
+      expect(whoText, contains('BCG'));
     });
   });
 }
