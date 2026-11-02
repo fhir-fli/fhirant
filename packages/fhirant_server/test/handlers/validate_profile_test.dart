@@ -237,6 +237,43 @@ Future<void> main() async {
     );
   });
 
+  test('a data type is resolved from its type code, relative to the base',
+      () async {
+    // The engine looks up a complex element's type by its type code as
+    // written, `HumanName`, not by a canonical URL. ElementDefinition.type.code
+    // (packaged profiles-types.ndjson, 4.3.0, verbatim): "References are URLs
+    // that are relative to http://hl7.org/fhir/StructureDefinition e.g.
+    // "string" is a reference to http://hl7.org/fhir/StructureDefinition/
+    // string." The store held HumanName under its canonical and was searched
+    // for a url of `HumanName`, so every complex element of every resource
+    // was reported as "No StructureDefinition or Profile found for Element
+    // type HumanName" (found 2026-11-01 validating bumblebee's Idai corpus).
+    // The tests above all used a Patient with primitive elements only.
+    await db.saveResource(_packagedPatientDefinition());
+    await db.saveResource(_packagedTypeDefinition('HumanName'));
+    for (final valueSet in _packagedValueSets()) {
+      await db.saveResource(valueSet);
+    }
+
+    final response = await validateHandler(
+      post(
+        '{"resourceType":"Patient","id":"p1",'
+        '"name":[{"family":"Okello","given":["Grace"]}]}',
+      ),
+      db,
+      'Patient',
+    );
+    expect(response.statusCode, 200);
+    final outcome =
+        jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+    final errors = ((outcome['issue'] as List?) ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .where((i) => i['severity'] == 'error')
+        .map((i) => i['diagnostics'])
+        .toList();
+    expect(errors, isEmpty);
+  });
+
   test('an invalid resource is a 200 whose OperationOutcome says so', () async {
     // OperationDefinition Resource-validate, `comment` (bundled
     // profiles-resources.ndjson, verbatim): "This operation returns a 200 OK
@@ -288,6 +325,20 @@ fhir.StructureDefinition _packagedPatientDefinition() {
     }
   }
   throw StateError('Patient StructureDefinition not found in the spec assets');
+}
+
+/// The data type [id]'s StructureDefinition as published, from the packaged
+/// specification.
+fhir.StructureDefinition _packagedTypeDefinition(String id) {
+  final file = File('assets/fhir_spec/profiles-types.ndjson');
+  for (final line in file.readAsLinesSync()) {
+    if (!line.contains('"id":"$id"')) continue;
+    final json = jsonDecode(line) as Map<String, dynamic>;
+    if (json['resourceType'] == 'StructureDefinition' && json['id'] == id) {
+      return fhir.StructureDefinition.fromJson(json);
+    }
+  }
+  throw StateError('$id StructureDefinition not found in the spec assets');
 }
 
 /// The packaged value sets a Patient's coded elements are bound to.

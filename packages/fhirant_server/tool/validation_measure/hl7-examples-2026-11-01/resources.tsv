@@ -1,0 +1,14 @@
+index	type	id	against	ms	errors	warnings
+0	Condition	f001	base	16504	12	3
+1	Condition	f002	base	16078	14	4
+2	Condition	f003	base	16314	12	2
+3	Condition	f201	base	16200	16	2
+4	Condition	f202	base	48870	14	2
+5	Condition	f203	base	15790	14	2
+6	Condition	f204	base	16315	14	2
+7	Condition	f205	base	16939	8	0
+8	Condition	family-history	base	16493	6	0
+9	Condition	stroke	base	15945	6	1
+10	Condition	example	base	16926	6	2
+11	Condition	example2	base	16376	6	1
+12	Encounter	emerg	base	-	THREW	-

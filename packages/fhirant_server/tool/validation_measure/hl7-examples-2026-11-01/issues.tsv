@@ -1,0 +1,150 @@
+index	type	id	against	severity	location	diagnostics
+0	Condition	f001	base	error	Condition.subject,Line[1] Col[3037]	Element type or path is missing for node: Condition.subject
+0	Condition	f001	base	error	Condition.subject,Line[1] Col[3037]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+0	Condition	f001	base	error	Condition.encounter,Line[1] Col[3107]	Element type or path is missing for node: Condition.encounter
+0	Condition	f001	base	error	Condition.encounter,Line[1] Col[3107]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+0	Condition	f001	base	error	Condition.asserter,Line[1] Col[3206]	Element type or path is missing for node: Condition.asserter
+0	Condition	f001	base	error	Condition.asserter,Line[1] Col[3206]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+0	Condition	f001	base	error	Condition.evidence[0],Line[1] Col[3276]	Context is null for code.exists() or detail.exists()
+0	Condition	f001	base	error	Condition.evidence,Line[1] Col[3264]	Context is null for code.exists() or detail.exists()
+0	Condition	f001	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+0	Condition	f001	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+0	Condition	f001	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+0	Condition	f001	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+0	Condition	f001	base	warning	Condition.evidence[0],Line[1] Col[3276]	Unable to determine context type for node: Condition.evidence[0]
+0	Condition	f001	base	warning	Condition.evidence,Line[1] Col[3264]	Unable to determine context type for node: Condition.evidence
+0	Condition	f001	base	warning	Condition.bodySite[0].text,Line[1] Col[3000]	Code "heart structure" is not valid according to ValueSet http://hl7.org/fhir/ValueSet/body-site
+1	Condition	f002	base	error	Condition.subject,Line[1] Col[3518]	Element type or path is missing for node: Condition.subject
+1	Condition	f002	base	error	Condition.subject,Line[1] Col[3518]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+1	Condition	f002	base	error	Condition.encounter,Line[1] Col[3588]	Element type or path is missing for node: Condition.encounter
+1	Condition	f002	base	error	Condition.encounter,Line[1] Col[3588]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+1	Condition	f002	base	error	Condition.asserter,Line[1] Col[3687]	Element type or path is missing for node: Condition.asserter
+1	Condition	f002	base	error	Condition.asserter,Line[1] Col[3687]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+1	Condition	f002	base	error	Condition.stage[0],Line[1] Col[3754]	Context is null for summary.exists() or assessment.exists()
+1	Condition	f002	base	error	Condition.stage,Line[1] Col[3745]	Context is null for summary.exists() or assessment.exists()
+1	Condition	f002	base	error	Condition.evidence[0],Line[1] Col[3990]	Context is null for code.exists() or detail.exists()
+1	Condition	f002	base	error	Condition.evidence,Line[1] Col[3978]	Context is null for code.exists() or detail.exists()
+1	Condition	f002	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+1	Condition	f002	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+1	Condition	f002	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+1	Condition	f002	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+1	Condition	f002	base	warning	Condition.stage[0],Line[1] Col[3754]	Unable to determine context type for node: Condition.stage[0]
+1	Condition	f002	base	warning	Condition.stage,Line[1] Col[3745]	Unable to determine context type for node: Condition.stage
+1	Condition	f002	base	warning	Condition.evidence[0],Line[1] Col[3990]	Unable to determine context type for node: Condition.evidence[0]
+1	Condition	f002	base	warning	Condition.evidence,Line[1] Col[3978]	Unable to determine context type for node: Condition.evidence
+2	Condition	f003	base	error	Condition.subject,Line[1] Col[3040]	Element type or path is missing for node: Condition.subject
+2	Condition	f003	base	error	Condition.subject,Line[1] Col[3040]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+2	Condition	f003	base	error	Condition.encounter,Line[1] Col[3110]	Element type or path is missing for node: Condition.encounter
+2	Condition	f003	base	error	Condition.encounter,Line[1] Col[3110]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+2	Condition	f003	base	error	Condition.asserter,Line[1] Col[3209]	Element type or path is missing for node: Condition.asserter
+2	Condition	f003	base	error	Condition.asserter,Line[1] Col[3209]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+2	Condition	f003	base	error	Condition.evidence[0],Line[1] Col[3279]	Context is null for code.exists() or detail.exists()
+2	Condition	f003	base	error	Condition.evidence,Line[1] Col[3267]	Context is null for code.exists() or detail.exists()
+2	Condition	f003	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+2	Condition	f003	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+2	Condition	f003	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+2	Condition	f003	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+2	Condition	f003	base	warning	Condition.evidence[0],Line[1] Col[3279]	Unable to determine context type for node: Condition.evidence[0]
+2	Condition	f003	base	warning	Condition.evidence,Line[1] Col[3267]	Unable to determine context type for node: Condition.evidence
+3	Condition	f201	base	error	Condition.subject,Line[1] Col[3437]	Element type or path is missing for node: Condition.subject
+3	Condition	f201	base	error	Condition.subject,Line[1] Col[3437]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Condition	f201	base	error	Condition.encounter,Line[1] Col[3495]	Element type or path is missing for node: Condition.encounter
+3	Condition	f201	base	error	Condition.encounter,Line[1] Col[3495]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Condition	f201	base	error	Condition.recorder,Line[1] Col[3635]	Element type or path is missing for node: Condition.recorder
+3	Condition	f201	base	error	Condition.recorder,Line[1] Col[3635]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Condition	f201	base	error	Condition.asserter,Line[1] Col[3680]	Element type or path is missing for node: Condition.asserter
+3	Condition	f201	base	error	Condition.asserter,Line[1] Col[3680]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Condition	f201	base	error	Condition.evidence[0].detail[0],Line[1] Col[3836]	Element type or path is missing for node: Condition.evidence[0].detail[0]
+3	Condition	f201	base	error	Condition.evidence[0].detail[0],Line[1] Col[3836]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Condition	f201	base	error	Condition.evidence[0],Line[1] Col[3726]	Context is null for code.exists() or detail.exists()
+3	Condition	f201	base	error	Condition.evidence,Line[1] Col[3714]	Context is null for code.exists() or detail.exists()
+3	Condition	f201	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+3	Condition	f201	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+3	Condition	f201	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+3	Condition	f201	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+3	Condition	f201	base	warning	Condition.evidence[0],Line[1] Col[3726]	Unable to determine context type for node: Condition.evidence[0]
+3	Condition	f201	base	warning	Condition.evidence,Line[1] Col[3714]	Unable to determine context type for node: Condition.evidence
+4	Condition	f202	base	error	Condition.subject,Line[1] Col[3448]	Element type or path is missing for node: Condition.subject
+4	Condition	f202	base	error	Condition.subject,Line[1] Col[3448]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+4	Condition	f202	base	error	Condition.onsetAge,Line[1] Col[3505]	Element type or path is missing for node: Condition.onsetAge
+4	Condition	f202	base	error	Condition.onsetAge,Line[1] Col[3505]	Context is null for (code.exists() or value.empty()) and (system.empty() or system = %ucum) and (value.empty() or value.hasValue().not() or value > 0)
+4	Condition	f202	base	error	Condition.abatementAge,Line[1] Col[3596]	Element type or path is missing for node: Condition.abatementAge
+4	Condition	f202	base	error	Condition.abatementAge,Line[1] Col[3596]	Context is null for (code.exists() or value.empty()) and (system.empty() or system = %ucum) and (value.empty() or value.hasValue().not() or value > 0)
+4	Condition	f202	base	error	Condition.evidence[0].detail[0],Line[1] Col[3723]	Element type or path is missing for node: Condition.evidence[0].detail[0]
+4	Condition	f202	base	error	Condition.evidence[0].detail[0],Line[1] Col[3723]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+4	Condition	f202	base	error	Condition.evidence[0],Line[1] Col[3712]	Context is null for code.exists() or detail.exists()
+4	Condition	f202	base	error	Condition.evidence,Line[1] Col[3700]	Context is null for code.exists() or detail.exists()
+4	Condition	f202	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+4	Condition	f202	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+4	Condition	f202	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+4	Condition	f202	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+4	Condition	f202	base	warning	Condition.evidence[0],Line[1] Col[3712]	Unable to determine context type for node: Condition.evidence[0]
+4	Condition	f202	base	warning	Condition.evidence,Line[1] Col[3700]	Unable to determine context type for node: Condition.evidence
+5	Condition	f203	base	error	Condition.subject,Line[1] Col[3139]	Element type or path is missing for node: Condition.subject
+5	Condition	f203	base	error	Condition.subject,Line[1] Col[3139]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Condition	f203	base	error	Condition.encounter,Line[1] Col[3197]	Element type or path is missing for node: Condition.encounter
+5	Condition	f203	base	error	Condition.encounter,Line[1] Col[3197]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Condition	f203	base	error	Condition.asserter,Line[1] Col[3343]	Element type or path is missing for node: Condition.asserter
+5	Condition	f203	base	error	Condition.asserter,Line[1] Col[3343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Condition	f203	base	error	Condition.evidence[0].detail[0],Line[1] Col[3400]	Element type or path is missing for node: Condition.evidence[0].detail[0]
+5	Condition	f203	base	error	Condition.evidence[0].detail[0],Line[1] Col[3400]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Condition	f203	base	error	Condition.evidence[0],Line[1] Col[3389]	Context is null for code.exists() or detail.exists()
+5	Condition	f203	base	error	Condition.evidence,Line[1] Col[3377]	Context is null for code.exists() or detail.exists()
+5	Condition	f203	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+5	Condition	f203	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+5	Condition	f203	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+5	Condition	f203	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+5	Condition	f203	base	warning	Condition.evidence[0],Line[1] Col[3389]	Unable to determine context type for node: Condition.evidence[0]
+5	Condition	f203	base	warning	Condition.evidence,Line[1] Col[3377]	Unable to determine context type for node: Condition.evidence
+6	Condition	f204	base	error	Condition.subject,Line[1] Col[3389]	Element type or path is missing for node: Condition.subject
+6	Condition	f204	base	error	Condition.subject,Line[1] Col[3389]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Condition	f204	base	error	Condition.encounter,Line[1] Col[3447]	Element type or path is missing for node: Condition.encounter
+6	Condition	f204	base	error	Condition.encounter,Line[1] Col[3447]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Condition	f204	base	error	Condition.asserter,Line[1] Col[3626]	Element type or path is missing for node: Condition.asserter
+6	Condition	f204	base	error	Condition.asserter,Line[1] Col[3626]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Condition	f204	base	error	Condition.stage[0].assessment[0],Line[1] Col[3783]	Element type or path is missing for node: Condition.stage[0].assessment[0]
+6	Condition	f204	base	error	Condition.stage[0].assessment[0],Line[1] Col[3783]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Condition	f204	base	error	Condition.stage[0],Line[1] Col[3669]	Context is null for summary.exists() or assessment.exists()
+6	Condition	f204	base	error	Condition.stage,Line[1] Col[3660]	Context is null for summary.exists() or assessment.exists()
+6	Condition	f204	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+6	Condition	f204	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+6	Condition	f204	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+6	Condition	f204	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+6	Condition	f204	base	warning	Condition.stage[0],Line[1] Col[3669]	Unable to determine context type for node: Condition.stage[0]
+6	Condition	f204	base	warning	Condition.stage,Line[1] Col[3660]	Unable to determine context type for node: Condition.stage
+7	Condition	f205	base	error	Condition.subject,Line[1] Col[1666]	Element type or path is missing for node: Condition.subject
+7	Condition	f205	base	error	Condition.subject,Line[1] Col[1666]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+7	Condition	f205	base	error	Condition.asserter,Line[1] Col[1751]	Element type or path is missing for node: Condition.asserter
+7	Condition	f205	base	error	Condition.asserter,Line[1] Col[1751]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+7	Condition	f205	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+7	Condition	f205	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+7	Condition	f205	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+7	Condition	f205	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+8	Condition	family-history	base	error	Condition.subject,Line[1] Col[573]	Element type or path is missing for node: Condition.subject
+8	Condition	family-history	base	error	Condition.subject,Line[1] Col[573]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+8	Condition	family-history	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+8	Condition	family-history	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+8	Condition	family-history	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+8	Condition	family-history	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+9	Condition	stroke	base	error	Condition.subject,Line[1] Col[700]	Element type or path is missing for node: Condition.subject
+9	Condition	stroke	base	error	Condition.subject,Line[1] Col[700]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+9	Condition	stroke	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+9	Condition	stroke	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+9	Condition	stroke	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+9	Condition	stroke	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+9	Condition	stroke	base	warning	Condition.code.text,Line[1] Col[673]	Code "Stroke" is not valid according to ValueSet http://hl7.org/fhir/ValueSet/condition-code
+10	Condition	example	base	error	Condition.subject,Line[1] Col[1013]	Element type or path is missing for node: Condition.subject
+10	Condition	example	base	error	Condition.subject,Line[1] Col[1013]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+10	Condition	example	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+10	Condition	example	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+10	Condition	example	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+10	Condition	example	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+10	Condition	example	base	warning	Condition.code.text,Line[1] Col[845]	Code "Burnt Ear" is not valid according to ValueSet http://hl7.org/fhir/ValueSet/condition-code
+10	Condition	example	base	warning	Condition.bodySite[0].text,Line[1] Col[983]	Code "Left Ear" is not valid according to ValueSet http://hl7.org/fhir/ValueSet/body-site
+11	Condition	example2	base	error	Condition.subject,Line[1] Col[690]	Element type or path is missing for node: Condition.subject
+11	Condition	example2	base	error	Condition.subject,Line[1] Col[690]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+11	Condition	example2	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+11	Condition	example2	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+11	Condition	example2	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+11	Condition	example2	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+11	Condition	example2	base	warning	Condition.code.text,Line[1] Col[663]	Code "Asthma" is not valid according to ValueSet http://hl7.org/fhir/ValueSet/condition-code

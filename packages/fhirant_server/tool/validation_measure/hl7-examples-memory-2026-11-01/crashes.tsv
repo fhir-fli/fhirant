@@ -1,0 +1,2 @@
+index	type	id	against	culprits	exception
+12	Encounter	emerg	base		Exception: Primitive element is not a Primitive or a List: ObjectNode

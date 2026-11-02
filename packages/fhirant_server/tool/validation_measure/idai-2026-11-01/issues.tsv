@@ -1,0 +1,625 @@
+index	type	id	against	severity	location	diagnostics
+2	Condition	e000-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+2	Condition	e000-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+2	Condition	e000-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+2	Condition	e000-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+2	Condition	e000-c0	base	error	Condition.extension[0],Line[1] Col[496]	Element type or path is missing for node: Condition.extension[0]
+2	Condition	e000-c0	base	error	Condition.extension[0],Line[1] Col[496]	Context is null for extension.exists() != value.exists()
+2	Condition	e000-c0	base	error	Condition.extension[1],Line[1] Col[597]	Element type or path is missing for node: Condition.extension[1]
+2	Condition	e000-c0	base	error	Condition.extension[1],Line[1] Col[597]	Context is null for extension.exists() != value.exists()
+2	Condition	e000-c0	base	error	Condition.extension,Line[1] Col[483]	Context is null for hasValue() or (children().count() > id.count())
+2	Condition	e000-c0	base	error	Condition.extension,Line[1] Col[483]	Context is null for extension.exists() != value.exists()
+2	Condition	e000-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+2	Condition	e000-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+2	Condition	e000-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+2	Condition	e000-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+2	Condition	e000-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 495, 494), Segment(1, 696, 695)))
+2	Condition	e000-c0	base	warning	Condition.extension,Line[1] Col[483]	Unable to determine context type for node: Condition.extension
+3	Procedure	e000-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+3	Procedure	e000-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+3	Procedure	e000-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+3	Procedure	e000-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+4	Procedure	e000-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+4	Procedure	e000-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+4	Procedure	e000-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+4	Procedure	e000-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+4	Procedure	e000-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+4	Procedure	e000-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Procedure	e000-mj0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+5	Procedure	e000-mj0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+5	Procedure	e000-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+5	Procedure	e000-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Procedure	e000-ga0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+6	Procedure	e000-ga0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Procedure	e000-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+6	Procedure	e000-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+6	Procedure	e000-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+6	Procedure	e000-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+8	Observation	e000-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+8	Observation	e000-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+8	Observation	e000-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+8	Observation	e000-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+8	Observation	e000-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+8	Observation	e000-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+9	Observation	e000-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+9	Observation	e000-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+9	Observation	e000-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+9	Observation	e000-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+9	Observation	e000-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+9	Observation	e000-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+12	Condition	e001-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+12	Condition	e001-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+12	Condition	e001-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+12	Condition	e001-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+12	Condition	e001-c0	base	error	Condition.extension[0],Line[1] Col[490]	Element type or path is missing for node: Condition.extension[0]
+12	Condition	e001-c0	base	error	Condition.extension[0],Line[1] Col[490]	Context is null for extension.exists() != value.exists()
+12	Condition	e001-c0	base	error	Condition.extension[1],Line[1] Col[591]	Element type or path is missing for node: Condition.extension[1]
+12	Condition	e001-c0	base	error	Condition.extension[1],Line[1] Col[591]	Context is null for extension.exists() != value.exists()
+12	Condition	e001-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for hasValue() or (children().count() > id.count())
+12	Condition	e001-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for extension.exists() != value.exists()
+12	Condition	e001-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+12	Condition	e001-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+12	Condition	e001-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+12	Condition	e001-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+12	Condition	e001-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 489, 488), Segment(1, 687, 686)))
+12	Condition	e001-c0	base	warning	Condition.extension,Line[1] Col[477]	Unable to determine context type for node: Condition.extension
+13	Procedure	e001-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+13	Procedure	e001-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+13	Procedure	e001-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+13	Procedure	e001-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+14	Procedure	e001-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+14	Procedure	e001-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+14	Procedure	e001-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+14	Procedure	e001-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+14	Procedure	e001-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+14	Procedure	e001-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+15	Procedure	e001-mj0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+15	Procedure	e001-mj0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+15	Procedure	e001-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+15	Procedure	e001-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+16	Procedure	e001-ga0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+16	Procedure	e001-ga0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+16	Procedure	e001-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+16	Procedure	e001-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+16	Procedure	e001-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+16	Procedure	e001-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+18	Observation	e001-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+18	Observation	e001-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+18	Observation	e001-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+18	Observation	e001-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+18	Observation	e001-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+18	Observation	e001-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+19	Observation	e001-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+19	Observation	e001-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+19	Observation	e001-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+19	Observation	e001-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+19	Observation	e001-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+19	Observation	e001-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+22	Condition	e002-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+22	Condition	e002-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+22	Condition	e002-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+22	Condition	e002-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+22	Condition	e002-c0	base	error	Condition.extension[0],Line[1] Col[490]	Element type or path is missing for node: Condition.extension[0]
+22	Condition	e002-c0	base	error	Condition.extension[0],Line[1] Col[490]	Context is null for extension.exists() != value.exists()
+22	Condition	e002-c0	base	error	Condition.extension[1],Line[1] Col[591]	Element type or path is missing for node: Condition.extension[1]
+22	Condition	e002-c0	base	error	Condition.extension[1],Line[1] Col[591]	Context is null for extension.exists() != value.exists()
+22	Condition	e002-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for hasValue() or (children().count() > id.count())
+22	Condition	e002-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for extension.exists() != value.exists()
+22	Condition	e002-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+22	Condition	e002-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+22	Condition	e002-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+22	Condition	e002-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+22	Condition	e002-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 489, 488), Segment(1, 687, 686)))
+22	Condition	e002-c0	base	warning	Condition.extension,Line[1] Col[477]	Unable to determine context type for node: Condition.extension
+23	Procedure	e002-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+23	Procedure	e002-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+23	Procedure	e002-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+23	Procedure	e002-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+24	Procedure	e002-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+24	Procedure	e002-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+24	Procedure	e002-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+24	Procedure	e002-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+24	Procedure	e002-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+24	Procedure	e002-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+25	Procedure	e002-mj0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+25	Procedure	e002-mj0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+25	Procedure	e002-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+25	Procedure	e002-mj0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+26	Procedure	e002-ga0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+26	Procedure	e002-ga0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+26	Procedure	e002-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+26	Procedure	e002-ga0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+26	Procedure	e002-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+26	Procedure	e002-ga0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+28	Observation	e002-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+28	Observation	e002-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+28	Observation	e002-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+28	Observation	e002-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+28	Observation	e002-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+28	Observation	e002-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+29	Observation	e002-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+29	Observation	e002-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+29	Observation	e002-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+29	Observation	e002-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+29	Observation	e002-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+29	Observation	e002-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+32	Condition	e003-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+32	Condition	e003-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+32	Condition	e003-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+32	Condition	e003-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+32	Condition	e003-c0	base	error	Condition.extension[0],Line[1] Col[490]	Element type or path is missing for node: Condition.extension[0]
+32	Condition	e003-c0	base	error	Condition.extension[0],Line[1] Col[490]	Context is null for extension.exists() != value.exists()
+32	Condition	e003-c0	base	error	Condition.extension[1],Line[1] Col[591]	Element type or path is missing for node: Condition.extension[1]
+32	Condition	e003-c0	base	error	Condition.extension[1],Line[1] Col[591]	Context is null for extension.exists() != value.exists()
+32	Condition	e003-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for hasValue() or (children().count() > id.count())
+32	Condition	e003-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for extension.exists() != value.exists()
+32	Condition	e003-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+32	Condition	e003-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+32	Condition	e003-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+32	Condition	e003-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+32	Condition	e003-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 489, 488), Segment(1, 687, 686)))
+32	Condition	e003-c0	base	warning	Condition.extension,Line[1] Col[477]	Unable to determine context type for node: Condition.extension
+33	Procedure	e003-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+33	Procedure	e003-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+33	Procedure	e003-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+33	Procedure	e003-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+34	Procedure	e003-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+34	Procedure	e003-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+34	Procedure	e003-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+34	Procedure	e003-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+34	Procedure	e003-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+34	Procedure	e003-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+36	Observation	e003-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+36	Observation	e003-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+36	Observation	e003-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+36	Observation	e003-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+36	Observation	e003-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+36	Observation	e003-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+37	Observation	e003-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+37	Observation	e003-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+37	Observation	e003-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+37	Observation	e003-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+37	Observation	e003-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+37	Observation	e003-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+40	Condition	e004-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+40	Condition	e004-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+40	Condition	e004-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+40	Condition	e004-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+40	Condition	e004-c0	base	error	Condition.extension[0],Line[1] Col[490]	Element type or path is missing for node: Condition.extension[0]
+40	Condition	e004-c0	base	error	Condition.extension[0],Line[1] Col[490]	Context is null for extension.exists() != value.exists()
+40	Condition	e004-c0	base	error	Condition.extension[1],Line[1] Col[591]	Element type or path is missing for node: Condition.extension[1]
+40	Condition	e004-c0	base	error	Condition.extension[1],Line[1] Col[591]	Context is null for extension.exists() != value.exists()
+40	Condition	e004-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for hasValue() or (children().count() > id.count())
+40	Condition	e004-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for extension.exists() != value.exists()
+40	Condition	e004-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+40	Condition	e004-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+40	Condition	e004-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+40	Condition	e004-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+40	Condition	e004-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 489, 488), Segment(1, 687, 686)))
+40	Condition	e004-c0	base	warning	Condition.extension,Line[1] Col[477]	Unable to determine context type for node: Condition.extension
+41	Procedure	e004-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+41	Procedure	e004-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+41	Procedure	e004-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+41	Procedure	e004-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+42	Procedure	e004-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+42	Procedure	e004-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+42	Procedure	e004-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+42	Procedure	e004-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+42	Procedure	e004-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+42	Procedure	e004-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+44	Observation	e004-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+44	Observation	e004-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+44	Observation	e004-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+44	Observation	e004-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+44	Observation	e004-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+44	Observation	e004-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+45	RelatedPerson	e004-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+45	RelatedPerson	e004-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+46	Observation	e004-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+46	Observation	e004-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+46	Observation	e004-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+46	Observation	e004-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+46	Observation	e004-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+46	Observation	e004-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+49	Condition	e005-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+49	Condition	e005-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+49	Condition	e005-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+49	Condition	e005-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+49	Condition	e005-c0	base	error	Condition.extension[0],Line[1] Col[490]	Element type or path is missing for node: Condition.extension[0]
+49	Condition	e005-c0	base	error	Condition.extension[0],Line[1] Col[490]	Context is null for extension.exists() != value.exists()
+49	Condition	e005-c0	base	error	Condition.extension[1],Line[1] Col[591]	Element type or path is missing for node: Condition.extension[1]
+49	Condition	e005-c0	base	error	Condition.extension[1],Line[1] Col[591]	Context is null for extension.exists() != value.exists()
+49	Condition	e005-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for hasValue() or (children().count() > id.count())
+49	Condition	e005-c0	base	error	Condition.extension,Line[1] Col[477]	Context is null for extension.exists() != value.exists()
+49	Condition	e005-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+49	Condition	e005-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+49	Condition	e005-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+49	Condition	e005-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+49	Condition	e005-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 489, 488), Segment(1, 687, 686)))
+49	Condition	e005-c0	base	warning	Condition.extension,Line[1] Col[477]	Unable to determine context type for node: Condition.extension
+50	Procedure	e005-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+50	Procedure	e005-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+50	Procedure	e005-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+50	Procedure	e005-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+51	Procedure	e005-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+51	Procedure	e005-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+51	Procedure	e005-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+51	Procedure	e005-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+51	Procedure	e005-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+51	Procedure	e005-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+53	Observation	e005-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+53	Observation	e005-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+53	Observation	e005-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+53	Observation	e005-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+53	Observation	e005-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+53	Observation	e005-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+54	RelatedPerson	e005-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+54	RelatedPerson	e005-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+55	Observation	e005-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+55	Observation	e005-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+55	Observation	e005-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+55	Observation	e005-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+55	Observation	e005-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+55	Observation	e005-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+58	Condition	e006-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+58	Condition	e006-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+58	Condition	e006-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+58	Condition	e006-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+58	Condition	e006-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+58	Condition	e006-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+58	Condition	e006-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+58	Condition	e006-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+58	Condition	e006-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+58	Condition	e006-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+58	Condition	e006-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+58	Condition	e006-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+58	Condition	e006-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+58	Condition	e006-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+59	Procedure	e006-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+59	Procedure	e006-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+59	Procedure	e006-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+59	Procedure	e006-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+60	Procedure	e006-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+60	Procedure	e006-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+60	Procedure	e006-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+60	Procedure	e006-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+60	Procedure	e006-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+60	Procedure	e006-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+62	Observation	e006-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+62	Observation	e006-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+62	Observation	e006-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+62	Observation	e006-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+62	Observation	e006-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+62	Observation	e006-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+63	RelatedPerson	e006-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+63	RelatedPerson	e006-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+64	Observation	e006-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+64	Observation	e006-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+64	Observation	e006-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+64	Observation	e006-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+64	Observation	e006-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+64	Observation	e006-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+67	Condition	e007-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+67	Condition	e007-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+67	Condition	e007-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+67	Condition	e007-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+67	Condition	e007-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+67	Condition	e007-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+67	Condition	e007-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+67	Condition	e007-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+67	Condition	e007-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+67	Condition	e007-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+67	Condition	e007-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+67	Condition	e007-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+67	Condition	e007-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+67	Condition	e007-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+68	Procedure	e007-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+68	Procedure	e007-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+68	Procedure	e007-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+68	Procedure	e007-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+69	Procedure	e007-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+69	Procedure	e007-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+69	Procedure	e007-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+69	Procedure	e007-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+69	Procedure	e007-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+69	Procedure	e007-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+71	Observation	e007-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+71	Observation	e007-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+71	Observation	e007-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+71	Observation	e007-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+71	Observation	e007-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+71	Observation	e007-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+72	RelatedPerson	e007-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+72	RelatedPerson	e007-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+73	Observation	e007-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+73	Observation	e007-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+73	Observation	e007-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+73	Observation	e007-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+73	Observation	e007-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+73	Observation	e007-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+76	Condition	e008-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+76	Condition	e008-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+76	Condition	e008-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+76	Condition	e008-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+76	Condition	e008-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+76	Condition	e008-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+76	Condition	e008-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+76	Condition	e008-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+76	Condition	e008-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+76	Condition	e008-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+76	Condition	e008-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+76	Condition	e008-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+76	Condition	e008-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+76	Condition	e008-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+77	Procedure	e008-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+77	Procedure	e008-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+77	Procedure	e008-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+77	Procedure	e008-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+78	Procedure	e008-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+78	Procedure	e008-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+78	Procedure	e008-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+78	Procedure	e008-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+78	Procedure	e008-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+78	Procedure	e008-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+80	Observation	e008-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+80	Observation	e008-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+80	Observation	e008-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+80	Observation	e008-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+80	Observation	e008-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+80	Observation	e008-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+81	RelatedPerson	e008-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+81	RelatedPerson	e008-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+82	Observation	e008-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+82	Observation	e008-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+82	Observation	e008-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+82	Observation	e008-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+82	Observation	e008-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+82	Observation	e008-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+85	Condition	e009-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+85	Condition	e009-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+85	Condition	e009-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+85	Condition	e009-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+85	Condition	e009-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+85	Condition	e009-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+85	Condition	e009-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+85	Condition	e009-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+85	Condition	e009-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+85	Condition	e009-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+85	Condition	e009-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+85	Condition	e009-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+85	Condition	e009-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+85	Condition	e009-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+86	Procedure	e009-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+86	Procedure	e009-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+86	Procedure	e009-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+86	Procedure	e009-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+87	Procedure	e009-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+87	Procedure	e009-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+87	Procedure	e009-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+87	Procedure	e009-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+87	Procedure	e009-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+87	Procedure	e009-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+89	Observation	e009-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+89	Observation	e009-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+89	Observation	e009-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+89	Observation	e009-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+89	Observation	e009-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+89	Observation	e009-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+90	RelatedPerson	e009-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+90	RelatedPerson	e009-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+91	Observation	e009-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+91	Observation	e009-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+91	Observation	e009-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+91	Observation	e009-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+91	Observation	e009-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+91	Observation	e009-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+94	Condition	e010-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+94	Condition	e010-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+94	Condition	e010-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+94	Condition	e010-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+94	Condition	e010-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+94	Condition	e010-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+94	Condition	e010-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+94	Condition	e010-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+94	Condition	e010-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+94	Condition	e010-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+94	Condition	e010-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+94	Condition	e010-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+94	Condition	e010-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+94	Condition	e010-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+95	Procedure	e010-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+95	Procedure	e010-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+95	Procedure	e010-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+95	Procedure	e010-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+96	Procedure	e010-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+96	Procedure	e010-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+96	Procedure	e010-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+96	Procedure	e010-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+96	Procedure	e010-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+96	Procedure	e010-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+98	Observation	e010-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+98	Observation	e010-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+98	Observation	e010-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+98	Observation	e010-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+98	Observation	e010-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+98	Observation	e010-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+99	RelatedPerson	e010-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+99	RelatedPerson	e010-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+100	Observation	e010-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+100	Observation	e010-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+100	Observation	e010-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+100	Observation	e010-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+100	Observation	e010-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+100	Observation	e010-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+103	Condition	e011-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+103	Condition	e011-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+103	Condition	e011-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+103	Condition	e011-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+103	Condition	e011-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+103	Condition	e011-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+103	Condition	e011-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+103	Condition	e011-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+103	Condition	e011-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+103	Condition	e011-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+103	Condition	e011-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+103	Condition	e011-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+103	Condition	e011-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+103	Condition	e011-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+104	Procedure	e011-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+104	Procedure	e011-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+104	Procedure	e011-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+104	Procedure	e011-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+105	Procedure	e011-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+105	Procedure	e011-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+105	Procedure	e011-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+105	Procedure	e011-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+105	Procedure	e011-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+105	Procedure	e011-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+107	Observation	e011-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+107	Observation	e011-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+107	Observation	e011-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+107	Observation	e011-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+107	Observation	e011-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+107	Observation	e011-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+108	RelatedPerson	e011-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+108	RelatedPerson	e011-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+109	Observation	e011-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+109	Observation	e011-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+109	Observation	e011-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+109	Observation	e011-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+109	Observation	e011-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+109	Observation	e011-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+112	Condition	e012-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+112	Condition	e012-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+112	Condition	e012-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+112	Condition	e012-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+112	Condition	e012-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+112	Condition	e012-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+112	Condition	e012-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+112	Condition	e012-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+112	Condition	e012-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+112	Condition	e012-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+112	Condition	e012-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+112	Condition	e012-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+112	Condition	e012-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+112	Condition	e012-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+113	Procedure	e012-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+113	Procedure	e012-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+113	Procedure	e012-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+113	Procedure	e012-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+114	Procedure	e012-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+114	Procedure	e012-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+114	Procedure	e012-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+114	Procedure	e012-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+114	Procedure	e012-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+114	Procedure	e012-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+116	Observation	e012-rn	base	error	Observation.subject,Line[1] Col[302]	Element type or path is missing for node: Observation.subject
+116	Observation	e012-rn	base	error	Observation.encounter,Line[1] Col[343]	Element type or path is missing for node: Observation.encounter
+116	Observation	e012-rn	base	error	Observation.encounter,Line[1] Col[343]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+116	Observation	e012-rn	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+116	Observation	e012-rn	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+116	Observation	e012-rn	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+117	RelatedPerson	e012-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+117	RelatedPerson	e012-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+118	Observation	e012-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+118	Observation	e012-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+118	Observation	e012-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+118	Observation	e012-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+118	Observation	e012-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+118	Observation	e012-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+121	Condition	e013-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+121	Condition	e013-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+121	Condition	e013-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+121	Condition	e013-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+121	Condition	e013-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+121	Condition	e013-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+121	Condition	e013-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+121	Condition	e013-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+121	Condition	e013-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+121	Condition	e013-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+121	Condition	e013-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+121	Condition	e013-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+121	Condition	e013-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+121	Condition	e013-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+122	Procedure	e013-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+122	Procedure	e013-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+122	Procedure	e013-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+122	Procedure	e013-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+123	Procedure	e013-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+123	Procedure	e013-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+123	Procedure	e013-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+123	Procedure	e013-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+123	Procedure	e013-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+123	Procedure	e013-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+125	RelatedPerson	e013-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+125	RelatedPerson	e013-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+126	Observation	e013-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+126	Observation	e013-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+126	Observation	e013-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+126	Observation	e013-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+126	Observation	e013-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+126	Observation	e013-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+129	Condition	e014-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+129	Condition	e014-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+129	Condition	e014-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+129	Condition	e014-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+129	Condition	e014-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+129	Condition	e014-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+129	Condition	e014-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+129	Condition	e014-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+129	Condition	e014-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+129	Condition	e014-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+129	Condition	e014-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+129	Condition	e014-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+129	Condition	e014-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+129	Condition	e014-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+130	Procedure	e014-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+130	Procedure	e014-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+130	Procedure	e014-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+130	Procedure	e014-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+131	Procedure	e014-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+131	Procedure	e014-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+131	Procedure	e014-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+131	Procedure	e014-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+131	Procedure	e014-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+131	Procedure	e014-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+133	RelatedPerson	e014-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+133	RelatedPerson	e014-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+134	Observation	e014-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+134	Observation	e014-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+134	Observation	e014-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+134	Observation	e014-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+134	Observation	e014-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+134	Observation	e014-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
+137	Condition	e015-c0	base	error	Condition.subject,Line[1] Col[54]	Element type or path is missing for node: Condition.subject
+137	Condition	e015-c0	base	error	Condition.subject,Line[1] Col[54]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+137	Condition	e015-c0	base	error	Condition.encounter,Line[1] Col[95]	Element type or path is missing for node: Condition.encounter
+137	Condition	e015-c0	base	error	Condition.encounter,Line[1] Col[95]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+137	Condition	e015-c0	base	error	Condition.extension[0],Line[1] Col[370]	Element type or path is missing for node: Condition.extension[0]
+137	Condition	e015-c0	base	error	Condition.extension[0],Line[1] Col[370]	Context is null for extension.exists() != value.exists()
+137	Condition	e015-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for hasValue() or (children().count() > id.count())
+137	Condition	e015-c0	base	error	Condition.extension,Line[1] Col[357]	Context is null for extension.exists() != value.exists()
+137	Condition	e015-c0	base	error	Condition,Line[1] Col[1]	Element type or path is missing for node: Condition
+137	Condition	e015-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()
+137	Condition	e015-c0	base	error	Condition,Line[1] Col[1]	Context is null for abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()
+137	Condition	e015-c0	base	error	Condition,Line[1] Col[1]	Context is null for verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()
+137	Condition	e015-c0	base	error	Condition,Line[1] Col[1]	Extension must be an ObjectNode: Array(ValidationLocation(Segment(1, 369, 368), Segment(1, 473, 472)))
+137	Condition	e015-c0	base	warning	Condition.extension,Line[1] Col[357]	Unable to determine context type for node: Condition.extension
+138	Procedure	e015-pr0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+138	Procedure	e015-pr0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+138	Procedure	e015-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+138	Procedure	e015-pr0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+139	Procedure	e015-an0	base	error	Procedure.subject,Line[1] Col[76]	Element type or path is missing for node: Procedure.subject
+139	Procedure	e015-an0	base	error	Procedure.subject,Line[1] Col[76]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+139	Procedure	e015-an0	base	error	Procedure.encounter,Line[1] Col[117]	Element type or path is missing for node: Procedure.encounter
+139	Procedure	e015-an0	base	error	Procedure.encounter,Line[1] Col[117]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+139	Procedure	e015-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Element type or path is missing for node: Procedure.partOf[0]
+139	Procedure	e015-an0	base	error	Procedure.partOf[0],Line[1] Col[201]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+141	RelatedPerson	e015-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Element type or path is missing for node: RelatedPerson.patient
+141	RelatedPerson	e015-rp	base	error	RelatedPerson.patient,Line[1] Col[58]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+142	Observation	e015-cps	base	error	Observation.subject,Line[1] Col[315]	Element type or path is missing for node: Observation.subject
+142	Observation	e015-cps	base	error	Observation.encounter,Line[1] Col[356]	Element type or path is missing for node: Observation.encounter
+142	Observation	e015-cps	base	error	Observation.encounter,Line[1] Col[356]	Context is null for reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)
+142	Observation	e015-cps	base	error	Observation,Line[1] Col[1]	Element type or path is missing for node: Observation
+142	Observation	e015-cps	base	error	Observation,Line[1] Col[1]	Context is null for value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()
+142	Observation	e015-cps	base	error	Observation,Line[1] Col[1]	Context is null for dataAbsentReason.empty() or value.empty()
