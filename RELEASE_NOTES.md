@@ -25,7 +25,9 @@ Requires Android 7.0 (API 24) or newer.
 - Validation (`$validate`) and terminology (`$validate-code`, `$lookup`,
   `$expand`)
 - FHIR Mapping Language transforms (`$transform`)
-- Immunization forecasting (`$immds-forecast` — CDC and WHO schedules)
+- Immunization forecasting: `$immds-forecast` (CDC schedule, tested against
+  CDC's published cases) and `$immds-forecast-who` (WHO schedule, not yet
+  validated against any outside answer; treat as a draft)
 - Patient `$everything`, `$document` generation, `_history`
 - `$backup` / `$restore` of the whole dataset as an encrypted SQLite file (a passphrase-wrapped FHIR Bundle is still accepted on restore)
 - Built-in resource browser with JSON/YAML views and clickable references
@@ -50,10 +52,10 @@ backups.
 ## Checksums
 
 ```
-4dedb827a6437d469c782ccc82795f6b8963981169ad919aede88e5c2ee1bbed  fhirant-1.0.0-arm64-v8a.apk
-d2ef5f31915c69010a1dc7d11953ae6c58f6951fc9baecb291272bc867bbfe87  fhirant-1.0.0-armeabi-v7a.apk
-cb92c8f7e0ab1071d4fb05d97f9666748a80e441063b04616656afae209e54b8  fhirant-1.0.0-universal.apk
-8ac4eb391acea626a28ec7d5f7aaa7632672774a2872d247d94a5522e311bb65  fhirant-1.0.0-x86_64.apk
+e3656ec72fe1e9dcb0a1fbb8fced380c2e3b7bdb28563eb8d5689d8bdf769dc2  fhirant-1.0.0-arm64-v8a.apk
+03e963b10384da162b5e2c113712d690ebb1d14d4b8595ed8b18fc5f7aa28c4b  fhirant-1.0.0-armeabi-v7a.apk
+46a67d70fce2689445b12c3c03eb66a059b3c32b756af67e5515af144e7aca59  fhirant-1.0.0-universal.apk
+daece6b8a59cc18a638f78ae03dd289da874f71ac915e193d8dbdbb2ad8a6a4c  fhirant-1.0.0-x86_64.apk
 ```
 
 Signed with the FHIR-FLI release key, SHA-256 fingerprint

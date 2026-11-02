@@ -46,7 +46,7 @@ curl "http://localhost:8080/Patient?name=smith"
 
 - The FHIR R4 REST API: create, read, update, delete, search (including chained search and `_include`), history, and transaction and batch Bundles.
 - SMART on FHIR login with scoped access, or an open mode for test data.
-- Bulk export (`$export`), CQL and FHIRPath evaluation, validation, terminology operations, FHIR Mapping Language transforms, Patient `$everything`, and immunization forecasting for the CDC and WHO schedules.
+- Bulk export (`$export`), CQL and FHIRPath evaluation, validation, terminology operations, FHIR Mapping Language transforms, Patient `$everything`, and immunization forecasting for the CDC schedule (tested against CDC's published cases) and the WHO schedule (not yet validated; treat as a draft).
 - Encrypted backup and restore of the whole store.
 
 ## Status
