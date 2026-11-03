@@ -94,23 +94,9 @@ class DbResourceCache extends ResourceCache {
     return null;
   }
 
-  /// The StructureDefinition at [url], which may be a type code.
-  ///
-  /// The validation engine passes a complex element's type code as written,
-  /// `HumanName`. ElementDefinition.type.code (packaged profiles-types.ndjson,
-  /// 4.3.0, verbatim): "References are URLs that are relative to
-  /// http://hl7.org/fhir/StructureDefinition e.g. "string" is a reference to
-  /// http://hl7.org/fhir/StructureDefinition/string. Absolute URLs are only
-  /// allowed in logical models." A relative one is resolved against that
-  /// base; searched as given it matched nothing, and every complex element
-  /// was reported as having no definition.
   @override
   Future<FhirNode?> getStructureDefinition(String url) =>
-      canonical<fhir.StructureDefinition>(
-        url.contains(':') ? url : '$_typeBase$url',
-      );
-
-  static const _typeBase = 'http://hl7.org/fhir/StructureDefinition/';
+      canonical<fhir.StructureDefinition>(url);
 
   @override
   Future<List<FhirNode>> getStructureDefinitions() async {

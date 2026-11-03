@@ -1,0 +1,9 @@
+corpus: /tmp/claude-1000/-home-grey-dev-fhir/9f50af63-dcc3-41f4-a926-28eff4866c83/scratchpad/hl7-examples-bundle.json
+resources: 138
+validations run: 12
+resources with >=1 error: 12
+validations that threw: 1
+error issues: 128
+warning issues: 21
+claimed profiles not loaded: 0 
+ms per validation: median 14415, p90 17632, p99 44522, max 44522, total 205865
