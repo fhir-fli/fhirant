@@ -219,9 +219,10 @@ OVERRIDES = {
     'V6.4.5': ('N/A', 'passwords do not expire; the one-time password is '
                'not renewed, a new reset replaces it, and its expiry is in '
                'the reply (one_time_password_expires)'),
-    'V6.4.6': ('FINDING', 'L3, fixed 2026-11-03: an administrator chose the '
-               'reset password; the reset now takes no password and hands '
-               'back a one-time password (one_time_password_test.dart)'),
+    'V6.4.6': ('FINDING', 'L3, open: the reset no longer takes a password, '
+               'but the administrator holds the one-time password and can '
+               'use it to set one of its choosing and sign in as the user '
+               '(review of 9b1b12a, 2026-11-03); design question with Grey'),
     'V5.2.6': ('FINDING', 'L3, fixed 2026-11-01: a PNG, JPEG or GIF over '
                'maxImagePixels (89,478,485, Pillow MAX_IMAGE_PIXELS) or whose '
                'header gives no size is 422 (file_type.dart, headers only; '
