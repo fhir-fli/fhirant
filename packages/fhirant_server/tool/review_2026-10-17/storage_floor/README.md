@@ -49,6 +49,11 @@ its 16 covering value indexes against September's single-column ones
 83.0 s. The covering indexes (fhir_db bea5283, 2026-09-09, added for search
 speed) are the whole slowdown, and their cost grows with the database.
 
-Not measured yet: a load with the covers built once at the end
-(`tools/load_then_index.sh`). Its first run overlapped the full test suite
-and was stopped.
+`load_then_index/` (`tools/load_then_index.sh`, one run, 2026-11-02, quiet
+machine): the full MIMIC load with the covers skipped, then built once at
+the end (`tools/build_value_indexes.dart`, fhir_db eccd67c with
+`tools/fhir_db_narrow_switch.patch`). Load 878 s (890 s wall), building the
+16 covers 39.8 s (49.8 s wall with startup): about 930 s against main's
+2,191 s and September's 1,423 s. The database ends at 5.89 GB against
+main's 6.18 GB. A first run that overlapped the full test suite was
+stopped and is not counted.
