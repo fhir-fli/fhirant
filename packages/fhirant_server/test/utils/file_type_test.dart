@@ -131,6 +131,32 @@ void main() {
     refuses('application/jose', text('a.b'), 'is not');
   });
 
+  test('message/mls is an MLSMessage: version mls10, a registered kind', () {
+    // RFC 9420 §6 (rfc9420.txt, read 2026-11-02): MLSMessage opens with
+    // ProtocolVersion (uint16, mls10 = 1) and WireFormat (uint16); IANA "MLS
+    // Wire Formats" (mls-wire-formats.csv, read 2026-11-02) registers 1-5.
+    // The first bytes are those of real messages from openmls 3.2.1.
+    for (final kind in [1, 2, 3, 4, 5]) {
+      accepts('message/mls', bytes([0x00, 0x01, 0x00, kind, 0x10, 0xAF]));
+    }
+    // §17.10: the optional version parameter; the protocol's own wins.
+    accepts('message/mls; version=1.0', bytes([0, 1, 0, 2, 0x10]));
+    refuses('message/mls', bytes([0, 2, 0, 2, 0x10]), 'is not message/mls');
+    refuses('message/mls', bytes([0, 0, 0, 2, 0x10]), 'is not message/mls');
+    for (final kind in [0x0000, 0x0006, 0xEFFF, 0xF000, 0xFFFF]) {
+      refuses(
+        'message/mls',
+        bytes([0, 1, kind >> 8, kind & 0xFF, 0x10]),
+        'is not message/mls',
+      );
+    }
+    // A header with no message after it, and one cut short.
+    refuses('message/mls', bytes([0, 1, 0, 1]), 'is not message/mls');
+    refuses('message/mls', bytes([0, 1, 0]), 'is not message/mls');
+    refuses('message/mls', text('hello'), 'is not message/mls');
+    refuses('message/mls', pdf, 'is not message/mls');
+  });
+
   test('the declared type is read as a media type', () {
     accepts('Image/PNG', png);
     accepts(' image/png ; name="scan.png"', png);
