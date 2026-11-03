@@ -1,0 +1,61 @@
+index	type	id	against	culprits	exception
+1	Encounter	e000	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+7	ServiceRequest	e000-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+8	Observation	e000-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+9	Observation	e000-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+11	Encounter	e001	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+17	ServiceRequest	e001-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+18	Observation	e001-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+19	Observation	e001-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+21	Encounter	e002	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+27	ServiceRequest	e002-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+28	Observation	e002-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+29	Observation	e002-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+31	Encounter	e003	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+35	ServiceRequest	e003-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+36	Observation	e003-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+37	Observation	e003-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+39	Encounter	e004	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+43	ServiceRequest	e004-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+44	Observation	e004-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+46	Observation	e004-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+48	Encounter	e005	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+52	ServiceRequest	e005-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+53	Observation	e005-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+55	Observation	e005-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+57	Encounter	e006	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+61	ServiceRequest	e006-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+62	Observation	e006-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+64	Observation	e006-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+66	Encounter	e007	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+70	ServiceRequest	e007-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+71	Observation	e007-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+73	Observation	e007-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+75	Encounter	e008	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+79	ServiceRequest	e008-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+80	Observation	e008-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+82	Observation	e008-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+84	Encounter	e009	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+88	ServiceRequest	e009-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+89	Observation	e009-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+91	Observation	e009-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+93	Encounter	e010	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+97	ServiceRequest	e010-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+98	Observation	e010-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+100	Observation	e010-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+102	Encounter	e011	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+106	ServiceRequest	e011-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+107	Observation	e011-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+109	Observation	e011-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+111	Encounter	e012	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+115	ServiceRequest	e012-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+116	Observation	e012-rn	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-rehabilitation-need		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+118	Observation	e012-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+120	Encounter	e013	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+124	ServiceRequest	e013-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+126	Observation	e013-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+128	Encounter	e014	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+132	ServiceRequest	e014-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+134	Observation	e014-cps	http://fhir-fli.dev/bumblebee/StructureDefinition/bumblebee-child-protection-status		Exception: Resource not found at http://hl7.org/fhir/ValueSet/languages|4.0.1
+136	Encounter	e015	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+140	ServiceRequest	e015-sr	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role

@@ -1,0 +1,31 @@
+index	type	id	against	culprits	exception
+12	Encounter	emerg	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+13	Encounter	f001	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+14	Encounter	f002	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+15	Encounter	f003	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+16	Encounter	f201	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/v3-ActEncounterCode
+17	Encounter	f202	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/v3-ActEncounterCode
+18	Encounter	f203	base		Exception: Primitive element is not a Primitive or a List: ObjectNode
+19	Encounter	home	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/v3-ActEncounterCode
+20	Encounter	xcda	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/v3-ActEncounterCode
+21	Encounter	example	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/v3-ActEncounterCode
+118	ServiceRequest	ambulation	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+119	ServiceRequest	appendectomy-narrative	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+120	ServiceRequest	colon-biopsy	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+121	ServiceRequest	colonoscopy	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+122	ServiceRequest	di	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+123	ServiceRequest	education	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+124	ServiceRequest	ft4	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+125	ServiceRequest	example-implant	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+126	ServiceRequest	lipid	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+127	ServiceRequest	myringotomy	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+128	ServiceRequest	ob	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+129	ServiceRequest	example-pgx	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+130	ServiceRequest	physical-therapy	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+131	ServiceRequest	subrequest	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+132	ServiceRequest	vent	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+133	ServiceRequest	example	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+134	ServiceRequest	physiotherapy	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+135	ServiceRequest	do-not-turn	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+136	ServiceRequest	benchpress	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
+137	ServiceRequest	genetics-example-1	base		Exception: Resource not found at http://terminology.hl7.org/ValueSet/action-participant-role
