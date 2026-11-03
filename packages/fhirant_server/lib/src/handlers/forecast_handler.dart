@@ -276,43 +276,50 @@ Future<Map<String, dynamic>> _buildParametersFromDb(
     'resource': patient.toJson(),
   });
 
-  // Load Immunizations for this patient
-  final immunizations = await _searchForPatient(
+  // The patient's records cicada reads (cicada `forecastFromParameters`):
+  // doses, then clinical history. Each type is searched by `patient`, the
+  // R4B `clinical-patient` search parameter, whose base lists all eight
+  // (search-parameters.json, 4.3.0). One parameter per resource, named for
+  // its type.
+  const historyTypes = [
     fhir.R4ResourceType.Immunization,
-    id,
-    dbInterface,
-  );
-  for (final imm in immunizations) {
-    parameters.add({
-      'name': 'immunization',
-      'resource': imm.toJson(),
-    });
-  }
-
-  // Load Conditions
-  final conditions = await _searchForPatient(
     fhir.R4ResourceType.Condition,
-    id,
-    dbInterface,
-  );
-  for (final cond in conditions) {
-    parameters.add({
-      'name': 'condition',
-      'resource': cond.toJson(),
-    });
-  }
-
-  // Load AllergyIntolerances
-  final allergies = await _searchForPatient(
     fhir.R4ResourceType.AllergyIntolerance,
-    id,
-    dbInterface,
-  );
-  for (final allergy in allergies) {
-    parameters.add({
-      'name': 'allergyIntolerance',
-      'resource': allergy.toJson(),
-    });
+    fhir.R4ResourceType.Observation,
+    fhir.R4ResourceType.Procedure,
+    fhir.R4ResourceType.MedicationStatement,
+    fhir.R4ResourceType.MedicationRequest,
+    fhir.R4ResourceType.MedicationAdministration,
+  ];
+  final organizationIds = <String>{};
+  for (final type in historyTypes) {
+    final name = type.toString();
+    for (final resource in await _searchForPatient(type, id, dbInterface)) {
+      parameters.add({
+        'name': name[0].toLowerCase() + name.substring(1),
+        'resource': resource.toJson(),
+      });
+      // A dose's maker given as a literal reference (`Organization/x`) is
+      // resolved by cicada only if the Organization is sent with it.
+      if (resource is fhir.Immunization) {
+        final reference = resource.manufacturer?.reference?.valueString;
+        if (reference != null && reference.startsWith('Organization/')) {
+          organizationIds.add(reference.substring('Organization/'.length));
+        }
+      }
+    }
+  }
+  for (final orgId in organizationIds) {
+    final organization = await dbInterface.getResource(
+      fhir.R4ResourceType.Organization,
+      orgId,
+    );
+    if (organization != null) {
+      parameters.add({
+        'name': 'organization',
+        'resource': organization.toJson(),
+      });
+    }
   }
 
   return {

@@ -204,7 +204,6 @@ void main() {
 
       verify(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'db-pat'))
           .called(1);
-      // Should have searched for Immunizations, Conditions, AllergyIntolerances
       verify(
         () => mockDb.search(
           resourceType: fhir.R4ResourceType.Immunization,
@@ -216,6 +215,93 @@ void main() {
         ),
       ).called(1);
     });
+
+    test(
+      'patientId sends every record type cicada reads, and the maker',
+      () async {
+        final patient = fhir.Patient(
+          id: 'db-pat'.toFhirString,
+          birthDate: fhir.FhirDate.fromString('2020-01-01'),
+          gender: fhir.AdministrativeGender.female,
+        );
+        // A dose whose maker is a literal reference: cicada can read the MVX
+        // code only if the Organization travels with the request.
+        final dose = fhir.Immunization.fromJson({
+          'resourceType': 'Immunization',
+          'id': 'd1',
+          'status': 'completed',
+          'vaccineCode': {
+            'coding': [
+              {'system': 'http://hl7.org/fhir/sid/cvx', 'code': '08'},
+            ],
+          },
+          'patient': {'reference': 'Patient/db-pat'},
+          'occurrenceDateTime': '2020-01-01',
+          'manufacturer': {'reference': 'Organization/merck'},
+        });
+        final merck = fhir.Organization.fromJson({
+          'resourceType': 'Organization',
+          'id': 'merck',
+          'identifier': [
+            {'system': 'http://hl7.org/fhir/sid/mvx', 'value': 'MSD'},
+          ],
+        });
+        when(() => mockDb.getResource(fhir.R4ResourceType.Patient, 'db-pat'))
+            .thenAnswer((_) async => patient);
+        when(
+          () => mockDb.getResource(fhir.R4ResourceType.Organization, 'merck'),
+        ).thenAnswer((_) async => merck);
+        when(
+          () => mockDb.search(
+            resourceType: any(named: 'resourceType'),
+            searchParameters: any(named: 'searchParameters'),
+            hasParameters: any(named: 'hasParameters'),
+            count: any(named: 'count'),
+            offset: any(named: 'offset'),
+            sort: any(named: 'sort'),
+          ),
+        ).thenAnswer((invocation) async {
+          final type = invocation.namedArguments[#resourceType];
+          return type == fhir.R4ResourceType.Immunization
+              ? <fhir.Resource>[dose]
+              : <fhir.Resource>[];
+        });
+
+        final response = await immdsForecastHandler(
+          postJson(r'/$immds-forecast', {'patientId': 'db-pat'}),
+          mockDb,
+        );
+        expect(response.statusCode, 200);
+
+        // R4B clinical-patient covers each of these (search-parameters.json).
+        for (final type in [
+          fhir.R4ResourceType.Immunization,
+          fhir.R4ResourceType.Condition,
+          fhir.R4ResourceType.AllergyIntolerance,
+          fhir.R4ResourceType.Observation,
+          fhir.R4ResourceType.Procedure,
+          fhir.R4ResourceType.MedicationStatement,
+          fhir.R4ResourceType.MedicationRequest,
+          fhir.R4ResourceType.MedicationAdministration,
+        ]) {
+          verify(
+            () => mockDb.search(
+              resourceType: type,
+              searchParameters: {
+                'patient': ['Patient/db-pat'],
+              },
+              hasParameters: any(named: 'hasParameters'),
+              count: any(named: 'count'),
+              offset: any(named: 'offset'),
+              sort: any(named: 'sort'),
+            ),
+          ).called(1);
+        }
+        verify(
+          () => mockDb.getResource(fhir.R4ResourceType.Organization, 'merck'),
+        ).called(1);
+      },
+    );
 
     test('patientId in Parameters triggers DB lookup', () async {
       final patient = fhir.Patient(
