@@ -210,6 +210,8 @@ String _listed() => 'it stores ${_checks.keys.join(', ')}';
 /// Library.content). HTML and XHTML files are left off, as Grey decided
 /// 2026-10-21, because they can carry script; so are office documents and
 /// archives, until someone needs one.
+/// `message/mls` (RFC 9420 §17.10) is what tremulator posts: its encrypted
+/// messages travel as Communication attachments.
 ///
 /// The image, audio and PDF checks are the byte patterns of the WHATWG MIME
 /// Sniffing Standard (§6.1 image, §6.2 audio, §7.1 PDF).
@@ -231,6 +233,7 @@ final Map<String, bool Function(Uint8List)> _checks = {
   'application/elm+xml': _isXml,
   'application/signature+xml': _isXml,
   'application/jose': _isJwsCompact,
+  'message/mls': _isMlsMessage,
 };
 
 /// The types whose bytes are text, for the charset rule.
@@ -245,6 +248,17 @@ const _text = {
   'application/signature+xml',
   'application/jose',
 };
+
+/// RFC 9420 §6 (rfc9420.txt, read 2026-11-02): an MLSMessage opens with
+/// its ProtocolVersion, `mls10(1)` the only one defined, and its WireFormat,
+/// a uint16 from the IANA "MLS Wire Formats" registry, where 1-5 are
+/// assigned (mls-wire-formats.csv, read 2026-11-02); then the message.
+/// Encrypted, so nothing past the header can be judged.
+bool _isMlsMessage(Uint8List b) =>
+    b.length > 4 &&
+    _starts(b, const [0x00, 0x01, 0x00]) &&
+    b[3] >= 1 &&
+    b[3] <= 5;
 
 bool _starts(Uint8List b, List<int> pattern) {
   if (b.length < pattern.length) return false;
