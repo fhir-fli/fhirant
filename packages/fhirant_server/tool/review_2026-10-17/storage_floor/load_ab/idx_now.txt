@@ -1,0 +1,46 @@
+idx_composite_search_parameters_contained | CREATE INDEX idx_composite_search_parameters_contained ON composite_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_composite_search_parameters_owner | CREATE INDEX idx_composite_search_parameters_owner ON composite_search_parameters(resource_type, id)
+idx_composite_search_parameters_values_cover | CREATE INDEX idx_composite_search_parameters_values_cover ON composite_search_parameters(resource_type, search_name, c1_value, c2_value, id)
+idx_date_search_parameters_contained | CREATE INDEX idx_date_search_parameters_contained ON date_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_date_search_parameters_high_cover | CREATE INDEX idx_date_search_parameters_high_cover ON date_search_parameters(resource_type, search_name, date_value_end, id)
+idx_date_search_parameters_low_cover | CREATE INDEX idx_date_search_parameters_low_cover ON date_search_parameters(resource_type, search_name, date_value, id)
+idx_date_search_parameters_owner | CREATE INDEX idx_date_search_parameters_owner ON date_search_parameters(resource_type, id)
+idx_number_search_parameters_contained | CREATE INDEX idx_number_search_parameters_contained ON number_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_number_search_parameters_high_cover | CREATE INDEX idx_number_search_parameters_high_cover ON number_search_parameters(resource_type, search_name, number_high, id)
+idx_number_search_parameters_low_cover | CREATE INDEX idx_number_search_parameters_low_cover ON number_search_parameters(resource_type, search_name, number_low, id)
+idx_number_search_parameters_owner | CREATE INDEX idx_number_search_parameters_owner ON number_search_parameters(resource_type, id)
+idx_quantity_search_parameters_contained | CREATE INDEX idx_quantity_search_parameters_contained ON quantity_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_quantity_search_parameters_high_cover | CREATE INDEX idx_quantity_search_parameters_high_cover ON quantity_search_parameters(resource_type, search_name, quantity_high, id)
+idx_quantity_search_parameters_low_cover | CREATE INDEX idx_quantity_search_parameters_low_cover ON quantity_search_parameters(resource_type, search_name, quantity_low, id)
+idx_quantity_search_parameters_owner | CREATE INDEX idx_quantity_search_parameters_owner ON quantity_search_parameters(resource_type, id)
+idx_reference_search_parameters_contained | CREATE INDEX idx_reference_search_parameters_contained ON reference_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_reference_search_parameters_identifier_cover | CREATE INDEX idx_reference_search_parameters_identifier_cover ON reference_search_parameters(resource_type, search_name, identifier_value, id)
+idx_reference_search_parameters_owner | CREATE INDEX idx_reference_search_parameters_owner ON reference_search_parameters(resource_type, id)
+idx_reference_search_parameters_target_cover | CREATE INDEX idx_reference_search_parameters_target_cover ON reference_search_parameters(resource_type, search_name, reference_resource_type, reference_id_part, id)
+idx_reference_search_parameters_value_cover | CREATE INDEX idx_reference_search_parameters_value_cover ON reference_search_parameters(resource_type, search_name, reference_value, id)
+idx_resources_history_type_updated | CREATE INDEX idx_resources_history_type_updated ON resources_history(resource_type, last_updated)
+idx_resources_type_updated | CREATE INDEX idx_resources_type_updated ON resources(resource_type, last_updated)
+idx_special_search_parameters_contained | CREATE INDEX idx_special_search_parameters_contained ON special_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_special_search_parameters_owner | CREATE INDEX idx_special_search_parameters_owner ON special_search_parameters(resource_type, id)
+idx_special_search_parameters_value_cover | CREATE INDEX idx_special_search_parameters_value_cover ON special_search_parameters(resource_type, search_name, special_value, id)
+idx_string_search_parameters_contained | CREATE INDEX idx_string_search_parameters_contained ON string_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_string_search_parameters_exact_cover | CREATE INDEX idx_string_search_parameters_exact_cover ON string_search_parameters(resource_type, search_name, exact_value, id)
+idx_string_search_parameters_owner | CREATE INDEX idx_string_search_parameters_owner ON string_search_parameters(resource_type, id)
+idx_string_search_parameters_value_cover | CREATE INDEX idx_string_search_parameters_value_cover ON string_search_parameters(resource_type, search_name, string_value, id)
+idx_token_search_parameters_contained | CREATE INDEX idx_token_search_parameters_contained ON token_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_token_search_parameters_owner | CREATE INDEX idx_token_search_parameters_owner ON token_search_parameters(resource_type, id)
+idx_token_search_parameters_system_cover | CREATE INDEX idx_token_search_parameters_system_cover ON token_search_parameters(resource_type, search_name, token_system, id)
+idx_token_search_parameters_value_cover | CREATE INDEX idx_token_search_parameters_value_cover ON token_search_parameters(resource_type, search_name, token_value, id)
+idx_uri_search_parameters_contained | CREATE INDEX idx_uri_search_parameters_contained ON uri_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_uri_search_parameters_owner | CREATE INDEX idx_uri_search_parameters_owner ON uri_search_parameters(resource_type, id)
+idx_uri_search_parameters_value_cover | CREATE INDEX idx_uri_search_parameters_value_cover ON uri_search_parameters(resource_type, search_name, uri_value, id)
+sqlite_autoindex_authorization_codes_1 | None
+sqlite_autoindex_canonical_resources_1 | None
+sqlite_autoindex_export_jobs_1 | None
+sqlite_autoindex_oauth_clients_1 | None
+sqlite_autoindex_resources_1 | None
+sqlite_autoindex_resources_history_1 | None
+sqlite_autoindex_revoked_tokens_1 | None
+sqlite_autoindex_spec_loads_1 | None
+sqlite_autoindex_sync_resources_1 | None
+sqlite_autoindex_users_1 | None

@@ -1,0 +1,4 @@
+Running build hooks...Running build hooks.../	852352184320	1964601909248	5.7325 us/call
+/tmp/claude-1000	852348481536	1964601909248	5.1012 us/call
+/tmp/claude-1000/does/not/exist	852364087296	1964601909248	15.1313 us/call
+/dev/shm	31408107520	31408115712	3.8886 us/call

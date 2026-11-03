@@ -58,6 +58,27 @@ audit-retention-days: 30
     expect(o.devMode, isFalse);
   });
 
+  // The config file takes every option but `config` and `help`; the
+  // storage-floor flag was first added to the parser and not to the
+  // config keys, so a file that set it was refused as unknown.
+  test('every option but config and help is a config key', () {
+    expect(
+      ServerOptions.parser().options.keys.toSet()
+        ..removeAll(['config', 'help']),
+      ServerOptions.configKeys,
+    );
+  });
+
+  test('the storage floor is on unless turned off, here or in the file', () {
+    expect(resolve([]).storageFloor, isTrue);
+    expect(resolve(['--no-storage-floor']).storageFloor, isFalse);
+    expect(
+      resolve(['--config', 's.yaml'], config: 'storage-floor: false\n')
+          .storageFloor,
+      isFalse,
+    );
+  });
+
   test('an empty config file configures nothing', () {
     expect(resolve(['--config', 'e.yaml'], config: '').port, 8080);
   });

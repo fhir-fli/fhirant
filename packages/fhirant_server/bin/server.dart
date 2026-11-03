@@ -168,6 +168,7 @@ void main(List<String> arguments) async {
     bootstrapToken: bootstrapToken,
     auditRetention: options.auditRetention,
     exportDir: options.exportDir,
+    keepStorageFree: options.storageFloor,
     fileScanner: options.clamdHost == null
         ? null
         : ClamdScanner(

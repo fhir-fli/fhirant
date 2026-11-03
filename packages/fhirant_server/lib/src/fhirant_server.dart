@@ -14,7 +14,9 @@ import 'package:fhirant_server/src/middlewares/content_negotiation.dart';
 import 'package:fhirant_server/src/middlewares/cors_middleware.dart';
 import 'package:fhirant_server/src/middlewares/no_store_middleware.dart';
 import 'package:fhirant_server/src/middlewares/redact_subscription_headers.dart';
+import 'package:fhirant_server/src/services/disk_space.dart';
 import 'package:fhirant_server/src/services/file_scanner.dart';
+import 'package:fhirant_server/src/services/storage_floor.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
@@ -63,8 +65,13 @@ class FhirAntServer {
     this.bootstrapToken,
     this.auditRetention,
     this.fileScanner,
+    this.keepStorageFree = true,
+    DiskSpace? diskSpace,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
+    storageFloor = keepStorageFree
+        ? StorageFloor(dbInterface, this.exportDir, disk: diskSpace)
+        : null;
     this.baseUrl = baseUrl;
     // Resolve the signing secret without ever falling back to a shared,
     // hardcoded value (which would let anyone forge tokens). An explicit
@@ -160,6 +167,14 @@ class FhirAntServer {
   /// default and the phone's case, scans nothing; the CLI sets it from
   /// --clamd-host.
   final FileScanner? fileScanner;
+
+  /// Whether writes are refused when the disk the store and its exports
+  /// live on runs short ([StorageFloor]; OWASP ASVS 5.0.0 V5.2.4). On by
+  /// default; the CLI turns it off with --no-storage-floor.
+  final bool keepStorageFree;
+
+  /// The floor [keepStorageFree] keeps; null when it is off.
+  late final StorageFloor? storageFloor;
   late final JwtService _jwtService;
   final DateTime _startTime;
   HttpServer? _server;
@@ -793,6 +808,13 @@ class FhirAntServer {
         .addMiddleware(redactSubscriptionHeaders())
         // Inside the auth check too, for the same reason (finding 16).
         .addMiddleware(noStoreForAuthenticated())
+        // Inside the auth check as well: a caller with no credential is
+        // told nothing about the disk.
+        .addMiddleware(
+          storageFloor == null
+              ? (inner) => inner
+              : storageFloorMiddleware(storageFloor!),
+        )
         .addMiddleware(_uncaughtErrorMiddleware())
         .addHandler(router.call);
   }
@@ -979,6 +1001,9 @@ class FhirAntServer {
       // Planner statistics for tables that have grown 10-fold since they
       // were last analysed (PRAGMA optimize); a no-op otherwise.
       ('planner statistics', dbInterface.optimizeStatistics),
+      // The current resources' size the storage floor keeps room for,
+      // summed again so updates and deletes since are counted.
+      ('storage floor', () async => storageFloor?.refresh()),
       // Subscription.end's definition in R4 profiles-resources.json,
       // verbatim: "The time for the server to turn the subscription off."
       // Delivery already honours it, but without a sweep the STORED status

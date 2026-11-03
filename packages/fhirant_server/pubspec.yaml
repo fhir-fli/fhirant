@@ -23,6 +23,8 @@ dependencies:
   crypto: ^3.0.3
   dart_jsonwebtoken: ^3.3.1
   drift: ^2.29.0
+  # statvfs for the storage floor (services/disk_space.dart).
+  ffi: ^2.2.0
   fhir_db: ^0.15.2
   fhir_node: ^0.6.1
   fhir_r4: ^0.14.0
