@@ -127,6 +127,28 @@ void main() {
     expect(await stored('DocumentReference'), 0);
   });
 
+  test('an MLS message travels in a Communication (tremulator)', () async {
+    // An MLSMessage, RFC 9420 §6: mls10, then wire format 2
+    // (mls_private_message); the first bytes of one from openmls 3.2.1.
+    final mls = base64.encode([0x00, 0x01, 0x00, 0x02, 0x10, 0xAF, 0xCD]);
+    Map<String, dynamic> communication(String data) => {
+          'resourceType': 'Communication',
+          'status': 'completed',
+          'payload': [
+            {
+              'contentAttachment': {'contentType': 'message/mls', 'data': data},
+            },
+          ],
+        };
+    final created = await send('POST', '/Communication', communication(mls));
+    expect(created.statusCode, 201);
+    await expectRefused(
+      await send('POST', '/Communication', communication(text('hello'))),
+      says: 'is not message/mls',
+    );
+    expect(await stored('Communication'), 1);
+  });
+
   test('a page declared as text is refused', () async {
     await expectRefused(
       await send(
