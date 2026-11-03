@@ -1,0 +1,127 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/one_time_password_test.dart
+00:00 +0: an administrator cannot choose a new account its password
+00:00 +0 -1: an administrator cannot choose a new account its password [E]
+  Expected: <400>
+    Actual: <201>
+  {id: 2, token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInVzZXJuYW1lIjoiYm9iLXVzZXIiLCJyb2xlIjoiY2xpbmljaWFuIiwic2NvcGUiOiJ1c2VyLyouKiIsImdlbiI6MCwianRpIjoiNTV5S1JWTHBJY19FRmwyV1lncnd2QSIsImlhdCI6MTc5MzcxNjU1NCwiZXhwIjoxNzkzNzQ1MzU0fQ.XEk7gMNB0jpbS-gRMYygdGNR6plcWTPQeEFcvyNbGW0, refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInVzZXJuYW1lIjoiYm9iLXVzZXIiLCJyb2xlIjoiY2xpbmljaWFuIiwidG9rZW5fdHlwZSI6InJlZnJlc2giLCJzY29wZSI6InVzZXIvKi4qIiwiZ2VuIjowLCJqdGkiOiJCM3ptbWJGQnM2aUJXWXNhSWFQYlNRIiwiaWF0IjoxNzkzNzE2NTU0LCJleHAiOjE3OTQzMjEzNTR9.n5ibPN1zdhXSR-rO3E7Lhz9LkSNZWE1rA53oM86ytOo, token_type: Bearer, username: bob-user, role: clinician, scopes: [user/*.*]}
+  
+  package:matcher                                     expect
+  test/integration/one_time_password_test.dart 121:5  main.<fn>
+  
+00:00 +0 -1: a new account gets a one-time password and no session
+00:00 +0 -2: a new account gets a one-time password and no session [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                     expect
+  test/integration/one_time_password_test.dart 132:5  main.<fn>
+  
+00:00 +0 -2: two one-time passwords are not the same
+00:00 +0 -3: two one-time passwords are not the same [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 148:24  main.<fn>
+  
+00:00 +0 -3: it opens no session, at login or at authorize
+00:00 +0 -4: it opens no session, at login or at authorize [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 159:23  main.<fn>
+  
+00:00 +0 -4: it sets the user its own password once, and is then spent
+00:00 +0 -5: it sets the user its own password once, and is then spent [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 190:23  main.<fn>
+  
+00:00 +0 -5: the new password must meet the policy
+00:00 +0 -6: the new password must meet the policy [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 201:23  main.<fn>
+  
+00:00 +0 -6: it expires, and an expired one answers as a wrong password
+00:00 +0 -7: it expires, and an expired one answers as a wrong password [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 208:24  main.<fn>
+  
+00:00 +0 -7: a reset gives a one-time password; the administrator chooses none
+00:00 +0 -8: a reset gives a one-time password; the administrator chooses none [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 222:24  main.<fn>
+  
+00:00 +0 -8: a signed-in change of an ordinary password still works
+00:00 +0 -9: a signed-in change of an ordinary password still works [E]
+  Expected: <201>
+    Actual: <400>
+  {error: Password must be a string}
+  
+  package:matcher                                      expect
+  test/integration/one_time_password_test.dart 110:5   main.createBob
+  ===== asynchronous gap ===========================
+  test/integration/one_time_password_test.dart 254:23  main.<fn>
+  
+00:00 +0 -9: the first administrator still chooses its own password
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/test_helpers.dart:146:14)
+#8      main.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/one_time_password_test.dart:270:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:00 +1 -9: Some tests failed.
+
+Failing tests:
+  test/integration/one_time_password_test.dart: a new account gets a one-time password and no session
+  test/integration/one_time_password_test.dart: a reset gives a one-time password; the administrator chooses none
+  test/integration/one_time_password_test.dart: a signed-in change of an ordinary password still works
+  test/integration/one_time_password_test.dart: an administrator cannot choose a new account its password
+  ... and 5 more
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

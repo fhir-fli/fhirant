@@ -406,9 +406,18 @@ Future<_Outcome> _authorize(
     // One answer for every failure, as at /auth/login (OWASP Authentication
     // Cheat Sheet, "Authentication Responses"; REVIEW-2026-09-17 A12).
     case CredentialInvalid():
+    case CredentialExpired():
     case CredentialInactive():
     case CredentialLocked():
       return const _Denied(401, 'Invalid username or password');
+    // A one-time password opens no session here either
+    // (auth/one_time_password.dart).
+    case CredentialMustChange():
+      return const _Denied(
+        403,
+        'This is a one-time password. Set your own with POST '
+        '/auth/password, then sign in with it.',
+      );
   }
 
   final held = SmartScopeEnforcer.heldScopes(user);

@@ -199,11 +199,13 @@ FHIRant is an on-device FHIR R4 server written in Dart. It runs as a standalone 
 ### Authentication
 
 ```gherkin
-Scenario: User registers and logs in
-  Given the server is running
-  When a user POSTs to /auth/register with username and password
-  Then a 201 response is returned with the user record
-  When the user POSTs to /auth/login with those credentials
+Scenario: An administrator creates an account, and the user sets its password
+  Given the server is running and an administrator is signed in
+  When the administrator POSTs to /auth/register with a username and no password
+  Then a 201 response is returned with the user record and a one-time password
+  When the user POSTs to /auth/login with the one-time password
+  Then a 403 response is returned with error password_change_required
+  When the user POSTs to /auth/password with username, the one-time password and a new password
   Then a 200 response is returned with access_token and refresh_token
 
 Scenario: Token refresh

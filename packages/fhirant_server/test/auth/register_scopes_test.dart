@@ -37,7 +37,6 @@ void main() {
           authToken: admin,
           body: jsonEncode({
             'username': 'newu',
-            'password': 'a-long-enough-password-123',
             'scopes': scopes,
           }),
         ),

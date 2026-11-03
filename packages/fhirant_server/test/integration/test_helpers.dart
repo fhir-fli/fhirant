@@ -158,3 +158,50 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler, server: server);
 }
+
+/// Registers an account as the administrator holding [adminToken], then
+/// sets [password] as the user's own with the one-time password the
+/// registration hands back (`auth/one_time_password.dart`): the two steps
+/// a real user goes through before its first sign-in. [fields] is the
+/// registration body (username, role, scopes, patient), without a
+/// password. Returns the registration reply with the session the password
+/// change opened (`token`, `refresh_token`).
+Future<Map<String, dynamic>> registerByAdmin(
+  Handler handler,
+  String adminToken,
+  Map<String, dynamic> fields, {
+  required String password,
+}) async {
+  final registered = await handler(
+    testRequest(
+      'POST',
+      '/auth/register',
+      authToken: adminToken,
+      headers: {'content-type': 'application/json'},
+      body: jsonEncode(fields),
+    ),
+  );
+  final reply =
+      jsonDecode(await registered.readAsString()) as Map<String, dynamic>;
+  if (registered.statusCode != 201) {
+    throw StateError('registration: ${registered.statusCode} $reply');
+  }
+  final changed = await handler(
+    testRequest(
+      'POST',
+      '/auth/password',
+      headers: {'content-type': 'application/json'},
+      body: jsonEncode({
+        'username': fields['username'],
+        'current_password': reply['one_time_password'],
+        'new_password': password,
+      }),
+    ),
+  );
+  final session =
+      jsonDecode(await changed.readAsString()) as Map<String, dynamic>;
+  if (changed.statusCode != 200) {
+    throw StateError('password change: ${changed.statusCode} $session');
+  }
+  return {...reply, ...session};
+}

@@ -103,7 +103,8 @@ class FhirAntServer {
 
   /// Requests per [rateLimitDuration] per client address on the endpoints
   /// that take a password or exchange a code: `/auth/login`,
-  /// `/auth/authorize`, `/auth/token`, `/auth/register`. Brute force is
+  /// `/auth/authorize`, `/auth/token`, `/auth/register`, `/auth/password`.
+  /// Brute force is
   /// bounded here without throttling the data API.
   final int authMaxRequests;
 
@@ -862,6 +863,8 @@ class FhirAntServer {
     'auth/authorize',
     'auth/token',
     'auth/register',
+    // Checks a password, with or without a token (account_handler.dart).
+    'auth/password',
   };
 
   /// Applies [inner] only to requests whose path is in [paths].

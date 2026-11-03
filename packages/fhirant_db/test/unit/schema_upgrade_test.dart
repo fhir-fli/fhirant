@@ -233,4 +233,47 @@ void main() {
     expect(version.read<int>('user_version'), second.schemaVersion);
     await second.close();
   });
+
+  test(
+      'opening a schema-27 database gains users.password_temporary_until, '
+      'and its accounts keep their own passwords', () async {
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.createUser(username: 'before', passwordHash: 'h', salt: 's');
+    await first.customStatement(
+      'ALTER TABLE users DROP COLUMN password_temporary_until',
+    );
+    await first.customStatement('PRAGMA user_version = 27');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    expect(
+      (await second.getUserByUsername('before'))!.passwordTemporaryUntil,
+      isNull,
+    );
+    final until = DateTime.fromMillisecondsSinceEpoch(
+      DateTime.now().add(const Duration(hours: 12)).millisecondsSinceEpoch ~/
+          1000 *
+          1000,
+    );
+    final id = await second.createUser(
+      username: 'after',
+      passwordHash: 'h',
+      salt: 's',
+      passwordTemporaryUntil: until,
+    );
+    expect((await second.getUserById(id))!.passwordTemporaryUntil, until);
+    await second.rehashPassword(id, 'h2', 's2');
+    expect(
+      (await second.getUserById(id))!.passwordTemporaryUntil,
+      until,
+      reason: 'a rehash keeps a one-time password one',
+    );
+    await second.updatePassword(id, 'h3', 's3');
+    expect((await second.getUserById(id))!.passwordTemporaryUntil, isNull);
+    final version =
+        await second.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), second.schemaVersion);
+    await second.close();
+  });
 }

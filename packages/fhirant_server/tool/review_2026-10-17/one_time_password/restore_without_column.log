@@ -1,0 +1,53 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/store_review_2026_09_08_test.dart
+00:00 +0: row 35: restore merges accounts by username the backup's admin survives an id clash with the local admin
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/store_review_2026_09_08_test.dart:90:19)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:04 +1: row 35: restore merges accounts by username a backup account whose id is free keeps it
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/store_review_2026_09_08_test.dart:136:19)
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:07 +1 -1: row 35: restore merges accounts by username a backup account whose id is free keeps it [E]
+  Expected: DateTime:<2026-11-03 21:44:29.000>
+    Actual: <null>
+  
+  package:matcher                                           expect
+  test/integration/store_review_2026_09_08_test.dart 167:7  main.<fn>.<fn>
+  
+00:07 +1 -1: Some tests failed.
+
+Failing tests:
+  test/integration/store_review_2026_09_08_test.dart: row 35: restore merges accounts by username a backup account whose id is free keeps it
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

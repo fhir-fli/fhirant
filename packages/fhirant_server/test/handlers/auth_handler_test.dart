@@ -147,13 +147,12 @@ void main() {
       expect(response.statusCode, equals(403));
     });
 
-    test('admin can register new user', () async {
+    test('admin can register new user, with a one-time password', () async {
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/register'),
         body: jsonEncode({
           'username': 'new_clinician',
-          'password': 'secureP@ss12',
           'role': 'clinician',
         }),
         context: {
@@ -171,6 +170,7 @@ void main() {
           salt: any(named: 'salt'),
           role: any(named: 'role'),
           scopes: any(named: 'scopes'),
+          passwordTemporaryUntil: any(named: 'passwordTemporaryUntil'),
         ),
       ).thenAnswer((_) async => 2);
       when(() => mockDb.getUserById(2)).thenAnswer(
@@ -190,9 +190,20 @@ void main() {
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
       expect(body['role'], equals('clinician'));
-      expect(body['token'], isA<String>());
-      expect(body['refresh_token'], isA<String>());
-      expect(body['token_type'], equals('Bearer'));
+      expect(body['one_time_password'], isA<String>());
+      expect(body.containsKey('token'), isFalse);
+      expect(body.containsKey('refresh_token'), isFalse);
+      final until = verify(
+        () => mockDb.createUser(
+          username: any(named: 'username'),
+          passwordHash: any(named: 'passwordHash'),
+          salt: any(named: 'salt'),
+          role: any(named: 'role'),
+          scopes: any(named: 'scopes'),
+          passwordTemporaryUntil: captureAny(named: 'passwordTemporaryUntil'),
+        ),
+      ).captured.single;
+      expect(until, isA<DateTime>());
     });
 
     test('missing username returns 400', () async {
@@ -220,6 +231,8 @@ void main() {
           'password': 'short',
         }),
       );
+      // The first administrator's own password is held to the policy.
+      when(() => mockDb.getUserCount()).thenAnswer((_) async => 0);
 
       final response = await registerHandler(request, mockDb, jwtService);
 

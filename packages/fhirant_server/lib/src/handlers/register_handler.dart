@@ -4,6 +4,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
+import 'package:fhirant_server/src/auth/one_time_password.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -18,7 +19,9 @@ const Set<String> _validRoles = validRoles;
 /// Handler for user registration.
 ///
 /// First-user bootstrap: if no users exist, anyone can register and is forced
-/// to admin role. Otherwise, only admins can register new users.
+/// to admin role, with a password of its own. Otherwise, only admins can
+/// register new users, and the new account's password is a one-time
+/// password the server makes (`auth/one_time_password.dart`).
 ///
 /// With [authenticationEnabled] false (Experimentation mode) registration is
 /// refused outright: the endpoint is public, and with no users the first
@@ -84,19 +87,6 @@ Future<Response> registerHandler(
       );
     }
 
-    // Validate password
-    final password = body['password'];
-    if (password is! String) {
-      return Response(
-        400,
-        body: jsonEncode({'error': 'Password must be a string'}),
-      );
-    }
-    final policyError = PasswordPolicy.validate(password);
-    if (policyError != null) {
-      return Response(400, body: jsonEncode({'error': policyError}));
-    }
-
     // Validate role
     final requestedRole = body['role'] as String? ?? 'clinician';
     if (!_validRoles.contains(requestedRole)) {
@@ -110,8 +100,11 @@ Future<Response> registerHandler(
 
     final userCount = await dbInterface.getUserCount();
 
-    // Determine the effective role
+    // Determine the effective role, and the password: the first
+    // administrator's own, or a one-time password.
     String effectiveRole;
+    final String password;
+    final DateTime? temporaryUntil;
     if (userCount == 0) {
       // First-user bootstrap — force admin; no account can authenticate
       // yet, so the proof is the bootstrap token when the server has one.
@@ -131,6 +124,21 @@ Future<Response> registerHandler(
         }
       }
       effectiveRole = 'admin';
+      // The first administrator chooses its own password: nobody else
+      // knows it.
+      final chosen = body['password'];
+      if (chosen is! String) {
+        return Response(
+          400,
+          body: jsonEncode({'error': 'Password must be a string'}),
+        );
+      }
+      final policyError = PasswordPolicy.validate(chosen);
+      if (policyError != null) {
+        return Response(400, body: jsonEncode({'error': policyError}));
+      }
+      password = chosen;
+      temporaryUntil = null;
     } else {
       // Require admin auth
       final authUser = request.context['auth_user'] as Map<String, dynamic>?;
@@ -143,6 +151,21 @@ Future<Response> registerHandler(
         );
       }
       effectiveRole = requestedRole;
+      // An administrator neither chooses nor keeps the user's password:
+      // the server makes a one-time password for it to hand over
+      // (auth/one_time_password.dart; OWASP ASVS 5.0.0 V6.4.1, V6.4.6).
+      if (body.containsKey('password')) {
+        return Response(
+          400,
+          body: jsonEncode({
+            'error': "An administrator does not choose a user's password. "
+                'Leave password out: the reply carries a one-time password '
+                'for the user to set their own with.',
+          }),
+        );
+      }
+      password = newOneTimePassword();
+      temporaryUntil = DateTime.now().add(oneTimePasswordLifetime);
     }
 
     // Optional: the Patient this account is about (`patient`, as
@@ -215,6 +238,7 @@ Future<Response> registerHandler(
         role: effectiveRole,
         scopes: jsonEncode(effectiveScopes),
         patientId: patientId,
+        passwordTemporaryUntil: temporaryUntil,
       );
     } on UsernameTaken {
       return Response(
@@ -223,7 +247,26 @@ Future<Response> registerHandler(
       );
     }
 
-    // Generate JWT tokens so the user is logged in immediately
+    // An account made by an administrator gets no session: its password
+    // is the one-time password, which opens none. The administrator reads
+    // it here, once, to hand it over.
+    if (temporaryUntil != null) {
+      return Response(
+        201,
+        body: jsonEncode({
+          'id': userId,
+          'username': username,
+          'role': effectiveRole,
+          'scopes': effectiveScopes,
+          if (patientId != null) 'patient': patientId,
+          'one_time_password': password,
+          'one_time_password_expires': temporaryUntil.toUtc().toIso8601String(),
+        }),
+        headers: jsonNoStoreHeaders,
+      );
+    }
+
+    // The first administrator is logged in at once.
     // Minted from the stored row, so the tokens carry what the store holds,
     // its generation included; this used to mint from the request's fields
     // and carry no generation.

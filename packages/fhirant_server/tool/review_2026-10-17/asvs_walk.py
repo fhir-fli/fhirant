@@ -205,6 +205,23 @@ OVERRIDES = {
                'every current resource (storage_floor.dart; '
                'every_route_meets_the_storage_floor_test.dart)'),
     'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
+    'V6.4.1': ('FINDING', 'fixed 2026-11-03: an administrator chose a new '
+               "account's password and the user kept it; now a server-made "
+               'one-time password, 80 random bits, meets the policy, 12 h, '
+               'opens no session and cannot be kept '
+               '(one_time_password_test.dart)'),
+    'V6.4.2': ('PASS', 'no hints or secret questions: the users table has '
+               'no such column (fhirant_db users schema)'),
+    'V6.4.3': ('PASS', 'after the V6.4.1 fix: the only reset is an '
+               "administrator's, which hands a one-time password; there is "
+               'no MFA to bypass'),
+    'V6.4.4': ('N/A', 'no multi-factor authentication'),
+    'V6.4.5': ('N/A', 'passwords do not expire; the one-time password is '
+               'not renewed, a new reset replaces it, and its expiry is in '
+               'the reply (one_time_password_expires)'),
+    'V6.4.6': ('FINDING', 'L3, fixed 2026-11-03: an administrator chose the '
+               'reset password; the reset now takes no password and hands '
+               'back a one-time password (one_time_password_test.dart)'),
     'V5.2.6': ('FINDING', 'L3, fixed 2026-11-01: a PNG, JPEG or GIF over '
                'maxImagePixels (89,478,485, Pillow MAX_IMAGE_PIXELS) or whose '
                'header gives no size is 422 (file_type.dart, headers only; '

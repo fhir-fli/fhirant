@@ -106,7 +106,7 @@ Requests pass through middleware in this order:
 4. **Rate limiting (general)** — before auth and audit, so a flood is counted before it costs anything (default 600 per 60 s per address)
 5. **Body limit** — a body over `maxRequestBody` (default 16 MiB) is 413 before it is read; `$restore` streams to disk and is exempt
 6. **Content Negotiation** — validates Accept/Content-Type headers
-7. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register` only (default 10 per 60 s)
+7. **Rate limiting (credentials)** — `/auth/login`, `/auth/authorize`, `/auth/token`, `/auth/register`, `/auth/password` only (default 10 per 60 s)
 8. **Audit** — writes AuditEvent resources to DB; outside the auth check so a refused token, deactivated account or missing scope is recorded, with the agent the auth check names on the response (`audit_agent`); a request that presented no credential and got 401 is not recorded
 9. **Auth** — JWT validation (refresh tokens refused) + SMART scope enforcement (or dev-mode bypass injecting synthetic admin)
 10. **Router** — dispatches to handler
@@ -118,17 +118,17 @@ What each route asks a caller for (SMART permission, resource type, special rule
 | Domain | Route Pattern | Handler | Purpose |
 |--------|---|---|---|
 | **Auth** | `GET /auth/status` | `authStatusHandler` | `firstUser`, and whether the first registration needs the bootstrap token |
-| | `POST /auth/register` | `registerHandler` | Create user account (the first one, with no account in the store, must carry the CLI's bootstrap token; after that, admin only) |
+| | `POST /auth/register` | `registerHandler` | Create user account (the first one, with no account in the store, must carry the CLI's bootstrap token and chooses its own password; after that, admin only, no password in the body, and the reply carries a one-time password, no session) |
 | | `POST /auth/login` | `loginHandler` | Authenticate, get JWT |
 | | `POST /auth/token` | `refreshHandler` | Refresh access token |
 | | `POST /auth/revoke` | `revokeHandler` | Revoke refresh token |
 | | `POST /auth/logout` | `logoutHandler` | Log out |
 | | `GET /auth/authorize` | `authorizeGetHandler` | OAuth authorize (GET) |
 | | `POST /auth/authorize` | `authorizePostHandler` / `authorizeJsonHandler` | OAuth authorize (POST) |
-| | `POST /auth/password` | `changePasswordHandler` | The caller changes its own password (current password checked; returns a fresh token pair) |
+| | `POST /auth/password` | `changePasswordHandler` | The caller changes its own password (current password checked; returns a fresh token pair). With no token, the body's `username`: how a one-time password is used, once |
 | **Admin** | `POST /admin/unlock/<userId>` | `unlockAccountHandler` | Unlock locked account |
 | | `GET /admin/users` | `listUsersHandler` | Every account, without secrets |
-| | `POST /admin/users/<userId>/password` | `resetPasswordHandler` | Set a new password for an account |
+| | `POST /admin/users/<userId>/password` | `resetPasswordHandler` | Reset an account's password: no body; the reply carries a one-time password |
 | | `POST /admin/users/<userId>/deactivate` · `/activate` | `setActiveHandler` | Switch an account off or on (the last active admin cannot be switched off: 409) |
 | | `PUT /admin/users/<userId>/role` | `setRoleHandler` | Change the role (the last active admin cannot be demoted: 409) |
 | | `PUT /admin/users/<userId>/scopes` | `setScopesHandler` | Change the granted scopes (array, or null for the role's defaults) |
@@ -303,6 +303,7 @@ Every package uses `very_good_analysis` through the repo's root `analysis_option
 - **Files are scanned before they are stored** (OWASP ASVS 5.0.0 V5.4.3): with `--clamd-host` set, every base64Binary value in a client's resource (found by type, `utils/file_data.dart`) goes to clamd before the write, through `fileRefusal` (`utils/file_refusal.dart`), at create, update, conditional update, PATCH and every Bundle entry. A match is 422 `business-rule`, and so is a password-protected zip, PDF or Office file (`AlertEncrypted`), with a reply asking for it without the password; no answer from clamd is 503 `transient`, never stored unscanned. docker-compose runs `clamav/clamav:1.5.4` beside the server with `clamav/clamd.conf`. `$restore` scans every resource in the backup, both formats, before anything is written: an infected one is left out and listed, clamd down is 503 with nothing restored. The phone has no scanner
 - **A file must be the type it declares** (OWASP ASVS 5.0.0 V5.2.2): before the scan, and with no scanner too (the phone), `fileRefusal` checks each Binary, Attachment and Signature file against its `contentType`/`sigFormat` (`utils/file_type.dart`: WHATWG MIME Sniffing byte patterns, UTF-8 text that is not HTML, JSON/XML that parses). The list is 15 types: 14 from the published examples and fhirant's own uses (PDF, PNG, JPEG, GIF, MP3, text, CQL, ELM, JSON, JSON Patch, XML, XML signature, JWS), and `message/mls` for tremulator (RFC 9420 §6: version mls10, then wire format 1-5); HTML, XHTML, office files and archives are 422. A PNG, JPEG or GIF over `maxImagePixels` (89,478,485, Pillow's limit; V5.2.6), or whose header gives no size, is 422 too; only headers are read Data with no type where R4B requires one is 400; a value with no type field is judged by its bytes
 - **Writes stop before the disk is full** (OWASP ASVS 5.0.0 V5.2.4, met by the disk rather than a per-user quota): `StorageFloor` (`services/storage_floor.dart`) refuses a write 507 `no-store` when it would leave less free than min(5%, 500 MiB), Android's low-storage line, plus the size of the current resources' JSON, the room `$export` needs. `$export` may use that room; `$backup`, `$reindex`, `$restore` must fit above the line; reads and compute-only operations are never refused. Every route is classified in `storageNeedOf`; a new route must be added to `every_route_meets_the_storage_floor_test.dart`. Free space is `statvfs` on Linux/Android only. On by default; `--no-storage-floor`, `keepStorageFree: false`.
+- **An administrator never chooses a user's password** (OWASP ASVS 5.0.0 V6.4.1, V6.4.6): creating an account (`/auth/register` after the first) and resetting one (`/admin/users/<id>/password`) make a one-time password (`auth/one_time_password.dart`: 16 Crockford Base32 symbols, 80 random bits, 12 hours, Keycloak's admin-action default) that the reply carries once. It opens no session: login and authorize answer 403 `password_change_required` (`CredentialMustChange`), and its one use is `POST /auth/password` with `username`, to set the user's own, which may not be the same. Expired, it answers as a wrong password. Stored as `users.password_temporary_until` (schema 28); a rehash keeps it (`rehashPassword`). The first administrator still chooses its own.
 - **Resources stored as JSON strings** in the database, deserialized via `Resource.fromJson()`
 - **A file store opens through `applyStoreCipher`** (`fhirant_db/lib/db/store_cipher.dart`): cipher, `legacy = 4`, key, then `main.journal_mode = WAL` and `main.synchronous = FULL` (7.9 ms per commit measured, against 23.8 with a rollback journal; NORMAL would trade the last commits on power loss for 0.5 ms and is not set). A backup ATTACHed to the connection stays a plain single file.
 - **Version ID = a counter** — `fhirDao.versionIdAsTime = false` (fhirant_db.dart), so each save's version id is the previous one plus one

@@ -1,0 +1,6 @@
+mutant	file	exit	failed
+no_expiry	lib/src/auth/credential_check.dart	1	1
+keep_one_time	lib/src/handlers/account_handler.dart	1	1
+login_opens_session	lib/src/auth/credential_check.dart	1	3
+admin_chooses	lib/src/handlers/register_handler.dart	1	1
+reset_not_temporary	lib/src/handlers/account_handler.dart	1	1

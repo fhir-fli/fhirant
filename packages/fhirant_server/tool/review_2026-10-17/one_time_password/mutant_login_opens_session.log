@@ -1,0 +1,67 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/one_time_password_test.dart
+00:00 +0: an administrator cannot choose a new account its password
+00:00 +1: a new account gets a one-time password and no session
+00:00 +2: two one-time passwords are not the same
+00:00 +3: it opens no session, at login or at authorize
+00:01 +3 -1: it opens no session, at login or at authorize [E]
+  Expected: <403>
+    Actual: <200>
+  {token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInVzZXJuYW1lIjoiYm9iLXVzZXIiLCJyb2xlIjoiY2xpbmljaWFuIiwic2NvcGUiOiJ1c2VyLyouKiIsImdlbiI6MCwianRpIjoicTFqMl91RmVQemQ1LVZYMnhyMDkxQSIsImlhdCI6MTc5MzcxNjk4MiwiZXhwIjoxNzkzNzQ1NzgyfQ.rYrzpdpaOrCnOgmHr7QYBgGYemDXO_-4MIp-KsqRJg4, refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInVzZXJuYW1lIjoiYm9iLXVzZXIiLCJyb2xlIjoiY2xpbmljaWFuIiwidG9rZW5fdHlwZSI6InJlZnJlc2giLCJzY29wZSI6InVzZXIvKi4qIiwiZ2VuIjowLCJqdGkiOiJ2dDVZRzNnd2p3bGR5SGw2bXE5RzBnIiwiaWF0IjoxNzkzNzE2OTgyLCJleHAiOjE3OTQzMjE3ODJ9.L4sm3mhP_l3aCWbhG1wt768HU25XiTMrX8eqf2vWJ8Q, token_type: Bearer, username: bob-user, role: clinician, scopes: [user/*.*]}
+  
+  package:matcher                                     expect
+  test/integration/one_time_password_test.dart 161:5  main.<fn>
+  
+00:01 +3 -1: it sets the user its own password once, and is then spent
+00:02 +4 -1: the new password must meet the policy
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:02 +4 -2: the new password must meet the policy [E]
+  Expected: <400>
+    Actual: <200>
+  the one-time password cannot become the long-term one
+  
+  package:matcher                                     expect
+  test/integration/one_time_password_test.dart 203:5  main.<fn>
+  
+00:02 +4 -2: it expires, and an expired one answers as a wrong password
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +5 -2: a reset gives a one-time password; the administrator chooses none
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:04 +5 -3: a reset gives a one-time password; the administrator chooses none [E]
+  Expected: <403>
+    Actual: <200>
+  
+  package:matcher                                     expect
+  test/integration/one_time_password_test.dart 254:5  main.<fn>
+  
+00:04 +5 -3: a signed-in change of an ordinary password still works
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +6 -3: the first administrator still chooses its own password
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/test_helpers.dart:146:14)
+#8      main.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/one_time_password_test.dart:276:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:06 +7 -3: Some tests failed.
+
+Failing tests:
+  test/integration/one_time_password_test.dart: a reset gives a one-time password; the administrator chooses none
+  test/integration/one_time_password_test.dart: it opens no session, at login or at authorize
+  test/integration/one_time_password_test.dart: the new password must meet the policy
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

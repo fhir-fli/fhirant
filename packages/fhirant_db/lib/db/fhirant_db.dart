@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -315,6 +315,21 @@ class FhirAntDb extends FhirDb {
             // only what is missing is written.
             await _createSpecLoadsTable();
           }
+          if (from < 28) {
+            // Until when the account's password is a one-time password an
+            // administrator was given to hand over (OWASP ASVS 5.0.0
+            // V6.4.1, V6.4.6). Null: the user's own. Guarded, as
+            // token_generation is: a fresh store creates the column.
+            final columns =
+                await customSelect('PRAGMA table_info(users)').get();
+            if (!columns.any(
+              (c) => c.read<String>('name') == 'password_temporary_until',
+            )) {
+              await customStatement(
+                'ALTER TABLE users ADD COLUMN password_temporary_until INTEGER',
+              );
+            }
+          }
         },
       );
 
@@ -337,7 +352,8 @@ class FhirAntDb extends FhirDb {
         failed_login_count INTEGER NOT NULL DEFAULT 0,
         locked_until INTEGER,
         patient_id TEXT,
-        token_generation INTEGER NOT NULL DEFAULT 0
+        token_generation INTEGER NOT NULL DEFAULT 0,
+        password_temporary_until INTEGER
       )
     ''');
   }
@@ -871,7 +887,7 @@ class FhirAntDb extends FhirDb {
   Future<void> _mergeUsers() async {
     const columns = 'username, password_hash, salt, role, active, '
         'created_at, last_login, scopes, failed_login_count, locked_until, '
-        'patient_id';
+        'patient_id, password_temporary_until';
     // New usernames whose id is free keep it.
     await customStatement(
       'INSERT INTO main.users (id, $columns) '
@@ -1600,6 +1616,7 @@ class FhirAntDb extends FhirDb {
     String role = 'clinician',
     String? scopes,
     String? patientId,
+    DateTime? passwordTemporaryUntil,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     // The id comes from the INSERT's own execution. It was read afterwards
@@ -1611,8 +1628,8 @@ class FhirAntDb extends FhirDb {
       return await customInsert(
         'INSERT INTO users '
         '(username, password_hash, salt, role, active, created_at, scopes, '
-        'patient_id) '
-        'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
+        'patient_id, password_temporary_until) '
+        'VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)',
         variables: [
           Variable.withString(username),
           Variable.withString(passwordHash),
@@ -1621,6 +1638,7 @@ class FhirAntDb extends FhirDb {
           Variable.withInt(now),
           Variable<String>(scopes),
           Variable<String>(patientId),
+          Variable<int>(_epochSeconds(passwordTemporaryUntil)),
         ],
       );
     } on Object catch (e) {
@@ -1653,12 +1671,40 @@ class FhirAntDb extends FhirDb {
 
   /// Replaces a user's stored password hash and salt. Used to transparently
   /// upgrade a legacy/low-cost hash to the current KDF on a successful login.
-  Future<void> updatePassword(int id, String passwordHash, String salt) async {
+  /// Sets the account's password: its own when [temporaryUntil] is null,
+  /// else a one-time password good until then.
+  Future<void> updatePassword(
+    int id,
+    String passwordHash,
+    String salt, {
+    DateTime? temporaryUntil,
+  }) async {
+    await customStatement(
+      'UPDATE users SET password_hash = ?, salt = ?, '
+      'password_temporary_until = ? WHERE id = ?',
+      [passwordHash, salt, _epochSeconds(temporaryUntil), id],
+    );
+  }
+
+  /// Stores a new hash of the same password, leaving whether it is a
+  /// one-time password as it was (a login upgrading an old hash).
+  Future<void> rehashPassword(int id, String passwordHash, String salt) async {
     await customStatement(
       'UPDATE users SET password_hash = ?, salt = ? WHERE id = ?',
       [passwordHash, salt, id],
     );
   }
+
+  /// Moves when the account's one-time password expires.
+  Future<void> setPasswordTemporaryUntil(int id, DateTime until) async {
+    await customStatement(
+      'UPDATE users SET password_temporary_until = ? WHERE id = ?',
+      [_epochSeconds(until), id],
+    );
+  }
+
+  static int? _epochSeconds(DateTime? at) =>
+      at == null ? null : at.millisecondsSinceEpoch ~/ 1000;
 
   Future<void> deactivateUser(int id) async {
     await customStatement(

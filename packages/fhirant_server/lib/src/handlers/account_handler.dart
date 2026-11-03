@@ -4,6 +4,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
+import 'package:fhirant_server/src/auth/one_time_password.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -32,6 +33,12 @@ import 'package:shelf/shelf.dart';
 /// `current_password`, `new_password`. The current password is checked
 /// through the one credential check (it counts failures and locks like a
 /// login); the new one must meet the password policy.
+///
+/// The account is the token's, or, with no token, the body's `username`:
+/// a one-time password opens no session (`auth/one_time_password.dart`),
+/// so this is where it is used, once, and it cannot be kept as the new
+/// password. Without a token this is a password check like a login, and
+/// is rate-limited with the credential endpoints.
 Future<Response> changePasswordHandler(
   Request request,
   FhirAntDb dbInterface,
@@ -39,11 +46,14 @@ Future<Response> changePasswordHandler(
 ) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
-    if (authUser == null) {
-      return _json(401, {'error': 'Authentication required'});
-    }
     final body = await _body(request);
     if (body == null) return _json(400, {'error': 'Invalid JSON body'});
+    final username = authUser != null
+        ? authUser['username'] as String? ?? ''
+        : body['username'];
+    if (username is! String) {
+      return _json(401, {'error': 'Authentication required'});
+    }
     final current = body['current_password'];
     final next = body['new_password'];
     if (current is! String || next is! String) {
@@ -55,12 +65,22 @@ Future<Response> changePasswordHandler(
     final policyError = PasswordPolicy.validate(next);
     if (policyError != null) return _json(400, {'error': policyError});
 
-    final username = authUser['username'] as String? ?? '';
     final User user;
     switch (await checkCredentials(dbInterface, username, current)) {
       case CredentialOk(user: final u):
         user = u;
+      case CredentialMustChange(user: final u):
+        // ASVS V6.4.1: "These initial secrets must not be permitted to
+        // become the long term password."
+        if (next == current) {
+          return _json(400, {
+            'error': 'Choose a password of your own, not the one-time '
+                'password.',
+          });
+        }
+        user = u;
       case CredentialInvalid():
+      case CredentialExpired():
       case CredentialInactive():
       case CredentialLocked():
         // The same answer as a login, for the same reason (A12).
@@ -94,8 +114,13 @@ Future<Response> listUsersHandler(
   );
 }
 
-/// `POST /admin/users/<id>/password`: an administrator sets a new
-/// password for the account. Body: `new_password`.
+/// `POST /admin/users/<id>/password`: an administrator resets the
+/// account's password. No body (or an empty JSON object): the
+/// administrator does not choose the password. The server makes a
+/// one-time password, good for [oneTimePasswordLifetime], and the reply
+/// carries it once for the administrator to hand over; the old password
+/// and every session from before it stop working (OWASP ASVS 5.0.0
+/// V6.4.6, `auth/one_time_password.dart`).
 Future<Response> resetPasswordHandler(
   Request request,
   int userId,
@@ -105,17 +130,37 @@ Future<Response> resetPasswordHandler(
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
-  final body = await _body(request);
-  final next = body?['new_password'];
-  if (next is! String) {
-    return _json(400, {'error': 'new_password is required'});
+  final raw = await request.readAsString();
+  if (raw.trim().isNotEmpty) {
+    final Object? body;
+    try {
+      body = jsonDecode(raw);
+    } on FormatException {
+      return _json(400, {'error': 'Body must be a JSON object, or empty'});
+    }
+    if (body is! Map<String, dynamic>) {
+      return _json(400, {'error': 'Body must be a JSON object, or empty'});
+    }
+    if (body.isNotEmpty) {
+      return _json(400, {
+        'error': "An administrator does not choose a user's password. Send "
+            'no body: the reply carries a one-time password for the user '
+            'to set their own with.',
+      });
+    }
   }
-  final policyError = PasswordPolicy.validate(next);
-  if (policyError != null) return _json(400, {'error': policyError});
-  await _setPassword(dbInterface, userId, next);
+  final once = newOneTimePassword();
+  final until = DateTime.now().add(oneTimePasswordLifetime);
+  await _setPassword(dbInterface, userId, once, temporaryUntil: until);
   FhirantLogging().logInfo('Password reset for user $userId by admin');
   return Response.ok(
-    jsonEncode({'message': 'Password reset', ..._publicUser(user)}),
+    jsonEncode({
+      'message': 'Password reset',
+      ..._publicUser(await _fresh(dbInterface, userId)),
+      'one_time_password': once,
+      'one_time_password_expires': until.toUtc().toIso8601String(),
+    }),
+    headers: jsonNoStoreHeaders,
   );
 }
 
@@ -223,12 +268,20 @@ Response get _lastActiveAdmin => _json(
       {'error': 'This is the last active administrator; add another first'},
     );
 
-Future<void> _setPassword(FhirAntDb db, int userId, String password) async {
+/// Sets the account's password, its own unless [temporaryUntil] makes it
+/// a one-time password, and ends every session from before.
+Future<void> _setPassword(
+  FhirAntDb db,
+  int userId,
+  String password, {
+  DateTime? temporaryUntil,
+}) async {
   final salt = PasswordHasher.generateSalt();
   await db.updatePassword(
     userId,
     await PasswordHasher.hashPassword(password, salt),
     salt,
+    temporaryUntil: temporaryUntil,
   );
   await db.bumpTokenGeneration(userId);
 }

@@ -26,6 +26,22 @@ class CredentialOk extends CredentialResult {
   final User user;
 }
 
+/// The password matched, and it is a one-time password still in date
+/// (`auth/one_time_password.dart`). It opens no session; its one use is
+/// `POST /auth/password`, to set the user's own.
+class CredentialMustChange extends CredentialResult {
+  const CredentialMustChange(this.user);
+
+  /// The account whose one-time password it is.
+  final User user;
+}
+
+/// The password matched a one-time password past its expiry. Callers answer
+/// it as a wrong password: it is no longer a credential.
+class CredentialExpired extends CredentialResult {
+  const CredentialExpired();
+}
+
 /// Unknown username or wrong password. The two are not distinguished, and
 /// an unknown username costs the same hash as a wrong password.
 class CredentialInvalid extends CredentialResult {
@@ -111,22 +127,30 @@ Future<CredentialResult> checkCredentials(
     return const CredentialInvalid();
   }
 
+  final temporaryUntil = user.passwordTemporaryUntil;
+  if (temporaryUntil != null && !temporaryUntil.isAfter(DateTime.now())) {
+    return const CredentialExpired();
+  }
+
   if (user.failedLoginCount > 0) {
     await db.resetFailedLogins(user.id);
   }
-  await db.updateLastLogin(user.id);
+  // A one-time password is not a login.
+  if (temporaryUntil == null) await db.updateLastLogin(user.id);
 
   // A legacy HMAC or an under-iterated PBKDF2 is re-hashed now that the
   // plaintext is in hand, so accounts migrate to the current KDF as they
   // are used.
   if (PasswordHasher.needsRehash(user.passwordHash)) {
     final salt = PasswordHasher.generateSalt();
-    await db.updatePassword(
+    await db.rehashPassword(
       user.id,
       await PasswordHasher.hashPassword(password, salt),
       salt,
     );
   }
 
-  return CredentialOk(user);
+  return temporaryUntil == null
+      ? CredentialOk(user)
+      : CredentialMustChange(user);
 }

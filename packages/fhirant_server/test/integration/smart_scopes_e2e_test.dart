@@ -73,7 +73,6 @@ void main() {
           '/auth/register',
           body: jsonEncode({
             'username': 'nurse',
-            'password': 'scopeTestPass1',
             'role': 'clinician',
             'scopes': ['user/Patient.rs', 'user/Observation.rs'],
           }),
@@ -118,7 +117,6 @@ void main() {
           '/auth/register',
           body: jsonEncode({
             'username': 'baduser',
-            'password': 'scopeTestPass1',
             'scopes': ['not-a-valid-scope'],
           }),
           authToken: adminToken,
@@ -193,18 +191,12 @@ void main() {
       final adminToken =
           jsonDecode(await loginResp.readAsString())['token'] as String;
 
-      // Register readonly user
-      await handler(
-        testRequest(
-          'POST',
-          '/auth/register',
-          body: jsonEncode({
-            'username': 'reader',
-            'password': 'scopeTestPass1',
-            'role': 'readonly',
-          }),
-          authToken: adminToken,
-        ),
+      // Register readonly user; it sets its own password
+      await registerByAdmin(
+        handler,
+        adminToken,
+        {'username': 'reader', 'role': 'readonly'},
+        password: 'scopeTestPass1',
       );
 
       // Login readonly user

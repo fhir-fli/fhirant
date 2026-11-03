@@ -141,10 +141,18 @@ void main() {
         passwordHash: 'h',
         salt: salt,
       );
+      // A one-time password stays one through a restore (OWASP ASVS
+      // 5.0.0 V6.4.1: it must not become the long-term password).
+      final until = DateTime.fromMillisecondsSinceEpoch(
+        DateTime.now().add(const Duration(hours: 12)).millisecondsSinceEpoch ~/
+            1000 *
+            1000,
+      );
       await src.createUser(
         username: 'second',
         passwordHash: 'h',
         salt: salt,
+        passwordTemporaryUntil: until,
       );
       final file = await BackupService.createFile(
         src,
@@ -156,6 +164,14 @@ void main() {
       // Local id 1 is 'admin'; the backup's id 1 ('first') is renumbered,
       // its id 2 ('second') is free and kept.
       expect((await db.getUserByUsername('second'))!.id, 2);
+      expect(
+        (await db.getUserByUsername('second'))!.passwordTemporaryUntil,
+        until,
+      );
+      expect(
+        (await db.getUserByUsername('first'))!.passwordTemporaryUntil,
+        isNull,
+      );
       expect((await db.getUserByUsername('first'))!.id, greaterThan(2));
     });
   });
