@@ -1,0 +1,13 @@
+round	variant	wall	user	sys	load_line
+1	base	35.20	29.62	6.81	total-load all files: 20000 in 22.48s (890/s)
+1	narrow	25.55	26.74	4.15	total-load all files: 20000 in 14.41s (1388/s)
+2	base	34.58	28.50	6.75	total-load all files: 20000 in 22.93s (872/s)
+2	narrow	25.00	26.05	4.09	total-load all files: 20000 in 14.05s (1424/s)
+3	base	33.34	26.93	6.40	total-load all files: 20000 in 22.40s (893/s)
+3	narrow	24.79	25.78	4.22	total-load all files: 20000 in 14.15s (1414/s)
+done
+1	sep	27.18	26.20	4.58	total-load all files: 20000 in 16.37s (1222/s)
+2	sep	26.25	24.98	4.50	total-load all files: 20000 in 16.14s (1239/s)
+3	sep	27.67	25.17	4.53	total-load all files: 20000 in 17.44s (1147/s)
+100k_1	narrow	94.15	57.44	16.64	total-load all files: 100000 in 82.98s (1205/s)
+100k_2	narrow	94.08	55.92	16.60	total-load all files: 100000 in 83.08s (1204/s)

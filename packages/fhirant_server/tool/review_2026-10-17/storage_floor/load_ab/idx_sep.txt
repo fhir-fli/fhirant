@@ -1,0 +1,41 @@
+idx_composite_search_parameters_contained | CREATE INDEX idx_composite_search_parameters_contained ON composite_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_date_search_parameters_contained | CREATE INDEX idx_date_search_parameters_contained ON date_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_date_value | CREATE INDEX idx_date_value ON date_search_parameters(date_value)
+idx_date_value_end | CREATE INDEX idx_date_value_end ON date_search_parameters(date_value_end)
+idx_number_high | CREATE INDEX idx_number_high ON number_search_parameters(number_high)
+idx_number_low | CREATE INDEX idx_number_low ON number_search_parameters(number_low)
+idx_number_search_parameters_contained | CREATE INDEX idx_number_search_parameters_contained ON number_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_quantity_high | CREATE INDEX idx_quantity_high ON quantity_search_parameters(quantity_high)
+idx_quantity_low | CREATE INDEX idx_quantity_low ON quantity_search_parameters(quantity_low)
+idx_quantity_search_parameters_contained | CREATE INDEX idx_quantity_search_parameters_contained ON quantity_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_ref_id | CREATE INDEX idx_ref_id ON reference_search_parameters(reference_id_part)
+idx_ref_identifier_sys | CREATE INDEX idx_ref_identifier_sys ON reference_search_parameters(identifier_system)
+idx_ref_identifier_val | CREATE INDEX idx_ref_identifier_val ON reference_search_parameters(identifier_value)
+idx_ref_type | CREATE INDEX idx_ref_type ON reference_search_parameters(reference_resource_type)
+idx_reference_search_parameters_contained | CREATE INDEX idx_reference_search_parameters_contained ON reference_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_special_search_parameters_contained | CREATE INDEX idx_special_search_parameters_contained ON special_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_special_value | CREATE INDEX idx_special_value ON special_search_parameters(special_value)
+idx_string_search_parameters_contained | CREATE INDEX idx_string_search_parameters_contained ON string_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_string_value | CREATE INDEX idx_string_value ON string_search_parameters(string_value)
+idx_token_search_parameters_contained | CREATE INDEX idx_token_search_parameters_contained ON token_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_token_system | CREATE INDEX idx_token_system ON token_search_parameters(token_system)
+idx_token_value | CREATE INDEX idx_token_value ON token_search_parameters(token_value)
+idx_uri_search_parameters_contained | CREATE INDEX idx_uri_search_parameters_contained ON uri_search_parameters(id) WHERE resource_type LIKE '#%'
+idx_uri_value | CREATE INDEX idx_uri_value ON uri_search_parameters(uri_value)
+sqlite_autoindex_authorization_codes_1 | None
+sqlite_autoindex_canonical_resources_1 | None
+sqlite_autoindex_composite_search_parameters_1 | None
+sqlite_autoindex_date_search_parameters_1 | None
+sqlite_autoindex_export_jobs_1 | None
+sqlite_autoindex_number_search_parameters_1 | None
+sqlite_autoindex_quantity_search_parameters_1 | None
+sqlite_autoindex_reference_search_parameters_1 | None
+sqlite_autoindex_resources_1 | None
+sqlite_autoindex_resources_history_1 | None
+sqlite_autoindex_revoked_tokens_1 | None
+sqlite_autoindex_special_search_parameters_1 | None
+sqlite_autoindex_string_search_parameters_1 | None
+sqlite_autoindex_sync_resources_1 | None
+sqlite_autoindex_token_search_parameters_1 | None
+sqlite_autoindex_uri_search_parameters_1 | None
+sqlite_autoindex_users_1 | None

@@ -1,0 +1,34 @@
+file	2026-09-06_per_s	restore_scan_per_s	dbsize_per_s
+MimicOrganization.ndjson	1	1	1
+MimicLocation.ndjson	258	310	388
+MimicPatient.ndjson	294	556	667
+MimicEncounterICU.ndjson	483	700	778
+MimicMedicationMix.ndjson	766	1570	1121
+MimicEncounterED.ndjson	673	1388	1388
+MimicObservationMicroOrg.ndjson	545	1056	994
+MimicConditionED.ndjson	1069	2180	2180
+MimicProcedure.ndjson	1184	2329	2329
+MimicEncounter.ndjson	482	1146	1100
+MimicMedicationDispenseED.ndjson	1151	2404	2516
+MimicProcedureED.ndjson	1248	2681	2681
+MimicSpecimen.ndjson	909	3036	2904
+MimicMedication.ndjson	2643	1510	1333
+MimicProcedureICU.ndjson	1769	2368	1790
+MimicObservationMicroSusc.ndjson	1006	1328	1164
+MimicObservationMicroTest.ndjson	1343	1618	1423
+MimicMedicationStatementED.ndjson	1898	2134	2621
+MimicObservationED.ndjson	1264	1357	1325
+MimicCondition.ndjson	2166	2781	2449
+MimicObservationVitalSignsED.ndjson	897	912	876
+MimicSpecimenLab.ndjson	1990	2270	2265
+MimicObservationOutputevents.ndjson	955	873	892
+MimicObservationDatetimeevents.ndjson	776	635	874
+MimicMedicationDispense.ndjson	925	1199	1613
+MimicMedicationRequest.ndjson	964	232	1487
+MimicMedicationAdministrationICU.ndjson	1047	399	1668
+MimicMedicationAdministration.ndjson	942	590	840
+MimicObservationLabevents.ndjson	527	352	376
+MimicObservationChartevents.ndjson	627	350	377
+TOTAL /home/grey/dev/fhir/fhirant/packages/fhirant_server/tool/perf_results/2026-09-06/perffull.perf.tsv	928935	1423s	653/s
+TOTAL /tmp/claude-1000/restore_scan/mimic.perf.tsv	928935	2475s	375/s
+TOTAL /tmp/claude-1000/dbsize/mimic.perf.tsv	928935	2191s	424/s

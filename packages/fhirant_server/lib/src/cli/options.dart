@@ -29,9 +29,9 @@ class CliUsageException implements Exception {
 /// The config file is a map whose keys are the long option names
 /// (`port`, `db-path`, `https`, `cert-path`, `key-path`, `spec-path`,
 /// `base-url`, `audit-retention-days`, `dev-mode`, `clamd-host`,
-/// `clamd-port`, `clamd-timeout-seconds`). A value given on the
-/// command line wins over the file; the file wins over the default. A key
-/// the CLI does not know is a usage error, so a misspelling is not
+/// `clamd-port`, `clamd-timeout-seconds`, `storage-floor`). A value given
+/// on the command line wins over the file; the file wins over the default.
+/// A key the CLI does not know is a usage error, so a misspelling is not
 /// silently ignored.
 class ServerOptions {
   const ServerOptions({
@@ -48,6 +48,7 @@ class ServerOptions {
     this.clamdHost,
     this.clamdPort = 3310,
     this.clamdTimeout = kClamdTimeout,
+    this.storageFloor = true,
   });
 
   final int port;
@@ -56,6 +57,10 @@ class ServerOptions {
   final String? certPath;
   final String? keyPath;
   final bool devMode;
+
+  /// Whether writes are refused when the disk runs short
+  /// (`FhirAntServer.keepStorageFree`).
+  final bool storageFloor;
   final String specPath;
   final String? baseUrl;
   final Duration? auditRetention;
@@ -145,6 +150,13 @@ class ServerOptions {
       defaultsTo: '${kClamdTimeout.inSeconds}',
       help: 'How long one scan may take before the file is refused',
     )
+    ..addFlag(
+      'storage-floor',
+      defaultsTo: true,
+      help: 'Refuse writes (507) once the disk would drop below 5% free or '
+          '500 MiB, whichever is smaller, plus room to export every '
+          'current resource. On by default.',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   /// The option names a config file may carry: every option but `config`
@@ -163,6 +175,7 @@ class ServerOptions {
     'clamd-host',
     'clamd-port',
     'clamd-timeout-seconds',
+    'storage-floor',
   };
 
   /// Resolves [arguments] (already parsed as [args]) over the config file
@@ -258,6 +271,7 @@ class ServerOptions {
       clamdTimeout: Duration(
         seconds: integer('clamd-timeout-seconds', min: 1, max: 3600),
       ),
+      storageFloor: flag('storage-floor'),
     );
   }
 

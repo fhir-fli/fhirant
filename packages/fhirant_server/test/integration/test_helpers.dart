@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/services/disk_space.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 
@@ -140,6 +141,7 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
   String? bootstrapToken,
   int maxRequests = 600,
   int authMaxRequests = 10,
+  DiskSpace? diskSpace,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
@@ -151,6 +153,7 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
     bootstrapToken: bootstrapToken,
     maxRequests: maxRequests,
     authMaxRequests: authMaxRequests,
+    diskSpace: diskSpace,
   );
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler, server: server);

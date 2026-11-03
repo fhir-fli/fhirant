@@ -1,0 +1,19 @@
+round	build	seconds	exit
+1	sep	231.753639053	0
+total-load all files: 100000 in 217.33s (460/s)
+1	now	213.056135108	0
+total-load all files: 100000 in 198.86s (503/s)
+2	sep	128.992323275	0
+total-load all files: 100000 in 115.68s (864/s)
+2	now	202.470599906	0
+total-load all files: 100000 in 188.64s (530/s)
+done
+3	now	194.180823962	0
+total-load all files: 100000 in 182.68s (547/s)
+3	sep	115.584957104	0
+total-load all files: 100000 in 105.35s (949/s)
+4	now	196.290588346	0
+total-load all files: 100000 in 186.24s (537/s)
+4	sep	114.193345799	0
+total-load all files: 100000 in 103.32s (968/s)
+done

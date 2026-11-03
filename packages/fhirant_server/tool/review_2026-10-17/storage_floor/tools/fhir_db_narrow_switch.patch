@@ -1,0 +1,42 @@
+diff --git a/lib/src/fhir_db.dart b/lib/src/fhir_db.dart
+index 3285ee4..e073a8d 100644
+--- a/lib/src/fhir_db.dart
++++ b/lib/src/fhir_db.dart
+@@ -1,3 +1,4 @@
++import 'dart:io';
+ import 'package:drift/drift.dart';
+ import 'package:fhir_db/src/cipher_from_key.dart';
+ import 'package:fhir_db/src/fhir_dao.dart';
+@@ -857,7 +858,31 @@ class FhirDb<R extends FhirNode, T extends Object> extends _$FhirDb {
+       ('composite_search_parameters', 'values', 'c1_value, c2_value'),
+       ('special_search_parameters', 'value', 'special_value'),
+     ];
+-    for (final (table, tag, columns) in covers) {
++    // EXPERIMENT (scratch worktree only): FHIR_DB_NARROW=1 builds the
++    // September single-column value indexes instead of the covers.
++    if (Platform.environment['FHIR_DB_NARROW'] == '1') {
++      for (final (name, table, column) in const [
++        ('idx_string_value', 'string_search_parameters', 'string_value'),
++        ('idx_token_value', 'token_search_parameters', 'token_value'),
++        ('idx_token_system', 'token_search_parameters', 'token_system'),
++        ('idx_ref_type', 'reference_search_parameters', 'reference_resource_type'),
++        ('idx_ref_id', 'reference_search_parameters', 'reference_id_part'),
++        ('idx_ref_identifier_sys', 'reference_search_parameters', 'identifier_system'),
++        ('idx_ref_identifier_val', 'reference_search_parameters', 'identifier_value'),
++        ('idx_date_value', 'date_search_parameters', 'date_value'),
++        ('idx_date_value_end', 'date_search_parameters', 'date_value_end'),
++        ('idx_number_low', 'number_search_parameters', 'number_low'),
++        ('idx_number_high', 'number_search_parameters', 'number_high'),
++        ('idx_quantity_low', 'quantity_search_parameters', 'quantity_low'),
++        ('idx_quantity_high', 'quantity_search_parameters', 'quantity_high'),
++        ('idx_uri_value', 'uri_search_parameters', 'uri_value'),
++        ('idx_special_value', 'special_search_parameters', 'special_value'),
++      ]) {
++        await create(name, table, '($column)');
++      }
++    }
++    for (final (table, tag, columns) in
++        (Platform.environment['FHIR_DB_NARROW'] ?? '0') != '0' ? const <(String, String, String)>[] : covers) {
+       await create(
+         'idx_${table}_${tag}_cover',
+         table,

@@ -1,0 +1,11 @@
+load rc=0 890.22	391.07	179.24
+total-load all files: 928935 in 878.12s (1058/s)
+database size: 3512.1 MB
+index rc=0 49.78	50.11	5.77
+Running build hooks...Running build hooks...createValueIndexes: 39.8s
+cover indexes 16
+total 5748800
+drwxrwxr-x 2 grey grey       4096 Nov  2 23:32 .
+drwxrwxr-x 3 grey grey       4096 Nov  2 23:31 ..
+-rw-r--r-- 1 grey grey 5886758912 Nov  2 23:32 fhirant.sqlite
+done

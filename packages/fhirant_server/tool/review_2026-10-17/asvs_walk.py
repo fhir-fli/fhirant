@@ -199,8 +199,11 @@ OVERRIDES = {
     'V5.2.3': ('N/A', 'no compressed file is accepted (zip and undeclared '
                'archives refused by the V5.2.2 check) and the server '
                'decompresses nothing (no gzip/zlib in lib or bin)'),
-    'V5.2.4': ('FINDING', 'L3: no per-user file quota or file count (no '
-               'quota in lib or bin); only the 16 MiB body limit'),
+    'V5.2.4': ('FINDING', 'L3, met another way 2026-11-02: a per-user '
+               'quota does not fit a shared record (Grey); writes are '
+               'refused 507 below min(5%, 500 MiB) free plus room to export '
+               'every current resource (storage_floor.dart; '
+               'every_route_meets_the_storage_floor_test.dart)'),
     'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
     'V5.2.6': ('FINDING', 'L3, fixed 2026-11-01: a PNG, JPEG or GIF over '
                'maxImagePixels (89,478,485, Pillow MAX_IMAGE_PIXELS) or whose '
