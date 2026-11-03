@@ -54,6 +54,13 @@ Future<Response> changePasswordHandler(
     if (username is! String) {
       return _json(401, {'error': 'Authentication required'});
     }
+    // With no token this is a password check like a login, and the audit
+    // trail records it as one: refused or accepted, with the name tried
+    // and no identifier (audit_middleware.dart; REVIEW-2026-09-17 A16).
+    // Without the name a refused guess here left no AuditEvent at all.
+    final tried = <String, Object>{
+      if (authUser == null) 'attempted_username': username,
+    };
     final current = body['current_password'];
     final next = body['new_password'];
     if (current is! String || next is! String) {
@@ -84,7 +91,8 @@ Future<Response> changePasswordHandler(
       case CredentialInactive():
       case CredentialLocked():
         // The same answer as a login, for the same reason (A12).
-        return _json(401, {'error': 'Invalid username or password'});
+        return _json(401, {'error': 'Invalid username or password'})
+            .change(context: tried);
     }
 
     await _setPassword(dbInterface, user.id, next);
@@ -92,6 +100,7 @@ Future<Response> changePasswordHandler(
     return Response.ok(
       jsonEncode(_tokenPair(jwtService, await _fresh(dbInterface, user.id))),
       headers: jsonNoStoreHeaders,
+      context: tried,
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Password change failed', e, stackTrace);

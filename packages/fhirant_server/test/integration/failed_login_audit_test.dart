@@ -90,4 +90,41 @@ void main() {
         await db.search(resourceType: fhir.R4ResourceType.AuditEvent);
     expect(events, isEmpty);
   });
+
+  // `POST /auth/password` with no token checks a password as a login does
+  // (how a one-time password is used, auth/one_time_password.dart), so it
+  // is recorded as a login is: refused or accepted, with the name tried.
+  Future<int> changeWithoutToken(String user, String current) async =>
+      (await handler(
+        testRequest(
+          'POST',
+          '/auth/password',
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({
+            'username': user,
+            'current_password': current,
+            'new_password': 'Audit-Password-2',
+          }),
+        ),
+      ))
+          .statusCode;
+
+  test('a wrong password at /auth/password is recorded with the name tried',
+      () async {
+    expect(await changeWithoutToken('audited-user', 'not-the-password'), 401);
+    final events = await trail();
+    expect(events, hasLength(1));
+    final agent = events.single.agent.single;
+    expect(agent.name?.valueString, 'audited-user');
+    expect(agent.who?.identifier, isNull, reason: 'nothing proven');
+    expect(events.single.outcome?.valueString, '4');
+  });
+
+  test('a password change with no token names the account', () async {
+    expect(await changeWithoutToken('audited-user', password), 200);
+    final events = await trail();
+    expect(events, hasLength(1));
+    expect(events.single.agent.single.name?.valueString, 'audited-user');
+    expect(events.single.outcome?.valueString, '0');
+  });
 }
