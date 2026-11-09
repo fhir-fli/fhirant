@@ -38,9 +38,11 @@ const _expected = <String, StorageNeed>{
   'GET /auth/authorize': StorageNeed.none,
   'POST /auth/authorize': StorageNeed.none,
   'POST /auth/password': StorageNeed.none,
+  'POST /auth/claim': StorageNeed.none,
   'POST /admin/unlock/<userId>': StorageNeed.none,
   'GET /admin/users': StorageNeed.none,
   'POST /admin/users/<userId>/password': StorageNeed.none,
+  'POST /admin/users/<userId>/approve': StorageNeed.none,
   'POST /admin/users/<userId>/deactivate': StorageNeed.none,
   'POST /admin/users/<userId>/activate': StorageNeed.none,
   'PUT /admin/users/<userId>/role': StorageNeed.none,
@@ -153,8 +155,9 @@ void main() {
       final registered = {
         for (final r in registeredRoutes()) '${r.verb} ${r.path}',
       };
-      // 89 registrations, counted from the source on 2026-11-02.
-      expect(registered.length, 89);
+      // 91 registrations, counted from the source on 2026-11-09 (89 on
+      // 2026-11-02, then `/auth/claim` and `/admin/users/<userId>/approve`).
+      expect(registered.length, 91);
       expect(
         registered.difference(_expected.keys.toSet()),
         isEmpty,

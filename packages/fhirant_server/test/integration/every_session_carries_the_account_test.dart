@@ -22,9 +22,9 @@ import 'test_helpers.dart';
 /// minted at five sites; registration's carried no generation, which was
 /// harmless only because a new account is at generation 0. Four routes
 /// mint: register (the first administrator only: an account an
-/// administrator creates gets a one-time password and no session), login,
-/// the refresh grant, and the caller's password change, which is also how
-/// a one-time password becomes the user's own.
+/// administrator creates waits for its owner and gets no session,
+/// auth/owner_claim.dart), login, the refresh grant, and the caller's
+/// password change.
 void main() {
   late FhirAntDb db;
   late Handler handler;

@@ -316,18 +316,20 @@ class FhirAntDb extends FhirDb {
             await _createSpecLoadsTable();
           }
           if (from < 28) {
-            // Until when the account's password is a one-time password an
-            // administrator was given to hand over (OWASP ASVS 5.0.0
-            // V6.4.1, V6.4.6). Null: the user's own. Guarded, as
-            // token_generation is: a fresh store creates the column.
+            // An account waiting for its owner to set a password, and the
+            // password the owner sent (OWASP ASVS 5.0.0 V6.4.1, V6.4.6;
+            // [awaitOwner]). Guarded, as token_generation is: a fresh store
+            // creates the columns.
             final columns =
-                await customSelect('PRAGMA table_info(users)').get();
-            if (!columns.any(
-              (c) => c.read<String>('name') == 'password_temporary_until',
-            )) {
-              await customStatement(
-                'ALTER TABLE users ADD COLUMN password_temporary_until INTEGER',
-              );
+                (await customSelect('PRAGMA table_info(users)').get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            for (final column in _ownerClaimColumns.entries) {
+              if (!columns.contains(column.key)) {
+                await customStatement(
+                  'ALTER TABLE users ADD COLUMN ${column.key} ${column.value}',
+                );
+              }
             }
           }
         },
@@ -353,7 +355,10 @@ class FhirAntDb extends FhirDb {
         locked_until INTEGER,
         patient_id TEXT,
         token_generation INTEGER NOT NULL DEFAULT 0,
-        password_temporary_until INTEGER
+        awaiting_owner_until INTEGER,
+        claim_password_hash TEXT,
+        claim_salt TEXT,
+        claim_code TEXT
       )
     ''');
   }
@@ -887,7 +892,8 @@ class FhirAntDb extends FhirDb {
   Future<void> _mergeUsers() async {
     const columns = 'username, password_hash, salt, role, active, '
         'created_at, last_login, scopes, failed_login_count, locked_until, '
-        'patient_id, password_temporary_until';
+        'patient_id, awaiting_owner_until, claim_password_hash, claim_salt, '
+        'claim_code';
     // New usernames whose id is free keep it.
     await customStatement(
       'INSERT INTO main.users (id, $columns) '
@@ -1616,7 +1622,7 @@ class FhirAntDb extends FhirDb {
     String role = 'clinician',
     String? scopes,
     String? patientId,
-    DateTime? passwordTemporaryUntil,
+    DateTime? awaitingOwnerUntil,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     // The id comes from the INSERT's own execution. It was read afterwards
@@ -1628,7 +1634,7 @@ class FhirAntDb extends FhirDb {
       return await customInsert(
         'INSERT INTO users '
         '(username, password_hash, salt, role, active, created_at, scopes, '
-        'patient_id, password_temporary_until) '
+        'patient_id, awaiting_owner_until) '
         'VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)',
         variables: [
           Variable.withString(username),
@@ -1638,7 +1644,7 @@ class FhirAntDb extends FhirDb {
           Variable.withInt(now),
           Variable<String>(scopes),
           Variable<String>(patientId),
-          Variable<int>(_epochSeconds(passwordTemporaryUntil)),
+          Variable<int>(_epochSeconds(awaitingOwnerUntil)),
         ],
       );
     } on Object catch (e) {
@@ -1671,37 +1677,98 @@ class FhirAntDb extends FhirDb {
 
   /// Replaces a user's stored password hash and salt. Used to transparently
   /// upgrade a legacy/low-cost hash to the current KDF on a successful login.
-  /// Sets the account's password: its own when [temporaryUntil] is null,
-  /// else a one-time password good until then.
-  Future<void> updatePassword(
-    int id,
-    String passwordHash,
-    String salt, {
-    DateTime? temporaryUntil,
-  }) async {
-    await customStatement(
-      'UPDATE users SET password_hash = ?, salt = ?, '
-      'password_temporary_until = ? WHERE id = ?',
-      [passwordHash, salt, _epochSeconds(temporaryUntil), id],
-    );
-  }
-
-  /// Stores a new hash of the same password, leaving whether it is a
-  /// one-time password as it was (a login upgrading an old hash).
-  Future<void> rehashPassword(int id, String passwordHash, String salt) async {
+  Future<void> updatePassword(int id, String passwordHash, String salt) async {
     await customStatement(
       'UPDATE users SET password_hash = ?, salt = ? WHERE id = ?',
       [passwordHash, salt, id],
     );
   }
 
-  /// Moves when the account's one-time password expires.
-  Future<void> setPasswordTemporaryUntil(int id, DateTime until) async {
+  /// The columns schema 28 adds to `users` for an account waiting for its
+  /// owner, and their types.
+  static const _ownerClaimColumns = {
+    'awaiting_owner_until': 'INTEGER',
+    'claim_password_hash': 'TEXT',
+    'claim_salt': 'TEXT',
+    'claim_code': 'TEXT',
+  };
+
+  /// Puts the account in wait for its owner until [until]: [passwordHash]
+  /// and [salt] replace its password (the caller makes them from a secret
+  /// nobody keeps), and any password the owner already sent is dropped.
+  /// An administrator's reset (OWASP ASVS 5.0.0 V6.4.6).
+  Future<void> awaitOwner(
+    int id,
+    String passwordHash,
+    String salt,
+    DateTime until,
+  ) async {
     await customStatement(
-      'UPDATE users SET password_temporary_until = ? WHERE id = ?',
-      [_epochSeconds(until), id],
+      'UPDATE users SET password_hash = ?, salt = ?, awaiting_owner_until = ?, '
+      'claim_password_hash = NULL, claim_salt = NULL, claim_code = NULL '
+      'WHERE id = ?',
+      [passwordHash, salt, _epochSeconds(until), id],
     );
   }
+
+  /// Holds the password the owner of the account [username] sent, under
+  /// [code], replacing one sent before. Only while the account waits for
+  /// its owner; false, and nothing written, otherwise.
+  Future<bool> holdClaim(
+    String username,
+    String passwordHash,
+    String salt,
+    String code,
+  ) async {
+    final changed = await customUpdate(
+      'UPDATE users SET claim_password_hash = ?, claim_salt = ?, '
+      'claim_code = ? WHERE username = ? AND awaiting_owner_until > ?',
+      variables: [
+        Variable.withString(passwordHash),
+        Variable.withString(salt),
+        Variable.withString(code),
+        Variable.withString(username),
+        Variable.withInt(_epochSeconds(DateTime.now())!),
+      ],
+      updateKind: UpdateKind.update,
+    );
+    return changed > 0;
+  }
+
+  /// An administrator approves the password the account's owner sent, by
+  /// the [code] the owner was shown. On a match it becomes the account's
+  /// password and the wait ends. A code that does not match drops the held
+  /// password: the owner sends it again, so each code gets one try.
+  Future<ClaimApproval> approveClaim(int id, String code) =>
+      transaction(() async {
+        final user = await getUserById(id);
+        if (user == null) return ClaimApproval.noAccount;
+        final until = user.awaitingOwnerUntil;
+        if (until == null) return ClaimApproval.notAwaiting;
+        if (!until.isAfter(DateTime.now())) return ClaimApproval.expired;
+        final row = await customSelect(
+          'SELECT claim_code FROM users WHERE id = ?',
+          variables: [Variable.withInt(id)],
+        ).getSingle();
+        final held = row.readNullable<String>('claim_code');
+        if (held == null) return ClaimApproval.nothingSent;
+        if (held != code) {
+          await customStatement(
+            'UPDATE users SET claim_password_hash = NULL, claim_salt = NULL, '
+            'claim_code = NULL WHERE id = ?',
+            [id],
+          );
+          return ClaimApproval.wrongCode;
+        }
+        await customStatement(
+          'UPDATE users SET password_hash = claim_password_hash, '
+          'salt = claim_salt, awaiting_owner_until = NULL, '
+          'claim_password_hash = NULL, claim_salt = NULL, claim_code = NULL, '
+          'failed_login_count = 0, locked_until = NULL WHERE id = ?',
+          [id],
+        );
+        return ClaimApproval.approved;
+      });
 
   static int? _epochSeconds(DateTime? at) =>
       at == null ? null : at.millisecondsSinceEpoch ~/ 1000;

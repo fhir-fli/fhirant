@@ -207,6 +207,44 @@ else
 fi
 echo ""
 
+# --- Test 4b: an administrator creates an account; its owner sets the password ---
+# (auth/owner_claim.dart; OWASP ASVS 5.0.0 V6.4.1, V6.4.6). Six credential
+# requests in all on this container, under the 10 per 60 s bucket.
+echo "=== Test: Owner sets the password of an account an administrator made ==="
+CLAIM_IP="10.0.0.3"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/register" \
+  -H "X-Forwarded-For: $CLAIM_IP" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "owner1", "role": "clinician"}')
+BODY=$(echo "$RESPONSE" | head -n -1)
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "an administrator creates an account with no password" 201 "$STATUS"
+assert_contains "the account waits for its owner" '"awaiting_owner_until":"' "$BODY"
+OWNER_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | cut -d: -f2)
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/claim" \
+  -H "X-Forwarded-For: $CLAIM_IP" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "owner1", "new_password": "OwnerPass123!"}')
+BODY=$(echo "$RESPONSE" | head -n -1)
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "the owner sends their own password" 202 "$STATUS"
+CLAIM_CODE=$(echo "$BODY" | grep -o '"code":"[^"]*"' | cut -d'"' -f4)
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/admin/users/$OWNER_ID/approve" \
+  -H "X-Forwarded-For: $CLAIM_IP" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"code\": \"$CLAIM_CODE\"}")
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "the administrator approves it with the code" 200 "$STATUS"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/login" \
+  -H "X-Forwarded-For: $CLAIM_IP" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "owner1", "password": "OwnerPass123!"}')
+STATUS=$(echo "$RESPONSE" | tail -1)
+assert_status "the owner signs in with their own password" 200 "$STATUS"
+echo ""
+
 # --- Test 5: Create a Patient ---
 echo "=== Test: Create Patient ==="
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/Patient" \

@@ -70,22 +70,7 @@ Future<Response> loginHandler(
       // information about whether the account is valid or not". This
       // answered 403 deactivated and 423 locked (REVIEW-2026-09-17 A12).
       // The lock still holds; the caller is not told of it.
-      // The password is right and is a one-time password: the caller
-      // proved it, so it is told what to do with it, and gets no session
-      // (auth/one_time_password.dart; OWASP ASVS 5.0.0 V6.4.1).
-      case CredentialMustChange():
-        return Response(
-          403,
-          body: jsonEncode({
-            'error': 'password_change_required',
-            'error_description': 'This is a one-time password. Set your own '
-                'with POST /auth/password (username, current_password, '
-                'new_password), then sign in with it.',
-          }),
-          context: {'attempted_username': username},
-        );
       case CredentialInvalid():
-      case CredentialExpired():
       case CredentialInactive():
       case CredentialLocked():
         // The name the caller claimed, for the audit trail: a refused

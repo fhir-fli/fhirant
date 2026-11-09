@@ -68,8 +68,10 @@ void main() {
     // The census of 2026-09-21: 89 registrations, 51 of them operations
     // (paths holding a `$`). A pattern that silently stops matching — the
     // first one missed every raw-string route, 38 of the 89 — fails here
-    // rather than passing a shrunken list to the tests below.
-    expect(routes, hasLength(89));
+    // rather than passing a shrunken list to the tests below. 91 since
+    // 2026-11-09: `/auth/claim` and `/admin/users/<userId>/approve`
+    // (auth/owner_claim.dart), counted from the source.
+    expect(routes, hasLength(91));
     expect(
       routes.where((r) => r.path.contains(r'$')),
       hasLength(51),

@@ -225,16 +225,26 @@ def seed(work):
         root, _ = login(*ROOT, ip=ROOT_IP)
         ids = {}
         for u, role, scopes, pat in USERS:
-            body = {'username': u, 'password': PW, 'role': role}
+            body = {'username': u, 'role': role}
             if scopes:
                 body['scopes'] = scopes
             if pat:
                 body['patient'] = pat
-            # /auth/register is credential-limited per address.
-            s, _, b = req('POST', '/auth/register', body, root,
-                          ip='127.0.2.%d' % (len(ids) + 10))
-            ids[u] = None
+            # /auth/register and /auth/claim are credential-limited per
+            # address. The administrator chooses no password: the owner
+            # sends PW to /auth/claim and the administrator approves it
+            # with the code (auth/owner_claim.dart).
+            ip = '127.0.2.%d' % (len(ids) + 10)
+            s, _, b = req('POST', '/auth/register', body, root, ip=ip)
             assert s in (200, 201), (u, s, b)
+            uid = json.loads(b)['id']
+            s, _, b = req('POST', '/auth/claim',
+                          {'username': u, 'new_password': PW}, None, ip=ip)
+            assert s == 202, (u, s, b)
+            s, _, b = req('POST', '/admin/users/%d/approve' % uid,
+                          {'code': json.loads(b)['code']}, root, ip=ROOT_IP)
+            assert s == 200, (u, s, b)
+            ids[u] = None
         s, _, b = req('GET', '/admin/users', token=root, ip=ROOT_IP)
         for row in json.loads(b)['users'] if b.startswith('{') else json.loads(b):
             ids[row['username']] = row['id']
@@ -290,8 +300,9 @@ def requests_for(seedinfo, me):
         # auth/*
         ('status', 'GET', '/auth/status', None, None),
         ('register-admin', 'POST', '/auth/register',
-         {'username': 'evil-' + me['name'], 'password': PW, 'role': 'admin'},
-         None),
+         {'username': 'evil-' + me['name'], 'role': 'admin'}, None),
+        ('claim', 'POST', '/auth/claim',
+         {'username': 'nobody', 'new_password': PW + 'claim'}, None),
         ('login-bad', 'POST', '/auth/login',
          {'username': 'nobody', 'password': 'wrong-password-1'}, None),
         ('refresh-own', 'POST', '/auth/token',
@@ -311,8 +322,9 @@ def requests_for(seedinfo, me):
         # admin/*
         ('unlock', 'POST', '/admin/unlock/%d' % t, None, None),
         ('users', 'GET', '/admin/users', None, None),
-        ('reset-pw', 'POST', '/admin/users/%d/password' % t,
-         {'new_password': PW + 'reset'}, None),
+        ('reset-pw', 'POST', '/admin/users/%d/password' % t, None, None),
+        ('approve', 'POST', '/admin/users/%d/approve' % t,
+         {'code': 'BBBB-BBBB'}, None),
         ('set-scopes', 'PUT', '/admin/users/%d/scopes' % t,
          {'scopes': ['user/*.*']}, None),
         ('set-role', 'PUT', '/admin/users/%d/role' % t, {'role': 'admin'},

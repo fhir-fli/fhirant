@@ -160,48 +160,58 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
 }
 
 /// Registers an account as the administrator holding [adminToken], then
-/// sets [password] as the user's own with the one-time password the
-/// registration hands back (`auth/one_time_password.dart`): the two steps
-/// a real user goes through before its first sign-in. [fields] is the
-/// registration body (username, role, scopes, patient), without a
-/// password. Returns the registration reply with the session the password
-/// change opened (`token`, `refresh_token`).
+/// goes through what its owner and the administrator do before the first
+/// sign-in (`auth/owner_claim.dart`): the owner sends [password] to
+/// `/auth/claim`, the administrator approves it with the code, the owner
+/// signs in. [fields] is the registration body (username, role, scopes,
+/// patient), without a password. Returns the registration reply with the
+/// session the sign-in opened (`token`, `refresh_token`).
 Future<Map<String, dynamic>> registerByAdmin(
   Handler handler,
   String adminToken,
   Map<String, dynamic> fields, {
   required String password,
 }) async {
-  final registered = await handler(
-    testRequest(
-      'POST',
-      '/auth/register',
-      authToken: adminToken,
-      headers: {'content-type': 'application/json'},
-      body: jsonEncode(fields),
-    ),
-  );
-  final reply =
-      jsonDecode(await registered.readAsString()) as Map<String, dynamic>;
-  if (registered.statusCode != 201) {
-    throw StateError('registration: ${registered.statusCode} $reply');
+  Future<(int, Map<String, dynamic>)> post(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
+    final r = await handler(
+      testRequest(
+        'POST',
+        path,
+        authToken: token,
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode(body),
+      ),
+    );
+    return (
+      r.statusCode,
+      jsonDecode(await r.readAsString()) as Map<String, dynamic>,
+    );
   }
-  final changed = await handler(
-    testRequest(
-      'POST',
-      '/auth/password',
-      headers: {'content-type': 'application/json'},
-      body: jsonEncode({
-        'username': fields['username'],
-        'current_password': reply['one_time_password'],
-        'new_password': password,
-      }),
-    ),
-  );
-  final session =
-      jsonDecode(await changed.readAsString()) as Map<String, dynamic>;
-  if (changed.statusCode != 200) {
-    throw StateError('password change: ${changed.statusCode} $session');
+
+  final (registered, reply) =
+      await post('/auth/register', fields, token: adminToken);
+  if (registered != 201) {
+    throw StateError('registration: $registered $reply');
   }
+  final (claimed, claim) = await post('/auth/claim', {
+    'username': fields['username'],
+    'new_password': password,
+  });
+  if (claimed != 202) throw StateError('claim: $claimed $claim');
+  final (approved, approval) = await post(
+    '/admin/users/${reply['id']}/approve',
+    {'code': claim['code']},
+    token: adminToken,
+  );
+  if (approved != 200) throw StateError('approval: $approved $approval');
+  final (signedIn, session) = await post('/auth/login', {
+    'username': fields['username'],
+    'password': password,
+  });
+  if (signedIn != 200) throw StateError('login: $signedIn $session');
   return {...reply, ...session};
 }

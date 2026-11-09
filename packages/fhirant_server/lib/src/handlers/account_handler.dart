@@ -4,7 +4,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
-import 'package:fhirant_server/src/auth/one_time_password.dart';
+import 'package:fhirant_server/src/auth/owner_claim.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -33,12 +33,6 @@ import 'package:shelf/shelf.dart';
 /// `current_password`, `new_password`. The current password is checked
 /// through the one credential check (it counts failures and locks like a
 /// login); the new one must meet the password policy.
-///
-/// The account is the token's, or, with no token, the body's `username`:
-/// a one-time password opens no session (`auth/one_time_password.dart`),
-/// so this is where it is used, once, and it cannot be kept as the new
-/// password. Without a token this is a password check like a login, and
-/// is rate-limited with the credential endpoints.
 Future<Response> changePasswordHandler(
   Request request,
   FhirAntDb dbInterface,
@@ -46,21 +40,11 @@ Future<Response> changePasswordHandler(
 ) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
-    final body = await _body(request);
-    if (body == null) return _json(400, {'error': 'Invalid JSON body'});
-    final username = authUser != null
-        ? authUser['username'] as String? ?? ''
-        : body['username'];
-    if (username is! String) {
+    if (authUser == null) {
       return _json(401, {'error': 'Authentication required'});
     }
-    // With no token this is a password check like a login, and the audit
-    // trail records it as one: refused or accepted, with the name tried
-    // and no identifier (audit_middleware.dart; REVIEW-2026-09-17 A16).
-    // Without the name a refused guess here left no AuditEvent at all.
-    final tried = <String, Object>{
-      if (authUser == null) 'attempted_username': username,
-    };
+    final body = await _body(request);
+    if (body == null) return _json(400, {'error': 'Invalid JSON body'});
     final current = body['current_password'];
     final next = body['new_password'];
     if (current is! String || next is! String) {
@@ -72,27 +56,16 @@ Future<Response> changePasswordHandler(
     final policyError = PasswordPolicy.validate(next);
     if (policyError != null) return _json(400, {'error': policyError});
 
+    final username = authUser['username'] as String? ?? '';
     final User user;
     switch (await checkCredentials(dbInterface, username, current)) {
       case CredentialOk(user: final u):
         user = u;
-      case CredentialMustChange(user: final u):
-        // ASVS V6.4.1: "These initial secrets must not be permitted to
-        // become the long term password."
-        if (next == current) {
-          return _json(400, {
-            'error': 'Choose a password of your own, not the one-time '
-                'password.',
-          });
-        }
-        user = u;
       case CredentialInvalid():
-      case CredentialExpired():
       case CredentialInactive():
       case CredentialLocked():
         // The same answer as a login, for the same reason (A12).
-        return _json(401, {'error': 'Invalid username or password'})
-            .change(context: tried);
+        return _json(401, {'error': 'Invalid username or password'});
     }
 
     await _setPassword(dbInterface, user.id, next);
@@ -100,7 +73,6 @@ Future<Response> changePasswordHandler(
     return Response.ok(
       jsonEncode(_tokenPair(jwtService, await _fresh(dbInterface, user.id))),
       headers: jsonNoStoreHeaders,
-      context: tried,
     );
   } catch (e, stackTrace) {
     FhirantLogging().logError('Password change failed', e, stackTrace);
@@ -125,11 +97,10 @@ Future<Response> listUsersHandler(
 
 /// `POST /admin/users/<id>/password`: an administrator resets the
 /// account's password. No body (or an empty JSON object): the
-/// administrator does not choose the password. The server makes a
-/// one-time password, good for [oneTimePasswordLifetime], and the reply
-/// carries it once for the administrator to hand over; the old password
-/// and every session from before it stop working (OWASP ASVS 5.0.0
-/// V6.4.6, `auth/one_time_password.dart`).
+/// administrator neither chooses the new password nor is handed one. The
+/// old password and every session from before stop working, and the
+/// account waits for its owner to set their own (`auth/owner_claim.dart`;
+/// OWASP ASVS 5.0.0 V6.4.6).
 Future<Response> resetPasswordHandler(
   Request request,
   int userId,
@@ -153,24 +124,123 @@ Future<Response> resetPasswordHandler(
     if (body.isNotEmpty) {
       return _json(400, {
         'error': "An administrator does not choose a user's password. Send "
-            'no body: the reply carries a one-time password for the user '
-            'to set their own with.',
+            'no body: the user sets their own with POST /auth/claim, and you '
+            'approve it with the code they are shown.',
       });
     }
   }
-  final once = newOneTimePassword();
-  final until = DateTime.now().add(oneTimePasswordLifetime);
-  await _setPassword(dbInterface, userId, once, temporaryUntil: until);
+  final none = await unusablePassword();
+  await dbInterface.awaitOwner(
+    userId,
+    none.hash,
+    none.salt,
+    DateTime.now().add(ownerWaitLifetime),
+  );
+  await dbInterface.bumpTokenGeneration(userId);
   FhirantLogging().logInfo('Password reset for user $userId by admin');
   return Response.ok(
     jsonEncode({
       'message': 'Password reset',
       ..._publicUser(await _fresh(dbInterface, userId)),
-      'one_time_password': once,
-      'one_time_password_expires': until.toUtc().toIso8601String(),
     }),
-    headers: jsonNoStoreHeaders,
   );
+}
+
+/// `POST /auth/claim`: the owner of an account waiting for them sets their
+/// own password, from their own device. Body: `username`, `new_password`
+/// (held to the password policy). The reply carries a code for the owner
+/// to show the administrator, who approves with it
+/// (`POST /admin/users/<id>/approve`; `auth/owner_claim.dart`).
+///
+/// The reply is the same whether or not the account exists and waits: a
+/// different answer would tell anyone which accounts were just reset. For
+/// an account that does not wait, the code is never stored and approves
+/// nothing. The password is hashed either way, so the time taken does not
+/// tell them apart. Rate-limited with the credential endpoints, and
+/// recorded in the audit trail with the name sent.
+Future<Response> claimHandler(Request request, FhirAntDb dbInterface) async {
+  try {
+    final body = await _body(request);
+    final username = body?['username'];
+    final next = body?['new_password'];
+    if (username is! String || next is! String) {
+      return _json(400, {'error': 'username and new_password are required'});
+    }
+    final tried = {'attempted_username': username};
+    final policyError = PasswordPolicy.validate(next);
+    if (policyError != null) {
+      return _json(400, {'error': policyError}).change(context: tried);
+    }
+    final salt = PasswordHasher.generateSalt();
+    final hash = await PasswordHasher.hashPassword(next, salt);
+    final code = newClaimCode();
+    await dbInterface.holdClaim(
+      username,
+      hash,
+      salt,
+      canonicalClaimCode(code)!,
+    );
+    return Response(
+      202,
+      body: jsonEncode({
+        'code': code,
+        'message': 'Show this code to your administrator. Your password '
+            'works once they approve it with the code. Sending a password '
+            'again replaces this one and gives a new code.',
+      }),
+      headers: jsonNoStoreHeaders,
+      context: tried,
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Password claim failed', e, stackTrace);
+    return _json(500, {'error': 'Password claim failed'});
+  }
+}
+
+/// `POST /admin/users/<id>/approve`: an administrator approves the
+/// password the account's owner sent, with the code the owner was shown.
+/// Body: `code` (dashes and case optional, RFC 8628 §6.1). A wrong code
+/// drops the password the owner sent; they send it again for a new code.
+Future<Response> approveClaimHandler(
+  Request request,
+  int userId,
+  FhirAntDb dbInterface,
+) async {
+  final refused = _requireAdmin(request);
+  if (refused != null) return refused;
+  final body = await _body(request);
+  final raw = body?['code'];
+  if (raw is! String) return _json(400, {'error': 'code is required'});
+  final code = canonicalClaimCode(raw);
+  // Not a code at all is a typing slip: what the owner sent stays.
+  if (code == null) return _json(400, {'error': 'That is not a code'});
+  switch (await dbInterface.approveClaim(userId, code)) {
+    case ClaimApproval.approved:
+      await dbInterface.bumpTokenGeneration(userId);
+      FhirantLogging().logInfo('Password of user $userId approved by admin');
+      return Response.ok(
+        jsonEncode(_publicUser(await _fresh(dbInterface, userId))),
+      );
+    case ClaimApproval.noAccount:
+      return _json(404, {'error': 'User not found'});
+    case ClaimApproval.notAwaiting:
+      return _json(409, {
+        'error': 'This account is not waiting for a password',
+      });
+    case ClaimApproval.expired:
+      return _json(409, {
+        'error': 'The wait for this account ran out; reset its password again',
+      });
+    case ClaimApproval.nothingSent:
+      return _json(409, {
+        'error': 'The owner has not sent a password yet (POST /auth/claim)',
+      });
+    case ClaimApproval.wrongCode:
+      return _json(400, {
+        'error': 'The code does not match. The password the owner sent was '
+            'dropped; they send it again for a new code.',
+      });
+  }
 }
 
 /// `POST /admin/users/<id>/activate` and `/deactivate`.
@@ -277,20 +347,12 @@ Response get _lastActiveAdmin => _json(
       {'error': 'This is the last active administrator; add another first'},
     );
 
-/// Sets the account's password, its own unless [temporaryUntil] makes it
-/// a one-time password, and ends every session from before.
-Future<void> _setPassword(
-  FhirAntDb db,
-  int userId,
-  String password, {
-  DateTime? temporaryUntil,
-}) async {
+Future<void> _setPassword(FhirAntDb db, int userId, String password) async {
   final salt = PasswordHasher.generateSalt();
   await db.updatePassword(
     userId,
     await PasswordHasher.hashPassword(password, salt),
     salt,
-    temporaryUntil: temporaryUntil,
   );
   await db.bumpTokenGeneration(userId);
 }
@@ -306,6 +368,9 @@ Map<String, dynamic> _publicUser(User u) => {
       'scopes': SmartScopeEnforcer.heldScopes(u),
       if (u.patientId != null) 'patient': u.patientId,
       'locked': u.lockedUntil != null && u.lockedUntil!.isAfter(DateTime.now()),
+      if (u.awaitingOwnerUntil != null)
+        'awaiting_owner_until': u.awaitingOwnerUntil!.toUtc().toIso8601String(),
+      if (u.awaitingOwnerUntil != null) 'password_sent': u.claimSent,
       if (u.lastLogin != null) 'last_login': u.lastLogin!.toIso8601String(),
     };
 

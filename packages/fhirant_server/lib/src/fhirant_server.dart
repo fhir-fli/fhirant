@@ -103,9 +103,8 @@ class FhirAntServer {
 
   /// Requests per [rateLimitDuration] per client address on the endpoints
   /// that take a password or exchange a code: `/auth/login`,
-  /// `/auth/authorize`, `/auth/token`, `/auth/register`, `/auth/password`.
-  /// Brute force is
-  /// bounded here without throttling the data API.
+  /// `/auth/authorize`, `/auth/token`, `/auth/register`, `/auth/claim`.
+  /// Brute force is bounded here without throttling the data API.
   final int authMaxRequests;
 
   /// The URL clients reach this server by, e.g. `https://10.0.0.5:8080`,
@@ -272,6 +271,13 @@ class FhirAntServer {
         '/auth/password',
         (Request req) => changePasswordHandler(req, dbInterface, _jwtService),
       )
+      // The owner of an account an administrator created or reset sets
+      // their own password (auth/owner_claim.dart). No token: the account
+      // has no password that opens it yet.
+      ..post(
+        '/auth/claim',
+        (Request req) => claimHandler(req, dbInterface),
+      )
       // Admin routes (protected by auth middleware — not under auth/ prefix)
       ..post('/admin/unlock/<userId>', (Request req, String userId) {
         final id = int.tryParse(userId);
@@ -291,6 +297,13 @@ class FhirAntServer {
           return Response(400, body: '{"error": "Invalid user ID"}');
         }
         return resetPasswordHandler(req, id, dbInterface);
+      })
+      ..post('/admin/users/<userId>/approve', (Request req, String userId) {
+        final id = int.tryParse(userId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid user ID"}');
+        }
+        return approveClaimHandler(req, id, dbInterface);
       })
       ..post('/admin/users/<userId>/deactivate', (Request req, String userId) {
         final id = int.tryParse(userId);
@@ -863,8 +876,8 @@ class FhirAntServer {
     'auth/authorize',
     'auth/token',
     'auth/register',
-    // Checks a password, with or without a token (account_handler.dart).
-    'auth/password',
+    // Takes a password from anyone, and hashes it (account_handler.dart).
+    'auth/claim',
   };
 
   /// Applies [inner] only to requests whose path is in [paths].

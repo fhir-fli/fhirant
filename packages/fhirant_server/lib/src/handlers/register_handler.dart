@@ -4,7 +4,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
-import 'package:fhirant_server/src/auth/one_time_password.dart';
+import 'package:fhirant_server/src/auth/owner_claim.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -20,8 +20,8 @@ const Set<String> _validRoles = validRoles;
 ///
 /// First-user bootstrap: if no users exist, anyone can register and is forced
 /// to admin role, with a password of its own. Otherwise, only admins can
-/// register new users, and the new account's password is a one-time
-/// password the server makes (`auth/one_time_password.dart`).
+/// register new users, and the new account waits for its owner to set a
+/// password the administrator never holds (`auth/owner_claim.dart`).
 ///
 /// With [authenticationEnabled] false (Experimentation mode) registration is
 /// refused outright: the endpoint is public, and with no users the first
@@ -101,10 +101,10 @@ Future<Response> registerHandler(
     final userCount = await dbInterface.getUserCount();
 
     // Determine the effective role, and the password: the first
-    // administrator's own, or a one-time password.
+    // administrator's own, or none until the owner sets theirs.
     String effectiveRole;
-    final String password;
-    final DateTime? temporaryUntil;
+    final String? password;
+    final DateTime? awaitingOwnerUntil;
     if (userCount == 0) {
       // First-user bootstrap — force admin; no account can authenticate
       // yet, so the proof is the bootstrap token when the server has one.
@@ -138,7 +138,7 @@ Future<Response> registerHandler(
         return Response(400, body: jsonEncode({'error': policyError}));
       }
       password = chosen;
-      temporaryUntil = null;
+      awaitingOwnerUntil = null;
     } else {
       // Require admin auth
       final authUser = request.context['auth_user'] as Map<String, dynamic>?;
@@ -151,21 +151,22 @@ Future<Response> registerHandler(
         );
       }
       effectiveRole = requestedRole;
-      // An administrator neither chooses nor keeps the user's password:
-      // the server makes a one-time password for it to hand over
-      // (auth/one_time_password.dart; OWASP ASVS 5.0.0 V6.4.1, V6.4.6).
+      // An administrator neither chooses nor is handed the user's password:
+      // the account waits for its owner to set one (auth/owner_claim.dart;
+      // OWASP ASVS 5.0.0 V6.4.1, V6.4.6).
       if (body.containsKey('password')) {
         return Response(
           400,
           body: jsonEncode({
             'error': "An administrator does not choose a user's password. "
-                'Leave password out: the reply carries a one-time password '
-                'for the user to set their own with.',
+                'Leave password out: the user sets their own with POST '
+                '/auth/claim, and you approve it with the code they are '
+                'shown.',
           }),
         );
       }
-      password = newOneTimePassword();
-      temporaryUntil = DateTime.now().add(oneTimePasswordLifetime);
+      password = null;
+      awaitingOwnerUntil = DateTime.now().add(ownerWaitLifetime);
     }
 
     // Optional: the Patient this account is about (`patient`, as
@@ -221,9 +222,18 @@ Future<Response> registerHandler(
       );
     }
 
-    // Hash password and create user
-    final salt = PasswordHasher.generateSalt();
-    final hash = await PasswordHasher.hashPassword(password, salt);
+    // Hash the password and create the user. An account waiting for its
+    // owner gets a password nobody holds.
+    final String salt;
+    final String hash;
+    if (password != null) {
+      salt = PasswordHasher.generateSalt();
+      hash = await PasswordHasher.hashPassword(password, salt);
+    } else {
+      final none = await unusablePassword();
+      salt = none.salt;
+      hash = none.hash;
+    }
 
     // The read above cannot see a registration of the same name that is
     // still hashing its password; the store's UNIQUE constraint can, and is
@@ -238,7 +248,7 @@ Future<Response> registerHandler(
         role: effectiveRole,
         scopes: jsonEncode(effectiveScopes),
         patientId: patientId,
-        passwordTemporaryUntil: temporaryUntil,
+        awaitingOwnerUntil: awaitingOwnerUntil,
       );
     } on UsernameTaken {
       return Response(
@@ -247,10 +257,9 @@ Future<Response> registerHandler(
       );
     }
 
-    // An account made by an administrator gets no session: its password
-    // is the one-time password, which opens none. The administrator reads
-    // it here, once, to hand it over.
-    if (temporaryUntil != null) {
+    // An account made by an administrator gets no session, and the reply
+    // carries no secret: the account waits for its owner.
+    if (awaitingOwnerUntil != null) {
       return Response(
         201,
         body: jsonEncode({
@@ -259,8 +268,7 @@ Future<Response> registerHandler(
           'role': effectiveRole,
           'scopes': effectiveScopes,
           if (patientId != null) 'patient': patientId,
-          'one_time_password': password,
-          'one_time_password_expires': temporaryUntil.toUtc().toIso8601String(),
+          'awaiting_owner_until': awaitingOwnerUntil.toUtc().toIso8601String(),
         }),
         headers: jsonNoStoreHeaders,
       );

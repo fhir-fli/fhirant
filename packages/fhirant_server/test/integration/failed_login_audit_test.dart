@@ -91,40 +91,35 @@ void main() {
     expect(events, isEmpty);
   });
 
-  // `POST /auth/password` with no token checks a password as a login does
-  // (how a one-time password is used, auth/one_time_password.dart), so it
-  // is recorded as a login is: refused or accepted, with the name tried.
-  Future<int> changeWithoutToken(String user, String current) async =>
-      (await handler(
+  // `POST /auth/claim` takes a password from anyone, with no token
+  // (auth/owner_claim.dart), so it is recorded as a login is, with the
+  // name sent: accepted or refused.
+  Future<int> claimFor(String user, String password) async => (await handler(
         testRequest(
           'POST',
-          '/auth/password',
+          '/auth/claim',
           headers: {'content-type': 'application/json'},
-          body: jsonEncode({
-            'username': user,
-            'current_password': current,
-            'new_password': 'Audit-Password-2',
-          }),
+          body: jsonEncode({'username': user, 'new_password': password}),
         ),
       ))
           .statusCode;
 
-  test('a wrong password at /auth/password is recorded with the name tried',
+  test('a password sent to /auth/claim is recorded with the name sent',
       () async {
-    expect(await changeWithoutToken('audited-user', 'not-the-password'), 401);
+    expect(await claimFor('audited-user', 'Audit-Password-2'), 202);
     final events = await trail();
     expect(events, hasLength(1));
     final agent = events.single.agent.single;
     expect(agent.name?.valueString, 'audited-user');
     expect(agent.who?.identifier, isNull, reason: 'nothing proven');
-    expect(events.single.outcome?.valueString, '4');
+    expect(events.single.outcome?.valueString, '0');
   });
 
-  test('a password change with no token names the account', () async {
-    expect(await changeWithoutToken('audited-user', password), 200);
+  test('a refused claim is recorded with the name sent', () async {
+    expect(await claimFor('audited-user', 'short'), 400);
     final events = await trail();
     expect(events, hasLength(1));
     expect(events.single.agent.single.name?.valueString, 'audited-user');
-    expect(events.single.outcome?.valueString, '0');
+    expect(events.single.outcome?.valueString, isNot('0'));
   });
 }

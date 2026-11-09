@@ -159,17 +159,21 @@ void main() {
       expect(s, 200, reason: '$reset');
       expect(await read(token), 401);
       expect((await login('alice-user', alicePassword)).$1, 401);
-      // The reset hands over a one-time password (one_time_password_test).
-      final (own, _) = await send(
+      // The owner sets their own and the administrator approves it by
+      // code (owner_claim_test.dart).
+      final (claimed, claim) = await send(
         'POST',
-        '/auth/password',
-        body: {
-          'username': 'alice-user',
-          'current_password': reset['one_time_password'],
-          'new_password': 'alice-password-3',
-        },
+        '/auth/claim',
+        body: {'username': 'alice-user', 'new_password': 'alice-password-3'},
       );
-      expect(own, 200);
+      expect(claimed, 202);
+      final (approved, _) = await send(
+        'POST',
+        '/admin/users/$aliceId/approve',
+        token: adminToken,
+        body: {'code': claim['code']},
+      );
+      expect(approved, 200);
       expect((await login('alice-user', 'alice-password-3')).$1, 200);
     });
 

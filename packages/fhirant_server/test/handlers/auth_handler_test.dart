@@ -147,7 +147,7 @@ void main() {
       expect(response.statusCode, equals(403));
     });
 
-    test('admin can register new user, with a one-time password', () async {
+    test('admin can register new user, who waits for its owner', () async {
       final request = Request(
         'POST',
         Uri.parse('http://localhost:8080/auth/register'),
@@ -170,7 +170,7 @@ void main() {
           salt: any(named: 'salt'),
           role: any(named: 'role'),
           scopes: any(named: 'scopes'),
-          passwordTemporaryUntil: any(named: 'passwordTemporaryUntil'),
+          awaitingOwnerUntil: any(named: 'awaitingOwnerUntil'),
         ),
       ).thenAnswer((_) async => 2);
       when(() => mockDb.getUserById(2)).thenAnswer(
@@ -190,7 +190,8 @@ void main() {
       expect(response.statusCode, equals(201));
       final body = jsonDecode(await response.readAsString());
       expect(body['role'], equals('clinician'));
-      expect(body['one_time_password'], isA<String>());
+      expect(body['awaiting_owner_until'], isA<String>());
+      expect(body.keys, isNot(contains('one_time_password')));
       expect(body.containsKey('token'), isFalse);
       expect(body.containsKey('refresh_token'), isFalse);
       final until = verify(
@@ -200,7 +201,7 @@ void main() {
           salt: any(named: 'salt'),
           role: any(named: 'role'),
           scopes: any(named: 'scopes'),
-          passwordTemporaryUntil: captureAny(named: 'passwordTemporaryUntil'),
+          awaitingOwnerUntil: captureAny(named: 'awaitingOwnerUntil'),
         ),
       ).captured.single;
       expect(until, isA<DateTime>());

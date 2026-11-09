@@ -23,7 +23,8 @@ class User {
     this.lockedUntil,
     this.patientId,
     this.tokenGeneration = 0,
-    this.passwordTemporaryUntil,
+    this.awaitingOwnerUntil,
+    this.claimSent = false,
   });
 
   factory User.fromRow(QueryRow row) {
@@ -41,8 +42,8 @@ class User {
       lockedUntil: row.readNullable<DateTime>('locked_until'),
       patientId: row.readNullable<String>('patient_id'),
       tokenGeneration: row.readNullable<int>('token_generation') ?? 0,
-      passwordTemporaryUntil:
-          row.readNullable<DateTime>('password_temporary_until'),
+      awaitingOwnerUntil: row.readNullable<DateTime>('awaiting_owner_until'),
+      claimSent: row.readNullable<String>('claim_code') != null,
     );
   }
   final int id;
@@ -68,11 +69,15 @@ class User {
   /// session from before it ends (REVIEW-2026-09-17 A14).
   final int tokenGeneration;
 
-  /// Until when the password is a one-time password an administrator was
-  /// given to hand over; null when it is the user's own. A one-time
-  /// password opens no session: it only sets the user's own password
-  /// (OWASP ASVS 5.0.0 V6.4.1, V6.4.6).
-  final DateTime? passwordTemporaryUntil;
+  /// Until when the account waits for its owner to set a password, after
+  /// an administrator created it or reset its password; null when the
+  /// password is the owner's own. While it waits, no password opens it
+  /// (OWASP ASVS 5.0.0 V6.4.1, V6.4.6; `FhirAntDb.awaitOwner`).
+  final DateTime? awaitingOwnerUntil;
+
+  /// Whether the owner has sent a password that waits for an
+  /// administrator's approval (`FhirAntDb.approveClaim`).
+  final bool claimSent;
 
   @override
   String toString() =>
@@ -200,4 +205,26 @@ class UsernameTaken implements Exception {
 
   @override
   String toString() => 'UsernameTaken: $username';
+}
+
+/// What an administrator's approval of an owner's password came to
+/// (`FhirAntDb.approveClaim`).
+enum ClaimApproval {
+  /// The code matched: the password is the account's own now.
+  approved,
+
+  /// No such account.
+  noAccount,
+
+  /// The account is not waiting for its owner.
+  notAwaiting,
+
+  /// The wait ran out; the administrator resets the password again.
+  expired,
+
+  /// The owner has not sent a password yet.
+  nothingSent,
+
+  /// The code did not match; the password the owner sent was dropped.
+  wrongCode,
 }
