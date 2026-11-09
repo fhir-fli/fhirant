@@ -90,4 +90,36 @@ void main() {
         await db.search(resourceType: fhir.R4ResourceType.AuditEvent);
     expect(events, isEmpty);
   });
+
+  // `POST /auth/claim` takes a password from anyone, with no token
+  // (auth/owner_claim.dart), so it is recorded as a login is, with the
+  // name sent: accepted or refused.
+  Future<int> claimFor(String user, String password) async => (await handler(
+        testRequest(
+          'POST',
+          '/auth/claim',
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({'username': user, 'new_password': password}),
+        ),
+      ))
+          .statusCode;
+
+  test('a password sent to /auth/claim is recorded with the name sent',
+      () async {
+    expect(await claimFor('audited-user', 'Audit-Password-2'), 202);
+    final events = await trail();
+    expect(events, hasLength(1));
+    final agent = events.single.agent.single;
+    expect(agent.name?.valueString, 'audited-user');
+    expect(agent.who?.identifier, isNull, reason: 'nothing proven');
+    expect(events.single.outcome?.valueString, '0');
+  });
+
+  test('a refused claim is recorded with the name sent', () async {
+    expect(await claimFor('audited-user', 'short'), 400);
+    final events = await trail();
+    expect(events, hasLength(1));
+    expect(events.single.agent.single.name?.valueString, 'audited-user');
+    expect(events.single.outcome?.valueString, isNot('0'));
+  });
 }

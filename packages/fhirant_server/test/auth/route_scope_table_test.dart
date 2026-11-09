@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:test/test.dart';
 
-/// The per-route table of what each of the 89 routes asks a caller for
+/// The per-route table of what each of the 91 routes asks a caller for
 /// (REVIEW-2026-09-17 ST2b): the SMART permission `authorizeRequest`
 /// derives from the method and path, the resource type it derives it on,
 /// and the class of rule that applies before the scope check. The list is
@@ -57,9 +57,11 @@ void main() {
     ('GET', '/auth/authorize', '-', '-', '-'),
     ('POST', '/auth/authorize', '-', '-', '-'),
     ('POST', '/auth/password', '-', '-', '-'),
+    ('POST', '/auth/claim', '-', '-', '-'),
     ('POST', '/admin/unlock/<userId>', 'c', 'admin', '-'),
     ('GET', '/admin/users', 'r', 'admin', '-'),
     ('POST', '/admin/users/<userId>/password', 'c', 'admin', '-'),
+    ('POST', '/admin/users/<userId>/approve', 'c', 'admin', '-'),
     ('POST', '/admin/users/<userId>/deactivate', 'c', 'admin', '-'),
     ('POST', '/admin/users/<userId>/activate', 'c', 'admin', '-'),
     ('PUT', '/admin/users/<userId>/role', 'u', 'admin', '-'),
@@ -180,7 +182,7 @@ void main() {
     final rows = table.map((r) => '${r.$1} ${r.$2}').toSet();
     expect(routes.difference(rows), isEmpty, reason: 'routes with no row');
     expect(rows.difference(routes), isEmpty, reason: 'rows with no route');
-    expect(table, hasLength(89));
+    expect(table, hasLength(91));
   });
 
   test('each row says what authorizeRequest derives for its route', () {

@@ -127,7 +127,7 @@ void main() {
       scopes: ['system/*.*'],
     );
     final (s2, body) = await register(
-      {'username': 'second-user', 'password': 'Second-Password-1'},
+      {'username': 'second-user'},
       authToken: admin,
     );
     expect(s2, 201, reason: '$body');

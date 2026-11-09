@@ -42,10 +42,7 @@ void main() {
               'POST',
               '/auth/register',
               authToken: admin,
-              body: jsonEncode({
-                'username': 'dup',
-                'password': 'a-long-enough-password-123',
-              }),
+              body: jsonEncode({'username': 'dup'}),
             ),
           ),
         ),

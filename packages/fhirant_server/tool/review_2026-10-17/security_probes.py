@@ -65,10 +65,10 @@ def main():
         }
         toks = {}
         for i, (u, sc) in enumerate(accounts.items()):
-            s, _, b = g.req('POST', '/auth/register', {
-                'username': u, 'password': g.PW, 'role': 'clinician',
-                'scopes': sc}, adm, ip='127.0.3.%d' % (i + 10))
-            assert s == 201, (u, s, b)
+            cs, cb, s, _ = g.make_account(
+                adm, {'username': u, 'role': 'clinician', 'scopes': sc},
+                g.PW, '127.0.3.%d' % (i + 10))
+            assert (cs, s) == (202, 200), (u, cs, cb, s)
             toks[u], _ = g.login(u, g.PW, '127.0.4.%d' % (i + 10))
 
         def probe(case, user, method, path, body=None, allowed=(),

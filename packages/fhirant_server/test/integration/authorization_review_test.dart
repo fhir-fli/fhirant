@@ -62,21 +62,17 @@ void main() {
     List<String>? scopes,
     String? patient,
   }) async {
-    final r = await handler(
-      testRequest(
-        'POST',
-        '/auth/register',
-        body: jsonEncode({
-          'username': username,
-          'password': '${username}pass12345',
-          'role': role,
-          if (scopes != null) 'scopes': scopes,
-          if (patient != null) 'patient': patient,
-        }),
-        authToken: adminToken,
-      ),
+    await registerByAdmin(
+      handler,
+      adminToken,
+      {
+        'username': username,
+        'role': role,
+        if (scopes != null) 'scopes': scopes,
+        if (patient != null) 'patient': patient,
+      },
+      password: '${username}pass12345',
     );
-    await json(r, 201);
   }
 
   /// Runs the authorization-code flow (JSON authorize, then the token

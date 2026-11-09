@@ -37,7 +37,6 @@ void main() {
 
   String registration(String username) => jsonEncode({
         'username': username,
-        'password': 'a-long-enough-password-123',
         'role': 'admin',
       });
 

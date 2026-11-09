@@ -205,6 +205,29 @@ OVERRIDES = {
                'every current resource (storage_floor.dart; '
                'every_route_meets_the_storage_floor_test.dart)'),
     'V5.2.5': ('N/A', 'no compressed file is accepted (see V5.2.3)'),
+    'V6.4.1': ('FINDING', 'fixed 2026-11-09: an administrator chose a new '
+               "account's password and the user kept it; now the account "
+               'gets a password nobody holds and waits 12 h for its owner, '
+               'who sets their own; an administrator approves it with an '
+               '8-letter code (RFC 8628 alphabet), one try per code '
+               '(owner_claim_test.dart)'),
+    'V6.4.2': ('PASS', 'no hints or secret questions: the users table has '
+               'no such column (fhirant_db users schema)'),
+    'V6.4.3': ('PASS', "the only reset is an administrator's, which hands "
+               'no secret: the owner sets their own password and the '
+               'administrator approves it by code; there is no MFA to '
+               'bypass'),
+    'V6.4.4': ('N/A', 'no multi-factor authentication'),
+    'V6.4.5': ('N/A', 'passwords do not expire; the 12 h wait for the owner '
+               'is not renewed, a new reset replaces it, and its end is in '
+               'the reply (awaiting_owner_until)'),
+    'V6.4.6': ('FINDING', 'L3, fixed 2026-11-09 for an honest administrator: '
+               'it neither chooses nor is handed any secret (every string it '
+               'is handed is checked against the stored hashes, '
+               'owner_claim_test.dart). Accepted, not stopped (Grey, '
+               '2026-11-09, phone with no outside channel): an administrator '
+               'who files a claim itself and approves its own code; both '
+               'steps are audited'),
     'V5.2.6': ('FINDING', 'L3, fixed 2026-11-01: a PNG, JPEG or GIF over '
                'maxImagePixels (89,478,485, Pillow MAX_IMAGE_PIXELS) or whose '
                'header gives no size is 422 (file_type.dart, headers only; '

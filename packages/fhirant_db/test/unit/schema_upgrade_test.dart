@@ -233,4 +233,149 @@ void main() {
     expect(version.read<int>('user_version'), second.schemaVersion);
     await second.close();
   });
+
+  test(
+      'opening a schema-27 database gains the owner-claim columns, '
+      'and its accounts keep their own passwords', () async {
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.createUser(username: 'before', passwordHash: 'h', salt: 's');
+    for (final column in [
+      'awaiting_owner_until',
+      'claim_password_hash',
+      'claim_salt',
+      'claim_code',
+    ]) {
+      await first.customStatement('ALTER TABLE users DROP COLUMN $column');
+    }
+    await first.customStatement(
+      'ALTER TABLE authorization_codes DROP COLUMN token_generation',
+    );
+    await first.customStatement('PRAGMA user_version = 27');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    // The columns themselves, read from SQLite: a User read through
+    // readNullable answers null for a column that is not there at all.
+    Future<Set<String>> columnsOf(String table) async =>
+        (await second.customSelect('PRAGMA table_info($table)').get())
+            .map((r) => r.read<String>('name'))
+            .toSet();
+    expect(
+      await columnsOf('users'),
+      containsAll(<String>[
+        'awaiting_owner_until',
+        'claim_password_hash',
+        'claim_salt',
+        'claim_code',
+      ]),
+    );
+    expect(
+      await columnsOf('authorization_codes'),
+      contains('token_generation'),
+    );
+    final before = (await second.getUserByUsername('before'))!;
+    expect(before.awaitingOwnerUntil, isNull);
+    expect(before.claimSent, isFalse);
+    await second.awaitOwner(
+      before.id,
+      'nobody-knows',
+      's0',
+      DateTime.now().add(const Duration(hours: 12)),
+    );
+    expect(await second.holdClaim('before', 'mine', 's1', 'BCDFGHJK'), isTrue);
+    expect(
+      await second.approveClaim(before.id, 'BCDFGHJK'),
+      ClaimApproval.approved,
+    );
+    final version =
+        await second.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), second.schemaVersion);
+    await second.close();
+  });
+
+  group('an account waiting for its owner', () {
+    late FhirAntDb db;
+    late int id;
+
+    setUp(() async {
+      db = FhirAntDb(NativeDatabase.memory());
+      id = await db.createUser(
+        username: 'owner',
+        passwordHash: 'nobody-knows',
+        salt: 's0',
+        awaitingOwnerUntil: DateTime.now().add(const Duration(hours: 12)),
+      );
+    });
+
+    tearDown(() => db.close());
+
+    Future<User> row() async => (await db.getUserById(id))!;
+
+    test(
+        'holds the password its owner sends, and the right code makes it '
+        'the account password', () async {
+      expect(await db.holdClaim('owner', 'mine', 's1', 'BCDFGHJK'), isTrue);
+      expect((await row()).claimSent, isTrue);
+      expect((await row()).passwordHash, 'nobody-knows');
+      expect(await db.approveClaim(id, 'BCDFGHJK'), ClaimApproval.approved);
+      final after = await row();
+      expect(after.passwordHash, 'mine');
+      expect(after.salt, 's1');
+      expect(after.awaitingOwnerUntil, isNull);
+      expect(after.claimSent, isFalse);
+      expect(await db.approveClaim(id, 'BCDFGHJK'), ClaimApproval.notAwaiting);
+    });
+
+    test('a wrong code drops the password the owner sent', () async {
+      await db.holdClaim('owner', 'mine', 's1', 'BCDFGHJK');
+      expect(await db.approveClaim(id, 'BCDFGHJL'), ClaimApproval.wrongCode);
+      expect((await row()).claimSent, isFalse);
+      expect(await db.approveClaim(id, 'BCDFGHJK'), ClaimApproval.nothingSent);
+      expect((await row()).passwordHash, 'nobody-knows');
+    });
+
+    test('a later password replaces the earlier one', () async {
+      await db.holdClaim('owner', 'first', 's1', 'BBBBBBBB');
+      await db.holdClaim('owner', 'second', 's2', 'CCCCCCCC');
+      expect(await db.approveClaim(id, 'BBBBBBBB'), ClaimApproval.wrongCode);
+      await db.holdClaim('owner', 'third', 's3', 'DDDDDDDD');
+      expect(await db.approveClaim(id, 'DDDDDDDD'), ClaimApproval.approved);
+      expect((await row()).passwordHash, 'third');
+    });
+
+    test('nothing is held once the wait has run out', () async {
+      await db.awaitOwner(
+        id,
+        'nobody-knows',
+        's0',
+        DateTime.now().subtract(const Duration(seconds: 1)),
+      );
+      expect(await db.holdClaim('owner', 'mine', 's1', 'BCDFGHJK'), isFalse);
+      expect(await db.approveClaim(id, 'BCDFGHJK'), ClaimApproval.expired);
+    });
+
+    test('an account that is not waiting holds nothing', () async {
+      final own = await db.createUser(
+        username: 'settled',
+        passwordHash: 'own',
+        salt: 's',
+      );
+      expect(await db.holdClaim('settled', 'x', 's1', 'BCDFGHJK'), isFalse);
+      expect(await db.approveClaim(own, 'BCDFGHJK'), ClaimApproval.notAwaiting);
+      expect((await db.getUserById(own))!.passwordHash, 'own');
+    });
+
+    test('a new reset drops a password the owner sent before it', () async {
+      await db.holdClaim('owner', 'mine', 's1', 'BCDFGHJK');
+      await db.awaitOwner(
+        id,
+        'nobody-knows-2',
+        's2',
+        DateTime.now().add(const Duration(hours: 12)),
+      );
+      expect((await row()).claimSent, isFalse);
+      expect(await db.approveClaim(id, 'BCDFGHJK'), ClaimApproval.nothingSent);
+    });
+  });
 }

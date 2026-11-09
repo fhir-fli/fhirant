@@ -1,0 +1,215 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/unit/schema_upgrade_test.dart
+00:00 +0: opening a schema-13 database re-extracts every index row
+00:03 +1: opening a schema-15 database gains users.patient_id and the oauth_clients pin table
+00:05 +2: opening a schema-16 database rebuilds the search index
+00:08 +3: opening a schema-25 database adds the identifier:of-type rows
+00:11 +4: opening a schema-27 database gains the owner-claim columns, and its accounts keep their own passwords
+00:13 +4 -1: opening a schema-27 database gains the owner-claim columns, and its accounts keep their own passwords [E]
+  Expected: contains all of ['awaiting_owner_until', 'claim_password_hash', 'claim_salt', 'claim_code']
+    Actual: Set:[
+              'id',
+              'username',
+              'password_hash',
+              'salt',
+              'role',
+              'active',
+              'created_at',
+              'last_login',
+              'scopes',
+              'failed_login_count',
+              'locked_until',
+              'patient_id',
+              'token_generation'
+            ]
+     Which: has no match for 'awaiting_owner_until' at index 0 along with 3 other unmatched
+  
+  package:matcher                           expect
+  test/unit/schema_upgrade_test.dart 264:5  main.<fn>
+  
+00:13 +4 -1: an account waiting for its owner holds the password its owner sends, and the right code makes it the account password
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +5 -1: an account waiting for its owner a wrong code drops the password the owner sent
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +6 -1: an account waiting for its owner a later password replaces the earlier one
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +7 -1: an account waiting for its owner nothing is held once the wait has run out
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +8 -1: an account waiting for its owner an account that is not waiting holds nothing
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +9 -1: an account waiting for its owner a new reset drops a password the owner sent before it
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      main.<anonymous closure>.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_db/test/unit/schema_upgrade_test.dart:302:12)
+#8      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:434:61)
+#9      Future.forEach.<anonymous closure> (dart:async/future.dart:695:26)
+#10     Future.doWhile.<anonymous closure> (dart:async/future.dart:753:26)
+#11     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#12     _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#13     _CustomZone.runUnaryGuarded (dart:async/zone.dart:710:7)
+#14     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:748:26)
+#15     Future.doWhile (dart:async/future.dart:770:18)
+#16     Future.forEach (dart:async/future.dart:693:12)
+#17     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:434:18)
+<asynchronous suspension>
+#18     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:15)
+<asynchronous suspension>
+#19     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:13 +10 -1: Some tests failed.
+
+Failing tests:
+  test/unit/schema_upgrade_test.dart: opening a schema-27 database gains the owner-claim columns, and its accounts keep their own passwords
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

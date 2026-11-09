@@ -158,3 +158,60 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler, server: server);
 }
+
+/// Registers an account as the administrator holding [adminToken], then
+/// goes through what its owner and the administrator do before the first
+/// sign-in (`auth/owner_claim.dart`): the owner sends [password] to
+/// `/auth/claim`, the administrator approves it with the code, the owner
+/// signs in. [fields] is the registration body (username, role, scopes,
+/// patient), without a password. Returns the registration reply with the
+/// session the sign-in opened (`token`, `refresh_token`).
+Future<Map<String, dynamic>> registerByAdmin(
+  Handler handler,
+  String adminToken,
+  Map<String, dynamic> fields, {
+  required String password,
+}) async {
+  Future<(int, Map<String, dynamic>)> post(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
+    final r = await handler(
+      testRequest(
+        'POST',
+        path,
+        authToken: token,
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode(body),
+      ),
+    );
+    return (
+      r.statusCode,
+      jsonDecode(await r.readAsString()) as Map<String, dynamic>,
+    );
+  }
+
+  final (registered, reply) =
+      await post('/auth/register', fields, token: adminToken);
+  if (registered != 201) {
+    throw StateError('registration: $registered $reply');
+  }
+  final (claimed, claim) = await post('/auth/claim', {
+    'username': fields['username'],
+    'new_password': password,
+  });
+  if (claimed != 202) throw StateError('claim: $claimed $claim');
+  final (approved, approval) = await post(
+    '/admin/users/${reply['id']}/approve',
+    {'code': claim['code']},
+    token: adminToken,
+  );
+  if (approved != 200) throw StateError('approval: $approved $approval');
+  final (signedIn, session) = await post('/auth/login', {
+    'username': fields['username'],
+    'password': password,
+  });
+  if (signedIn != 200) throw StateError('login: $signedIn $session');
+  return {...reply, ...session};
+}

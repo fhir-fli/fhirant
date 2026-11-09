@@ -216,6 +216,25 @@ def fixtures():
     ]
 
 
+def make_account(admin, body, password, ip, admin_ip=ROOT_IP):
+    """Creates an account as the administrator holding [admin] and sets
+    its password the way its owner does (auth/owner_claim.dart): register
+    with no password, /auth/claim with [password], approve by the code.
+    Returns (claim status, claim body, approve status, account id); the
+    claim is 400 when [password] fails the policy, and nothing is approved."""
+    s, _, b = req('POST', '/auth/register', body, admin, ip=ip)
+    assert s in (200, 201), (body, s, b)
+    uid = json.loads(b)['id']
+    cs, _, cb = req('POST', '/auth/claim',
+                    {'username': body['username'], 'new_password': password},
+                    None, ip=ip)
+    if cs != 202:
+        return cs, cb, None, uid
+    s, _, b = req('POST', '/admin/users/%d/approve' % uid,
+                  {'code': json.loads(cb)['code']}, admin, ip=admin_ip)
+    return cs, cb, s, uid
+
+
 def seed(work):
     d = os.path.join(work, 'seed')
     shutil.rmtree(d, ignore_errors=True)
@@ -225,16 +244,19 @@ def seed(work):
         root, _ = login(*ROOT, ip=ROOT_IP)
         ids = {}
         for u, role, scopes, pat in USERS:
-            body = {'username': u, 'password': PW, 'role': role}
+            body = {'username': u, 'role': role}
             if scopes:
                 body['scopes'] = scopes
             if pat:
                 body['patient'] = pat
-            # /auth/register is credential-limited per address.
-            s, _, b = req('POST', '/auth/register', body, root,
-                          ip='127.0.2.%d' % (len(ids) + 10))
+            # /auth/register and /auth/claim are credential-limited per
+            # address. The administrator chooses no password: the owner
+            # sends PW to /auth/claim and the administrator approves it
+            # with the code (auth/owner_claim.dart).
+            cs, cb, s, _ = make_account(root, body, PW,
+                                        '127.0.2.%d' % (len(ids) + 10))
+            assert (cs, s) == (202, 200), (u, cs, cb, s)
             ids[u] = None
-            assert s in (200, 201), (u, s, b)
         s, _, b = req('GET', '/admin/users', token=root, ip=ROOT_IP)
         for row in json.loads(b)['users'] if b.startswith('{') else json.loads(b):
             ids[row['username']] = row['id']
@@ -290,8 +312,9 @@ def requests_for(seedinfo, me):
         # auth/*
         ('status', 'GET', '/auth/status', None, None),
         ('register-admin', 'POST', '/auth/register',
-         {'username': 'evil-' + me['name'], 'password': PW, 'role': 'admin'},
-         None),
+         {'username': 'evil-' + me['name'], 'role': 'admin'}, None),
+        ('claim', 'POST', '/auth/claim',
+         {'username': 'nobody', 'new_password': PW + 'claim'}, None),
         ('login-bad', 'POST', '/auth/login',
          {'username': 'nobody', 'password': 'wrong-password-1'}, None),
         ('refresh-own', 'POST', '/auth/token',
@@ -311,8 +334,9 @@ def requests_for(seedinfo, me):
         # admin/*
         ('unlock', 'POST', '/admin/unlock/%d' % t, None, None),
         ('users', 'GET', '/admin/users', None, None),
-        ('reset-pw', 'POST', '/admin/users/%d/password' % t,
-         {'new_password': PW + 'reset'}, None),
+        ('reset-pw', 'POST', '/admin/users/%d/password' % t, None, None),
+        ('approve', 'POST', '/admin/users/%d/approve' % t,
+         {'code': 'BBBB-BBBB'}, None),
         ('set-scopes', 'PUT', '/admin/users/%d/scopes' % t,
          {'scopes': ['user/*.*']}, None),
         ('set-role', 'PUT', '/admin/users/%d/role' % t, {'role': 'admin'},
@@ -672,8 +696,7 @@ def identity_setup(name, seedinfo, root):
         return a, r, PW
     if name == 'pw-reset':
         a, r = login('pwch', PW, ip)
-        as_root('POST', '/admin/users/%d/password' % ids['pwch'],
-                {'new_password': PW + 'reset'})
+        as_root('POST', '/admin/users/%d/password' % ids['pwch'])
         return a, r, PW
     if name == 'scopes-narrowed':
         a, r = login('narrow', PW, ip)

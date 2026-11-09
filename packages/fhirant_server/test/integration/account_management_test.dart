@@ -151,16 +151,30 @@ void main() {
     test('resets a password, and the old sessions end', () async {
       final (_, before) = await login('alice-user', alicePassword);
       final token = before['token'] as String;
-      final (s, _) = await send(
+      final (s, reset) = await send(
         'POST',
         '/admin/users/$aliceId/password',
         token: adminToken,
-        body: {'new_password': 'reset-by-admin-1'},
       );
-      expect(s, 200);
+      expect(s, 200, reason: '$reset');
       expect(await read(token), 401);
       expect((await login('alice-user', alicePassword)).$1, 401);
-      expect((await login('alice-user', 'reset-by-admin-1')).$1, 200);
+      // The owner sets their own and the administrator approves it by
+      // code (owner_claim_test.dart).
+      final (claimed, claim) = await send(
+        'POST',
+        '/auth/claim',
+        body: {'username': 'alice-user', 'new_password': 'alice-password-3'},
+      );
+      expect(claimed, 202);
+      final (approved, _) = await send(
+        'POST',
+        '/admin/users/$aliceId/approve',
+        token: adminToken,
+        body: {'code': claim['code']},
+      );
+      expect(approved, 200);
+      expect((await login('alice-user', 'alice-password-3')).$1, 200);
     });
 
     test('deactivates and reactivates an account', () async {

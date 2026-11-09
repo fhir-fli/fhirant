@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -315,6 +315,37 @@ class FhirAntDb extends FhirDb {
             // only what is missing is written.
             await _createSpecLoadsTable();
           }
+          if (from < 28) {
+            // An account waiting for its owner to set a password, and the
+            // password the owner sent (OWASP ASVS 5.0.0 V6.4.1, V6.4.6;
+            // [awaitOwner]). Guarded, as token_generation is: a fresh store
+            // creates the columns.
+            final columns =
+                (await customSelect('PRAGMA table_info(users)').get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            for (final column in _ownerClaimColumns.entries) {
+              if (!columns.contains(column.key)) {
+                await customStatement(
+                  'ALTER TABLE users ADD COLUMN ${column.key} ${column.value}',
+                );
+              }
+            }
+            // The account's token generation when a code was issued: a
+            // code from before a password, role, scope or activation change
+            // opens no session ([createAuthorizationCode]).
+            final codeColumns =
+                (await customSelect('PRAGMA table_info(authorization_codes)')
+                        .get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            if (!codeColumns.contains('token_generation')) {
+              await customStatement(
+                'ALTER TABLE authorization_codes ADD COLUMN token_generation '
+                'INTEGER NOT NULL DEFAULT 0',
+              );
+            }
+          }
         },
       );
 
@@ -337,7 +368,11 @@ class FhirAntDb extends FhirDb {
         failed_login_count INTEGER NOT NULL DEFAULT 0,
         locked_until INTEGER,
         patient_id TEXT,
-        token_generation INTEGER NOT NULL DEFAULT 0
+        token_generation INTEGER NOT NULL DEFAULT 0,
+        awaiting_owner_until INTEGER,
+        claim_password_hash TEXT,
+        claim_salt TEXT,
+        claim_code TEXT
       )
     ''');
   }
@@ -391,6 +426,7 @@ class FhirAntDb extends FhirDb {
         code_challenge_method TEXT,
         expires_at INTEGER NOT NULL,
         used INTEGER NOT NULL DEFAULT 0,
+        token_generation INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     ''');
@@ -871,7 +907,8 @@ class FhirAntDb extends FhirDb {
   Future<void> _mergeUsers() async {
     const columns = 'username, password_hash, salt, role, active, '
         'created_at, last_login, scopes, failed_login_count, locked_until, '
-        'patient_id';
+        'patient_id, awaiting_owner_until, claim_password_hash, claim_salt, '
+        'claim_code';
     // New usernames whose id is free keep it.
     await customStatement(
       'INSERT INTO main.users (id, $columns) '
@@ -1600,6 +1637,7 @@ class FhirAntDb extends FhirDb {
     String role = 'clinician',
     String? scopes,
     String? patientId,
+    DateTime? awaitingOwnerUntil,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     // The id comes from the INSERT's own execution. It was read afterwards
@@ -1611,8 +1649,8 @@ class FhirAntDb extends FhirDb {
       return await customInsert(
         'INSERT INTO users '
         '(username, password_hash, salt, role, active, created_at, scopes, '
-        'patient_id) '
-        'VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
+        'patient_id, awaiting_owner_until) '
+        'VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)',
         variables: [
           Variable.withString(username),
           Variable.withString(passwordHash),
@@ -1621,6 +1659,7 @@ class FhirAntDb extends FhirDb {
           Variable.withInt(now),
           Variable<String>(scopes),
           Variable<String>(patientId),
+          Variable<int>(_epochSeconds(awaitingOwnerUntil)),
         ],
       );
     } on Object catch (e) {
@@ -1659,6 +1698,95 @@ class FhirAntDb extends FhirDb {
       [passwordHash, salt, id],
     );
   }
+
+  /// The columns schema 28 adds to `users` for an account waiting for its
+  /// owner, and their types.
+  static const _ownerClaimColumns = {
+    'awaiting_owner_until': 'INTEGER',
+    'claim_password_hash': 'TEXT',
+    'claim_salt': 'TEXT',
+    'claim_code': 'TEXT',
+  };
+
+  /// Puts the account in wait for its owner until [until]: [passwordHash]
+  /// and [salt] replace its password (the caller makes them from a secret
+  /// nobody keeps), and any password the owner already sent is dropped.
+  /// An administrator's reset (OWASP ASVS 5.0.0 V6.4.6).
+  Future<void> awaitOwner(
+    int id,
+    String passwordHash,
+    String salt,
+    DateTime until,
+  ) async {
+    await customStatement(
+      'UPDATE users SET password_hash = ?, salt = ?, awaiting_owner_until = ?, '
+      'claim_password_hash = NULL, claim_salt = NULL, claim_code = NULL '
+      'WHERE id = ?',
+      [passwordHash, salt, _epochSeconds(until), id],
+    );
+  }
+
+  /// Holds the password the owner of the account [username] sent, under
+  /// [code], replacing one sent before. Only while the account waits for
+  /// its owner; false, and nothing written, otherwise.
+  Future<bool> holdClaim(
+    String username,
+    String passwordHash,
+    String salt,
+    String code,
+  ) async {
+    final changed = await customUpdate(
+      'UPDATE users SET claim_password_hash = ?, claim_salt = ?, '
+      'claim_code = ? WHERE username = ? AND awaiting_owner_until > ?',
+      variables: [
+        Variable.withString(passwordHash),
+        Variable.withString(salt),
+        Variable.withString(code),
+        Variable.withString(username),
+        Variable.withInt(_epochSeconds(DateTime.now())!),
+      ],
+      updateKind: UpdateKind.update,
+    );
+    return changed > 0;
+  }
+
+  /// An administrator approves the password the account's owner sent, by
+  /// the [code] the owner was shown. On a match it becomes the account's
+  /// password and the wait ends. A code that does not match drops the held
+  /// password: the owner sends it again, so each code gets one try.
+  Future<ClaimApproval> approveClaim(int id, String code) =>
+      transaction(() async {
+        final user = await getUserById(id);
+        if (user == null) return ClaimApproval.noAccount;
+        final until = user.awaitingOwnerUntil;
+        if (until == null) return ClaimApproval.notAwaiting;
+        if (!until.isAfter(DateTime.now())) return ClaimApproval.expired;
+        final row = await customSelect(
+          'SELECT claim_code FROM users WHERE id = ?',
+          variables: [Variable.withInt(id)],
+        ).getSingle();
+        final held = row.readNullable<String>('claim_code');
+        if (held == null) return ClaimApproval.nothingSent;
+        if (held != code) {
+          await customStatement(
+            'UPDATE users SET claim_password_hash = NULL, claim_salt = NULL, '
+            'claim_code = NULL WHERE id = ?',
+            [id],
+          );
+          return ClaimApproval.wrongCode;
+        }
+        await customStatement(
+          'UPDATE users SET password_hash = claim_password_hash, '
+          'salt = claim_salt, awaiting_owner_until = NULL, '
+          'claim_password_hash = NULL, claim_salt = NULL, claim_code = NULL, '
+          'failed_login_count = 0, locked_until = NULL WHERE id = ?',
+          [id],
+        );
+        return ClaimApproval.approved;
+      });
+
+  static int? _epochSeconds(DateTime? at) =>
+      at == null ? null : at.millisecondsSinceEpoch ~/ 1000;
 
   Future<void> deactivateUser(int id) async {
     await customStatement(
@@ -1834,13 +1962,14 @@ class FhirAntDb extends FhirDb {
     String? codeChallenge,
     String? codeChallengeMethod,
     required DateTime expiresAt,
+    int tokenGeneration = 0,
   }) async {
     final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
     await customStatement(
       'INSERT INTO authorization_codes '
       '(code, client_id, user_id, redirect_uri, scope, code_challenge, '
-      'code_challenge_method, expires_at) '
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'code_challenge_method, expires_at, token_generation) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         code,
         clientId,
@@ -1850,6 +1979,7 @@ class FhirAntDb extends FhirDb {
         codeChallenge,
         codeChallengeMethod,
         expiresAtEpoch,
+        tokenGeneration,
       ],
     );
   }

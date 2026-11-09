@@ -4,6 +4,7 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
+import 'package:fhirant_server/src/auth/owner_claim.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -94,8 +95,12 @@ Future<Response> listUsersHandler(
   );
 }
 
-/// `POST /admin/users/<id>/password`: an administrator sets a new
-/// password for the account. Body: `new_password`.
+/// `POST /admin/users/<id>/password`: an administrator resets the
+/// account's password. No body (or an empty JSON object): the
+/// administrator neither chooses the new password nor is handed one. The
+/// old password and every session from before stop working, and the
+/// account waits for its owner to set their own (`auth/owner_claim.dart`;
+/// OWASP ASVS 5.0.0 V6.4.6).
 Future<Response> resetPasswordHandler(
   Request request,
   int userId,
@@ -105,18 +110,148 @@ Future<Response> resetPasswordHandler(
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
-  final body = await _body(request);
-  final next = body?['new_password'];
-  if (next is! String) {
-    return _json(400, {'error': 'new_password is required'});
+  // An administrator who reset its own password would lose its session and
+  // have no way to approve its own new one; as the only administrator, the
+  // server would be left with nobody who can sign in to run it (review of
+  // fhirant #107). Its own password it changes as any caller does.
+  final caller = request.context['auth_user'] as Map<String, dynamic>?;
+  if (caller?['userId'] == userId) {
+    return _json(409, {
+      'error': 'Change your own password with POST /auth/password; an '
+          'administrator cannot reset its own',
+    });
   }
-  final policyError = PasswordPolicy.validate(next);
-  if (policyError != null) return _json(400, {'error': policyError});
-  await _setPassword(dbInterface, userId, next);
+  final raw = await request.readAsString();
+  if (raw.trim().isNotEmpty) {
+    final Object? body;
+    try {
+      body = jsonDecode(raw);
+    } on FormatException {
+      return _json(400, {'error': 'Body must be a JSON object, or empty'});
+    }
+    if (body is! Map<String, dynamic>) {
+      return _json(400, {'error': 'Body must be a JSON object, or empty'});
+    }
+    if (body.isNotEmpty) {
+      return _json(400, {
+        'error': "An administrator does not choose a user's password. Send "
+            'no body: the user sets their own with POST /auth/claim, and you '
+            'approve it with the code they are shown.',
+      });
+    }
+  }
+  final none = await unusablePassword();
+  await dbInterface.awaitOwner(
+    userId,
+    none.hash,
+    none.salt,
+    DateTime.now().add(ownerWaitLifetime),
+  );
+  await dbInterface.bumpTokenGeneration(userId);
   FhirantLogging().logInfo('Password reset for user $userId by admin');
   return Response.ok(
-    jsonEncode({'message': 'Password reset', ..._publicUser(user)}),
+    jsonEncode({
+      'message': 'Password reset',
+      ..._publicUser(await _fresh(dbInterface, userId)),
+    }),
   );
+}
+
+/// `POST /auth/claim`: the owner of an account waiting for them sets their
+/// own password, from their own device. Body: `username`, `new_password`
+/// (held to the password policy). The reply carries a code for the owner
+/// to show the administrator, who approves with it
+/// (`POST /admin/users/<id>/approve`; `auth/owner_claim.dart`).
+///
+/// The reply is the same whether or not the account exists and waits: a
+/// different answer would tell anyone which accounts were just reset. For
+/// an account that does not wait, the code is never stored and approves
+/// nothing. The password is hashed either way, so the time taken does not
+/// tell them apart. Rate-limited with the credential endpoints, and
+/// recorded in the audit trail with the name sent.
+Future<Response> claimHandler(Request request, FhirAntDb dbInterface) async {
+  try {
+    final body = await _body(request);
+    final username = body?['username'];
+    final next = body?['new_password'];
+    if (username is! String || next is! String) {
+      return _json(400, {'error': 'username and new_password are required'});
+    }
+    final tried = {'attempted_username': username};
+    final policyError = PasswordPolicy.validate(next);
+    if (policyError != null) {
+      return _json(400, {'error': policyError}).change(context: tried);
+    }
+    final salt = PasswordHasher.generateSalt();
+    final hash = await PasswordHasher.hashPassword(next, salt);
+    final code = newClaimCode();
+    await dbInterface.holdClaim(
+      username,
+      hash,
+      salt,
+      canonicalClaimCode(code)!,
+    );
+    return Response(
+      202,
+      body: jsonEncode({
+        'code': code,
+        'message': 'Show this code to your administrator. Your password '
+            'works once they approve it with the code. Sending a password '
+            'again replaces this one and gives a new code.',
+      }),
+      headers: jsonNoStoreHeaders,
+      context: tried,
+    );
+  } catch (e, stackTrace) {
+    FhirantLogging().logError('Password claim failed', e, stackTrace);
+    return _json(500, {'error': 'Password claim failed'});
+  }
+}
+
+/// `POST /admin/users/<id>/approve`: an administrator approves the
+/// password the account's owner sent, with the code the owner was shown.
+/// Body: `code` (dashes and case optional, RFC 8628 §6.1). A wrong code
+/// drops the password the owner sent; they send it again for a new code.
+Future<Response> approveClaimHandler(
+  Request request,
+  int userId,
+  FhirAntDb dbInterface,
+) async {
+  final refused = _requireAdmin(request);
+  if (refused != null) return refused;
+  final body = await _body(request);
+  final raw = body?['code'];
+  if (raw is! String) return _json(400, {'error': 'code is required'});
+  final code = canonicalClaimCode(raw);
+  // Not a code at all is a typing slip: what the owner sent stays.
+  if (code == null) return _json(400, {'error': 'That is not a code'});
+  switch (await dbInterface.approveClaim(userId, code)) {
+    case ClaimApproval.approved:
+      await dbInterface.bumpTokenGeneration(userId);
+      FhirantLogging().logInfo('Password of user $userId approved by admin');
+      return Response.ok(
+        jsonEncode(_publicUser(await _fresh(dbInterface, userId))),
+      );
+    case ClaimApproval.noAccount:
+      return _json(404, {'error': 'User not found'});
+    case ClaimApproval.notAwaiting:
+      return _json(409, {
+        'error': 'This account is not waiting for a password',
+      });
+    case ClaimApproval.expired:
+      return _json(409, {
+        'error': 'The wait for this account ran out; reset its password again',
+      });
+    case ClaimApproval.nothingSent:
+      return _json(409, {
+        'error': 'The owner has not sent a password yet (POST /auth/claim)',
+      });
+    case ClaimApproval.wrongCode:
+      return _json(400, {
+        'error': 'The code does not match. The password the owner sent was '
+            'dropped; they send it again for a new code.',
+      });
+  }
 }
 
 /// `POST /admin/users/<id>/activate` and `/deactivate`.
@@ -244,6 +379,9 @@ Map<String, dynamic> _publicUser(User u) => {
       'scopes': SmartScopeEnforcer.heldScopes(u),
       if (u.patientId != null) 'patient': u.patientId,
       'locked': u.lockedUntil != null && u.lockedUntil!.isAfter(DateTime.now()),
+      if (u.awaitingOwnerUntil != null)
+        'awaiting_owner_until': u.awaitingOwnerUntil!.toUtc().toIso8601String(),
+      if (u.awaitingOwnerUntil != null) 'password_sent': u.claimSent,
       if (u.lastLogin != null) 'last_login': u.lastLogin!.toIso8601String(),
     };
 

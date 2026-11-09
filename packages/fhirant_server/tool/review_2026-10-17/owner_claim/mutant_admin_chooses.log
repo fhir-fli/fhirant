@@ -1,0 +1,82 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/integration/owner_claim_test.dart
+00:00 +0: an administrator cannot choose a new account its password
+00:00 +0 -1: an administrator cannot choose a new account its password [E]
+  Expected: <400>
+    Actual: <201>
+  {id: 2, username: bob-user, role: clinician, scopes: [user/*.*], awaiting_owner_until: 2026-11-10T09:46:11.683788Z}
+  
+  package:matcher                               expect
+  test/integration/owner_claim_test.dart 136:5  main.<fn>
+  
+00:00 +0 -1: a new account waits for its owner; the reply has no secret and no session
+00:01 +1 -1: the owner sets their own password, approved by the code
+00:02 +2 -1: the code is read without dashes and in any case (RFC 8628 §6.1)
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:03 +3 -1: a wrong code drops what the owner sent; a non-code does not
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:05 +4 -1: a later password replaces the earlier one
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:07 +5 -1: the password the owner sends must meet the policy
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:07 +6 -1: a claim for an account that does not wait looks the same and approves nothing
+00:09 +7 -1: the wait runs out: nothing is held or approved after it
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:11 +8 -1: a reset hands the administrator nothing, ends the old password and every session, and the owner sets a new one
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:13 +9 -1: nothing an administrator is handed signs in as the user
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:26 +10 -1: only an administrator approves
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:27 +11 -1: an administrator cannot reset its own password
+00:27 +12 -1: a code taken before a reset opens no session
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:28 +13 -1: a code taken with no change since still opens a session
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:29 +14 -1: a claim spends the credential bucket, not the general one
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/test_helpers.dart:146:14)
+#8      main.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/owner_claim_test.dart:456:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+Error in saveResources: Bad state: Can't re-open a database after closing it. Please create a new database connection and open that instead.
+00:30 +15 -1: the first administrator still chooses its own password
+WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$FhirDb (package:fhir_db/src/fhir_db.g.dart:6605:31)
+#4      new FhirDb (package:fhir_db/src/fhir_db.dart)
+#5      new FhirDb (package:fhir_r4_db/src/fhir_db.dart:14:21)
+#6      new FhirAntDb (package:fhirant_db/db/fhirant_db.dart)
+#7      createTestServer (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/test_helpers.dart:146:14)
+#8      main.<anonymous closure> (file:///tmp/claude-1000/fhirant-asvs/packages/fhirant_server/test/integration/owner_claim_test.dart:486:26)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:30 +16 -1: Some tests failed.
+
+Failing tests:
+  test/integration/owner_claim_test.dart: an administrator cannot choose a new account its password
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

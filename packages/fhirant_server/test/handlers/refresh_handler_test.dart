@@ -388,6 +388,7 @@ void main() {
     test('returns 400 when code already used, and ends the sessions', () async {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(true);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.userId).thenReturn(7);
       when(() => mockDb.bumpTokenGeneration(7)).thenAnswer((_) async {});
 
@@ -412,6 +413,7 @@ void main() {
     test('returns 400 when code expired', () async {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().subtract(const Duration(minutes: 1)));
       when(() => mockCode.code).thenReturn('expired-code');
@@ -437,6 +439,7 @@ void main() {
     test('returns 400 when redirect_uri does not match', () async {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().add(const Duration(minutes: 5)));
       when(() => mockCode.redirectUri)
@@ -462,6 +465,7 @@ void main() {
         () async {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().add(const Duration(minutes: 5)));
       when(() => mockCode.redirectUri)
@@ -495,6 +499,7 @@ void main() {
 
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().add(const Duration(minutes: 5)));
       when(() => mockCode.redirectUri)
@@ -525,6 +530,7 @@ void main() {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.code).thenReturn('valid-code');
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().add(const Duration(minutes: 5)));
       when(() => mockCode.redirectUri)
@@ -590,6 +596,7 @@ void main() {
       final mockCode = MockAuthorizationCode();
       when(() => mockCode.code).thenReturn('pkce-valid');
       when(() => mockCode.used).thenReturn(false);
+      when(() => mockCode.tokenGeneration).thenReturn(0);
       when(() => mockCode.expiresAt)
           .thenReturn(DateTime.now().add(const Duration(minutes: 5)));
       when(() => mockCode.redirectUri)

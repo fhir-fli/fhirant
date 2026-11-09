@@ -141,11 +141,20 @@ void main() {
         passwordHash: 'h',
         salt: salt,
       );
+      // An account waiting for its owner still waits after a restore,
+      // with the password its owner sent still held (auth/owner_claim.dart).
+      final until = DateTime.fromMillisecondsSinceEpoch(
+        DateTime.now().add(const Duration(hours: 12)).millisecondsSinceEpoch ~/
+            1000 *
+            1000,
+      );
       await src.createUser(
         username: 'second',
         passwordHash: 'h',
         salt: salt,
+        awaitingOwnerUntil: until,
       );
+      expect(await src.holdClaim('second', 'h2', salt, 'BCDFGHJK'), isTrue);
       final file = await BackupService.createFile(
         src,
         'correct horse battery',
@@ -156,6 +165,18 @@ void main() {
       // Local id 1 is 'admin'; the backup's id 1 ('first') is renumbered,
       // its id 2 ('second') is free and kept.
       expect((await db.getUserByUsername('second'))!.id, 2);
+      final second = (await db.getUserByUsername('second'))!;
+      expect(second.awaitingOwnerUntil, until);
+      expect(second.claimSent, isTrue);
+      expect(
+        await db.approveClaim(second.id, 'BCDFGHJK'),
+        ClaimApproval.approved,
+      );
+      expect((await db.getUserById(second.id))!.passwordHash, 'h2');
+      expect(
+        (await db.getUserByUsername('first'))!.awaitingOwnerUntil,
+        isNull,
+      );
       expect((await db.getUserByUsername('first'))!.id, greaterThan(2));
     });
   });

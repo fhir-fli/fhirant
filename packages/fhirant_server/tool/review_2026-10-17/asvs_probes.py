@@ -243,11 +243,11 @@ def run(d):
                                                                 431)
         else 'FAIL')
 
-    # V6.2 password policy (register as admin)
+    # V6.2 password policy: the owner's password at /auth/claim, the one
+    # place a password other than the first administrator's is chosen
+    # (auth/owner_claim.dart). 202 is accepted, 400 refused by the policy.
     def reg(u, pw):
-        s, _, b = g.req('POST', '/auth/register', {'username': u,
-                                                   'password': pw},
-                        adm, ip=ip())
+        s, b, _, _ = g.make_account(adm, {'username': u}, pw, ip())
         return s, b[:100]
     for u, pw in [('p8', 'abcdefgh'), ('p11', 'abcdefghijk'),
                   ('p12', 'k7#Lm2$qZx9!'), ('p15', 'correcthorsebat'),

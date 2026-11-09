@@ -30,18 +30,12 @@ void main() {
       role: 'admin',
       scopes: ['system/*.*'],
     );
-    final r = await handler(
-      testRequest(
-        'POST',
-        '/auth/register',
-        authToken: admin,
-        body: jsonEncode({
-          'username': 'ref',
-          'password': 'a-long-enough-password-123',
-        }),
-      ),
+    await registerByAdmin(
+      handler,
+      admin,
+      {'username': 'ref'},
+      password: 'a-long-enough-password-123',
     );
-    expect(r.statusCode, 201, reason: await r.readAsString());
   });
 
   tearDown(() => db.close());

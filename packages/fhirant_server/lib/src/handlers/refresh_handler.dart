@@ -208,6 +208,25 @@ Future<Response> _handleAuthorizationCodeGrant(
     );
   }
 
+  // A code issued before a password reset, or a role, scope or activation
+  // change, is revoked with the sessions from before it
+  // (auth/token_bound.dart). RFC 6749 §5.2 (rfc-editor.org, read
+  // 2026-11-09, verbatim): invalid_grant, "The provided authorization grant
+  // (e.g., authorization code, resource owner credentials) or refresh token
+  // is invalid, expired, revoked". A code taken just before a reset used to
+  // open a session on the account waiting for its owner (review of
+  // fhirant #107).
+  if (authCode.tokenGeneration != user.tokenGeneration) {
+    return Response(
+      400,
+      body: jsonEncode({
+        'error': 'invalid_grant',
+        'error_description': 'Authorization code predates a change to the '
+            'account',
+      }),
+    );
+  }
+
   // The scope stored with the code is already the requested scope
   // intersected with the account's grant (authorize_handler). The token's
   // scope claim carries the resource scopes; launch and OpenID scopes are

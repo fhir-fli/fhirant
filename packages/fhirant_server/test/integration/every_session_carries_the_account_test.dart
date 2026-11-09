@@ -21,8 +21,10 @@ import 'test_helpers.dart';
 /// first such change. Before the shared minter (2026-09-22) the pair was
 /// minted at five sites; registration's carried no generation, which was
 /// harmless only because a new account is at generation 0. Four routes
-/// mint: register, login, the refresh grant, and the caller's password
-/// change.
+/// mint: register (the first administrator only: an account an
+/// administrator creates waits for its owner and gets no session,
+/// auth/owner_claim.dart), login, the refresh grant, and the caller's
+/// password change.
 void main() {
   late FhirAntDb db;
   late Handler handler;
@@ -82,21 +84,51 @@ void main() {
     }
   }
 
-  test('register, login, refresh and password change all mint from the row',
-      () async {
+  test('the first registration mints from the row', () async {
+    final first = await createTestServer();
+    try {
+      final r = await first.handler(
+        testRequest(
+          'POST',
+          '/auth/register',
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({
+            'username': 'first-admin',
+            'password': 'first-admin-own-1',
+          }),
+        ),
+      );
+      final reply = jsonDecode(await r.readAsString()) as Map<String, dynamic>;
+      expect(r.statusCode, 201, reason: '$reply');
+      final user = (await first.db.getUserByUsername('first-admin'))!;
+      final payload = jwt.verifyToken(reply['token'] as String)!;
+      expect(payload['gen'], user.tokenGeneration);
+      expect(payload['userId'], user.id);
+      expect(
+        payload['scope'],
+        SmartScopeEnforcer.heldScopes(user).join(' '),
+      );
+    } finally {
+      await first.db.close();
+    }
+  });
+
+  test(
+      'a first password, login, refresh and password change all mint from '
+      'the row', () async {
     const password = 'bob-password-1';
-    final (s0, registered) = await send(
-      'POST',
-      '/auth/register',
-      token: adminToken,
-      body: {'username': 'bob-user', 'password': password, 'role': 'clinician'},
+    final registered = await registerByAdmin(
+      handler,
+      adminToken,
+      {'username': 'bob-user', 'role': 'clinician'},
+      password: password,
     );
-    expect(s0, 201, reason: '$registered');
     final bobId = registered['id'] as int;
-    await carriesTheAccount('register', registered, bobId);
+    await carriesTheAccount('first password', registered, bobId);
+    expect((await db.getUserById(bobId))!.tokenGeneration, 1);
 
     // A role change moves the generation on (A14), so from here every
-    // session must carry 1, not the 0 a request-built token would.
+    // session must carry 2, not the 1 a request-built token would.
     final (s1, _) = await send(
       'PUT',
       '/admin/users/$bobId/role',
@@ -104,7 +136,7 @@ void main() {
       body: {'role': 'readonly'},
     );
     expect(s1, 200);
-    expect((await db.getUserById(bobId))!.tokenGeneration, 1);
+    expect((await db.getUserById(bobId))!.tokenGeneration, 2);
 
     final (s2, loggedIn) = await send(
       'POST',
@@ -132,7 +164,7 @@ void main() {
       body: {'current_password': password, 'new_password': 'bob-password-2'},
     );
     expect(s4, 200, reason: '$changed');
-    expect((await db.getUserById(bobId))!.tokenGeneration, 2);
+    expect((await db.getUserById(bobId))!.tokenGeneration, 3);
     await carriesTheAccount('password change', changed, bobId);
   });
 }
