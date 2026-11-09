@@ -444,6 +444,7 @@ Future<_Outcome> _authorize(
     codeChallenge: codeChallenge,
     codeChallengeMethod: codeChallengeMethod,
     expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+    tokenGeneration: user.tokenGeneration,
   );
 
   final redirectParams = {

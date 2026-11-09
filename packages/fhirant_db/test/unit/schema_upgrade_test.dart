@@ -248,13 +248,46 @@ void main() {
     ]) {
       await first.customStatement('ALTER TABLE users DROP COLUMN $column');
     }
+    await first.customStatement(
+      'ALTER TABLE authorization_codes DROP COLUMN token_generation',
+    );
     await first.customStatement('PRAGMA user_version = 27');
     await first.close();
 
     final second = FhirAntDb(NativeDatabase(file));
+    // The columns themselves, read from SQLite: a User read through
+    // readNullable answers null for a column that is not there at all.
+    Future<Set<String>> columnsOf(String table) async =>
+        (await second.customSelect('PRAGMA table_info($table)').get())
+            .map((r) => r.read<String>('name'))
+            .toSet();
+    expect(
+      await columnsOf('users'),
+      containsAll(<String>[
+        'awaiting_owner_until',
+        'claim_password_hash',
+        'claim_salt',
+        'claim_code',
+      ]),
+    );
+    expect(
+      await columnsOf('authorization_codes'),
+      contains('token_generation'),
+    );
     final before = (await second.getUserByUsername('before'))!;
     expect(before.awaitingOwnerUntil, isNull);
     expect(before.claimSent, isFalse);
+    await second.awaitOwner(
+      before.id,
+      'nobody-knows',
+      's0',
+      DateTime.now().add(const Duration(hours: 12)),
+    );
+    expect(await second.holdClaim('before', 'mine', 's1', 'BCDFGHJK'), isTrue);
+    expect(
+      await second.approveClaim(before.id, 'BCDFGHJK'),
+      ClaimApproval.approved,
+    );
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
     expect(version.read<int>('user_version'), second.schemaVersion);

@@ -110,6 +110,17 @@ Future<Response> resetPasswordHandler(
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
+  // An administrator who reset its own password would lose its session and
+  // have no way to approve its own new one; as the only administrator, the
+  // server would be left with nobody who can sign in to run it (review of
+  // fhirant #107). Its own password it changes as any caller does.
+  final caller = request.context['auth_user'] as Map<String, dynamic>?;
+  if (caller?['userId'] == userId) {
+    return _json(409, {
+      'error': 'Change your own password with POST /auth/password; an '
+          'administrator cannot reset its own',
+    });
+  }
   final raw = await request.readAsString();
   if (raw.trim().isNotEmpty) {
     final Object? body;

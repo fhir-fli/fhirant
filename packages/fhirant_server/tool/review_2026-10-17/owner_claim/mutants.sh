@@ -15,7 +15,7 @@ for o,n in zip(a[::2],a[1::2]):
     assert s.count(o)==1,o
     s=s.replace(o,n)
 open(p,'w').write(s)" "$file" "$@" || { mv "$file.orig" "$file"; echo -e "$name\t$file\tNOAPPLY\t-" >> $OUT; return; }
-  dart test test/integration/owner_claim_test.dart > "$DIR/mutant_$name.log" 2>&1
+  eval "${TESTCMD:-dart test test/integration/owner_claim_test.dart}" > "$DIR/mutant_$name.log" 2>&1
   rc=$?
   failed=$(grep -cE '\[E\]$' "$DIR/mutant_$name.log")
   mv "$file.orig" "$file"
@@ -67,4 +67,13 @@ mutate anyone_approves lib/src/handlers/account_handler.dart \
 # /auth/claim leaves the credential rate limit.
 mutate claim_unlimited lib/src/fhirant_server.dart \
   "    'auth/claim'," ""
+# An administrator resets its own password.
+mutate self_reset lib/src/handlers/account_handler.dart \
+  "  if (caller?['userId'] == userId) {" "  if (false) {"
+# A code issued before a reset still opens a session.
+mutate code_ignores_generation lib/src/handlers/refresh_handler.dart \
+  "  if (authCode.tokenGeneration != user.tokenGeneration) {" "  if (false) {"
+# The schema-28 step never runs on a schema-27 store.
+TESTCMD="(cd ../fhirant_db && dart test test/unit/schema_upgrade_test.dart)" \
+  mutate migration_off $STORE "          if (from < 28) {" "          if (from < 0) {"
 cat $OUT

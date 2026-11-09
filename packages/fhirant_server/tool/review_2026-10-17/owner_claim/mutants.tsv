@@ -8,3 +8,6 @@ claim_without_wait	../fhirant_db/lib/db/fhirant_db.dart	1	1
 no_expiry	../fhirant_db/lib/db/fhirant_db.dart	1	1
 anyone_approves	lib/src/handlers/account_handler.dart	1	1
 claim_unlimited	lib/src/fhirant_server.dart	1	1
+self_reset	lib/src/handlers/account_handler.dart	1	1
+code_ignores_generation	lib/src/handlers/refresh_handler.dart	1	1
+migration_off	../fhirant_db/lib/db/fhirant_db.dart	1	1

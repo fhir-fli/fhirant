@@ -1,6 +1,6 @@
 Running build hooks...Running build hooks...00:00 +0: loading test/unit/backup_file_test.dart
 00:00 +0: test/unit/backup_file_test.dart: a build without a cipher writes no backup
-00:00 +1: test/unit/search_test.dart: String search search by name finds matching patients
+00:00 +1: test/unit/backup_file_test.dart: a build without a cipher restores no backup either
 00:00 +2: test/unit/search_test.dart: String search search by name finds matching patients
 00:00 +3: test/unit/search_test.dart: String search search by name finds matching patients
 00:00 +4: test/unit/search_test.dart: String search search by name finds matching patients
@@ -31,7 +31,12 @@ Running build hooks...Running build hooks...00:00 +0: loading test/unit/backup_f
 00:01 +29: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +30: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +31: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:01 +31: test/unit/create_user_id_test.dart: a duplicate username is UsernameTaken, from a background store
+00:01 +32: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +33: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +34: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +35: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +36: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +36: test/unit/create_user_id_test.dart: a duplicate username is UsernameTaken, from a background store
 WARNING (drift): It looks like you've created the database class FhirAntDb multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
 Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
 Here is the stacktrace from when the database was opened a second time:
@@ -51,11 +56,6 @@ Here is the stacktrace from when the database was opened a second time:
 #10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
 <asynchronous suspension>
 This warning will only appear on debug builds.
-00:01 +32: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:01 +33: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:01 +34: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:01 +35: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:01 +36: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +37: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +38: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +39: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
@@ -67,9 +67,9 @@ This warning will only appear on debug builds.
 00:01 +45: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +46: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:01 +47: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:02 +48: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:02 +49: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:02 +50: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +48: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +49: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:01 +50: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:02 +51: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:02 +52: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:02 +53: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
@@ -132,32 +132,32 @@ This warning will only appear on debug builds.
 00:02 +110: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:02 +111: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:02 +112: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +113: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +114: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +115: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +116: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +117: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +118: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +119: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +120: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +121: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +122: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +123: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +113: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +114: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +115: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +116: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +117: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +118: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +119: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +120: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +121: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +122: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:02 +123: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:03 +124: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
 00:03 +125: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +126: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
-00:03 +127: test/unit/history_test.dart: FhirAntDb - Resource History getResourceHistory tracks distinct version IDs
-00:05 +128: test/unit/history_test.dart: FhirAntDb - Resource History getResourceHistory tracks distinct version IDs
-00:05 +129: test/unit/schema_upgrade_test.dart: opening a schema-16 database rebuilds the search index
+00:04 +126: test/unit/schema_upgrade_test.dart: opening a schema-13 database re-extracts every index row
+00:04 +127: test/unit/history_test.dart: FhirAntDb - Resource History getResourceHistory tracks distinct version IDs
+00:05 +128: test/unit/schema_upgrade_test.dart: opening a schema-15 database gains users.patient_id and the oauth_clients pin table
+00:06 +129: test/unit/history_test.dart: FhirAntDb - Resource History getResourceHistory contains both original and updated data
 00:06 +130: test/unit/schema_upgrade_test.dart: opening a schema-16 database rebuilds the search index
 00:06 +131: test/unit/schema_upgrade_test.dart: opening a schema-16 database rebuilds the search index
-00:07 +132: test/unit/schema_upgrade_test.dart: opening a schema-16 database rebuilds the search index
-00:07 +133: test/unit/schema_upgrade_test.dart: opening a schema-25 database adds the identifier:of-type rows
-00:08 +134: test/unit/schema_upgrade_test.dart: opening a schema-27 database gains the owner-claim columns, and its accounts keep their own passwords
-00:09 +135: test/unit/schema_upgrade_test.dart: an account waiting for its owner holds the password its owner sends, and the right code makes it the account password
-00:09 +136: test/unit/schema_upgrade_test.dart: an account waiting for its owner a wrong code drops the password the owner sent
-00:09 +137: test/unit/schema_upgrade_test.dart: an account waiting for its owner a later password replaces the earlier one
-00:09 +138: test/unit/schema_upgrade_test.dart: an account waiting for its owner nothing is held once the wait has run out
-00:09 +139: test/unit/schema_upgrade_test.dart: an account waiting for its owner an account that is not waiting holds nothing
-00:09 +140: test/unit/schema_upgrade_test.dart: an account waiting for its owner a new reset drops a password the owner sent before it
-00:09 +141: All tests passed!
+00:06 +132: test/unit/schema_upgrade_test.dart: opening a schema-16 database rebuilds the search index
+00:08 +133: test/unit/schema_upgrade_test.dart: opening a schema-25 database adds the identifier:of-type rows
+00:10 +134: test/unit/schema_upgrade_test.dart: opening a schema-27 database gains the owner-claim columns, and its accounts keep their own passwords
+00:12 +135: test/unit/schema_upgrade_test.dart: an account waiting for its owner holds the password its owner sends, and the right code makes it the account password
+00:12 +136: test/unit/schema_upgrade_test.dart: an account waiting for its owner a wrong code drops the password the owner sent
+00:12 +137: test/unit/schema_upgrade_test.dart: an account waiting for its owner a later password replaces the earlier one
+00:12 +138: test/unit/schema_upgrade_test.dart: an account waiting for its owner nothing is held once the wait has run out
+00:12 +139: test/unit/schema_upgrade_test.dart: an account waiting for its owner an account that is not waiting holds nothing
+00:12 +140: test/unit/schema_upgrade_test.dart: an account waiting for its owner a new reset drops a password the owner sent before it
+00:12 +141: All tests passed!

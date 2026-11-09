@@ -26,6 +26,13 @@ import 'package:fhirant_server/src/utils/password_hasher.dart';
 ///    `POST /admin/users/<id>/approve`. On a match the held password is the
 ///    account's; a wrong code drops it, so each code gets one try.
 ///
+/// One claim is held at a time and a later one replaces it. Anyone who
+/// knows the username can therefore, by claiming between the owner's claim
+/// and the approval, make the approval fail and the owner send again; the
+/// credential rate limit bounds how often. Holding several claims instead
+/// would let a stranger fill every slot at any time in the wait, ahead of
+/// the owner, which is easier than hitting that window.
+///
 /// The code plays the part of the user code in the OAuth 2.0 Device
 /// Authorization Grant (RFC 8628): a short code that ties what one device
 /// sent to an approval made elsewhere. A first version (2026-11-03) handed

@@ -348,6 +348,110 @@ void main() {
     expect((await login('bob-user', 'bob-own-choice-1')).$1, 401);
   });
 
+  test('an administrator cannot reset its own password', () async {
+    final adminId = (await db.getUserByUsername('admin-one'))!.id;
+    final (status, body) = await send(
+      'POST',
+      '/admin/users/$adminId/password',
+      token: adminToken,
+    );
+    expect(status, 409, reason: '$body');
+    expect((await db.getUserById(adminId))!.awaitingOwnerUntil, isNull);
+    expect(
+      (await send('GET', '/admin/users', token: adminToken)).$1,
+      200,
+      reason: 'its session goes on',
+    );
+  });
+
+  test('a code taken before a reset opens no session', () async {
+    final registered = await registerByAdmin(
+      handler,
+      adminToken,
+      {'username': 'bob-user'},
+      password: 'bob-own-choice-1',
+    );
+    final id = registered['id'] as int;
+    // RFC 7636 Appendix B's verifier and challenge.
+    const verifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+    const challenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
+    final (authorized, auth) = await send(
+      'POST',
+      '/auth/authorize',
+      body: {
+        'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
+        'client_id': 'app',
+        'redirect_uri': 'http://localhost/cb',
+        'scope': 'user/*.rs',
+        'code_challenge': challenge,
+        'code_challenge_method': 'S256',
+        'username': 'bob-user',
+        'password': 'bob-own-choice-1',
+      },
+    );
+    expect(authorized, 200, reason: '$auth');
+    expect(
+      (await send('POST', '/admin/users/$id/password', token: adminToken)).$1,
+      200,
+    );
+    final (exchanged, tokens) = await send(
+      'POST',
+      '/auth/token',
+      body: {
+        'grant_type': 'authorization_code',
+        'code': auth['code'],
+        'redirect_uri': 'http://localhost/cb',
+        'client_id': 'app',
+        'code_verifier': verifier,
+      },
+    );
+    expect(exchanged, 400, reason: '$tokens');
+    expect(tokens['error'], 'invalid_grant');
+    expect(tokens.containsKey('access_token'), isFalse);
+  });
+
+  test('a code taken with no change since still opens a session', () async {
+    await registerByAdmin(
+      handler,
+      adminToken,
+      {'username': 'bob-user'},
+      password: 'bob-own-choice-1',
+    );
+    const verifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+    const challenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
+    final (_, auth) = await send(
+      'POST',
+      '/auth/authorize',
+      body: {
+        'response_type': 'code',
+        'state': 'xyz',
+        'aud': 'http://localhost:8080',
+        'client_id': 'app',
+        'redirect_uri': 'http://localhost/cb',
+        'scope': 'user/*.rs',
+        'code_challenge': challenge,
+        'code_challenge_method': 'S256',
+        'username': 'bob-user',
+        'password': 'bob-own-choice-1',
+      },
+    );
+    final (exchanged, tokens) = await send(
+      'POST',
+      '/auth/token',
+      body: {
+        'grant_type': 'authorization_code',
+        'code': auth['code'],
+        'redirect_uri': 'http://localhost/cb',
+        'client_id': 'app',
+        'code_verifier': verifier,
+      },
+    );
+    expect(exchanged, 200, reason: '$tokens');
+    expect(tokens['access_token'], isA<String>());
+  });
+
   test('a claim spends the credential bucket, not the general one', () async {
     final server = await createTestServer(
       exportDir: exportDir.path,

@@ -216,6 +216,25 @@ def fixtures():
     ]
 
 
+def make_account(admin, body, password, ip, admin_ip=ROOT_IP):
+    """Creates an account as the administrator holding [admin] and sets
+    its password the way its owner does (auth/owner_claim.dart): register
+    with no password, /auth/claim with [password], approve by the code.
+    Returns (claim status, claim body, approve status, account id); the
+    claim is 400 when [password] fails the policy, and nothing is approved."""
+    s, _, b = req('POST', '/auth/register', body, admin, ip=ip)
+    assert s in (200, 201), (body, s, b)
+    uid = json.loads(b)['id']
+    cs, _, cb = req('POST', '/auth/claim',
+                    {'username': body['username'], 'new_password': password},
+                    None, ip=ip)
+    if cs != 202:
+        return cs, cb, None, uid
+    s, _, b = req('POST', '/admin/users/%d/approve' % uid,
+                  {'code': json.loads(cb)['code']}, admin, ip=admin_ip)
+    return cs, cb, s, uid
+
+
 def seed(work):
     d = os.path.join(work, 'seed')
     shutil.rmtree(d, ignore_errors=True)
@@ -234,16 +253,9 @@ def seed(work):
             # address. The administrator chooses no password: the owner
             # sends PW to /auth/claim and the administrator approves it
             # with the code (auth/owner_claim.dart).
-            ip = '127.0.2.%d' % (len(ids) + 10)
-            s, _, b = req('POST', '/auth/register', body, root, ip=ip)
-            assert s in (200, 201), (u, s, b)
-            uid = json.loads(b)['id']
-            s, _, b = req('POST', '/auth/claim',
-                          {'username': u, 'new_password': PW}, None, ip=ip)
-            assert s == 202, (u, s, b)
-            s, _, b = req('POST', '/admin/users/%d/approve' % uid,
-                          {'code': json.loads(b)['code']}, root, ip=ROOT_IP)
-            assert s == 200, (u, s, b)
+            cs, cb, s, _ = make_account(root, body, PW,
+                                        '127.0.2.%d' % (len(ids) + 10))
+            assert (cs, s) == (202, 200), (u, cs, cb, s)
             ids[u] = None
         s, _, b = req('GET', '/admin/users', token=root, ip=ROOT_IP)
         for row in json.loads(b)['users'] if b.startswith('{') else json.loads(b):
@@ -684,8 +696,7 @@ def identity_setup(name, seedinfo, root):
         return a, r, PW
     if name == 'pw-reset':
         a, r = login('pwch', PW, ip)
-        as_root('POST', '/admin/users/%d/password' % ids['pwch'],
-                {'new_password': PW + 'reset'})
+        as_root('POST', '/admin/users/%d/password' % ids['pwch'])
         return a, r, PW
     if name == 'scopes-narrowed':
         a, r = login('narrow', PW, ip)

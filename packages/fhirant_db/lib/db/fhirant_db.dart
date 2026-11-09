@@ -331,6 +331,20 @@ class FhirAntDb extends FhirDb {
                 );
               }
             }
+            // The account's token generation when a code was issued: a
+            // code from before a password, role, scope or activation change
+            // opens no session ([createAuthorizationCode]).
+            final codeColumns =
+                (await customSelect('PRAGMA table_info(authorization_codes)')
+                        .get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            if (!codeColumns.contains('token_generation')) {
+              await customStatement(
+                'ALTER TABLE authorization_codes ADD COLUMN token_generation '
+                'INTEGER NOT NULL DEFAULT 0',
+              );
+            }
           }
         },
       );
@@ -412,6 +426,7 @@ class FhirAntDb extends FhirDb {
         code_challenge_method TEXT,
         expires_at INTEGER NOT NULL,
         used INTEGER NOT NULL DEFAULT 0,
+        token_generation INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     ''');
@@ -1947,13 +1962,14 @@ class FhirAntDb extends FhirDb {
     String? codeChallenge,
     String? codeChallengeMethod,
     required DateTime expiresAt,
+    int tokenGeneration = 0,
   }) async {
     final expiresAtEpoch = expiresAt.millisecondsSinceEpoch ~/ 1000;
     await customStatement(
       'INSERT INTO authorization_codes '
       '(code, client_id, user_id, redirect_uri, scope, code_challenge, '
-      'code_challenge_method, expires_at) '
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'code_challenge_method, expires_at, token_generation) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         code,
         clientId,
@@ -1963,6 +1979,7 @@ class FhirAntDb extends FhirDb {
         codeChallenge,
         codeChallengeMethod,
         expiresAtEpoch,
+        tokenGeneration,
       ],
     );
   }

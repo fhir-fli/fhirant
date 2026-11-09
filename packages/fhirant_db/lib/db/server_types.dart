@@ -163,6 +163,7 @@ class AuthorizationCode {
     this.codeChallengeMethod,
     required this.expiresAt,
     required this.used,
+    this.tokenGeneration = 0,
   });
 
   factory AuthorizationCode.fromRow(QueryRow row) {
@@ -176,6 +177,7 @@ class AuthorizationCode {
       codeChallengeMethod: row.readNullable<String>('code_challenge_method'),
       expiresAt: row.read<DateTime>('expires_at'),
       used: row.read<bool>('used'),
+      tokenGeneration: row.readNullable<int>('token_generation') ?? 0,
     );
   }
   final String code;
@@ -187,6 +189,10 @@ class AuthorizationCode {
   final String? codeChallengeMethod;
   final DateTime expiresAt;
   final bool used;
+
+  /// The account's token generation when the code was issued. A code from
+  /// an earlier generation opens no session, as a token from one does not.
+  final int tokenGeneration;
 
   @override
   String toString() => 'AuthorizationCode(code: $code, clientId: $clientId, '

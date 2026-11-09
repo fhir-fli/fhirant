@@ -1,0 +1,36 @@
+case	scopes	status	types or detail	verdict
+chain to unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"The search criteria read Patient (by chain, _has or _filter), 	PASS
+chain discloses an attribute of an unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"The search criteria re	PASS
+_include of unreadable type	['user/Observation.rs']	200	['Observation']	PASS
+_include:iterate	['user/Observation.rs']	200	['Observation']	PASS
+_revinclude of unreadable type	['user/Patient.rs']	200	['Patient']	PASS
+_has on unreadable type	['user/Patient.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"The search criteria re	NOTE
+$everything with Patient scope only	['user/Patient.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to read AuditEvent, Composition, Encounter,	PASS
+$everything Encounter with Observation scope	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Encounter"}]}	PASS
+compartment search via unreadable compartment	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+compartment search of unreadable type	['user/Patient.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Observation"}]}	PASS
+$document with Composition scope only	['user/Composition.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to read Observation, Patient, which this do	PASS
+Group read lists members of an unreadable type	['user/Group.rs']	200	{"resourceType":"Group","id":"g1","meta":{"versionId":"1","lastUpdated":"2026-11-09T21:58:44.009537Z"},"type":"person","actual":true,"name":"LEAKMARKOUT","member":[{"entity":{"reference":"Patient/pat1	NOTE
+Group export with Group scope only	['user/Group.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope to export Account, AdverseEvent, AllergyInt	PASS
+system search	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Patient"}]}	PASS
+system search, no _type	['user/Observation.rs']	200	['Observation']	PASS
+POST _search system	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for s on Patient"}]}	PASS
+history system	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"System history returns every resource type, so it requires a u	PASS
+history type of unreadable	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+batch GET of unreadable type	['user/Observation.rs']	200	['-']	PASS
+batch entries for unreadable type	['user/Observation.rs']	200	[('403', [None]), ('403', [None])]	PASS
+conditional reference searches an unreadable type	['user/Observation.cruds']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Transaction failed at entry 0: Bundle entry 0: not authorized for GET /Patient"}]}	NOTE
+If-None-Exist chain to unreadable type	['user/Observation.cruds']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"The search criteria read Patient (by chain, _has or _filter), 	NOTE
+$fhirpath on unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"This operation can return data the request does not name, so i	PASS
+$meta of unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+vread of unreadable type	['user/Observation.rs']	403	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"forbidden","diagnostics":"Insufficient scope for r on Patient"}]}	PASS
+narrative script	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+narrative onclick	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+narrative javascript href	admin	201	{"resourceType":"Patient","id":"6f156557-bfe9-42a0-8d63-9780ca63c7cd","meta":{"versionId":"1","lastUpdated":"2026-11-09T21:59:30.036271Z"},"	FAIL
+narrative iframe	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"processing","diagnostics":"Invalid resource: FormatException: Invali	PASS
+Binary text/html read Accept=text/html	admin	406	('application/fhir+json; charset=utf-8; fhirVersion=4.3', '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-supp')	PASS
+Binary text/html read Accept=*/*	admin	404	('application/fhir+json', '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-foun')	PASS
+Binary text/html read Accept=application/fhir+json	admin	404	('application/fhir+json', '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-foun')	PASS
+401 headers	none	401	[('content-length', '137'), ('content-type', 'application/fhir+json'), ('date', 'Mon, 09 Nov 2026 21:59:30 GMT'), ('x-content-type-options', 'nosniff'), ('x-frame-options', 'SAMEORIGIN'), ('x-powered-by', 'Dart with package:shelf'), ('x-xss-protection', '1; mode=block')]	NOTE
+400 detail	admin	400	{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"The value \"garbage-date\" is not a valid date for \"date\"."}]}	NOTE
+login garbled detail	none	400	{"error":"Body is not JSON: Unexpected end of input"}	NOTE
