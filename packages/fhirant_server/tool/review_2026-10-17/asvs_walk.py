@@ -155,7 +155,8 @@ OVERRIDES = {
     'V6.2.12': ('NOTPROBED', 'no breached-password check'),
     'V7.3.1': ('FINDING', 'no inactivity timeout'),
     'V10.4.8': ('FINDING', 'R1: each rotation grants a fresh 7 days'),
-    'V9.2.1': ('FINDING', 'a signed token without exp never expires'),
+    'V9.2.1': ('PASS', 'fixed 2026-11-10: a token without exp is refused '
+               '(jwt_service_test; asvs_probes "no exp" 401)'),
     'V9.2.3': ('NOTPROBED', 'no aud claim; single service'),
     # Measured after the review, 2026-10-21 (REVIEW-2026-10-17, "The
     # NOTPROBED rows, measured after the review").
