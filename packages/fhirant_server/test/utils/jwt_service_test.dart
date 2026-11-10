@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:test/test.dart';
 
@@ -59,6 +60,51 @@ void main() {
       expect(service.verifyToken('not-a-jwt'), isNull);
       expect(service.verifyToken('only.two'), isNull);
       expect(service.verifyToken(''), isNull);
+    });
+  });
+
+  group('a token must carry exp (RFC 9068 §2.2, §4)', () {
+    // Signed with the server's own secret, so only the claim differs.
+    String signedWith(Map<String, dynamic> claims, {Duration? expiresIn}) =>
+        JWT(claims).sign(SecretKey(secret), expiresIn: expiresIn);
+    final access = {'userId': 1, 'username': 'x', 'role': 'admin', 'gen': 0};
+    final refresh = {...access, 'token_type': 'refresh'};
+
+    test('control: the same claims with a future exp verify', () {
+      final token = signedWith(access, expiresIn: const Duration(hours: 1));
+      expect(service.verifyToken(token), isNotNull);
+      expect(service.verifyAccessToken(token), isNotNull);
+      expect(
+        service.verifyRefreshToken(
+          signedWith(refresh, expiresIn: const Duration(hours: 1)),
+        ),
+        isNotNull,
+      );
+    });
+
+    test('an access token with no exp is refused', () {
+      final token = signedWith(access);
+      expect(JWT.decode(token).payload, isNot(contains('exp')));
+      expect(service.verifyToken(token), isNull);
+      expect(service.verifyAccessToken(token), isNull);
+    });
+
+    test('a refresh token with no exp is refused', () {
+      expect(service.verifyRefreshToken(signedWith(refresh)), isNull);
+    });
+
+    test('a past exp is refused', () {
+      final token = signedWith(access, expiresIn: const Duration(seconds: -5));
+      expect(service.verifyToken(token), isNull);
+    });
+
+    test('every token the service mints carries exp', () {
+      final t1 = service.generateToken(userId: 1, username: 'x', role: 'r');
+      final t2 =
+          service.generateRefreshToken(userId: 1, username: 'x', role: 'r');
+      for (final t in [t1, t2]) {
+        expect(JWT.decode(t).payload['exp'], isA<int>());
+      }
     });
   });
 

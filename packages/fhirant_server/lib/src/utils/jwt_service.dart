@@ -149,11 +149,22 @@ class JwtService {
   /// checked from the header before signature verification so a token claiming
   /// `alg: none` (or any other algorithm) is rejected outright rather than
   /// handed to the library's alg-dispatch.
+  ///
+  /// A token must carry `exp`. The library checks `exp` only when it is
+  /// present, so a token signed with the real secret but no `exp` never
+  /// expired (REVIEW-2026-10-17 asvs_probes, "token: no exp", 200). RFC 9068
+  /// §2.2 (read 2026-11-10, rfc-editor.org txt): "exp REQUIRED"; §4: "The
+  /// current time MUST be before the time represented by the "exp" claim."
+  /// OWASP ASVS 5.0.0 V9.2.1 (flat.json, read 2026-11-10): "the claims 'nbf'
+  /// and 'exp' must be verified." Every token this service signs has one.
   Map<String, dynamic>? verifyToken(String token) {
     try {
       if (_headerAlgorithm(token) != _pinnedAlgorithm.name) return null;
       final jwt = JWT.verify(token, SecretKey(_secret));
-      return jwt.payload as Map<String, dynamic>;
+      final payload = jwt.payload;
+      if (payload is! Map<String, dynamic>) return null;
+      if (payload['exp'] is! num) return null;
+      return payload;
     } catch (_) {
       return null;
     }

@@ -1,0 +1,13 @@
+Running build hooks...Running build hooks...00:00 +0: loading test/utils/jwt_service_test.dart
+00:00 +0: JwtService round-trip a token it signs verifies and carries its claims
+00:00 +1: JwtService round-trip a token signed with a different secret is rejected
+00:00 +2: algorithm pinning (HS256 only) an alg:none token is rejected (no signature)
+00:00 +3: algorithm pinning (HS256 only) a token declaring a non-HS256 algorithm is rejected
+00:00 +4: algorithm pinning (HS256 only) malformed tokens are rejected, not thrown
+00:00 +5: a token must carry exp (RFC 9068 §2.2, §4) control: the same claims with a future exp verify
+00:00 +6: a token must carry exp (RFC 9068 §2.2, §4) an access token with no exp is refused
+00:00 +7: a token must carry exp (RFC 9068 §2.2, §4) a refresh token with no exp is refused
+00:00 +8: a token must carry exp (RFC 9068 §2.2, §4) a past exp is refused
+00:00 +9: a token must carry exp (RFC 9068 §2.2, §4) every token the service mints carries exp
+00:00 +10: refresh tokens a refresh token is recognised, an access token is not
+00:00 +11: All tests passed!
