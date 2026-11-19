@@ -1,4 +1,4 @@
-# Draft security report for the Dart SDK (not sent; Grey sends it)
+# Security report for the Dart SDK (filed by Grey 2026-11-19, Google Bug Hunters, OSS VRP; type "Other", marked public; the form warned "out of scope", submitted anyway; report number not recorded)
 
 **Where it goes:** https://g.co/vulnz, not a public GitHub issue. Dart's
 policy (https://dart.dev/security, read 2026-10-21): "To report a security
