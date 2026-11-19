@@ -1,4 +1,4 @@
-# Security report for the Dart SDK (filed by Grey 2026-11-19, Google Bug Hunters, OSS VRP; type "Other", marked public; the form warned "out of scope", submitted anyway; report number not recorded)
+# Security report for the Dart SDK (filed by Grey 2026-11-19 to Google Bug Hunters, OSS VRP, issuetracker.google.com/issues/588008641; closed the same day as Infeasible: "At this time, we are only accepting OSS VRP reports that are supply chain related", and pointed to the repository's SECURITY.md or GitHub private vulnerability reporting, which dart-lang/sdk has enabled)
 
 **Where it goes:** https://g.co/vulnz, not a public GitHub issue. Dart's
 policy (https://dart.dev/security, read 2026-10-21): "To report a security
