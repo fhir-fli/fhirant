@@ -1,0 +1,9 @@
+mutant	caught	failing tests
+field time is the latest save, not the save that set it	yes	test/sync/merge_test.dart: the time of a field is the save that gave it its value, not the latest save
+the older save wins a field both sides changed	yes	test/integration/server_sync_test.dart: a field both sides changed takes the later save: here later; test/integration/server_sync_test.dart: a field both sides changed takes the later save: peer later; test/sync/merge_test.dart: a field both sides changed takes the newer save, either way round; test/sync/merge_test.dart: a list is one field; test/sync/merge_test.dart: the time of a field is the save that gave it its value, not the latest save; test/sync/merge_test.dart: with no base, a differing field takes the side that set it later
+neither side changed, different values: take local	yes	test/sync/merge_test.dart: values that differ with neither side changed take the peer's
+a delete always wins	yes	test/integration/server_sync_test.dart: an edit newer than the other side's delete keeps it on both; test/sync/merge_test.dart: an edit newer than the other side's delete brings it back
+the base is ignored	yes	test/integration/server_sync_test.dart: fields changed on different sides are both kept
+the cursor moves even when a write failed	yes	test/integration/server_sync_test.dart: runs that do not finish a run cut off partway moves no cursor, and the next run finishes
+audit events are synced	yes	test/integration/server_sync_test.dart: audit events and subscriptions are not synced
+a 412 on the peer is ignored and the pair recorded	yes	test/integration/server_sync_test.dart: runs that do not finish a resource the peer changes during the sync is merged next time

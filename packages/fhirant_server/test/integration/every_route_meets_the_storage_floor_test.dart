@@ -84,6 +84,10 @@ const _expected = <String, StorageNeed>{
   r'POST /CodeSystem/$subsumes': StorageNeed.none,
   r'POST /$reindex': StorageNeed.reindex,
   r'GET /$reindex-status': StorageNeed.none,
+  // The kickoff itself writes nothing to keep; each write the sync makes
+  // here is checked against the floor (sync_job.dart).
+  r'POST /$sync': StorageNeed.record,
+  r'GET /$sync-status': StorageNeed.none,
   r'POST /$backup': StorageNeed.backup,
   r'POST /$restore': StorageNeed.restore,
   r'GET /$fhirpath': StorageNeed.none,
@@ -156,8 +160,9 @@ void main() {
         for (final r in registeredRoutes()) '${r.verb} ${r.path}',
       };
       // 91 registrations, counted from the source on 2026-11-09 (89 on
-      // 2026-11-02, then `/auth/claim` and `/admin/users/<userId>/approve`).
-      expect(registered.length, 91);
+      // 2026-11-02, then `/auth/claim` and `/admin/users/<userId>/approve`);
+      // 93 on 2026-11-19 with `POST /$sync` and `GET /$sync-status`.
+      expect(registered.length, 93);
       expect(
         registered.difference(_expected.keys.toSet()),
         isEmpty,

@@ -21,7 +21,9 @@ void main() {
     // the Bulk Data export definition (REVIEW-2026-09-17 C3).
     expect(spec, contains('assets/fhir_spec/fhirant-operations.ndjson'));
     expect(spec, contains('assets/fhir_spec/bulkdata-operations.ndjson'));
-    expect(spec, hasLength(11));
+    // And `$sync`'s definition, in a file of its own (2026-11-19).
+    expect(spec, contains('assets/fhir_spec/fhirant-sync-operations.ndjson'));
+    expect(spec, hasLength(12));
     final text = await rootBundle
         .loadString('assets/fhir_spec/search-parameters.ndjson');
     expect(text, startsWith('{"resourceType":"SearchParameter"'));

@@ -19,6 +19,7 @@ import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/storage_floor.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
+import 'package:fhirant_server/src/sync/sync_job.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
@@ -190,6 +191,19 @@ class FhirAntServer {
 
   /// The `\$reindex` job of this process (one at a time).
   final ReindexJobs reindexJobs = ReindexJobs();
+
+  /// The `\$sync` job of this process (one at a time).
+  final SyncJobs syncJobs = SyncJobs();
+
+  /// The router [createRouter] built last: `\$sync` writes this server's
+  /// side through it, so its writes reach the same Subscription service as
+  /// a client's. A second router would replace that service.
+  late Router _router;
+
+  /// The router [createRouter] built last, for a test that drives the
+  /// sync's local side as the server does.
+  @visibleForTesting
+  Handler get routerHandler => _router.call;
 
   /// The `\$export` jobs running in this process; ended by [stop].
   final ExportJobs exportJobs = ExportJobs();
@@ -506,6 +520,21 @@ class FhirAntServer {
         r'/$reindex-status',
         (Request req) => reindexStatusHandler(req, reindexJobs),
       )
+      ..post(
+        r'/$sync',
+        (Request req) => syncKickoffHandler(
+          req,
+          db: dbInterface,
+          jobs: syncJobs,
+          router: () => _router.call,
+          baseUrl: baseUrl,
+          floor: storageFloor,
+        ),
+      )
+      ..get(
+        r'/$sync-status',
+        (Request req) => syncStatusHandler(req, syncJobs),
+      )
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(
         r'/$restore',
@@ -763,6 +792,7 @@ class FhirAntServer {
             conditionalDeleteHandler(req, resourceType, dbInterface),
       );
 
+    _router = router;
     return router;
   }
 

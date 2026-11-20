@@ -229,6 +229,16 @@ Future<Response> metadataHandler(
               ),
             ),
             CapabilityStatementOperation(
+              name: 'sync'.toFhirString,
+              // This server's own: assets/fhir_spec/
+              // fhirant-sync-operations.ndjson, a file of its own so a store
+              // that already loaded fhirant-operations.ndjson loads it too
+              // (the loader records files, not lines; spec_loader.dart).
+              definition: FhirCanonical(
+                'http://fhirfli.dev/fhirant/OperationDefinition/sync',
+              ),
+            ),
+            CapabilityStatementOperation(
               name: 'export'.toFhirString,
               definition: FhirCanonical(
                 'http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export',

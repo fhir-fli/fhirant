@@ -152,6 +152,8 @@ class SmartScopeEnforcer {
     r'$export', // system-level bulk dump
     r'$reindex', // full search-index rebuild
     r'$reindex-status',
+    r'$sync', // reads and writes every resource, here and on a peer
+    r'$sync-status',
   };
 
   /// Root-level operations whose handler authorizes the caller against the

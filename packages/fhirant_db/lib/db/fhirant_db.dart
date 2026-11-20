@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,6 +41,7 @@ class FhirAntDb extends FhirDb {
           await _createRevokedTokensTable();
           await _createOAuthClientsTable();
           await _createSpecLoadsTable();
+          await _createSyncTables();
           await createValueIndexes();
         },
         // fhir_r4_db runs ANALYZE from its own beforeOpen when the database
@@ -346,6 +347,12 @@ class FhirAntDb extends FhirDb {
               );
             }
           }
+          if (from < 29) {
+            // What `$sync` remembers about each peer server: where its last
+            // pull stopped on each side, and per resource the versions the
+            // two sides last agreed on ([syncPair]).
+            await _createSyncTables();
+          }
         },
       );
 
@@ -443,6 +450,100 @@ class FhirAntDb extends FhirDb {
     ''');
   }
 
+  /// The `$sync` bookkeeping (schema 29). `sync_peers`: per peer server,
+  /// the `_since` to ask each side's history from next time, as that side's
+  /// own clock wrote it. `sync_pairs`: per peer and resource, the version on
+  /// each side that the last sync left them at; the base a later sync
+  /// compares each side's changes against. The resource is one
+  /// `resource_key` (`Patient/123`), not `resource_type` + `id` columns:
+  /// [restoreEncrypted] treats a table with those two columns as part of
+  /// the FHIR record.
+  Future<void> _createSyncTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS sync_peers (
+        peer TEXT NOT NULL PRIMARY KEY,
+        remote_since TEXT,
+        local_since TEXT,
+        last_run INTEGER
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS sync_pairs (
+        peer TEXT NOT NULL,
+        resource_key TEXT NOT NULL,
+        local_version TEXT,
+        remote_version TEXT,
+        PRIMARY KEY (peer, resource_key)
+      )
+    ''');
+  }
+
+  /// Where the last completed `$sync` with [peer] left each side's history
+  /// cursor, or null when none has completed.
+  Future<({String? remoteSince, String? localSince})?> syncCursor(
+    String peer,
+  ) async {
+    final row = await customSelect(
+      'SELECT remote_since, local_since FROM sync_peers WHERE peer = ?',
+      variables: [Variable.withString(peer)],
+    ).getSingleOrNull();
+    if (row == null) return null;
+    return (
+      remoteSince: row.read<String?>('remote_since'),
+      localSince: row.read<String?>('local_since'),
+    );
+  }
+
+  /// Records where a completed `$sync` with [peer] stopped on each side.
+  Future<void> setSyncCursor(
+    String peer, {
+    required String? remoteSince,
+    required String? localSince,
+  }) async {
+    await customStatement(
+      'INSERT INTO sync_peers (peer, remote_since, local_since, last_run) '
+      "VALUES (?, ?, ?, strftime('%s', 'now')) "
+      'ON CONFLICT(peer) DO UPDATE SET remote_since = excluded.remote_since, '
+      'local_since = excluded.local_since, last_run = excluded.last_run',
+      [peer, remoteSince, localSince],
+    );
+  }
+
+  /// The versions the last `$sync` with [peer] left [resourceKey]
+  /// (`Type/id`) at on each side, or null when it has never been synced.
+  Future<({String? local, String? remote})?> syncPair(
+    String peer,
+    String resourceKey,
+  ) async {
+    final row = await customSelect(
+      'SELECT local_version, remote_version FROM sync_pairs '
+      'WHERE peer = ? AND resource_key = ?',
+      variables: [Variable.withString(peer), Variable.withString(resourceKey)],
+    ).getSingleOrNull();
+    if (row == null) return null;
+    return (
+      local: row.read<String?>('local_version'),
+      remote: row.read<String?>('remote_version'),
+    );
+  }
+
+  /// Records the versions a `$sync` with [peer] left [resourceKey] at.
+  Future<void> setSyncPair(
+    String peer,
+    String resourceKey, {
+    required String? local,
+    required String? remote,
+  }) async {
+    await customStatement(
+      'INSERT INTO sync_pairs (peer, resource_key, local_version, '
+      'remote_version) VALUES (?, ?, ?, ?) '
+      'ON CONFLICT(peer, resource_key) DO UPDATE SET '
+      'local_version = excluded.local_version, '
+      'remote_version = excluded.remote_version',
+      [peer, resourceKey, local, remote],
+    );
+  }
+
   /// Whether the loader has finished the specification file [file] (its
   /// base name, as the loader names it).
   Future<bool> specFileLoaded(String file) async {
@@ -488,6 +589,8 @@ class FhirAntDb extends FhirDb {
     'authorization_codes',
     'spec_loads',
     'revoked_tokens',
+    'sync_peers',
+    'sync_pairs',
   };
 
   /// Writes every table of this database to [path] as a SQLite file
