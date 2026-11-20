@@ -9,9 +9,9 @@ import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/fhirant_server.dart'
     show loadSpecResourcesFromAssets;
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 

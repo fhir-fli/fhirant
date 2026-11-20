@@ -5,8 +5,8 @@ import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant/src/widgets/admin_setup_dialog.dart';
 import 'package:fhirant/src/widgets/keep_running_dialog.dart';
 import 'package:fhirant_server/fhirant_server.dart' show AdminProvisioning;
-import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class ServerControlCard extends StatefulWidget {

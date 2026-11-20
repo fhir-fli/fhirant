@@ -3,7 +3,7 @@ import 'package:fhirant/src/widgets/network_info_card.dart';
 import 'package:fhirant/src/widgets/request_log_card.dart';
 import 'package:fhirant/src/widgets/resource_counts_card.dart';
 import 'package:fhirant/src/widgets/server_control_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
