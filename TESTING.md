@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,741 | 192 | `cd packages/fhirant_server && dart test` (recounted 2026-11-19) |
+| fhirant_server | 1,748 | 194 | `cd packages/fhirant_server && dart test` (recounted 2026-11-19) |
 | fhirant_db | 145 | 8 | `cd packages/fhirant_db && dart test` (recounted 2026-11-19) |
 | fhirant | 38 | 5 | `cd packages/fhirant && flutter test` (recounted 2026-11-19) |
 | fhirant_secure_storage | 7 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -113,6 +113,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/has_search_e2e_test.dart` | _has reverse chaining |
 | `test/integration/bundle_e2e_test.dart` | Transaction/batch with real DB |
 | `test/integration/history_bundle_test.dart` | R4B http.html §3.1.0.11.4: one server's `_history` posted to another replays every version oldest first (create kept its id, two updates, a delete); one bad entry applies nothing; a `response.location` naming another resource, a missing request, a resource with no id and a DELETE with no id are refused; a history create entry carries its Location (5). Mutants: `tool/history_bundle_2026-11-19/mutants.tsv`, 6 of 6 caught |
+| `test/integration/history_since_clock_test.dart` | R4B http.html §3.1.0.12 `_since` "at or after": a version at the instant is kept by system, type and instance history; a save after the clock is set back still reaches a `_since` reader (fhir_db 0.15.3 stamps). Both seen failing before the fix (2) |
 | `test/integration/compartment_e2e_test.dart` | Compartment search with real DB |
 | `test/integration/export_integration_test.dart` | Bulk export end-to-end |
 | `test/integration/export_scale_test.dart` | REVIEW-2026-09-06 finding 34: export file is the stored JSON streamed with Content-Length, `Expires` = completion + retention, the sweep removes expired jobs and orphan directories, a job left running at restart is reported failed, an empty type leaves no output item (5) |

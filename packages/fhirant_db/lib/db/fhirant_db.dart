@@ -1362,7 +1362,10 @@ class FhirAntDb extends FhirDb {
     }
     final inner = [
       if (typeCond != null) typeCond,
-      if (since != null) 'last_updated > ?',
+      // R4B http.html §3.1.0.12 (read 2026-11-19): "created at or after
+      // the given instant". It was `>`, so a version saved in the
+      // millisecond a `_since` cursor names was never returned.
+      if (since != null) 'last_updated >= ?',
     ];
     final rh =
         _versionsSql(inner.isEmpty ? '' : ' WHERE ${inner.join(' AND ')}');
