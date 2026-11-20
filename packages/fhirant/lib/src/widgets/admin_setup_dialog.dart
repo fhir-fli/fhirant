@@ -1,7 +1,7 @@
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
 import 'package:fhirant_server/fhirant_server.dart'
     show AdminProvisioning, AdminSetupStatus;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shows the admin-account setup dialog. Returns `true` if an admin account
 /// now exists (freshly created, or already present), `false`/`null` if the

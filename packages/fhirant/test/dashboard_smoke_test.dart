@@ -6,8 +6,8 @@ import 'package:fhirant/src/services/server_service.dart';
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
 import 'package:fhirant_server/fhirant_server.dart' show RequestLogEntry;
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
