@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
+import 'package:fhirant_server/src/services/disk_space.dart';
 import 'package:fhirant_server/src/sync/merge.dart';
 import 'package:fhirant_server/src/sync/sync_endpoint.dart';
 import 'package:fhirant_server/src/sync/sync_job.dart';
@@ -24,12 +25,25 @@ void main() {
   late ({FhirAntDb db, Handler handler, FhirAntServer server}) there;
   late HttpServer peerSocket;
   late String peerUrl;
+  // Every request the peer received, as "METHOD path".
+  late List<String> peerRequests;
 
   setUp(() async {
     here = await createTestServer(devMode: true);
     there = await createTestServer(devMode: true);
+    peerRequests = [];
     peerSocket = await shelf_io.serve(
-      there.handler,
+      (request) async {
+        if (request.method != 'POST') {
+          peerRequests.add('${request.method} ${request.url.path}');
+          return there.handler(request);
+        }
+        // A POST is named by its Bundle type too.
+        final body = await request.readAsString();
+        final type = body.isEmpty ? null : (jsonDecode(body) as Map)['type'];
+        peerRequests.add('POST ${request.url.path}${type ?? ''}');
+        return there.handler(request.change(body: body));
+      },
       InternetAddress.loopbackIPv4,
       0,
     );
@@ -148,6 +162,125 @@ void main() {
           .getResourceHistory(fhir.R4ResourceType.Patient, 'only-there'),
       hasLength(1),
     );
+  });
+
+  test(
+      'a first sync copies in one batch each way, and the next reads no '
+      "resource's history", () async {
+    for (final id in ['h1', 'h2', 'h3']) {
+      await save(here.db, {'id': id});
+    }
+    for (final id in ['t1', 't2']) {
+      await save(there.db, {'id': id});
+    }
+
+    final first = await sync();
+
+    expect(count(first, 'writtenToPeer'), 3);
+    expect(count(first, 'writtenHere'), 2);
+    // One transaction to the peer, no write of its own per resource, and no
+    // resource's history read: the copies came from the history pages.
+    expect(peerRequests.where((r) => r == 'POST transaction'), hasLength(1));
+    expect(peerRequests.where((r) => r.startsWith('PUT ')), isEmpty);
+    final perResource = RegExp('^GET [A-Za-z]+/[^/]+/_history');
+    expect(peerRequests.where(perResource.hasMatch), isEmpty);
+    for (final id in ['t1', 't2']) {
+      expect(
+        await here.db.getResourceHistory(fhir.R4ResourceType.Patient, id),
+        hasLength(1),
+      );
+    }
+
+    peerRequests.clear();
+    final second = await sync();
+
+    // The first sync's own writes are all the two sides show; each is the
+    // version it recorded, so none is read or written again.
+    expect(count(second, 'considered'), 5);
+    expect(count(second, 'unchanged'), 5);
+    expect(count(second, 'writtenToPeer'), 0);
+    expect(count(second, 'writtenHere'), 0);
+    expect(peerRequests.where(perResource.hasMatch), isEmpty);
+    expect(peerRequests.where((r) => !r.startsWith('GET ')), isEmpty);
+  });
+
+  test(
+      'this side read whole after its clock went back copies nothing the '
+      'peer already has', () async {
+    for (final id in ['a', 'b', 'c']) {
+      await save(here.db, {'id': id});
+    }
+    await sync();
+    // The second run moves the peer's cursor past the first run's copies;
+    // `_since` keeps the newest of them, the others are not shown again.
+    await sync();
+    // This side's cursor ahead of its clock: it is read whole next time,
+    // and the peer, read since its cursor, shows at most one of them.
+    await here.db.customStatement(
+      "UPDATE sync_peers SET local_since = '2099-01-01T00:00:00.000Z'",
+    );
+    peerRequests.clear();
+
+    final r = await sync();
+
+    expect(count(r, 'writtenToPeer'), 0);
+    expect(count(r, 'unchanged'), 3);
+    expect(peerRequests.where((r) => r.startsWith('POST')), isEmpty);
+  });
+
+  test('copies past 500 go in more than one batch', () async {
+    await here.db.saveResources([
+      for (var i = 0; i < 501; i++) fhir.Patient(id: 'p$i'.toFhirString),
+    ]);
+
+    final r = await sync();
+
+    expect(count(r, 'writtenToPeer'), 501);
+    expect(r['failure'], isNull);
+    expect(peerRequests.where((r) => r == 'POST transaction'), hasLength(2));
+    expect(
+      await there.db.getResourceCount(fhir.R4ResourceType.Patient),
+      501,
+    );
+  });
+
+  test("copies this server's floor would not hold are refused, not lost",
+      () async {
+    final disk = _FillsUp();
+    final full = await createTestServer(devMode: true, diskSpace: disk);
+    addTearDown(() async {
+      await full.server.stop();
+      await full.db.close();
+    });
+    for (final id in ['t1', 't2']) {
+      await save(there.db, {'id': id});
+    }
+
+    final r = await sync(on: full.handler);
+
+    expect(count(r, 'writtenHere'), 0);
+    expect(r['failure'], hasLength(2));
+    expect('${r['failure']}', contains('507'));
+    expect(await full.db.syncCursor(peerUrl), isNull);
+  });
+
+  test('a resource this store lost after the last sync is brought back',
+      () async {
+    await save(here.db, {'id': 'kept', 'gender': 'male'});
+    await sync();
+    // As a store restored from before the sync: the resource and the
+    // cursor gone, the pair left.
+    for (final table in ['resources', 'resources_history']) {
+      await here.db.customStatement(
+        "DELETE FROM $table WHERE resource_type = 'Patient' AND id = 'kept'",
+      );
+    }
+    await here.db.customStatement('DELETE FROM sync_peers');
+
+    final r = await sync();
+
+    expect(r['failure'], isNull);
+    expect((await read(here.db, 'kept'))?['gender'], 'male');
   });
 
   test('a meta.source the original carries reaches the copy unchanged',
@@ -296,19 +429,10 @@ void main() {
   });
 
   group('runs that do not finish', () {
-    /// The peer, failing every write after [allowed] writes went through.
-    SyncClient failingPeer(int allowed) {
-      var writes = 0;
-      return SyncClient(
-        _Intercept(RemoteEndpoint(Uri.parse(peerUrl)), (method, path) {
-          if (method != 'PUT' && method != 'DELETE') return null;
-          writes++;
-          return writes > allowed
-              ? (status: 503, headers: <String, String>{}, body: 'down')
-              : null;
-        }),
-      );
-    }
+    /// The peer, failing every write after [allowed] writes went through,
+    /// including the entries of a batch past that count.
+    SyncClient failingPeer(int allowed) =>
+        SyncClient(_GoesDown(RemoteEndpoint(Uri.parse(peerUrl)), allowed));
 
     SyncClient localClient() => SyncClient(
           LocalEndpoint(
@@ -341,6 +465,51 @@ void main() {
         expect((await read(there.db, id))!['gender'], 'male');
       }
       expect(await here.db.syncCursor(peerUrl), isNotNull);
+    });
+
+    test('a peer that refuses the transaction takes the copies as a batch',
+        () async {
+      for (final id in ['a', 'b', 'c']) {
+        await save(here.db, {'id': id});
+      }
+      final report = SyncReport();
+      await Synchronizer(
+        db: here.db,
+        peer: peerUrl,
+        local: localClient(),
+        remote: failingPeer(1000),
+        report: report,
+      ).run();
+      expect(report.failures, isEmpty);
+      expect(report.writtenToPeer, 3);
+      for (final id in ['a', 'b', 'c']) {
+        expect(await read(there.db, id), isNotNull);
+      }
+    });
+
+    test('copies the peer refuses whole are each a failure', () async {
+      for (final id in ['a', 'b']) {
+        await save(here.db, {'id': id});
+      }
+      final report = SyncReport();
+      await Synchronizer(
+        db: here.db,
+        peer: peerUrl,
+        local: localClient(),
+        remote: SyncClient(
+          _Intercept(
+            RemoteEndpoint(Uri.parse(peerUrl)),
+            (method, path) => method == 'POST'
+                ? (status: 500, headers: <String, String>{}, body: 'no')
+                : null,
+          ),
+        ),
+        report: report,
+      ).run();
+      expect(report.writtenToPeer, 0);
+      expect(report.failures, hasLength(2));
+      expect(report.failures.first, contains('answered 500'));
+      expect(await here.db.syncCursor(peerUrl), isNull);
     });
 
     test('a resource the peer changes during the sync is merged next time',
@@ -770,4 +939,80 @@ class _Intercept implements SyncEndpoint {
     if (canned != null) return canned;
     return inner.send(method, pathAndQuery, headers: headers, body: body);
   }
+}
+
+/// A peer that takes [allowed] writes and refuses every later one with
+/// 503, counting each entry of a batch as one write: a server that goes
+/// down partway through a run.
+class _GoesDown implements SyncEndpoint {
+  _GoesDown(this.inner, this.allowed);
+
+  final SyncEndpoint inner;
+  final int allowed;
+  int _writes = 0;
+
+  static const SyncReply _down =
+      (status: 503, headers: <String, String>{}, body: 'down');
+
+  @override
+  Uri get base => inner.base;
+
+  @override
+  Future<SyncReply> send(
+    String method,
+    String pathAndQuery, {
+    Map<String, String>? headers,
+    String? body,
+  }) async {
+    if (method == 'PUT' || method == 'DELETE') {
+      if (++_writes > allowed) return _down;
+    }
+    if (method != 'POST' || body == null) {
+      return inner.send(method, pathAndQuery, headers: headers, body: body);
+    }
+    final bundle = jsonDecode(body) as Map<String, dynamic>;
+    // A server that goes down during a transaction takes none of it.
+    if (bundle['type'] == 'transaction') return _down;
+    final entries = (bundle['entry'] as List).cast<Map<String, dynamic>>();
+    final through = <Map<String, dynamic>>[];
+    for (final e in entries) {
+      if (++_writes > allowed) break;
+      through.add(e);
+    }
+    var answered = <dynamic>[];
+    if (through.isNotEmpty) {
+      final reply = await inner.send(
+        method,
+        pathAndQuery,
+        headers: headers,
+        body: jsonEncode({...bundle, 'entry': through}),
+      );
+      answered = (jsonDecode(reply.body) as Map)['entry'] as List;
+    }
+    return (
+      status: 200,
+      headers: <String, String>{},
+      body: jsonEncode({
+        'resourceType': 'Bundle',
+        'type': 'batch-response',
+        'entry': [
+          ...answered,
+          for (var i = through.length; i < entries.length; i++)
+            {
+              'response': {'status': '503'},
+            },
+        ],
+      }),
+    );
+  }
+}
+
+/// A disk with room for the request that starts a sync and none after it.
+class _FillsUp implements DiskSpace {
+  static const int _total = 64 * 1024 * 1024 * 1024;
+  int _calls = 0;
+
+  @override
+  DiskUsage? measure(String path) =>
+      (free: _calls++ == 0 ? _total : 0, total: _total);
 }

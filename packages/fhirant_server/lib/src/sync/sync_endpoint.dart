@@ -174,35 +174,51 @@ class SyncClient {
   /// The largest page asked for (fhirant's `kMaxPageSize`).
   static const pageSize = 500;
 
-  /// The resources with a version saved at or after [since], or every
-  /// resource when [since] is null, by `Type/id`; and the latest
-  /// `lastModified` seen, as the server wrote it, for the next `_since`;
-  /// and the server's clock when it answered (the reply's `Date`, else
-  /// this machine's clock: the in-process side has no `Date` header), so a
-  /// caller can tell the clock went back behind its cursor.
+  /// Reads the server's history (`_history`) of everything saved at or
+  /// after [since], or of everything when [since] is null, newest first,
+  /// and calls [onEntry] for each entry in that order with its `Type/id`
+  /// and its version (null when the entry carries no version id or time).
+  /// Returns the latest `lastModified` seen, as the server wrote it, for the
+  /// next `_since`; the server's clock when it answered (the reply's
+  /// `Date`, else this machine's clock: the in-process side has no `Date`
+  /// header); and whether the whole history was read.
+  ///
+  /// A server whose clock reads earlier than [since] (by more than the
+  /// `Date` header's one-second grain) had its clock set back: what it
+  /// saved since is stamped before the cursor and `_since` would never
+  /// return it, so its whole history is read instead (review of PR #110:
+  /// a version stamped 09:00 after one stamped 10:00 never reached the
+  /// peer). That is decided on the first page, before any entry is given.
   ///
   /// R4B http.html §3.1.0.12 history (hl7.org/fhir/R4B/http.html, read
   /// 2026-11-19): `_since` is "Only include resource versions that were
   /// created at or after the given instant in time", and "The history
   /// interaction can be used to set up a subscription from one system to
   /// another, so that resources are synchronized between them".
-  Future<({Set<String> keys, String? latest, DateTime now})> changedSince(
+  Future<({String? latest, DateTime now, bool whole})> scan(
     String? since,
+    FutureOr<void> Function(String key, SyncVersion? version) onEntry,
   ) async {
-    final keys = <String>{};
+    String first(String? from) => '_history?_count=$pageSize'
+        '${from == null ? '' : '&_since=${Uri.encodeQueryComponent(from)}'}';
+    var whole = since == null;
+    var next = first(since);
+    var reply = await endpoint.send('GET', next);
+    final now = _dateOf(reply) ?? DateTime.now().toUtc();
+    final cursorAt = since == null ? null : DateTime.tryParse(since);
+    if (cursorAt != null &&
+        now.isBefore(cursorAt.subtract(const Duration(seconds: 1)))) {
+      whole = true;
+      next = first(null);
+      reply = await endpoint.send('GET', next);
+    }
     String? latest;
     DateTime? latestAt;
-    DateTime? now;
-    var next = '_history?_count=$pageSize'
-        '${since == null ? '' : '&_since=${Uri.encodeQueryComponent(since)}'}';
     for (;;) {
-      final reply = await endpoint.send('GET', next);
-      now ??= _dateOf(reply) ?? DateTime.now().toUtc();
       final page = _decode(reply, next);
       for (final entry in _entries(page)) {
         final key = _keyOf(entry);
         if (key == null) continue;
-        keys.add(key);
         final modified =
             (entry['response'] as Map?)?['lastModified'] as String?;
         final at = modified == null ? null : DateTime.tryParse(modified);
@@ -210,12 +226,63 @@ class SyncClient {
           latestAt = at;
           latest = modified;
         }
+        await onEntry(key, _versionOf(entry));
       }
       final link = _nextLink(page);
       if (link == null) break;
       next = link;
+      reply = await endpoint.send('GET', next);
     }
-    return (keys: keys, latest: latest, now: now);
+    return (latest: latest, now: now, whole: whole);
+  }
+
+  /// Sends [entries] (each a `Bundle.entry` with its `request`) as one
+  /// Bundle of [type] `batch` or `transaction`. R4B http.html §3.1.0.11
+  /// (hl7.org/fhir/R4B/http.html, read 2026-11-20): the entries "may be a
+  /// mix of other interactions defined on this page (e.g. read, search,
+  /// create, update, delete, etc.)"; "in the case of a batch each entry is
+  /// treated as if an individual interaction or operation, in the case of
+  /// a transaction all interactions or operations either succeed or fail
+  /// together". Returns each entry's status, new version id (from its
+  /// `etag`) and the start of its outcome, in order. A Bundle refused whole
+  /// is a [SyncFailure].
+  Future<List<({int status, String? versionId, String detail})>> bundle(
+    String type,
+    List<Map<String, dynamic>> entries,
+  ) async {
+    final what = '$type of ${entries.length}';
+    final reply = await endpoint.send(
+      'POST',
+      '',
+      headers: {'content-type': 'application/fhir+json'},
+      body: jsonEncode({
+        'resourceType': 'Bundle',
+        'type': type,
+        'entry': entries,
+      }),
+    );
+    final answer = _decode(reply, what, 'POST');
+    final answers = _entries(answer).toList();
+    if (answer['type'] != '$type-response' ||
+        answers.length != entries.length) {
+      throw SyncFailure('POST $what did not answer a $type-response with '
+          'one entry each');
+    }
+    return [
+      for (final a in answers)
+        () {
+          final response = a['response'] as Map? ?? const {};
+          final status = int.tryParse(
+                '${response['status'] ?? ''}'.split(' ').first,
+              ) ??
+              0;
+          return (
+            status: status,
+            versionId: etagVersion(response['etag'] as String?),
+            detail: _start(jsonEncode(response['outcome'] ?? response)),
+          );
+        }(),
+    ];
   }
 
   static DateTime? _dateOf(SyncReply reply) {
@@ -286,14 +353,18 @@ class SyncClient {
   Future<SyncReply> delete(String key, {required String ifMatch}) =>
       endpoint.send('DELETE', key, headers: {'if-match': 'W/"$ifMatch"'});
 
-  Map<String, dynamic> _decode(SyncReply reply, String what) {
+  Map<String, dynamic> _decode(
+    SyncReply reply,
+    String what, [
+    String method = 'GET',
+  ]) {
     if (reply.status != 200) {
-      throw SyncFailure('GET $what answered ${reply.status}: '
+      throw SyncFailure('$method $what answered ${reply.status}: '
           '${_start(reply.body)}');
     }
     final body = jsonDecode(reply.body);
     if (body is! Map<String, dynamic> || body['resourceType'] != 'Bundle') {
-      throw SyncFailure('GET $what did not answer a Bundle');
+      throw SyncFailure('$method $what did not answer a Bundle');
     }
     return body;
   }

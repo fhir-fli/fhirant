@@ -527,6 +527,39 @@ class FhirAntDb extends FhirDb {
     );
   }
 
+  /// [syncPair] for each of [resourceKeys] in one query: the keys that
+  /// were synced before, with their pairs; a key never synced is absent.
+  /// At most 500 keys, the size of a sync's page.
+  Future<Map<String, ({String? local, String? remote})>> syncPairs(
+    String peer,
+    List<String> resourceKeys,
+  ) async {
+    if (resourceKeys.isEmpty) return const {};
+    if (resourceKeys.length > 500) {
+      throw ArgumentError.value(
+        resourceKeys.length,
+        'resourceKeys',
+        'at most 500',
+      );
+    }
+    final rows = await customSelect(
+      'SELECT resource_key, local_version, remote_version FROM sync_pairs '
+      'WHERE peer = ? AND resource_key IN '
+      '(${List.filled(resourceKeys.length, '?').join(', ')})',
+      variables: [
+        Variable.withString(peer),
+        for (final k in resourceKeys) Variable.withString(k),
+      ],
+    ).get();
+    return {
+      for (final row in rows)
+        row.read<String>('resource_key'): (
+          local: row.read<String?>('local_version'),
+          remote: row.read<String?>('remote_version'),
+        ),
+    };
+  }
+
   /// Records the versions a `$sync` with [peer] left [resourceKey] at.
   Future<void> setSyncPair(
     String peer,

@@ -1,0 +1,8 @@
+load start 2026-11-20T14:03:08-05:00
+load exit 0 2026-11-20T14:03:24-05:00
+pids	1474900	1475086
+sync	first	30.2	202
+counts	A_Patient	100	B_Patient	100
+sync	unchanged	10.1	202
+sync	hundred	10.1	202
+done 2026-11-20T14:05:01-05:00

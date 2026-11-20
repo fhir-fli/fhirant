@@ -118,17 +118,46 @@ class SyncJobs {
   }
 }
 
+/// What a history scan showed of one resource on one side: its newest
+/// version id (null when the entry carried none) and whether that version
+/// is a delete.
+typedef _Seen = ({String? versionId, bool deleted});
+
+/// A resource on its way to the other side in a batch: its key, the JSON,
+/// the version it was copied from, and its size in bytes.
+typedef _Copy = ({
+  String key,
+  Map<String, dynamic> json,
+  String source,
+  int bytes,
+});
+
 /// Brings this server and a peer to the same content for every resource
 /// either changed since the last sync between them.
 ///
-/// For each such resource: read both sides' histories, split each at the
-/// version the last sync left it at (`sync_pairs`), merge
-/// ([mergeResource]), write the result to the peer, then here, and record
-/// the versions both now hold. The peer is written first: when the peer
-/// takes the merge and this side cannot (it changed in between, 412), the
-/// peer holds the merge and the next sync's rule for "neither changed,
-/// different values" (take the peer's) carries it here. When the peer
-/// cannot take it, nothing is recorded and the next sync starts over.
+/// Both sides' histories since the last sync are read page by page
+/// (`_history?_since`, R4B http.html §3.1.0.12), this side's first. Three
+/// kinds of resource come out of that read:
+///
+/// - Unchanged: the newest version each side shows is the one the last
+///   sync left it at (`sync_pairs`), or the side shows none. A sync's own
+///   writes are of this kind on the next run. Nothing more is read.
+/// - A copy: both sides were read whole (no earlier sync, or a clock set
+///   back) and only one side ever had the resource. Its newest version, in
+///   the page already read, is written to the other side in batches
+///   (R4B http.html §3.1.0.11), which is what a first sync mostly is: a
+///   first sync of 10,000 that read each resource's history and wrote each
+///   on its own took 1,227 s (tool/sync_cost_2026-11-20/RESULTS.md). The
+///   Android FHIR SDK uploads the same way, in Bundles of up to 500
+///   (android-fhir 28a5034, UploadStrategy.forBundleRequest).
+/// - Everything else: both sides' histories of it are read, each split at
+///   the version the last sync left it at, merged ([mergeResource]), the
+///   result written to the peer, then here, and the versions both now hold
+///   recorded. The peer is written first: when the peer takes the merge and
+///   this side cannot (it changed in between, 412), the peer holds the
+///   merge and the next sync's rule for "neither changed, different
+///   values" (take the peer's) carries it here. When the peer cannot take
+///   it, nothing is recorded and the next sync starts over.
 ///
 /// The history cursors move only when every resource went through: a
 /// refused write is tried again next time rather than skipped for good.
@@ -161,21 +190,100 @@ class Synchronizer {
   /// This server's storage floor, checked before each write here.
   final StorageFloor? floor;
 
+  /// The most bytes of resources one batch carries: under the 16 MiB body
+  /// a fhirant peer takes by default (`maxRequestBody`), with room for the
+  /// Bundle around them. A larger resource goes in a batch of its own.
+  static const int batchBytes = 4 * 1024 * 1024;
+
+  final List<_Copy> _toHere = [];
+  final List<_Copy> _toPeer = [];
+  int _toHereBytes = 0;
+  int _toPeerBytes = 0;
+
+  static bool _skipped(String key) =>
+      syncSkippedTypes.contains(key.split('/').first);
+
   /// Runs the sync.
   Future<void> run() async {
     final cursor = await db.syncCursor(peer);
-    final there = await _changedSince(remote, cursor?.remoteSince);
-    final here = await _changedSince(local, cursor?.localSince);
-    final keys = {...there.keys, ...here.keys}
-        .where((k) => !syncSkippedTypes.contains(k.split('/').first))
+
+    final seenHere = <String, _Seen>{};
+    final here = await local.scan(cursor?.localSince, (key, version) {
+      seenHere.putIfAbsent(
+        key,
+        () =>
+            (versionId: version?.versionId, deleted: version?.deleted ?? false),
+      );
+    });
+
+    final seenThere = <String, _Seen>{};
+    final copied = <String>{};
+    final there = await remote.scan(cursor?.remoteSince, (key, version) async {
+      if (seenThere.containsKey(key)) return;
+      seenThere[key] =
+          (versionId: version?.versionId, deleted: version?.deleted ?? false);
+      // Only the peer ever had it: its newest version, read just now.
+      if (here.whole &&
+          !_skipped(key) &&
+          !seenHere.containsKey(key) &&
+          version != null &&
+          !version.deleted) {
+        copied.add(key);
+        await _queue(key, version, toPeer: false);
+      }
+    });
+    await _flush(toPeer: false);
+
+    if (here.whole && there.whole) {
+      // Only this side ever had it. The whole history is read again rather
+      // than held from the first read: holding every resource's JSON for a
+      // store the size of MIMIC-IV (928,935 resources) is not needed when
+      // the second read is in process.
+      final pushed = <String>{};
+      await local.scan(null, (key, version) async {
+        if (!pushed.add(key) ||
+            _skipped(key) ||
+            seenThere.containsKey(key) ||
+            !seenHere.containsKey(key) ||
+            version == null ||
+            version.deleted) {
+          return;
+        }
+        copied.add(key);
+        await _queue(key, version, toPeer: true);
+      });
+      await _flush(toPeer: true);
+    }
+
+    final keys = {...seenHere.keys, ...seenThere.keys}
+        .where((k) => !_skipped(k))
         .toList()
       ..sort();
     report.considered = keys.length;
-    for (final key in keys) {
-      try {
-        await _syncOne(key);
-      } on SyncFailure catch (e) {
-        report.failures.add('$key: $e');
+    final rest = [
+      for (final k in keys)
+        if (!copied.contains(k)) k,
+    ];
+    for (var at = 0; at < rest.length; at += SyncClient.pageSize) {
+      final chunk = rest.sublist(
+        at,
+        (at + SyncClient.pageSize).clamp(0, rest.length),
+      );
+      // The pairs of a page of keys in one query. A sync of 10,000 that
+      // changed nothing took 10.2 s with one query a key, 5.3 s with this
+      // (measured 2026-11-20).
+      final pairs = await db.syncPairs(peer, chunk);
+      for (final key in chunk) {
+        try {
+          await _syncOne(
+            key,
+            pairs[key],
+            seenHere: seenHere[key],
+            seenThere: seenThere[key],
+          );
+        } on SyncFailure catch (e) {
+          report.failures.add('$key: $e');
+        }
       }
     }
     if (report.failures.isEmpty) {
@@ -187,28 +295,118 @@ class Synchronizer {
     }
   }
 
-  /// What [side] changed since [since]. A server whose clock now reads
-  /// earlier than [since] (by more than the `Date` header's one-second
-  /// grain) had its clock set back: what it saved since then is stamped
-  /// before the cursor, and `_since` would never return it. Such a side is
-  /// read whole; the version pairs keep what did not change from being
-  /// written again (review of PR #110: a version stamped 09:00 after one
-  /// stamped 10:00 never reached the peer).
-  Future<({Set<String> keys, String? latest, DateTime now})> _changedSince(
-    SyncClient side,
-    String? since,
-  ) async {
-    final found = await side.changedSince(since);
-    final cursorAt = since == null ? null : DateTime.tryParse(since);
-    if (cursorAt == null ||
-        !found.now.isBefore(cursorAt.subtract(const Duration(seconds: 1)))) {
-      return found;
+  Future<void> _queue(
+    String key,
+    SyncVersion version, {
+    required bool toPeer,
+  }) async {
+    final bytes = utf8.encode(jsonEncode(version.json)).length;
+    final queued = toPeer ? _toPeerBytes : _toHereBytes;
+    final list = toPeer ? _toPeer : _toHere;
+    if (list.isNotEmpty &&
+        (list.length >= SyncClient.pageSize || queued + bytes > batchBytes)) {
+      await _flush(toPeer: toPeer);
     }
-    return side.changedSince(null);
+    list.add(
+      (
+        key: key,
+        json: version.json!,
+        source: version.versionId,
+        bytes: bytes,
+      ),
+    );
+    if (toPeer) {
+      _toPeerBytes += bytes;
+    } else {
+      _toHereBytes += bytes;
+    }
   }
 
-  Future<void> _syncOne(String key) async {
-    final pair = await db.syncPair(peer, key);
+  /// Writes the queued copies to one side in one Bundle and records each
+  /// one written. A copy the side refuses is a failure, tried again next
+  /// run; a Bundle the side refuses whole is a failure of each copy in it.
+  Future<void> _flush({required bool toPeer}) async {
+    final list = toPeer ? _toPeer : _toHere;
+    if (list.isEmpty) return;
+    final copies = List<_Copy>.of(list);
+    list.clear();
+    if (toPeer) {
+      _toPeerBytes = 0;
+    } else {
+      _toHereBytes = 0;
+    }
+    final where = toPeer ? 'peer' : 'here';
+    // A batch here goes through this server's storage floor
+    // (syncLocalHandler) and is refused whole when it would cut into it;
+    // the peer was not written for a copy, so nothing is left half done.
+    final client = toPeer ? remote : local;
+    final entries = [
+      for (final c in copies)
+        {
+          'resource': c.json,
+          'request': {'method': 'PUT', 'url': c.key},
+        },
+    ];
+    // As a transaction first: one commit for all of them, where a batch
+    // commits each entry on its own (500 MIMIC-IV Observations measured
+    // 2026-11-20 on a fhirant file store: 1.5-1.8 s as a transaction,
+    // 8.3-9.0 s as a batch; tool/sync_cost_2026-11-20/
+    // batch_vs_transaction.py). A transaction refused is sent again as a
+    // batch, so one copy the side will not take holds back only itself.
+    List<({int status, String? versionId, String detail})> answers;
+    try {
+      answers = await client.bundle('transaction', entries);
+    } on SyncFailure {
+      try {
+        answers = await client.bundle('batch', entries);
+      } on SyncFailure catch (e) {
+        for (final c in copies) {
+          report.failures.add('${c.key}: write $where: $e');
+        }
+        return;
+      }
+    }
+    // The pairs in one commit, not one each.
+    await db.transaction<void>(() async {
+      for (var i = 0; i < copies.length; i++) {
+        final c = copies[i];
+        final a = answers[i];
+        if (a.status < 200 || a.status >= 300) {
+          report.failures
+              .add('${c.key}: write $where answered ${a.status}: ${a.detail}');
+          continue;
+        }
+        toPeer ? report.writtenToPeer++ : report.writtenHere++;
+        await db.setSyncPair(
+          peer,
+          c.key,
+          local: toPeer ? c.source : a.versionId,
+          remote: toPeer ? a.versionId : c.source,
+        );
+      }
+    });
+  }
+
+  /// Whether a side has nothing after [pairVersion], the version the last
+  /// sync left it at: the newest version its scan showed is that one, or
+  /// the scan showed none. A side read whole that shows none does not have
+  /// the resource at all; when the other side has it, it was a copy and
+  /// never reaches here, and when neither has it there is nothing to write.
+  static bool _unchangedSince(_Seen? seen, String? pairVersion) =>
+      seen == null || (seen.versionId != null && seen.versionId == pairVersion);
+
+  Future<void> _syncOne(
+    String key,
+    ({String? local, String? remote})? pair, {
+    required _Seen? seenHere,
+    required _Seen? seenThere,
+  }) async {
+    if (pair != null &&
+        _unchangedSince(seenHere, pair.local) &&
+        _unchangedSince(seenThere, pair.remote)) {
+      report.unchanged++;
+      return;
+    }
     final mine = await local.history(key);
     final theirs = await remote.history(key);
     if (pair != null &&

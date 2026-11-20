@@ -108,6 +108,24 @@ void main() {
       );
     });
 
+    test('many pairs are read in one query, by peer', () async {
+      await db.setSyncPair('http://a', 'Patient/x', local: '1', remote: '2');
+      await db.setSyncPair('http://a', 'Patient/y', local: null, remote: '3');
+      await db.setSyncPair('http://b', 'Patient/z', local: '4', remote: '4');
+      expect(
+        await db.syncPairs('http://a', ['Patient/x', 'Patient/y', 'Patient/z']),
+        {
+          'Patient/x': (local: '1', remote: '2'),
+          'Patient/y': (local: null, remote: '3'),
+        },
+      );
+      expect(await db.syncPairs('http://a', const []), isEmpty);
+      expect(
+        () => db.syncPairs('http://a', List.filled(501, 'Patient/x')),
+        throwsArgumentError,
+      );
+    });
+
     test('the sync tables are server state, not part of the FHIR record', () {
       expect(
         FhirAntDb.serverStateTables,
