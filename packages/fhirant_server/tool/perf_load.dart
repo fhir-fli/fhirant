@@ -6,6 +6,11 @@
 // Usage:
 //   cd packages/fhirant_server
 //   dart run tool/perf_load.dart <ndjson-dir> <db-path> [--limit N] [--batch N]
+//     [--server-store]
+//
+// --server-store writes <db-path>/fhirant.db the way the CLI opens it
+// (openStoreFile, under the public development key), so
+// `bin/server.dart --dev-mode --db-path <db-path>` serves the loaded store.
 //
 // Writes one row per batch to <db-path>.perf.tsv as it goes, flushed every
 // time, so a run that is killed still leaves everything it measured. Then
@@ -30,6 +35,7 @@ Future<void> main(List<String> args) async {
   final dbPath = args[1];
   final limit = _intArg(args, '--limit') ?? -1;
   final batchSize = _intArg(args, '--batch') ?? 500;
+  final serverStore = args.contains('--server-store');
 
   // Appended synchronously, one row at a time: an IOSink with an in-flight
   // flush throws "StreamSink is bound to a stream" on the next write, and the
@@ -49,7 +55,14 @@ Future<void> main(List<String> args) async {
         '(${rate.toStringAsFixed(0)}/s)');
   }
 
-  final db = FhirAntDb(NativeDatabase(File('$dbPath/fhirant.sqlite')));
+  final dbFile = File(
+    serverStore ? '$dbPath/fhirant.db' : '$dbPath/fhirant.sqlite',
+  );
+  final db = FhirAntDb(
+    serverStore
+        ? openStoreFile(dbFile, 'default-development-key')
+        : NativeDatabase(dbFile),
+  );
 
   // Two shapes are accepted: a directory of NDJSON, one resource per line
   // (MIMIC), and a directory of single-resource .json files (the fhir_r*
@@ -197,7 +210,6 @@ Future<void> main(List<String> args) async {
     DateTime.now().difference(searchStart).inMilliseconds / 1000,
   );
 
-  final dbFile = File('$dbPath/fhirant.sqlite');
   print('database size: '
       '${(dbFile.lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB');
   tsv.writeAsStringSync(
