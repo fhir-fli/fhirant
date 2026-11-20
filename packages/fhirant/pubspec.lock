@@ -246,18 +246,18 @@ packages:
     dependency: transitive
     description:
       name: fhir_path
-      sha256: "1b861908806240394c2beb3ed5b097b9e8af90595f13b90a3f7de63a13314cd4"
+      sha256: ff6180e3908da8ea515ef73c299543bfbcd5cd4b11c20a13521a1020003b04db
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.1"
+    version: "0.15.3"
   fhir_r4:
     dependency: "direct main"
     description:
       name: fhir_r4
-      sha256: "654b4cf3648415028e416df9d1ec21fd0cad147790a304ac1c1559966cd994da"
+      sha256: "776feafe1bfa80d11ae843b4ac9faf89a0f9e36c4c9dd3803df2453ab04b7ec3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   fhir_r4_bulk:
     dependency: transitive
     description:
@@ -294,10 +294,10 @@ packages:
     dependency: transitive
     description:
       name: fhir_r4_path
-      sha256: f1432a3025c16b35a0653b4718c809198a5a721eb1afa730878f7fb3b067f425
+      sha256: "96346c0f7d93b0db3f1bc940523fe83e65a890cc33ec16236f320854bea6dd3c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   fhir_r4_validation:
     dependency: transitive
     description:

@@ -27,11 +27,11 @@ dependencies:
   ffi: ^2.2.0
   fhir_db: ^0.15.2
   fhir_node: ^0.6.1
-  fhir_r4: ^0.14.0
+  fhir_r4: ^0.14.1
   fhir_r4_bulk: ^0.14.0
   fhir_r4_cql: ^0.14.0
   fhir_r4_mapping: ^0.14.0
-  fhir_r4_path: ^0.14.0
+  fhir_r4_path: ^0.14.1
   fhir_r4_validation: ^0.14.0
   fhirant_db:
     path: ../fhirant_db
