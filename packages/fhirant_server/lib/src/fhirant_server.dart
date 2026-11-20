@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
@@ -19,6 +20,7 @@ import 'package:fhirant_server/src/services/file_scanner.dart';
 import 'package:fhirant_server/src/services/storage_floor.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
+import 'package:fhirant_server/src/sync/sync_job.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
@@ -190,6 +192,19 @@ class FhirAntServer {
 
   /// The `\$reindex` job of this process (one at a time).
   final ReindexJobs reindexJobs = ReindexJobs();
+
+  /// The `\$sync` job of this process (one at a time).
+  final SyncJobs syncJobs = SyncJobs();
+
+  /// The router [createRouter] built last: `\$sync` writes this server's
+  /// side through it, so its writes reach the same Subscription service as
+  /// a client's. A second router would replace that service.
+  late Router _router;
+
+  /// The router [createRouter] built last, for a test that drives the
+  /// sync's local side as the server does.
+  @visibleForTesting
+  Handler get routerHandler => _router.call;
 
   /// The `\$export` jobs running in this process; ended by [stop].
   final ExportJobs exportJobs = ExportJobs();
@@ -506,6 +521,21 @@ class FhirAntServer {
         r'/$reindex-status',
         (Request req) => reindexStatusHandler(req, reindexJobs),
       )
+      ..post(
+        r'/$sync',
+        (Request req) => syncKickoffHandler(
+          req,
+          db: dbInterface,
+          jobs: syncJobs,
+          router: () => syncLocalHandler(_router.call),
+          baseUrl: baseUrl,
+          floor: storageFloor,
+        ),
+      )
+      ..get(
+        r'/$sync-status',
+        (Request req) => syncStatusHandler(req, syncJobs),
+      )
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(
         r'/$restore',
@@ -763,7 +793,43 @@ class FhirAntServer {
             conditionalDeleteHandler(req, resourceType, dbInterface),
       );
 
+    _router = router;
     return router;
+  }
+
+  /// What `\$sync` sends its requests to on this server: [router] inside
+  /// the same audit, scope check, storage floor and error handling a
+  /// client's request goes through, with the caller who started the sync
+  /// in place of a token (each request carries its claims as `auth_user`).
+  /// Straight to the router, a sync started with a read-only `system/`
+  /// token wrote here, and nothing it wrote was audited (review of PR
+  /// #110, both reproduced).
+  Handler syncLocalHandler(Handler router) {
+    Middleware asCaller() => (inner) => (request) async {
+          final claims = request.context['auth_user'];
+          final principal = Principal.of(request);
+          if (claims is! Map<String, dynamic> || principal == null) {
+            return outcomeResponse(
+              401,
+              'login',
+              r'A $sync request here carried no caller.',
+            );
+          }
+          final refused =
+              authorizeRequest(principal, request.method, request.url.path);
+          final response = refused ?? await inner(request);
+          return response.change(context: {auditAgentKey: claims});
+        };
+    return const Pipeline()
+        .addMiddleware(auditMiddleware(dbInterface, queue: _audit))
+        .addMiddleware(asCaller())
+        .addMiddleware(
+          storageFloor == null
+              ? (inner) => inner
+              : storageFloorMiddleware(storageFloor!),
+        )
+        .addMiddleware(_uncaughtErrorMiddleware())
+        .addHandler(router);
   }
 
   /// Create pipeline with middleware

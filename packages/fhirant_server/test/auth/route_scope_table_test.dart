@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
 import 'package:test/test.dart';
 
-/// The per-route table of what each of the 91 routes asks a caller for
+/// The per-route table of what each of the 93 routes asks a caller for
 /// (REVIEW-2026-09-17 ST2b): the SMART permission `authorizeRequest`
 /// derives from the method and path, the resource type it derives it on,
 /// and the class of rule that applies before the scope check. The list is
@@ -16,7 +16,8 @@ import 'package:test/test.dart';
 /// this layer), resource type the permission is checked on (`-` = none),
 /// class:
 /// - `system`: admin role or a `system/` scope, before anything else
-///   ($backup, $restore, $export at the root, $reindex, $reindex-status).
+///   ($backup, $restore, $export at the root, $reindex, $reindex-status,
+///   $sync, $sync-status).
 /// - `rootData`: a root operation that can read stored data the request
 ///   does not name ($fhirpath, $cql, the forecasts): a user- or
 ///   system-context scope covering every type.
@@ -103,6 +104,8 @@ void main() {
     ('POST', r'/CodeSystem/$subsumes', 'r', 'CodeSystem', '-'),
     ('POST', r'/$reindex', 'r', '-', 'system'),
     ('GET', r'/$reindex-status', 'r', '-', 'system'),
+    ('POST', r'/$sync', 'r', '-', 'system'),
+    ('GET', r'/$sync-status', 'r', '-', 'system'),
     ('POST', r'/$backup', 'r', '-', 'system'),
     ('POST', r'/$restore', 'r', '-', 'system'),
     ('GET', r'/$fhirpath', 'r', '-', 'rootData'),
@@ -182,7 +185,7 @@ void main() {
     final rows = table.map((r) => '${r.$1} ${r.$2}').toSet();
     expect(routes.difference(rows), isEmpty, reason: 'routes with no row');
     expect(rows.difference(routes), isEmpty, reason: 'rows with no route');
-    expect(table, hasLength(91));
+    expect(table, hasLength(93));
   });
 
   test('each row says what authorizeRequest derives for its route', () {
