@@ -2,7 +2,7 @@ import 'package:fhirant/src/state/server_state.dart';
 import 'package:fhirant_db/fhirant_db.dart' show BackupSchemaTooNew;
 import 'package:fhirant_server/fhirant_server.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
