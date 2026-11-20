@@ -1,0 +1,7 @@
+round	type	entries	seconds	status_ok
+0	batch	500	8.33	500
+0	transaction	500	1.62	500
+1	batch	500	8.68	500
+1	transaction	500	1.79	500
+2	batch	500	8.99	500
+2	transaction	500	1.53	500

@@ -16,8 +16,8 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,749 | 194 | `cd packages/fhirant_server && dart test` (recounted 2026-11-20) |
-| fhirant_db | 145 | 8 | `cd packages/fhirant_db && dart test` (recounted 2026-11-19) |
+| fhirant_server | 1,756 | 194 | `cd packages/fhirant_server && dart test` (recounted 2026-11-20) |
+| fhirant_db | 146 | 8 | `cd packages/fhirant_db && dart test` (recounted 2026-11-20) |
 | fhirant | 38 | 5 | `cd packages/fhirant && flutter test` (recounted 2026-11-19) |
 | fhirant_secure_storage | 7 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 8 | 1 | `cd packages/fhirant_logging && dart test` |
@@ -163,7 +163,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/bundle_entry_url_test.dart` | REVIEW-2026-09-17 Q7: an entry URL with a third segment or a non-id second segment (`_history`, `$everything`, `$validate`) is a 400 on that entry, not the first two segments (1) |
 | `test/integration/bundle_entry_search_test.dart` | REVIEW-2026-09-17 Q6: eight search URLs (`_has`, `_include`, `_revinclude`, `_summary=count`, `_elements`, `_filter`, `_total=none`, plain) as batch entries and as REST requests must agree; `Prefer: handling=strict` reaches the entry (3) |
 | `test/integration/program_sandbox_test.dart` | REVIEW-2026-09-17 A9: `$fhirpath`, `$cql` and `$transform` past the deadline are 422 `too-costly` and the server answers the next request; `runProgram` value, kill at deadline, program error; `runHostedProgram` host answers, host failure, `HostResourceCache` round trip (11) |
-| `test/integration/server_sync_test.dart` | `$sync` between two servers, the peer over a real socket: copies both ways with ids kept and `meta.source` neither added nor changed, the original not written again; nothing changed writes nothing; different fields both kept; the same field takes the later save, both ways; history kept; delete against edit both ways; AuditEvents not synced; a run cut off moves no cursor; a peer change during the sync is merged next run; a sync started from the peer agrees; admin only; non-http peer 400; peer token used, missing token reported; a peer key that is not a resource stops the sync; a read-only caller writes nothing here; sync writes here are audited as the caller's; a peer URL with credentials 400; history taken in the server's order; a clock set back is read whole (24). Mutants: `tool/sync_2026-11-19/mutants.tsv`, 14 of 14 caught |
+| `test/integration/server_sync_test.dart` | `$sync` between two servers, the peer over a real socket: copies both ways with ids kept and `meta.source` neither added nor changed, the original not written again; nothing changed writes nothing; different fields both kept; the same field takes the later save, both ways; history kept; delete against edit both ways; AuditEvents not synced; a run cut off moves no cursor; a peer change during the sync is merged next run; a sync started from the peer agrees; admin only; non-http peer 400; peer token used, missing token reported; a peer key that is not a resource stops the sync; a read-only caller writes nothing here; sync writes here are audited as the caller's; a peer URL with credentials 400; history taken in the server's order; a clock set back is read whole; a first sync copies in one transaction each way and the next reads no resource's history; more than 500 copies take more than one Bundle; a peer that refuses the transaction takes a batch; copies refused whole are each a failure; copies past this server's storage floor are refused; a resource this store lost is brought back; a side read whole after its clock went back copies nothing the peer has (31). Mutants: `tool/sync_2026-11-19/mutants.tsv`, 24 of 24 caught |
 | `test/sync/merge_test.dart` | The merge rule with clocks the test sets: one-side change, newer save wins both ways, a field's time is the save that set it, changed-and-back is unchanged, removal, a list is one field, copy, delete against edit, neither-changed-but-different takes the peer's, meta parts, `meta.extension` carried, no base (14) |
 
 ### fhirant_db — Unit Tests (6 files)
@@ -176,7 +176,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/unit/schema_upgrade_test.dart` | Schema 14 rebuilds the search index from the stored resources |
 | `test/unit/backup_file_test.dart` | `copyEncrypted`/`restoreEncrypted` refuse a build without the cipher (3) |
 | `test/unit/export_stream_test.dart` | `exportJson` streams the stored JSON by rowid keyset, `since` and `ids` chunks; finished-job and stale-job queries for the export sweep (7) |
-| `test/unit/sync_tables_test.dart` | Schema 29: a schema-28 store gains `sync_peers`/`sync_pairs`; cursors and pairs kept per peer; both are server state (4) |
+| `test/unit/sync_tables_test.dart` | Schema 29: a schema-28 store gains `sync_peers`/`sync_pairs`; cursors and pairs kept per peer; many pairs read in one query; both are server state (5) |
 
 ## Running Tests
 
