@@ -125,21 +125,43 @@ void main() {
 
     final r = await sync();
 
-    // Each side gets the other's resource, and each resource gains
-    // meta.source on both sides (a version on its first server too).
-    expect(count(r, 'writtenToPeer'), 2);
-    expect(count(r, 'writtenHere'), 2);
+    // Each side gets the other's resource, as it is. R4B resource.html,
+    // Meta.source (read 2026-11-20): "On receiving a write operation, the
+    // server SHOULD generally leave this unchanged". The sync adds none, so
+    // the copy is the original's content and the original is not written
+    // again (measured 2026-11-20: adding one wrote all 10,000 resources
+    // back to the server they came from).
+    expect(count(r, 'writtenToPeer'), 1);
+    expect(count(r, 'writtenHere'), 1);
     expect(r['failure'], isNull);
     expect((await read(there.db, 'only-here'))!['gender'], 'male');
     expect((await read(here.db, 'only-there'))!['gender'], 'female');
-    // meta.source names the server each was first saved on.
+    expect((await read(here.db, 'only-there'))!['meta']['source'], isNull);
+    expect((await read(there.db, 'only-here'))!['meta']['source'], isNull);
     expect(
-      (await read(here.db, 'only-there'))!['meta']['source'],
-      peerUrl,
+      await here.db
+          .getResourceHistory(fhir.R4ResourceType.Patient, 'only-here'),
+      hasLength(1),
     );
     expect(
-      (await read(there.db, 'only-here'))!['meta']['source'],
-      'http://localhost:8080',
+      await there.db
+          .getResourceHistory(fhir.R4ResourceType.Patient, 'only-there'),
+      hasLength(1),
+    );
+  });
+
+  test('a meta.source the original carries reaches the copy unchanged',
+      () async {
+    await save(there.db, {
+      'id': 'sourced',
+      'meta': {'source': 'http://lab.example/fhir'},
+    });
+
+    await sync();
+
+    expect(
+      (await read(here.db, 'sourced'))!['meta']['source'],
+      'http://lab.example/fhir',
     );
   });
 
@@ -307,7 +329,6 @@ void main() {
         peer: peerUrl,
         local: localClient(),
         remote: failingPeer(1),
-        localBase: 'http://localhost:8080',
         report: report,
       ).run();
       expect(report.writtenToPeer, 1);
@@ -353,7 +374,6 @@ void main() {
         peer: peerUrl,
         local: localClient(),
         remote: racingPeer,
-        localBase: 'http://localhost:8080',
         report: report,
       ).run();
       expect(report.retryLater, hasLength(1));
@@ -562,7 +582,6 @@ void main() {
             peer: peerUrl,
             local: local,
             remote: hostile,
-            localBase: 'http://localhost:8080',
             report: SyncReport(),
           ).run(),
           throwsA(isA<SyncFailure>()),
