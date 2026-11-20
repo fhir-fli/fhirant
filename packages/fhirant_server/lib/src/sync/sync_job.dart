@@ -89,7 +89,6 @@ class SyncJobs {
     required String peer,
     required SyncClient local,
     required SyncClient remote,
-    required String localBase,
     StorageFloor? floor,
     void Function()? onDone,
   }) {
@@ -102,7 +101,6 @@ class SyncJobs {
         peer: peer,
         local: local,
         remote: remote,
-        localBase: localBase,
         floor: floor,
         report: job.report,
       ).run().then(
@@ -141,7 +139,6 @@ class Synchronizer {
     required this.peer,
     required this.local,
     required this.remote,
-    required this.localBase,
     required this.report,
     this.floor,
   });
@@ -157,10 +154,6 @@ class Synchronizer {
 
   /// The peer.
   final SyncClient remote;
-
-  /// This server's base URL, written into `meta.source` of what it sends
-  /// that has none.
-  final String localBase;
 
   /// What the run did.
   final SyncReport report;
@@ -236,8 +229,7 @@ class Synchronizer {
         'peer ${c.remoteAt.toIso8601String()})',
       );
     }
-    var json = merged.json;
-    if (json != null) json = _withSource(json, mine, theirs);
+    final json = merged.json;
 
     // The floor is checked before anything is written, so a refusal here
     // leaves both sides as they were.
@@ -311,37 +303,6 @@ class Synchronizer {
     }
     toPeer ? report.writtenToPeer++ : report.writtenHere++;
     return (versionId: written.versionId);
-  }
-
-  /// [json] with `meta.source` set to the server the resource was first
-  /// saved on, when it carries none: the peer for one this server never
-  /// had, this server for one the peer never had. R4B resource.html, Meta
-  /// (hl7.org/fhir/R4B/resource.html, read 2026-11-19): source is "A uri
-  /// that identifies the source system of the resource", and on a write
-  /// "the server SHOULD generally leave this unchanged".
-  Map<String, dynamic> _withSource(
-    Map<String, dynamic> json,
-    List<SyncVersion> mine,
-    List<SyncVersion> theirs,
-  ) {
-    final meta = json['meta'];
-    if (meta is Map && meta['source'] != null) return json;
-    final String? origin;
-    if (mine.isEmpty) {
-      origin = peer;
-    } else if (theirs.isEmpty) {
-      origin = localBase;
-    } else {
-      origin = null;
-    }
-    if (origin == null) return json;
-    return {
-      ...json,
-      'meta': {
-        if (meta is Map) ...meta.cast<String, dynamic>(),
-        'source': origin,
-      },
-    };
   }
 
   /// [versions] split at [baseVersion]: the base, and what came after it.

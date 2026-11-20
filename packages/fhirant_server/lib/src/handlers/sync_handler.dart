@@ -44,8 +44,7 @@ Future<Response> syncKickoffHandler(
     );
   }
   // Credentials go in `token`. In the URL they would be logged, returned
-  // by `$sync-status`, kept as the bookkeeping key and written into
-  // `meta.source` of every resource copied from the peer.
+  // by `$sync-status` and kept as the bookkeeping key.
   if (peer.userInfo.isNotEmpty) {
     return outcomeResponse(
       400,
@@ -89,7 +88,6 @@ Future<Response> syncKickoffHandler(
       ),
     ),
     remote: SyncClient(remoteEndpoint),
-    localBase: localBase,
     floor: floor,
     onDone: remoteEndpoint.close,
   );

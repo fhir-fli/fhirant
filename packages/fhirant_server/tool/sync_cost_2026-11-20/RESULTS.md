@@ -25,3 +25,7 @@ its peer. Times are the job's own `started`/`finished` (status_*.json).
 - Not run: the 929k store. Derived from the 10,000 rate, not measured:
   ~32 h for a first sync at 1,000 a minute, ~52 h at 600, and half that
   again for the next sync.
+
+Since measured: the sync no longer adds `meta.source` (R4B resource.html,
+Meta.source: "the server SHOULD generally leave this unchanged"), so the
+write-back and the re-read after it are gone. Not yet re-measured.
