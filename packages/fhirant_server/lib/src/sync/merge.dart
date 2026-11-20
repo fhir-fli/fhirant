@@ -43,17 +43,20 @@ class SyncSide {
   bool get changed => since.isNotEmpty;
 }
 
-/// The parts of `meta` a merge carries: those a client sets. `versionId`
-/// and `lastUpdated` are each server's own: R4B http.html §3.1.0.4 update
-/// (hl7.org/fhir/R4B/http.html, read 2026-11-19): "If the request body
-/// includes a meta, the server SHALL ignore the provided versionId and
-/// lastUpdated values."
-const metaFields = ['source', 'profile', 'security', 'tag'];
+/// The parts of `meta` a merge leaves out: each server's own. R4B
+/// http.html §3.1.0.4 update (hl7.org/fhir/R4B/http.html, read
+/// 2026-11-19): "If the request body includes a meta, the server SHALL
+/// ignore the provided versionId and lastUpdated values." Every other part
+/// (`source`, `profile`, `security`, `tag`, and Element's `id` and
+/// `extension`) is carried: a fixed list of four dropped `meta.extension`,
+/// and the two servers then differed for good (review of PR #110,
+/// reproduced).
+const serverMetaFields = {'versionId', 'lastUpdated'};
 
 /// The elements a merge decides one by one: every top-level element of the
-/// resource except `resourceType`, `id` and `meta`, and the [metaFields] of
-/// `meta`, named `meta.source` and so on. A list or a nested element is one
-/// field: `Patient.name` is decided whole.
+/// resource except `resourceType`, `id` and `meta`, and every part of
+/// `meta` but [serverMetaFields], named `meta.source` and so on. A list
+/// or a nested element is one field: `Patient.name` is decided whole.
 Map<String, Object?> syncFields(Map<String, dynamic> json) {
   final fields = <String, Object?>{};
   for (final entry in json.entries) {
@@ -66,8 +69,10 @@ Map<String, Object?> syncFields(Map<String, dynamic> json) {
   }
   final meta = json['meta'];
   if (meta is Map) {
-    for (final part in metaFields) {
-      if (meta.containsKey(part)) fields['meta.$part'] = meta[part];
+    for (final part in meta.keys) {
+      if (part is String && !serverMetaFields.contains(part)) {
+        fields['meta.$part'] = meta[part];
+      }
     }
   }
   return fields;
@@ -277,9 +282,10 @@ Map<String, dynamic> _assemble(
     if (shape['id'] != null) 'id': shape['id'],
   };
   final meta = <String, dynamic>{};
-  for (final part in metaFields) {
-    final v = fields['meta.$part'];
-    if (v != null) meta[part] = v;
+  for (final entry in fields.entries) {
+    if (entry.key.startsWith('meta.')) {
+      meta[entry.key.substring('meta.'.length)] = entry.value;
+    }
   }
   if (meta.isNotEmpty) out['meta'] = meta;
   for (final entry in fields.entries) {

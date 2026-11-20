@@ -235,6 +235,52 @@ void main() {
     );
   });
 
+  test('meta.extension and meta.id are carried, and a change to them alone',
+      () {
+    const ext = [
+      {'url': 'http://example.org/x', 'valueString': 'kept'},
+    ];
+    final withExt = {
+      ...base,
+      'meta': {'id': 'm1', 'extension': ext},
+    };
+    // Here changes gender; the extension is on both sides untouched.
+    final merged = mergeResource(
+      local: SyncSide(
+        base: v('1', 0, withExt),
+        since: [
+          v('2', 5, {...withExt, 'gender': 'other'}),
+        ],
+      ),
+      remote: SyncSide(base: v('1', 0, withExt), since: const []),
+    ).json!;
+    expect(merged['gender'], 'other');
+    expect(merged['meta'], {'id': 'm1', 'extension': ext});
+
+    // Only the extension changed, on the peer: it reaches here.
+    const changed = [
+      {'url': 'http://example.org/x', 'valueString': 'new'},
+    ];
+    final fromPeer = mergeResource(
+      local: SyncSide(base: v('1', 0, withExt), since: const []),
+      remote: SyncSide(
+        base: v('1', 0, withExt),
+        since: [
+          v('2', 3, {
+            ...base,
+            'meta': {'id': 'm1', 'extension': changed},
+          }),
+        ],
+      ),
+    ).json!;
+    expect((fromPeer['meta'] as Map)['extension'], changed);
+    expect(
+      sameContent(patient(withExt), fromPeer),
+      isFalse,
+      reason: 'an extension-only difference is a difference',
+    );
+  });
+
   test('meta.source and tags are fields; versionId and lastUpdated are not',
       () {
     final local = SyncSide(

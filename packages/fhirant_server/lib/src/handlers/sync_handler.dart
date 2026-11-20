@@ -43,6 +43,17 @@ Future<Response> syncKickoffHandler(
           '(http or https).',
     );
   }
+  // Credentials go in `token`. In the URL they would be logged, returned
+  // by `$sync-status`, kept as the bookkeeping key and written into
+  // `meta.source` of every resource copied from the peer.
+  if (peer.userInfo.isNotEmpty) {
+    return outcomeResponse(
+      400,
+      'invalid',
+      'peer must not carry a user name or password; pass the credential '
+          'as token.',
+    );
+  }
   if (token != null && token is! String) {
     return outcomeResponse(400, 'invalid', 'token must be a string.');
   }
@@ -50,7 +61,6 @@ Future<Response> syncKickoffHandler(
   // its bookkeeping is kept under.
   final peerKey = Uri(
     scheme: peer.scheme,
-    userInfo: peer.userInfo,
     host: peer.host,
     port: peer.hasPort ? peer.port : null,
     path: peer.path.replaceFirst(RegExp(r'/+$'), ''),

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
+import 'package:fhirant_server/src/auth/request_authorization.dart';
 import 'package:fhirant_server/src/handlers/handlers.dart';
 import 'package:fhirant_server/src/middlewares/audit_middleware.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
@@ -526,7 +527,7 @@ class FhirAntServer {
           req,
           db: dbInterface,
           jobs: syncJobs,
-          router: () => _router.call,
+          router: () => syncLocalHandler(_router.call),
           baseUrl: baseUrl,
           floor: storageFloor,
         ),
@@ -794,6 +795,41 @@ class FhirAntServer {
 
     _router = router;
     return router;
+  }
+
+  /// What `\$sync` sends its requests to on this server: [router] inside
+  /// the same audit, scope check, storage floor and error handling a
+  /// client's request goes through, with the caller who started the sync
+  /// in place of a token (each request carries its claims as `auth_user`).
+  /// Straight to the router, a sync started with a read-only `system/`
+  /// token wrote here, and nothing it wrote was audited (review of PR
+  /// #110, both reproduced).
+  Handler syncLocalHandler(Handler router) {
+    Middleware asCaller() => (inner) => (request) async {
+          final claims = request.context['auth_user'];
+          final principal = Principal.of(request);
+          if (claims is! Map<String, dynamic> || principal == null) {
+            return outcomeResponse(
+              401,
+              'login',
+              r'A $sync request here carried no caller.',
+            );
+          }
+          final refused =
+              authorizeRequest(principal, request.method, request.url.path);
+          final response = refused ?? await inner(request);
+          return response.change(context: {auditAgentKey: claims});
+        };
+    return const Pipeline()
+        .addMiddleware(auditMiddleware(dbInterface, queue: _audit))
+        .addMiddleware(asCaller())
+        .addMiddleware(
+          storageFloor == null
+              ? (inner) => inner
+              : storageFloorMiddleware(storageFloor!),
+        )
+        .addMiddleware(_uncaughtErrorMiddleware())
+        .addHandler(router);
   }
 
   /// Create pipeline with middleware

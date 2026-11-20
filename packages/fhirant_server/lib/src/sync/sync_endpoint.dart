@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show HttpDate, HttpException;
 
+import 'package:fhir_r4/fhir_r4.dart' show R4ResourceType;
 import 'package:fhirant_server/src/sync/merge.dart';
+import 'package:fhirant_server/src/utils/fhir_id.dart';
 import 'package:http/http.dart' as http;
 import 'package:shelf/shelf.dart';
 
@@ -173,23 +176,29 @@ class SyncClient {
 
   /// The resources with a version saved at or after [since], or every
   /// resource when [since] is null, by `Type/id`; and the latest
-  /// `lastModified` seen, as the server wrote it, for the next `_since`.
+  /// `lastModified` seen, as the server wrote it, for the next `_since`;
+  /// and the server's clock when it answered (the reply's `Date`, else
+  /// this machine's clock: the in-process side has no `Date` header), so a
+  /// caller can tell the clock went back behind its cursor.
   ///
   /// R4B http.html §3.1.0.12 history (hl7.org/fhir/R4B/http.html, read
   /// 2026-11-19): `_since` is "Only include resource versions that were
   /// created at or after the given instant in time", and "The history
   /// interaction can be used to set up a subscription from one system to
   /// another, so that resources are synchronized between them".
-  Future<({Set<String> keys, String? latest})> changedSince(
+  Future<({Set<String> keys, String? latest, DateTime now})> changedSince(
     String? since,
   ) async {
     final keys = <String>{};
     String? latest;
     DateTime? latestAt;
+    DateTime? now;
     var next = '_history?_count=$pageSize'
         '${since == null ? '' : '&_since=${Uri.encodeQueryComponent(since)}'}';
     for (;;) {
-      final page = await _bundle(next);
+      final reply = await endpoint.send('GET', next);
+      now ??= _dateOf(reply) ?? DateTime.now().toUtc();
+      final page = _decode(reply, next);
       for (final entry in _entries(page)) {
         final key = _keyOf(entry);
         if (key == null) continue;
@@ -206,12 +215,28 @@ class SyncClient {
       if (link == null) break;
       next = link;
     }
-    return (keys: keys, latest: latest);
+    return (keys: keys, latest: latest, now: now);
+  }
+
+  static DateTime? _dateOf(SyncReply reply) {
+    final date = reply.headers['date'];
+    if (date == null) return null;
+    try {
+      return HttpDate.parse(date);
+    } on FormatException {
+      return null;
+    } on HttpException {
+      return null;
+    }
   }
 
   /// Every version of [key] (`Type/id`), oldest first; empty when the
   /// server never had it.
   Future<List<SyncVersion>> history(String key) async {
+    // In the server's order, which is newest first (http.html §3.1.0.12,
+    // read 2026-11-19: "sorted with oldest versions last"). The order is
+    // the server's, not the versions' times: a clock set back stamps a
+    // newer version earlier, and two saves can share a millisecond.
     final byVersion = <String, SyncVersion>{};
     var next = '$key/_history?_count=$pageSize';
     for (;;) {
@@ -220,17 +245,17 @@ class SyncClient {
       final page = _decode(reply, next);
       for (final entry in _entries(page)) {
         final version = _versionOf(entry);
-        if (version != null) byVersion[version.versionId] = version;
+        // A page read after a new save repeats an entry; the first
+        // reading keeps its place.
+        if (version != null) {
+          byVersion.putIfAbsent(version.versionId, () => version);
+        }
       }
       final link = _nextLink(page);
       if (link == null) break;
       next = link;
     }
-    // The Bundle is newest first (http.html §3.1.0.12, read 2026-11-19:
-    // "sorted with oldest versions last"); a page read after a new save
-    // may repeat an entry, which the map drops.
-    return byVersion.values.toList()
-      ..sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
+    return byVersion.values.toList().reversed.toList();
   }
 
   /// Writes [json] as [key] (update, or update as create), with
@@ -260,9 +285,6 @@ class SyncClient {
   /// Deletes [key], with `If-Match` on [ifMatch]; returns the reply.
   Future<SyncReply> delete(String key, {required String ifMatch}) =>
       endpoint.send('DELETE', key, headers: {'if-match': 'W/"$ifMatch"'});
-
-  Future<Map<String, dynamic>> _bundle(String pathAndQuery) async =>
-      _decode(await endpoint.send('GET', pathAndQuery), pathAndQuery);
 
   Map<String, dynamic> _decode(SyncReply reply, String what) {
     if (reply.status != 200) {
@@ -302,8 +324,26 @@ class SyncClient {
   }
 
   /// `Type/id` of a history entry: from its resource, else from its
-  /// request URL or fullUrl (a delete carries no resource).
+  /// request URL or fullUrl (a delete carries no resource). The key becomes
+  /// a request path on both servers, so a type that is not an R4 resource
+  /// type or an id outside the `id` grammar (fhir_id.dart) stops the sync:
+  /// `admin/users/2/role` from a peer would otherwise be a PUT to this
+  /// server's account route (review of PR #110, reproduced).
   static String? _keyOf(Map<String, dynamic> entry) {
+    final key = _rawKeyOf(entry);
+    if (key == null) return null;
+    final slash = key.indexOf('/');
+    final type = key.substring(0, slash);
+    final id = key.substring(slash + 1);
+    if (R4ResourceType.fromString(type) == null ||
+        !fhirIdGrammar.hasMatch(id)) {
+      throw SyncFailure('history entry names "$key", which is not a '
+          'resource type and id');
+    }
+    return key;
+  }
+
+  static String? _rawKeyOf(Map<String, dynamic> entry) {
     final resource = entry['resource'];
     if (resource is Map &&
         resource['resourceType'] is String &&

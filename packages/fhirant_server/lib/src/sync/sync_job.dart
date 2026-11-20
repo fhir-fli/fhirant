@@ -171,8 +171,8 @@ class Synchronizer {
   /// Runs the sync.
   Future<void> run() async {
     final cursor = await db.syncCursor(peer);
-    final there = await remote.changedSince(cursor?.remoteSince);
-    final here = await local.changedSince(cursor?.localSince);
+    final there = await _changedSince(remote, cursor?.remoteSince);
+    final here = await _changedSince(local, cursor?.localSince);
     final keys = {...there.keys, ...here.keys}
         .where((k) => !syncSkippedTypes.contains(k.split('/').first))
         .toList()
@@ -192,6 +192,26 @@ class Synchronizer {
         localSince: here.latest ?? cursor?.localSince,
       );
     }
+  }
+
+  /// What [side] changed since [since]. A server whose clock now reads
+  /// earlier than [since] (by more than the `Date` header's one-second
+  /// grain) had its clock set back: what it saved since then is stamped
+  /// before the cursor, and `_since` would never return it. Such a side is
+  /// read whole; the version pairs keep what did not change from being
+  /// written again (review of PR #110: a version stamped 09:00 after one
+  /// stamped 10:00 never reached the peer).
+  Future<({Set<String> keys, String? latest, DateTime now})> _changedSince(
+    SyncClient side,
+    String? since,
+  ) async {
+    final found = await side.changedSince(since);
+    final cursorAt = since == null ? null : DateTime.tryParse(since);
+    if (cursorAt == null ||
+        !found.now.isBefore(cursorAt.subtract(const Duration(seconds: 1)))) {
+      return found;
+    }
+    return side.changedSince(null);
   }
 
   Future<void> _syncOne(String key) async {

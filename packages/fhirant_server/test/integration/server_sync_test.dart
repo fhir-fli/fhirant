@@ -44,13 +44,19 @@ void main() {
     await there.db.close();
   });
 
-  /// Runs `$sync` on [here] against the peer and returns the finished
-  /// status as name → values.
-  Future<Map<String, List<Object?>>> sync({String? token}) async {
-    final kick = await here.handler(
+  /// Runs `$sync` on [here] (or [on], as [caller]) against the peer and
+  /// returns the finished status as name → values.
+  Future<Map<String, List<Object?>>> sync({
+    String? token,
+    Handler? on,
+    String? caller,
+  }) async {
+    final handler = on ?? here.handler;
+    final kick = await handler(
       testRequest(
         'POST',
         r'/$sync',
+        authToken: caller,
         headers: {'content-type': 'application/fhir+json'},
         body: jsonEncode({
           'resourceType': 'Parameters',
@@ -64,7 +70,9 @@ void main() {
     expect(kick.statusCode, 202, reason: await kick.readAsString());
     final deadline = DateTime.now().add(const Duration(seconds: 60));
     for (;;) {
-      final status = await here.handler(testRequest('GET', r'/$sync-status'));
+      final status = await handler(
+        testRequest('GET', r'/$sync-status', authToken: caller),
+      );
       if (status.statusCode != 202) {
         final body = await status.readAsString();
         expect(status.statusCode, 200, reason: body);
@@ -498,6 +506,201 @@ void main() {
     await socket.close(force: true);
     await secured.server.stop();
     await secured.db.close();
+  });
+
+  group('what the sync does not trust', () {
+    test('a peer naming something that is not a resource stops the sync',
+        () async {
+      // A history entry whose type and id would make the key a path to
+      // another route here: `admin/users/2/role` is the account role
+      // route.
+      for (final resource in [
+        {'resourceType': 'admin', 'id': 'users/2/role', 'role': 'admin'},
+        {'resourceType': 'Patient', 'id': r'a$b'},
+      ]) {
+        final hostile = SyncClient(
+          _Intercept(RemoteEndpoint(Uri.parse(peerUrl)), (method, path) {
+            if (method != 'GET' || !path.startsWith('_history')) return null;
+            return (
+              status: 200,
+              headers: <String, String>{},
+              body: jsonEncode({
+                'resourceType': 'Bundle',
+                'type': 'history',
+                'entry': [
+                  {
+                    'resource': resource,
+                    'request': {'method': 'PUT', 'url': 'x'},
+                    'response': {
+                      'status': '200',
+                      'etag': 'W/"1"',
+                      'lastModified': '2026-11-19T10:00:00Z',
+                    },
+                  },
+                ],
+              }),
+            );
+          }),
+        );
+        final sentHere = <String>[];
+        final local = SyncClient(
+          _Intercept(
+            LocalEndpoint(
+              here.server.routerHandler,
+              Uri.parse('http://localhost:8080'),
+              null,
+            ),
+            (method, path) {
+              sentHere.add('$method $path');
+              return null;
+            },
+          ),
+        );
+        await expectLater(
+          Synchronizer(
+            db: here.db,
+            peer: peerUrl,
+            local: local,
+            remote: hostile,
+            localBase: 'http://localhost:8080',
+            report: SyncReport(),
+          ).run(),
+          throwsA(isA<SyncFailure>()),
+          reason: '$resource',
+        );
+        expect(
+          sentHere.where((r) => !r.startsWith('GET _history')),
+          isEmpty,
+          reason: '$resource',
+        );
+      }
+    });
+
+    test('a caller who may only read writes nothing here', () async {
+      final secured = await createTestServer();
+      final reader = await issueTestToken(
+        secured.db,
+        username: 'reader',
+        scopes: ['system/*.rs'],
+      );
+      await save(there.db, {'id': 'from-peer', 'gender': 'male'});
+
+      final r = await sync(on: secured.handler, caller: reader);
+
+      expect(r['failure'], isNotNull);
+      expect(r['failure']!.single, contains('403'));
+      expect(
+        await secured.db.getResource(fhir.R4ResourceType.Patient, 'from-peer'),
+        isNull,
+      );
+      await secured.server.stop();
+      await secured.db.close();
+    });
+
+    test("what the sync writes here is audited as its caller's", () async {
+      final secured = await createTestServer();
+      final admin = await issueTestToken(
+        secured.db,
+        username: 'sync-admin',
+        role: 'admin',
+      );
+      await save(there.db, {'id': 'audited', 'gender': 'male'});
+
+      final r = await sync(on: secured.handler, caller: admin);
+      expect(r['failure'], isNull);
+      await secured.server.auditQueue.drain();
+
+      final events = [
+        for (final e in await secured.db
+            .getResourcesByType(fhir.R4ResourceType.AuditEvent))
+          jsonEncode(e.toJson()),
+      ];
+      final writes = events.where(
+        (e) =>
+            e.contains('Patient/audited') &&
+            e.contains('"action":"U"') &&
+            e.contains('sync-admin'),
+      );
+      expect(writes, isNotEmpty, reason: events.join('\n'));
+      await secured.server.stop();
+      await secured.db.close();
+    });
+
+    test('a peer URL carrying a user name or password is refused', () async {
+      final r = await here.handler(
+        testRequest(
+          'POST',
+          r'/$sync',
+          headers: {'content-type': 'application/fhir+json'},
+          body: jsonEncode({
+            'resourceType': 'Parameters',
+            'parameter': [
+              {
+                'name': 'peer',
+                'valueUrl': 'http://admin:secret@127.0.0.1:${peerSocket.port}',
+              },
+            ],
+          }),
+        ),
+      );
+      expect(r.statusCode, 400);
+    });
+  });
+
+  group('a clock set back', () {
+    test("a peer's history is read in its order, not by its times", () async {
+      // v3 saved after the clock went back, so stamped before v2.
+      final peer = SyncClient(
+        _Intercept(RemoteEndpoint(Uri.parse(peerUrl)), (method, path) {
+          if (!path.startsWith('Patient/p1/_history')) return null;
+          Map<String, dynamic> entry(String v, String at, String gender) => {
+                'resource': {
+                  'resourceType': 'Patient',
+                  'id': 'p1',
+                  'gender': gender,
+                },
+                'request': {'method': 'PUT', 'url': 'Patient/p1'},
+                'response': {
+                  'status': '200',
+                  'etag': 'W/"$v"',
+                  'lastModified': at,
+                },
+              };
+          return (
+            status: 200,
+            headers: <String, String>{},
+            body: jsonEncode({
+              'resourceType': 'Bundle',
+              'type': 'history',
+              'entry': [
+                entry('3', '2026-11-19T09:00:00Z', 'other'),
+                entry('2', '2026-11-19T10:00:00Z', 'male'),
+                entry('1', '2026-11-19T08:00:00Z', 'female'),
+              ],
+            }),
+          );
+        }),
+      );
+      final versions = await peer.history('Patient/p1');
+      expect(versions.map((v) => v.versionId), ['1', '2', '3']);
+    });
+
+    test('a side whose clock reads before the cursor is read whole', () async {
+      await save(there.db, {'id': 'missed', 'gender': 'male'});
+      // The cursor a sync left when the peer's clock was a day ahead.
+      final ahead =
+          DateTime.now().toUtc().add(const Duration(days: 1)).toIso8601String();
+      await here.db.setSyncCursor(
+        peerUrl,
+        remoteSince: ahead,
+        localSince: ahead,
+      );
+
+      final r = await sync();
+
+      expect(r['failure'], isNull);
+      expect((await read(here.db, 'missed'))!['gender'], 'male');
+    });
   });
 
   test("the merge rule decides with each server's own times", () {
