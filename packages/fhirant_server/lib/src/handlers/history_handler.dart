@@ -503,6 +503,12 @@ fhir.BundleEntry _historyEntry(HistoryEntry e, String baseUrl) {
                   ? '201'
                   : '200')
           .toFhirString,
+      // The create's Location, as the create answered it: a history Bundle
+      // posted to another server is checked against it (http.html
+      // §3.1.0.11.4, "must match the Bundle.entry.response.location").
+      location: isCreate && !e.deleted
+          ? fhir.FhirUri('$path/_history/${e.versionId}')
+          : null,
       etag: 'W/"${e.versionId}"'.toFhirString,
       lastModified: fhir.FhirInstant.fromDateTime(e.lastUpdated),
     ),

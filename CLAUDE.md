@@ -180,7 +180,7 @@ What each route asks a caller for (SMART permission, resource type, special rule
 | **Compartment** | `GET /<type>/<id>/<resourceType>` | `compartmentSearchHandler` | Compartment search |
 | **Search** | `POST /_search` | `postSystemSearchHandler` | System-level POST search |
 | | `POST /<type>/_search` | `postSearchHandler` | Type-level POST search |
-| **CRUD** | `POST /` | `bundleHandler` | Transaction/Batch bundle |
+| **CRUD** | `POST /` | `bundleHandler` | Transaction, batch or history Bundle (a history Bundle replays every version, oldest first, all or nothing; a POST entry keeps `resource.id`; R4B http.html §3.1.0.11.4) |
 | | `GET /<type>` | `getResourcesHandler` | Search resources |
 | | `POST /<type>` | `postResourceHandler` | Create resource |
 | | `GET /<type>/<id>` | `getResourceByIdHandler` | Read resource |

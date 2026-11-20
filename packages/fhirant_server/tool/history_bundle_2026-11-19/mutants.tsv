@@ -1,0 +1,7 @@
+mutant	caught	failing tests
+newest version applied first	yes	another server's history replays here, every version in order
+a repeated resource is refused as in a transaction	yes	another server's history replays here, every version in order
+response.location is not checked	yes	a POST entry whose response.location names another resource is refused
+a DELETE need not name an id	yes	an entry with no request, no resource id, or a DELETE of no id is refused
+a resource without an id is accepted	yes	an entry with no request, no resource id, or a DELETE of no id is refused
+history create entries carry no Location	yes	a history create entry carries the Location its create answered

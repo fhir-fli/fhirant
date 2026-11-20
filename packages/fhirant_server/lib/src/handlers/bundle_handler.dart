@@ -25,7 +25,7 @@ import 'package:fhirant_server/src/utils/stored_resource.dart';
 import 'package:fhirant_server/src/utils/unknown_codes.dart';
 import 'package:shelf/shelf.dart';
 
-/// Handler for Transaction and Batch operations: POST /
+/// Handler for Transaction, Batch and History Bundles: POST /
 Future<Response> bundleHandler(
   Request request,
   FhirAntDb dbInterface, {
@@ -38,10 +38,24 @@ Future<Response> bundleHandler(
     final body = await request.readAsString();
     final parsed = fhir.Bundle.fromJsonString(body);
 
+    if (parsed.type == fhir.BundleType.history) {
+      final asTransaction = _historyAsTransaction(parsed);
+      if (asTransaction.refusal != null) {
+        return validationOutcome(asTransaction.refusal!);
+      }
+      return await _processTransaction(
+        asTransaction.bundle!,
+        dbInterface,
+        request,
+        subs,
+        fileScanner,
+        history: true,
+      );
+    }
     if (parsed.type != fhir.BundleType.transaction &&
         parsed.type != fhir.BundleType.batch) {
       return validationOutcome(
-        'Bundle type must be "transaction" or "batch"',
+        'Bundle type must be "transaction", "batch" or "history"',
       );
     }
 
@@ -83,8 +97,9 @@ Future<Response> _processTransaction(
   FhirAntDb dbInterface,
   Request request,
   SubscriptionService subscriptions,
-  FileScanner? fileScanner,
-) async {
+  FileScanner? fileScanner, {
+  bool history = false,
+}) async {
   FhirantLogging().logInfo(
     'Processing Transaction Bundle with ${bundle.entry!.length} entries',
   );
@@ -118,12 +133,18 @@ Future<Response> _processTransaction(
   // transaction." Entries run in that order; the response keeps the
   // Bundle's order ("entries in the response bundle SHALL be in the same
   // order as the entries in the request").
-  final order = List<int>.generate(bundle.entry!.length, (i) => i)
-    ..sort((a, b) {
-      final byMethod = _methodRank(bundle.entry![a].request!.method)
-          .compareTo(_methodRank(bundle.entry![b].request!.method));
-      return byMethod != 0 ? byMethod : a.compareTo(b);
-    });
+  //
+  // A history Bundle ([_historyAsTransaction]) runs oldest version first
+  // instead: it is "sorted with oldest versions last" (http.html
+  // §3.1.0.12), so from the end.
+  final order = history
+      ? List<int>.generate(bundle.entry!.length, (i) => i).reversed.toList()
+      : (List<int>.generate(bundle.entry!.length, (i) => i)
+        ..sort((a, b) {
+          final byMethod = _methodRank(bundle.entry![a].request!.method)
+              .compareTo(_methodRank(bundle.entry![b].request!.method));
+          return byMethod != 0 ? byMethod : a.compareTo(b);
+        }));
   final resultByIndex = List<fhir.BundleEntry?>.filled(
     bundle.entry!.length,
     null,
@@ -173,7 +194,8 @@ Future<Response> _processTransaction(
     // identity.
     void record(int i, _BundleOperation operation) {
       final identity = _writtenIdentity(operation);
-      if (identity != null) {
+      // A history Bundle repeats a resource once per version, by design.
+      if (identity != null && !history) {
         final earlier = writtenBy[identity];
         if (earlier != null) {
           throw BundleEntryException(
@@ -467,6 +489,108 @@ List<Map<String, Object?>> _auditEntries(
     });
   }
   return entries;
+}
+
+/// A history Bundle as the transaction that replays it: R4B http.html
+/// §3.1.0.11.4 (read 2026-11-19), "servers SHOULD accept a history Bundle
+/// - this makes it possible to replicate data from one server to another
+/// easily using a pub/sub model", "a resource may occur more than once in
+/// a history list, so servers processing history bundles must have some
+/// strategy to manage this", and "When processing a history bundle via a
+/// transaction, any entries with the request method of POST must use the
+/// Bundle.entry.resource.id (which must match the
+/// Bundle.entry.response.location) for that resource so that references
+/// are preserved."
+///
+/// The strategy: every version is applied, oldest first, all or nothing,
+/// so the history here holds each one in order and the last is current.
+/// An entry's resource is the version as it was saved, so it is applied as
+/// an update to its own identity (`PUT [type]/[resource.id]`), whatever the
+/// original request was: a POST keeps its id as quoted, and a conditional
+/// or PATCH request's result is the resource itself. A DELETE entry
+/// deletes the identity its request URL names. Entries keep their
+/// positions, so the transaction-response answers them in the request's
+/// order.
+({fhir.Bundle? bundle, String? refusal}) _historyAsTransaction(
+  fhir.Bundle history,
+) {
+  final entries = <fhir.BundleEntry>[];
+  final given = history.entry ?? const <fhir.BundleEntry>[];
+  for (var i = 0; i < given.length; i++) {
+    final entry = given[i];
+    final request = entry.request;
+    // bdl-3: "entry.request mandatory for batch/transaction/history".
+    if (request == null) {
+      return (bundle: null, refusal: 'Bundle entry $i missing request');
+    }
+    if (request.method == fhir.HTTPVerb.dELETE) {
+      final parts = _pathOf(request.url.valueString ?? '');
+      if (parts.length != 2 || !fhirIdGrammar.hasMatch(parts[1])) {
+        return (
+          bundle: null,
+          refusal: 'Bundle entry $i: a DELETE in a history Bundle must name '
+              '[type]/[id]',
+        );
+      }
+      entries.add(
+        fhir.BundleEntry(
+          request: fhir.BundleRequest(
+            method: fhir.HTTPVerb.dELETE,
+            url: fhir.FhirUri('${parts[0]}/${parts[1]}'),
+          ),
+        ),
+      );
+      continue;
+    }
+    final resource = entry.resource;
+    final id = resource?.id?.valueString;
+    if (resource == null || id == null) {
+      return (
+        bundle: null,
+        refusal: 'Bundle entry $i: a ${request.method} in a history Bundle '
+            'must carry the resource with its id',
+      );
+    }
+    final key = '${resource.resourceTypeString}/$id';
+    final location = entry.response?.location?.valueString;
+    if (location != null) {
+      final parts = _pathOf(location);
+      final named = parts.length >= 2 ? '${parts[0]}/${parts[1]}' : location;
+      if (named != key) {
+        return (
+          bundle: null,
+          refusal: 'Bundle entry $i: response.location names $named but the '
+              'resource is $key',
+        );
+      }
+    }
+    entries.add(
+      fhir.BundleEntry(
+        fullUrl: entry.fullUrl,
+        resource: resource,
+        request: fhir.BundleRequest(
+          method: fhir.HTTPVerb.pUT,
+          url: fhir.FhirUri(key),
+        ),
+      ),
+    );
+  }
+  return (
+    bundle: fhir.Bundle(type: fhir.BundleType.transaction, entry: entries),
+    refusal: null,
+  );
+}
+
+/// The segments of [url]'s path that name the resource: from the first
+/// that is a resource type, so an absolute URL on any base reads the same
+/// as a relative one.
+List<String> _pathOf(String url) {
+  final segments = (Uri.tryParse(url)?.pathSegments ?? const <String>[])
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final start =
+      segments.indexWhere((s) => fhir.R4ResourceType.fromString(s) != null);
+  return start < 0 ? const [] : segments.sublist(start);
 }
 
 /// The processing rank of a method in a transaction: DELETE, then POST,

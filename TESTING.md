@@ -112,6 +112,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 | `test/integration/search_e2e_test.dart` | Search with real DB |
 | `test/integration/has_search_e2e_test.dart` | _has reverse chaining |
 | `test/integration/bundle_e2e_test.dart` | Transaction/batch with real DB |
+| `test/integration/history_bundle_test.dart` | R4B http.html §3.1.0.11.4: one server's `_history` posted to another replays every version oldest first (create kept its id, two updates, a delete); one bad entry applies nothing; a `response.location` naming another resource, a missing request, a resource with no id and a DELETE with no id are refused; a history create entry carries its Location (5). Mutants: `tool/history_bundle_2026-11-19/mutants.tsv`, 6 of 6 caught |
 | `test/integration/compartment_e2e_test.dart` | Compartment search with real DB |
 | `test/integration/export_integration_test.dart` | Bulk export end-to-end |
 | `test/integration/export_scale_test.dart` | REVIEW-2026-09-06 finding 34: export file is the stored JSON streamed with Content-Length, `Expires` = completion + retention, the sweep removes expired jobs and orphan directories, a job left running at restart is reported failed, an empty type leaves no output item (5) |
