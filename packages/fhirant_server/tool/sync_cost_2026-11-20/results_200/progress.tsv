@@ -1,0 +1,8 @@
+label	seconds	a_log_lines	a_rss_mb	b_rss_mb	status
+first	0.1	0	1582	1594	202
+first	10.1	0	1640	1627	202
+first	20.1	0	1640	1626	200
+unchanged	0.0	0	1641	1626	202
+unchanged	10.1	0	1644	1655	200
+hundred	0.0	0	1648	1655	202
+hundred	10.1	0	1477	1661	200
