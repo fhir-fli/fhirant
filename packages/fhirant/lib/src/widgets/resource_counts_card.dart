@@ -5,8 +5,8 @@ import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhirant/src/screens/resource_browser_screen.dart';
 import 'package:fhirant/src/state/server_state.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 List<Map<String, dynamic>> _parseBundle(String jsonStr) {
