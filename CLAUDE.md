@@ -295,7 +295,7 @@ Server and db tests use `package:test` + `mocktail`; the app uses `flutter_test`
 --clamd-timeout-seconds  Deadline for one scan (default 130)
 ```
 
-Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption key; `FHIRANT_JWT_SECRET` the token signing secret (else one is generated and persisted beside the database); `FHIRANT_ADMIN_USERNAME` + `FHIRANT_ADMIN_PASSWORD` seed the first administrator (else the CLI prints a one-time bootstrap token the first registration must carry).
+Environment variable `FHIRANT_ENCRYPTION_KEY` provides the database encryption key; `FHIRANT_JWT_SECRET` the token signing secret (else one is generated and persisted beside the database; one per server, never shared, because a token names its account by this store's id alone, ASVS V10.3.3); `FHIRANT_ADMIN_USERNAME` + `FHIRANT_ADMIN_PASSWORD` seed the first administrator (else the CLI prints a one-time bootstrap token the first registration must carry).
 
 ## Code Style
 
