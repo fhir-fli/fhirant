@@ -543,7 +543,7 @@ void main() {
       expect(entityRefs.where((r) => r?.contains('health') ?? false), isEmpty);
     });
 
-    test('POST _search is action R / search, an operation is E / execute',
+    test('POST _search is search-type, an operation is operation, both E',
         () async {
       await db.saveResource(fhir.Patient(id: 'pb'.toFhirString));
       expect(
@@ -563,16 +563,25 @@ void main() {
         200,
       );
       final events = await auditEvents(atLeast: 2);
-      final byAction = {
+      final bySubtype = {
         for (final e in events)
-          e.action?.valueString: e.subtype?.first.code?.valueString,
+          e.subtype?.first.code?.valueString: e.action?.valueString,
       };
       // `search-type` since REVIEW-2026-10-06 finding 11: the specific
       // restful-interaction code for a type-level search, where this row
-      // pinned the parent code `search`.
-      expect(byAction['R'], 'search-type');
-      expect(byAction['E'], 'execute');
-      expect(byAction.containsKey('C'), isFalse, reason: 'nothing was created');
+      // pinned the parent code `search`. Both are action E since
+      // 2026-11-21. R4B audit-event-action (valuesets.json, read
+      // 2026-11-21) defines E as including "perform a query/search
+      // operation", and IHE BALP's Query profile fixes E. An operation is
+      // the R4B restful-interaction code `operation` (same file), where
+      // this row pinned `execute`, which is no code there.
+      expect(bySubtype['search-type'], 'E');
+      expect(bySubtype['operation'], 'E');
+      expect(
+        bySubtype.values,
+        isNot(contains('C')),
+        reason: 'nothing was created',
+      );
     });
 
     test('auth/login is not turned into a resource reference', () async {
