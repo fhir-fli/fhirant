@@ -20,10 +20,8 @@ import 'test_helpers.dart';
 void main() {
   test('two access tokens with the same claims in the same instant differ', () {
     final jwt = JwtService(testJwtSecret);
-    String mint() =>
-        jwt.generateToken(userId: 1, username: 'u', role: 'clinician');
-    String refresh() =>
-        jwt.generateRefreshToken(userId: 1, username: 'u', role: 'clinician');
+    String mint() => jwt.generateToken(subject: 'u');
+    String refresh() => jwt.generateRefreshToken(subject: 'u');
     expect(mint(), isNot(mint()));
     expect(refresh(), isNot(refresh()));
   });

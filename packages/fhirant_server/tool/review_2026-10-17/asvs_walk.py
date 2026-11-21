@@ -191,24 +191,26 @@ OVERRIDES = {
     'V7.5.3': ('FINDING', 'L3: $backup (the whole record) and making an '
                'account admin take the bearer token alone, 200 '
                '(asvs_notprobed)'),
-    'V9.2.3': ('FINDING', 'tokens carry exp gen iat jti role scope userId '
-               'username: no aud or iss. Another secret is refused (401), '
-               "but X's admin token worked on server Y sharing the secret "
-               '(200), the multi-instance set-up bin/server.dart describes '
-               '(asvs_notprobed)'),
-    'V10.3.1': ('FINDING', 'as V9.2.3: no aud; a token is good on every '
-                'server that holds the same secret'),
+    'V9.2.3': ('FINDING', 'since 2026-11-21 a token carries aud (and iss) '
+               'only when the server is started with --base-url (W: aud is '
+               'its URL, PASS; another iss/aud with the shared secret 401). '
+               'Without it (X, Y, the phone) there is no aud; the token '
+               'names its account by the account key (sub), so X\'s admin '
+               'token on Y is 401 (asvs_notprobed). Before: exp gen iat jti '
+               'role scope userId username, and X\'s admin token worked on Y '
+               '(200)'),
+    'V10.3.1': ('FINDING', 'as V9.2.3: aud only with --base-url'),
     'V10.3.2': ('PASS', 'scope user/Observation.rs: GET /Patient 403, GET '
                 '/Observation 200 (asvs_notprobed; access grid)'),
-    'V10.3.3': ('FINDING', 'the user is the numeric userId alone, and '
-                'account ids are per store: with a shared secret, nora\'s '
-                "token from X (id 17) was accepted on Y as Y's id 17, "
-                'another person (200); a restore gives a backup\'s accounts '
-                'new ids when theirs are taken (15 of 15 here): cara, admin on X '
-                '(id 16), restored as Y id 32; her X token opened GET '
-                "/admin/users on Y (200) as Y's id 16, a clinician. The "
-                "token's username is not compared with the account's, and "
-                'the role comes from the token (asvs_notprobed)'),
+    'V10.3.3': ('PASS', 'since 2026-11-21 the token names its account by '
+                'sub, the account\'s random key, which a backup carries; the '
+                'role and patient come from the account. With a shared '
+                'secret: nora (not in the backup) 401 on Y; cara, restored '
+                'to Y as id 32, 403 on /admin/users (Y\'s role for her), and '
+                'unchanged when y-cara, Y\'s id 16, is deactivated, 401 when '
+                'cara is (asvs_notprobed). Before: the numeric userId and the '
+                'token\'s role, so cara\'s X token opened /admin/users on Y '
+                'as Y\'s id 16, a clinician (200)'),
     'V10.3.4': ('N/A', 'the resource server requires no authentication '
                 'strength, method or recentness (password only; no acr, '
                 'amr or auth_time)'),

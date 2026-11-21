@@ -79,7 +79,7 @@ void main() {
           jwt.verifyRefreshToken(token) ??
           (throw StateError('$route: $key does not verify'));
       expect(payload['gen'], user.tokenGeneration, reason: '$route $key gen');
-      expect(payload['userId'], user.id, reason: '$route $key userId');
+      expect(payload['sub'], user.accountKey, reason: '$route $key sub');
       expect(payload['scope'], held, reason: '$route $key scope');
     }
   }
@@ -103,7 +103,7 @@ void main() {
       final user = (await first.db.getUserByUsername('first-admin'))!;
       final payload = jwt.verifyToken(reply['token'] as String)!;
       expect(payload['gen'], user.tokenGeneration);
-      expect(payload['userId'], user.id);
+      expect(payload['sub'], user.accountKey);
       expect(
         payload['scope'],
         SmartScopeEnforcer.heldScopes(user).join(' '),

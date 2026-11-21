@@ -91,6 +91,7 @@ void main() {
       when(() => mockDb.getUserById(1)).thenAnswer(
         (_) async => User(
           id: 1,
+          accountKey: 'key-1',
           username: 'admin_user',
           passwordHash: 'h',
           salt: 's',
@@ -113,8 +114,8 @@ void main() {
       // Verify the token is valid and contains correct claims
       final payload = jwtService.verifyToken(body['token'] as String);
       expect(payload, isNotNull);
-      expect(payload!['username'], equals('admin_user'));
-      expect(payload['role'], equals('admin'));
+      expect(payload!['sub'], equals('key-1'));
+      expect(payload, isNot(contains('role')));
 
       // Verify createUser was called with role=admin
       final captured = verify(
@@ -176,6 +177,7 @@ void main() {
       when(() => mockDb.getUserById(2)).thenAnswer(
         (_) async => User(
           id: 2,
+          accountKey: 'key-2',
           username: 'new_clinician',
           passwordHash: 'h',
           salt: 's',
@@ -244,6 +246,7 @@ void main() {
 
     test('duplicate username returns 409', () async {
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('existing');
 
@@ -299,6 +302,7 @@ void main() {
       final salt = PasswordHasher.generateSalt();
       final hash = PasswordHasher.hashPasswordSync(password, salt);
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(id);
       when(() => mockUser.username).thenReturn(username);
       when(() => mockUser.role).thenReturn(role);
@@ -340,7 +344,7 @@ void main() {
       // Verify the token is valid
       final payload = jwtService.verifyToken(body['token'] as String);
       expect(payload, isNotNull);
-      expect(payload!['username'], equals('testuser'));
+      expect(payload!['sub'], equals('key-1'));
     });
 
     test('unknown user returns 401', () async {
@@ -571,6 +575,7 @@ void main() {
 
     test('admin can unlock account', () async {
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(2);
       when(() => mockUser.username).thenReturn('lockeduser');
 

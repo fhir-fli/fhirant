@@ -72,9 +72,7 @@ void main() {
 
     test('returns 401 when using access token as refresh token', () async {
       final accessToken = jwtService.generateToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = makeRequest({
@@ -91,13 +89,12 @@ void main() {
 
     test('returns new tokens for valid refresh token', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
         scopes: ['system/*.*'],
       );
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
@@ -106,7 +103,7 @@ void main() {
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
-      when(() => mockDb.getUserByUsername('testuser'))
+      when(() => mockDb.getUserByAccountKey('testuser'))
           .thenAnswer((_) async => mockUser);
 
       final request = makeRequest({
@@ -127,7 +124,7 @@ void main() {
       // Verify the new access token is valid
       final newPayload = jwtService.verifyToken(body['access_token'] as String);
       expect(newPayload, isNotNull);
-      expect(newPayload!['username'], 'testuser');
+      expect(newPayload!['sub'], 'key-1');
 
       // Verify the new refresh token is valid
       final newRefreshPayload =
@@ -137,12 +134,10 @@ void main() {
 
     test('returns 401 when user no longer exists', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'deleted-user',
-        role: 'admin',
+        subject: 'deleted-user',
       );
 
-      when(() => mockDb.getUserByUsername('deleted-user'))
+      when(() => mockDb.getUserByAccountKey('deleted-user'))
           .thenAnswer((_) async => null);
 
       final request = makeRequest({
@@ -156,12 +151,11 @@ void main() {
 
     test('returns 403 when user account is deactivated', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'inactive',
-        role: 'admin',
+        subject: 'inactive',
       );
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('inactive');
       when(() => mockUser.role).thenReturn('admin');
@@ -169,7 +163,7 @@ void main() {
       when(() => mockUser.tokenGeneration).thenReturn(0);
       when(() => mockUser.patientId).thenReturn(null);
 
-      when(() => mockDb.getUserByUsername('inactive'))
+      when(() => mockDb.getUserByAccountKey('inactive'))
           .thenAnswer((_) async => mockUser);
 
       final request = makeRequest({
@@ -186,14 +180,12 @@ void main() {
       // The account is linked to pat-123, so the new token carries it; a
       // token naming another patient would be corrected the same way.
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'patientuser',
-        role: 'readonly',
+        subject: 'patientuser',
         scopes: ['patient/Patient.r', 'patient/Observation.r'],
-        patientId: 'someone-else',
       );
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('patientuser');
       when(() => mockUser.role).thenReturn('readonly');
@@ -203,7 +195,7 @@ void main() {
           .thenReturn('["patient/Patient.r","patient/Observation.r"]');
       when(() => mockUser.patientId).thenReturn('pat-123');
 
-      when(() => mockDb.getUserByUsername('patientuser'))
+      when(() => mockDb.getUserByAccountKey('patientuser'))
           .thenAnswer((_) async => mockUser);
 
       final request = makeRequest({
@@ -217,20 +209,21 @@ void main() {
       final body = jsonDecode(await response.readAsString()) as Map;
       expect(body['patient'], 'pat-123');
 
-      // Verify the new access token has patient claim
+      // The token names the account and carries no patient: the auth
+      // middleware reads the patient context from the account each request.
       final newPayload = jwtService.verifyToken(body['access_token'] as String);
-      expect(newPayload!['patient'], 'pat-123');
+      expect(newPayload!['sub'], 'key-1');
+      expect(newPayload, isNot(contains('patient')));
     });
 
     test('supports form-encoded body', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
         scopes: ['system/*.*'],
       );
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
@@ -239,7 +232,7 @@ void main() {
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
-      when(() => mockDb.getUserByUsername('testuser'))
+      when(() => mockDb.getUserByAccountKey('testuser'))
           .thenAnswer((_) async => mockUser);
 
       final formBody = 'grant_type=refresh_token&refresh_token='
@@ -256,13 +249,12 @@ void main() {
 
     test('old refresh token is revoked after rotation', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
         scopes: ['system/*.*'],
       );
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
@@ -271,7 +263,7 @@ void main() {
       when(() => mockUser.scopes).thenReturn(null);
       when(() => mockUser.patientId).thenReturn(null);
 
-      when(() => mockDb.getUserByUsername('testuser'))
+      when(() => mockDb.getUserByAccountKey('testuser'))
           .thenAnswer((_) async => mockUser);
 
       final request = makeRequest({
@@ -289,9 +281,7 @@ void main() {
 
     test('revoked refresh token is rejected', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final refreshHash = TokenHasher.hash(refreshToken);
@@ -299,12 +289,13 @@ void main() {
       when(() => mockDb.consumeToken(refreshHash, any()))
           .thenAnswer((_) async => false);
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
       when(() => mockUser.active).thenReturn(true);
       when(() => mockUser.tokenGeneration).thenReturn(0);
-      when(() => mockDb.getUserByUsername('testuser'))
+      when(() => mockDb.getUserByAccountKey('testuser'))
           .thenAnswer((_) async => mockUser);
       when(() => mockDb.bumpTokenGeneration(1)).thenAnswer((_) async {});
 
@@ -547,6 +538,7 @@ void main() {
           .thenAnswer((_) async => true);
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');
@@ -577,7 +569,8 @@ void main() {
       // Verify the access token is valid
       final payload = jwtService.verifyToken(body['access_token'] as String);
       expect(payload, isNotNull);
-      expect(payload!['username'], 'testuser');
+      expect(payload!['sub'], 'key-1');
+      expect(payload['client_id'], isNotNull);
     });
 
     test('exchanges valid code with PKCE', () async {
@@ -613,6 +606,7 @@ void main() {
           .thenAnswer((_) async => true);
 
       final mockUser = MockUser();
+      when(() => mockUser.accountKey).thenReturn('key-1');
       when(() => mockUser.id).thenReturn(1);
       when(() => mockUser.username).thenReturn('testuser');
       when(() => mockUser.role).thenReturn('admin');

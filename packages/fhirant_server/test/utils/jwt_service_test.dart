@@ -11,25 +11,131 @@ void main() {
   group('JwtService round-trip', () {
     test('a token it signs verifies and carries its claims', () {
       final token = service.generateToken(
-        userId: 7,
-        username: 'operator',
-        role: 'admin',
+        subject: 'k7',
         scopes: ['system/*.*'],
+        generation: 2,
       );
-      final payload = service.verifyToken(token);
+      final payload = service.verifyAccessToken(token);
       expect(payload, isNotNull);
-      expect(payload!['userId'], 7);
-      expect(payload['username'], 'operator');
-      expect(payload['role'], 'admin');
+      expect(payload!['sub'], 'k7');
+      expect(payload['scope'], 'system/*.*');
+      expect(payload['gen'], 2);
     });
 
     test('a token signed with a different secret is rejected', () {
-      final token = JwtService('some-other-secret').generateToken(
-        userId: 1,
-        username: 'x',
-        role: 'admin',
-      );
+      final token = JwtService('some-other-secret').generateToken(subject: 'k');
       expect(service.verifyToken(token), isNull);
+    });
+  });
+
+  // RFC 9068 §2.2 (rfc-editor.org txt, read 2026-11-21) lists iss, exp,
+  // aud, sub, client_id, iat and jti as REQUIRED; §4: the resource server
+  // "MUST verify that the "typ" header value is "at+jwt"", the "iss" "MUST
+  // exactly match", and a token whose "aud" does not contain this server
+  // "MUST be rejected".
+  group('RFC 9068 claims and checks', () {
+    const base = 'https://fhirant.example:8080';
+    final issuing = JwtService(secret, issuer: base);
+
+    test('a token names its account by sub and says nothing else about it', () {
+      final claims = JWT.decode(service.generateToken(subject: 'k')).payload
+          as Map<String, dynamic>;
+      expect(claims['sub'], 'k');
+      for (final gone in ['userId', 'username', 'role', 'patient']) {
+        expect(claims, isNot(contains(gone)), reason: gone);
+      }
+      expect(claims.keys, containsAll(<String>['exp', 'iat', 'jti']));
+    });
+
+    test('an access token is typ at+jwt, a refresh token is not', () {
+      expect(
+        JWT.decode(service.generateToken(subject: 'k')).header!['typ'],
+        accessTokenType,
+      );
+      expect(
+        JWT.decode(service.generateRefreshToken(subject: 'k')).header!['typ'],
+        'JWT',
+      );
+    });
+
+    test('a token without typ at+jwt is no access token', () {
+      final plain = JWT({'sub': 'k', 'gen': 0})
+          .sign(SecretKey(secret), expiresIn: const Duration(hours: 1));
+      expect(service.verifyToken(plain), isNotNull, reason: 'control');
+      expect(service.verifyAccessToken(plain), isNull);
+    });
+
+    test('a refresh-shaped token with typ at+jwt is no refresh token', () {
+      final wrong = JWT(
+        {'sub': 'k', 'gen': 0, 'token_type': 'refresh'},
+        header: {'typ': accessTokenType},
+      ).sign(SecretKey(secret), expiresIn: const Duration(hours: 1));
+      expect(service.verifyRefreshToken(wrong), isNull);
+    });
+
+    test('a token with no sub is refused', () {
+      final token = JWT({'gen': 0}, header: {'typ': accessTokenType})
+          .sign(SecretKey(secret), expiresIn: const Duration(hours: 1));
+      expect(service.verifyAccessToken(token), isNull);
+    });
+
+    test('with an issuer, iss and aud are it, and client_id is carried', () {
+      final claims = JWT
+          .decode(issuing.generateToken(subject: 'k', clientId: 'app'))
+          .payload as Map<String, dynamic>;
+      expect(claims['iss'], base);
+      expect(claims['aud'], base);
+      expect(claims['client_id'], 'app');
+      expect(
+        JWT.decode(issuing.generateRefreshToken(subject: 'k')).payload['iss'],
+        base,
+      );
+    });
+
+    test('with an issuer, its own tokens pass', () {
+      expect(
+        issuing.verifyAccessToken(issuing.generateToken(subject: 'k')),
+        isNotNull,
+      );
+      expect(
+        issuing.verifyRefreshToken(issuing.generateRefreshToken(subject: 'k')),
+        isNotNull,
+      );
+    });
+
+    test("with an issuer, another server's token is refused", () {
+      final other = JwtService(secret, issuer: 'https://other.example');
+      expect(
+        issuing.verifyAccessToken(other.generateToken(subject: 'k')),
+        isNull,
+      );
+      expect(
+        issuing.verifyRefreshToken(other.generateRefreshToken(subject: 'k')),
+        isNull,
+      );
+      // No iss at all: a server with no issuer signed it.
+      expect(
+        issuing.verifyAccessToken(service.generateToken(subject: 'k')),
+        isNull,
+      );
+    });
+
+    test('with an issuer, an aud list must contain it', () {
+      String withAud(Object aud) => JWT(
+            {'sub': 'k', 'gen': 0, 'iss': base, 'aud': aud},
+            header: {'typ': accessTokenType},
+          ).sign(SecretKey(secret), expiresIn: const Duration(hours: 1));
+      expect(issuing.verifyAccessToken(withAud([base, 'x'])), isNotNull);
+      expect(issuing.verifyAccessToken(withAud(['x'])), isNull);
+      expect(issuing.verifyAccessToken(withAud('x')), isNull);
+    });
+
+    test('without an issuer, neither iss nor aud is written', () {
+      final claims = JWT.decode(service.generateToken(subject: 'k')).payload
+          as Map<String, dynamic>;
+      expect(claims, isNot(contains('iss')));
+      expect(claims, isNot(contains('aud')));
+      expect(claims, isNot(contains('client_id')));
     });
   });
 
@@ -39,8 +145,8 @@ void main() {
     String forge(String alg, String signature) {
       String seg(Map<String, dynamic> m) =>
           base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
-      final header = seg({'alg': alg, 'typ': 'JWT'});
-      final payload = seg({'userId': 1, 'role': 'admin'});
+      final header = seg({'alg': alg, 'typ': accessTokenType});
+      final payload = seg({'sub': 'k'});
       return '$header.$payload.$signature';
     }
 
@@ -65,9 +171,14 @@ void main() {
 
   group('a token must carry exp (RFC 9068 §2.2, §4)', () {
     // Signed with the server's own secret, so only the claim differs.
-    String signedWith(Map<String, dynamic> claims, {Duration? expiresIn}) =>
-        JWT(claims).sign(SecretKey(secret), expiresIn: expiresIn);
-    final access = {'userId': 1, 'username': 'x', 'role': 'admin', 'gen': 0};
+    String signedWith(
+      Map<String, dynamic> claims, {
+      Duration? expiresIn,
+      String typ = accessTokenType,
+    }) =>
+        JWT(claims, header: {'typ': typ})
+            .sign(SecretKey(secret), expiresIn: expiresIn);
+    final access = {'sub': 'k', 'gen': 0};
     final refresh = {...access, 'token_type': 'refresh'};
 
     test('control: the same claims with a future exp verify', () {
@@ -76,7 +187,11 @@ void main() {
       expect(service.verifyAccessToken(token), isNotNull);
       expect(
         service.verifyRefreshToken(
-          signedWith(refresh, expiresIn: const Duration(hours: 1)),
+          signedWith(
+            refresh,
+            expiresIn: const Duration(hours: 1),
+            typ: 'JWT',
+          ),
         ),
         isNotNull,
       );
@@ -90,7 +205,10 @@ void main() {
     });
 
     test('a refresh token with no exp is refused', () {
-      expect(service.verifyRefreshToken(signedWith(refresh)), isNull);
+      expect(
+        service.verifyRefreshToken(signedWith(refresh, typ: 'JWT')),
+        isNull,
+      );
     });
 
     test('a past exp is refused', () {
@@ -99,9 +217,8 @@ void main() {
     });
 
     test('every token the service mints carries exp', () {
-      final t1 = service.generateToken(userId: 1, username: 'x', role: 'r');
-      final t2 =
-          service.generateRefreshToken(userId: 1, username: 'x', role: 'r');
+      final t1 = service.generateToken(subject: 'k');
+      final t2 = service.generateRefreshToken(subject: 'k');
       for (final t in [t1, t2]) {
         expect(JWT.decode(t).payload['exp'], isA<int>());
       }
@@ -110,18 +227,11 @@ void main() {
 
   group('refresh tokens', () {
     test('a refresh token is recognised, an access token is not', () {
-      final refresh = service.generateRefreshToken(
-        userId: 3,
-        username: 'operator',
-        role: 'admin',
-      );
-      final access = service.generateToken(
-        userId: 3,
-        username: 'operator',
-        role: 'admin',
-      );
+      final refresh = service.generateRefreshToken(subject: 'k3');
+      final access = service.generateToken(subject: 'k3');
       expect(service.verifyRefreshToken(refresh), isNotNull);
       expect(service.verifyRefreshToken(access), isNull);
+      expect(service.verifyAccessToken(refresh), isNull);
     });
   });
 }

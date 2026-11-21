@@ -33,9 +33,10 @@ class JwtSecret {
   /// 1. [explicit] — a value the caller already holds (e.g. from secure
   ///    storage on mobile), used verbatim when non-empty.
   /// 2. [envValue] — e.g. `FHIRANT_JWT_SECRET`, for an operator who manages
-  ///    the secret. One per server, never shared: a server accepts every
-  ///    token signed with it, and a token names its account by this store's
-  ///    id alone (REVIEW-2026-10-17, ASVS V10.3.3).
+  ///    the secret. One per server: a server accepts every token signed
+  ///    with it whose account key (`sub`) it holds, which after a restore
+  ///    includes the other server's accounts, and a revocation on one never
+  ///    reaches the other (REVIEW-2026-10-17, ASVS V10.3.3; JwtService).
   /// 3. A secret persisted at [persistPath], created (with owner-only
   ///    permissions where supported) if the file is absent or empty.
   ///

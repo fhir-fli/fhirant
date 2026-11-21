@@ -52,12 +52,54 @@ const auditAgentKey = 'audit_agent';
 Response _withAgent(Response response, Map<String, dynamic> agent) =>
     response.change(context: {auditAgentKey: agent});
 
-/// The account id a verified token names, or -1 when the claim is not an
-/// integer (no account has that id, so the account read finds nothing).
-int _userIdOf(Map<String, dynamic> payload) {
-  final rawUserId = payload['userId'];
-  return rawUserId is int ? rawUserId : int.tryParse('$rawUserId') ?? -1;
+/// The account a verified token names by its `sub` ([User.accountKey]),
+/// or null. The token's `sub` is the only thing read from it about the
+/// account: ids restart at 1 in every store, and a token naming an id named
+/// whoever held that number in another store sharing the signing secret
+/// (REVIEW-2026-10-17, ASVS 5.0.0 V10.3.3; JwtService).
+Future<User?> _accountOf(Map<String, dynamic> payload, FhirAntDb db) {
+  final sub = payload['sub'];
+  return sub is String ? db.getUserByAccountKey(sub) : Future.value();
 }
+
+/// The scopes a token carries, or null when it carries none.
+List<String>? _tokenScopes(Map<String, dynamic> payload) {
+  final claim = payload['scope'];
+  return claim is String && claim.isNotEmpty ? claim.split(' ') : null;
+}
+
+/// What the rest of the server reads as `auth_user`: the token's own claims,
+/// with who the caller is and what it holds taken from [account]. The
+/// role and the patient context are the account's, and the scopes are the
+/// token's narrowed to what the account holds now
+/// ([SmartScopeEnforcer.grantScopes]). The role was the token's: a token
+/// minted as an administrator stayed one on a store whose account of that
+/// id was a clinician (probe of 2026-11-21).
+Map<String, dynamic> _authUser(
+  Map<String, dynamic> payload,
+  User account,
+  List<String> scopes,
+) =>
+    {
+      ...payload,
+      'userId': account.id,
+      'username': account.username,
+      'role': account.role,
+      'scope': scopes.join(' '),
+      'scopes': scopes,
+      if (account.patientId != null) 'patientId': account.patientId,
+    };
+
+/// [requested] narrowed to what [account] holds now; with no scope claim,
+/// what it holds. A `patient/` scope is kept when the account has no
+/// patient, so that [authorizeRequest] refuses it (REVIEW-2026-09-17 A1)
+/// rather than the request going on with no scope at all, which the root
+/// `_history` and `_search` answer as an empty page.
+List<String> _scopesNow(List<String>? requested, User account) =>
+    SmartScopeEnforcer.grantScopes(
+      requested ?? const [],
+      SmartScopeEnforcer.heldScopes(account),
+    );
 
 /// Middleware that validates JWT Bearer tokens, enforces SMART scopes,
 /// and injects auth_user into the request context. Every response it
@@ -87,18 +129,24 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         if (authHeader != null && authHeader.startsWith('Bearer ')) {
           final rawToken = authHeader.substring(7);
           final payload = jwtService.verifyAccessToken(rawToken);
-          if (payload != null) {
+          final requested = payload == null ? null : _tokenScopes(payload);
+          if (payload != null &&
+              SmartScopeEnforcer.allScopesParse(requested ?? const [])) {
             final revoked =
                 await dbInterface.isTokenRevoked(TokenHasher.hash(rawToken));
-            final account = revoked
-                ? null
-                : await dbInterface.getUserById(_userIdOf(payload));
+            final account =
+                revoked ? null : await _accountOf(payload, dbInterface);
             if (account != null &&
                 account.active &&
                 !tokenPredatesAccount(payload, account)) {
+              final authUser = _authUser(
+                payload,
+                account,
+                _scopesNow(requested, account),
+              );
               final updatedRequest =
-                  request.change(context: {'auth_user': payload});
-              return _withAgent(await innerHandler(updatedRequest), payload);
+                  request.change(context: {'auth_user': authUser});
+              return _withAgent(await innerHandler(updatedRequest), authUser);
             }
           }
         }
@@ -120,37 +168,30 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (payload == null) {
         return unauthorized('Token is invalid or expired');
       }
-      // From here the server's signature is verified, so the token's
-      // account id is the server's own statement of who was issued it.
-      final userId = _userIdOf(payload);
-      final claimed = <String, dynamic>{
-        'userId': userId,
-        'username': payload['username'],
+      // From here the server's signature is verified; the token proves
+      // which account key it was issued to, and nothing yet about who that
+      // is here.
+      // The account behind the token, re-read on every request: one indexed
+      // read by key. A token used to authenticate for its whole life (8 h;
+      // the refresh token 7 d) after the account was deactivated or locked,
+      // because nothing here looked at the account again
+      // (REVIEW-2026-09-08 row 14). An account cannot be deleted, only
+      // deactivated, so a missing row is a token this store never issued:
+      // its `sub` names no one here, and the audit record names no one.
+      final account = await _accountOf(payload, dbInterface);
+      if (account == null) {
+        return unauthorized('The account this token names does not exist');
+      }
+      final known = <String, dynamic>{
+        'userId': account.id,
+        'username': account.username,
       };
 
       // Check if the token has been revoked
       final revoked = await dbInterface.isTokenRevoked(TokenHasher.hash(token));
       if (revoked) {
-        return _withAgent(unauthorized('Token has been revoked'), claimed);
+        return _withAgent(unauthorized('Token has been revoked'), known);
       }
-
-      // The account behind the token, re-read on every request: one indexed
-      // read by id. A token used to authenticate for its whole life (8 h;
-      // the refresh token 7 d) after the account was deactivated or locked,
-      // because nothing here looked at the account again
-      // (REVIEW-2026-09-08 row 14). An account cannot be deleted, only
-      // deactivated, so a missing row is a token this store never issued.
-      final account = await dbInterface.getUserById(userId);
-      if (account == null) {
-        return _withAgent(
-          unauthorized('The account this token names does not exist'),
-          claimed,
-        );
-      }
-      final known = <String, dynamic>{
-        'userId': userId,
-        'username': account.username,
-      };
       if (!account.active) {
         return _withAgent(unauthorized('Account is deactivated'), known);
       }
@@ -169,21 +210,13 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       // account's valid token out (REVIEW-2026-09-17 A3). Revoking a
       // session is `/auth/revoke` or deactivating the account.
 
-      // Extract scopes from JWT (fall back to role defaults for legacy tokens)
-      final List<String> scopes;
-      final scopeClaim = payload['scope'];
-      if (scopeClaim is String && scopeClaim.isNotEmpty) {
-        scopes = scopeClaim.split(' ');
-      } else {
-        final role = payload['role'] as String? ?? 'readonly';
-        scopes = SmartScopeEnforcer.defaultScopesForRole(role);
-      }
+      final requested = _tokenScopes(payload);
 
       // A scope this server cannot parse is refused, not skipped. Skipping it
       // is not the safe direction: the unparsed entry may be the one that
       // NARROWS access, in which case dropping it leaves the broader scopes
       // standing and the token ends up more powerful than its issuer intended.
-      if (!SmartScopeEnforcer.allScopesParse(scopes)) {
+      if (!SmartScopeEnforcer.allScopesParse(requested ?? const [])) {
         return _withAgent(
           forbidden(
             'Token carries a scope this server does not understand. Scopes '
@@ -193,23 +226,20 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
         );
       }
 
+      final scopes = _scopesNow(requested, account);
       final principal = Principal(
-        userId: userId,
-        username: payload['username'] as String? ?? account.username,
-        role: payload['role'] as String? ?? account.role,
+        userId: account.id,
+        username: account.username,
+        role: account.role,
         scopes: scopes,
-        patientId: payload['patient'] as String?,
+        patientId: account.patientId,
       );
       final refused = authorizeRequest(principal, request.method, path);
       if (refused != null) return _withAgent(refused, known);
 
-      // Inject auth_user (with scopes and patient context) into context
-      payload['scopes'] = scopes;
-      if (principal.patientId != null) {
-        payload['patientId'] = principal.patientId;
-      }
-      final updatedRequest = request.change(context: {'auth_user': payload});
-      return _withAgent(await innerHandler(updatedRequest), payload);
+      final authUser = _authUser(payload, account, scopes);
+      final updatedRequest = request.change(context: {'auth_user': authUser});
+      return _withAgent(await innerHandler(updatedRequest), authUser);
     };
   };
 }

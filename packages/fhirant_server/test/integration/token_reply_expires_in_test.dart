@@ -17,13 +17,16 @@ void main() {
   late FhirAntDb db;
   late Handler handler;
   late int userId;
+  late String accountKey;
 
   setUp(() async {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
     await issueTestToken(db, username: 'nurse', scopes: ['user/*.rs']);
-    userId = (await db.getUserByUsername('nurse'))!.id;
+    final nurse = (await db.getUserByUsername('nurse'))!;
+    userId = nurse.id;
+    accountKey = nurse.accountKey;
   });
 
   tearDown(() => db.close());
@@ -80,9 +83,7 @@ void main() {
 
   test('the refresh reply carries expires_in', () async {
     final refresh = JwtService(testJwtSecret).generateRefreshToken(
-      userId: userId,
-      username: 'nurse',
-      role: 'clinician',
+      subject: accountKey,
       scopes: ['user/*.rs'],
     );
     final reply = await token(
@@ -99,9 +100,7 @@ void main() {
       testJwtSecret,
       refreshTokenLifetime: const Duration(hours: 1),
     ).generateRefreshToken(
-      userId: userId,
-      username: 'nurse',
-      role: 'clinician',
+      subject: accountKey,
       scopes: ['user/*.rs'],
     );
     final reply = await token(

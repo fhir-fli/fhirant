@@ -23,9 +23,7 @@ void main() {
   group('revokeHandler', () {
     test('revokes valid access token (JSON body)', () async {
       final token = jwtService.generateToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(
@@ -46,9 +44,7 @@ void main() {
 
     test('revokes valid refresh token', () async {
       final token = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(
@@ -95,9 +91,7 @@ void main() {
 
     test('supports form-encoded body', () async {
       final token = jwtService.generateToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(
@@ -117,9 +111,7 @@ void main() {
   group('logoutHandler', () {
     test('revokes access token from Authorization header', () async {
       final token = jwtService.generateToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(
@@ -140,14 +132,10 @@ void main() {
 
     test('revokes both access and refresh tokens', () async {
       final accessToken = jwtService.generateToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(
@@ -181,9 +169,7 @@ void main() {
 
     test('revokes only refresh_token from body when no auth header', () async {
       final refreshToken = jwtService.generateRefreshToken(
-        userId: 1,
-        username: 'testuser',
-        role: 'admin',
+        subject: 'testuser',
       );
 
       final request = Request(

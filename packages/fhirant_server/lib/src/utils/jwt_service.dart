@@ -21,24 +21,57 @@ String _newJti() => base64Url
     .encode(List<int>.generate(16, (_) => _random.nextInt(256)))
     .replaceAll('=', '');
 
+/// The JWT header `typ` of an access token. RFC 9068 §4 (rfc-editor.org
+/// txt, read 2026-11-21): "The resource server MUST verify that the "typ"
+/// header value is "at+jwt" or "application/at+jwt" and reject tokens
+/// carrying any other value." A refresh token keeps
+/// the library's default `JWT`, so neither passes for the other.
+const String accessTokenType = 'at+jwt';
+
 /// Service for generating and verifying JWT tokens.
+///
+/// A token names its account by [User.accountKey] in `sub`, and carries
+/// nothing else about the account: the role, the patient context and the
+/// held scopes are read from the account at every request (auth
+/// middleware). RFC 9068 §2.2 (read 2026-11-21) lists iss, exp, aud, sub,
+/// client_id, iat and jti as REQUIRED. Each token used to carry `userId`,
+/// `username` and `role` and no iss, aud or sub; the account was found by
+/// `userId`, which restarts at 1 in every store, and the role was the
+/// token's. Two stores sharing the signing secret took each other's tokens
+/// for whoever held the same number, with the issuing store's role: probe
+/// of 2026-11-21, another store's id 16, an administrator, opened this
+/// store's `/admin/users` as its id 16, a clinician (REVIEW-2026-10-17,
+/// OWASP ASVS 5.0.0 V10.3.3; `tool/review_2026-10-17/asvs_notprobed.py`).
+///
+/// [issuer] is the operator's `--base-url`. With it, every token carries it
+/// as `iss` and `aud`, and one carrying any other value, or none, is
+/// refused (RFC 9068 §4: the `iss` "MUST exactly match", and a token whose
+/// `aud` does not contain this server "MUST be rejected"). Without it (the
+/// phone, whose address changes with each network) neither is written nor
+/// checked, and `sub` alone keeps another store's token off this store's
+/// accounts. `client_id` is written when the session came from an OAuth
+/// client (`/auth/authorize`); `/auth/login` has none, and RFC 9068 names
+/// no value for that case, so none is written.
 class JwtService {
   /// Creates a JwtService with the given secret and optional token lifetimes.
   JwtService(
     this._secret, {
+    String? issuer,
     Duration tokenLifetime = const Duration(hours: 8),
     Duration refreshTokenLifetime = const Duration(days: 7),
-  })  : _tokenLifetime = tokenLifetime,
+  })  : _issuer = issuer,
+        _tokenLifetime = tokenLifetime,
         _refreshTokenLifetime = refreshTokenLifetime;
   final String _secret;
+  final String? _issuer;
   final Duration _tokenLifetime;
   final Duration _refreshTokenLifetime;
 
-  /// Generates a signed JWT containing user claims.
   /// The one way a session is minted: an access token and a refresh token
-  /// for [user], carrying its id, name, role, patient context and current
-  /// token generation, and [scopes]. Before 2026-09-22 the pair was minted
-  /// at five sites, and registration's carried no generation.
+  /// for [user], naming it by its account key and carrying its current
+  /// token generation, [scopes] and, from an OAuth client, [clientId].
+  /// Before 2026-09-22 the pair was minted at five sites, and
+  /// registration's carried no generation.
   ///
   /// [notAfter] caps both tokens' lifetimes: a refresh passes the presented
   /// refresh token's own expiry, so the session ends where the login set it
@@ -56,27 +89,24 @@ class JwtService {
     User user, {
     required List<String> scopes,
     DateTime? notAfter,
+    String? clientId,
   }) {
     final access = generateToken(
-      userId: user.id,
-      username: user.username,
-      role: user.role,
+      subject: user.accountKey,
       scopes: scopes,
-      patientId: user.patientId,
       generation: user.tokenGeneration,
       notAfter: notAfter,
+      clientId: clientId,
     );
     final claims = JWT.decode(access).payload as Map<String, dynamic>;
     return (
       access: access,
       refresh: generateRefreshToken(
-        userId: user.id,
-        username: user.username,
-        role: user.role,
+        subject: user.accountKey,
         scopes: scopes,
-        patientId: user.patientId,
         generation: user.tokenGeneration,
         notAfter: notAfter,
+        clientId: clientId,
       ),
       expiresIn: (claims['exp'] as int) - (claims['iat'] as int),
     );
@@ -89,53 +119,65 @@ class JwtService {
     return left < lifetime ? left : lifetime;
   }
 
+  Map<String, dynamic> _claims({
+    required String subject,
+    required List<String>? scopes,
+    required int generation,
+    required String? clientId,
+  }) =>
+      {
+        if (_issuer != null) 'iss': _issuer,
+        if (_issuer != null) 'aud': _issuer,
+        'sub': subject,
+        if (clientId != null) 'client_id': clientId,
+        if (scopes != null) 'scope': scopes.join(' '),
+        // The account's token generation at issue (auth/token_bound.dart).
+        'gen': generation,
+        'jti': _newJti(),
+      };
+
+  /// An access token for the account whose key is [subject]
+  /// ([User.accountKey]). Sessions come from [issueSession]; this is public
+  /// for tests that need a token of a given shape.
   String generateToken({
-    required int userId,
-    required String username,
-    required String role,
+    required String subject,
     List<String>? scopes,
-    String? patientId,
     int generation = 0,
     DateTime? notAfter,
+    String? clientId,
   }) {
-    final jwt = JWT({
-      'userId': userId,
-      'username': username,
-      'role': role,
-      if (scopes != null) 'scope': scopes.join(' '),
-      if (patientId != null) 'patient': patientId,
-      // The account's token generation at issue (auth/token_bound.dart).
-      'gen': generation,
-      'jti': _newJti(),
-    });
+    final jwt = JWT(
+      _claims(
+        subject: subject,
+        scopes: scopes,
+        generation: generation,
+        clientId: clientId,
+      ),
+      header: {'typ': accessTokenType},
+    );
     return jwt.sign(
       SecretKey(_secret),
       expiresIn: _capped(_tokenLifetime, notAfter),
     );
   }
 
-  /// Generates a refresh token with a longer lifetime.
-  ///
-  /// The refresh token contains the same user claims as the access token
-  /// plus a `token_type: refresh` marker to distinguish it.
+  /// A refresh token: the access token's claims plus `token_type: refresh`,
+  /// with the longer lifetime.
   String generateRefreshToken({
-    required int userId,
-    required String username,
-    required String role,
+    required String subject,
     List<String>? scopes,
-    String? patientId,
     int generation = 0,
     DateTime? notAfter,
+    String? clientId,
   }) {
     final jwt = JWT({
-      'userId': userId,
-      'username': username,
-      'role': role,
+      ..._claims(
+        subject: subject,
+        scopes: scopes,
+        generation: generation,
+        clientId: clientId,
+      ),
       'token_type': 'refresh',
-      if (scopes != null) 'scope': scopes.join(' '),
-      if (patientId != null) 'patient': patientId,
-      'gen': generation,
-      'jti': _newJti(),
     });
     return jwt.sign(
       SecretKey(_secret),
@@ -159,40 +201,56 @@ class JwtService {
   /// and 'exp' must be verified." Every token this service signs has one.
   Map<String, dynamic>? verifyToken(String token) {
     try {
-      if (_headerAlgorithm(token) != _pinnedAlgorithm.name) return null;
-      final jwt = JWT.verify(token, SecretKey(_secret));
+      if (_header(token)?['alg'] != _pinnedAlgorithm.name) return null;
+      final jwt = JWT.verify(
+        token,
+        SecretKey(_secret),
+        // The `typ` is checked by the caller: an access token's is at+jwt.
+        checkHeaderType: false,
+      );
       final payload = jwt.payload;
       if (payload is! Map<String, dynamic>) return null;
       if (payload['exp'] is! num) return null;
+      if (payload['sub'] is! String) return null;
+      if (!_fromThisIssuer(payload)) return null;
       return payload;
     } catch (_) {
       return null;
     }
   }
 
-  /// Reads the `alg` value from a JWT's header segment, or null if the token
-  /// is malformed.
-  static String? _headerAlgorithm(String token) {
+  /// With an [_issuer] set, whether `iss` is exactly it and `aud` contains
+  /// it (RFC 9068 §4). Without one, every token passes here.
+  bool _fromThisIssuer(Map<String, dynamic> payload) {
+    final issuer = _issuer;
+    if (issuer == null) return true;
+    if (payload['iss'] != issuer) return false;
+    final aud = payload['aud'];
+    return aud == issuer || (aud is List && aud.contains(issuer));
+  }
+
+  /// A JWT's decoded header, or null if the token is malformed.
+  static Map<String, dynamic>? _header(String token) {
     final parts = token.split('.');
     if (parts.length != 3) return null;
     try {
       final headerJson =
           utf8.decode(base64Url.decode(base64Url.normalize(parts[0])));
       final header = jsonDecode(headerJson);
-      if (header is! Map<String, dynamic>) return null;
-      final alg = header['alg'];
-      return alg is String ? alg : null;
+      return header is Map<String, dynamic> ? header : null;
     } catch (_) {
       return null;
     }
   }
 
-  /// Verifies an ACCESS token: a valid signature whose payload is not a
-  /// refresh token. A refresh token presented as a Bearer credential is
-  /// refused here, not merely at the resource-scope check.
+  /// Verifies an ACCESS token: a valid signature, header `typ` at+jwt, and
+  /// a payload that is not a refresh token. A refresh token presented as a
+  /// Bearer credential is refused here, not merely at the resource-scope
+  /// check.
   Map<String, dynamic>? verifyAccessToken(String token) {
     final payload = verifyToken(token);
     if (payload == null) return null;
+    if (_header(token)?['typ'] != accessTokenType) return null;
     if (payload['token_type'] == 'refresh') return null;
     return payload;
   }
@@ -202,6 +260,7 @@ class JwtService {
   Map<String, dynamic>? verifyRefreshToken(String token) {
     final payload = verifyToken(token);
     if (payload == null) return null;
+    if (_header(token)?['typ'] == accessTokenType) return null;
     if (payload['token_type'] != 'refresh') return null;
     return payload;
   }

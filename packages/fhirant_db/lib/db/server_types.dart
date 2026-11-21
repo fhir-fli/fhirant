@@ -11,6 +11,7 @@ import 'package:drift/drift.dart';
 class User {
   const User({
     required this.id,
+    required this.accountKey,
     required this.username,
     required this.passwordHash,
     required this.salt,
@@ -30,6 +31,7 @@ class User {
   factory User.fromRow(QueryRow row) {
     return User(
       id: row.read<int>('id'),
+      accountKey: row.read<String>('account_key'),
       username: row.read<String>('username'),
       passwordHash: row.read<String>('password_hash'),
       salt: row.read<String>('salt'),
@@ -47,6 +49,16 @@ class User {
     );
   }
   final int id;
+
+  /// The account's own random name, 128 bits as hex, given when the account
+  /// is created and never reused. A token names its account by this (`sub`),
+  /// not by [id]: ids restart at 1 in every store, so a token from another
+  /// store sharing the signing secret named whoever held the same number
+  /// here (fhirant REVIEW-2026-10-17, ASVS 5.0.0 V10.3.3, probe of
+  /// 2026-11-21: another store's id 16, an administrator, opened this
+  /// store's id 16, a clinician). A backup carries it with the account, so
+  /// a token still finds its owner after a restore.
+  final String accountKey;
   final String username;
   final String passwordHash;
   final String salt;

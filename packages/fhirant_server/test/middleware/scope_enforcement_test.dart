@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/middlewares/auth_middleware.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
@@ -17,24 +19,42 @@ void main() {
   late JwtService jwtService;
   late MockFhirAntDb mockDb;
   late Middleware middleware;
+  final accounts = <String, User>{};
+
+  /// An access token for a new active account with these details.
+  String tokenFor({
+    required int userId,
+    required String username,
+    required String role,
+    List<String>? scopes,
+    String? patientId,
+  }) {
+    final key = 'key-$userId-$username';
+    accounts[key] = User(
+      id: userId,
+      accountKey: key,
+      username: username,
+      passwordHash: 'h',
+      salt: 's',
+      role: role,
+      active: true,
+      createdAt: DateTime.now(),
+      scopes: scopes == null ? null : jsonEncode(scopes),
+      patientId: patientId,
+    );
+    return jwtService.generateToken(subject: key, scopes: scopes);
+  }
 
   setUp(() {
     jwtService = JwtService('test-secret-key');
     mockDb = MockFhirAntDb();
     when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
-    // The middleware re-reads the account behind every token
-    // (REVIEW-2026-09-08 row 14); these tests are about scopes, so every
-    // token's account is active and unlocked.
-    when(() => mockDb.getUserById(any())).thenAnswer(
-      (i) async => User(
-        id: i.positionalArguments.first as int,
-        username: 'u${i.positionalArguments.first}',
-        passwordHash: 'h',
-        salt: 's',
-        role: 'clinician',
-        active: true,
-        createdAt: DateTime.now(),
-      ),
+    // The middleware reads the account a token names by its key, and takes
+    // the role, scopes and patient context from it; [tokenFor] puts one in
+    // [accounts], active and unlocked.
+    accounts.clear();
+    when(() => mockDb.getUserByAccountKey(any())).thenAnswer(
+      (i) async => accounts[i.positionalArguments.first],
     );
     middleware = authMiddleware(jwtService, mockDb);
   });
@@ -62,7 +82,7 @@ void main() {
   /// The scope is deliberately valid SMART v2. An invalid one would now be
   /// rejected by the parse check, and every test below would pass for that
   /// reason rather than for the one it claims to be testing.
-  String leastPrivilegedToken() => jwtService.generateToken(
+  String leastPrivilegedToken() => tokenFor(
         userId: 2,
         username: 'scoped',
         role: 'readonly',
@@ -72,7 +92,7 @@ void main() {
 
   group('the scope check does what it claims for resource paths', () {
     test('a read-only token cannot write a resource', () async {
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 3,
         username: 'ro',
         role: 'readonly',
@@ -82,7 +102,7 @@ void main() {
     });
 
     test('a token scoped to one resource type cannot read another', () async {
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 3,
         username: 'ro',
         role: 'readonly',
@@ -93,7 +113,7 @@ void main() {
 
     test('a read-only token cannot reach a privileged system operation',
         () async {
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 3,
         username: 'ro',
         role: 'readonly',
@@ -130,7 +150,7 @@ void main() {
         () async {
       // patient/*.rs parses and is broad, but nothing downstream confines the
       // result to that patient, so the patient context is refused outright.
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 5,
         username: 'patient-app',
         role: 'readonly',
@@ -143,7 +163,7 @@ void main() {
     test('a clinician with user/*.rs may still use them', () async {
       // The gate must not break the operations for the accounts that are
       // meant to have them.
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 6,
         username: 'clinician',
         role: 'clinician',
@@ -207,7 +227,7 @@ void main() {
     });
 
     test('a token carrying an unparseable scope is refused', () async {
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 7,
         username: 'mixed',
         role: 'readonly',
@@ -223,7 +243,7 @@ void main() {
     });
 
     test('a token whose scopes all parse is unaffected', () async {
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 8,
         username: 'ok',
         role: 'readonly',

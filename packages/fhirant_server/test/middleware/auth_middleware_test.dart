@@ -14,25 +14,43 @@ void main() {
   late JwtService jwtService;
   late MockFhirAntDb mockDb;
   late Middleware middleware;
+  final accounts = <String, User>{};
+
+  /// An access token for a new active account with these details.
+  String tokenFor({
+    required int userId,
+    required String username,
+    required String role,
+    List<String>? scopes,
+    String? patientId,
+  }) {
+    final key = 'key-$userId-$username';
+    accounts[key] = User(
+      id: userId,
+      accountKey: key,
+      username: username,
+      passwordHash: 'h',
+      salt: 's',
+      role: role,
+      active: true,
+      createdAt: DateTime.now(),
+      scopes: scopes == null ? null : jsonEncode(scopes),
+      patientId: patientId,
+    );
+    return jwtService.generateToken(subject: key, scopes: scopes);
+  }
 
   setUp(() {
     jwtService = JwtService('test-secret-key');
     mockDb = MockFhirAntDb();
     // Default: no tokens are revoked
     when(() => mockDb.isTokenRevoked(any())).thenAnswer((_) async => false);
-    // The middleware re-reads the account behind every token
-    // (REVIEW-2026-09-08 row 14); these tests are about scopes, so every
-    // token's account is active and unlocked.
-    when(() => mockDb.getUserById(any())).thenAnswer(
-      (i) async => User(
-        id: i.positionalArguments.first as int,
-        username: 'u${i.positionalArguments.first}',
-        passwordHash: 'h',
-        salt: 's',
-        role: 'clinician',
-        active: true,
-        createdAt: DateTime.now(),
-      ),
+    // The middleware reads the account a token names by its key, and takes
+    // the role, scopes and patient context from it; [tokenFor] puts one in
+    // [accounts], active and unlocked.
+    accounts.clear();
+    when(() => mockDb.getUserByAccountKey(any())).thenAnswer(
+      (i) async => accounts[i.positionalArguments.first],
     );
     middleware = authMiddleware(jwtService, mockDb);
   });
@@ -114,7 +132,7 @@ void main() {
     test('valid token injects auth_user into context', () async {
       final handler = createHandler();
 
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 1,
         username: 'testuser',
         role: 'clinician',
@@ -137,7 +155,7 @@ void main() {
     test('readonly blocked on POST', () async {
       final handler = createHandler();
 
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 2,
         username: 'reader',
         role: 'readonly',
@@ -160,7 +178,7 @@ void main() {
     test('readonly allowed on GET', () async {
       final handler = createHandler();
 
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 2,
         username: 'reader',
         role: 'readonly',
@@ -182,7 +200,7 @@ void main() {
     test('revoked token on protected route returns 401', () async {
       final handler = createHandler();
 
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 1,
         username: 'testuser',
         role: 'clinician',
@@ -208,7 +226,7 @@ void main() {
     test('revoked token on public route does not inject auth_user', () async {
       final handler = createHandler();
 
-      final token = jwtService.generateToken(
+      final token = tokenFor(
         userId: 1,
         username: 'testuser',
         role: 'admin',

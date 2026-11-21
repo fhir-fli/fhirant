@@ -65,54 +65,51 @@ Future<Response> pollExport(
 
 /// A token for an account that EXISTS in [db].
 ///
-/// The auth middleware re-reads the account behind a token on every request
-/// (REVIEW-2026-09-08 row 14: a deactivated or locked account's live tokens
-/// used to keep working), so a token whose user id has no row is refused.
-/// This creates the account on first use, reuses it by [username] after,
-/// and mints its token; the row carries the role and scopes for the record,
-/// the token's claims are what the middleware enforces.
+/// The auth middleware finds the account a token names by its key
+/// (`sub`, `User.accountKey`) and reads the role, scopes and patient
+/// context from it, so a token for no row is refused. This creates the
+/// account on first use with [role], [scopes] and [patientId], reuses it by
+/// [username] after, and mints its token. On reuse the account's role
+/// stands: the token carries none. The token's scope is [scopes], which the
+/// middleware narrows to what the account holds. [issuer] is the server's
+/// `baseUrl` when it was built with one: its tokens' `iss` and `aud`.
 Future<String> issueTestToken(
   FhirAntDb db, {
   String username = 'testuser',
   String role = 'clinician',
   List<String>? scopes,
   String? patientId,
+  String? issuer,
 }) async {
   final existing = await db.getUserByUsername(username);
-  final userId = existing?.id ??
-      await db.createUser(
-        username: username,
-        passwordHash: 'not-a-hash',
-        salt: 'not-a-salt',
-        role: role,
-        scopes: scopes == null ? null : jsonEncode(scopes),
-        patientId: patientId,
-      );
-  return JwtService(testJwtSecret).generateToken(
-    userId: userId,
-    username: username,
-    role: role,
+  final user = existing ??
+      (await db.getUserById(
+        await db.createUser(
+          username: username,
+          passwordHash: 'not-a-hash',
+          salt: 'not-a-salt',
+          role: role,
+          scopes: scopes == null ? null : jsonEncode(scopes),
+          patientId: patientId,
+        ),
+      ))!;
+  return JwtService(testJwtSecret, issuer: issuer).generateToken(
+    subject: user.accountKey,
     scopes: scopes,
-    patientId: patientId,
+    generation: user.tokenGeneration,
   );
 }
 
-/// Generates a JWT token for testing, for a request that does NOT reach the
-/// auth middleware (a handler called directly); see [issueTestToken] for
-/// requests through the pipeline.
+/// A signed access token naming the account key [subject], for a request
+/// that does NOT need the account to exist (a refusal is what is tested);
+/// see [issueTestToken] for requests through the pipeline.
 String generateTestToken({
-  int userId = 1,
-  String username = 'testuser',
-  String role = 'clinician',
+  String subject = 'no-such-account',
   List<String>? scopes,
-  String? patientId,
 }) {
   return JwtService(testJwtSecret).generateToken(
-    userId: userId,
-    username: username,
-    role: role,
+    subject: subject,
     scopes: scopes,
-    patientId: patientId,
   );
 }
 
@@ -142,6 +139,7 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
   int maxRequests = 600,
   int authMaxRequests = 10,
   DiskSpace? diskSpace,
+  String? baseUrl,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
@@ -154,6 +152,7 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
     maxRequests: maxRequests,
     authMaxRequests: authMaxRequests,
     diskSpace: diskSpace,
+    baseUrl: baseUrl,
   );
   final handler = server.createHandler(server.createRouter());
   return (db: db, handler: handler, server: server);

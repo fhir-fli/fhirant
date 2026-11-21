@@ -290,10 +290,9 @@ void main() {
 
   test('finding 2: a refresh token is not accepted as a Bearer access token',
       () async {
+    await issueTestToken(db, username: 'refresher', role: 'admin');
     final refresh = JwtService(testJwtSecret).generateRefreshToken(
-      userId: 1,
-      username: 'u',
-      role: 'admin',
+      subject: (await db.getUserByUsername('refresher'))!.accountKey,
       scopes: ['system/*.*'],
     );
     final r = await handler(testRequest('GET', '/Patient', authToken: refresh));
@@ -439,9 +438,18 @@ void main() {
     expect(login.statusCode, 200);
     final body = await json(login);
     expect(body['patient'], 'pat-linked');
+    // The token carries no patient; each request reads the account's.
     final payload =
         JwtService(testJwtSecret).verifyToken(body['token'] as String);
-    expect(payload!['patient'], 'pat-linked');
+    expect(payload, isNot(contains('patient')));
+    final read = await handler(
+      testRequest(
+        'GET',
+        '/Patient/someone-else',
+        authToken: body['token'] as String,
+      ),
+    );
+    expect(read.statusCode, 404, reason: "outside the account's patient");
   });
 
   test('finding 7: failed OAuth authorize attempts count toward lockout',

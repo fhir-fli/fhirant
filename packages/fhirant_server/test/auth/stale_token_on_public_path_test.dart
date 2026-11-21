@@ -90,7 +90,7 @@ void main() {
 
   test('a token whose account does not exist registers nobody', () async {
     await admin('adminB');
-    final token = generateTestToken(userId: 9999, role: 'admin');
+    final token = generateTestToken(scopes: ['system/*.*']);
     final response = await register(token, 'evil-admin');
     expect(response.statusCode, 403);
     expect(await db.getUserByUsername('evil-admin'), isNull);
