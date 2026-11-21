@@ -1,0 +1,18 @@
+Running build hooks...Running build hooks...CREATE TABLE "token_search_parameters" ("resource_type" TEXT NOT NULL, "id" TEXT NOT NULL, "last_updated" INTEGER NOT NULL, "search_name" TEXT NOT NULL DEFAULT '', "param_index" INTEGER NOT NULL, "token_system" TEXT NULL, "token_value" TEXT NOT NULL, "token_display" TEXT NULL)
+token AuditEvent type: 939083
+token AuditEvent subtype: 939083
+token AuditEvent outcome: 939083
+token AuditEvent action: 939083
+token AuditEvent entity-type: 927009
+token AuditEvent entity-role: 927009
+token totals: other=3655753 audit=5610350
+reference AuditEvent entity: 1856144
+reference AuditEvent patient: 927309
+reference totals: other=2925081 audit=2783453
+date AuditEvent date: 939083
+date totals: other=921632 audit=939083
+string AuditEvent address: 632
+string totals: other=427916 audit=632
+uri totals: other=928935
+quantity totals: other=737654
+composite totals: other=1182265

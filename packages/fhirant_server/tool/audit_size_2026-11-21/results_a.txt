@@ -1,0 +1,55 @@
+Running build hooks...Running build hooks...total 6.37 GB
+   1078 MB  resources
+    594 MB  token_search_parameters
+    550 MB  idx_token_search_parameters_system_cover
+    526 MB  reference_search_parameters
+    387 MB  idx_reference_search_parameters_value_cover
+    387 MB  idx_reference_search_parameters_target_cover
+    315 MB  idx_token_search_parameters_value_cover
+    307 MB  composite_search_parameters
+    247 MB  idx_token_search_parameters_owner
+    230 MB  idx_reference_search_parameters_identifier_cover
+    198 MB  idx_reference_search_parameters_owner
+    166 MB  idx_uri_search_parameters_value_cover
+    153 MB  uri_search_parameters
+    129 MB  quantity_search_parameters
+    127 MB  idx_composite_search_parameters_values_cover
+    108 MB  date_search_parameters
+     79 MB  idx_date_search_parameters_high_cover
+     79 MB  idx_date_search_parameters_low_cover
+     78 MB  idx_composite_search_parameters_owner
+     72 MB  idx_quantity_search_parameters_high_cover
+     72 MB  idx_quantity_search_parameters_low_cover
+     65 MB  idx_resources_order
+     62 MB  sqlite_autoindex_resources_1
+     62 MB  idx_uri_search_parameters_owner
+     61 MB  idx_date_search_parameters_owner
+     49 MB  idx_quantity_search_parameters_owner
+     48 MB  string_search_parameters
+     43 MB  idx_string_search_parameters_exact_cover
+     43 MB  idx_string_search_parameters_value_cover
+     30 MB  idx_resources_type_updated
+     28 MB  idx_string_search_parameters_owner
+      0 MB  resources_history
+      0 MB  sqlite_schema
+      0 MB  sqlite_autoindex_resources_history_1
+      0 MB  idx_resources_history_order
+      0 MB  idx_resources_history_type_updated
+      0 MB  users
+      0 MB  sync_resources
+      0 MB  sync_peers
+      0 MB  sync_pairs
+resources Observation: 813540 rows, 739 MB of resource
+resources MedicationAdministration: 56535 rows, 56 MB of resource
+resources MedicationRequest: 17552 rows, 18 MB of resource
+resources MedicationDispense: 15375 rows, 15 MB of resource
+resources Specimen: 12458 rows, 7 MB of resource
+resources Condition: 5051 rows, 3 MB of resource
+resources AuditEvent: 4251 rows, 2 MB of resource
+resources Procedure: 3450 rows, 2 MB of resource
+resources MedicationStatement: 2411 rows, 2 MB of resource
+resources Medication: 1794 rows, 1 MB of resource
+resources Encounter: 637 rows, 1 MB of resource
+resources Patient: 100 rows, 0 MB of resource
+resources Location: 31 rows, 0 MB of resource
+resources Organization: 1 rows, 0 MB of resource
