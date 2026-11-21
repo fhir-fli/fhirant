@@ -172,20 +172,29 @@ Future<Response> typeHistoryHandler(
     // (REVIEW-2026-09-08 row 4).
     final compartment =
         Principal.of(request)?.compartmentFor(resourceType, 'r');
-    final total = await dbInterface.countTypeHistory(
+    final position = _position(queryParams, at: at, compartment: compartment);
+    if (position.error != null) return validationOutcome(position.error!);
+    final after = position.after;
+    final keyed = position.keyed;
+    final total = after != null
+        ? null
+        : await dbInterface.countTypeHistory(
+            type,
+            since: since,
+            at: at,
+            compartment: compartment,
+          );
+    final rows = await dbInterface.getTypeHistory(
       type,
       since: since,
       at: at,
+      count: keyed ? count + 1 : count,
+      offset: after == null ? offset : null,
+      after: after,
       compartment: compartment,
     );
-    final paginatedHistory = await dbInterface.getTypeHistory(
-      type,
-      since: since,
-      at: at,
-      count: count,
-      offset: offset,
-      compartment: compartment,
-    );
+    final more = keyed && rows.length > count;
+    final paginatedHistory = more ? rows.sublist(0, count) : rows;
 
     // Build base URL
     final baseUrl = baseUrlOf(request.requestedUri);
@@ -197,12 +206,16 @@ Future<Response> typeHistoryHandler(
       entry: [
         for (final e in paginatedHistory) _historyEntry(e, baseUrl),
       ],
-      total: fhir.FhirUnsignedInt(total),
+      total: total == null ? null : fhir.FhirUnsignedInt(total),
       link: SearchLinks.history(request.url.queryParametersAll).page(
         request.requestedUri,
         count: count,
-        offset: offset,
+        offset: after == null ? offset : 0,
         total: total,
+        hasMore: keyed ? more : null,
+        nextCursor: keyed && paginatedHistory.isNotEmpty
+            ? _cursorOf(paginatedHistory.last)
+            : null,
       ),
     );
 
@@ -275,18 +288,27 @@ Future<Response> systemHistoryHandler(
         );
       }
     }
-    final total = await dbInterface.countSystemHistory(
+    final position = _position(queryParams, at: at, compartment: compartment);
+    if (position.error != null) return validationOutcome(position.error!);
+    final after = position.after;
+    final keyed = position.keyed;
+    final total = after != null
+        ? null
+        : await dbInterface.countSystemHistory(
+            since: since,
+            at: at,
+            compartment: compartment,
+          );
+    final rows = await dbInterface.getSystemHistory(
       since: since,
       at: at,
+      count: keyed ? count + 1 : count,
+      offset: after == null ? offset : null,
+      after: after,
       compartment: compartment,
     );
-    final paginatedHistory = await dbInterface.getSystemHistory(
-      since: since,
-      at: at,
-      count: count,
-      offset: offset,
-      compartment: compartment,
-    );
+    final more = keyed && rows.length > count;
+    final paginatedHistory = more ? rows.sublist(0, count) : rows;
 
     // Build base URL
     final baseUrl = baseUrlOf(request.requestedUri);
@@ -298,12 +320,16 @@ Future<Response> systemHistoryHandler(
       entry: [
         for (final e in paginatedHistory) _historyEntry(e, baseUrl),
       ],
-      total: fhir.FhirUnsignedInt(total),
+      total: total == null ? null : fhir.FhirUnsignedInt(total),
       link: SearchLinks.history(request.url.queryParametersAll).page(
         request.requestedUri,
         count: count,
-        offset: offset,
+        offset: after == null ? offset : 0,
         total: total,
+        hasMore: keyed ? more : null,
+        nextCursor: keyed && paginatedHistory.isNotEmpty
+            ? _cursorOf(paginatedHistory.last)
+            : null,
       ),
     );
 
@@ -437,7 +463,13 @@ Future<Response?> _refuseOutsideCompartment(
 /// once." A request that repeats one is refused rather than answered with
 /// one value applied and both in the self link (REVIEW-2026-10-17).
 String? _repeatedError(Map<String, List<String>> query) {
-  for (final name in const ['_count', '_since', '_at', '_list']) {
+  for (final name in const [
+    '_count',
+    '_since',
+    '_at',
+    '_list',
+    SearchLinks.historyCursor,
+  ]) {
     if ((query[name]?.length ?? 0) > 1) {
       return '$name SHALL NOT appear more than once in a history request';
     }
@@ -512,5 +544,65 @@ fhir.BundleEntry _historyEntry(HistoryEntry e, String baseUrl) {
       etag: 'W/"${e.versionId}"'.toFhirString,
       lastModified: fhir.FhirInstant.fromDateTime(e.lastUpdated),
     ),
+  );
+}
+
+/// The `_cursor` a type or system history request carries, as the position
+/// its page starts after ([SearchLinks.historyCursor]). [keyed] is whether
+/// the page is found by position at all: not under `_at` or a compartment,
+/// whose pages are counted by offset as before. A cursor this server could
+/// not have given, or one with `_offset`, `_at` or a compartment, is an
+/// [error] (R4B 3.1.1.3: a parameter in error is not ignored).
+({HistoryPosition? after, bool keyed, String? error}) _position(
+  Map<String, String> queryParams, {
+  required DateTime? at,
+  required CompartmentScope? compartment,
+}) {
+  final keyed = at == null && compartment == null;
+  final raw = queryParams[SearchLinks.historyCursor];
+  if (raw == null) return (after: null, keyed: keyed, error: null);
+  if (!keyed || queryParams['_offset'] != null) {
+    return (
+      after: null,
+      keyed: keyed,
+      error: '${SearchLinks.historyCursor} pages history without _offset, '
+          '_at or a patient compartment',
+    );
+  }
+  final after = _parseCursor(raw);
+  return (
+    after: after,
+    keyed: keyed,
+    error: after == null
+        ? '${SearchLinks.historyCursor} is not one this server gives'
+        : null,
+  );
+}
+
+/// The [SearchLinks.historyCursor] value after [e]: its `last_updated` in
+/// milliseconds, version id, type and id, joined by `|`, which none of the
+/// four can contain (an id and a version id are `[A-Za-z0-9\-\.]{1,64}`,
+/// R4B datatypes.html id).
+String _cursorOf(HistoryEntry e) =>
+    '${e.lastUpdated.millisecondsSinceEpoch}|${e.versionId}|'
+    '${e.resourceType}|${e.id}';
+
+final _idPattern = RegExp(r'^[A-Za-z0-9\-\.]{1,64}$');
+
+HistoryPosition? _parseCursor(String raw) {
+  final parts = raw.split('|');
+  if (parts.length != 4) return null;
+  final ms = int.tryParse(parts[0]);
+  if (ms == null ||
+      !_idPattern.hasMatch(parts[1]) ||
+      fhir.R4ResourceType.fromString(parts[2]) == null ||
+      !_idPattern.hasMatch(parts[3])) {
+    return null;
+  }
+  return HistoryPosition(
+    lastUpdated: DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true),
+    versionId: parts[1],
+    resourceType: parts[2],
+    id: parts[3],
   );
 }

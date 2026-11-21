@@ -34,3 +34,39 @@ touch the no-change path, went 6.2 s to 10.2 s).
 - Memory: each server stayed 1.48-1.67 GB (the idle JIT process is 1.59
   GB) at 10,000.
 - 200 resources (`results_200/`, run a's code): 10.8 s, 1.2 s, 3.5 s.
+
+## The whole MIMIC-IV store: 928,935 resources
+
+`KEEP_A=1 run.sh 1000000`: A loaded once (38 min, `perf_load.dart`), kept
+for each run; B started empty each time. Run e's code first, then one
+change a row.
+
+| run | code | first sync | nothing changed | 100 changed |
+|---|---|---|---|---|
+| f | run e | stopped | | |
+| g | history pages read from two order indexes (fhirant_db schema 30) | 7,431 s | 1,411 s | 3.7 s |
+| h | the next page found from where the last ended (`_cursor`), not by offset | 6,091 s | 155 s | 3.5 s |
+
+All 928,935 written in each first sync, no failures; one run of each.
+
+- Run f (`results_full_before_index/`): each 500-version page of system
+  history took 3.9-5.7 s on A, rising with depth, because every page
+  sorted every version the store holds. Stopped after 108 of ~1,860
+  pages. `history_keyed.dart` (`results_history_keyed.txt`) times the
+  index-ordered page at 33-264 ms against 3.9-5.7 s, the same rows at
+  five depths. 2,786 groups of versions shared a millisecond and a version
+  id, so the order now also breaks ties by type and id.
+- Run g (`results_full_g_order_index/`): the first sync was B's writes,
+  ~3 s for each 500 (1.65 s at the start, A's page 112-261 ms). A sync
+  with nothing changed made one request to A and spent 1,411 s paging
+  B's own history: the first sync's 928,935 copies and the 934,798
+  AuditEvents of those writes (1,863,732 versions; B's file 11.9 GB, A's
+  6.4 GB), each found unchanged. Each page was found by `OFFSET`;
+  `history_keyset.dart` (`results_history_keyset.txt`) on B's store: 395
+  ms at depth 1.87 million by offset, 1 ms by position, the same rows.
+- Run h (`results_full_h_keyset/`): the `next` link carries the last
+  row's position (R4B http.html §3.1.0.14: "A server MAY add additional
+  state tracking parameters to the links"), and the total is given on the
+  first page only. B still pages its own writes in a sync after a first
+  sync; 155 s is that cost now.
+- Memory: peak 1.63 GB (A) and 1.90 GB (B) in run h, 1.64 and 1.86 in g.

@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 29;
+  int get schemaVersion => 30;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +42,7 @@ class FhirAntDb extends FhirDb {
           await _createOAuthClientsTable();
           await _createSpecLoadsTable();
           await _createSyncTables();
+          await _createHistoryOrderIndexes();
           await createValueIndexes();
         },
         // fhir_r4_db runs ANALYZE from its own beforeOpen when the database
@@ -353,6 +354,9 @@ class FhirAntDb extends FhirDb {
             // two sides last agreed on ([syncPair]).
             await _createSyncTables();
           }
+          if (from < 30) {
+            await _createHistoryOrderIndexes();
+          }
         },
       );
 
@@ -458,6 +462,24 @@ class FhirAntDb extends FhirDb {
   /// `resource_key` (`Patient/123`), not `resource_type` + `id` columns:
   /// [restoreEncrypted] treats a table with those two columns as part of
   /// the FHIR record.
+  /// The order of type and system history (newest first, ties broken by
+  /// version, type and id) as an index on each half of the versions, so a
+  /// page is a merge of two index scans and the rows of that page alone.
+  /// Without them each page sorted every version the store holds: 3.8-5.5 s
+  /// a page of 500 on the 929,047 versions of MIMIC-IV, 5-191 ms with them,
+  /// the same rows (measured 2026-11-20,
+  /// fhirant_server/tool/sync_cost_2026-11-20/history_keyed.dart).
+  Future<void> _createHistoryOrderIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_resources_history_order ON '
+      'resources_history (last_updated, version_id, resource_type, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_resources_order ON '
+      'resources (last_updated, version_id, resource_type, id)',
+    );
+  }
+
   Future<void> _createSyncTables() async {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS sync_peers (
@@ -1280,6 +1302,7 @@ class FhirAntDb extends FhirDb {
     DateTime? at,
     int? count,
     int? offset,
+    HistoryPosition? after,
     CompartmentScope? compartment,
   }) =>
       _historyPage(
@@ -1288,6 +1311,7 @@ class FhirAntDb extends FhirDb {
         at: at,
         count: count,
         offset: offset,
+        after: after,
         compartment: compartment,
       );
 
@@ -1312,6 +1336,7 @@ class FhirAntDb extends FhirDb {
     DateTime? at,
     int? count,
     int? offset,
+    HistoryPosition? after,
     CompartmentScope? compartment,
   }) =>
       _historyPage(
@@ -1319,6 +1344,7 @@ class FhirAntDb extends FhirDb {
         at: at,
         count: count,
         offset: offset,
+        after: after,
         compartment: compartment,
       );
 
@@ -1408,12 +1434,13 @@ class FhirAntDb extends FhirDb {
 
   /// The variables of [_historySql], in order: the `_at` form binds the
   /// outer union's type (twice) then the inner union's type and instant
-  /// (twice); the range form binds type and `_since` twice; then the
-  /// compartment's focal id twice.
+  /// (twice); the range form binds type, `_since` and [after]'s four
+  /// columns twice; then the compartment's focal id twice.
   List<Variable<Object>> _historyVariables({
     required String? resourceType,
     required DateTime? since,
     required DateTime? at,
+    HistoryPosition? after,
     CompartmentScope? compartment,
   }) {
     final type =
@@ -1430,6 +1457,12 @@ class FhirAntDb extends FhirDb {
         for (var half = 0; half < 2; half++) ...[
           if (type != null) type,
           if (since != null) Variable.withInt(since.millisecondsSinceEpoch),
+          if (after != null) ...[
+            Variable.withInt(after.lastUpdated.millisecondsSinceEpoch),
+            Variable.withString(after.versionId),
+            Variable.withString(after.resourceType),
+            Variable.withString(after.id),
+          ],
         ],
       if (compartment != null) ...[
         Variable.withString(compartment.id),
@@ -1438,26 +1471,88 @@ class FhirAntDb extends FhirDb {
     ];
   }
 
+  /// The order of a history page: newest first (R4B http.html §3.1.0.12,
+  /// "sorted with oldest versions last"), then version, type and id, so
+  /// the order is total and `OFFSET` pages neither repeat nor skip a
+  /// version that shares its millisecond and version id with another
+  /// (2,786 such groups in the MIMIC-IV load, measured 2026-11-20).
+  static const _historyOrder = 'rh.last_updated DESC, rh.version_id DESC, '
+      'rh.resource_type DESC, rh.id DESC';
+
+  /// A page of type or system history in [_historyOrder]: the keys of the
+  /// page from the two order indexes ([_createHistoryOrderIndexes]), merged,
+  /// then those rows alone; with [after], the rows that come after that
+  /// one in the order (a keyset page: the cost of a page does not grow with
+  /// its depth, as an `OFFSET` does). The variables are
+  /// [_historyVariables]'s range form: the type, `_since` and [after] once
+  /// for each half.
+  String _keyedHistorySql({
+    required String? resourceType,
+    required DateTime? since,
+    required HistoryPosition? after,
+    required String limit,
+  }) {
+    final where = [
+      if (resourceType != null) 'resource_type = ?',
+      if (since != null) 'last_updated >= ?',
+      if (after != null)
+        '(last_updated, version_id, resource_type, id) < (?, ?, ?, ?)',
+    ];
+    final cond = where.isEmpty ? '' : ' WHERE ${where.join(' AND ')}';
+    return 'WITH k AS ( '
+        "SELECT 'h' AS src, rowid AS rid, last_updated AS lu, "
+        'version_id AS vid, resource_type AS t, id AS i '
+        'FROM resources_history$cond '
+        'UNION ALL '
+        "SELECT 'r', rowid, last_updated, version_id, resource_type, id "
+        'FROM resources$cond '
+        'ORDER BY 3 DESC, 4 DESC, 5 DESC, 6 DESC$limit) '
+        'SELECT h.resource_type, h.id, h.version_id, h.resource, '
+        'h.last_updated, h.deleted, k.lu, k.vid, k.t, k.i '
+        'FROM k JOIN resources_history h '
+        "ON k.src = 'h' AND h.rowid = k.rid "
+        'UNION ALL '
+        'SELECT r.resource_type, r.id, r.version_id, r.resource, '
+        'r.last_updated, 0, k.lu, k.vid, k.t, k.i '
+        "FROM k JOIN resources r ON k.src = 'r' AND r.rowid = k.rid "
+        'ORDER BY 7 DESC, 8 DESC, 9 DESC, 10 DESC';
+  }
+
   Future<List<HistoryEntry>> _historyPage({
     String? resourceType,
     DateTime? since,
     DateTime? at,
     int? count,
     int? offset,
+    HistoryPosition? after,
     CompartmentScope? compartment,
   }) async {
-    var sql = _historySql(
-      select: 'rh.*',
-      resourceType: resourceType,
-      since: since,
-      at: at,
-      compartment: compartment,
-    );
-    sql += ' ORDER BY rh.last_updated DESC, rh.version_id DESC';
-    if (count != null) {
-      sql += ' LIMIT $count OFFSET ${offset ?? 0}';
-    } else if (offset != null && offset > 0) {
-      sql += ' LIMIT -1 OFFSET $offset';
+    final keyed = compartment == null && at == null;
+    if (after != null && (!keyed || (offset ?? 0) != 0)) {
+      throw ArgumentError(
+        'after pages type and system history without _at, a compartment or '
+        'an offset',
+      );
+    }
+    final limit = count != null
+        ? ' LIMIT $count OFFSET ${offset ?? 0}'
+        : (offset != null && offset > 0 ? ' LIMIT -1 OFFSET $offset' : '');
+    final String sql;
+    if (keyed) {
+      sql = _keyedHistorySql(
+        resourceType: resourceType,
+        since: since,
+        after: after,
+        limit: limit,
+      );
+    } else {
+      sql = '${_historySql(
+        select: 'rh.*',
+        resourceType: resourceType,
+        since: since,
+        at: at,
+        compartment: compartment,
+      )} ORDER BY $_historyOrder$limit';
     }
     final rows = await customSelect(
       sql,
@@ -1465,6 +1560,7 @@ class FhirAntDb extends FhirDb {
         resourceType: resourceType,
         since: since,
         at: at,
+        after: after,
         compartment: compartment,
       ),
       readsFrom: {resources, resourcesHistory, referenceSearchParameters},
@@ -2415,4 +2511,38 @@ class NoCipherInThisBuild implements Exception {
   String toString() =>
       'This build of SQLite has no cipher (PRAGMA cipher answers nothing): a '
       'backup would be written in the clear, so none is written.';
+}
+
+/// Where a history page ends: the order key of its last version
+/// (`last_updated`, version id, type, id), so the next page starts after it
+/// (`getSystemHistory` / `getTypeHistory` `after`).
+class HistoryPosition {
+  /// A position by its four parts.
+  const HistoryPosition({
+    required this.lastUpdated,
+    required this.versionId,
+    required this.resourceType,
+    required this.id,
+  });
+
+  /// The position of [entry].
+  HistoryPosition.of(HistoryEntry entry)
+      : this(
+          lastUpdated: entry.lastUpdated,
+          versionId: entry.versionId,
+          resourceType: entry.resourceType,
+          id: entry.id,
+        );
+
+  /// The version's `meta.lastUpdated`, to the millisecond the store keeps.
+  final DateTime lastUpdated;
+
+  /// The version id.
+  final String versionId;
+
+  /// The resource type.
+  final String resourceType;
+
+  /// The resource id.
+  final String id;
 }

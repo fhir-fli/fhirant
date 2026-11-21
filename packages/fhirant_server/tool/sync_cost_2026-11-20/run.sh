@@ -5,6 +5,8 @@
 # changes on A. Both servers are the CLI in dev mode on this machine.
 #
 # Usage: tool/sync_cost_2026-11-20/run.sh N
+# KEEP_A=1 keeps server A's store from an earlier run of the same N (the
+# load of all 929,047 took 38 min) and starts everything else afresh.
 # Output: .dart_tool/sync_cost/N/{progress.tsv,results.tsv,a.log,b.log}
 # progress.tsv gets a row every 10 s (flushed): elapsed seconds, requests A
 # has logged (resource routes), RSS of A and B in MB.
@@ -15,14 +17,19 @@ OUT=$HERE/.dart_tool/sync_cost/$N
 MIMIC=/home/grey/Downloads/mimic-iv-clinical-database-demo-on-fhir-2.1.0/fhir
 export TMPDIR=$HERE/.dart_tool/tmp
 mkdir -p "$TMPDIR"
-rm -rf "$OUT"; mkdir -p "$OUT/a" "$OUT/b"
 cd "$HERE"
 PA=18181; PB=18182
-
-echo "load start $(date -Is)" >> "$OUT/results.tsv"
-dart run tool/perf_load.dart "$MIMIC" "$OUT/a" --limit "$N" --batch 500 \
-  --server-store > "$OUT/load.log" 2>&1
-echo "load exit $? $(date -Is)" >> "$OUT/results.tsv"
+if [ "${KEEP_A:-}" = 1 ] && [ -f "$OUT/a/fhirant.db" ]; then
+  find "$OUT" -mindepth 1 -maxdepth 1 ! -name a -exec rm -rf {} +
+  mkdir -p "$OUT/b"
+  echo "load kept $(date -Is)" >> "$OUT/results.tsv"
+else
+  rm -rf "$OUT"; mkdir -p "$OUT/a" "$OUT/b"
+  echo "load start $(date -Is)" >> "$OUT/results.tsv"
+  dart run tool/perf_load.dart "$MIMIC" "$OUT/a" --limit "$N" --batch 500 \
+    --server-store > "$OUT/load.log" 2>&1
+  echo "load exit $? $(date -Is)" >> "$OUT/results.tsv"
+fi
 
 start_server() { # port dir log
   (exec dart run bin/server.dart --dev-mode --port "$1" --db-path "$2" \

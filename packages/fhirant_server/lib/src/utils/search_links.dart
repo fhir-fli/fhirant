@@ -141,7 +141,15 @@ class SearchLinks {
   }
 
   factory SearchLinks.history(Map<String, List<String>> query) {
-    const known = {'_count', '_offset', '_since', '_at', '_format', '_pretty'};
+    const known = {
+      '_count',
+      '_offset',
+      '_since',
+      '_at',
+      '_format',
+      '_pretty',
+      historyCursor,
+    };
     final used = <String, List<String>>{};
     final ignored = <String>[];
     for (final entry in query.entries) {
@@ -203,7 +211,8 @@ class SearchLinks {
   /// `last` when [total] is known and positive. A [count] of zero is a
   /// count-only page and carries `self` alone.
   /// The links of one page: `self` and `first` always; `previous` when
-  /// there is a page before; `next` when [hasMore] (the caller's probe
+  /// there is a page before by offset; `next` when [hasMore], found from
+  /// [nextCursor] when given (the caller's probe
   /// row, or `offset + count < total` when it has a total and no probe);
   /// `last` when the total is known and positive. [total] is null under
   /// `_total=none`, and paging goes on without it.
@@ -213,6 +222,7 @@ class SearchLinks {
     required int offset,
     required int? total,
     bool? hasMore,
+    String? nextCursor,
   }) {
     fhir.BundleLink link(String relation, int at) => fhir.BundleLink(
           relation: fhir.FhirString(relation),
@@ -224,7 +234,13 @@ class SearchLinks {
       self(requested),
       link('first', 0),
       if (offset > 0) link('previous', (offset - count).clamp(0, offset)),
-      if (more) link('next', offset + count),
+      if (more && nextCursor != null)
+        fhir.BundleLink(
+          relation: fhir.FhirString('next'),
+          url: fhir.FhirUri(url(requested, cursor: nextCursor).toString()),
+        )
+      else if (more)
+        link('next', offset + count),
       if (total != null && total > 0)
         link('last', ((total - 1) ~/ count) * count),
     ];
@@ -250,6 +266,15 @@ class SearchLinks {
     '_type',
   };
 
+  /// The parameter a history page's `next` link carries: where the page
+  /// before ended ([HistoryPosition]), so the next page is found from
+  /// there rather than counted from the start. R4B http.html §3.1.0.14
+  /// (hl7.org/fhir/R4B/http.html, read 2026-11-20): "A server MAY add
+  /// additional state tracking parameters to the links"; "The links are
+  /// opaque to the client, have no dictated structure, and only the server
+  /// understands them."
+  static const historyCursor = '_cursor';
+
   /// The parameters the search used, one entry per repetition.
   final Map<String, List<String>> used;
 
@@ -259,11 +284,16 @@ class SearchLinks {
   final List<String> ignored;
 
   /// [requested] with its query replaced by [used], `_offset` set to [offset]
-  /// when given.
-  Uri url(Uri requested, {int? offset}) {
+  /// or [historyCursor] to [cursor] when given (each replacing the other).
+  Uri url(Uri requested, {int? offset, String? cursor}) {
     final params = <String, List<String>>{...used};
     if (offset != null) {
       params['_offset'] = ['$offset'];
+      params.remove(historyCursor);
+    }
+    if (cursor != null) {
+      params[historyCursor] = [cursor];
+      params.remove('_offset');
     }
     if (params.isNotEmpty) return requested.replace(queryParameters: params);
     // Nothing was used. `replace(queryParameters: null)` would keep the
