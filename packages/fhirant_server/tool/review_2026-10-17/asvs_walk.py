@@ -11,6 +11,9 @@ documentation requirement: not probed; whether the document exists is
 stated), NOTPROBED (applies, not measured in this review: said so).
 
 Run: python3 -I tool/review_2026-10-17/asvs_walk.py <asvs-5.0.0.json>
+The JSON is OWASP's release file:
+https://github.com/OWASP/ASVS/releases/download/v5.0.0_release/
+OWASP_Application_Security_Verification_Standard_5.0.0_en.json
 """
 import json
 import os
@@ -148,16 +151,126 @@ SECTIONS = {
 }
 
 OVERRIDES = {
+    # The 31 rows left NOTPROBED, measured 2026-11-21 (asvs_notprobed.py ->
+    # asvs_notprobed.tsv against the CLI built by `dart build cli`; code
+    # reads name their file).
+    'V1.1.1': ('PASS', 'asvs_notprobed: family:exact=%2541 finds "%41" '
+               'only and =%41 finds "A" only; GET /Patient/%2541 is 404, '
+               'not Patient/A: decoded once'),
+    'V1.1.2': ('PASS', 'asvs_notprobed: client_id <b>"x&\' escaped once '
+               '(no &amp;lt;) on the authorize page; HTML escaped where the '
+               'template is built (_escapeHtml), SQL by bound variables '
+               '(V1.2.4), JSON by jsonEncode'),
+    'V3.7.1': ('PASS', 'the authorize page has no object, embed, applet or '
+               'script (asvs_notprobed)'),
+    'V3.7.2': ('FINDING', 'M1: a second redirect_uri for a known client is '
+               '400 with no redirect (PASS), but a new client_id pins any '
+               'host on first use: http://evil.example/cb got the code '
+               '(asvs_notprobed)'),
+    'V3.7.3': ('FINDING', 'L3: posting credentials answers 302 straight to '
+               "the client's redirect_uri, with no notice of the host or "
+               'way to cancel (asvs_notprobed)'),
+    'V3.7.4': ('N/A', 'L3: fhirant has no domain of its own; a '
+               "deployment's operator owns its domain and any HSTS preload "
+               '(and no HSTS header is sent: V3.4)'),
+    'V3.7.5': ('DOC', 'L3: no document says what happens on a browser '
+               'without the expected features; the only browser page is '
+               'the authorize form'),
+    'V6.2.12': ('FINDING', 'checked against 30,407 common passwords from '
+                'SecLists (common_passwords.g.dart), not a breach corpus: of '
+                '13 candidates of policy length found in Have I Been Pwned, '
+                '11 refused, Summer2024!! (936) and Welcome2024! (6,590) '
+                'accepted (asvs_notprobed)'),
+    'V7.5.1': ('PASS', 'changing one\'s own password needs the current one: '
+               '400 without it, 401 when wrong (asvs_notprobed); there is '
+               'no email, phone, MFA or recovery attribute'),
+    'V7.5.2': ('FINDING', 'no route lists a user\'s sessions (route table; '
+               '/auth/sessions and the like fall through to the FHIR routes, '
+               '400). Ending them: logout ends one, a password change all '
+               '(V7.4); none needs re-authentication'),
+    'V7.5.3': ('FINDING', 'L3: $backup (the whole record) and making an '
+               'account admin take the bearer token alone, 200 '
+               '(asvs_notprobed)'),
+    'V9.2.3': ('FINDING', 'tokens carry exp gen iat jti role scope userId '
+               'username: no aud or iss. Another secret is refused (401), '
+               "but X's admin token worked on server Y sharing the secret "
+               '(200), the multi-instance set-up bin/server.dart describes '
+               '(asvs_notprobed)'),
+    'V10.3.1': ('FINDING', 'as V9.2.3: no aud; a token is good on every '
+                'server that holds the same secret'),
+    'V10.3.2': ('PASS', 'scope user/Observation.rs: GET /Patient 403, GET '
+                '/Observation 200 (asvs_notprobed; access grid)'),
+    'V10.3.3': ('FINDING', 'the user is the numeric userId alone, and '
+                'account ids are per store: with a shared secret, nora\'s '
+                "token from X (id 17) was accepted on Y as Y's id 17, "
+                'another person (200); a restore gives a backup\'s accounts '
+                'new ids when theirs are taken (15 of 15 here): cara, admin on X '
+                '(id 16), restored as Y id 32; her X token opened GET '
+                "/admin/users on Y (200) as Y's id 16, a clinician. The "
+                "token's username is not compared with the account's, and "
+                'the role comes from the token (asvs_notprobed)'),
+    'V10.3.4': ('N/A', 'the resource server requires no authentication '
+                'strength, method or recentness (password only; no acr, '
+                'amr or auth_time)'),
+    'V10.3.5': ('FINDING', 'L3: no DPoP or mutual TLS; one token answered '
+                'from two client addresses (asvs_notprobed)'),
+    'V10.7.1': ('FINDING', 'the HTML authorize page names the client and '
+                'the scopes before every code, but client identity is not '
+                'assured (any client_id, redirect pinned on first use), and '
+                'the JSON authorize issues a code to whoever holds the '
+                "password, with no page shown (200, asvs_notprobed)"),
+    'V10.7.2': ('FINDING', 'the page shows the client_id and the requested '
+                'scopes as raw strings (patient/*.cruds), not the scopes '
+                'granted (the intersection with the account) or how long '
+                'they last (asvs_notprobed)'),
+    'V10.7.3': ('FINDING', 'no route to review, change or revoke a grant; '
+                '/auth/revoke ends a token, not the grant'),
+    'V12.2.1': ('FINDING', 'plain HTTP on every interface by default '
+                '(InternetAddress.anyIPv4, fhirant_server.dart); /health '
+                "answered 200 over HTTP on this host's LAN address; TLS only "
+                'with --https; the phone serves HTTPS'),
+    'V12.2.2': ('FINDING', 'CLI: --https takes whatever certificate the '
+                'operator gives, unchecked; the phone serves a self-signed '
+                'certificate for localhost and shows its fingerprint for '
+                'pinning (fhirant server_service.dart, server_state.dart)'),
+    'V12.3.1': ('FINDING', 'a rest-hook to http:// is accepted active and '
+                'notified in clear; $sync to an http peer sent its request '
+                '(with the bearer token given) in clear (asvs_notprobed)'),
+    'V12.3.2': ('PASS', 'a self-signed https rest-hook was not delivered '
+                '(CERTIFICATE_VERIFY_FAILED, Subscription to error) and '
+                '$sync to a self-signed https peer sent nothing '
+                '(asvs_notprobed); no badCertificateCallback in the server '
+                '(the app sets one only for its own loopback health check)'),
+    'V12.3.3': ('FINDING', 'as V12.3.1: server-to-server $sync and '
+                'rest-hooks may use plain HTTP'),
+    'V12.3.4': ('FINDING', 'no way to trust a specific internal CA or '
+                'self-signed certificate for $sync or rest-hooks: the '
+                "platform's trust store only (no option in cli/options.dart)"),
+    'V12.3.5': ('FINDING', 'L3: $sync authenticates the peer by its TLS '
+                'certificate and itself by a bearer token; no TLS client '
+                'authentication'),
+    'V13.3.1': ('FINDING', 'CLI: the database key from FHIRANT_ENCRYPTION_KEY '
+                'and the JWT secret from FHIRANT_JWT_SECRET or a generated '
+                '.jwt_secret beside the store; no secrets manager. The '
+                'phone keeps both in platform secure storage '
+                '(flutter_secure_storage). None in the source'),
+    'V13.3.2': ('PASS', 'the generated .jwt_secret is 0600; the environment '
+                "of the server process is 0400 (owner only). The store's "
+                'files are 0644 and its directory 0775 (umask), encrypted '
+                '(asvs_notprobed)'),
+    'V13.3.3': ('FINDING', 'L3: SQLCipher and HMAC run in the server '
+                'process; no HSM or vault'),
+    'V13.3.4': ('FINDING', 'L3: neither secret expires or rotates: fhirant '
+                'never calls a database rekey (fhir_db has one), and a new '
+                'JWT secret ends every session; no document sets a period'),
     'V1.2.4': ('PASS', 'asvs_probes: values, names, _sort, chains, _has'),
     'V1.3.6': ('PASS', 'no outbound request to 7 client-named URLs'),
     'V2.4.1': ('PASS', 'limiter counts the socket address'),
     'V6.2.4': ('FINDING', 'P1: 20 common passwords, not 3000'),
-    'V6.2.12': ('NOTPROBED', 'no breached-password check'),
     'V7.3.1': ('FINDING', 'no inactivity timeout'),
     'V10.4.8': ('FINDING', 'R1: each rotation grants a fresh 7 days'),
     'V9.2.1': ('PASS', 'fixed 2026-11-10: a token without exp is refused '
                '(jwt_service_test; asvs_probes "no exp" 401)'),
-    'V9.2.3': ('NOTPROBED', 'no aud claim; single service'),
     # Measured after the review, 2026-10-21 (REVIEW-2026-10-17, "The
     # NOTPROBED rows, measured after the review").
     'V11.3.1': ('PASS', 'code read 2026-10-21: both file formats are '
