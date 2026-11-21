@@ -1,0 +1,5 @@
+versions: 1868395
+depth 500000: offset 112 ms, keyset 5 ms, same rows: true
+depth 934197: offset 200 ms, keyset 2 ms, same rows: true
+depth 1867395: offset 395 ms, keyset 1 ms, same rows: true
+keyset plan: MERGE (UNION ALL); LEFT; SEARCH resources_history USING COVERING INDEX idx_resources_history_order ((last_updated,version_id,resource_type,id)<(?,?,?,?)); RIGHT; SEARCH resources USING COVERING INDEX idx_resources_order ((last_updated,version_id,resource_type,id)<(?,?,?,?))

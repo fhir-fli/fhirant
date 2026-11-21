@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant_db/fhirant_db.dart';
@@ -205,6 +207,146 @@ void main() {
       );
     });
   });
+  group('schema 30: history pages in one total order', () {
+    late FhirAntDb db;
+
+    setUp(() async {
+      db = FhirAntDb(NativeDatabase.memory());
+      await db.initialize();
+    });
+
+    tearDown(() async => db.close());
+
+    test('a schema-29 store gains the history order indexes', () async {
+      final dir = await Directory.systemTemp.createTemp('fhirant_db_hist_');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/fhirant.sqlite');
+      final first = FhirAntDb(NativeDatabase(file));
+      await first.saveResource(fhir.Patient(id: 'a'.toFhirString));
+      await first.customStatement('DROP INDEX idx_resources_history_order');
+      await first.customStatement('DROP INDEX idx_resources_order');
+      await first.customStatement('PRAGMA user_version = 29');
+      await first.close();
+
+      final second = FhirAntDb(NativeDatabase(file));
+      final plan = await second
+          .customSelect(
+            'EXPLAIN QUERY PLAN SELECT rowid FROM resources '
+            'ORDER BY last_updated DESC, version_id DESC, '
+            'resource_type DESC, id DESC',
+          )
+          .get();
+      expect(
+        plan.map((r) => r.read<String>('detail')).join('; '),
+        contains('idx_resources_order'),
+      );
+      final indexes = (await second
+              .customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'index'",
+              )
+              .get())
+          .map((r) => r.read<String>('name'));
+      expect(
+        indexes,
+        containsAll(['idx_resources_history_order', 'idx_resources_order']),
+      );
+      await second.close();
+    });
+
+    test(
+        'versions sharing a millisecond and a version id are paged in type '
+        'and id order, none repeated or skipped', () async {
+      // One call, so most share a millisecond; each a first version.
+      await db.saveResources([
+        for (var i = 0; i < 12; i++)
+          fhir.Patient(id: 'p${i.toString().padLeft(2, '0')}'.toFhirString),
+        for (var i = 0; i < 8; i++) fhir.Organization(id: 'o$i'.toFhirString),
+      ]);
+      // An update, so a page draws from both halves of the versions.
+      await db.saveResource(
+        fhir.Patient(id: 'p03'.toFhirString, active: true.toFhirBoolean),
+      );
+
+      for (final type in [null, 'Patient']) {
+        final paged = <HistoryEntry>[];
+        for (var offset = 0;; offset += 3) {
+          final page = type == null
+              ? await db.getSystemHistory(count: 3, offset: offset)
+              : await db.getTypeHistory(
+                  fhir.R4ResourceType.Patient,
+                  count: 3,
+                  offset: offset,
+                );
+          if (page.isEmpty) break;
+          paged.addAll(page);
+        }
+        final all = type == null
+            ? await db.getSystemHistory()
+            : await db.getTypeHistory(fhir.R4ResourceType.Patient);
+        String key(HistoryEntry e) =>
+            '${e.resourceType}/${e.id}/${e.versionId}';
+        final expected = [...all]..sort((a, b) {
+            final byTime = b.lastUpdated.compareTo(a.lastUpdated);
+            if (byTime != 0) return byTime;
+            final byVersion = b.versionId.compareTo(a.versionId);
+            if (byVersion != 0) return byVersion;
+            final byType = b.resourceType.compareTo(a.resourceType);
+            if (byType != 0) return byType;
+            return b.id.compareTo(a.id);
+          });
+        expect(paged.map(key).toList(), expected.map(key).toList());
+        expect(paged.map(key).toSet(), hasLength(type == null ? 21 : 13));
+
+        // The same pages by position: each starts after the last row of
+        // the one before.
+        final byPosition = <HistoryEntry>[];
+        HistoryPosition? after;
+        for (;;) {
+          final page = type == null
+              ? await db.getSystemHistory(count: 3, after: after)
+              : await db.getTypeHistory(
+                  fhir.R4ResourceType.Patient,
+                  count: 3,
+                  after: after,
+                );
+          if (page.isEmpty) break;
+          byPosition.addAll(page);
+          after = HistoryPosition.of(page.last);
+        }
+        expect(byPosition.map(key).toList(), expected.map(key).toList());
+      }
+    });
+
+    test('a position pages with _since, and not with _at or an offset',
+        () async {
+      await db.saveResource(fhir.Patient(id: 'old'.toFhirString));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final since = DateTime.now().toUtc();
+      await db.saveResources([
+        for (var i = 0; i < 5; i++) fhir.Patient(id: 'new$i'.toFhirString),
+      ]);
+      final first = await db.getSystemHistory(since: since, count: 2);
+      final rest = await db.getSystemHistory(
+        since: since,
+        after: HistoryPosition.of(first.last),
+      );
+      expect(
+        [...first, ...rest].map((e) => e.id).toSet(),
+        {for (var i = 0; i < 5; i++) 'new$i'},
+      );
+      expect(first.length + rest.length, 5);
+      final position = HistoryPosition.of(first.last);
+      expect(
+        () => db.getSystemHistory(at: since, after: position),
+        throwsArgumentError,
+      );
+      expect(
+        () => db.getSystemHistory(offset: 2, after: position),
+        throwsArgumentError,
+      );
+    });
+  });
+
   group('schema 23: the current version is stored once', () {
     late FhirAntDb db;
 

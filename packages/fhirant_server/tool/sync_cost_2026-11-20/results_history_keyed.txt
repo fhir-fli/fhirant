@@ -1,0 +1,7 @@
+order plan: SCAN resources USING COVERING INDEX idx_resources_order
+(last_updated, version_id) groups shared by more than one version: 2786
+offset 0: now 89 ms, before 3860 ms, 500 rows, same rows: true
+offset 500: now 33 ms, before 4001 ms, 500 rows, same rows: true
+offset 100000: now 49 ms, before 5031 ms, 500 rows, same rows: true
+offset 500000: now 128 ms, before 5706 ms, 500 rows, same rows: true
+offset 928500: now 264 ms, before 5745 ms, 500 rows, same rows: true
