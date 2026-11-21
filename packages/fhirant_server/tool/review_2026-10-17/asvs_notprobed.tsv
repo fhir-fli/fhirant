@@ -1,0 +1,49 @@
+asvs	case	observed	verdict
+V1.1.1	family:exact=%2541 finds "%41" only; =%41 finds "A" only	(200, ['%41'], 200, ['A'])	PASS
+V1.1.1	GET /Patient/%2541 is not Patient/A	(201, 404, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-foun')	PASS
+V1.1.2	client_id <b>"x&' on the authorize page	(200, 'escaped once', '', '')	PASS
+V3.7.1	authorize page: plugin or script tags	none	PASS
+V3.7.3	credentials posted: answer	(302, 'http://app.example/cb')	FINDING
+V3.7.2	client-a, a second redirect_uri	(400, None)	PASS
+V3.7.2	a new client_id: any redirect host is pinned and used	(302, 'http://evil.example/cb')	FINDING
+V10.7.2	authorize page content	{'client named': True, 'scopes as raw strings': True, 'lifetime': False, 'separate consent step': False}	FINDING
+V10.7.1	JSON authorize: code issued with no page shown	(200, True)	FINDING
+V7.5.2/V10.7.3	GET /auth/sessions	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Invalid resource type: a')	FINDING
+V7.5.2/V10.7.3	GET /auth/grants	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Invalid resource type: a')	FINDING
+V7.5.2/V10.7.3	GET /auth/consents	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Invalid resource type: a')	FINDING
+V7.5.2/V10.7.3	GET /admin/sessions	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Invalid resource type: a')	FINDING
+V6.2.12	claim with 'password1234' (HIBP count 443416)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'qwertyuiop12' (HIBP count 170116)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with '123456789012' (HIBP count 167070)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'iloveyou1234' (HIBP count 38800)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'football1234' (HIBP count 16479)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'princess1234' (HIBP count 13075)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with '1qaz2wsx3edc' (HIBP count 1902590)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'zaq12wsxcde3' (HIBP count 82115)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'Tr0ub4dor&3x' (HIBP count 0)	(202, 'accepted')	PASS
+V6.2.12	claim with 'correcthorsebatterystaple' (HIBP count 4173)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'Summer2024!!' (HIBP count 936)	(202, 'accepted')	FINDING
+V6.2.12	claim with 'Welcome2024!' (HIBP count 6590)	(202, 'accepted')	FINDING
+V6.2.12	claim with 'Liverpool123' (HIBP count 79751)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V6.2.12	claim with 'Manchester12' (HIBP count 19922)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
+V7.5.1	password change without / with a wrong current password	(400, 401)	PASS
+V7.5.3	$backup with the admin token only	(200, 266240)	FINDING
+V7.5.3	make an account admin with the token only	200	FINDING
+V9.2.3	claims in an access token	['exp', 'gen', 'iat', 'jti', 'role', 'scope', 'userId', 'username']	FINDING
+V10.3.1	same claims signed with another secret	401	PASS
+V10.3.2	scope user/Observation.rs: Patient / Observation	(403, 200)	PASS
+V10.3.5	one token from two addresses	(200, 200)	FINDING
+V12.2.1	plain HTTP /health from this host's LAN address	200	FINDING
+V12.3.1	rest-hook to http://: accepted, notified in clear	(201, 'active', 1)	FINDING
+V12.3.2	rest-hook to a self-signed https endpoint	(201, 'active', 'delivered 0', 'error', 'delivery to https://127.0.0.1:18491/selfsigned failed: HandshakeException: Handshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: self signed certificate(handshake.cc:320))')	PASS
+V12.3.1	$sync, http peer	(202, 'peer saw 1 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: FormatException: Unexpected end of input (at char')	FINDING
+V12.3.2	$sync, self-signed https peer	(202, 'peer saw 0 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: HandshakeException: Handshake error in client (OS')	PASS
+V10.3.3	accounts on X: count, nora	(17, 17)	NOTE
+V10.3.1	X's admin token at Y (shared secret)	200	FINDING
+V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 58 saved, 0 errors, 58 total entri')	NOTE
+V10.3.3	accounts on Y after restore: count, nora, y-nora	(32, None, 17)	NOTE
+V10.3.3	nora's X token at Y: X id 17, Y id None, Y's id 17 is ['y-nora']	200	FINDING
+V10.3.3	cara (restored) X token at Y: X id 16, restored as Y id 32, Y's id 16 is ['y-cara']; GET /admin/users	200	FINDING
+V13.3.2	generated secret file and its mode	[('z/db/.jwt_secret', '0o600')]	PASS
+V13.3.2	store directory and its files	('0o775', [('.jwt_secret', '0o600'), ('fhirant.db', '0o644'), ('fhirant.db-shm', '0o644'), ('fhirant.db-wal', '0o644')])	NOTE
+V13.3.2	X (key in its environment): /proc/<pid>/environ mode	0o400	NOTE
