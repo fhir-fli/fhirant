@@ -9,9 +9,14 @@ import '../integration/test_helpers.dart';
 /// REVIEW-2026-10-06 finding 11 (probe P9): `GET /Patient?name=x` was
 /// audited as subtype `read`, action `R`, the same as a read of one record,
 /// and `GET /?_type=Patient` (the system search, R4B search.html 3.1.1.2)
-/// was not audited at all. The restful-interaction code system (R4B
-/// valueset-restful-interaction, read 2026-10-06) has `search-type`,
-/// `search-system` and `search-compartment` for the three.
+/// was not audited at all. The R4B restful-interaction code system
+/// (valuesets.json, 4.3.0) has `search-type` and `search-system`; it has no
+/// `search-compartment` (that is R5's, and this file pinned it from
+/// 2026-10-06 to 2026-11-21), so a compartment search is the parent code
+/// `search`. A search's action is E: the R4B audit-event-action definition
+/// of E includes "perform a query/search operation", IHE BALP's Query
+/// profile fixes action E, and the R4B example audit-event-example-search
+/// carries E. This file pinned R until 2026-11-21.
 void main() {
   late FhirAntDb db;
   late FhirAntServer server;
@@ -51,7 +56,7 @@ void main() {
   }
 
   test('a type-level GET is search-type', () async {
-    expect(await auditedAs('GET', '/Patient?name=x'), [('search-type', 'R')]);
+    expect(await auditedAs('GET', '/Patient?name=x'), [('search-type', 'E')]);
   });
 
   test('a POST _search on a type is search-type', () async {
@@ -62,23 +67,23 @@ void main() {
         body: 'name=x',
         headers: {'content-type': 'application/x-www-form-urlencoded'},
       ),
-      [('search-type', 'R')],
+      [('search-type', 'E')],
     );
   });
 
   test('a system search, GET /?… or POST /_search, is search-system', () async {
-    expect(await auditedAs('GET', '/?_type=Patient'), [('search-system', 'R')]);
+    expect(await auditedAs('GET', '/?_type=Patient'), [('search-system', 'E')]);
   });
 
   test('a bare GET / is still not audited', () async {
     expect(await auditedAs('GET', '/'), isEmpty);
   });
 
-  test('a compartment search is search-compartment', () async {
+  test('a compartment search is search', () async {
     await db.saveResource(fhir.Patient(id: fhir.FhirString('p1')));
     expect(
       await auditedAs('GET', '/Patient/p1/Observation'),
-      [('search-compartment', 'R')],
+      [('search', 'E')],
     );
   });
 

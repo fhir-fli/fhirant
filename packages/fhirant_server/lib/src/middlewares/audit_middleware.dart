@@ -196,77 +196,236 @@ bool _shouldAudit(Request request) {
   return true;
 }
 
-/// Maps a request to a FHIR AuditEvent action code (audit-event-action:
-/// C R U D E). A `POST …/_search` is a read, and a `POST …/$operation` an
-/// execute; both used to be recorded as a create (REVIEW-2026-09-08 row
-/// 46).
-String _mapAction(String method, String path) {
-  final segments = path.split('/');
-  if (segments.isNotEmpty && segments.last == '_search') return 'R';
-  if (segments.any((s) => s.startsWith(r'$'))) return 'E';
-  if (_searchSubtype(method, path) != null) return 'R';
-  switch (method) {
-    case 'POST':
+/// A coding as AuditEvent JSON.
+typedef _Coding = Map<String, String>;
+
+_Coding _coding(String system, String code, String display) =>
+    {'system': system, 'code': code, 'display': display};
+
+const _dcm = 'http://dicom.nema.org/resources/ontology/DCM';
+const _restfulInteraction = 'http://hl7.org/fhir/restful-interaction';
+
+/// `rest`, "RESTful Operation" (R4B CodeSystem audit-event-type,
+/// valuesets.json): the type IHE BALP fixes on its Create, Read, Update,
+/// Delete and Query profiles (IHE.BasicAudit.*, StructureDefinition JSON
+/// read 2026-11-21) and the R4B examples audit-event-example-search and
+/// -vread carry.
+final _Coding _restType = _coding(
+  'http://terminology.hl7.org/CodeSystem/audit-event-type',
+  'rest',
+  'RESTful Operation',
+);
+
+/// What kind of event a request is, as AuditEvent records it.
+///
+/// Every event used to be `type` DCM 110112 "Query", a create and a failed
+/// login included (REVIEW-2026-09-17-TRIAGE.md), with a subtype from
+/// restful-interaction even where the request was not a FHIR interaction.
+/// A FHIR interaction is now `rest` with its R4B restful-interaction code;
+/// fhirant's own account routes take the DICOM PS3.15 audit message whose
+/// definition they meet (PS3.15 A.5.3.10 Query, A.5.3.11 Security Alert,
+/// A.5.3.12 User Authentication, and the codes in PS3.16 CID 400, 401 and
+/// 403 with their Annex D definitions, read 2026-11-21). Each of those
+/// three messages says of EventActionCode "Shall be: E Execute".
+({_Coding type, _Coding? subtype, String action}) _classify(
+  String method,
+  String path,
+) {
+  final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+  if (segments.isNotEmpty && segments[0] == 'auth') {
+    return _authEvent(method, segments.skip(1).join('/'));
+  }
+  if (segments.isNotEmpty && segments[0] == 'admin') {
+    return _adminEvent(method, segments);
+  }
+  final interaction = _restfulInteractionOf(method, segments);
+  return (
+    type: _restType,
+    subtype: interaction == null
+        ? null
+        : _coding(_restfulInteraction, interaction, interaction),
+    action: interaction == null
+        ? _actionOfMethod(method)
+        : _actionOfInteraction(interaction),
+  );
+}
+
+/// The `auth/` routes. Login and logout are DICOM 110114 "User
+/// Authentication" ("User Authentication has been attempted"), subtypes
+/// 110122 "Login" and 110123 "Logout" (PS3.15 A.5.3.12: "a user has
+/// attempted to log on or log off ... regardless of whether the attempt was
+/// successful or not"). `POST auth/authorize` is the sign-in form of the
+/// authorization-code flow, so it is a login. Revoking a refresh token ends
+/// the session it opened, so it is a logout. The token endpoint is IHE
+/// IUA's ITI-71 Get Access Token, whose audit profile IHE.IUA.71 fixes type
+/// 110114, subtype `urn:ihe:event-type-code#ITI-71` and action E (BALP
+/// package StructureDefinition JSON, read 2026-11-21). Registering,
+/// claiming or changing a password change a user's security attributes:
+/// 110113 "Security Alert" with 110137 "User security Attributes Changed"
+/// (CID 403; Annex D: "Security attributes of a user have been changed").
+/// What reads only (`GET auth/status`, the sign-in page) is a query:
+/// PS3.15 A.5.3.10, "Non-DICOM queries may also be captured by this
+/// message".
+({_Coding type, _Coding? subtype, String action}) _authEvent(
+  String method,
+  String route,
+) {
+  final authentication = _coding(_dcm, '110114', 'User Authentication');
+  final login = _coding(_dcm, '110122', 'Login');
+  final logout = _coding(_dcm, '110123', 'Logout');
+  if (method == 'POST') {
+    switch (route) {
+      case 'login':
+      case 'authorize':
+        return (type: authentication, subtype: login, action: 'E');
+      case 'logout':
+      case 'revoke':
+        return (type: authentication, subtype: logout, action: 'E');
+      case 'token':
+        return (
+          type: authentication,
+          subtype:
+              _coding('urn:ihe:event-type-code', 'ITI-71', 'Get Access Token'),
+          action: 'E',
+        );
+      case 'register':
+      case 'password':
+      case 'claim':
+        return _userSecurityChanged;
+    }
+  }
+  return _query;
+}
+
+/// The `admin/` routes. A role change is 110136 "Security Roles Changed"
+/// ("Security roles have been changed"); a password reset, approving a
+/// claim, unlocking, activating, deactivating or setting scopes change one
+/// user's security attributes (110137). Listing the accounts is a query.
+({_Coding type, _Coding? subtype, String action}) _adminEvent(
+  String method,
+  List<String> segments,
+) {
+  if (method == 'GET') return _query;
+  if (segments.length == 4 && segments[3] == 'role') {
+    return (
+      type: _securityAlert,
+      subtype: _coding(_dcm, '110136', 'Security Roles Changed'),
+      action: 'E',
+    );
+  }
+  return _userSecurityChanged;
+}
+
+final _Coding _securityAlert = _coding(_dcm, '110113', 'Security Alert');
+
+final ({_Coding type, _Coding? subtype, String action}) _userSecurityChanged = (
+  type: _securityAlert,
+  subtype: _coding(_dcm, '110137', 'User security Attributes Changed'),
+  action: 'E',
+);
+
+final ({_Coding type, _Coding? subtype, String action}) _query = (
+  type: _coding(_dcm, '110112', 'Query'),
+  subtype: null,
+  action: 'E',
+);
+
+/// The R4B restful-interaction code (valuesets.json, CodeSystem
+/// restful-interaction 4.3.0, read whole 2026-11-21) for [method] on the
+/// path [segments], or null when the path is no FHIR interaction (an
+/// unknown first segment).
+///
+/// R4B has no `search-compartment` (it is R5's); a compartment search is
+/// the parent code `search`. An operation is `operation`: `execute` is no
+/// code there. A history read is `history-instance`, `-type` or `-system`
+/// and a version read `vread`; all used to be `read`.
+String? _restfulInteractionOf(String method, List<String> segments) {
+  bool isType(String s) => fhir.R4ResourceType.fromString(s) != null;
+  bool isOperation(String s) => s.startsWith(r'$');
+  if (segments.isEmpty) {
+    if (method == 'GET') return 'search-system';
+    // A POST to the base is a Bundle; the handler declares transaction or
+    // batch and that wins over this.
+    return null;
+  }
+  final first = segments[0];
+  if (isOperation(first)) return 'operation';
+  if (segments.length == 1 && first == '_search') return 'search-system';
+  if (segments.length == 1 && first == '_history') return 'history-system';
+  if (!isType(first)) return null;
+  if (segments.length == 1) {
+    return switch (method) {
+      'GET' => 'search-type',
+      'POST' => 'create',
+      'PUT' => 'update',
+      'PATCH' => 'patch',
+      'DELETE' => 'delete',
+      _ => null,
+    };
+  }
+  final second = segments[1];
+  if (isOperation(second)) return 'operation';
+  if (segments.length == 2 && second == '_search') return 'search-type';
+  if (segments.length == 2 && second == '_history') return 'history-type';
+  if (second.startsWith('_')) return null;
+  if (segments.length == 2) {
+    return switch (method) {
+      'GET' => 'read',
+      'PUT' => 'update',
+      'PATCH' => 'patch',
+      'DELETE' => 'delete',
+      _ => null,
+    };
+  }
+  final third = segments[2];
+  if (isOperation(third)) return 'operation';
+  if (third == '_history') {
+    if (segments.length == 3) return 'history-instance';
+    if (segments.length == 4) return 'vread';
+    return null;
+  }
+  if (isType(third) || third == '*') {
+    if (segments.length == 3) return 'search';
+    if (segments.length == 4 && segments[3] == '_search') return 'search';
+  }
+  return null;
+}
+
+/// The action for a restful interaction. A search is E: the R4B
+/// audit-event-action definition of E includes "perform a query/search
+/// operation", BALP's Query profile fixes action E, and the R4B example
+/// audit-event-example-search carries E. A read, version read or history
+/// read is R ("Display or print data"; audit-event-example-vread carries
+/// R). An operation, transaction or batch is E.
+String _actionOfInteraction(String interaction) {
+  switch (interaction) {
+    case 'create':
       return 'C';
-    case 'GET':
+    case 'read':
+    case 'vread':
+    case 'history-instance':
+    case 'history-type':
+    case 'history-system':
       return 'R';
-    case 'PUT':
+    case 'update':
+    case 'patch':
       return 'U';
-    case 'PATCH':
-      return 'U';
-    case 'DELETE':
+    case 'delete':
       return 'D';
     default:
       return 'E';
   }
 }
 
-/// Maps a request to a FHIR AuditEvent subtype display.
-String _mapSubtype(String method, String path) {
-  final search = _searchSubtype(method, path);
-  if (search != null) return search;
-  final segments = path.split('/');
-  if (segments.any((s) => s.startsWith(r'$'))) return 'execute';
-  switch (method) {
-    case 'POST':
-      return 'create';
-    case 'GET':
-      return 'read';
-    case 'PUT':
-      return 'update';
-    case 'PATCH':
-      return 'patch';
-    case 'DELETE':
-      return 'delete';
-    default:
-      return 'execute';
-  }
-}
-
-/// The search interaction [method] on [path] is, as a restful-interaction
-/// code (`search-system`, `search-type`, `search-compartment`), or null when
-/// it is not a search. R4B http.html names the three; `GET /[type]?…` used
-/// to be recorded as `read`, so the trail could not tell a search of a type
-/// from a read of one record, and `GET /?…` was not recorded at all
-/// (REVIEW-2026-10-06 finding 11, probe P9).
-String? _searchSubtype(String method, String path) {
-  final segments = path.split('/').where((s) => s.isNotEmpty).toList();
-  if (segments.isNotEmpty && segments.last == '_search') {
-    return segments.length == 1 ? 'search-system' : 'search-type';
-  }
-  if (method != 'GET') return null;
-  bool isType(String s) => fhir.R4ResourceType.fromString(s) != null;
-  if (segments.isEmpty) return 'search-system';
-  if (segments.length == 1 && isType(segments[0])) return 'search-type';
-  if (segments.length == 3 &&
-      isType(segments[0]) &&
-      isType(segments[2]) &&
-      !segments[1].startsWith('_') &&
-      !segments[1].startsWith(r'$')) {
-    return 'search-compartment';
-  }
-  return null;
-}
+/// The action for a request that names no interaction (an unknown path),
+/// from its method alone.
+String _actionOfMethod(String method) => switch (method) {
+      'POST' => 'C',
+      'GET' => 'R',
+      'PUT' || 'PATCH' => 'U',
+      'DELETE' => 'D',
+      _ => 'E',
+    };
 
 /// Maps an HTTP response status to a FHIR AuditEvent outcome code.
 String _mapOutcome(int statusCode) {
@@ -337,8 +496,7 @@ Future<void> _queueAuditEvent(
     path: request.url.path,
     statusCode: response.statusCode,
     entityRef: _entityReference(request, response),
-    subtype: bundleSubtype is String ? bundleSubtype : null,
-    action: bundleSubtype is String ? 'E' : null,
+    interaction: bundleSubtype is String ? bundleSubtype : null,
     attemptedUsername: attempted is String ? attempted : null,
     agent: _agentOf(response),
   );
@@ -364,12 +522,9 @@ Future<void> _queueBundleEntryEvents(
     if (method is! String || url is! String || status is! int) continue;
     final path = url.split('?').first;
     final entityRef = _entityFromPath(path);
-    // A type-level GET entry (`Patient?name=x`) is the search interaction;
-    // `_mapSubtype` reads `read` off a GET with no `_search` segment.
-    final isSearch = method == 'GET' &&
-        entityRef == null &&
-        !path.contains('/') &&
-        fhir.R4ResourceType.fromString(path) != null;
+    // A created entry is declared by its new id (`Patient/new-id`), which as
+    // a request path would name no interaction.
+    final created = method == 'POST' && entityRef != null;
     await _queueEvent(
       request,
       dbInterface,
@@ -379,15 +534,14 @@ Future<void> _queueBundleEntryEvents(
       statusCode: status,
       entityRef: entityRef,
       patientRef: patient is String ? patient : null,
-      subtype: isSearch ? 'search-type' : null,
-      action: isSearch ? 'R' : null,
+      interaction: created ? 'create' : null,
       agent: _agentOf(response),
     );
   }
 }
 
 /// Builds one AuditEvent for [request] and queues it. [method], [path] and
-/// [statusCode] are the interaction recorded (the request's own, or one
+/// [statusCode] are the request recorded (the request's own, or one
 /// Bundle entry's); [entityRef] the record it touched; [patientRef] the
 /// subject of care when the caller already knows it (a deleted resource's,
 /// read before the delete), else resolved from the record.
@@ -400,8 +554,7 @@ Future<void> _queueEvent(
   required int statusCode,
   String? entityRef,
   String? patientRef,
-  String? subtype,
-  String? action,
+  String? interaction,
   String? attemptedUsername,
   Map<String, dynamic>? agent,
 }) async {
@@ -420,8 +573,16 @@ Future<void> _queueEvent(
     // token identifies the actor without inventing Practitioner resources.
     final userId = authUser?['userId'];
 
-    final actionCode = action ?? _mapAction(method, path);
-    final subtypeCode = subtype ?? _mapSubtype(method, path);
+    // [interaction] is a restful-interaction code the caller knows better
+    // than the path does: a Bundle's `transaction` or `batch`, or a created
+    // entry.
+    final kind = interaction == null
+        ? _classify(method, path)
+        : (
+            type: _restType,
+            subtype: _coding(_restfulInteraction, interaction, interaction),
+            action: _actionOfInteraction(interaction),
+          );
     final outcome = _mapOutcome(statusCode);
     var subjectRef = patientRef;
 
@@ -444,19 +605,9 @@ Future<void> _queueEvent(
 
     final auditEventJson = <String, dynamic>{
       'resourceType': 'AuditEvent',
-      'type': {
-        'system': 'http://dicom.nema.org/resources/ontology/DCM',
-        'code': '110112',
-        'display': 'Query',
-      },
-      'subtype': [
-        {
-          'system': 'http://hl7.org/fhir/restful-interaction',
-          'code': subtypeCode,
-          'display': subtypeCode,
-        },
-      ],
-      'action': actionCode,
+      'type': kind.type,
+      if (kind.subtype != null) 'subtype': [kind.subtype],
+      'action': kind.action,
       'recorded': DateTime.now().toUtc().toIso8601String(),
       'outcome': outcome,
       'agent': [

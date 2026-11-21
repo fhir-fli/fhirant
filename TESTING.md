@@ -16,7 +16,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,760 | 195 | `cd packages/fhirant_server && dart test` (recounted 2026-11-20) |
+| fhirant_server | 1,769 | 196 | `cd packages/fhirant_server && dart test` (recounted 2026-11-21) |
 | fhirant_db | 149 | 8 | `cd packages/fhirant_db && dart test` (recounted 2026-11-20) |
 | fhirant | 38 | 5 | `cd packages/fhirant && flutter test` (recounted 2026-11-19) |
 | fhirant_secure_storage | 7 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
@@ -64,6 +64,7 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 |------|-------------|
 | `test/middleware/auth_middleware_test.dart` | JWT validation, scope enforcement |
 | `test/middleware/audit_middleware_test.dart` | AuditEvent creation |
+| `test/middleware/audit_event_type_test.dart` | AuditEvent type, subtype and action per request, against IHE BALP, IUA ITI-71, DICOM PS3.15 and the R4B codes |
 | `test/middleware/audit_queue_test.dart` | REVIEW-2026-09-17 A16: a batch the store refuses (false) or throws on is an error in the log file; a written batch logs nothing (3) |
 | `test/middleware/cors_middleware_test.dart` | CORS headers |
 | `test/middleware/content_negotiation_test.dart` | Accept/Content-Type handling |

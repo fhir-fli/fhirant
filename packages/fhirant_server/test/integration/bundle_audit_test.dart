@@ -193,8 +193,11 @@ void main() {
     };
     expect(byEntity, {'Patient/p-d': '0', 'Patient/nobody': '4'});
     // The type-level GET is the search interaction, with no single record.
+    // Its action is E since 2026-11-21 (this row pinned R): IHE BALP's
+    // Query profile fixes E, and R4B audit-event-action (valuesets.json)
+    // defines E as including "perform a query/search operation".
     final search = shapes.singleWhere((s) => s.subtype == 'search-type');
-    expect(search.action, 'R');
+    expect(search.action, 'E');
     expect(search.entities, isEmpty);
   });
 

@@ -56,7 +56,7 @@ Each had the old behaviour observed wrong against an outside source.
 
 ## New finding, reproduced, not yet fixed
 
-- Every AuditEvent carries `type` `110112` Query, a failed login included. The R4B value set `audit-event-type` has `110114` User Authentication for that event.
+- Every AuditEvent carries `type` `110112` Query, a failed login included. The R4B value set `audit-event-type` has `110114` User Authentication for that event. **Fixed 2026-11-21:** FHIR interactions are `rest` with their R4B restful-interaction code (IHE BALP), logins and logouts `110114`, the token endpoint `110114` ITI-71 (IHE IUA), account changes `110113` Security Alert, account reads `110112` (`test/middleware/audit_event_type_test.dart`).
 
 Documentation only: `b952dc4` S7.
 
