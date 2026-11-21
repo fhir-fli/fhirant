@@ -27,7 +27,9 @@ services:
     # Both are required. A default written here would be a public key, and
     # the server refuses the two placeholders this file and bin/server.dart
     # once carried. `docker compose up` fails with the message below until
-    # they are set in the environment or an .env file.
+    # they are set in the environment or an .env file. Give every server its
+    # own FHIRANT_JWT_SECRET: a server accepts any token signed with it, so
+    # two sharing one take each other's logins (REVIEW-2026-10-17, V10.3.3).
     environment:
       - FHIRANT_ENCRYPTION_KEY=${FHIRANT_ENCRYPTION_KEY:?set FHIRANT_ENCRYPTION_KEY to a strong secret}
       - FHIRANT_JWT_SECRET=${FHIRANT_JWT_SECRET:?set FHIRANT_JWT_SECRET to a strong secret}

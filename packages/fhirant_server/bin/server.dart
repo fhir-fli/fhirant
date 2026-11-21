@@ -51,11 +51,15 @@ void main(List<String> arguments) async {
   final encryptionKey = Platform.environment['FHIRANT_ENCRYPTION_KEY'] ??
       'default-development-key';
 
-  // Resolve the JWT signing secret. Preference: FHIRANT_JWT_SECRET (set this
-  // for cloud/multi-instance deployments where instances share a secret and
-  // the filesystem is ephemeral); otherwise a strong secret is generated once
-  // and persisted next to the database so an offline, zero-config deployment
-  // gets a stable, unguessable secret without contacting anything.
+  // Resolve the JWT signing secret. Preference: FHIRANT_JWT_SECRET, for an
+  // operator who manages the secret; otherwise a strong secret is generated
+  // once and persisted next to the database, so an offline, zero-config
+  // deployment gets a stable, unguessable secret without contacting anything.
+  // Every server needs its own. Each fhirant server is its own store with
+  // its own account ids, a token names its account by that id alone, and a
+  // server accepts every token signed with its secret: two servers sharing
+  // one took each other's tokens as their own accounts with the same id,
+  // other people (REVIEW-2026-10-17, ASVS V10.3.3, asvs_notprobed.tsv).
   final jwtSecretEnv = Platform.environment['FHIRANT_JWT_SECRET'];
   final jwtSecret = JwtSecret.resolveForServer(
     envValue: jwtSecretEnv,
@@ -64,7 +68,7 @@ void main(List<String> arguments) async {
   if (jwtSecretEnv == null || jwtSecretEnv.isEmpty) {
     logger.logInfo(
       'FHIRANT_JWT_SECRET not set; using a generated secret persisted at '
-      '$dbPath/.jwt_secret. Set the env var for multi-instance deployments.',
+      '$dbPath/.jwt_secret. Never give two servers the same secret.',
     );
   }
 
