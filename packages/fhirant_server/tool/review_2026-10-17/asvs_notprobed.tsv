@@ -29,7 +29,7 @@ V6.2.12	claim with 'Manchester12' (HIBP count 19922)	(400, '{"error":"This passw
 V7.5.1	password change without / with a wrong current password	(400, 401)	PASS
 V7.5.3	$backup with the admin token only	(200, 266240)	FINDING
 V7.5.3	make an account admin with the token only	200	FINDING
-V9.2.3	claims in an access token	['exp', 'gen', 'iat', 'jti', 'role', 'scope', 'userId', 'username']	FINDING
+V9.2.3	claims in an access token	['exp', 'gen', 'iat', 'jti', 'scope', 'sub']	FINDING
 V10.3.1	same claims signed with another secret	401	PASS
 V10.3.2	scope user/Observation.rs: Patient / Observation	(403, 200)	PASS
 V10.3.5	one token from two addresses	(200, 200)	FINDING
@@ -39,11 +39,17 @@ V12.3.2	rest-hook to a self-signed https endpoint	(201, 'active', 'delivered 0',
 V12.3.1	$sync, http peer	(202, 'peer saw 1 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: FormatException: Unexpected end of input (at char')	FINDING
 V12.3.2	$sync, self-signed https peer	(202, 'peer saw 0 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: HandshakeException: Handshake error in client (OS')	PASS
 V10.3.3	accounts on X: count, nora	(17, 17)	NOTE
-V10.3.1	X's admin token at Y (shared secret)	200	FINDING
+V10.3.1	X's admin token at Y (shared secret)	401	PASS
 V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 58 saved, 0 errors, 58 total entri')	NOTE
 V10.3.3	accounts on Y after restore: count, nora, y-nora	(32, None, 17)	NOTE
-V10.3.3	nora's X token at Y: X id 17, Y id None, Y's id 17 is ['y-nora']	200	FINDING
-V10.3.3	cara (restored) X token at Y: X id 16, restored as Y id 32, Y's id 16 is ['y-cara']; GET /admin/users	200	FINDING
+V10.3.3	nora's X token at Y: X id 17, Y id None, Y's id 17 is ['y-nora']	401	NOTE
+V10.3.3	cara (restored; admin on X only after the backup) X token at Y: X id 16, Y id 32, Y's id 16 is ['y-cara']; GET /admin/users	403	NOTE
+V10.3.3	['y-nora'] (Y id [17], holder of nora's X id) deactivated; nora's X token at Y, before / after	(401, 401)	PASS
+V10.3.3	['y-cara'] (Y id [16], holder of cara's X id) deactivated; cara's X token at Y, before / after	(403, 403)	PASS
+V10.3.3	cara deactivated on Y; her X token at Y	401	PASS
 V13.3.2	generated secret file and its mode	[('z/db/.jwt_secret', '0o600')]	PASS
 V13.3.2	store directory and its files	('0o775', [('.jwt_secret', '0o600'), ('fhirant.db', '0o644'), ('fhirant.db-shm', '0o644'), ('fhirant.db-wal', '0o644')])	NOTE
 V13.3.2	X (key in its environment): /proc/<pid>/environ mode	0o400	NOTE
+V9.2.3	W (--base-url) access token: claims, iss, aud	(['aud', 'exp', 'gen', 'iat', 'iss', 'jti', 'scope', 'sub'], 'http://127.0.0.1:18414', 'http://127.0.0.1:18414')	PASS
+V10.3.1	W's own token at W	200	PASS
+V10.3.1	W's claims with another server's iss/aud, shared secret	401	PASS

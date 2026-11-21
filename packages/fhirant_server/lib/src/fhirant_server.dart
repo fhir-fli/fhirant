@@ -88,7 +88,15 @@ class FhirAntServer {
         : (envSecret != null && envSecret.isNotEmpty)
             ? envSecret
             : JwtSecret.generate();
-    _jwtService = JwtService(secret);
+    // The operator's base URL, when one is given here, is the tokens' `iss`
+    // and `aud` (JwtService). The app sets [baseUrl] later, from the
+    // address it shows, which changes with the network: that one is not an
+    // issuer, or every session would end at each change of network.
+    final issuer = baseUrl?.trim();
+    _jwtService = JwtService(
+      secret,
+      issuer: issuer == null || issuer.isEmpty ? null : issuer,
+    );
   }
   final FhirAntDb dbInterface;
   final String exportDir;

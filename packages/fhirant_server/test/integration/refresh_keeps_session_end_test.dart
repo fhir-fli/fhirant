@@ -17,14 +17,14 @@ import 'test_helpers.dart';
 void main() {
   late FhirAntDb db;
   late Handler handler;
-  late int userId;
+  late String accountKey;
 
   setUp(() async {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
     await issueTestToken(db, username: 'nurse', scopes: ['user/*.rs']);
-    userId = (await db.getUserByUsername('nurse'))!.id;
+    accountKey = (await db.getUserByUsername('nurse'))!.accountKey;
   });
 
   tearDown(() => db.close());
@@ -52,9 +52,7 @@ void main() {
   String refreshToken({Duration life = const Duration(days: 7)}) =>
       JwtService(testJwtSecret, refreshTokenLifetime: life)
           .generateRefreshToken(
-        userId: userId,
-        username: 'nurse',
-        role: 'clinician',
+        subject: accountKey,
         scopes: ['user/*.rs'],
       );
 

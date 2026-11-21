@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -357,6 +357,27 @@ class FhirAntDb extends FhirDb {
           if (from < 30) {
             await _createHistoryOrderIndexes();
           }
+          if (from < 31) {
+            // Each account's own random name, which a token carries as
+            // `sub` ([User.accountKey]). Every token from before it names
+            // its account by id only, and is refused: everyone signs in
+            // once more. Guarded, as token_generation is: a fresh store
+            // creates the column.
+            final columns =
+                (await customSelect('PRAGMA table_info(users)').get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            if (!columns.contains('account_key')) {
+              await customStatement(
+                'ALTER TABLE users ADD COLUMN account_key TEXT',
+              );
+            }
+            await customStatement(
+              'UPDATE users SET account_key = $_newAccountKeySql '
+              'WHERE account_key IS NULL',
+            );
+            await _createAccountKeyIndex();
+          }
         },
       );
 
@@ -383,10 +404,23 @@ class FhirAntDb extends FhirDb {
         awaiting_owner_until INTEGER,
         claim_password_hash TEXT,
         claim_salt TEXT,
-        claim_code TEXT
+        claim_code TEXT,
+        account_key TEXT NOT NULL DEFAULT ($_newAccountKeySql)
       )
     ''');
+    await _createAccountKeyIndex();
   }
+
+  /// 128 bits from SQLite's `randomblob`, as 32 hex digits. SQLite seeds its
+  /// generator from the operating system (sqlite.org/c3ref/randomness.html).
+  /// The key needs to be unique, not secret: the token that carries it is
+  /// signed.
+  static const _newAccountKeySql = 'lower(hex(randomblob(16)))';
+
+  Future<void> _createAccountKeyIndex() => customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_key '
+        'ON users (account_key)',
+      );
 
   /// One row per OAuth client_id this server has issued a code to, pinning
   /// the redirect_uri it first authorized with. Trust on first use: fhirant
@@ -1061,12 +1095,15 @@ class FhirAntDb extends FhirDb {
   /// admin (id 1) silently dropped the backup's admin, also id 1
   /// (REVIEW-2026-09-08 row 35). Rows that name a user id in other tables
   /// (authorization codes, export jobs) are transient and are not
-  /// renumbered.
+  /// renumbered. An account comes in with its [User.accountKey], so a token
+  /// this store issued before the backup still finds it. One whose key a
+  /// local account of another username already holds is left out: no code
+  /// changes a username or a key, so only an edited backup has one.
   Future<void> _mergeUsers() async {
     const columns = 'username, password_hash, salt, role, active, '
         'created_at, last_login, scopes, failed_login_count, locked_until, '
         'patient_id, awaiting_owner_until, claim_password_hash, claim_salt, '
-        'claim_code';
+        'claim_code, account_key';
     // New usernames whose id is free keep it.
     await customStatement(
       'INSERT INTO main.users (id, $columns) '
@@ -1074,7 +1111,9 @@ class FhirAntDb extends FhirDb {
       'FROM bk.users b '
       'WHERE NOT EXISTS '
       '(SELECT 1 FROM main.users m WHERE m.username = b.username) '
-      'AND NOT EXISTS (SELECT 1 FROM main.users m WHERE m.id = b.id)',
+      'AND NOT EXISTS (SELECT 1 FROM main.users m WHERE m.id = b.id) '
+      'AND NOT EXISTS '
+      '(SELECT 1 FROM main.users m WHERE m.account_key = b.account_key)',
     );
     // New usernames whose id is taken get the next one.
     await customStatement(
@@ -1082,7 +1121,9 @@ class FhirAntDb extends FhirDb {
       'SELECT ${columns.split(', ').map((c) => 'b.$c').join(', ')} '
       'FROM bk.users b '
       'WHERE NOT EXISTS '
-      '(SELECT 1 FROM main.users m WHERE m.username = b.username)',
+      '(SELECT 1 FROM main.users m WHERE m.username = b.username) '
+      'AND NOT EXISTS '
+      '(SELECT 1 FROM main.users m WHERE m.account_key = b.account_key)',
     );
   }
 
@@ -1851,6 +1892,16 @@ class FhirAntDb extends FhirDb {
     final rows = await customSelect(
       'SELECT * FROM users WHERE username = ?',
       variables: [Variable.withString(username)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return User.fromRow(rows.first);
+  }
+
+  /// The account a token's `sub` names ([User.accountKey]), or null.
+  Future<User?> getUserByAccountKey(String accountKey) async {
+    final rows = await customSelect(
+      'SELECT * FROM users WHERE account_key = ?',
+      variables: [Variable.withString(accountKey)],
     ).get();
     if (rows.isEmpty) return null;
     return User.fromRow(rows.first);

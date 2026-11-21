@@ -55,11 +55,15 @@ void main(List<String> arguments) async {
   // operator who manages the secret; otherwise a strong secret is generated
   // once and persisted next to the database, so an offline, zero-config
   // deployment gets a stable, unguessable secret without contacting anything.
-  // Every server needs its own. Each fhirant server is its own store with
-  // its own account ids, a token names its account by that id alone, and a
-  // server accepts every token signed with its secret: two servers sharing
-  // one took each other's tokens as their own accounts with the same id,
-  // other people (REVIEW-2026-10-17, ASVS V10.3.3, asvs_notprobed.tsv).
+  // Every server needs its own. A token names its account by the account's
+  // random key (JwtService), so two servers sharing a secret take each
+  // other's tokens only for an account restored from one into the other,
+  // with this server's role for it; a logout or revocation on one never
+  // reaches the other. Ids, which restart at 1 in every store, named the
+  // account until 2026-11-21, and a shared secret let one server's tokens
+  // open other people's accounts on the other (REVIEW-2026-10-17, ASVS
+  // V10.3.3, asvs_notprobed.tsv). With --base-url, a token also carries
+  // the URL as iss and aud and the other server's are refused.
   final jwtSecretEnv = Platform.environment['FHIRANT_JWT_SECRET'];
   final jwtSecret = JwtSecret.resolveForServer(
     envValue: jwtSecretEnv,

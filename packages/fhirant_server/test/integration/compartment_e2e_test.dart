@@ -428,6 +428,7 @@ void main() {
           '/Observation',
           authToken: await issueTestToken(
             testDb,
+            username: 'pat-1-app',
             scopes: ['patient/Observation.rs'],
             patientId: 'pat-1',
           ),

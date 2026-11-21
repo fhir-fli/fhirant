@@ -238,7 +238,11 @@ Future<Response> _handleAuthorizationCodeGrant(
   final scopes = SmartScopeEnforcer.resourceScopesOf(granted);
   // The patient context is the account's, never the caller's.
   final patientId = user.patientId;
-  final session = jwtService.issueSession(user, scopes: scopes);
+  final session = jwtService.issueSession(
+    user,
+    scopes: scopes,
+    clientId: authCode.clientId,
+  );
   final accessToken = session.access;
   final refreshToken = session.refresh;
 
@@ -307,21 +311,10 @@ Future<Response> _handleRefreshTokenGrant(
     );
   }
 
-  // Verify the user still exists and is active
-  final userId = payload['userId'] as int?;
-  final username = payload['username'] as String?;
-  if (userId == null || username == null) {
-    return Response(
-      401,
-      body: jsonEncode({
-        'error': 'invalid_grant',
-        'error_description': 'Invalid refresh token payload',
-      }),
-    );
-  }
-
-  final user = await dbInterface.getUserByUsername(username);
-  if (user == null || user.id != userId) {
+  // The account the refresh token names by its key (JwtService). It was
+  // found by username and checked against the token's numeric id.
+  final user = await dbInterface.getUserByAccountKey(payload['sub'] as String);
+  if (user == null) {
     return Response(
       401,
       body: jsonEncode({
@@ -411,6 +404,7 @@ Future<Response> _handleRefreshTokenGrant(
     user,
     scopes: scopes,
     notAfter: oldExpiresAt,
+    clientId: payload['client_id'] as String?,
   );
   final newAccessToken = session.access;
   final newRefreshToken = session.refresh;

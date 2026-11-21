@@ -6,9 +6,13 @@ is a property of the code or the deployment, not of an answer, is
 settled in asvs_walk.py with the file it was read in; this script measures
 what a running server does.
 
-Three compiled CLI servers on this machine: X and Y share one JWT secret
+Four compiled CLI servers on this machine: X and Y share one JWT secret
 (the multi-instance setup bin/server.dart describes), Z is started without
-FHIRANT_JWT_SECRET so it writes its own secret file.
+FHIRANT_JWT_SECRET so it writes its own secret file, and W shares X's
+secret and is started with --base-url (its tokens carry iss and aud).
+Re-run 2026-11-21 after the token change (tokens name the account by
+its key, sub; role from the account): the V10.3.3 verdicts now tell whose
+account a token was taken for by deactivating the other candidate.
 
 Run from packages/fhirant_server:
   python3 -I tool/review_2026-10-17/asvs_notprobed.py <server> <workdir>
@@ -34,7 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import access_grid as g  # noqa: E402
 
 OUT = os.path.join(g.HERE, 'asvs_notprobed.tsv')
-PX, PY, PZ = 18411, 18412, 18413
+PX, PY, PZ, PW = 18411, 18412, 18413, 18414
 HOOK, TLS_HOOK, TLS_PEER = 18490, 18491, 18492
 RECEIVED = []
 N = [0]
@@ -58,7 +62,7 @@ def on(port):
     g.PORT = port
 
 
-def start(port, dbdir, cwd, secret=True):
+def start(port, dbdir, cwd, secret=True, base_url=None):
     env = dict(os.environ)
     env.update({'FHIRANT_ENCRYPTION_KEY': g.KEY,
                 'FHIRANT_ADMIN_USERNAME': g.ROOT[0],
@@ -71,7 +75,8 @@ def start(port, dbdir, cwd, secret=True):
     logf = open(os.path.join(cwd, 'server.log'), 'w')
     p = subprocess.Popen(
         [g.BIN, '--port', str(port), '--db-path', dbdir, '--spec-path',
-         g.SPEC], cwd=cwd, env=env, stdout=logf, stderr=subprocess.STDOUT)
+         g.SPEC] + (['--base-url', base_url] if base_url else []),
+        cwd=cwd, env=env, stdout=logf, stderr=subprocess.STDOUT)
     with open(os.path.join(cwd, 'pid'), 'w') as f:
         f.write(str(p.pid))
     on(port)
@@ -200,6 +205,10 @@ def main():
         procs.append(start(PZ, os.path.join(work, 'z', 'db'),
                            os.path.join(work, 'z'), secret=False))
         run_z(work)
+        procs.append(start(PW, os.path.join(work, 'w', 'db'),
+                           os.path.join(work, 'w'),
+                           base_url='http://127.0.0.1:%d' % PW))
+        run_w()
     finally:
         for p in procs:
             g.stop(p)
@@ -482,31 +491,60 @@ def run_y(backup):
     log('V10.3.3', 'accounts on Y after restore: count, nora, y-nora',
         (len(yusers), yusers.get('nora'), yusers.get('y-nora')), 'NOTE')
     nora_x, nora_y = xusers['nora'], yusers.get('nora')
-    holder = [n for n, i in yusers.items() if i == nora_x]
+    holder = [n for n, i in yusers.items() if i == nora_x and n != 'nora']
     s1, _, _ = g.req('GET', '/Observation', None, nora_tok, ip=ip())
     log('V10.3.3', "nora's X token at Y: X id %s, Y id %s, Y's id %s is %s"
-        % (nora_x, nora_y, nora_x, holder), s1,
-        'FINDING' if s1 == 200 and holder != ['nora'] else 'PASS')
+        % (nora_x, nora_y, nora_x, holder or ['nora']), s1, 'NOTE')
     cara_y = yusers.get('cara')
-    cara_holder = [n for n, i in yusers.items() if i == xusers['cara']]
-    s4, _, b4 = g.req('GET', '/admin/users', None, cara_tok, ip=ip())
-    log('V10.3.3', "cara (restored) X token at Y: X id %s, restored as Y id "
-        "%s, Y's id %s is %s; GET /admin/users" % (
-            xusers['cara'], cara_y, xusers['cara'], cara_holder), s4,
-        'FINDING' if s4 == 200 and cara_holder != ['cara'] else 'PASS')
-    if nora_y is not None and holder != ['nora']:
-        g.req('POST', '/admin/users/%d/deactivate' % nora_y, {}, rooty,
-              ip=ip())
-        s2, _, _ = g.req('GET', '/Observation', None, nora_tok, ip=ip())
-        log('V10.3.3', "nora deactivated on Y; her X token at Y", s2,
-            'FINDING' if s2 == 200 else 'PASS')
-        if holder:
-            g.req('POST', '/admin/users/%d/deactivate' % nora_x, {}, rooty,
+    cara_holder = [n for n, i in yusers.items()
+                   if i == xusers['cara'] and n != 'cara']
+    s4, _, _ = g.req('GET', '/admin/users', None, cara_tok, ip=ip())
+    log('V10.3.3', "cara (restored; admin on X only after the backup) X token at Y: X id %s, Y id %s, "
+        "Y's id %s is %s; GET /admin/users" % (
+            xusers['cara'], cara_y, xusers['cara'], cara_holder or ['cara']),
+        s4, 'NOTE')
+    # Whose account each token was taken for: deactivate the account that
+    # holds the token's X id on Y. A token bound to it now fails; one bound
+    # to its own owner does not.
+    for who, tok, others, path, before in [
+            ('nora', nora_tok, holder, '/Observation', s1),
+            ('cara', cara_tok, cara_holder, '/admin/users', s4)]:
+        for o in others:
+            g.req('POST', '/admin/users/%d/deactivate' % yusers[o], {}, rooty,
                   ip=ip())
-            s3, _, _ = g.req('GET', '/Observation', None, nora_tok, ip=ip())
-            log('V10.3.3', "%s (Y id %s) deactivated; nora's X token at Y"
-                % (holder[0], nora_x), s3,
-                'FINDING' if s3 == 401 else 'NOTE')
+        s5, _, _ = g.req('GET', path, None, tok, ip=ip())
+        log('V10.3.3', "%s (Y id %s, holder of %s's X id) deactivated; %s's "
+            'X token at Y, before / after' % (others, [yusers[o] for o in
+                                                      others], who, who),
+            (before, s5),
+            'FINDING' if before == 200 and s5 == 401 else
+            'PASS' if s5 == before else 'NOTE')
+        if yusers.get(who) is not None:
+            g.req('POST', '/admin/users/%d/deactivate' % yusers[who], {},
+                  rooty, ip=ip())
+            s6, _, _ = g.req('GET', path, None, tok, ip=ip())
+            log('V10.3.3', '%s deactivated on Y; her X token at Y' % who, s6,
+                'PASS' if s6 == 401 else 'FINDING')
+
+
+def run_w():
+    # V9.2.3 / V10.3.1 with --base-url: W shares X's secret.
+    on(PW)
+    rootw, _ = g.login(g.ROOT[0], g.ROOT[1], g.ROOT_IP)
+    claims = g.claims_of(rootw)
+    log('V9.2.3', 'W (--base-url) access token: claims, iss, aud',
+        (sorted(claims), claims.get('iss'), claims.get('aud')),
+        'PASS' if claims.get('aud') == 'http://127.0.0.1:%d' % PW else
+        'FINDING')
+    s, _, _ = g.req('GET', '/Patient', None, rootw, ip=ip())
+    log('V10.3.1', "W's own token at W", s, 'PASS' if s == 200 else 'FAIL')
+    # The same claims with another aud, signed with the shared secret.
+    forged = g.sign({'alg': 'HS256', 'typ': 'at+jwt'},
+                    dict(claims, aud='http://127.0.0.1:%d' % PX,
+                         iss='http://127.0.0.1:%d' % PX), g.SECRET)
+    s, _, _ = g.req('GET', '/Patient', None, forged, ip=ip())
+    log('V10.3.1', "W's claims with another server's iss/aud, shared secret",
+        s, 'PASS' if s == 401 else 'FINDING')
 
 
 def run_z(work):

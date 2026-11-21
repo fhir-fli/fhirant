@@ -72,7 +72,11 @@ void main() {
       testRequest(
         'GET',
         '/Observation?subject=Patient/p1',
-        authToken: await issueTestToken(s.db, scopes: ['user/*.cruds']),
+        authToken: await issueTestToken(
+          s.db,
+          scopes: ['user/*.cruds'],
+          issuer: s.server.baseUrl,
+        ),
       ),
     );
     expect(response.statusCode, 200);
