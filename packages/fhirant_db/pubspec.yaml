@@ -8,14 +8,13 @@ environment:
 
 dependencies:
   drift: ^2.29.0
-  # Direct, not only through fhir_r4_db: saveResourceList is 0.15.2.
+  # unimported: direct, not only through fhir_r4_db, for its version floor:
+  # saveResourceList is 0.15.2.
   fhir_db: ^0.15.4
   fhir_r4: ^0.14.1
   fhir_r4_db: ^0.14.0
-  path: ^1.9.1
   sqlite3: ^3.1.5
 
 dev_dependencies:
-  mocktail: ^1.0.4
   test: ^1.25.8
   very_good_analysis: ^10.0.0
