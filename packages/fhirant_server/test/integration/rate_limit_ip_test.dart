@@ -16,6 +16,7 @@ void main() {
     const maxRequests = 5;
     final server = FhirAntServer(
       db,
+      breachedPasswords: null,
       jwtSecret: 'test-secret',
       maxRequests: maxRequests,
       devMode: true,

@@ -47,6 +47,7 @@ void main() {
 
     final server = FhirAntServer(
       db,
+      breachedPasswords: null,
       jwtSecret: 'test-secret',
       devMode: true,
       exportDir: exportDir.path,

@@ -65,6 +65,7 @@ void main() {
 
     final server = FhirAntServer(
       db,
+      breachedPasswords: null,
       jwtSecret: 'test-secret',
       auditRetention: const Duration(days: 30),
     );
@@ -84,7 +85,8 @@ void main() {
     // old.
     await db.saveResources([event('ancient')]);
     await age('ancient', const Duration(days: 20 * 365));
-    await FhirAntServer(db, jwtSecret: 'test-secret').hourlyCleanup();
+    await FhirAntServer(db, breachedPasswords: null, jwtSecret: 'test-secret')
+        .hourlyCleanup();
     final left = await db.search(resourceType: fhir.R4ResourceType.AuditEvent);
     expect(left, hasLength(1));
   });

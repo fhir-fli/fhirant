@@ -46,7 +46,8 @@ void main() {
   setUp(() async {
     db = FhirAntDb(NativeDatabase.memory());
     await db.initialize();
-    server = FhirAntServer(db, jwtSecret: testJwtSecret);
+    server =
+        FhirAntServer(db, breachedPasswords: null, jwtSecret: testJwtSecret);
     admin = await issueTestToken(
       db,
       username: 'adm',

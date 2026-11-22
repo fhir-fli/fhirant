@@ -36,6 +36,7 @@ void main() {
     await db.initialize();
     final server = FhirAntServer(
       db,
+      breachedPasswords: null,
       jwtSecret: testJwtSecret,
       programDeadline: deadline,
     );

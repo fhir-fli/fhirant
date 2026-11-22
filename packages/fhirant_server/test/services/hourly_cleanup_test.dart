@@ -24,7 +24,8 @@ void main() {
     // The constructor reads `fhirDao` (for the base URL); the mock has none.
     real = FhirAntDb(NativeDatabase.memory());
     when(() => db.fhirDao).thenReturn(real.fhirDao);
-    server = FhirAntServer(db, jwtSecret: 'test-secret');
+    server =
+        FhirAntServer(db, breachedPasswords: null, jwtSecret: 'test-secret');
   });
   tearDown(() => real.close());
 

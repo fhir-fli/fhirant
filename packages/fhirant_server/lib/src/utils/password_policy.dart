@@ -1,3 +1,4 @@
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/common_passwords.g.dart';
 
 /// Password policy based on NIST 800-63B guidelines.
@@ -36,5 +37,24 @@ class PasswordPolicy {
           'predictable password.';
     }
     return null;
+  }
+
+  /// The message for a password listed in a breach.
+  static const breachedMessage = 'This password has appeared in a data '
+      'breach (Have I Been Pwned) and may be tried against any account. '
+      'Please choose another.';
+
+  /// [validate], then, for a password it accepts, [breached]: the check
+  /// every password set at registration or a change goes through (OWASP
+  /// ASVS 5.0.0 V6.2.12). The server passes `hibpBreachLookup`; null
+  /// checks the local rules alone. A lookup with no answer accepts what
+  /// [validate] accepted.
+  static Future<String?> check(
+    String password, {
+    BreachedPasswordLookup? breached,
+  }) async {
+    final local = validate(password);
+    if (local != null || breached == null) return local;
+    return await breached(password) == true ? breachedMessage : null;
   }
 }

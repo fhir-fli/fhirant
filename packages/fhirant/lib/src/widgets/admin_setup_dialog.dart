@@ -1,6 +1,6 @@
 import 'package:fhirant_db/fhirant_db.dart' show FhirAntDb;
 import 'package:fhirant_server/fhirant_server.dart'
-    show AdminProvisioning, AdminSetupStatus;
+    show AdminProvisioning, AdminSetupStatus, hibpBreachLookup;
 import 'package:material_ui/material_ui.dart';
 
 /// Shows the admin-account setup dialog. Returns `true` if an admin account
@@ -57,6 +57,7 @@ class _AdminSetupDialogState extends State<_AdminSetupDialog> {
       widget.db,
       username,
       password,
+      breached: hibpBreachLookup,
     );
     if (!mounted) return;
 

@@ -5,6 +5,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
 import 'package:fhirant_server/src/auth/owner_claim.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -36,8 +37,9 @@ import 'package:shelf/shelf.dart';
 Future<Response> changePasswordHandler(
   Request request,
   FhirAntDb dbInterface,
-  JwtService jwtService,
-) async {
+  JwtService jwtService, {
+  BreachedPasswordLookup? breached,
+}) async {
   try {
     final authUser = request.context['auth_user'] as Map<String, dynamic>?;
     if (authUser == null) {
@@ -53,7 +55,7 @@ Future<Response> changePasswordHandler(
         {'error': 'current_password and new_password are required'},
       );
     }
-    final policyError = PasswordPolicy.validate(next);
+    final policyError = await PasswordPolicy.check(next, breached: breached);
     if (policyError != null) return _json(400, {'error': policyError});
 
     final username = authUser['username'] as String? ?? '';
@@ -169,7 +171,11 @@ Future<Response> resetPasswordHandler(
 /// nothing. The password is hashed either way, so the time taken does not
 /// tell them apart. Rate-limited with the credential endpoints, and
 /// recorded in the audit trail with the name sent.
-Future<Response> claimHandler(Request request, FhirAntDb dbInterface) async {
+Future<Response> claimHandler(
+  Request request,
+  FhirAntDb dbInterface, {
+  BreachedPasswordLookup? breached,
+}) async {
   try {
     final body = await _body(request);
     final username = body?['username'];
@@ -178,7 +184,7 @@ Future<Response> claimHandler(Request request, FhirAntDb dbInterface) async {
       return _json(400, {'error': 'username and new_password are required'});
     }
     final tried = {'attempted_username': username};
-    final policyError = PasswordPolicy.validate(next);
+    final policyError = await PasswordPolicy.check(next, breached: breached);
     if (policyError != null) {
       return _json(400, {'error': policyError}).change(context: tried);
     }

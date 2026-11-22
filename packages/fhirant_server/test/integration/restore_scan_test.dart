@@ -34,6 +34,7 @@ void main() {
   Handler serve(FileScanner? scanner) {
     final server = FhirAntServer(
       target,
+      breachedPasswords: null,
       jwtSecret: testJwtSecret,
       devMode: true,
       fileScanner: scanner,

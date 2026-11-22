@@ -27,7 +27,8 @@ void main() {
   setUp(() async {
     db = FhirAntDb(NativeDatabase.memory());
     await db.initialize();
-    server = FhirAntServer(db, jwtSecret: testJwtSecret);
+    server =
+        FhirAntServer(db, breachedPasswords: null, jwtSecret: testJwtSecret);
     await server.startHttp(0);
     clinician =
         await issueTestToken(db, username: 'clin', scopes: ['user/*.*']);

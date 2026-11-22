@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_server/src/services/disk_space.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:shelf/shelf.dart';
 
@@ -130,7 +131,8 @@ Future<int> createTargetUser(
 }
 
 /// Creates a fresh in-memory DB and full-pipeline handler for integration
-/// tests.
+/// tests. [breachedPasswords] is null unless a test passes one: no test
+/// asks Have I Been Pwned (`every_test_server_stays_offline_test.dart`).
 Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
     createTestServer({
   String? exportDir,
@@ -140,11 +142,13 @@ Future<({FhirAntDb db, Handler handler, FhirAntServer server})>
   int authMaxRequests = 10,
   DiskSpace? diskSpace,
   String? baseUrl,
+  BreachedPasswordLookup? breachedPasswords,
 }) async {
   final db = FhirAntDb(NativeDatabase.memory());
   await db.initialize();
   final server = FhirAntServer(
     db,
+    breachedPasswords: breachedPasswords,
     jwtSecret: testJwtSecret,
     exportDir: exportDir,
     devMode: devMode,

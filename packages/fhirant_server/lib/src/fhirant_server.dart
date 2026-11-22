@@ -21,6 +21,7 @@ import 'package:fhirant_server/src/services/storage_floor.dart';
 import 'package:fhirant_server/src/services/subscription_service.dart';
 import 'package:fhirant_server/src/services/websocket_subscriptions.dart';
 import 'package:fhirant_server/src/sync/sync_job.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/expiring_rate_limit_storage.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
@@ -68,6 +69,7 @@ class FhirAntServer {
     this.auditRetention,
     this.fileScanner,
     this.keepStorageFree = true,
+    this.breachedPasswords = hibpBreachLookup,
     DiskSpace? diskSpace,
   })  : exportDir = exportDir ?? 'data/export',
         _startTime = DateTime.now() {
@@ -183,6 +185,14 @@ class FhirAntServer {
   /// default; the CLI turns it off with --no-storage-floor.
   final bool keepStorageFree;
 
+  /// Checks every password set at registration, a change or a claim
+  /// against a breach corpus (OWASP ASVS 5.0.0 V6.2.12): Have I Been
+  /// Pwned by default, which receives the first 5 hex characters of the
+  /// password's SHA-1 and nothing else (Grey 2026-11-21). With no answer
+  /// the local list alone applies. Null checks the local rules alone
+  /// (tests).
+  final BreachedPasswordLookup? breachedPasswords;
+
   /// The floor [keepStorageFree] keeps; null when it is off.
   late final StorageFloor? storageFloor;
   late final JwtService _jwtService;
@@ -258,6 +268,7 @@ class FhirAntServer {
           _jwtService,
           authenticationEnabled: !devMode,
           bootstrapToken: bootstrapToken,
+          breached: breachedPasswords,
         ),
       )
       ..post(
@@ -292,14 +303,20 @@ class FhirAntServer {
       // handler requires it.
       ..post(
         '/auth/password',
-        (Request req) => changePasswordHandler(req, dbInterface, _jwtService),
+        (Request req) => changePasswordHandler(
+          req,
+          dbInterface,
+          _jwtService,
+          breached: breachedPasswords,
+        ),
       )
       // The owner of an account an administrator created or reset sets
       // their own password (auth/owner_claim.dart). No token: the account
       // has no password that opens it yet.
       ..post(
         '/auth/claim',
-        (Request req) => claimHandler(req, dbInterface),
+        (Request req) =>
+            claimHandler(req, dbInterface, breached: breachedPasswords),
       )
       // Admin routes (protected by auth middleware — not under auth/ prefix)
       ..post('/admin/unlock/<userId>', (Request req, String userId) {

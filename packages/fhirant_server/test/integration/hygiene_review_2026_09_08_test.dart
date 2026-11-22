@@ -608,7 +608,11 @@ void main() {
       final store = FhirAntDb(NativeDatabase.memory());
       await store.initialize();
       addTearDown(store.close);
-      final server = FhirAntServer(store, jwtSecret: testJwtSecret);
+      final server = FhirAntServer(
+        store,
+        breachedPasswords: null,
+        jwtSecret: testJwtSecret,
+      );
       final router = Router()
         ..get('/boom', (Request _) => throw StateError('secret detail'));
       final pipeline = server.createHandler(router);
@@ -624,7 +628,11 @@ void main() {
       final store = FhirAntDb(NativeDatabase.memory());
       await store.initialize();
       addTearDown(store.close);
-      final server = FhirAntServer(store, jwtSecret: testJwtSecret);
+      final server = FhirAntServer(
+        store,
+        breachedPasswords: null,
+        jwtSecret: testJwtSecret,
+      );
       final pipeline = server.createHandler(server.createRouter());
       final token = await issueTestToken(store, role: 'admin');
       final entries = <RequestLogEntry>[];

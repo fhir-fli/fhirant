@@ -496,6 +496,7 @@ void main() {
       addTearDown(rawDb.close);
       final server = FhirAntServer(
         rawDb,
+        breachedPasswords: null,
         jwtSecret: testJwtSecret,
         maxRequests: 5,
       );
@@ -520,6 +521,7 @@ void main() {
       addTearDown(rawDb.close);
       final server = FhirAntServer(
         rawDb,
+        breachedPasswords: null,
         jwtSecret: testJwtSecret,
         maxRequests: 100,
         authMaxRequests: 3,
