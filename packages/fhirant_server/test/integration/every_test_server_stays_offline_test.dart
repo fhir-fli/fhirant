@@ -8,14 +8,17 @@ import 'package:test/test.dart';
 /// and pass or fail with the connection. So every `FhirAntServer(` under
 /// test/ passes `breachedPasswords:` (null, or a stand-in).
 void main() {
-  test('every FhirAntServer( in test/ passes breachedPasswords', () {
+  test(
+      'every FhirAntServer( and DeviceConsole( in test/ passes '
+      'breachedPasswords', () {
     final files = Directory('test')
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'));
     final missing = <String>[];
     var sites = 0;
-    final call = RegExp(r'FhirAntServer\(');
+    // DeviceConsole builds a server too, with the same default.
+    final call = RegExp(r'(FhirAntServer|DeviceConsole)\(');
     for (final f in files) {
       if (f.path.endsWith('every_test_server_stays_offline_test.dart')) {
         continue;

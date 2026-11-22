@@ -5,6 +5,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const _jwtSecretKey = 'fhirant_jwt_secret';
 
+/// The token signing secret, persisted in platform secure storage
+/// (Keystore/Keychain-backed), generated on first use with cryptographic
+/// randomness: a predictable, timestamp-derived secret would let tokens be
+/// forged. The server and the on-device administration share it.
+Future<String> loadJwtSecret() async {
+  const secureStorage = FlutterSecureStorage();
+  var jwtSecret = await secureStorage.read(key: _jwtSecretKey);
+  if (jwtSecret == null || jwtSecret.isEmpty) {
+    jwtSecret = JwtSecret.generate();
+    await secureStorage.write(key: _jwtSecretKey, value: jwtSecret);
+  }
+  return jwtSecret;
+}
+
 class ServerService {
   ServerService(this._dbService);
   final DatabaseService _dbService;
@@ -36,15 +50,7 @@ class ServerService {
   Future<void> start(int port, {bool devMode = false}) async {
     if (_server?.isRunning ?? false) return;
 
-    // Get or generate the JWT secret, persisted in platform secure storage
-    // (Keystore/Keychain-backed). Generated with cryptographic randomness —
-    // a predictable, timestamp-derived secret would let tokens be forged.
-    const secureStorage = FlutterSecureStorage();
-    var jwtSecret = await secureStorage.read(key: _jwtSecretKey);
-    if (jwtSecret == null || jwtSecret.isEmpty) {
-      jwtSecret = JwtSecret.generate();
-      await secureStorage.write(key: _jwtSecretKey, value: jwtSecret);
-    }
+    final jwtSecret = await loadJwtSecret();
 
     final exportDir = await _dbService.getExportDir();
 

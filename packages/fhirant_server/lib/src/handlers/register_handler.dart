@@ -162,9 +162,8 @@ Future<Response> registerHandler(
           400,
           body: jsonEncode({
             'error': "An administrator does not choose a user's password. "
-                'Leave password out: the user sets their own with POST '
-                '/auth/claim, and you approve it with the code they are '
-                'shown.',
+                'Leave password out: the user sets their own, and you '
+                'approve it with the code they are shown.',
           }),
         );
       }

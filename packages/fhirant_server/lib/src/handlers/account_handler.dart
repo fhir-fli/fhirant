@@ -119,8 +119,8 @@ Future<Response> resetPasswordHandler(
   final caller = request.context['auth_user'] as Map<String, dynamic>?;
   if (caller?['userId'] == userId) {
     return _json(409, {
-      'error': 'Change your own password with POST /auth/password; an '
-          'administrator cannot reset its own',
+      'error': 'An administrator cannot reset its own password; change it '
+          'the way any user does, with the current one',
     });
   }
   final raw = await request.readAsString();
@@ -137,8 +137,8 @@ Future<Response> resetPasswordHandler(
     if (body.isNotEmpty) {
       return _json(400, {
         'error': "An administrator does not choose a user's password. Send "
-            'no body: the user sets their own with POST /auth/claim, and you '
-            'approve it with the code they are shown.',
+            'no body: the user sets their own, and you approve it with the '
+            'code they are shown.',
       });
     }
   }
@@ -250,7 +250,7 @@ Future<Response> approveClaimHandler(
       });
     case ClaimApproval.nothingSent:
       return _json(409, {
-        'error': 'The owner has not sent a password yet (POST /auth/claim)',
+        'error': 'The owner has not sent a password yet',
       });
     case ClaimApproval.wrongCode:
       return _json(400, {
