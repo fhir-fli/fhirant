@@ -80,7 +80,9 @@ def start(port, dbdir, cwd, secret=True, base_url=None):
     with open(os.path.join(cwd, 'pid'), 'w') as f:
         f.write(str(p.pid))
     on(port)
-    for _ in range(120):
+    # A fresh store loads the specification first: 2026-11-21 that took
+    # over the 60 s this used to wait (the last file still loading at 57 s).
+    for _ in range(1200):
         try:
             if g.req('GET', '/health', ip=g.ROOT_IP, timeout=2)[0] == 200:
                 return p
@@ -441,8 +443,14 @@ def run_x(work):
             'resourceType': 'Parameters', 'parameter': [
                 {'name': 'peer', 'valueString': peer},
                 {'name': 'token', 'valueString': 'peer-token-probe'}]})
-        time.sleep(4)
-        st, _, sb = r('GET', '/$sync-status')
+        # Read the status once the sync has ended. A fixed 4 s wait read it
+        # while still 202 on a loaded machine (2026-11-21, before the peer
+        # was reached), and logged the http peer as unreached.
+        for _ in range(120):
+            st, _, sb = r('GET', '/$sync-status')
+            if st != 202:
+                break
+            time.sleep(0.5)
         port = HOOK if label == 'http peer' else TLS_PEER
         got = [x for x in RECEIVED if x[0] == port]
         log('V12.3.1' if label == 'http peer' else 'V12.3.2',
@@ -450,10 +458,6 @@ def run_x(work):
                                 st, sb[:160]),
             ('FINDING' if got else 'NOTE') if label == 'http peer'
             else ('PASS' if not got else 'FAIL'))
-        for _ in range(20):
-            if r('GET', '/$sync-status')[0] != 202:
-                break
-            time.sleep(1)
     return backup
 
 

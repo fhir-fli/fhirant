@@ -37,7 +37,12 @@ void main() {
   setUp(() async {
     db = FhirAntDb(NativeDatabase.memory());
     await db.initialize();
-    final server = FhirAntServer(db, jwtSecret: testJwtSecret, devMode: true);
+    final server = FhirAntServer(
+      db,
+      breachedPasswords: null,
+      jwtSecret: testJwtSecret,
+      devMode: true,
+    );
     handler = server.createHandler(server.createRouter());
   });
 

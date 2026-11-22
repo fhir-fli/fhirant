@@ -636,7 +636,12 @@ void main() {
 
   group('row 13: Experimentation mode does not hand out the admin account', () {
     test('registration is refused while authentication is off', () async {
-      final dev = FhirAntServer(db, jwtSecret: testJwtSecret, devMode: true);
+      final dev = FhirAntServer(
+        db,
+        breachedPasswords: null,
+        jwtSecret: testJwtSecret,
+        devMode: true,
+      );
       final devHandler = dev.createHandler(dev.createRouter());
       final r = await devHandler(
         testRequest(

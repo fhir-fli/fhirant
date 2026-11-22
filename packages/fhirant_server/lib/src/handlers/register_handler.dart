@@ -5,6 +5,7 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/auth/owner_claim.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
@@ -42,6 +43,7 @@ Future<Response> registerHandler(
   JwtService jwtService, {
   bool authenticationEnabled = true,
   String? bootstrapToken,
+  BreachedPasswordLookup? breached,
 }) async {
   if (!authenticationEnabled) {
     return Response(
@@ -133,7 +135,8 @@ Future<Response> registerHandler(
           body: jsonEncode({'error': 'Password must be a string'}),
         );
       }
-      final policyError = PasswordPolicy.validate(chosen);
+      final policyError =
+          await PasswordPolicy.check(chosen, breached: breached);
       if (policyError != null) {
         return Response(400, body: jsonEncode({'error': policyError}));
       }

@@ -1,3 +1,4 @@
+export 'breached_passwords.dart';
 export 'http_headers.dart';
 export 'json_patch.dart';
 export 'jwt_service.dart';

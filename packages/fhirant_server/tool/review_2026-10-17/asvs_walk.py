@@ -176,11 +176,13 @@ OVERRIDES = {
     'V3.7.5': ('DOC', 'L3: no document says what happens on a browser '
                'without the expected features; the only browser page is '
                'the authorize form'),
-    'V6.2.12': ('FINDING', 'checked against 30,407 common passwords from '
-                'SecLists (common_passwords.g.dart), not a breach corpus: of '
-                '13 candidates of policy length found in Have I Been Pwned, '
-                '11 refused, Summer2024!! (936) and Welcome2024! (6,590) '
-                'accepted (asvs_notprobed)'),
+    'V6.2.12': ('PASS', 'every password set is checked against Have I Been '
+                'Pwned (range API, 5 hex characters of the SHA-1 sent) after '
+                'the 30,407 common passwords (utils/breached_passwords.dart, '
+                '2026-11-21): all 13 candidates found there refused, '
+                'Summer2024!! (936) and Welcome2024! (6,590) as breached '
+                '(asvs_notprobed). Offline (the phone) the local list alone '
+                'applies'),
     'V7.5.1': ('PASS', 'changing one\'s own password needs the current one: '
                '400 without it, 401 when wrong (asvs_notprobed); there is '
                'no email, phone, MFA or recovery attribute'),

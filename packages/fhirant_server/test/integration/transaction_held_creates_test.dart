@@ -68,7 +68,8 @@ void main() {
     count = _Count();
     db = FhirAntDb(NativeDatabase.memory().interceptWith(count));
     await db.initialize();
-    final server = FhirAntServer(db, jwtSecret: testJwtSecret);
+    final server =
+        FhirAntServer(db, breachedPasswords: null, jwtSecret: testJwtSecret);
     handler = server.createHandler(server.createRouter());
     admin = await issueTestToken(db, username: 'adm', scopes: ['system/*.*']);
   });

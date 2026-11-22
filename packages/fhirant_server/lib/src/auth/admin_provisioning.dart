@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fhirant_db/fhirant_db.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/password_hasher.dart';
 import 'package:fhirant_server/src/utils/password_policy.dart';
 import 'package:fhirant_server/src/utils/smart_scopes.dart';
@@ -56,12 +57,15 @@ class AdminProvisioning {
   ///
   /// Fails with [AdminSetupStatus.alreadyExists] if any user already exists
   /// (bootstrap is one-time), or [AdminSetupStatus.invalid] if the username is
-  /// too short or the password fails [PasswordPolicy].
+  /// too short or the password fails [PasswordPolicy], [breached] included
+  /// (the server and the app pass `hibpBreachLookup`; null checks the local
+  /// rules alone).
   static Future<AdminSetupResult> createInitialAdmin(
     FhirAntDb db,
     String username,
-    String password,
-  ) async {
+    String password, {
+    BreachedPasswordLookup? breached,
+  }) async {
     final trimmed = username.trim();
     if (trimmed.length < minUsernameLength) {
       return const AdminSetupResult(
@@ -70,7 +74,8 @@ class AdminProvisioning {
       );
     }
 
-    final policyError = PasswordPolicy.validate(password);
+    final policyError =
+        await PasswordPolicy.check(password, breached: breached);
     if (policyError != null) {
       return AdminSetupResult(AdminSetupStatus.invalid, message: policyError);
     }

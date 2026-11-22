@@ -7,6 +7,7 @@ import 'package:fhirant_server/src/auth/bootstrap.dart';
 import 'package:fhirant_server/src/cli/options.dart';
 import 'package:fhirant_server/src/fhirant_server.dart';
 import 'package:fhirant_server/src/services/file_scanner.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 import 'package:fhirant_server/src/utils/spec_loader.dart';
 
@@ -135,7 +136,11 @@ void main(List<String> arguments) async {
   // neither applies.
   String? bootstrapToken;
   if (!devMode) {
-    switch (await seedAdminFromEnvironment(db, Platform.environment)) {
+    switch (await seedAdminFromEnvironment(
+      db,
+      Platform.environment,
+      breached: hibpBreachLookup,
+    )) {
       case SeedCreated(username: final u):
         logger.logInfo('Administrator "$u" created from the environment');
       case SeedAlreadyProvisioned():

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/src/auth/admin_provisioning.dart';
+import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_secret.dart';
 
 /// The first administrator of a headless server (REVIEW-2026-09-17 A15).
@@ -78,11 +79,13 @@ class SeedRefused extends SeedOutcome {
 
 /// Creates the administrator named by [adminUsernameEnv] and
 /// [adminPasswordEnv] in [env], if both are set and the store has no active
-/// administrator.
+/// administrator. [breached] as in `AdminProvisioning.createInitialAdmin`;
+/// the CLI passes `hibpBreachLookup`.
 Future<SeedOutcome> seedAdminFromEnvironment(
   FhirAntDb db,
-  Map<String, String> env,
-) async {
+  Map<String, String> env, {
+  BreachedPasswordLookup? breached,
+}) async {
   final username = env[adminUsernameEnv];
   final password = env[adminPasswordEnv];
   final hasUser = username != null && username.isNotEmpty;
@@ -97,6 +100,7 @@ Future<SeedOutcome> seedAdminFromEnvironment(
     db,
     username,
     password,
+    breached: breached,
   );
   return switch (result.status) {
     AdminSetupStatus.created => SeedCreated(username.trim()),

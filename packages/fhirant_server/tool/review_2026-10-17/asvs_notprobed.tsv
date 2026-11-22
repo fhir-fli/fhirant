@@ -22,12 +22,12 @@ V6.2.12	claim with '1qaz2wsx3edc' (HIBP count 1902590)	(400, '{"error":"This pas
 V6.2.12	claim with 'zaq12wsxcde3' (HIBP count 82115)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
 V6.2.12	claim with 'Tr0ub4dor&3x' (HIBP count 0)	(202, 'accepted')	PASS
 V6.2.12	claim with 'correcthorsebatterystaple' (HIBP count 4173)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
-V6.2.12	claim with 'Summer2024!!' (HIBP count 936)	(202, 'accepted')	FINDING
-V6.2.12	claim with 'Welcome2024!' (HIBP count 6590)	(202, 'accepted')	FINDING
+V6.2.12	claim with 'Summer2024!!' (HIBP count 936)	(400, '{"error":"This password has appeared in a data breach (Have I Been Pwn')	PASS
+V6.2.12	claim with 'Welcome2024!' (HIBP count 6590)	(400, '{"error":"This password has appeared in a data breach (Have I Been Pwn')	PASS
 V6.2.12	claim with 'Liverpool123' (HIBP count 79751)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
 V6.2.12	claim with 'Manchester12' (HIBP count 19922)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
 V7.5.1	password change without / with a wrong current password	(400, 401)	PASS
-V7.5.3	$backup with the admin token only	(200, 266240)	FINDING
+V7.5.3	$backup with the admin token only	(200, 258048)	FINDING
 V7.5.3	make an account admin with the token only	200	FINDING
 V9.2.3	claims in an access token	['exp', 'gen', 'iat', 'jti', 'scope', 'sub']	FINDING
 V10.3.1	same claims signed with another secret	401	PASS
@@ -40,7 +40,7 @@ V12.3.1	$sync, http peer	(202, 'peer saw 1 requests', 500, '{"resourceType":"Ope
 V12.3.2	$sync, self-signed https peer	(202, 'peer saw 0 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: HandshakeException: Handshake error in client (OS')	PASS
 V10.3.3	accounts on X: count, nora	(17, 17)	NOTE
 V10.3.1	X's admin token at Y (shared secret)	401	PASS
-V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 58 saved, 0 errors, 58 total entri')	NOTE
+V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 56 saved, 0 errors, 56 total entri')	NOTE
 V10.3.3	accounts on Y after restore: count, nora, y-nora	(32, None, 17)	NOTE
 V10.3.3	nora's X token at Y: X id 17, Y id None, Y's id 17 is ['y-nora']	401	NOTE
 V10.3.3	cara (restored; admin on X only after the backup) X token at Y: X id 16, Y id 32, Y's id 16 is ['y-cara']; GET /admin/users	403	NOTE
