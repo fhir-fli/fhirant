@@ -5,7 +5,8 @@ V1.1.2	client_id <b>"x&' on the authorize page	(200, 'escaped once', '', '')	PAS
 V3.7.1	authorize page: plugin or script tags	none	PASS
 V3.7.3	credentials posted: answer	(302, 'http://app.example/cb')	FINDING
 V3.7.2	client-a, a second redirect_uri	(400, None)	PASS
-V3.7.2	a new client_id: any redirect host is pinned and used	(302, 'http://evil.example/cb')	FINDING
+V3.7.2	an unregistered client_id: refused, no redirect	(400, '')	PASS
+V10.4.1	an unregistered client_id: refused, no redirect	(400, '')	PASS
 V10.7.2	authorize page content	{'client named': True, 'scopes as raw strings': True, 'lifetime': False, 'separate consent step': False}	FINDING
 V10.7.1	JSON authorize: code issued with no page shown	(200, True)	FINDING
 V7.5.2/V10.7.3	GET /auth/sessions	(400, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"invalid","diagnostics":"Invalid resource type: a')	FINDING
@@ -27,7 +28,7 @@ V6.2.12	claim with 'Welcome2024!' (HIBP count 6590)	(400, '{"error":"This passwo
 V6.2.12	claim with 'Liverpool123' (HIBP count 79751)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
 V6.2.12	claim with 'Manchester12' (HIBP count 19922)	(400, '{"error":"This password is too common. Please choose a less predictabl')	PASS
 V7.5.1	password change without / with a wrong current password	(400, 401)	PASS
-V7.5.3	$backup with the admin token only	(200, 258048)	FINDING
+V7.5.3	$backup with the admin token only	(200, 274432)	FINDING
 V7.5.3	make an account admin with the token only	200	FINDING
 V9.2.3	claims in an access token	['exp', 'gen', 'iat', 'jti', 'scope', 'sub']	FINDING
 V10.3.1	same claims signed with another secret	401	PASS
@@ -40,7 +41,7 @@ V12.3.1	$sync, http peer	(202, 'peer saw 1 requests', 500, '{"resourceType":"Ope
 V12.3.2	$sync, self-signed https peer	(202, 'peer saw 0 requests', 500, '{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","diagnostics":"Sync failed: HandshakeException: Handshake error in client (OS')	PASS
 V10.3.3	accounts on X: count, nora	(17, 17)	NOTE
 V10.3.1	X's admin token at Y (shared secret)	401	PASS
-V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 56 saved, 0 errors, 56 total entri')	NOTE
+V10.3.3	$restore of X into Y	(200, b'{"resourceType":"OperationOutcome","issue":[{"severity":"information","code":"informational","diagnostics":"Restore complete: 60 saved, 0 errors, 60 total entri')	NOTE
 V10.3.3	accounts on Y after restore: count, nora, y-nora	(32, None, 17)	NOTE
 V10.3.3	nora's X token at Y: X id 17, Y id None, Y's id 17 is ['y-nora']	401	NOTE
 V10.3.3	cara (restored; admin on X only after the backup) X token at Y: X id 16, Y id 32, Y's id 16 is ['y-cara']; GET /admin/users	403	NOTE

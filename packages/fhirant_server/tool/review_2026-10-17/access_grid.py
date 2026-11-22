@@ -235,6 +235,16 @@ def make_account(admin, body, password, ip, admin_ip=ROOT_IP):
     return cs, cb, s, uid
 
 
+SEED_APPS = {
+    'grid': ['http://127.0.0.1:9/cb'],
+    'app1': ['https://app.example/cb'],
+    'app2': ['https://two.example/cb'],
+    'app3': ['https://three.example/cb'],
+    'app4': ['https://four.example/cb'],
+    'xss': ['https://xss.example/cb'],
+}
+
+
 def seed(work):
     d = os.path.join(work, 'seed')
     shutil.rmtree(d, ignore_errors=True)
@@ -260,6 +270,17 @@ def seed(work):
         s, _, b = req('GET', '/admin/users', token=root, ip=ROOT_IP)
         for row in json.loads(b)['users'] if b.startswith('{') else json.loads(b):
             ids[row['username']] = row['id']
+        # Since 2026-11-22 an app signs no one in until an administrator
+        # registers it with its addresses (OWASP ASVS 5.0.0 V10.4.1). These
+        # are the apps this grid, smart_probes.py and asvs_probes.py sign
+        # in through; `other-client` and smart_probes' bad-address
+        # clients stay unregistered on purpose.
+        for cid, uris in SEED_APPS.items():
+            s, _, b = req('PUT', '/admin/clients/' +
+                          urllib.parse.quote(cid, safe=''),
+                          {'name': cid, 'redirect_uris': uris}, root,
+                          ip=ROOT_IP)
+            assert s in (200, 201), (cid, s, b[:300])
         for r in fixtures():
             s, _, b = req('PUT', '/%s/%s' % (r['resourceType'], r['id']), r,
                           root, ip=ROOT_IP)

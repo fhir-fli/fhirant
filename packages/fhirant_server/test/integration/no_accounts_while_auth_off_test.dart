@@ -31,8 +31,8 @@ import 'test_helpers.dart';
 void main() {
   const passphrase = 'restore-probe-passphrase';
 
-  /// A backup file holding Patient/p1, an admin `planted` and a pinned
-  /// OAuth client, as an authenticated server's `$backup` writes it.
+  /// A backup file holding Patient/p1, an admin `planted` and a registered
+  /// app, as an authenticated server's `$backup` writes it.
   Future<List<int>> plantedBackup() async {
     final source = await createTestServer();
     addTearDown(source.db.close);
@@ -45,7 +45,11 @@ void main() {
       salt: 's',
       role: 'admin',
     );
-    await source.db.registerOAuthClient('app', 'https://evil.example/cb');
+    await source.db.putOAuthClient(
+      'app',
+      name: 'Planted',
+      redirectUris: ['https://evil.example/cb'],
+    );
     final dir = await Directory.systemTemp.createTemp('planted-');
     addTearDown(() => dir.delete(recursive: true));
     final file = await BackupService.createFile(
@@ -91,7 +95,11 @@ void main() {
     );
     expect(await target.db.getUserByUsername('planted'), isNull);
     expect(await AdminProvisioning.hasActiveAdmin(target.db), isFalse);
-    expect(await target.db.getOAuthClientRedirect('app'), isNull);
+    expect(await target.db.getOAuthClient('app'), isNull);
+    final addresses = await target.db
+        .customSelect('SELECT count(*) AS c FROM oauth_client_redirects')
+        .getSingle();
+    expect(addresses.read<int>('c'), 0);
   });
 
   test('control, authentication on: an admin restore merges accounts',
@@ -110,8 +118,9 @@ void main() {
     expect(r.statusCode, 200, reason: await r.readAsString());
     expect(await target.db.getUserByUsername('planted'), isNotNull);
     expect(
-      await target.db.getOAuthClientRedirect('app'),
-      'https://evil.example/cb',
+      (await target.db.getOAuthClient('app'))?.redirectUris,
+      ['https://evil.example/cb'],
+      reason: 'the app and its addresses both travel in a backup',
     );
   });
 

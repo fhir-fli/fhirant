@@ -225,6 +225,18 @@ def run_x(work):
     def r(m, path, b=None, tok=None, h=None):
         return g.req(m, path, b, root if tok is None else tok, h, ip=ip())
 
+    # Since 2026-11-22 an administrator registers each app and its
+    # addresses before it signs anyone in (V10.4.1). `client-new` is left
+    # unregistered: it is the case M1 was about.
+    for cid, uri in [('<b>"x&\'', 'http://127.0.0.1/cb'),
+                     ('client-a', 'http://app.example/cb'),
+                     ('client-b', 'http://127.0.0.1/cb'),
+                     ('client-c', 'http://127.0.0.1/cb')]:
+        s, _, b = r('PUT', '/admin/clients/' +
+                    urllib.parse.quote(cid, safe=''),
+                    {'name': cid, 'redirect_uris': [uri]})
+        assert s in (200, 201), (cid, s, b[:300])
+
     # V1.1.1: a search value is percent-decoded once. `family=%2541` is the
     # string "%41"; decoded twice it would be "A".
     for fam in ['%41', 'A']:
@@ -286,9 +298,13 @@ def run_x(work):
                   urllib.parse.urlencode(form).encode(),
                   {'Content-Type': 'application/x-www-form-urlencoded'})
     loc = h.get('Location') or h.get('location') or ''
-    log('V3.7.2', 'a new client_id: any redirect host is pinned and used',
+    log('V3.7.2', 'an unregistered client_id: refused, no redirect',
         (s, loc.split('?')[0]),
-        'FINDING' if loc.startswith('http://evil.example') else 'PASS')
+        'FINDING' if loc.startswith('http://evil.example') else
+        'PASS' if s == 400 and not loc else 'FAIL')
+    log('V10.4.1', 'an unregistered client_id: refused, no redirect',
+        (s, loc.split('?')[0]),
+        'PASS' if s == 400 and not loc else 'FINDING')
 
     # V10.7.1 / V10.7.2: what the user is shown before a code is issued.
     q = authorize_query('client-b', 'http://127.0.0.1/cb',

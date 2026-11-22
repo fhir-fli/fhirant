@@ -13,8 +13,11 @@ import 'test_helpers.dart';
 /// (e.g., disallow javascript: or data:)"; the code goes out in a Location
 /// built from this value. REVIEW-2026-10-17 finding 19: on a client's first
 /// use, `javascript:alert(1)`, a URI with a fragment and `not a url` were
-/// pinned and sent the code. Pinning on first use is settled; this is the
-/// form check before it. Custom schemes stay allowed (RFC 8252 native apps).
+/// pinned and sent the code. Since 2026-11-22 an app's addresses are
+/// registered by an administrator, and the route refuses these too
+/// (`admin_clients_test.dart`); this is the check at sign-in, for an
+/// address a store already holds. Custom schemes stay allowed (RFC 8252
+/// native apps).
 const password = 'a-long-test-password-9';
 
 void main() {
@@ -48,7 +51,7 @@ void main() {
         'code_challenge_method': 'S256',
       };
 
-  /// The form (GET), then the sign-in that pins (POST); both answers.
+  /// The form (GET), then the sign-in (POST); both answers.
   Future<(Response, Response)> authorize(String client, String redirect) async {
     final form = await handler(
       testRequest(
@@ -87,13 +90,13 @@ void main() {
     '/relative/cb',
     'https:///no-host',
   ]) {
-    test('refused, not pinned: $bad', () async {
+    test('refused even when the store holds it: $bad', () async {
       final client = 'bad-${n++}';
+      await db.putOAuthClient(client, name: 'Old', redirectUris: [bad]);
       final (form, signIn) = await authorize(client, bad);
       expect(form.statusCode, 400, reason: await form.readAsString());
       expect(signIn.statusCode, 400, reason: await signIn.readAsString());
       expect(signIn.headers['location'], isNull, reason: 'no code sent');
-      expect(await db.getOAuthClientRedirect(client), isNull);
     });
   }
 
@@ -104,11 +107,11 @@ void main() {
   ]) {
     test('allowed: $good', () async {
       final client = 'good-${n++}';
+      await db.putOAuthClient(client, name: 'App', redirectUris: [good]);
       final (form, signIn) = await authorize(client, good);
       expect(form.statusCode, 200, reason: await form.readAsString());
       expect(signIn.statusCode, 302, reason: await signIn.readAsString());
       expect(signIn.headers['location'], startsWith(good));
-      expect(await db.getOAuthClientRedirect(client), good);
     });
   }
 }

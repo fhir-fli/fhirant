@@ -30,6 +30,14 @@ void main() {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
+    await registerTestApp(
+      db,
+      redirectUris: [
+        'http://localhost/cb',
+        'https://app.example/cb',
+        'http://127.0.0.1:4000/cb',
+      ],
+    );
   });
 
   tearDown(() async {
@@ -228,7 +236,7 @@ void main() {
     });
   });
 
-  group('finding 10: PKCE and the redirect pin', () {
+  group('finding 10: PKCE and the registered redirect', () {
     test('an authorize request without S256 PKCE is refused', () async {
       await registerAdmin();
       for (final pkce in [
@@ -258,8 +266,7 @@ void main() {
       }
     });
 
-    test('a client_id keeps the redirect_uri it first authorized with',
-        () async {
+    test('a redirect_uri the app did not register is refused', () async {
       await registerAdmin();
       await oauth('admin1', 'user/*.rs', redirect: 'https://app.example/cb');
       final other = await handler(

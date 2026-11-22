@@ -5,6 +5,8 @@ import 'package:fhirant_logging/fhirant_logging.dart';
 import 'package:fhirant_server/src/auth/account_rules.dart';
 import 'package:fhirant_server/src/auth/credential_check.dart';
 import 'package:fhirant_server/src/auth/owner_claim.dart';
+import 'package:fhirant_server/src/handlers/authorize_handler.dart'
+    show redirectFormProblem;
 import 'package:fhirant_server/src/utils/breached_passwords.dart';
 import 'package:fhirant_server/src/utils/jwt_service.dart';
 import 'package:fhirant_server/src/utils/no_store.dart';
@@ -420,3 +422,103 @@ Future<Map<String, dynamic>?> _body(Request request) async {
 
 Response _json(int status, Map<String, dynamic> body) =>
     Response(status, body: jsonEncode(body));
+
+// ── Registered apps (OAuth clients) ──────────────────────────────────────
+
+/// `GET /admin/clients`: every app registered to sign people in, with its
+/// addresses.
+Future<Response> listClientsHandler(Request request, FhirAntDb db) async {
+  final refused = _requireAdmin(request);
+  if (refused != null) return refused;
+  return Response.ok(
+    jsonEncode({
+      'apps': [for (final c in await db.getOAuthClients()) _publicClient(c)],
+    }),
+  );
+}
+
+/// `PUT /admin/clients/<clientId>`: registers an app, or changes one. The
+/// body is `name` (for people) and `redirect_uris`, every address the app
+/// may be sent back to after sign-in; the list replaces the one held.
+///
+/// OWASP ASVS 5.0.0 V10.4.1 (0x19-V10-OAuth-and-OIDC.md at tag v5.0.0,
+/// read 2026-11-22, verbatim): "Verify that the authorization server
+/// validates redirect URIs based on a client-specific allowlist of
+/// pre-registered URIs using exact string comparison." Each address must
+/// be one `/auth/authorize` would accept (`redirectFormProblem`). The
+/// client_id is RFC 6749 Appendix A.1 (rfc6749.txt, read 2026-11-22):
+/// `client-id = *VSCHAR`, `VSCHAR = %x20-7E`; here 1 to 200 of them.
+Future<Response> putClientHandler(
+  Request request,
+  String clientId,
+  FhirAntDb db,
+) async {
+  final refused = _requireAdmin(request);
+  if (refused != null) return refused;
+  final idError = clientIdError(clientId);
+  if (idError != null) return _json(400, {'error': idError});
+  final body = await _body(request);
+  if (body == null) {
+    return _json(400, {'error': 'The body must be a JSON object'});
+  }
+  final name = body['name'];
+  if (name is! String || name.trim().isEmpty) {
+    return _json(400, {'error': 'name is required'});
+  }
+  final raw = body['redirect_uris'];
+  if (raw is! List || raw.isEmpty || raw.any((u) => u is! String)) {
+    return _json(400, {
+      'error': 'redirect_uris is required: at least one address',
+    });
+  }
+  final uris = raw.cast<String>().map((u) => u.trim()).toList();
+  for (final u in uris) {
+    final problem = redirectFormProblem(u);
+    if (problem != null) return _json(400, {'error': '$problem: $u'});
+  }
+  final existed = await db.isOAuthClientRegistered(clientId);
+  await db.putOAuthClient(clientId, name: name.trim(), redirectUris: uris);
+  FhirantLogging().logInfo(
+    'App ${existed ? 'changed' : 'registered'} by admin',
+  );
+  return _json(
+    existed ? 200 : 201,
+    _publicClient((await db.getOAuthClient(clientId))!),
+  );
+}
+
+/// `DELETE /admin/clients/<clientId>`: removes an app. Its addresses and
+/// unused authorization codes go, and its sessions are refused from then
+/// on (`tokenAppRemoved`).
+Future<Response> deleteClientHandler(
+  Request request,
+  String clientId,
+  FhirAntDb db,
+) async {
+  final refused = _requireAdmin(request);
+  if (refused != null) return refused;
+  if (!await db.isOAuthClientRegistered(clientId)) {
+    return _json(404, {'error': 'No app is registered as "$clientId"'});
+  }
+  await db.deleteOAuthClient(clientId);
+  FhirantLogging().logInfo('App removed by admin');
+  return Response(204);
+}
+
+/// Why [clientId] cannot be a client_id, or null.
+String? clientIdError(String clientId) {
+  if (clientId.isEmpty || clientId.length > 200) {
+    return 'client_id must be 1 to 200 characters';
+  }
+  if (clientId.codeUnits.any((c) => c < 0x20 || c > 0x7E)) {
+    return 'client_id may hold only printable ASCII (RFC 6749 Appendix A.1)';
+  }
+  return null;
+}
+
+Map<String, dynamic> _publicClient(OAuthClient c) => {
+      'client_id': c.clientId,
+      'name': c.name,
+      'registered': c.registered.toIso8601String(),
+      'redirect_uris': c.redirectUris,
+    };

@@ -44,11 +44,18 @@ MockUser activeUser(
   return mockUser;
 }
 
+/// An app registered with [redirect] as its one address.
+OAuthClient registered(String redirect) => OAuthClient(
+      clientId: 'my-app',
+      name: 'My app',
+      registered: DateTime.utc(2026, 11, 22),
+      redirectUris: [redirect],
+    );
+
 /// The stubs every successful authorize needs from the store.
 void stubIssue(MockFhirAntDb mockDb) {
-  when(() => mockDb.getOAuthClientRedirect(any()))
-      .thenAnswer((_) async => null);
-  when(() => mockDb.registerOAuthClient(any(), any())).thenAnswer((_) async {});
+  when(() => mockDb.getOAuthClient(any()))
+      .thenAnswer((_) async => registered('http://app/cb'));
   when(() => mockDb.updateLastLogin(any())).thenAnswer((_) async {});
   when(
     () => mockDb.createAuthorizationCode(
@@ -70,8 +77,8 @@ void main() {
 
     setUp(() {
       mockDb = MockFhirAntDb();
-      when(() => mockDb.getOAuthClientRedirect(any()))
-          .thenAnswer((_) async => null);
+      when(() => mockDb.getOAuthClient(any()))
+          .thenAnswer((_) async => registered('http://app/cb'));
     });
 
     test('returns 400 when client_id missing', () async {
@@ -102,8 +109,8 @@ void main() {
     test(
         'redirects a registered client with error for unsupported '
         'response_type', () async {
-      when(() => mockDb.getOAuthClientRedirect('my-app'))
-          .thenAnswer((_) async => 'http://app/cb');
+      when(() => mockDb.getOAuthClient('my-app'))
+          .thenAnswer((_) async => registered('http://app/cb'));
       final request = Request(
         'GET',
         Uri.parse(
@@ -122,7 +129,7 @@ void main() {
         '(RFC 6749 4.1.2.1)', () async {
       // REVIEW-2026-09-08 row 15: this used to 302 to any redirect_uri a
       // new client_id named, an open redirect.
-      when(() => mockDb.getOAuthClientRedirect('new-app'))
+      when(() => mockDb.getOAuthClient('new-app'))
           .thenAnswer((_) async => null);
       final request = Request(
         'GET',
@@ -137,10 +144,32 @@ void main() {
     });
 
     test(
+        'an app nobody registered gets a page saying so, no sign-in form '
+        'and no redirect (ASVS 5.0.0 V10.4.1)', () async {
+      // REVIEW-2026-10-17 M1: a new client_id used to be pinned to whatever
+      // address its first sign-in named, and got a code.
+      when(() => mockDb.getOAuthClient('new-app'))
+          .thenAnswer((_) async => null);
+      final request = Request(
+        'GET',
+        Uri.parse(
+          'http://localhost:8080/auth/authorize?response_type=code&client_id=new-app&redirect_uri=http://evil.example/cb&scope=user/*.*$pkceQuery&state=xyz&aud=http%3A%2F%2Flocalhost%3A8080',
+        ),
+      );
+
+      final response = await authorizeGetHandler(request, mockDb);
+      expect(response.statusCode, 400);
+      expect(response.headers['location'], isNull);
+      final page = await response.readAsString();
+      expect(page, contains('is not registered on this server'));
+      expect(page, isNot(contains('type="password"')));
+    });
+
+    test(
         'redirects a registered client with invalid_request when PKCE is '
         'missing', () async {
-      when(() => mockDb.getOAuthClientRedirect('my-app'))
-          .thenAnswer((_) async => 'http://app/cb');
+      when(() => mockDb.getOAuthClient('my-app'))
+          .thenAnswer((_) async => registered('http://app/cb'));
       final request = Request(
         'GET',
         Uri.parse(
@@ -156,10 +185,10 @@ void main() {
     });
 
     test(
-        'refuses, without redirecting, a redirect_uri other than the pinned '
-        'one', () async {
-      when(() => mockDb.getOAuthClientRedirect('my-app'))
-          .thenAnswer((_) async => 'http://app/cb');
+        'refuses, without redirecting, a redirect_uri other than the '
+        'registered one', () async {
+      when(() => mockDb.getOAuthClient('my-app'))
+          .thenAnswer((_) async => registered('http://app/cb'));
       final request = Request(
         'GET',
         Uri.parse(
@@ -404,8 +433,6 @@ void main() {
           expiresAt: any(named: 'expiresAt'),
         ),
       ).called(1);
-      verify(() => mockDb.registerOAuthClient('my-app', 'http://app/cb'))
-          .called(1);
     });
 
     test('the scope stored is the request intersected with the account',

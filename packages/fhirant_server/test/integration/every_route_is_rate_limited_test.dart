@@ -44,6 +44,7 @@ void main() {
       .replaceAll('<compartmentId>', 'p1')
       .replaceAll('<groupId>', 'g1')
       .replaceAll('<userId>', '2')
+      .replaceAll('<clientId>', 'app')
       .replaceAll('<jobId>', 'j1')
       .replaceAll('<fileName>', 'f.ndjson')
       .replaceAll('<vid>', '1')
@@ -72,8 +73,9 @@ void main() {
     // 2026-11-09: `/auth/claim` and `/admin/users/<userId>/approve`
     // (auth/owner_claim.dart), counted from the source. 93 since
     // 2026-11-19: `POST /$sync` and `GET /$sync-status`, two more
-    // operations.
-    expect(routes, hasLength(93));
+    // operations. 96 since 2026-11-22: `GET /admin/clients`, `PUT` and
+    // `DELETE /admin/clients/<clientId>` (registered apps).
+    expect(routes, hasLength(96));
     expect(
       routes.where((r) => r.path.contains(r'$')),
       hasLength(53),

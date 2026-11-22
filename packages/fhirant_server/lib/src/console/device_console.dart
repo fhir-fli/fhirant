@@ -258,6 +258,49 @@ class DeviceConsole {
   }
 
   /// Writes what the calls queued for the audit trail.
+  /// Every registered app (`GET /admin/clients`).
+  Future<ConsoleResult<List<RegisteredApp>>> apps(DeviceSession session) async {
+    final r = await send('GET', '/admin/clients', token: session.token);
+    if (r.status != 200) return ConsoleResult.failed(r);
+    return ConsoleResult.ok(
+      (r.json['apps'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(RegisteredApp.fromJson)
+          .toList(),
+    );
+  }
+
+  /// Registers the app [clientId], or changes it: its [name] and every
+  /// address it may be sent back to (`PUT /admin/clients/<clientId>`).
+  Future<ConsoleResult<void>> putApp(
+    DeviceSession session,
+    String clientId, {
+    required String name,
+    required List<String> redirectUris,
+  }) =>
+      _done(
+        send(
+          'PUT',
+          '/admin/clients/${Uri.encodeComponent(clientId)}',
+          token: session.token,
+          body: {'name': name, 'redirect_uris': redirectUris},
+        ),
+      );
+
+  /// Removes the app [clientId]; its sessions end
+  /// (`DELETE /admin/clients/<clientId>`).
+  Future<ConsoleResult<void>> removeApp(
+    DeviceSession session,
+    String clientId,
+  ) =>
+      _done(
+        send(
+          'DELETE',
+          '/admin/clients/${Uri.encodeComponent(clientId)}',
+          token: session.token,
+        ),
+      );
+
   Future<void> close() => _server.auditQueue.drain();
 
   static Future<ConsoleResult<void>> _done(Future<ConsoleReply> reply) async {
@@ -367,4 +410,26 @@ class Account {
   /// Waiting for its owner, and the wait has not run out.
   bool get awaitingOwner =>
       awaitingOwnerUntil != null && awaitingOwnerUntil!.isAfter(DateTime.now());
+}
+
+/// One row of `GET /admin/clients`: an app allowed to sign people in.
+class RegisteredApp {
+  const RegisteredApp({
+    required this.clientId,
+    required this.name,
+    required this.registered,
+    required this.redirectUris,
+  });
+
+  factory RegisteredApp.fromJson(Map<String, dynamic> j) => RegisteredApp(
+        clientId: j['client_id'] as String,
+        name: j['name'] as String? ?? '',
+        registered: DateTime.parse(j['registered'] as String),
+        redirectUris: (j['redirect_uris'] as List? ?? const []).cast<String>(),
+      );
+
+  final String clientId;
+  final String name;
+  final DateTime registered;
+  final List<String> redirectUris;
 }

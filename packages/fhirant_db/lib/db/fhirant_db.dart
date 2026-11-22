@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -378,6 +378,36 @@ class FhirAntDb extends FhirDb {
             );
             await _createAccountKeyIndex();
           }
+          if (from < 32) {
+            // An app is registered by an administrator, with every address
+            // it may be sent back to (OWASP ASVS 5.0.0 V10.4.1: "a
+            // client-specific allowlist of pre-registered URIs"); a
+            // client_id is no longer pinned on its first sign-in. The pins
+            // taken so far become registrations with that one address.
+            // Guarded: a store created between 16 and 32 by this code
+            // already has the new shape.
+            await _createOAuthClientsTable();
+            final columns =
+                (await customSelect('PRAGMA table_info(oauth_clients)').get())
+                    .map((c) => c.read<String>('name'))
+                    .toSet();
+            if (columns.contains('redirect_uri')) {
+              await customStatement(
+                'INSERT OR IGNORE INTO oauth_client_redirects '
+                '(client_id, redirect_uri) '
+                'SELECT client_id, redirect_uri FROM oauth_clients',
+              );
+              await customStatement(
+                'ALTER TABLE oauth_clients DROP COLUMN redirect_uri',
+              );
+            }
+            if (!columns.contains('name')) {
+              await customStatement(
+                'ALTER TABLE oauth_clients ADD COLUMN name TEXT NOT NULL '
+                "DEFAULT ''",
+              );
+            }
+          }
         },
       );
 
@@ -422,16 +452,26 @@ class FhirAntDb extends FhirDb {
         'ON users (account_key)',
       );
 
-  /// One row per OAuth client_id this server has issued a code to, pinning
-  /// the redirect_uri it first authorized with. Trust on first use: fhirant
-  /// has no dynamic client registration, and without a pin a crafted
-  /// authorize link could send a real user's authorization code to any URL.
+  /// One row per app an administrator registered (`oauth_clients`: its
+  /// client_id, a name for people, when it was registered), and one per
+  /// address it may be sent back to after sign-in
+  /// (`oauth_client_redirects`). fhirant has no dynamic client
+  /// registration: an app not here gets no authorization code (OWASP ASVS
+  /// 5.0.0 V10.4.1, V3.7.2). Until schema 32 a client_id was pinned to the
+  /// first address it signed in with, whatever that was.
   Future<void> _createOAuthClientsTable() async {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS oauth_clients (
         client_id TEXT NOT NULL PRIMARY KEY,
+        first_seen INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        name TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS oauth_client_redirects (
+        client_id TEXT NOT NULL,
         redirect_uri TEXT NOT NULL,
-        first_seen INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+        PRIMARY KEY (client_id, redirect_uri)
       )
     ''');
   }
@@ -674,6 +714,7 @@ class FhirAntDb extends FhirDb {
   static const serverStateTables = {
     'users',
     'oauth_clients',
+    'oauth_client_redirects',
     'export_jobs',
     'authorization_codes',
     'spec_loads',
@@ -2202,37 +2243,102 @@ class FhirAntDb extends FhirDb {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // OAuth client redirect pins
+  // Registered OAuth clients (apps)
   // ──────────────────────────────────────────────────────────────────────────
 
-  /// The redirect_uri pinned for [clientId], or null when the client has
-  /// never been issued a code.
-  Future<String?> getOAuthClientRedirect(String clientId) async {
+  /// Every registered app, by client_id.
+  Future<List<OAuthClient>> getOAuthClients() async {
     final rows = await customSelect(
-      'SELECT redirect_uri FROM oauth_clients WHERE client_id = ?',
+      'SELECT client_id, name, first_seen FROM oauth_clients '
+      'ORDER BY client_id',
+    ).get();
+    final redirects = await customSelect(
+      'SELECT client_id, redirect_uri FROM oauth_client_redirects '
+      'ORDER BY client_id, redirect_uri',
+    ).get();
+    final byClient = <String, List<String>>{};
+    for (final r in redirects) {
+      byClient
+          .putIfAbsent(r.read<String>('client_id'), () => [])
+          .add(r.read<String>('redirect_uri'));
+    }
+    return [
+      for (final r in rows)
+        OAuthClient(
+          clientId: r.read<String>('client_id'),
+          name: r.read<String>('name'),
+          registered: DateTime.fromMillisecondsSinceEpoch(
+            r.read<int>('first_seen') * 1000,
+            isUtc: true,
+          ),
+          redirectUris: byClient[r.read<String>('client_id')] ?? const [],
+        ),
+    ];
+  }
+
+  /// The app registered as [clientId], or null.
+  Future<OAuthClient?> getOAuthClient(String clientId) async {
+    for (final c in await getOAuthClients()) {
+      if (c.clientId == clientId) return c;
+    }
+    return null;
+  }
+
+  /// Whether [clientId] is a registered app: one indexed read, for every
+  /// request a session of that app makes.
+  Future<bool> isOAuthClientRegistered(String clientId) async {
+    final rows = await customSelect(
+      'SELECT 1 FROM oauth_clients WHERE client_id = ?',
       variables: [Variable.withString(clientId)],
     ).get();
-    if (rows.isEmpty) return null;
-    return rows.first.read<String>('redirect_uri');
+    return rows.isNotEmpty;
   }
 
-  /// Pins [redirectUri] for [clientId]; a second call for the same client is
-  /// ignored, the first pin stands.
-  Future<void> registerOAuthClient(String clientId, String redirectUri) async {
-    await customStatement(
-      'INSERT OR IGNORE INTO oauth_clients (client_id, redirect_uri) '
-      'VALUES (?, ?)',
-      [clientId, redirectUri],
-    );
+  /// Registers [clientId], or changes it: its name and the whole list of
+  /// addresses it may be sent back to, replaced in one transaction.
+  Future<void> putOAuthClient(
+    String clientId, {
+    required String name,
+    required List<String> redirectUris,
+  }) async {
+    await transaction(() async {
+      await customStatement(
+        'INSERT INTO oauth_clients (client_id, name) VALUES (?, ?) '
+        'ON CONFLICT(client_id) DO UPDATE SET name = excluded.name',
+        [clientId, name],
+      );
+      await customStatement(
+        'DELETE FROM oauth_client_redirects WHERE client_id = ?',
+        [clientId],
+      );
+      for (final uri in redirectUris.toSet()) {
+        await customStatement(
+          'INSERT INTO oauth_client_redirects (client_id, redirect_uri) '
+          'VALUES (?, ?)',
+          [clientId, uri],
+        );
+      }
+    });
   }
 
-  /// Removes the pin for [clientId] (an administrator re-registering a
-  /// client whose redirect changed).
+  /// Removes the app [clientId], its addresses, and the authorization codes
+  /// it holds. Its sessions carry its client_id, and fhirant_server refuses
+  /// a session whose app is not registered.
   Future<void> deleteOAuthClient(String clientId) async {
-    await customStatement(
-      'DELETE FROM oauth_clients WHERE client_id = ?',
-      [clientId],
-    );
+    await transaction(() async {
+      await customStatement(
+        'DELETE FROM authorization_codes WHERE client_id = ?',
+        [clientId],
+      );
+      await customStatement(
+        'DELETE FROM oauth_client_redirects WHERE client_id = ?',
+        [clientId],
+      );
+      await customStatement(
+        'DELETE FROM oauth_clients WHERE client_id = ?',
+        [clientId],
+      );
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────────

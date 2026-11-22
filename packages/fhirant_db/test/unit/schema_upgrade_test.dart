@@ -134,11 +134,57 @@ void main() {
     expect((await second.getUserById(id))!.patientId, 'pat-1');
     expect((await second.getUserByUsername('before'))!.patientId, isNull);
 
-    await second.registerOAuthClient('app', 'http://app/cb');
-    await second.registerOAuthClient('app', 'http://other/cb');
-    expect(await second.getOAuthClientRedirect('app'), 'http://app/cb');
+    await second.putOAuthClient(
+      'app',
+      name: 'App',
+      redirectUris: ['http://app/cb'],
+    );
+    expect((await second.getOAuthClient('app'))!.redirectUris, [
+      'http://app/cb',
+    ]);
     await second.deleteOAuthClient('app');
-    expect(await second.getOAuthClientRedirect('app'), isNull);
+    expect(await second.getOAuthClient('app'), isNull);
+    await second.close();
+  });
+
+  test(
+      'opening a schema-31 database turns each pinned client into a '
+      'registered app with its one address', () async {
+    final file = File('${dir.path}/fhirant.sqlite');
+    final first = FhirAntDb(NativeDatabase(file));
+    await first.customSelect('PRAGMA user_version').getSingle();
+    // The schema-31 shape: one pinned redirect per client.
+    await first.customStatement('DROP TABLE oauth_client_redirects');
+    await first.customStatement('DROP TABLE oauth_clients');
+    await first.customStatement('''
+      CREATE TABLE oauth_clients (
+        client_id TEXT NOT NULL PRIMARY KEY,
+        redirect_uri TEXT NOT NULL,
+        first_seen INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      )
+    ''');
+    await first.customStatement(
+      'INSERT INTO oauth_clients (client_id, redirect_uri, first_seen) '
+      "VALUES ('scarab', 'http://127.0.0.1:4000/cb', 1763000000)",
+    );
+    await first.customStatement('PRAGMA user_version = 31');
+    await first.close();
+
+    final second = FhirAntDb(NativeDatabase(file));
+    final apps = await second.getOAuthClients();
+    expect(apps.map((a) => a.clientId), ['scarab']);
+    expect(apps.single.redirectUris, ['http://127.0.0.1:4000/cb']);
+    expect(apps.single.name, '');
+    expect(
+      apps.single.registered,
+      DateTime.fromMillisecondsSinceEpoch(1763000000000, isUtc: true),
+    );
+    final columns =
+        (await second.customSelect('PRAGMA table_info(oauth_clients)').get())
+            .map((c) => c.read<String>('name'))
+            .toList();
+    // A fresh store's column order: a backup's rows are copied by position.
+    expect(columns, ['client_id', 'first_seen', 'name']);
     await second.close();
   });
 

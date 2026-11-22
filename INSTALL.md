@@ -65,6 +65,19 @@ The same card has an **Experimentation / Secure** switch:
   switch prompts you to create an admin account, and only takes effect once one
   exists.
 
+In Secure mode the dashboard has an **Administration** card. Sign in there as
+an administrator to manage accounts and apps:
+
+- **Accounts**: create one, then its owner taps *I have a new account* on the
+  same screen, sets their own password and shows you a code to approve.
+- **Apps**: an app (a SMART on FHIR client such as an EHR) cannot sign anyone
+  in until you register it here, with its client id and every return address
+  (redirect URI) its settings list. An app that is not registered gets an
+  error page saying so. Removing an app signs out everyone signed in through
+  it.
+
+The section signs you out when you leave the app or after an hour unused.
+
 On Android the server keeps running when you background the app (there's a
 persistent notification). Stopping the server or force-quitting the app stops it.
 

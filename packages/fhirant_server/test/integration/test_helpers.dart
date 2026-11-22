@@ -218,3 +218,13 @@ Future<Map<String, dynamic>> registerByAdmin(
   if (signedIn != 200) throw StateError('login: $signedIn $session');
   return {...reply, ...session};
 }
+
+/// Registers the app [clientId] with [redirectUris], as an administrator
+/// does before its first sign-in (OWASP ASVS 5.0.0 V10.4.1): an app not
+/// registered gets no authorization code.
+Future<void> registerTestApp(
+  FhirAntDb db, {
+  String clientId = 'app',
+  List<String> redirectUris = const ['http://localhost/cb'],
+}) =>
+    db.putOAuthClient(clientId, name: 'Test app', redirectUris: redirectUris);

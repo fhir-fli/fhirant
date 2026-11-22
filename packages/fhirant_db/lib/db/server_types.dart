@@ -246,3 +246,28 @@ enum ClaimApproval {
   /// The code did not match; the password the owner sent was dropped.
   wrongCode,
 }
+
+/// An app registered to sign people in through `/auth/authorize`
+/// (`oauth_clients`, `oauth_client_redirects`; schema 32).
+class OAuthClient {
+  const OAuthClient({
+    required this.clientId,
+    required this.name,
+    required this.registered,
+    required this.redirectUris,
+  });
+
+  /// The client_id the app sends.
+  final String clientId;
+
+  /// A name for people; may be empty for a registration carried from
+  /// before schema 32.
+  final String name;
+
+  /// When it was registered (for one carried from before schema 32: when
+  /// its client_id was first seen).
+  final DateTime registered;
+
+  /// Every address it may be sent back to after sign-in.
+  final List<String> redirectUris;
+}

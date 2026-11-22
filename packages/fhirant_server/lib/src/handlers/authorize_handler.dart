@@ -38,11 +38,12 @@ const _uuid = Uuid();
 ///   grant ([SmartScopeEnforcer.grantScopes]), never the request verbatim;
 /// - credentials go through [checkCredentials], so failures here count
 ///   toward the same lockout as `/auth/login`;
-/// - `redirect_uri` is pinned per `client_id` on first use, and a later
-///   request for the same client with a different redirect is refused
-///   without redirecting (RFC 6749 §3.1.2.4 forbids redirecting to an
-///   invalid redirect_uri). Loopback redirects may vary their port
-///   (RFC 8252 §7.3).
+/// - the `client_id` must be an app an administrator registered, and the
+///   `redirect_uri` one of the addresses registered for it (OWASP ASVS
+///   5.0.0 V10.4.1); anything else is refused on a page, without
+///   redirecting (RFC 6749 §3.1.2.4 forbids redirecting to an invalid
+///   redirect_uri). Loopback redirects may vary their port (RFC 8252
+///   §7.3).
 
 /// Handle GET /auth/authorize — return HTML login form.
 Future<Response> authorizeGetHandler(
@@ -89,11 +90,11 @@ Future<Response> authorizeGetHandler(
 
   // The checks that need no credentials run before the form is shown, so a
   // person is not asked for a password on a request that cannot succeed.
-  final pinned = await _redirectPinProblem(dbInterface, clientId, redirectUri);
-  if (pinned != null) {
+  final refused = await _clientProblem(dbInterface, clientId, redirectUri);
+  if (refused != null) {
     return Response(
       400,
-      body: _errorPage(pinned),
+      body: _errorPage(refused),
       headers: htmlPageHeaders,
     );
   }
@@ -392,9 +393,9 @@ Future<_Outcome> _authorize(
   required String username,
   required String password,
 }) async {
-  final pinned = await _redirectPinProblem(db, clientId, redirectUri);
-  if (pinned != null) {
-    return _Invalid('invalid_request', pinned, redirectable: false);
+  final refused = await _clientProblem(db, clientId, redirectUri);
+  if (refused != null) {
+    return _Invalid('invalid_request', refused, redirectable: false);
   }
   final pkce = _pkceProblem(codeChallenge, codeChallengeMethod);
   if (pkce != null) return _Invalid('invalid_request', pkce);
@@ -428,11 +429,6 @@ Future<_Outcome> _authorize(
       "None of the requested scopes is within this account's grant",
     );
   }
-
-  // First use of this client_id: pin its redirect_uri. Done only after the
-  // credentials passed, so an unauthenticated caller cannot squat a client
-  // id by naming it first.
-  await db.registerOAuthClient(clientId, redirectUri);
 
   final code = _uuid.v4();
   await db.createAuthorizationCode(
@@ -477,11 +473,11 @@ Future<Response> _errorToClient(
       clientId.isNotEmpty &&
       redirectUri != null &&
       redirectUri.isNotEmpty) {
-    final pinned = await db.getOAuthClientRedirect(clientId);
-    // A store may hold a redirect pinned before its form was checked.
-    if (pinned != null &&
-        _sameRedirect(pinned, redirectUri) &&
-        _redirectFormProblem(redirectUri) == null) {
+    final app = await db.getOAuthClient(clientId);
+    // A store may hold an address registered before its form was checked.
+    if (app != null &&
+        app.redirectUris.any((r) => _sameRedirect(r, redirectUri)) &&
+        redirectFormProblem(redirectUri) == null) {
       return _errorRedirect(redirectUri, state, error, description);
     }
   }
@@ -530,20 +526,35 @@ String? _pkceProblem(String codeChallenge, String codeChallengeMethod) {
   return null;
 }
 
-/// Why [redirectUri] is refused for [clientId], or null when it is the pinned
-/// one, an equivalent loopback address, or the client is new.
-Future<String?> _redirectPinProblem(
+/// Why [clientId] and [redirectUri] are refused, or null when the app is
+/// registered and the address is one of its own (or an equivalent loopback
+/// address).
+///
+/// OWASP ASVS 5.0.0 V10.4.1 (L1): "Verify that the authorization server
+/// validates redirect URIs based on a client-specific allowlist of
+/// pre-registered URIs using exact string comparison." V3.7.2 asks the
+/// same of any redirect. Until 2026-11-22 an unknown client_id was pinned
+/// to whatever address its first sign-in named (REVIEW-2026-10-17 M1:
+/// `http://evil.example/cb` got a code).
+Future<String?> _clientProblem(
   FhirAntDb db,
   String clientId,
   String redirectUri,
 ) async {
-  final form = _redirectFormProblem(redirectUri);
+  final form = redirectFormProblem(redirectUri);
   if (form != null) return form;
-  final pinned = await db.getOAuthClientRedirect(clientId);
-  if (pinned == null || _sameRedirect(pinned, redirectUri)) return null;
-  return 'redirect_uri does not match the one registered for this '
-      'client_id';
+  final app = await db.getOAuthClient(clientId);
+  if (app == null) return unregisteredAppMessage(clientId);
+  if (app.redirectUris.any((r) => _sameRedirect(r, redirectUri))) return null;
+  return 'redirect_uri is not one of the addresses registered for this app';
 }
+
+/// What a person is shown when an app nobody registered asks them to sign
+/// in.
+String unregisteredAppMessage(String clientId) =>
+    'The app "$clientId" is not registered on this server. An '
+    'administrator registers it in the FHIR ANT app, under '
+    'Administration, Apps.';
 
 /// Why [redirectUri] cannot be a redirection endpoint, or null.
 ///
@@ -556,7 +567,7 @@ Future<String?> _redirectPinProblem(
 /// used to be pinned whatever it was, `javascript:alert(1)` included
 /// (REVIEW-2026-10-17 finding 19). Other schemes stay allowed: a native
 /// app's private-use scheme is RFC 8252's own example.
-String? _redirectFormProblem(String redirectUri) {
+String? redirectFormProblem(String redirectUri) {
   final uri = Uri.tryParse(redirectUri);
   if (uri == null || !uri.hasScheme || redirectUri.contains(' ')) {
     return 'redirect_uri must be an absolute URI';
@@ -577,9 +588,9 @@ String? _redirectFormProblem(String redirectUri) {
 /// "the authorization server MUST allow any port to be specified at the
 /// time of the request for loopback IP redirect URIs" (quoted from the RFC
 /// as read 2026-09-07).
-bool _sameRedirect(String pinned, String offered) {
-  if (pinned == offered) return true;
-  final a = Uri.tryParse(pinned);
+bool _sameRedirect(String registered, String offered) {
+  if (registered == offered) return true;
+  final a = Uri.tryParse(registered);
   final b = Uri.tryParse(offered);
   if (a == null || b == null) return false;
   const loopback = {'127.0.0.1', 'localhost', '::1', '[::1]'};

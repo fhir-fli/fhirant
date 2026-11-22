@@ -300,12 +300,23 @@ final _Coding _restType = _coding(
 /// The `admin/` routes. A role change is 110136 "Security Roles Changed"
 /// ("Security roles have been changed"); a password reset, approving a
 /// claim, unlocking, activating, deactivating or setting scopes change one
-/// user's security attributes (110137). Listing the accounts is a query.
+/// user's security attributes (110137). Registering, changing or removing
+/// an app (`admin/clients/<id>`) is 110129 "Security Configuration": it
+/// decides who may sign people in, and no user's attributes change.
+/// Listing accounts or apps is a query. (DICOM codes from R4B
+/// valuesets.json, read 2026-11-22.)
 ({_Coding type, _Coding? subtype, String action}) _adminEvent(
   String method,
   List<String> segments,
 ) {
   if (method == 'GET') return _query;
+  if (segments.length >= 2 && segments[1] == 'clients') {
+    return (
+      type: _securityAlert,
+      subtype: _coding(_dcm, '110129', 'Security Configuration'),
+      action: 'E',
+    );
+  }
   if (segments.length == 4 && segments[3] == 'role') {
     return (
       type: _securityAlert,

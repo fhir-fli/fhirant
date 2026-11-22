@@ -138,7 +138,8 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
                 revoked ? null : await _accountOf(payload, dbInterface);
             if (account != null &&
                 account.active &&
-                !tokenPredatesAccount(payload, account)) {
+                !tokenPredatesAccount(payload, account) &&
+                !await tokenAppRemoved(payload, dbInterface)) {
               final authUser = _authUser(
                 payload,
                 account,
@@ -201,6 +202,12 @@ Middleware authMiddleware(JwtService jwtService, FhirAntDb dbInterface) {
       if (tokenPredatesAccount(payload, account)) {
         return _withAgent(
           unauthorized('Token predates a change to the account'),
+          known,
+        );
+      }
+      if (await tokenAppRemoved(payload, dbInterface)) {
+        return _withAgent(
+          unauthorized('The app this session belongs to is not registered'),
           known,
         );
       }

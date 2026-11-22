@@ -63,8 +63,10 @@ StorageNeed storageNeedOf(String method, String path) {
     case 'OPTIONS':
       return last == r'$export' ? StorageNeed.export : StorageNeed.none;
     case 'DELETE':
-      // Cancelling an export deletes its files.
-      return path.startsWith(r'$export-poll-status/')
+      // Cancelling an export deletes its files; removing an app deletes
+      // rows of the server's own and records nothing.
+      return path.startsWith(r'$export-poll-status/') ||
+              path.startsWith('admin/')
           ? StorageNeed.none
           : StorageNeed.record;
   }

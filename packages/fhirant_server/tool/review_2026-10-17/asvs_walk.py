@@ -96,9 +96,9 @@ SECTIONS = {
     'V10.1': ('N/A', 'client-side requirements'),
     'V10.2': ('N/A', 'client-side requirements'),
     'V10.3': ('NOTPROBED', 'no aud in the token; one resource server'),
-    'V10.4': ('FINDING', 'M1 redirect pinned on first use without '
-              'validation; R1 refresh no absolute cap; code single-use + '
-              'revoke, PKCE S256, 5 min code (PASS)'),
+    'V10.4': ('FINDING', 'R1 refresh no absolute cap; code single-use + '
+              'revoke, PKCE S256, 5 min code (PASS); M1 (redirect pinned on '
+              'first use) fixed 2026-11-22, V10.4.1'),
     'V10.5': ('N/A', 'OIDC client requirements'),
     'V10.6': ('N/A', 'not an OpenID Provider (openid scope passes through, '
               'no id_token)'),
@@ -163,10 +163,10 @@ OVERRIDES = {
                '(V1.2.4), JSON by jsonEncode'),
     'V3.7.1': ('PASS', 'the authorize page has no object, embed, applet or '
                'script (asvs_notprobed)'),
-    'V3.7.2': ('FINDING', 'M1: a second redirect_uri for a known client is '
-               '400 with no redirect (PASS), but a new client_id pins any '
-               'host on first use: http://evil.example/cb got the code '
-               '(asvs_notprobed)'),
+    'V3.7.2': ('PASS', 'fixed 2026-11-22 (M1): an app signs in only when '
+               'an administrator registered it, and only to its registered '
+               'addresses; an unregistered client_id and a second '
+               'redirect_uri are both 400 with no redirect (asvs_notprobed)'),
     'V3.7.3': ('FINDING', 'L3: posting credentials answers 302 straight to '
                "the client's redirect_uri, with no notice of the host or "
                'way to cancel (asvs_notprobed)'),
@@ -273,6 +273,12 @@ OVERRIDES = {
     'V6.2.4': ('FINDING', 'P1: 20 common passwords, not 3000'),
     'V7.3.1': ('FINDING', 'no inactivity timeout'),
     'V10.4.8': ('FINDING', 'R1: each rotation grants a fresh 7 days'),
+    'V10.4.1': ('PASS', 'fixed 2026-11-22 (M1): redirect_uri checked '
+                'against the addresses an administrator registered for the '
+                'app (/admin/clients, the phone\'s Administration, Apps); '
+                'exact match, a loopback port free (RFC 8252 §7.3); an '
+                'unregistered app is 400 with no redirect (asvs_notprobed, '
+                'admin_clients_test)'),
     'V9.2.1': ('PASS', 'fixed 2026-11-10: a token without exp is refused '
                '(jwt_service_test; asvs_probes "no exp" 401)'),
     # Measured after the review, 2026-10-21 (REVIEW-2026-10-17, "The

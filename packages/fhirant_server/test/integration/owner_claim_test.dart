@@ -41,6 +41,7 @@ void main() {
     final server = await createTestServer(exportDir: exportDir.path);
     db = server.db;
     handler = server.handler;
+    await registerTestApp(db);
     adminToken = await issueTestToken(
       db,
       username: 'admin-one',

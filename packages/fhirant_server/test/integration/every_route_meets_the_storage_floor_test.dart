@@ -47,6 +47,9 @@ const _expected = <String, StorageNeed>{
   'POST /admin/users/<userId>/activate': StorageNeed.none,
   'PUT /admin/users/<userId>/role': StorageNeed.none,
   'PUT /admin/users/<userId>/scopes': StorageNeed.none,
+  'GET /admin/clients': StorageNeed.none,
+  'PUT /admin/clients/<clientId>': StorageNeed.none,
+  'DELETE /admin/clients/<clientId>': StorageNeed.none,
   'GET /': StorageNeed.none,
   'GET /favicon.ico': StorageNeed.none,
   'GET /health': StorageNeed.none,
@@ -148,6 +151,7 @@ void main() {
       .replaceAll('<compartmentId>', 'p1')
       .replaceAll('<groupId>', 'g1')
       .replaceAll('<userId>', '1')
+      .replaceAll('<clientId>', 'app')
       .replaceAll('<jobId>', 'j1')
       .replaceAll('<fileName>', 'f.ndjson')
       .replaceAll('<vid>', '1')
@@ -161,8 +165,9 @@ void main() {
       };
       // 91 registrations, counted from the source on 2026-11-09 (89 on
       // 2026-11-02, then `/auth/claim` and `/admin/users/<userId>/approve`);
-      // 93 on 2026-11-19 with `POST /$sync` and `GET /$sync-status`.
-      expect(registered.length, 93);
+      // 93 on 2026-11-19 with `POST /$sync` and `GET /$sync-status`; 96 on
+      // 2026-11-22 with the three `/admin/clients` routes.
+      expect(registered.length, 96);
       expect(
         registered.difference(_expected.keys.toSet()),
         isEmpty,

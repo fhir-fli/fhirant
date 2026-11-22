@@ -182,6 +182,74 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets(
+      'register an app, change its addresses, remove it '
+      '(ASVS 5.0.0 V10.4.1)', (tester) async {
+    await pumpScreen(tester);
+    await signIn(tester, adminName, adminPassword);
+    await until(tester, find.byKey(const Key('tab-apps')));
+    await tester.tap(find.byKey(const Key('tab-apps')));
+    await until(tester, find.byKey(const Key('no-apps')));
+    // The tab slides in; both tabs are built while it moves.
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('new-app')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('app-client-id')), 'scarab');
+    await tester.enterText(find.byKey(const Key('app-name')), 'Scarab');
+    await tester.enterText(
+      find.byKey(const Key('app-addresses')),
+      'https://scarab.example/cb\nhttp://127.0.0.1/cb',
+    );
+    await tester.tap(find.byKey(const Key('app-ok')));
+    await until(tester, find.byKey(const Key('app-scarab')));
+    var app = await tester.runAsync(() => db.getOAuthClient('scarab'));
+    expect(app!.redirectUris, [
+      'http://127.0.0.1/cb',
+      'https://scarab.example/cb',
+    ]);
+
+    // A refused address is said, and nothing changes.
+    await tester.tap(find.byKey(const Key('app-scarab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('app-change')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('app-addresses')),
+      'javascript:alert(1)',
+    );
+    await tester.tap(find.byKey(const Key('app-ok')));
+    await until(tester, find.textContaining('is not allowed'));
+    app = await tester.runAsync(() => db.getOAuthClient('scarab'));
+    expect(app!.redirectUris, hasLength(2));
+
+    await tester.tap(find.byKey(const Key('app-scarab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('app-change')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('app-addresses')),
+      'https://scarab.example/cb',
+    );
+    await tester.tap(find.byKey(const Key('app-ok')));
+    await until(tester, find.text('scarab changed.'));
+    app = await tester.runAsync(() => db.getOAuthClient('scarab'));
+    expect(app!.redirectUris, ['https://scarab.example/cb']);
+
+    await tester.tap(find.byKey(const Key('app-scarab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('app-remove')));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove Scarab?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirm-ok')));
+    await until(tester, find.byKey(const Key('no-apps')));
+    expect(
+      await tester.runAsync(() => db.getOAuthClient('scarab')),
+      isNull,
+    );
+    await finish(tester);
+  });
+
   testWidgets('leaving the app signs out', (tester) async {
     await pumpScreen(tester);
     await signIn(tester, adminName, adminPassword);
