@@ -16,9 +16,9 @@ must use `flutter test`; the pure Dart ones must use `dart test`.
 
 | Package | Tests | Files | Command |
 |---------|-------|-------|---------|
-| fhirant_server | 1,800 | 200 | `cd packages/fhirant_server && dart test` (recounted 2026-11-21) |
+| fhirant_server | 1,809 | 201 | `cd packages/fhirant_server && dart test` (recounted 2026-11-22) |
 | fhirant_db | 152 | 9 | `cd packages/fhirant_db && dart test` (recounted 2026-11-21) |
-| fhirant | 38 | 5 | `cd packages/fhirant && flutter test` (recounted 2026-11-19) |
+| fhirant | 45 | 6 | `cd packages/fhirant && flutter test` (recounted 2026-11-22) |
 | fhirant_secure_storage | 7 | 1 | `cd packages/fhirant_secure_storage && flutter test` |
 | fhirant_logging | 8 | 1 | `cd packages/fhirant_logging && dart test` |
 
