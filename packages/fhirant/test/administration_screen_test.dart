@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
+import 'package:fhir_r4/fhir_r4.dart' as fhir;
 import 'package:fhirant/src/screens/administration_screen.dart';
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_server/fhirant_server.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shelf/shelf_io.dart' as shelf_io;
 
 /// The Administration section on the phone, against a real store and the
 /// server's own routes (`DeviceConsole`): what an administrator used to need
@@ -14,10 +18,12 @@ void main() {
   const nursePassword = 'Nurse-own-pass-7q';
 
   late FhirAntDb db;
+  late SyncJobs syncJobs;
 
   Future<DeviceConsole> open() async => DeviceConsole(
         db,
         jwtSecret: 'app-test-secret',
+        syncJobs: syncJobs,
         breachedPasswords: null,
       );
 
@@ -71,6 +77,7 @@ void main() {
     db = FhirAntDb(NativeDatabase.memory());
     await db.initialize();
     await AdminProvisioning.createInitialAdmin(db, adminName, adminPassword);
+    syncJobs = SyncJobs();
   });
 
   tearDown(() => db.close());
@@ -179,6 +186,98 @@ void main() {
     await tester.tap(find.byKey(const Key('confirm-ok')));
     await until(tester, find.byType(SnackBar));
     expect(find.textContaining('switched off.'), findsNothing);
+    await finish(tester);
+  });
+
+  testWidgets(
+      'sync with another fhirant server, signed in there with an account '
+      'of its own', (tester) async {
+    const peerName = 'peer-admin';
+    const peerPassword = 'Peer-own-pass-7q';
+    // The test binding answers every HTTP request with 400 and sends
+    // nothing; the other server here is real, on the loopback address.
+    final mocked = HttpOverrides.current;
+    HttpOverrides.global = null;
+    addTearDown(() => HttpOverrides.global = mocked);
+    final peerDb = FhirAntDb(NativeDatabase.memory());
+    final peer = FhirAntServer(
+      peerDb,
+      jwtSecret: 'peer-secret',
+      breachedPasswords: null,
+    );
+    final socket = (await tester.runAsync(() async {
+      await peerDb.initialize();
+      await AdminProvisioning.createInitialAdmin(
+        peerDb,
+        peerName,
+        peerPassword,
+      );
+      await peerDb.saveResource(
+        fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'there'}),
+      );
+      await db.saveResource(
+        fhir.Patient.fromJson({'resourceType': 'Patient', 'id': 'here'}),
+      );
+      return shelf_io.serve(
+        peer.createHandler(peer.createRouter()),
+        InternetAddress.loopbackIPv4,
+        0,
+      );
+    }))!;
+    final peerUrl = 'http://127.0.0.1:${socket.port}';
+    addTearDown(() async {
+      await socket.close(force: true);
+      await peer.stop();
+      await peerDb.close();
+    });
+
+    await pumpScreen(tester);
+    await signIn(tester, adminName, adminPassword);
+    await until(tester, find.byKey(const Key('tab-sync')));
+    await tester.tap(find.byKey(const Key('tab-sync')));
+    await until(tester, find.byKey(const Key('sync-none')));
+    await tester.pumpAndSettle();
+
+    // A wrong password there is that server's answer; this sign-in stays.
+    await tester.tap(find.byKey(const Key('new-sync')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('sync-address')),
+      'https://peer.example',
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('sync-unencrypted')), findsNothing);
+    await tester.enterText(find.byKey(const Key('sync-address')), peerUrl);
+    await tester.pump();
+    expect(find.byKey(const Key('sync-unencrypted')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('sync-username')), peerName);
+    await tester.enterText(find.byKey(const Key('sync-password')), 'wrong');
+    await tester.tap(find.byKey(const Key('sync-ok')));
+    await until(tester, find.textContaining('The other server: '));
+    expect(find.byKey(const Key('tab-sync')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('new-sync')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('sync-address')), peerUrl);
+    await tester.enterText(find.byKey(const Key('sync-username')), peerName);
+    await tester.enterText(
+      find.byKey(const Key('sync-password')),
+      peerPassword,
+    );
+    await tester.tap(find.byKey(const Key('sync-ok')));
+    await until(tester, find.byKey(const Key('sync-done')));
+    expect(
+      find.text('1 written to the other server, 1 written here.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(Key('peer-$peerUrl')), findsOneWidget);
+    final both = await tester.runAsync(
+      () async => [
+        await db.getResource(fhir.R4ResourceType.Patient, 'there'),
+        await peerDb.getResource(fhir.R4ResourceType.Patient, 'here'),
+      ],
+    );
+    expect(both, everyElement(isNotNull));
     await finish(tester);
   });
 

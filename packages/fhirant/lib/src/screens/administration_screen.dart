@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fhirant/src/state/admin_session.dart';
 import 'package:fhirant/src/widgets/accounts_view.dart';
 import 'package:fhirant/src/widgets/apps_view.dart';
+import 'package:fhirant/src/widgets/sync_view.dart';
 import 'package:fhirant_server/fhirant_server.dart'
     show ConsoleResult, DeviceConsole;
 import 'package:material_ui/material_ui.dart';
@@ -102,21 +103,22 @@ class _AdministrationScreenState extends State<AdministrationScreen> {
   }
 }
 
-/// What an administrator manages: the accounts, and the apps allowed to
-/// sign people in.
+/// What an administrator manages: the accounts, the apps allowed to sign
+/// people in, and syncing with another server.
 class _AdminTabs extends StatelessWidget {
   const _AdminTabs({required this.session});
   final AdminSession session;
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-        length: 2,
+        length: 3,
         child: Column(
           children: [
             const TabBar(
               tabs: [
                 Tab(key: Key('tab-accounts'), text: 'Accounts'),
                 Tab(key: Key('tab-apps'), text: 'Apps'),
+                Tab(key: Key('tab-sync'), text: 'Sync'),
               ],
             ),
             Expanded(
@@ -124,6 +126,7 @@ class _AdminTabs extends StatelessWidget {
                 children: [
                   AccountsView(session: session),
                   AppsView(session: session),
+                  SyncView(session: session),
                 ],
               ),
             ),
@@ -292,7 +295,9 @@ Future<void> handleRefusal(
   ConsoleResult<Object?> result,
 ) async {
   final refusal = result.refusal!;
-  if (refusal.status == 401) {
+  // A 401 from another server (the Sync tab's sign-in there) is that
+  // server's answer, not the end of this sign-in.
+  if (refusal.status == 401 && !refusal.fromPeer) {
     await session.end('Your sign-in has ended. Sign in again.');
     return;
   }

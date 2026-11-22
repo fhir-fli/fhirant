@@ -71,7 +71,9 @@ class FhirAntServer {
     this.keepStorageFree = true,
     this.breachedPasswords = hibpBreachLookup,
     DiskSpace? diskSpace,
+    SyncJobs? syncJobs,
   })  : exportDir = exportDir ?? 'data/export',
+        syncJobs = syncJobs ?? SyncJobs(),
         _startTime = DateTime.now() {
     storageFloor = keepStorageFree
         ? StorageFloor(dbInterface, this.exportDir, disk: diskSpace)
@@ -211,8 +213,11 @@ class FhirAntServer {
   /// The `\$reindex` job of this process (one at a time).
   final ReindexJobs reindexJobs = ReindexJobs();
 
-  /// The `\$sync` job of this process (one at a time).
-  final SyncJobs syncJobs = SyncJobs();
+  /// The `\$sync` job of this process (one at a time on the device: the
+  /// store holds its lease). Passed in when another server in the process
+  /// must see the same job: the app keeps one for every `DeviceConsole` it
+  /// opens, so a sync outlives the screen's session.
+  final SyncJobs syncJobs;
 
   /// The router [createRouter] built last: `\$sync` writes this server's
   /// side through it, so its writes reach the same Subscription service as
@@ -577,9 +582,14 @@ class FhirAntServer {
           floor: storageFloor,
         ),
       )
+      // The servers a sync completed with, for the Administration screen.
+      ..get(
+        '/admin/sync-peers',
+        (Request req) => syncPeersHandler(req, dbInterface),
+      )
       ..get(
         r'/$sync-status',
-        (Request req) => syncStatusHandler(req, syncJobs),
+        (Request req) => syncStatusHandler(req, syncJobs, dbInterface),
       )
       ..post(r'/$backup', (Request req) => backupHandler(req, dbInterface))
       ..post(

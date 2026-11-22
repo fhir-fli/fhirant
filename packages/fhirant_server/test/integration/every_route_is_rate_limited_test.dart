@@ -74,8 +74,9 @@ void main() {
     // (auth/owner_claim.dart), counted from the source. 93 since
     // 2026-11-19: `POST /$sync` and `GET /$sync-status`, two more
     // operations. 96 since 2026-11-22: `GET /admin/clients`, `PUT` and
-    // `DELETE /admin/clients/<clientId>` (registered apps).
-    expect(routes, hasLength(96));
+    // `DELETE /admin/clients/<clientId>` (registered apps); 97 with
+    // `GET /admin/sync-peers`.
+    expect(routes, hasLength(97));
     expect(
       routes.where((r) => r.path.contains(r'$')),
       hasLength(53),

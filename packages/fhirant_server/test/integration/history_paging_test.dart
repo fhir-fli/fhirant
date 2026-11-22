@@ -61,7 +61,7 @@ void main() {
 
   for (final (level, expected) in [
     ('/_history', 11),
-    ('/Patient/_history', 8)
+    ('/Patient/_history', 8),
   ]) {
     test(
         '$level: following next links returns every version once, in the '

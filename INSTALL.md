@@ -66,7 +66,7 @@ The same card has an **Experimentation / Secure** switch:
   exists.
 
 In Secure mode the dashboard has an **Administration** card. Sign in there as
-an administrator to manage accounts and apps:
+an administrator to manage accounts and apps, and to sync:
 
 - **Accounts**: create one, then its owner taps *I have a new account* on the
   same screen, sets their own password and shows you a code to approve.
@@ -75,6 +75,13 @@ an administrator to manage accounts and apps:
   (redirect URI) its settings list. An app that is not registered gets an
   error page saying so. Removing an app signs out everyone signed in through
   it.
+- **Sync**: brings this phone and another server to the same record. Give
+  the other server's address and your account there; the phone signs in
+  there for this sync only. A server that is not fhirant takes its access
+  token instead. One sync runs at a time, and it goes on after you sign out
+  of the section; the tab shows its progress and, at the end, what was
+  written on each side, what both sides had changed (the later save is
+  kept) and anything not written (the next sync tries again).
 
 The section signs you out when you leave the app or after an hour unused.
 
