@@ -146,13 +146,16 @@ assert_contains "the first registration needs the bootstrap token" '"bootstrapTo
 echo ""
 
 # --- Test 3: Register first user (bootstrap; REVIEW-2026-09-17 A15) ---
+# The container checks every password against Have I Been Pwned (ASVS
+# V6.2.12): the passwords here are ones it does not list. TestPass123!
+# (775) and ScanPass123! (11) were, and were refused (2026-11-21).
 # With no FHIRANT_ADMIN_USERNAME/PASSWORD the server logs a one-time token
 # at start; the first registration must carry it.
 echo "=== Test: Register first user ==="
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/register" \
   -H "X-Forwarded-For: $TEST_IP" \
   -H "Content-Type: application/json" \
-  -d '{"username": "testadmin", "password": "TestPass123!"}')
+  -d '{"username": "testadmin", "password": "Testadmin-own-7q"}')
 STATUS=$(echo "$RESPONSE" | tail -1)
 assert_status "POST /auth/register without the bootstrap token is 403" 403 "$STATUS"
 
@@ -170,7 +173,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/register" \
   -H "X-Forwarded-For: $TEST_IP" \
   -H "Content-Type: application/json" \
   -H "X-Bootstrap-Token: $BOOTSTRAP_TOKEN" \
-  -d '{"username": "testadmin", "password": "TestPass123!"}')
+  -d '{"username": "testadmin", "password": "Testadmin-own-7q"}')
 BODY=$(echo "$RESPONSE" | head -n -1)
 STATUS=$(echo "$RESPONSE" | tail -1)
 assert_status "POST /auth/register with the bootstrap token returns 201" 201 "$STATUS"
@@ -193,7 +196,7 @@ echo "=== Test: Login ==="
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE/auth/login" \
   -H "X-Forwarded-For: $TEST_IP" \
   -H "Content-Type: application/json" \
-  -d '{"username": "testadmin", "password": "TestPass123!"}')
+  -d '{"username": "testadmin", "password": "Testadmin-own-7q"}')
 BODY=$(echo "$RESPONSE" | head -n -1)
 STATUS=$(echo "$RESPONSE" | tail -1)
 assert_status "POST /auth/login returns 200" 200 "$STATUS"
@@ -402,7 +405,7 @@ else
   assert_contains "seeded server has its first user" '"firstUser":false' "$BODY"
   RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SEED_BASE/auth/register" \
     -H "Content-Type: application/json" \
-    -d '{"username": "intruder", "password": "TestPass123!"}')
+    -d '{"username": "intruder", "password": "Testadmin-own-7q"}')
   STATUS=$(echo "$RESPONSE" | tail -1)
   assert_status "registration on the seeded server needs an administrator" 403 "$STATUS"
   RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SEED_BASE/auth/login" \
@@ -453,7 +456,7 @@ else
     -e "FHIRANT_ENCRYPTION_KEY=$ENCRYPTION_KEY" \
     -e "FHIRANT_JWT_SECRET=$JWT_SECRET" \
     -e "FHIRANT_ADMIN_USERNAME=scanadmin" \
-    -e "FHIRANT_ADMIN_PASSWORD=ScanPass123!" \
+    -e "FHIRANT_ADMIN_PASSWORD=Scanadmin-own-7q" \
     "$IMAGE_NAME" /app/bin/server --port 8080 --db-path /data \
     --clamd-host 127.0.0.1 >/dev/null
   SCAN_READY=false
@@ -471,7 +474,7 @@ else
   else
     SCAN_TOKEN=$(curl -s -X POST "$SCAN_BASE/auth/login" \
       -H "Content-Type: application/json" \
-      -d '{"username": "scanadmin", "password": "ScanPass123!"}' \
+      -d '{"username": "scanadmin", "password": "Scanadmin-own-7q"}' \
       | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
     # base64 of the 68-byte EICAR string, and of "a clean file".
     EICAR_B64='WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo='
