@@ -152,6 +152,33 @@ void main() {
     await fresh.close();
   });
 
+  test("a backup taken mid-sync does not bring that sync's lease", () async {
+    await db.saveResource(patient('p1', 'Alpha'));
+    expect(
+      await db.claimSyncLease(
+        'running',
+        'http://peer',
+        staleAfter: const Duration(minutes: 2),
+      ),
+      isTrue,
+    );
+    final file = await BackupService.createFile(
+      db,
+      'correct horse',
+      '${dir.path}/backup.sqlite',
+    );
+    final fresh = FhirAntDb(NativeDatabase.memory());
+    await fresh.initialize();
+    await BackupService.restoreFile(
+      fresh,
+      file.path,
+      passphrase: 'correct horse',
+    );
+    expect(await families(fresh), ['Alpha']);
+    expect(await fresh.syncLease(), isNull);
+    await fresh.close();
+  });
+
   test(
       'onto a device with data: the backup wins on a resource, local '
       'accounts stay', () async {

@@ -29,7 +29,7 @@ class FhirAntDb extends FhirDb {
   }
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +42,7 @@ class FhirAntDb extends FhirDb {
           await _createOAuthClientsTable();
           await _createSpecLoadsTable();
           await _createSyncTables();
+          await _createSyncLeaseTable();
           await _createHistoryOrderIndexes();
           await createValueIndexes();
         },
@@ -408,6 +409,12 @@ class FhirAntDb extends FhirDb {
               );
             }
           }
+          if (from < 33) {
+            // One `$sync` at a time across every process and isolate on
+            // the store: the phone's Administration screen and the server
+            // each run their own pipeline.
+            await _createSyncLeaseTable();
+          }
         },
       );
 
@@ -572,6 +579,110 @@ class FhirAntDb extends FhirDb {
         PRIMARY KEY (peer, resource_key)
       )
     ''');
+  }
+
+  /// Which `$sync` runs now (schema 33): one row at most, the holder's own
+  /// random name, the peer, and when it started and last showed it was
+  /// alive, in seconds since 1970 by this device's clock. Every process and
+  /// isolate on the store runs its own pipeline (the phone's Administration
+  /// screen builds one, the server or its foreground service another), so
+  /// a flag held in memory leaves each blind to the other's sync. Not
+  /// carried by a backup ([restoreEncrypted] skips it): a lease names a run
+  /// on the device that took it.
+  Future<void> _createSyncLeaseTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS sync_lease (
+        id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+        holder TEXT NOT NULL,
+        peer TEXT NOT NULL,
+        started INTEGER NOT NULL,
+        heartbeat INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  /// Tables a backup's restore leaves alone: what they hold describes the
+  /// device that wrote them, not the record or the server's accounts.
+  static const deviceOnlyTables = {'sync_lease'};
+
+  /// Takes the `$sync` lease for [holder] syncing with [peer], unless
+  /// another holder renewed it within [staleAfter]. Returns whether
+  /// [holder] holds it now. One statement, so two claims cannot both win.
+  Future<bool> claimSyncLease(
+    String holder,
+    String peer, {
+    required Duration staleAfter,
+  }) async {
+    final n = await customUpdate(
+      'INSERT INTO sync_lease (id, holder, peer, started, heartbeat) '
+      "VALUES (1, ?, ?, strftime('%s', 'now'), strftime('%s', 'now')) "
+      'ON CONFLICT(id) DO UPDATE SET holder = excluded.holder, '
+      'peer = excluded.peer, started = excluded.started, '
+      'heartbeat = excluded.heartbeat '
+      "WHERE sync_lease.heartbeat < strftime('%s', 'now') - ?",
+      variables: [
+        Variable.withString(holder),
+        Variable.withString(peer),
+        Variable.withInt(staleAfter.inSeconds),
+      ],
+      updateKind: UpdateKind.update,
+    );
+    return n > 0;
+  }
+
+  /// Marks [holder]'s lease alive now. False when [holder] no longer holds
+  /// it: another sync took it over as stale.
+  Future<bool> renewSyncLease(String holder) async {
+    final n = await customUpdate(
+      "UPDATE sync_lease SET heartbeat = strftime('%s', 'now') "
+      'WHERE id = 1 AND holder = ?',
+      variables: [Variable.withString(holder)],
+      updateKind: UpdateKind.update,
+    );
+    return n > 0;
+  }
+
+  /// Gives up [holder]'s lease; nothing when it holds none.
+  Future<void> releaseSyncLease(String holder) async {
+    await customStatement(
+      'DELETE FROM sync_lease WHERE id = 1 AND holder = ?',
+      [holder],
+    );
+  }
+
+  /// The lease as it stands, or null when no sync holds it.
+  Future<({String holder, String peer, DateTime started, DateTime heartbeat})?>
+      syncLease() async {
+    final row = await customSelect(
+      'SELECT holder, peer, started, heartbeat FROM sync_lease WHERE id = 1',
+    ).getSingleOrNull();
+    if (row == null) return null;
+    DateTime at(String c) =>
+        DateTime.fromMillisecondsSinceEpoch(row.read<int>(c) * 1000);
+    return (
+      holder: row.read<String>('holder'),
+      peer: row.read<String>('peer'),
+      started: at('started'),
+      heartbeat: at('heartbeat'),
+    );
+  }
+
+  /// Every peer a `$sync` completed with, and when it last did.
+  Future<List<({String peer, DateTime? lastRun})>> syncPeers() async {
+    final rows = await customSelect(
+      'SELECT peer, last_run FROM sync_peers ORDER BY last_run DESC, peer',
+    ).get();
+    return [
+      for (final r in rows)
+        (
+          peer: r.read<String>('peer'),
+          lastRun: r.read<int?>('last_run') == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(
+                  r.read<int>('last_run') * 1000,
+                ),
+        ),
+    ];
   }
 
   /// Where the last completed `$sync` with [peer] left each side's history
@@ -1012,6 +1123,7 @@ class FhirAntDb extends FhirDb {
               table == 'users' ||
               searchTables.contains(table) ||
               !backupTables.contains(table) ||
+              deviceOnlyTables.contains(table) ||
               (!withServerState && serverStateTables.contains(table))) {
             continue;
           }

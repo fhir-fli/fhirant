@@ -89,7 +89,7 @@ Future<Response> listUsersHandler(
   Request request,
   FhirAntDb dbInterface,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final users = await dbInterface.getAllUsers();
   return Response.ok(
@@ -110,7 +110,7 @@ Future<Response> resetPasswordHandler(
   int userId,
   FhirAntDb dbInterface,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
@@ -225,7 +225,7 @@ Future<Response> approveClaimHandler(
   int userId,
   FhirAntDb dbInterface,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final body = await _body(request);
   final raw = body?['code'];
@@ -269,7 +269,7 @@ Future<Response> setActiveHandler(
   FhirAntDb dbInterface, {
   required bool active,
 }) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
@@ -294,7 +294,7 @@ Future<Response> setRoleHandler(
   int userId,
   FhirAntDb dbInterface,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
@@ -323,7 +323,7 @@ Future<Response> setScopesHandler(
   int userId,
   FhirAntDb dbInterface,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final user = await dbInterface.getUserById(userId);
   if (user == null) return _json(404, {'error': 'User not found'});
@@ -347,7 +347,8 @@ Future<Response> setScopesHandler(
   );
 }
 
-Response? _requireAdmin(Request request) {
+/// The 403 for a caller who is not an administrator, or null for one.
+Response? requireAdmin(Request request) {
   final authUser = request.context['auth_user'] as Map<String, dynamic>?;
   if (authUser == null || authUser['role'] != 'admin') {
     return _json(403, {'error': 'Only administrators can manage accounts'});
@@ -428,7 +429,7 @@ Response _json(int status, Map<String, dynamic> body) =>
 /// `GET /admin/clients`: every app registered to sign people in, with its
 /// addresses.
 Future<Response> listClientsHandler(Request request, FhirAntDb db) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   return Response.ok(
     jsonEncode({
@@ -453,7 +454,7 @@ Future<Response> putClientHandler(
   String clientId,
   FhirAntDb db,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   final idError = clientIdError(clientId);
   if (idError != null) return _json(400, {'error': idError});
@@ -495,7 +496,7 @@ Future<Response> deleteClientHandler(
   String clientId,
   FhirAntDb db,
 ) async {
-  final refused = _requireAdmin(request);
+  final refused = requireAdmin(request);
   if (refused != null) return refused;
   if (!await db.isOAuthClientRegistered(clientId)) {
     return _json(404, {'error': 'No app is registered as "$clientId"'});

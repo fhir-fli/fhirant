@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:fhirant_db/fhirant_db.dart';
 import 'package:fhirant_logging/fhirant_logging.dart';
@@ -73,28 +74,75 @@ class SyncJob {
 
   /// Whether it is still running.
   bool get running => finished == null;
+
+  final Completer<void> _done = Completer<void>();
+
+  /// Completes when the job has ended, either way.
+  Future<void> get done => _done.future;
 }
 
-/// The `$sync` job of this process: one at a time.
+/// The `$sync` job of this process, and the store's lease that makes it
+/// the only one on the device.
+///
+/// A flag in memory is not enough: the phone's Administration screen runs
+/// the server's pipeline in its own process or isolate (`DeviceConsole`),
+/// and the server, or its foreground service, runs another, so each would
+/// see only its own sync. The lease is a row in the store
+/// ([FhirAntDb.claimSyncLease]) renewed every [heartbeat]; one not renewed
+/// within [staleAfter] belonged to a run that died (the app killed
+/// mid-sync) and the next sync takes it over. A run that finds its lease
+/// taken over stops before its next write ([SyncLeaseLost]).
 class SyncJobs {
+  SyncJobs({
+    this.heartbeat = const Duration(seconds: 30),
+    this.staleAfter = const Duration(minutes: 2),
+  });
+
+  /// How often a running sync renews its lease.
+  final Duration heartbeat;
+
+  /// How long a lease stands without renewal.
+  final Duration staleAfter;
+
+  static final Random _random = Random.secure();
+
   SyncJob? _current;
 
-  /// The job running or last finished, or null when none was run.
+  /// The job running or last finished in this process, or null when none
+  /// was run here.
   SyncJob? get current => _current;
 
-  /// Starts a sync unless one is running; returns it, or null when one is
-  /// already running.
-  SyncJob? start({
+  /// Starts a sync unless one is running in this process or holds the
+  /// store's lease; returns it, or null when one is already running.
+  Future<SyncJob?> start({
     required FhirAntDb db,
     required String peer,
     required SyncClient local,
     required SyncClient remote,
     StorageFloor? floor,
     void Function()? onDone,
-  }) {
+  }) async {
+    // Two starts at once in this process both reach the claim; the store
+    // gives the lease to one.
     if (_current?.running ?? false) return null;
+    final holder = List.generate(
+      16,
+      (_) => _random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+    if (!await db.claimSyncLease(holder, peer, staleAfter: staleAfter)) {
+      return null;
+    }
     final job = SyncJob._(peer);
     _current = job;
+    var lost = false;
+    final renew = Timer.periodic(heartbeat, (_) async {
+      if (lost) return;
+      try {
+        if (!await db.renewSyncLease(holder)) lost = true;
+      } on Object catch (e, st) {
+        FhirantLogging().logWarning(r'$sync lease not renewed', e, st);
+      }
+    });
     unawaited(
       Synchronizer(
         db: db,
@@ -103,19 +151,41 @@ class SyncJobs {
         remote: remote,
         floor: floor,
         report: job.report,
+        stillHeld: () {
+          if (lost) throw const SyncLeaseLost();
+        },
       ).run().then(
         (_) {},
         onError: (Object e, StackTrace st) {
           job.error = '$e';
           FhirantLogging().logError('\$sync with $peer failed', e, st);
         },
-      ).whenComplete(() {
+      ).whenComplete(() async {
+        renew.cancel();
+        try {
+          await db.releaseSyncLease(holder);
+        } on Object catch (e, st) {
+          // Left to go stale; the next sync takes it over.
+          FhirantLogging().logWarning(r'$sync lease not released', e, st);
+        }
         job.finished = DateTime.now();
         onDone?.call();
+        job._done.complete();
       }),
     );
     return job;
   }
+}
+
+/// A sync's lease was taken over by another: it went unrenewed for longer
+/// than [SyncJobs.staleAfter] (the process was frozen), and another sync
+/// now runs. This one stops before writing anything more.
+class SyncLeaseLost implements Exception {
+  const SyncLeaseLost();
+
+  @override
+  String toString() => 'Another sync took over: this one went '
+      'unrenewed for too long and stopped before its next write.';
 }
 
 /// What a history scan showed of one resource on one side: its newest
@@ -170,6 +240,7 @@ class Synchronizer {
     required this.remote,
     required this.report,
     this.floor,
+    this.stillHeld,
   });
 
   /// This server's store, for the sync bookkeeping.
@@ -189,6 +260,10 @@ class Synchronizer {
 
   /// This server's storage floor, checked before each write here.
   final StorageFloor? floor;
+
+  /// Called before each write to either side; throws when this run must
+  /// not write any more ([SyncLeaseLost]).
+  final void Function()? stillHeld;
 
   /// The most bytes of resources one batch carries: under the 16 MiB body
   /// a fhirant peer takes by default (`maxRequestBody`), with room for the
@@ -328,6 +403,7 @@ class Synchronizer {
   Future<void> _flush({required bool toPeer}) async {
     final list = toPeer ? _toPeer : _toHere;
     if (list.isEmpty) return;
+    stillHeld?.call();
     final copies = List<_Copy>.of(list);
     list.clear();
     if (toPeer) {
@@ -442,6 +518,7 @@ class Synchronizer {
     }
 
     // The peer first.
+    stillHeld?.call();
     final peerNow = await _apply(remote, key, there, json, toPeer: true);
     if (peerNow == null) return;
     final hereNow = await _apply(local, key, here, json, toPeer: false);

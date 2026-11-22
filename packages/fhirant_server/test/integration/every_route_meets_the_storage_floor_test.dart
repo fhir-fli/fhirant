@@ -50,6 +50,7 @@ const _expected = <String, StorageNeed>{
   'GET /admin/clients': StorageNeed.none,
   'PUT /admin/clients/<clientId>': StorageNeed.none,
   'DELETE /admin/clients/<clientId>': StorageNeed.none,
+  'GET /admin/sync-peers': StorageNeed.none,
   'GET /': StorageNeed.none,
   'GET /favicon.ico': StorageNeed.none,
   'GET /health': StorageNeed.none,
@@ -166,8 +167,9 @@ void main() {
       // 91 registrations, counted from the source on 2026-11-09 (89 on
       // 2026-11-02, then `/auth/claim` and `/admin/users/<userId>/approve`);
       // 93 on 2026-11-19 with `POST /$sync` and `GET /$sync-status`; 96 on
-      // 2026-11-22 with the three `/admin/clients` routes.
-      expect(registered.length, 96);
+      // 2026-11-22 with the three `/admin/clients` routes; 97 with
+      // `GET /admin/sync-peers`.
+      expect(registered.length, 97);
       expect(
         registered.difference(_expected.keys.toSet()),
         isEmpty,

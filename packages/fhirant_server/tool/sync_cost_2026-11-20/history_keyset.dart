@@ -19,7 +19,7 @@ Future<void> main(List<String> args) async {
   print('versions: $total');
 
   String keys(String where, String limit) => 'SELECT last_updated AS lu, '
-      'version_id AS vid, resource_type AS t, id AS i FROM ('
+      'version_id AS vid, resource_type AS t, id AS i FROM ( '
       'SELECT last_updated, version_id, resource_type, id '
       'FROM resources_history$where UNION ALL '
       'SELECT last_updated, version_id, resource_type, id '

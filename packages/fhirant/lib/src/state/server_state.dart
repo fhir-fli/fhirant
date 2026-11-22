@@ -136,6 +136,9 @@ class ServerState extends ChangeNotifier {
   StreamSubscription<RequestLogEntry>? _logSubscription;
 
   FhirAntDb get db => _dbService.db;
+
+  /// The export directory: the disk the storage floor measures.
+  Future<String> exportDir() => _dbService.getExportDir();
   ServerStatus get status => _status;
   String? get errorMessage => _errorMessage;
   String? get wifiIp => _wifiIp;
