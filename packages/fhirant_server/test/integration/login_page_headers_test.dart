@@ -21,6 +21,7 @@ void main() {
     final server = await createTestServer(exportDir: exportDir.path);
     db = server.db;
     handler = server.handler;
+    await registerTestApp(db);
   });
 
   tearDown(() async {

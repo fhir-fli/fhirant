@@ -78,6 +78,7 @@ void main() {
     expect(index, hasLength(1));
     final version =
         await second.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 31);
+    // Upgraded to the current schema, not stopped at 31.
+    expect(version.read<int>('user_version'), second.schemaVersion);
   });
 }

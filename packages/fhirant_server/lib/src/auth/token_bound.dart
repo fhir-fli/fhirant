@@ -24,3 +24,17 @@ bool tokenPredatesAccount(Map<String, dynamic> payload, User account) {
   final issuedUnder = gen is int ? gen : 0;
   return issuedUnder < account.tokenGeneration;
 }
+
+/// Whether [payload], a verified JWT, is a session of an app that is no
+/// longer registered (an administrator removed it). A session from an
+/// app carries its `client_id` (RFC 9068 §2.2; `JwtService.issueSession`);
+/// one signed in on the server itself carries none and is never refused
+/// here. Removing an app ends its sessions: an app is registered so that
+/// an administrator decides which apps sign people in (OWASP ASVS 5.0.0
+/// V10.4.1), and a removed one that kept working for the 7 days of its
+/// refresh token would make the removal a request, not a decision.
+Future<bool> tokenAppRemoved(Map<String, dynamic> payload, FhirAntDb db) async {
+  final clientId = payload['client_id'];
+  if (clientId is! String) return false;
+  return !await db.isOAuthClientRegistered(clientId);
+}

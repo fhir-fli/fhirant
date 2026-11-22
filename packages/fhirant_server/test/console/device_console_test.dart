@@ -190,6 +190,56 @@ void main() {
     }
   });
 
+  test('register, change and remove an app (ASVS 5.0.0 V10.4.1)', () async {
+    var put = await console.putApp(
+      admin,
+      'scarab',
+      name: 'Scarab',
+      redirectUris: ['https://scarab.example/cb'],
+    );
+    expect(put.ok, isTrue, reason: put.refusal?.text);
+    var apps = (await console.apps(admin)).value!;
+    expect(apps.single.clientId, 'scarab');
+    expect(apps.single.redirectUris, ['https://scarab.example/cb']);
+
+    put = await console.putApp(
+      admin,
+      'scarab',
+      name: 'Scarab EHR',
+      redirectUris: ['http://127.0.0.1/cb', 'https://scarab.example/cb'],
+    );
+    expect(put.ok, isTrue);
+    apps = (await console.apps(admin)).value!;
+    expect(apps.single.name, 'Scarab EHR');
+    expect(apps.single.redirectUris, hasLength(2));
+
+    final bad = await console.putApp(
+      admin,
+      'other',
+      name: 'Other',
+      redirectUris: ['javascript:alert(1)'],
+    );
+    expect(bad.ok, isFalse);
+    expect(bad.refusal!.status, 400);
+
+    // A client_id with characters a path must escape still reaches the
+    // route whole.
+    final spaced = await console.putApp(
+      admin,
+      'my app/v2',
+      name: 'Spaced',
+      redirectUris: ['https://spaced.example/cb'],
+    );
+    expect(spaced.ok, isTrue, reason: spaced.refusal?.text);
+    expect(await db.getOAuthClient('my app/v2'), isNotNull);
+
+    expect((await console.removeApp(admin, 'scarab')).ok, isTrue);
+    expect((await console.removeApp(admin, 'my app/v2')).ok, isTrue);
+    expect((await console.apps(admin)).value, isEmpty);
+    final again = await console.removeApp(admin, 'scarab');
+    expect(again.refusal?.status, 404);
+  });
+
   test('the owner claim goes through the breach check', () async {
     final checked = DeviceConsole(
       db,

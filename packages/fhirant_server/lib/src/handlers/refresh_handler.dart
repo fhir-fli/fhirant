@@ -380,6 +380,16 @@ Future<Response> _handleRefreshTokenGrant(
       }),
     );
   }
+  if (await tokenAppRemoved(payload, dbInterface)) {
+    return Response(
+      401,
+      body: jsonEncode({
+        'error': 'invalid_grant',
+        'error_description': 'The app this session belongs to is not '
+            'registered',
+      }),
+    );
+  }
 
   // The refresh token's scopes, narrowed to what the account holds NOW, so
   // an administrator's downgrade takes effect at the next refresh rather

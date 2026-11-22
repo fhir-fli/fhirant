@@ -373,6 +373,26 @@ class FhirAntServer {
         }
         return setScopesHandler(req, id, dbInterface);
       })
+      // Registered apps (OWASP ASVS 5.0.0 V10.4.1; REVIEW-2026-10-17 M1)
+      ..get(
+        '/admin/clients',
+        (Request req) => listClientsHandler(req, dbInterface),
+      )
+      // The router hands the segment over still percent-encoded.
+      ..put('/admin/clients/<clientId>', (Request req, String clientId) {
+        final id = _decodedSegment(clientId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid client_id"}');
+        }
+        return putClientHandler(req, id, dbInterface);
+      })
+      ..delete('/admin/clients/<clientId>', (Request req, String clientId) {
+        final id = _decodedSegment(clientId);
+        if (id == null) {
+          return Response(400, body: '{"error": "Invalid client_id"}');
+        }
+        return deleteClientHandler(req, id, dbInterface);
+      })
       // Public routes
       // R4B search.html 3.1.1.2: "All resource types: GET [base]?parameter(s)".
       // A bare GET / stays the welcome page.
@@ -1347,5 +1367,19 @@ class FhirAntServer {
         return response;
       };
     };
+  }
+}
+
+/// [segment] percent-decoded, or null when it is not valid percent-encoding.
+/// `Uri.decodeComponent` throws an ArgumentError for `%zz` or a lone `%`,
+/// and a FormatException for a broken UTF-8 sequence (`%C3`; measured
+/// 2026-11-22). Through shelf neither arrives (it re-escapes a stray `%`
+/// and refuses a broken sequence before routing, measured the same day);
+/// the catch keeps a direct caller from a 500.
+String? _decodedSegment(String segment) {
+  try {
+    return Uri.decodeComponent(segment);
+  } catch (_) {
+    return null;
   }
 }

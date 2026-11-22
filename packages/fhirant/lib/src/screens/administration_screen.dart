@@ -2,13 +2,15 @@ import 'dart:async';
 
 import 'package:fhirant/src/state/admin_session.dart';
 import 'package:fhirant/src/widgets/accounts_view.dart';
+import 'package:fhirant/src/widgets/apps_view.dart';
 import 'package:fhirant_server/fhirant_server.dart'
     show ConsoleResult, DeviceConsole;
 import 'package:material_ui/material_ui.dart';
 
-/// The Administration section: everything an operator does with accounts,
-/// on the phone itself (Grey 2026-11-21: "anything requiring the command
-/// line is wrong for this app"). Shown in Secure mode only.
+/// The Administration section: everything an operator does with accounts
+/// and the apps allowed to sign people in, on the phone itself (Grey
+/// 2026-11-21: "anything requiring the command line is wrong for this
+/// app"). Shown in Secure mode only.
 ///
 /// It opens on a sign-in. An administrator gets the accounts; anyone else
 /// may change their own password here. The owner of a new or reset account
@@ -69,7 +71,7 @@ class _AdministrationScreenState extends State<AdministrationScreen> {
               child: session == null
                   ? _SignIn(session: _session)
                   : session.isAdmin
-                      ? AccountsView(session: _session)
+                      ? _AdminTabs(session: _session)
                       : _NotAdmin(username: session.username),
             ),
           ),
@@ -98,6 +100,36 @@ class _AdministrationScreenState extends State<AdministrationScreen> {
       await handleRefusal(context, _session, result);
     }
   }
+}
+
+/// What an administrator manages: the accounts, and the apps allowed to
+/// sign people in.
+class _AdminTabs extends StatelessWidget {
+  const _AdminTabs({required this.session});
+  final AdminSession session;
+
+  @override
+  Widget build(BuildContext context) => DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            const TabBar(
+              tabs: [
+                Tab(key: Key('tab-accounts'), text: 'Accounts'),
+                Tab(key: Key('tab-apps'), text: 'Apps'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  AccountsView(session: session),
+                  AppsView(session: session),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _NotAdmin extends StatelessWidget {
@@ -266,6 +298,32 @@ Future<void> handleRefusal(
   }
   if (context.mounted) showMessage(context, refusal.message);
 }
+
+/// Asks before an action that cannot be taken back with one tap.
+Future<bool> confirmAction(
+  BuildContext context,
+  String title,
+  String body,
+) async =>
+    await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('confirm-ok'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    ) ??
+    false;
 
 /// What [showPasswordFields] collected.
 class PasswordFields {

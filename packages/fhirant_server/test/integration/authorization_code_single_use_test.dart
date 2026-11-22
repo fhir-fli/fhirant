@@ -24,6 +24,7 @@ void main() {
     final server = await createTestServer(exportDir: exportDir.path);
     db = server.db;
     handler = server.handler;
+    await registerTestApp(db);
     await issueTestToken(db, username: 'code-user', scopes: ['user/*.rs']);
     userId = (await db.getUserByUsername('code-user'))!.id;
   });

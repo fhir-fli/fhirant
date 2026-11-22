@@ -23,6 +23,10 @@ void main() {
     final server = await createTestServer();
     db = server.db;
     handler = server.handler;
+    await registerTestApp(
+      db,
+      redirectUris: ['https://app.example/cb?keep=this&tag=a&tag=b'],
+    );
     await db.createUser(
       username: 'pat',
       passwordHash: PasswordHasher.hashPasswordSync(password, 'salt'),

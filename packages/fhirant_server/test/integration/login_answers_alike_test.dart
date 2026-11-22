@@ -32,6 +32,11 @@ void main() {
     final server = await createTestServer(exportDir: exportDir.path);
     db = server.db;
     handler = server.handler;
+    await registerTestApp(
+      db,
+      clientId: 'my-app',
+      redirectUris: ['http://localhost:9999/cb'],
+    );
     final salt = PasswordHasher.generateSalt();
     final hash = await PasswordHasher.hashPassword('right-password-1', salt);
     await db.createUser(

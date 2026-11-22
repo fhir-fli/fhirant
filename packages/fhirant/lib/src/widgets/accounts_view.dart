@@ -233,7 +233,8 @@ class _AccountsViewState extends State<AccountsView> {
           'Approved. ${a.username} can sign in.',
         );
       case _Action.reset:
-        if (!await _confirm(
+        if (!await confirmAction(
+          context,
           'Reset the password of ${a.username}?',
           'Their password stops working and every session of theirs ends. '
               'They set a new one here and show you a code.',
@@ -247,7 +248,8 @@ class _AccountsViewState extends State<AccountsView> {
       case _Action.unlock:
         await _act((c) => c.unlock(session, a.id), '${a.username} unlocked.');
       case _Action.off:
-        if (!await _confirm(
+        if (!await confirmAction(
+          context,
           'Switch off ${a.username}?',
           'They cannot sign in, and every session of theirs ends.',
         )) {
@@ -314,27 +316,6 @@ class _AccountsViewState extends State<AccountsView> {
       ),
     );
   }
-
-  Future<bool> _confirm(String title, String body) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(title),
-          content: Text(body),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              key: const Key('confirm-ok'),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes'),
-            ),
-          ],
-        ),
-      ) ??
-      false;
 
   Future<String?> _pickRole(String current) => showDialog<String>(
         context: context,
