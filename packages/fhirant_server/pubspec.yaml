@@ -25,7 +25,7 @@ dependencies:
   drift: ^2.29.0
   # statvfs for the storage floor (services/disk_space.dart).
   ffi: ^2.2.0
-  fhir_db: ^0.15.2
+  fhir_db: ^0.15.8
   fhir_node: ^0.6.1
   fhir_r4: ^0.14.1
   fhir_r4_bulk: ^0.14.0
