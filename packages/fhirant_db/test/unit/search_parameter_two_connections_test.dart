@@ -6,9 +6,15 @@ import 'package:fhirant_db/fhirant_db.dart';
 import 'package:test/test.dart';
 
 /// A search parameter uploaded through one connection to the store, then
-/// searched through another. Two connections to one file stand for the
-/// phone's foreground service (which serves requests after Android
-/// restarted it) and the app's screens, each with its own FhirAntDb.
+/// searched and saved through another. Two connections to one file stand
+/// for the phone's foreground service (which serves requests after Android
+/// restarted it) and the app's screens (the Administration console's sync,
+/// the sample data load), each with its own FhirAntDb.
+///
+/// Measured 2026-11-24 on fhir_db 0.15.4: the screens' connection answered
+/// a search by the new code with every patient, and its own saves wrote no
+/// rows under the code, until it was reopened. fhir_db 0.15.8 counts every
+/// SearchParameter change in the file and each connection reads it.
 void main() {
   late Directory dir;
   late FhirAntDb server;
@@ -24,6 +30,8 @@ void main() {
   });
 
   tearDown(() async {
+    await server.searchParameterIndexing.idle;
+    await screen.searchParameterIndexing.idle;
     await server.close();
     await screen.close();
     await dir.delete(recursive: true);
@@ -42,49 +50,39 @@ void main() {
     'expression': 'Patient.gender',
   });
 
-  Future<Object> search(FhirAntDb db) async {
-    try {
-      return (await db.fhirDao.search(
+  fhir.Patient patient(String id, String gender) => fhir.Patient.fromJson({
+        'resourceType': 'Patient',
+        'id': id,
+        'gender': gender,
+      });
+
+  Future<List<String>> females(FhirAntDb db) async => (await db.fhirDao.search(
         resourceType: fhir.R4ResourceType.Patient,
         searchParameters: {
           'sex': ['female'],
         },
       ))
-          .map((r) => r.id!.valueString)
-          .toList();
-    } on Object catch (e) {
-      return 'threw ${e.runtimeType}: $e';
-    }
-  }
+          .map((r) => r.id!.valueString!)
+          .toList()
+        ..sort();
 
-  test('probe', () async {
-    for (final (id, gender) in [('f', 'female'), ('m', 'male')]) {
-      await server.fhirDao.saveResource(
-        fhir.Patient.fromJson({
-          'resourceType': 'Patient',
-          'id': id,
-          'gender': gender,
-        }),
-      );
-    }
-    // The screen has searched once before the upload, so its copy of the
-    // uploaded definitions is loaded.
-    print('screen before upload: ${await search(screen)}');
+  test(
+      'an upload through the service is searched and indexed by the '
+      'screens, and its earlier records are found without a re-index call',
+      () async {
+    await server.fhirDao.saveResources([
+      patient('f', 'female'),
+      patient('m', 'male'),
+    ]);
+    // The screens have read the uploaded parameters (none) already.
+    expect(await females(screen), ['f', 'm']);
+
     await server.fhirDao.saveResource(parameter);
-    await server.rebuildSearchIndex();
-    print('server after upload: ${await search(server)}');
-    print('screen after upload: ${await search(screen)}');
-    await screen.fhirDao.saveResource(
-      fhir.Patient.fromJson({
-        'resourceType': 'Patient',
-        'id': 'f2',
-        'gender': 'female',
-      }),
-    );
-    print('server after screen saves f2: ${await search(server)}');
-    final fresh = FhirAntDb(NativeDatabase(File('${dir.path}/fhirant.sqlite')));
-    await fresh.initialize();
-    print('new connection: ${await search(fresh)}');
-    await fresh.close();
+    await server.searchParameterIndexing.idle;
+    expect(await females(server), ['f']);
+    expect(await females(screen), ['f']);
+
+    await screen.fhirDao.saveResource(patient('f2', 'female'));
+    expect(await females(server), ['f', 'f2']);
   });
 }

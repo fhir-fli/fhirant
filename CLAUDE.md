@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages from pub.dev (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.14.0, `fhir_db` ^0.15.2, `fhir_node` ^0.6.1, `cql` ^0.8.0; the family release of 2026-10-16). There are no `dependency_overrides` in the committed pubspecs; to work against an unreleased checkout, put a gitignored `pubspec_overrides.yaml` in the package. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency at `main`.
+FHIRant (Fast Healthcare Interoperability Resources Agile Networking Tool) is a FHIR R4 server built with Dart. It runs standalone as a CLI process or embedded in the Flutter mobile app. It lives alongside the larger `fhir/` family and depends on its packages from pub.dev (`fhir_r4`, `fhir_r4_bulk`, `fhir_r4_path`, `fhir_r4_mapping`, `fhir_r4_validation`, `fhir_r4_cql` at ^0.14.0, `fhir_db` ^0.15.8, `fhir_node` ^0.6.1, `cql` ^0.8.0; the family release of 2026-10-16). There are no `dependency_overrides` in the committed pubspecs; to work against an unreleased checkout, put a gitignored `pubspec_overrides.yaml` in the package. The path dependencies are the internal `fhirant_*` packages; `cicada` is a git dependency at `main`.
 
 ## Package Structure
 
@@ -220,7 +220,7 @@ All implemented operations:
 - `$document` — Composition-based document Bundle generation
 - `$meta` / `$meta-add` / `$meta-delete` — Meta tag management
 - `$backup` / `$restore` — Full database backup and restore
-- `$reindex` — Rebuild the search index after a SearchParameter is uploaded (admin, asynchronous)
+- `$reindex` — Rebuild the whole search index (admin, asynchronous); an uploaded SearchParameter no longer needs it
 - `$sync` — Merge this server and a peer, field by field (admin, asynchronous)
 - `$fhirpath` — Server-side FHIRPath expression evaluation
 - `$cql` — Clinical Quality Language evaluation
@@ -245,7 +245,7 @@ Drift ORM over SQLite with SQLCipher encryption. The main database class is `Fhi
 2. On search, each parameter's declared type (from the published definitions, never guessed from the value) picks its table and condition builder
 3. One SQL statement per search (fhir_db `_pagedIds`, since 2026-10-01): repeated parameters AND as nested `IN`/`EXISTS` parts, comma values OR on one table, chains and `_has` as correlated subqueries on the reference table, `_sort` as a LEFT JOIN, the page as `LIMIT`. There is no Dart set path
 4. A modifier the builders give no meaning (`_id:not`, `subject:Foo`) is refused with `UnsupportedSearchModifier` (R4B 3.1.1.4.4), never answered as something else
-5. An uploaded `SearchParameter` (admin-only; `status: active`) is indexed by evaluating its FHIRPath expression on every later save of its base types (fhir_db `CustomSearchParameters`); `POST /$reindex` indexes what was stored before it; the CapabilityStatement lists it
+5. An uploaded `SearchParameter` (admin-only; `status: active`) is indexed by evaluating its FHIRPath expression on every later save of its base types (fhir_db `CustomSearchParameters`); what was stored before it is indexed by the store itself, in the background, after every save, delete or purge of a `SearchParameter` (fhir_db 0.15.7 `reindexOnSearchParameterChange`, on by default as HAPI FHIR's is; progress in `db.searchParameterIndexing`); `POST /$reindex` rebuilds the whole index; the CapabilityStatement lists it. Every connection to the store file sees a change made through another (fhir_db 0.15.8): the phone's foreground service and its screens each open their own (`fhirant_db/test/unit/search_parameter_two_connections_test.dart`)
 6. `identifier:of-type` searches its own `<param>:of-type` token rows (one per `Identifier.type.coding`); stores from before fhirant_db schema 26 get them on upgrade
 
 ### Secure Storage (`fhirant_secure_storage`)

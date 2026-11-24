@@ -10,7 +10,8 @@ import 'test_helpers.dart';
 /// published race parameter (hl7.fhir.us.core#3.1.0
 /// SearchParameter-us-core-race), the store indexes every later Patient by
 /// it, `GET /Patient?race=` finds them, the CapabilityStatement lists it,
-/// `$reindex` indexes what was stored before it, a definition the store
+/// the store indexes what was stored before it by itself, and so does
+/// `$reindex`, a definition the store
 /// cannot index by is a 400, and a clinician may not define one. The
 /// Patient's race extension is the one in US Core's published Patient
 /// example (STU3.1.1 Patient-example.json, downloaded 2026-09-14).
@@ -79,7 +80,10 @@ void main() {
       scopes: ['user/*.cruds'],
     );
   });
-  tearDown(() => db.close());
+  tearDown(() async {
+    await db.searchParameterIndexing.idle;
+    await db.close();
+  });
 
   Future<Response> send(
     String method,
@@ -153,7 +157,30 @@ void main() {
     );
   });
 
+  test(
+      'records stored before the parameter are found once the store has '
+      'indexed it by itself', () async {
+    await json(
+      await send(
+        'PUT',
+        '/Patient/early',
+        body: patient('early', withRace: true),
+      ),
+      201,
+    );
+    await json(
+      await send('PUT', '/SearchParameter/us-core-race', body: raceParameter()),
+      201,
+    );
+    // fhir_db re-indexes a changed code in the background (0.15.7).
+    await db.searchParameterIndexing.idle;
+    expect(db.searchParameterIndexing.last['race']?.error, isNull);
+    expect(await patientIds('race=2028-9'), ['early']);
+  });
+
   test(r'$reindex indexes what was stored before the parameter', () async {
+    // The store's own re-index switched off, so only $reindex can find it.
+    db.reindexOnSearchParameterChange = false;
     await json(
       await send(
         'PUT',

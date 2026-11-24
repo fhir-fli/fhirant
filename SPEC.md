@@ -118,7 +118,7 @@ FHIRant is an on-device FHIR R4 server written in Dart. It runs as a standalone 
 - [x] _include and _revinclude
 - [x] POST-based search (POST /{type}/_search, POST /_search)
 - [x] Compartment search (GET /Patient/123/Observation)
-- [x] Uploaded SearchParameters: an admin POSTs a `SearchParameter` (status active), the store indexes every later save of its base types by evaluating its FHIRPath expression, `POST /$reindex` (async) indexes what was stored before it, the CapabilityStatement lists it; a definition the store cannot index by is a 400
+- [x] Uploaded SearchParameters: an admin POSTs a `SearchParameter` (status active), the store indexes every later save of its base types by evaluating its FHIRPath expression, and what was stored before it by itself in the background (fhir_db 0.15.7); `POST /$reindex` (async) rebuilds the whole index; the CapabilityStatement lists it; a definition the store cannot index by is a 400
 - [ ] _has (reverse chaining)
 - [ ] _summary, _elements (response shaping)
 - [ ] _contained, _containedType
@@ -296,7 +296,12 @@ Scenario: Uploaded SearchParameter
   Then that Patient is returned and a Patient without the extension is not
   And GET /metadata lists `race` under Patient with the definition's url
 
-Scenario: Reindex after a late SearchParameter
+Scenario: A late SearchParameter finds what was stored before it
+  Given a Patient carrying the us-core-race extension was saved before SearchParameter/us-core-race
+  When the store has finished indexing race in the background
+  Then GET /Patient?race=2028-9 returns that Patient, with no $reindex
+
+Scenario: Reindex after a late SearchParameter, the store's own indexing off
   Given a Patient carrying the us-core-race extension was saved before SearchParameter/us-core-race
   When an admin POSTs /$reindex
   Then the response is 202 with Content-Location /$reindex-status
