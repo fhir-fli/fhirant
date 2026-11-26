@@ -222,10 +222,10 @@ packages:
     dependency: transitive
     description:
       name: fhir_db
-      sha256: "810f41d36e55c3d1b5a68dc72916fcf23f7117d05f6e932f4e744524903cba28"
+      sha256: cacbe7cbf69da7a70ce6f945f793fbed54851223e47c35f43de10268ed1d8011
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.8"
+    version: "0.16.4"
   fhir_mapping:
     dependency: transitive
     description:
@@ -278,10 +278,10 @@ packages:
     dependency: transitive
     description:
       name: fhir_r4_db
-      sha256: e8913d0bdbb9715b404f6cd37edc699abd795d742d5b5e1a3115361da07fffc5
+      sha256: f288654e04d2430b706e10a2f6abea6a1795544fe4bb2e60d314d66c495c26cb
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   fhir_r4_mapping:
     dependency: transitive
     description:

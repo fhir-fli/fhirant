@@ -90,4 +90,37 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+      "a save waits for another connection's write, and so does an open "
+      '(the foreground service and the screens each open the store)', () async {
+    final file = File('${dir.path}/store.db');
+    final first = FhirAntDb(openStoreFile(file, 'a-key'));
+    await first.initialize();
+    final second = FhirAntDb(openStoreFile(file, 'a-key'));
+    await second.initialize();
+    final held = Completer<void>();
+    final hold = first.transaction(() async {
+      await first.customStatement('CREATE TABLE IF NOT EXISTS w (x)');
+      await first.customStatement('INSERT INTO w VALUES (1)');
+      held.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    });
+    await held.future;
+    final clock = Stopwatch()..start();
+    final third = FhirAntDb(openStoreFile(file, 'a-key'));
+    final opened = third.initialize();
+    await second.saveResource(fhir.Patient(id: fhir.FhirString('p1')));
+    final waited = clock.elapsedMilliseconds;
+    await opened;
+    await hold;
+    expect(waited, greaterThan(1000), reason: 'it must have met the lock');
+    expect(
+      await third.getResource(fhir.R4ResourceType.Patient, 'p1'),
+      isNotNull,
+    );
+    await third.close();
+    await second.close();
+    await first.close();
+  });
 }

@@ -180,6 +180,41 @@ void main() {
   });
 
   test(
+      "a backup taken mid-re-index does not bring the indexer's lease "
+      '(fhir_db 0.16)', () async {
+    await db.saveResource(patient('p1', 'Alpha'));
+    const lease = SearchParameterIndexing.leaseTable;
+    Future<int> leaseRows(FhirAntDb d) async =>
+        (await d.customSelect('SELECT count(*) AS c FROM $lease').getSingle())
+            .read<int>('c');
+    final file = await db.searchParameterIndexing.exclusive((_) async {
+      expect(await leaseRows(db), 1, reason: 'the backup must carry one');
+      return BackupService.createFile(
+        db,
+        'correct horse',
+        '${dir.path}/backup.sqlite',
+      );
+    });
+    final copy = openCopy(file.path, 'correct horse');
+    expect(await leaseRows(copy), 1, reason: 'the backup carries it');
+    await copy.close();
+    // A device in use: its store has saved, so it has the indexer's tables.
+    final fresh = FhirAntDb(NativeDatabase.memory());
+    await fresh.initialize();
+    await fresh.saveResource(patient('p2', 'Amber'));
+    await fresh.searchParameterIndexing.idle;
+    expect(await leaseRows(fresh), 0);
+    await BackupService.restoreFile(
+      fresh,
+      file.path,
+      passphrase: 'correct horse',
+    );
+    expect(await families(fresh), ['Alpha', 'Amber']);
+    expect(await leaseRows(fresh), 0);
+    await fresh.close();
+  });
+
+  test(
       'onto a device with data: the backup wins on a resource, local '
       'accounts stay', () async {
     await db.saveResource(patient('p1', 'Alpha'));

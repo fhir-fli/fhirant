@@ -10,9 +10,9 @@ dependencies:
   drift: ^2.29.0
   # Direct, not only through fhir_r4_db: 0.15.8, so a SearchParameter
   # saved through the foreground service's store is seen by the app's.
-  fhir_db: ^0.15.8
+  fhir_db: ^0.16.4
   fhir_r4: ^0.14.1
-  fhir_r4_db: ^0.14.0
+  fhir_r4_db: ^0.14.1
   path: ^1.9.1
   sqlite3: ^3.1.5
 

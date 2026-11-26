@@ -174,7 +174,9 @@ void main() {
     );
     // fhir_db re-indexes a changed code in the background (0.15.7).
     await db.searchParameterIndexing.idle;
-    expect(db.searchParameterIndexing.last['race']?.error, isNull);
+    final race = (await db.searchParameterIndexing.status())
+        .singleWhere((s) => s.code == 'race');
+    expect(race.state, SearchParameterIndexState.done, reason: race.error);
     expect(await patientIds('race=2028-9'), ['early']);
   });
 
