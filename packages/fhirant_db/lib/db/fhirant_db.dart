@@ -602,8 +602,13 @@ class FhirAntDb extends FhirDb {
   }
 
   /// Tables a backup's restore leaves alone: what they hold describes the
-  /// device that wrote them, not the record or the server's accounts.
-  static const deviceOnlyTables = {'sync_lease'};
+  /// device that wrote them, not the record or the server's accounts. The
+  /// search parameter indexer's lease (fhir_db 0.16) names a run on the
+  /// device that wrote the backup; a copied one would read as a run here.
+  static const Set<String> deviceOnlyTables = {
+    'sync_lease',
+    SearchParameterIndexing.leaseTable,
+  };
 
   /// Takes the `$sync` lease for [holder] syncing with [peer], unless
   /// another holder renewed it within [staleAfter]. Returns whether

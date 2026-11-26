@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift/native.dart';
+import 'package:fhir_db/fhir_db.dart' show waitForWriters;
 import 'package:sqlite3/sqlite3.dart' show Database;
 
 /// The cipher scheme every FHIRant store and backup is written with.
@@ -57,6 +58,17 @@ const storeSynchronous = 'FULL';
 ///
 /// The key is a passphrase inside a SQL string literal: a quote in it is
 /// doubled, as SQL requires, rather than ending the literal.
+///
+/// The phone's foreground service and the app's screens each open the
+/// store, so two connections can write at once; the second waits up to
+/// 10 s for the first (fhir_db `waitForWriters`), set before any statement
+/// so opening waits too. There was no wait before: a write that met
+/// another connection's failed at once with "database is locked", and an
+/// open on its own isolate during another's write failed 20 times in 20
+/// (fhir_r4_db `tool/probe_open_while_writing.dart`). Not `PRAGMA
+/// busy_timeout`: with Dart's profiler on (debug and profile builds) a
+/// 10 s one gave up after 115 ms (fhir_r4_db
+/// `tool/probe_busy_timeout_wait.dart`).
 void applyStoreCipher(Database raw, String key) {
   // `PRAGMA key = ''` is no cipher: sqlite3mc opens and writes the file in
   // the clear (measured 2026-10-06, fhirant REVIEW-2026-10-06 finding 2).
@@ -64,6 +76,7 @@ void applyStoreCipher(Database raw, String key) {
   if (key.isEmpty) {
     throw ArgumentError.value(key, 'key', 'must not be empty');
   }
+  waitForWriters(raw);
   raw
     ..execute("PRAGMA cipher = '$storeCipherScheme';")
     ..execute('PRAGMA legacy = $storeCipherLegacy;')
